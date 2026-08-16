@@ -144,6 +144,26 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
         codeActionContributors.append(contributor)
     }
 
+    /// 按 id 撤回补全贡献者（贡献包按插件撤回用，§9.3）。
+    public func unregisterCompletionContributor(id: String) {
+        completionContributors.removeAll { $0.id == id }
+    }
+
+    /// 按 id 撤回 Hover 贡献者（贡献包按插件撤回用，§9.3）。
+    public func unregisterHoverContributor(id: String) {
+        hoverContributors.removeAll { $0.id == id }
+    }
+
+    /// 按 id 撤回 Code Action 贡献者（贡献包按插件撤回用，§9.3）。
+    public func unregisterCodeActionContributor(id: String) {
+        codeActionContributors.removeAll { $0.id == id }
+    }
+
+    /// 按 id 撤回 Quick Open 贡献者（贡献包按插件撤回用，§9.3）。
+    public func unregisterQuickOpenContributor(id: String) {
+        quickOpenContributors.removeAll { $0.id == id }
+    }
+
     public func registerHighlightProviderContributor(_ contributor: any SuperEditorHighlightProviderContributor) {
         if highlightProviderContributors.contains(where: { $0.id == contributor.id }) {
             return

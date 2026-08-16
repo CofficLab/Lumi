@@ -32,18 +32,6 @@ let package = Package(
                 .product(name: "TreeSitterSwift", package: "tree-sitter-swift"),
             ],
             path: "Sources",
-            exclude: [
-                "Commands",
-                "Contributors",
-                "Models",
-                "Services",
-                "Tools",
-                "ViewModels",
-                "Views",
-                "EditorSwiftKeywordHoverContributor.swift",
-                "SwiftPrimitiveTypeCompletionContributor.swift",
-                "SwiftSelectionCodeActionContributor.swift",
-            ],
             resources: [
                 .process("../Resources/Localizable.xcstrings"),
                 .copy("Resources"),
@@ -55,21 +43,7 @@ let package = Package(
                 "EditorSwiftPlugin",
                 .product(name: "KernelLumi", package: "KernelLumi"),
             ],
-            path: "Tests",
-            exclude: [
-                "EditorSwiftBuildServerStoreTests.swift",
-                "EditorSwiftHostEnvironmentConfigurationTests.swift",
-                "EditorSwiftIntegrationTests.swift",
-                "EditorSwiftStorageTests.swift",
-                "GenerateXcodeProjectToolParserTests.swift",
-                "SwiftAgentToolsTests.swift",
-                "SwiftBuildRunTests.swift",
-                "SwiftContributorsTests.swift",
-                "XcodeProjectContextStatusMapperTests.swift",
-                "XcodeProjectStatusBarContrastTests.swift",
-                "XcodeProjectStatusBarViewModelTests.swift",
-                "XcodeProjectStatusPresentationTests.swift",
-            ]
+            path: "Tests"
         )
     ]
 )

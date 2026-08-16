@@ -1,4 +1,5 @@
 import Foundation
+import os
 import SwiftUI
 
 /// 内置插件管理器
@@ -418,16 +419,6 @@ public final class PluginManager: ObservableObject {
 
     }
 
-    /// 收集所有插件贡献的编辑器运行时插件,并注册到内核的 `EditorProviding` 服务。
-    ///
-    /// 调用时机:在 `KernelLumi.startup()` 的 `onReady` 之后。每个语言/语法插件
-    /// 只需实现 `LumiPlugin.editorPlugins(kernel:)` 返回面向 `KernelLumi` 协议的
-    /// `EditorPlugin` 实例,无需直接依赖 `EditorService` 或接触具体注册表。
-    public func registerEditorPlugins(in kernel: KernelLumi) {
-        self.kernel = kernel
-        kernel.editorProvider?.replaceEditorPlugins(collectEditorPlugins(in: kernel))
-    }
-
     /// 收集所有插件贡献的聊天起始提示词，并注册到内核的 `PromptSuggestionProviding` 服务。
     ///
     /// 调用时机：在 `KernelLumi.startup()` 的收集阶段，以及 `rebuildAllContributions`
@@ -524,9 +515,8 @@ public final class PluginManager: ObservableObject {
         // 3. Command 菜单贡献重建
         registerPluginCommandContributions(in: kernel)
 
-        // 4. Editor Plugins 重建
-        //    必须通过 replace 入口撤回已禁用插件的语言/语法/高亮贡献,再回放当前有效集合。
-        registerEditorPlugins(in: kernel)
+        // 4. 编辑器贡献包重建（契约 V2）：启用 → 原子安装；禁用 → 撤回。
+        registerEditorContributionBundles(in: kernel)
 
         // 5. LLM Provider 重建(diff)
         guard let manager = kernel.llmProvider else { return }
@@ -547,16 +537,51 @@ public final class PluginManager: ObservableObject {
         try? manager.registerLLMProviders(collected)
     }
 
-    private func collectEditorPlugins(in kernel: KernelLumi) -> [any EditorPlugin] {
-        allPlugins
-            .filter { effectiveEnabled(for: $0) }
-            .flatMap { $0.editorPlugins(kernel: kernel) }
-            .sorted { lhs, rhs in
-                if lhs.order != rhs.order {
-                    return lhs.order < rhs.order
+    /// 收集并装配编辑器贡献包（契约 V2，重构方案 §9.2）。
+    ///
+    /// 只向已启用插件请求 Bundle；为每个 Bundle 盖可信 plugin id 与递增 generation
+    /// （插件不能伪造归属），Host 按插件维度**原子安装**；一个插件失败只记录
+    /// 日志、不影响其他插件。禁用插件的 Bundle 以 `nil` 撤回。
+    public func registerEditorContributionBundles(in kernel: KernelLumi) {
+        self.kernel = kernel
+        guard let hosting = kernel.editorV2?.extensions else { return }
+
+        Task { @MainActor in
+            for plugin in allPlugins {
+                let enabled = effectiveEnabled(for: plugin)
+                guard enabled else {
+                    // 运行时禁用：撤回该插件全部编辑器贡献（§9.2）。
+                    if await pluginHasEditorBundle(plugin, kernel: kernel) {
+                        try? await hosting.replaceBundle(for: plugin.id, with: nil)
+                    }
+                    continue
                 }
-                return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
+
+                do {
+                    let bundle = try await plugin.editorContributionBundle(kernel: kernel)
+                    guard let bundle else { continue }
+                    // 盖戳：覆盖插件自报的 pluginID/generation。
+                    let stamped = bundle.stamped(pluginID: plugin.id, generation: 0)
+                    try await hosting.replaceBundle(for: plugin.id, with: stamped)
+                } catch {
+                    // 单插件失败不回滚其他插件（§9.2）。
+                    Self.editorBundleLogger.warning(
+                        "editor bundle install failed: \(plugin.id, privacy: .public) — \(error.localizedDescription)"
+                    )
+                }
             }
+        }
+    }
+
+    /// 该插件是否会贡献编辑器 Bundle（决定禁用时是否需要撤回）。
+    /// 编辑器贡献包装配日志。
+    nonisolated static let editorBundleLogger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin-manager.editor-bundles"
+    )
+
+    private func pluginHasEditorBundle(_ plugin: any LumiPlugin, kernel: KernelLumi) async -> Bool {
+        (try? await plugin.editorContributionBundle(kernel: kernel)) != nil
     }
 
     private func updateSortedPlugins() {

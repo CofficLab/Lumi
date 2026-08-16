@@ -370,8 +370,16 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
                 self.onExpansionChange?(relativePath, !fileItem.isExpanded)
             }
         )
-        kernel?.project?.updateCurrentFile(fileItem.url)
-        
+        // Phase 3 迁移：直接经 Editor 契约打开/激活文件（单一事实源），
+        // 不再写 ProjectProviding.currentFileURL。
+        if !fileItem.isDirectory {
+            let url = fileItem.url
+            let kernel = self.kernel
+            Task { @MainActor in
+                _ = try? await kernel?.editorV2?.documents.open(EditorOpenRequest(uri: url))
+            }
+        }
+
         // 刷新所有可见 cell 以同步选中状态（避免上一个选中项的高亮残留）
         reloadVisibleItems()
     }

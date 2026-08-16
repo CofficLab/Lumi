@@ -125,6 +125,4 @@ public final class Plugin: LumiPlugin, SuperLog {
         )
     }
     public func onContainerActivated(kernel: KernelLumi, containerID: String) {}
-    public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
-    public func configureEditorRuntime(kernel: KernelLumi) async {}
 }

@@ -158,6 +158,4 @@ public final class MindMapPlugin: LumiPlugin, SuperLog {
     public func onContainerActivated(kernel: KernelLumi, containerID: String) {
         if containerID == id { MindMapStore.shared.reload() }
     }
-    public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
-    public func configureEditorRuntime(kernel: KernelLumi) async {}
 }

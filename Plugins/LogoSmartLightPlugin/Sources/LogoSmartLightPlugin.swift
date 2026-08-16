@@ -59,6 +59,4 @@ public final class LogoSmartLightPlugin: LumiPlugin {
     public func onboardingPages(kernel: KernelLumi) -> [OnboardingPageItem] { [] }
     public func onTurnFinished(kernel: KernelLumi, conversationID: UUID, reason: LumiTurnEndReason) async {}
     public func onContainerActivated(kernel: KernelLumi, containerID: String) {}
-    public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
-    public func configureEditorRuntime(kernel: KernelLumi) async {}
 }

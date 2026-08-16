@@ -14,19 +14,15 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI"),
-        .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.13.3"),
     ],
     targets: [
         .target(
             name: "EditorProblemsPlugin",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
                 .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
             ],
             path: "Sources",
             resources: [

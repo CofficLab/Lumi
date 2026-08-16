@@ -1,4 +1,3 @@
-import EditorService
 import LumiUI
 import SwiftUI
 import KernelLumi
@@ -6,11 +5,11 @@ import KernelLumi
 public struct BottomEditorCallHierarchyPanelView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @ObservedObject var service: EditorService
+    @ObservedObject var viewModel: BottomCallHierarchyViewModel
     public var showsHeader: Bool = true
 
-    public init(service: EditorService, showsHeader: Bool = true) {
-        self._service = ObservedObject(wrappedValue: service)
+    public init(viewModel: BottomCallHierarchyViewModel, showsHeader: Bool = true) {
+        self._viewModel = ObservedObject(wrappedValue: viewModel)
         self.showsHeader = showsHeader
     }
 
@@ -23,6 +22,9 @@ public struct BottomEditorCallHierarchyPanelView: View {
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            viewModel.prepareFromCursor()
+        }
     }
 
     private var header: some View {
@@ -34,7 +36,7 @@ public struct BottomEditorCallHierarchyPanelView: View {
             Spacer(minLength: 0)
 
             Button {
-                service.panel.performPanelCommand(.closeCallHierarchy)
+                viewModel.close()
             } label: {
                 Image(systemName: "xmark")
                     .font(.appMicroEmphasized)
@@ -49,25 +51,25 @@ public struct BottomEditorCallHierarchyPanelView: View {
 
     @ViewBuilder
     private var content: some View {
-        if service.lsp.callHierarchyProvider.isLoading {
+        if viewModel.state.isLoading {
             emptyState(LumiPluginLocalization.string("Loading Call Hierarchy...", bundle: .module), systemImage: "arrow.triangle.branch")
-        } else if service.lsp.callHierarchyProvider.rootItem == nil {
+        } else if viewModel.state.root == nil {
             emptyState(LumiPluginLocalization.string("No Call Hierarchy", bundle: .module), systemImage: "point.3.connected.trianglepath.dotted")
         } else {
             HStack(spacing: 0) {
-                callHierarchyColumn(title: LumiPluginLocalization.string("Incoming", bundle: .module), calls: service.lsp.callHierarchyProvider.incomingCalls)
+                callHierarchyColumn(title: LumiPluginLocalization.string("Incoming", bundle: .module), calls: viewModel.state.incoming)
                 Divider()
-                callHierarchyColumn(title: LumiPluginLocalization.string("Outgoing", bundle: .module), calls: service.lsp.callHierarchyProvider.outgoingCalls)
+                callHierarchyColumn(title: LumiPluginLocalization.string("Outgoing", bundle: .module), calls: viewModel.state.outgoing)
             }
         }
     }
 
     private var panelTitle: String {
-        let count = service.lsp.callHierarchyProvider.incomingCalls.count + service.lsp.callHierarchyProvider.outgoingCalls.count
+        let count = viewModel.state.incoming.count + viewModel.state.outgoing.count
         return count > 0 ? LumiPluginLocalization.string("Call Hierarchy (\(count))", bundle: .module) : LumiPluginLocalization.string("Call Hierarchy", bundle: .module)
     }
 
-    private func callHierarchyColumn(title: String, calls: [EditorCallHierarchyCall]) -> some View {
+    private func callHierarchyColumn(title: String, calls: [EditorCallHierarchyEdge]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.appMicroEmphasized)
@@ -82,12 +84,12 @@ public struct BottomEditorCallHierarchyPanelView: View {
                     } else {
                         ForEach(calls) { call in
                             Button {
-                                service.navigation.performOpenItem(.callHierarchyItem(call.item))
+                                viewModel.open(call.node)
                             } label: {
                                 panelCard(
-                                    title: call.item.name,
-                                    subtitle: call.item.kindDisplayName,
-                                    badge: call.item.fileBadge
+                                    title: call.node.name,
+                                    subtitle: kindDisplayName(call.node.kind),
+                                    badge: call.node.uri.lastPathComponent
                                 )
                             }
                             .buttonStyle(.plain)
@@ -129,6 +131,20 @@ public struct BottomEditorCallHierarchyPanelView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .appSurface(style: .custom(theme.textPrimary.opacity(0.05)), cornerRadius: 8)
+    }
+
+    private func kindDisplayName(_ kind: EditorDocumentSymbolKind) -> String {
+        switch kind {
+        case .function: return LumiPluginLocalization.string("Function", bundle: .module)
+        case .method: return LumiPluginLocalization.string("Method", bundle: .module)
+        case .constructor: return LumiPluginLocalization.string("Initializer", bundle: .module)
+        case .class: return LumiPluginLocalization.string("Class", bundle: .module)
+        case .interface: return LumiPluginLocalization.string("Protocol", bundle: .module)
+        case .struct: return LumiPluginLocalization.string("Structure", bundle: .module)
+        case .enum: return LumiPluginLocalization.string("Enumeration", bundle: .module)
+        case .enumMember: return LumiPluginLocalization.string("Case", bundle: .module)
+        default: return LumiPluginLocalization.string("Symbol", bundle: .module)
+        }
     }
 
     private func emptyState(_ title: String, systemImage: String) -> some View {

@@ -57,7 +57,18 @@ public final class EditorSwiftPlugin: LumiPlugin {
     public func logoItems(kernel: KernelLumi) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: KernelLumi, conversationID: UUID, reason: LumiTurnEndReason) async {}
     public func onContainerActivated(kernel: KernelLumi, containerID: String) {}
-    public func editorPlugins(kernel: KernelLumi) -> [any EditorPlugin] {
-        [EditorSwiftEditorPlugin()]
+
+    /// 编辑器贡献包（契约 V2，§9.1）：语言 + grammar。
+    /// 构建阶段只创建描述符/Provider，不启动任何后台任务（事务语义 §9.3）。
+    public func editorContributionBundle(kernel: KernelLumi) async throws -> EditorContributionBundle? {
+        EditorContributionBundle(
+            pluginID: id,
+            languages: [
+                EditorLanguageContribution(
+                    language: EditorSwiftPluginDescriptor.swift,
+                    grammar: EditorSwiftGrammarProvider()
+                )
+            ]
+        )
     }
 }

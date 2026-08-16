@@ -438,8 +438,6 @@ struct ToolManagerPluginTests {
         try await plugin.onReady(kernel: kernel)
         await plugin.onTurnFinished(kernel: kernel, conversationID: UUID(), reason: .completed)
         plugin.onContainerActivated(kernel: kernel, containerID: "test")
-        await plugin.registerEditorExtensions(into: NSObject(), kernel: kernel)
-        await plugin.configureEditorRuntime(kernel: kernel)
         try await plugin.onBoot(kernel: kernel)
         #expect(kernel.toolManager != nil)
     }

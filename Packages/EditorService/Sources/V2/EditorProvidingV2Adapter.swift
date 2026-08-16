@@ -48,7 +48,7 @@ public final class EditorSurfaceBox: EditorSurfaceProviding {
 
 /// `EditorProvidingV2` 的 EditorService 实现。
 @MainActor
-public final class EditorProvidingV2Adapter: EditorProvidingV2 {
+public final class EditorProvidingV2Adapter: EditorProvidingV2, EditorFeatureHostBridge {
     public let scope: EditorScope
 
     // 子能力持有 weak self，用 lazy 在首次访问时装配；对外以协议存在类型暴露。
@@ -130,6 +130,32 @@ public final class EditorProvidingV2Adapter: EditorProvidingV2 {
     }
 
     var editorService: EditorService? { service }
+
+    // MARK: - EditorFeatureHostBridge（Phase 5 §10）
+
+    func featureContext(languageID: String) -> EditorFeatureRequestContext {
+        EditorFeatureRequestContext(
+            uri: service?.files.currentFileURL,
+            languageID: languageID,
+            revision: service?.state.contentRevision ?? 0
+        )
+    }
+
+    func open(_ location: KernelLumi.EditorLocation) {
+        guard let service else { return }
+        service.sessions.openFile(at: location.uri)
+        // 打开后把光标落到目标位置（zero-based UTF-16 → 文本偏移）。
+        let text = service.state.content?.string ?? ""
+        if let offset = SelectionCapability.offset(of: location.range.start, in: text) {
+            service.state.setSelections([MultiCursorSelection(location: offset, length: 0)])
+        }
+    }
+
+    func apply(_ edit: KernelLumi.EditorWorkspaceEdit) {
+        Task { @MainActor in
+            _ = try? await documentCapability.apply(edit, expectedRevisions: [:], options: EditorEditOptions())
+        }
+    }
 
     // MARK: - 派生状态
 
@@ -732,7 +758,7 @@ private final class SelectionCapability: EditorSelectionProviding {
         return offsets
     }
 
-    private static func offset(of position: EditorPosition, in text: String) -> Int? {
+    static func offset(of position: EditorPosition, in text: String) -> Int? {
         let starts = Self.lineStartOffsets(of: text)
         guard position.line >= 0, position.line < starts.count else { return nil }
         let lineStart = starts[position.line]

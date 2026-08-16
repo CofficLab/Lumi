@@ -40,50 +40,6 @@ public final class EditorProvider: EditorProviding, SuperLog {
         AnyView(EditorSurfaceView(state: editorService.state))
     }
 
-    // MARK: - Editor Plugin Registration
-
-    /// 注册一个编辑器插件。插件在 `registerExtensions(into:)` 中写入编辑器运行时扩展表。
-    public func registerEditorPlugin(_ plugin: any EditorPlugin) {
-        plugin.registerExtensions(into: editorService.editorExtensions)
-    }
-
-    /// 用当前有效启用的编辑器插件集合替换运行时扩展。
-    ///
-    /// `EditorExtensionRegistry.reset()` 会清空语言、语法、高亮、命令等编辑器扩展；
-    /// 这里保留已注册的主题 contributor，因为主题由 app 主题系统单独同步，不属于语言插件集合。
-    public func replaceEditorPlugins(_ plugins: [any EditorPlugin]) {
-        let sortedPlugins = plugins.sorted(by: sortEditorPlugins)
-
-        let registry = editorService.editorExtensions
-        let themeContributors = registry.allThemes()
-        registry.reset()
-        for themeContributor in themeContributors {
-            registry.registerThemeContributor(themeContributor)
-        }
-
-        for plugin in sortedPlugins {
-            plugin.registerExtensions(into: registry)
-        }
-        registry.recordInstalledPlugins(
-            sortedPlugins.map {
-                EditorInstalledPluginRecord(
-                    id: $0.id,
-                    displayName: $0.name,
-                    description: "",
-                    order: $0.order,
-                    isConfigurable: false
-                )
-            }
-        )
-    }
-
-    private func sortEditorPlugins(_ lhs: any EditorPlugin, _ rhs: any EditorPlugin) -> Bool {
-        if lhs.order != rhs.order {
-            return lhs.order < rhs.order
-        }
-        return lhs.id.localizedCaseInsensitiveCompare(rhs.id) == .orderedAscending
-    }
-
     // MARK: - File Operations
 
     public var currentFilePath: String? {

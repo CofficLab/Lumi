@@ -29,8 +29,9 @@ public struct GetCurrentFileTool: LumiAgentTool {
     }
 
     public func execute(arguments: [String: LumiJSONValue], kernel: KernelLumi) async throws -> String {
+        // Phase 3:当前文件唯一事实源是 Editor（kernel.editorV2），不再读 Project 状态。
         let currentFileURL = await MainActor.run {
-            kernel.project?.currentFileURL
+            kernel.editorV2?.documents.activeDocument?.uri
         }
 
         guard let currentFileURL else {

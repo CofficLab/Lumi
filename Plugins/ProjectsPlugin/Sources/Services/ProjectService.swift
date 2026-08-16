@@ -86,6 +86,10 @@ public final class ProjectService: ProjectProviding {
         }
     }
 
+    /// - Deprecated: Phase 3（编辑器重构 §4.3/§20）：当前文件的唯一事实源是
+    ///   Editor（`kernel.editorV2`）。Project 侧不再维护打开文件状态；
+    ///   该 API 仅为兼容保留，持久化的打开文件记录不再被任何 UI 读取。
+    @available(*, deprecated, message: "使用 kernel.editorV2.documents / sessions（Editor 单一事实源）")
     public func updateCurrentFile(_ fileURL: URL?) {
         let standardizedURL = fileURL?.standardizedFileURL
         currentFileURL = standardizedURL
@@ -93,6 +97,7 @@ public final class ProjectService: ProjectProviding {
         updateOpenFiles(openFileURLs + [standardizedURL])
     }
 
+    @available(*, deprecated, message: "使用 kernel.editorV2.documents / sessions（Editor 单一事实源）")
     public func updateOpenFiles(_ fileURLs: [URL]) {
         var uniqueURLs: [URL] = []
         uniqueURLs.reserveCapacity(fileURLs.count)
@@ -108,6 +113,7 @@ public final class ProjectService: ProjectProviding {
         persistCurrentProject()
     }
 
+    @available(*, deprecated, message: "使用 kernel.editorV2.sessions.close（Editor 单一事实源）")
     public func closeFile(_ fileURL: URL) {
         let standardizedURL = fileURL.standardizedFileURL
 

@@ -17,10 +17,15 @@ public final class QuickFileSearchPlugin: LumiPlugin {
     public func onBoot(kernel: KernelLumi) async throws {}
 
     public func onReady(kernel: KernelLumi) async throws {
-        // 注入文件选择回调：通过 EditorProviding 打开文件
+        // 注入文件选择回调：优先经 Editor 契约 V2 打开（单一事实源），
+        // Host 未就绪的精简宿主回退 legacy EditorProviding。
         QuickFileSearchBridge.selectFileHandler = { [weak kernel] path, _ in
             Task { @MainActor in
-                try? await kernel?.editorProvider?.openFile(at: path)
+                if let documents = kernel?.editorV2?.documents {
+                    _ = try? await documents.open(EditorOpenRequest(uri: URL(fileURLWithPath: path)))
+                } else {
+                    try? await kernel?.editorProvider?.openFile(at: path)
+                }
             }
         }
 
@@ -90,6 +95,4 @@ public final class QuickFileSearchPlugin: LumiPlugin {
     public func logoItems(kernel: KernelLumi) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: KernelLumi, conversationID: UUID, reason: LumiTurnEndReason) async {}
     public func onContainerActivated(kernel: KernelLumi, containerID: String) {}
-    public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
-    public func configureEditorRuntime(kernel: KernelLumi) async {}
 }

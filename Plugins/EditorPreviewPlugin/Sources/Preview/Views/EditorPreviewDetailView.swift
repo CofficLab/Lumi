@@ -8,7 +8,6 @@ import MagicAlert
 import MarkdownKit
 import os
 import SwiftUI
-import EditorService
 import StringCatalogKit
 import WebKit
 
@@ -41,19 +40,15 @@ public struct EditorPreviewDetailView: View, SuperLog {
     @MainActor
     public init(kernel: KernelLumi, viewModel: EditorPreviewViewModel? = nil) {
         self.kernel = kernel
-        self.viewModel = viewModel ?? EditorPreviewRuntimeBridge.previewViewModel()
-    }
-
-    private var editorService: EditorService? {
-        EditorPreviewRuntimeBridge.editorService
+        self.viewModel = viewModel ?? EditorPreviewRuntimeBridge.previewViewModel(for: kernel.editorV2)
     }
 
     private var sourceText: String? {
-        editorService?.files.content?.string
+        viewModel.sourceText
     }
 
     private var currentFileURL: URL? {
-        editorService?.files.currentFileURL
+        viewModel.currentFileURL
     }
 
     public var body: some View {
@@ -66,29 +61,12 @@ public struct EditorPreviewDetailView: View, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(self.t)📺 视图出现 — 当前文件=\(currentFileURL?.lastPathComponent ?? "nil")")
             }
-            // 订阅 EditorService（幂等，内部有 Combine 订阅，多次调用会重复订阅，所以只调一次）
-            if let editorService {
-                viewModel.wireEditorService(editorService)
-            }
+            // ViewModel 自行订阅 EditorProvidingV2 的 statePublisher（幂等），
+            // 文件切换/保存/内容变化均由其直接感知，无需 View 层 onChange。
             viewModel.viewDidAppear(fileURL: currentFileURL, sourceText: sourceText)
         }
         .onDisappear {
             viewModel.viewDidDisappear()
-        }
-        .onChange(of: currentFileURL) { _, newValue in
-            if Self.verbose {
-                Self.logger.info("\(self.t)📄 currentFileURL 变更 → \(newValue?.lastPathComponent ?? "nil")")
-            }
-            viewModel.setActiveFile(newValue, sourceText: sourceText)
-        }
-        .onChange(of: editorService?.files.saveRevision ?? 0) { _, _ in
-            if Self.verbose {
-                Self.logger.info("\(self.t)💾 saveRevision 变更")
-            }
-            viewModel.applySaveRevision(sourceText: sourceText)
-        }
-        .onChange(of: editorService?.files.contentRevision ?? 0) { _, _ in
-            viewModel.updateBufferText(sourceText)
         }
     }
 
@@ -673,35 +651,32 @@ public struct EditorPreviewDetailView: View, SuperLog {
     private func cleanCurrentStringCatalog() {
         guard !isCleaningCurrentStringCatalog else { return }
         isCleaningCurrentStringCatalog = true
-        defer { isCleaningCurrentStringCatalog = false }
 
-        do {
-            guard let editorService else {
-                alert_warning(LumiPluginLocalization.string("Editor service is not available.", bundle: .module))
-                return
-            }
-            let removedCount = try viewModel.cleanCurrentStringCatalog(
-                fileURL: currentFileURL,
-                sourceText: sourceText,
-                editorService: editorService
-            )
-            if removedCount > 0 {
-                alert_success(
+        Task {
+            defer { isCleaningCurrentStringCatalog = false }
+            do {
+                let removedCount = try await viewModel.cleanCurrentStringCatalog(
+                    fileURL: currentFileURL,
+                    sourceText: sourceText
+                )
+                if removedCount > 0 {
+                    alert_success(
+                        String(
+                            format: LumiPluginLocalization.string("Removed %d stale String Catalog key(s).", bundle: .module),
+                            removedCount
+                        )
+                    )
+                } else {
+                    alert_info(LumiPluginLocalization.string("No stale String Catalog keys found.", bundle: .module))
+                }
+            } catch {
+                alert_error(
                     String(
-                        format: LumiPluginLocalization.string("Removed %d stale String Catalog key(s).", bundle: .module),
-                        removedCount
+                        format: LumiPluginLocalization.string("Failed to clean String Catalog: %@", bundle: .module),
+                        error.localizedDescription
                     )
                 )
-            } else {
-                alert_info(LumiPluginLocalization.string("No stale String Catalog keys found.", bundle: .module))
             }
-        } catch {
-            alert_error(
-                String(
-                    format: LumiPluginLocalization.string("Failed to clean String Catalog: %@", bundle: .module),
-                    error.localizedDescription
-                )
-            )
         }
     }
 
@@ -712,10 +687,6 @@ public struct EditorPreviewDetailView: View, SuperLog {
             alert_warning(LumiPluginLocalization.string("Select a project before cleaning String Catalogs.", bundle: .module))
             return
         }
-        guard let editorService else {
-            alert_warning(LumiPluginLocalization.string("Editor service is not available.", bundle: .module))
-            return
-        }
 
         isCleaningProjectStringCatalogs = true
         Task {
@@ -723,8 +694,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 let summary = try await viewModel.cleanProjectStringCatalogs(
                     projectRootPath: projectRootPath,
                     currentFileURL: currentFileURL,
-                    currentSourceText: sourceText,
-                    editorService: editorService
+                    currentSourceText: sourceText
                 )
                 isCleaningProjectStringCatalogs = false
 
@@ -757,33 +727,29 @@ public struct EditorPreviewDetailView: View, SuperLog {
     }
 
     private func removeStaleStringCatalogEntry(key: String) {
-        guard let editorService else {
-            alert_warning(LumiPluginLocalization.string("Editor service is not available.", bundle: .module))
-            return
-        }
-
-        do {
-            let removed = try viewModel.removeStaleStringCatalogEntry(
-                key: key,
-                fileURL: currentFileURL,
-                sourceText: sourceText,
-                editorService: editorService
-            )
-            if removed {
-                alert_success(
+        Task {
+            do {
+                let removed = try await viewModel.removeStaleStringCatalogEntry(
+                    key: key,
+                    fileURL: currentFileURL,
+                    sourceText: sourceText
+                )
+                if removed {
+                    alert_success(
+                        String(
+                            format: LumiPluginLocalization.string("Removed %d stale String Catalog key(s).", bundle: .module),
+                            1
+                        )
+                    )
+                }
+            } catch {
+                alert_error(
                     String(
-                        format: LumiPluginLocalization.string("Removed %d stale String Catalog key(s).", bundle: .module),
-                        1
+                        format: LumiPluginLocalization.string("Failed to clean String Catalog: %@", bundle: .module),
+                        error.localizedDescription
                     )
                 )
             }
-        } catch {
-            alert_error(
-                String(
-                    format: LumiPluginLocalization.string("Failed to clean String Catalog: %@", bundle: .module),
-                    error.localizedDescription
-                )
-            )
         }
     }
 
@@ -825,7 +791,7 @@ public struct EditorPreviewDetailView: View, SuperLog {
                 EditorPreviewMarkdownView(
                     markdown: sourceText ?? "",
                     fileURL: currentFileURL,
-                    editorService: editorService
+                    viewModel: viewModel
                 )
                     .environmentObject(themeVM)
             case .stringCatalog:
@@ -1304,7 +1270,7 @@ private struct EditorPreviewMarkdownView: View {
 
     public let markdown: String
     public let fileURL: URL?
-    public let editorService: EditorService?
+    public let viewModel: EditorPreviewViewModel
     @State private var scrollToID: String?
 
     private var toc: (headings: [MarkdownTOCHeading], sections: [MarkdownTOCSection]) {
@@ -1437,8 +1403,9 @@ private struct EditorPreviewMarkdownView: View {
     }
 
     /// 从 markdown 源文件中删除指定标题及其子内容（直到下一个同级或更高级标题，或文件末尾）。
+    /// 通过 V2 契约的 Workspace Edit 替换活动文档全文并保存。
     private func deleteHeadingAndContent(heading: MarkdownTOCHeading) {
-        guard let editorService else { return }
+        guard let fileURL else { return }
 
         let lines = markdown.components(separatedBy: .newlines)
         let startLine = heading.lineNumber
@@ -1478,9 +1445,20 @@ private struct EditorPreviewMarkdownView: View {
             options: .regularExpression
         )
 
-        // 替换编辑器内容
-        _ = editorService.files.replaceCurrentDocumentText(newContent, reason: "markdown_delete_heading")
-        editorService.files.saveNow()
+        // 替换编辑器内容（V2 契约：revision 校验的 Workspace Edit + 保存）
+        Task {
+            do {
+                _ = try await viewModel.replaceActiveDocumentText(
+                    newContent,
+                    reason: "markdown_delete_heading",
+                    matching: fileURL
+                )
+            } catch {
+                EditorPreviewDetailView.logger.error(
+                    "\(EditorPreviewDetailView.t)❌ 删除 Markdown 标题失败：\(error.localizedDescription)"
+                )
+            }
+        }
     }
 
     /// 快速解析 ATX 标题，只返回 level

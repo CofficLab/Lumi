@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import EditorService
+import KernelLumi
 @testable import QuickFileSearchPlugin
 
 // MARK: - File Index

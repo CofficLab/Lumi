@@ -1,28 +1,19 @@
-import EditorService
 import KernelLumi
 import LumiUI
 import SwiftUI
 
-@MainActor
-public enum EditorStickySymbolBarBridge {
-    public static var editorServiceProvider: (() -> EditorService?)?
-}
-
 /// 编辑器符号面包屑头部视图。
 public struct EditorStickySymbolBarHeaderView: View {
-    private let service: EditorService
+    @StateObject private var model: StickySymbolBarModel
 
-    public init(service: EditorService) {
-        self.service = service
+    public init(editor: any EditorProvidingV2) {
+        self._model = StateObject(wrappedValue: StickySymbolBarModel(editor: editor))
     }
 
     public var body: some View {
-        let activeDocumentSymbolTrail = service.lsp.documentSymbolProvider.activeItems(for: service.editing.cursorLine)
+        let activeDocumentSymbolTrail = model.activeSymbolTrail
         if !activeDocumentSymbolTrail.isEmpty {
-            EditorStickySymbolBarView(
-                service: service,
-                symbols: activeDocumentSymbolTrail
-            )
+            EditorStickySymbolBarView(model: model, symbols: activeDocumentSymbolTrail)
         }
     }
 }
@@ -35,13 +26,13 @@ public struct EditorStickySymbolBarHeaderView: View {
 public struct EditorStickySymbolBarView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    /// 编辑器服务门面（用于获取光标行号、执行符号跳转等操作）
-    @ObservedObject private var service: EditorService
+    /// 视图模型（用于获取光标行号、执行符号跳转等操作）
+    @ObservedObject private var model: StickySymbolBarModel
     /// 当前光标所在的符号层级路径列表（从根到当前节点）
-    public let symbols: [EditorDocumentSymbolItem]
+    public let symbols: [EditorDocumentSymbol]
 
-    public init(service: EditorService, symbols: [EditorDocumentSymbolItem]) {
-        self._service = ObservedObject(wrappedValue: service)
+    public init(model: StickySymbolBarModel, symbols: [EditorDocumentSymbol]) {
+        self._model = ObservedObject(wrappedValue: model)
         self.symbols = symbols
     }
 
@@ -67,7 +58,7 @@ public struct EditorStickySymbolBarView: View {
 
             Spacer(minLength: 0)
 
-            Text(LumiPluginLocalization.string("Ln \(service.editing.cursorLine)", bundle: .module))
+            Text(LumiPluginLocalization.string("Ln \(model.cursorLine)", bundle: .module))
                 .font(.appMicroEmphasized)
                 .foregroundColor(theme.textSecondary)
                 .padding(.horizontal, 8)
@@ -86,9 +77,9 @@ public struct EditorStickySymbolBarView: View {
     }
 
     @ViewBuilder
-    private func symbolChip(_ symbol: EditorDocumentSymbolItem) -> some View {
+    private func symbolChip(_ symbol: EditorDocumentSymbol) -> some View {
         Button {
-            service.navigation.performOpenItem(.documentSymbol(symbol))
+            model.open(symbol)
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: symbol.iconSymbol)

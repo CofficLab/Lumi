@@ -1,6 +1,5 @@
 import AppKit
-import EditorService
-import EditorSource
+import KernelLumi
 import LumiUI
 import SwiftUI
 
@@ -10,7 +9,6 @@ public struct DatabaseInspectorView: View {
     @ObservedObject var viewModel: DatabaseViewModel
     @State private var section: SchemaInspectorSection = .columns
     @State private var ddlText = ""
-    @State private var ddlEditorState = SourceEditorState()
     @State private var showAddColumn = false
     @State private var showAddIndex = false
     @State private var renameColumn: TableColumn?
@@ -306,11 +304,14 @@ public struct DatabaseInspectorView: View {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(ddl, forType: .string)
                 }
-                SourceEditor(
-                    $ddlText,
-                    language: DatabaseSQLLanguageSupport.context,
-                    configuration: ddlEditorConfiguration,
-                    state: $ddlEditorState
+                EmbeddedCodeEditorView(
+                    text: $ddlText,
+                    options: EditorEmbeddedEditorOptions(
+                        languageID: "sql",
+                        isEditable: false,
+                        wrapLines: false,
+                        fontSize: NSFont.smallSystemFontSize
+                    )
                 )
                 .frame(minHeight: 260)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -321,27 +322,6 @@ public struct DatabaseInspectorView: View {
                 .font(.appCaption)
                 .foregroundStyle(.secondary)
         }
-    }
-
-    private var ddlEditorConfiguration: SourceEditorConfiguration {
-        let resolved = LumiUIThemeRegistry.shared.resolvedEditorSyntax(colorScheme: colorScheme)
-        let palette = resolved?.palette ?? .standard(isDark: colorScheme == .dark)
-        return SourceEditorConfiguration(
-            appearance: .init(
-                theme: EditorSyntaxPaletteAdapter.makeEditorTheme(from: palette),
-                themeIdentifier: resolved?.themeId ?? "database-ddl-\(colorScheme == .dark ? "dark" : "light")",
-                font: .monospacedSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular),
-                wrapLines: false
-            ),
-            behavior: .init(isEditable: false, isSelectable: true),
-            layout: .init(additionalTextInsets: NSEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)),
-            peripherals: .init(
-                showGutter: true,
-                showMinimap: false,
-                showReformattingGuide: false,
-                showFoldingRibbon: false
-            )
-        )
     }
 
     private var connectionContent: some View {

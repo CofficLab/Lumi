@@ -59,9 +59,13 @@ public struct SetCurrentFileTool: LumiAgentTool {
         }
 
         let fileURL = URL(fileURLWithPath: path)
-        await MainActor.run {
-            kernel.project?.updateCurrentFile(fileURL)
+        // Phase 3:直接经 Editor 契约打开文件（激活对应 Session），不再写 Project 状态。
+        guard await MainActor.run(body: { kernel.editorV2 != nil }) else {
+            return "❌ Error: Editor host unavailable."
         }
+        _ = await Task { @MainActor in
+            try? await kernel.editorV2?.documents.open(EditorOpenRequest(uri: fileURL))
+        }.value
 
         return """
         ✅ Successfully set current file

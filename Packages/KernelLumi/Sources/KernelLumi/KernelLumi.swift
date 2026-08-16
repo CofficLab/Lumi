@@ -192,10 +192,8 @@ public final class KernelLumiContainer: ObservableObject {
             try pluginManager.registerLLMProviders(in: self)
         }
 
-        // 9. 收集所有插件贡献的编辑器运行时插件,并注册到 EditorProviding。
-        //    语言高亮、语法、语言描述等扩展通过 typed 的 `EditorPlugin` 协议接入,
-        //    由具体编辑器宿主在边界处桥接到运行时实现。
-        pluginManager.registerEditorPlugins(in: self)
+        // 9. 装配编辑器贡献包（契约 V2）：按插件原子安装/撤回。
+        pluginManager.registerEditorContributionBundles(in: self)
 
         // 10. 同步当前激活容器的可见性状态
         //    — 从 WorkspaceProviding 获取 activeViewContainerID,

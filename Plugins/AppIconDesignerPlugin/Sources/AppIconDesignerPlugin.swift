@@ -162,6 +162,4 @@ public final class AppIconDesignerPlugin: LumiPlugin, SuperLog {
     public func onContainerActivated(kernel: KernelLumi, containerID: String) {
         if containerID == id { IconDocumentStore.shared.reload() }
     }
-    public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
-    public func configureEditorRuntime(kernel: KernelLumi) async {}
 }

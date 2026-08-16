@@ -14,7 +14,6 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
@@ -24,7 +23,6 @@ let package = Package(
         .target(
             name: "QuickFileSearchPlugin",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
                 .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
@@ -39,7 +37,6 @@ let package = Package(
             name: "QuickFileSearchPluginTests",
             dependencies: [
                 "QuickFileSearchPlugin",
-                .product(name: "EditorService", package: "EditorService"),
             ],
             path: "Tests"
         )

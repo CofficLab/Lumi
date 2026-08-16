@@ -32,7 +32,7 @@ public struct EditorThemeInfo: Sendable, Equatable, Identifiable {
 /// 受支持编程语言的元数据，由语言插件注册。
 ///
 /// 此类型从 `EditorLanguageRuntime` 复制到 `KernelLumi`，使内核无需依赖 `EditorLanguageRuntime`
-/// 即可定义编辑器扩展契约（见 `EditorPlugin` / `EditorExtensionRegistrar`）。
+/// 即可定义编辑器扩展契约（见 `EditorContributionBundle`）。
 /// 编辑器侧在桥接时负责在两边的类型之间做转换。
 public struct EditorLanguageDescriptor: Sendable, Equatable, Hashable {
     public let languageId: String
@@ -121,8 +121,8 @@ public protocol EditorHighlightProvider: AnyObject {}
 
 /// 高亮贡献者协议，由实现代码高亮的插件遵循。
 ///
-/// 插件仅面向内核实现本协议，并在 `EditorPlugin.registerExtensions(into:)` 中
-/// 调用 `EditorExtensionRegistrar.registerHighlightContributor(_:)` 完成注入。
+/// 插件仅面向内核实现本协议，并通过 `EditorLanguageContribution`
+/// 通过 `EditorLanguageContribution.highlightContributors` 随贡献包注入。
 /// 具体的高亮 provider 通过 `highlightProviders(for:)` 以内核可见的标记类型
 /// `EditorHighlightProvider` 返回；其底层实现（`EditorSource.HighlightProviding`）
 /// 由插件让同一实体同时遵循这两个协议，并由 `EditorService` 在桥接时向下转型还原。

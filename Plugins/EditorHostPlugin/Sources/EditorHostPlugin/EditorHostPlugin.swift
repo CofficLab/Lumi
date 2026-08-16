@@ -1,4 +1,3 @@
-import Combine
 import EditorService
 import Foundation
 import KernelLumi
@@ -38,9 +37,7 @@ public final class EditorHostPlugin: LumiPlugin, SuperLog {
 
     private var editorProvider: EditorProvider?
     private var editorService: EditorService?
-    private var projectObservation: AnyCancellable?
-    private var projectSyncTask: Task<Void, Never>?
-    private var lastSyncedProjectFilePath: String?
+    private var embeddedEditorProvider: EmbeddedEditorSurfaceProvider?
 
     public init() {}
 
@@ -52,18 +49,16 @@ public final class EditorHostPlugin: LumiPlugin, SuperLog {
         let service = EditorService(editorExtensionRegistry: registry)
         try kernel.registerService(EditorService.self, service)
 
-        // 2. 文件树/标签栏协同器（同一实例实现两个协同协议）。
-        let editorContext = EditorContext(service: service, kernel: kernel)
-        try kernel.registerFileTreeEditorCoordination(editorContext)
-        try kernel.registerEditorTabStripCoordination(editorContext)
+        // 3.5 贡献包注册表（契约 V2 §9）：编辑器贡献按插件维度原子安装/撤回。
+        let contributionRegistry = EditorContributionRegistry(registry: service.editorExtensions)
 
-        // 3. legacy EditorProviding 契约（PluginManager 编辑器插件装配、旧消费者）。
+        // 3. legacy EditorProviding 契约（旧消费者）。
         //    同一插件内服务已就绪，构造即注入，无需 pending 回放。
         let provider = EditorProvider(service: service)
         try kernel.registerEditor(provider)
 
         // 4. 契约 V2（kernel.editorV2），Surface 视图工厂注入。
-        let adapter = EditorProvidingV2Adapter(service: service)
+        let adapter = EditorProvidingV2Adapter(service: service, extensions: contributionRegistry)
         adapter.surfaceBox.makeView = { [weak service] in
             guard let service else {
                 return AnyView(
@@ -77,8 +72,14 @@ public final class EditorHostPlugin: LumiPlugin, SuperLog {
         }
         try kernel.registerEditorV2(adapter)
 
+        // 4.5 嵌入式编辑器能力（§17.2）：供 Feature 插件在自身面板内
+        //     使用同一语言/语法高亮栈，而不依赖 EditorService/EditorSource。
+        let embeddedProvider = EmbeddedEditorSurfaceProvider(service: service)
+        try kernel.registerService(EditorEmbeddedEditorProviding.self, embeddedProvider)
+
         editorService = service
         editorProvider = provider
+        embeddedEditorProvider = embeddedProvider
 
         if Self.verbose {
             Self.logger.info("\(Self.t)EditorHostPlugin: EditorService + legacy provider + V2 adapter registered")
@@ -88,11 +89,6 @@ public final class EditorHostPlugin: LumiPlugin, SuperLog {
     public func onReady(kernel: KernelLumi) async throws {
         // 主题同步（原 EditorProviderPlugin OnReady）：订阅 .themeDidChange 并应用编辑器主题。
         editorProvider?.bindThemeSync(kernel: kernel)
-
-        // 项目当前文件联动（原 EditorProviderPlugin OnReady）：
-        // 只订阅 project 的 objectWillChange（精确信号），project 变更驱动编辑器打开文件。
-        bindProjectCurrentFileObservation(kernel: kernel)
-        scheduleProjectCurrentFileSync(kernel: kernel)
     }
 
     // MARK: - LumiPlugin stubs
@@ -123,47 +119,5 @@ public final class EditorHostPlugin: LumiPlugin, SuperLog {
     public func logoItems(kernel: KernelLumi) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: KernelLumi, conversationID: UUID, reason: LumiTurnEndReason) async {}
     public func onContainerActivated(kernel: KernelLumi, containerID: String) {}
-    public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
-    public func configureEditorRuntime(kernel: KernelLumi) async {}
 
-    // MARK: - Project Sync
-
-    private func bindProjectCurrentFileObservation(kernel: KernelLumi) {
-        projectObservation?.cancel()
-        projectObservation = nil
-
-        guard let project = kernel.project else { return }
-
-        projectObservation = project.objectWillChange.sink { [weak self] _ in
-            self?.scheduleProjectCurrentFileSync(kernel: kernel)
-        }
-    }
-
-    private func scheduleProjectCurrentFileSync(kernel: KernelLumi) {
-        projectSyncTask?.cancel()
-        projectSyncTask = Task { @MainActor [weak self] in
-            await Task.yield()
-            guard !Task.isCancelled else { return }
-            self?.syncProjectCurrentFile(kernel: kernel)
-        }
-    }
-
-    private func syncProjectCurrentFile(kernel: KernelLumi) {
-        guard let editorProvider else { return }
-
-        let projectFilePath = kernel.project?.currentFileURL?.standardizedFileURL.path
-        guard projectFilePath != lastSyncedProjectFilePath else { return }
-        lastSyncedProjectFilePath = projectFilePath
-
-        guard let projectFilePath else { return }
-
-        let currentEditorPath = editorProvider.currentFilePath.map {
-            URL(fileURLWithPath: $0).standardizedFileURL.path
-        }
-        guard currentEditorPath != projectFilePath else { return }
-
-        Task { @MainActor in
-            try? await editorProvider.openFile(at: projectFilePath)
-        }
-    }
 }

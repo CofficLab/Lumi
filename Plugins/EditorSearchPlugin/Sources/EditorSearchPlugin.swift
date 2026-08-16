@@ -1,4 +1,3 @@
-import EditorService
 import KernelLumi
 import LumiUI
 import SwiftUI
@@ -26,35 +25,33 @@ public final class EditorSearchPanelPlugin: LumiPlugin {
 
 
     public func panelBottomTabItems(kernel: KernelLumi) -> [PanelBottomTabItem] {
-        guard let service = kernel.editor?.editorService else {
+        guard let editor = kernel.editorV2 else {
             return []
         }
 
         return [
             PanelBottomTabItem(
                 id: "editor-bottom-search",
-                order: order,
                 title: LumiPluginLocalization.string("Search", bundle: .module),
                 systemImage: "magnifyingglass"
             ) {
-                BottomEditorWorkspaceSearchPanelView(service: service, showsToolbar: true)
+                AnyView(BottomEditorWorkspaceSearchPanelView(viewModel: BottomWorkspaceSearchViewModel(editor: editor), showsToolbar: true))
             }
         ]
     }
 
     public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
-        guard let service = kernel.editor?.editorService else {
+        guard let editor = kernel.editorV2 else {
             return []
         }
 
         return [
             PanelRailTabItem(
                 id: Self.railTabID,
-                order: order,
                 title: LumiPluginLocalization.string("Search", bundle: .module),
                 systemImage: "magnifyingglass"
             ) {
-                BottomEditorWorkspaceSearchPanelView(service: service, showsToolbar: true)
+                AnyView(BottomEditorWorkspaceSearchPanelView(viewModel: BottomWorkspaceSearchViewModel(editor: editor), showsToolbar: true))
             }
         ]
     }
@@ -86,6 +83,4 @@ public final class EditorSearchPanelPlugin: LumiPlugin {
     public func logoItems(kernel: KernelLumi) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: KernelLumi, conversationID: UUID, reason: LumiTurnEndReason) async {}
     public func onContainerActivated(kernel: KernelLumi, containerID: String) {}
-    public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
-    public func configureEditorRuntime(kernel: KernelLumi) async {}
 }

@@ -234,23 +234,9 @@ public protocol LumiPlugin: AnyObject {
 
     // MARK: - Editor Extension
 
-    /// 注册编辑器扩展
-    func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async
-
-    /// 配置编辑器运行时上下文
-    func configureEditorRuntime(kernel: KernelLumi) async
-
-    /// 提供编辑器运行时插件。
-    ///
-    /// 语言高亮、语法、语言描述等编辑器扩展应优先通过此 typed 贡献点接入。
-    /// 插件只需要依赖 `KernelLumi` 的 `EditorPlugin` / `EditorExtensionRegistrar`
-    /// 协议；具体编辑器宿主由 `EditorProviding` 在边界处桥接到运行时实现。
-    func editorPlugins(kernel: KernelLumi) -> [any EditorPlugin]
-
     /// 编辑器贡献包（契约 V2，重构方案 §9.1）。
     ///
-    /// 取代 `editorPlugins` / `registerEditorExtensions` / `configureEditorRuntime`
-    /// 的最终贡献入口。Bundle 构建阶段只创建描述符和 Provider，
+    /// 插件的**唯一**编辑器贡献入口。Bundle 构建阶段只创建描述符和 Provider，
     /// **不得**启动 Language Server、watcher 或后台任务。
     /// Host 按插件维度原子安装/替换/撤回（`kernel.editorV2.extensions`）。
     func editorContributionBundle(kernel: KernelLumi) async throws -> EditorContributionBundle?
@@ -283,15 +269,6 @@ public extension LumiPlugin {
 
     /// 默认描述:空字符串。
     var pluginDescription: String { "" }
-
-    /// 默认不注册编辑器扩展。
-    func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
-
-    /// 默认不配置编辑器运行时。
-    func configureEditorRuntime(kernel: KernelLumi) async {}
-
-    /// 默认不贡献编辑器运行时插件。
-    func editorPlugins(kernel: KernelLumi) -> [any EditorPlugin] { [] }
 
     /// 默认不贡献编辑器贡献包。
     func editorContributionBundle(kernel: KernelLumi) async throws -> EditorContributionBundle? { nil }

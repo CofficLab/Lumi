@@ -1,4 +1,3 @@
-import EditorLanguageRuntime
 import Foundation
 import KernelLumi
 import TreeSitterSQL
@@ -14,32 +13,8 @@ enum DatabaseSQLLanguageSupport {
         highlightLanguageId: "sql",
         lspLanguageId: nil
     )
-
-    static let context = EditorLanguageRuntime.EditorLanguageContext(
-        descriptor: EditorLanguageRuntime.EditorLanguageDescriptor(
-            languageId: "sql",
-            displayName: "SQL",
-            fileExtensions: ["sql"],
-            lineComment: "--",
-            rangeCommentOpen: "/*",
-            rangeCommentClose: "*/",
-            highlightLanguageId: "sql",
-            lspLanguageId: nil
-        )
-    )
 }
 
-@MainActor
-final class DatabaseSQLEditorPlugin: EditorPlugin {
-    let id = "DatabaseManager.sql-language"
-    let name = "SQL Language Support"
-    let order = 20
-
-    func registerExtensions(into registrar: any EditorExtensionRegistrar) {
-        registrar.registerLanguage(DatabaseSQLLanguageSupport.descriptor)
-        registrar.registerGrammarProvider(DatabaseSQLGrammarProvider())
-    }
-}
 
 final class DatabaseSQLGrammarProvider: KernelLanguageGrammarProviding {
     let grammarId = "sql"

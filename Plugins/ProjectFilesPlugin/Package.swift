@@ -33,6 +33,7 @@ let package = Package(
             name: "ProjectFilesPluginTests",
             dependencies: [
                 "ProjectFilesPlugin",
+                .product(name: "KernelLumi", package: "KernelLumi"),
             ],
             path: "Tests"
         )

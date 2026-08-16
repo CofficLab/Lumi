@@ -1,4 +1,3 @@
-import EditorService
 import KernelLumi
 import LumiUI
 import SwiftUI
@@ -25,9 +24,6 @@ public final class EditorPreviewBottomPanelPlugin: LumiPlugin {
 
     public func onReady(kernel: KernelLumi) async throws {
         EditorPreviewRuntimeBridge.kernel = kernel
-        EditorPreviewRuntimeBridge.editorServiceProvider = {
-            kernel.resolveService(EditorService.self)
-        }
     }
 
 
@@ -69,6 +65,4 @@ public final class EditorPreviewBottomPanelPlugin: LumiPlugin {
     public func logoItems(kernel: KernelLumi) -> [LogoItem] { [] }
     public func onTurnFinished(kernel: KernelLumi, conversationID: UUID, reason: LumiTurnEndReason) async {}
     public func onContainerActivated(kernel: KernelLumi, containerID: String) {}
-    public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
-    public func configureEditorRuntime(kernel: KernelLumi) async {}
 }

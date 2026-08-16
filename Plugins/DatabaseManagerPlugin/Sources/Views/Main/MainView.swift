@@ -1,7 +1,4 @@
 import AppKit
-import EditorLanguageRuntime
-import EditorService
-import EditorSource
 import KernelLumi
 import LumiUI
 import SwiftUI
@@ -20,7 +17,6 @@ public struct MainView: View {
 
     /// 由本视图的「去添加」按钮触发；popover 中的 Add Connection 共享同一个表单。
     @State private var showAddConfigSheet = false
-    @State private var sourceEditorState = SourceEditorState()
     @Environment(\.colorScheme) private var colorScheme
 
     public init(viewModel: DatabaseViewModel) {
@@ -64,38 +60,12 @@ public struct MainView: View {
     }
 
     private var queryEditor: some View {
-        SourceEditor(
-            $viewModel.queryText,
-            language: DatabaseSQLLanguageSupport.context,
-            configuration: queryEditorConfiguration,
-            state: $sourceEditorState
+        EmbeddedCodeEditorView(
+            text: $viewModel.queryText,
+            options: EditorEmbeddedEditorOptions(languageID: "sql")
         )
             .frame(minHeight: 100, maxHeight: 200)
             .border(theme.appSubtleBorder)
-    }
-
-    private var queryEditorConfiguration: SourceEditorConfiguration {
-        let resolved = LumiUIThemeRegistry.shared.resolvedEditorSyntax(colorScheme: colorScheme)
-        let palette = resolved?.palette ?? .standard(isDark: colorScheme == .dark)
-        return SourceEditorConfiguration(
-            appearance: .init(
-                theme: EditorSyntaxPaletteAdapter.makeEditorTheme(from: palette),
-                themeIdentifier: resolved?.themeId ?? "database-sql-\(colorScheme == .dark ? "dark" : "light")",
-                useThemeBackground: true,
-                font: .monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular),
-                wrapLines: true,
-                tabWidth: 4
-            ),
-            layout: .init(
-                additionalTextInsets: NSEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
-            ),
-            peripherals: .init(
-                showGutter: true,
-                showMinimap: false,
-                showReformattingGuide: false,
-                showFoldingRibbon: false
-            )
-        )
     }
 
     private var toolbar: some View {

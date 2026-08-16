@@ -7,8 +7,9 @@ import SwiftUI
 /// 在面板顶部显示当前文件的路径面包屑导航。
 /// 仅显示文件路径段，符号面包屑由 EditorStickySymbolBarPlugin 负责。
 ///
-/// 数据来源是 `KernelLumi`：当前文件路径取自 `kernel.project?.currentFileURL`，
-/// 项目根取自 `kernel.project?.currentProject?.path`。对任何编辑器细节都不知情。
+/// 数据来源是 `KernelLumi`：当前文件路径取自 `kernel.editorV2.documents`
+/// （Editor Session 单一事实源，Phase 3 迁移），项目根取自
+/// `kernel.project?.currentProject?.path`。对任何编辑器实现细节都不知情。
 public struct ProjectFileBreadcrumbHeaderView: View {
     let kernel: KernelLumi
     @LumiUI.LumiTheme private var theme: any LumiUITheme
@@ -29,7 +30,7 @@ public struct ProjectFileBreadcrumbHeaderView: View {
     public init(kernel: KernelLumi) {
         self.kernel = kernel
         _observer = StateObject(
-            wrappedValue: ProjectFileBreadcrumbObserver(project: kernel.project)
+            wrappedValue: ProjectFileBreadcrumbObserver(kernel: kernel)
         )
     }
 
@@ -44,7 +45,7 @@ public struct ProjectFileBreadcrumbHeaderView: View {
                 trailing: AppPanelChromeMetrics.breadcrumbHorizontalPadding
             )
         ) {
-            if let fileURL = project?.currentFileURL?.standardizedFileURL,
+            if let fileURL = observer.activeFileURL,
                isProjectSelected,
                isFileInCurrentProject(fileURL) {
                 breadcrumbPath(fileURL: fileURL)

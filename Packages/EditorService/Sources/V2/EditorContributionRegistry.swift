@@ -21,17 +21,25 @@ public final class EditorContributionRegistry: EditorExtensionHosting {
         let languageIds: [String]
         let grammarIds: [String]
         let highlightContributorIds: [String]
+        let completionProviderIds: [String]
+        let hoverProviderIds: [String]
+        let codeActionProviderIds: [String]
+        let quickOpenProviderIds: [String]
     }
 
     private let registry: EditorExtensionRegistry
+    /// 宿主桥（Phase 5）：中立 Provider 适配所需的活动文档上下文与执行入口。
+    /// Host 在装配完 V2 Adapter 后注入（Adapter 即桥实现）。
+    weak var hostBridge: (any EditorFeatureHostBridge)?
     private var installed: [String: InstalledContribution] = [:]
     private var nextGeneration: UInt64 = 1
 
     /// 最近一次安装/撤回事件描述（调试与测试用；UI 恢复依赖 State，§8.9）。
     public private(set) var lastChangeDescription: String = ""
 
-    public init(registry: EditorExtensionRegistry) {
+    public init(registry: EditorExtensionRegistry, hostBridge: (any EditorFeatureHostBridge)? = nil) {
         self.registry = registry
+        self.hostBridge = hostBridge
     }
 
     // MARK: - EditorExtensionHosting
@@ -81,6 +89,36 @@ public final class EditorContributionRegistry: EditorExtensionHosting {
             }
         }
 
+        // 3.5 安装语言功能 Provider（Phase 5 §10；Host 桥接为 SuperEditor 贡献者）
+        var completionIds: [String] = []
+        var hoverIds: [String] = []
+        var codeActionIds: [String] = []
+        var quickOpenIds: [String] = []
+        if let hostBridge {
+            for provider in bundle.providers {
+                if let completion = provider as? any EditorCompletionProvider {
+                    let bridge = CompletionProviderBridge(pluginID: pluginID, provider: completion, bridge: hostBridge)
+                    registry.registerCompletionContributor(bridge)
+                    completionIds.append(bridge.id)
+                }
+                if let hover = provider as? any EditorHoverProvider {
+                    let bridge = HoverProviderBridge(pluginID: pluginID, provider: hover, bridge: hostBridge)
+                    registry.registerHoverContributor(bridge)
+                    hoverIds.append(bridge.id)
+                }
+                if let codeAction = provider as? any EditorCodeActionProvider {
+                    let bridge = CodeActionProviderBridge(pluginID: pluginID, provider: codeAction, bridge: hostBridge)
+                    registry.registerCodeActionContributor(bridge)
+                    codeActionIds.append(bridge.id)
+                }
+                if let quickOpen = provider as? any EditorQuickOpenProvider {
+                    let bridge = QuickOpenProviderBridge(pluginID: pluginID, provider: quickOpen, bridge: hostBridge)
+                    registry.registerQuickOpenContributor(bridge)
+                    quickOpenIds.append(bridge.id)
+                }
+            }
+        }
+
         // 4. 记录 generation，发布一次变化
         let generation = nextGeneration
         nextGeneration += 1
@@ -88,7 +126,11 @@ public final class EditorContributionRegistry: EditorExtensionHosting {
             generation: generation,
             languageIds: languageIds,
             grammarIds: grammarIds,
-            highlightContributorIds: highlightContributorIds
+            highlightContributorIds: highlightContributorIds,
+            completionProviderIds: completionIds,
+            hoverProviderIds: hoverIds,
+            codeActionProviderIds: codeActionIds,
+            quickOpenProviderIds: quickOpenIds
         )
         lastChangeDescription = "installed \(pluginID) gen=\(generation) languages=\(languageIds)"
         syncInstalledPlugins()
@@ -138,6 +180,18 @@ public final class EditorContributionRegistry: EditorExtensionHosting {
         }
         for contributorId in contribution.highlightContributorIds {
             registry.unregisterHighlightProviderContributor(id: contributorId)
+        }
+        for providerId in contribution.completionProviderIds {
+            registry.unregisterCompletionContributor(id: providerId)
+        }
+        for providerId in contribution.hoverProviderIds {
+            registry.unregisterHoverContributor(id: providerId)
+        }
+        for providerId in contribution.codeActionProviderIds {
+            registry.unregisterCodeActionContributor(id: providerId)
+        }
+        for providerId in contribution.quickOpenProviderIds {
+            registry.unregisterQuickOpenContributor(id: providerId)
         }
         lastChangeDescription = "withdrew \(pluginID) gen=\(contribution.generation)"
         syncInstalledPlugins()

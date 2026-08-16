@@ -14,7 +14,6 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LumiUI"),
     ],
@@ -22,7 +21,6 @@ let package = Package(
         .target(
             name: "EditorSearchPlugin",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
                 .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],

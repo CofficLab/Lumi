@@ -1,13 +1,11 @@
-import EditorService
+import KernelLumi
 import LumiUI
 import SwiftUI
-import KernelLumi
 
 public struct EditorOutlinePanelView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @ObservedObject var service: EditorService
-    @ObservedObject var provider: DocumentSymbolProvider
+    @StateObject private var model: OutlineEditorModel
     public var showsHeader: Bool = true
     public var showsResizeHandle: Bool = true
 
@@ -20,6 +18,12 @@ public struct EditorOutlinePanelView: View {
     @State private var panelWidth: CGFloat = defaultWidth
     @State private var dragStartWidth: CGFloat?
     @State private var isResizeHandleHovering = false
+
+    public init(editor: any EditorProvidingV2, showsHeader: Bool = true, showsResizeHandle: Bool = true) {
+        self._model = StateObject(wrappedValue: OutlineEditorModel(editor: editor))
+        self.showsHeader = showsHeader
+        self.showsResizeHandle = showsResizeHandle
+    }
 
     public var body: some View {
         HStack(spacing: 0) {
@@ -56,13 +60,13 @@ public struct EditorOutlinePanelView: View {
 
                 Spacer(minLength: 0)
 
-                if provider.isLoading {
+                if model.isLoading {
                     ProgressView()
                         .scaleEffect(0.7)
                 }
 
                 Button {
-                    service.panel.performPanelCommand(.closeOutline)
+                    model.editor.panels.presentBottomPanel(nil)
                 } label: {
                     Image(systemName: "xmark")
                         .font(.appMicroEmphasized)
@@ -82,7 +86,7 @@ public struct EditorOutlinePanelView: View {
 
     @ViewBuilder
     private var content: some View {
-        if provider.symbols.isEmpty {
+        if model.symbols.isEmpty {
             emptyState
         } else {
             ScrollViewReader { proxy in
@@ -97,10 +101,10 @@ public struct EditorOutlinePanelView: View {
                 .onAppear {
                     syncActiveSymbolPresentation(using: proxy)
                 }
-                .onChange(of: service.editing.cursorLine) { _, _ in
+                .onChange(of: model.cursorLine) { _, _ in
                     syncActiveSymbolPresentation(using: proxy)
                 }
-                .onChange(of: provider.symbols.map(\.id)) { _, _ in
+                .onChange(of: model.symbols.map(\.id)) { _, _ in
                     syncActiveSymbolPresentation(using: proxy)
                 }
             }
@@ -113,7 +117,7 @@ public struct EditorOutlinePanelView: View {
                 .font(.appTitle)
                 .foregroundColor(theme.textTertiary)
 
-            Text(provider.isLoading ? LumiPluginLocalization.string("Loading Outline...", bundle: .module) : LumiPluginLocalization.string("No Symbols", bundle: .module))
+            Text(model.isLoading ? LumiPluginLocalization.string("Loading Outline...", bundle: .module) : LumiPluginLocalization.string("No Symbols", bundle: .module))
                 .font(.appCaptionEmphasized)
                 .foregroundColor(theme.textSecondary)
         }
@@ -163,22 +167,22 @@ public struct EditorOutlinePanelView: View {
             )
     }
 
-    private var filteredSymbols: [EditorDocumentSymbolItem] {
+    private var filteredSymbols: [EditorDocumentSymbol] {
         let query = filterText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return provider.symbols }
-        return provider.symbols.compactMap { filtered($0, query: query.lowercased()) }
+        guard !query.isEmpty else { return model.symbols }
+        return model.symbols.compactMap { filtered($0, query: query.lowercased()) }
     }
 
     private var activePathIDs: Set<String> {
-        Set(provider.symbols.compactMap { $0.activePath(for: service.editing.cursorLine) }.flatMap { $0 })
+        model.activePathIDs(for: model.cursorLine)
     }
 
-    private func filtered(_ item: EditorDocumentSymbolItem, query: String) -> EditorDocumentSymbolItem? {
+    private func filtered(_ item: EditorDocumentSymbol, query: String) -> EditorDocumentSymbol? {
         let filteredChildren = item.children.compactMap { filtered($0, query: query) }
         let matchesSelf = item.name.lowercased().contains(query)
             || (item.detail?.lowercased().contains(query) ?? false)
         guard matchesSelf || !filteredChildren.isEmpty else { return nil }
-        return EditorDocumentSymbolItem(
+        return EditorDocumentSymbol(
             id: item.id,
             name: item.name,
             detail: item.detail,
@@ -189,7 +193,7 @@ public struct EditorOutlinePanelView: View {
         )
     }
 
-    private func outlineRow(_ item: EditorDocumentSymbolItem, depth: Int) -> AnyView {
+    private func outlineRow(_ item: EditorDocumentSymbol, depth: Int) -> AnyView {
         AnyView(
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
@@ -208,7 +212,7 @@ public struct EditorOutlinePanelView: View {
                     }
 
                     Button {
-                        service.navigation.performOpenItem(.documentSymbol(item))
+                        model.open(item)
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: item.iconSymbol)
@@ -222,7 +226,7 @@ public struct EditorOutlinePanelView: View {
                                     .foregroundColor(theme.textPrimary)
                                     .lineLimit(1)
 
-                                Text("L\(item.line)" + (item.detail.map { " · \($0)" } ?? ""))
+                                Text("L\(item.lineNumber)" + (item.detail.map { " · \($0)" } ?? ""))
                                     .font(.appMicro)
                                     .foregroundColor(theme.textTertiary)
                                     .lineLimit(1)
@@ -260,14 +264,13 @@ public struct EditorOutlinePanelView: View {
     }
 
     private func syncActiveSymbolPresentation(using proxy: ScrollViewProxy) {
-        let activePathIDs = provider.activePathIDs(for: service.editing.cursorLine)
-        guard !activePathIDs.isEmpty else { return }
+        let activePath = model.activePath(for: model.cursorLine)
+        guard !activePath.isEmpty else { return }
 
-        let ancestorIDs = provider.activeAncestorIDs(for: service.editing.cursorLine)
-        collapsedIDs.subtract(ancestorIDs)
+        collapsedIDs.subtract(model.activeAncestorIDs(for: model.cursorLine))
 
         guard filterText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              let activeSymbolID = activePathIDs.last
+              let activeSymbolID = activePath.last?.id
         else {
             return
         }

@@ -39,6 +39,24 @@ public protocol EditorProvidingV2: AnyObject {
     /// Surface 能力：标准编辑器视图组装（Shell UI 插件消费）。
     var surface: any EditorSurfaceProviding { get }
 
+    /// 诊断能力：问题快照与变更流（数据面）。
+    var diagnostics: any EditorDiagnosticsProviding { get }
+
+    /// 文档符号能力：当前文档符号树（数据面）。
+    var documentSymbols: any EditorDocumentSymbolProviding { get }
+
+    /// 面板能力：底部面板展示/收起。
+    var panels: any EditorPanelProviding { get }
+
+    /// 引用能力：引用/定义结果数据面。
+    var references: any EditorReferencesProviding { get }
+
+    /// 调用层级能力：caller/callee 会话数据面。
+    var callHierarchy: any EditorCallHierarchyProviding { get }
+
+    /// 工作区搜索能力：搜索执行与结果数据面。
+    var workspaceSearch: any EditorWorkspaceSearchProviding { get }
+
     /// 扩展宿主能力：贡献包原子安装/撤回与能力可用性（§9）。
     var extensions: any EditorExtensionHosting { get }
 }

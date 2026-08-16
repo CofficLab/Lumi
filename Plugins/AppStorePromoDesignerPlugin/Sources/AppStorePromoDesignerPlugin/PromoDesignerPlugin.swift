@@ -151,6 +151,4 @@ public final class PromoDesignerPlugin: LumiPlugin {
     public func onContainerActivated(kernel: KernelLumi, containerID: String) {
         if containerID == id { WorkspaceStore.shared.reload() }
     }
-    public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
-    public func configureEditorRuntime(kernel: KernelLumi) async {}
 }

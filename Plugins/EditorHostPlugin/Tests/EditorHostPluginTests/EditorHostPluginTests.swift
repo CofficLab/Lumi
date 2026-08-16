@@ -10,22 +10,23 @@ import Testing
 @MainActor
 @Suite("Editor Host Plugin")
 struct EditorHostPluginTests {
-    @Test
-    func currentProjectFileOpensInEditor() async throws {
+    @Test("editorV2.documents.open 端到端打开文件（Phase 3 单一事实源路径）")
+    func editorV2OpenActivatesFile() async throws {
         let kernel = KernelLumi()
-        let project = MockProjectService()
-        try kernel.registerProject(project)
 
         let plugin = EditorHostPlugin()
         try await plugin.onBoot(kernel: kernel)
         try await plugin.onReady(kernel: kernel)
 
         let editorService = try #require(kernel.resolveService(EditorService.self))
+        let editorV2 = try #require(kernel.editorV2)
 
         let fileURL = try makeTemporarySwiftFile()
-        project.updateCurrentFile(fileURL)
+        _ = try await editorV2.documents.open(EditorOpenRequest(uri: fileURL))
 
         await waitForEditorFile(editorService, expected: fileURL.standardizedFileURL)
+        // V2 状态与运行时一致。
+        #expect(editorV2.documents.activeDocument?.uri.standardizedFileURL == fileURL.standardizedFileURL)
     }
 
     @Test
@@ -55,6 +56,47 @@ struct EditorHostPluginTests {
 
         #expect(registry.theme(for: "xcode-dark") != nil)
         #expect(registry.theme(for: "test-dracula") != nil)
+    }
+
+    @Test("V2 extensions 能力可用于贡献包安装与可用性查询")
+    func extensionsHostingAvailable() async throws {
+        let kernel = KernelLumi()
+        let plugin = EditorHostPlugin()
+        try await plugin.onBoot(kernel: kernel)
+        try await plugin.onReady(kernel: kernel)
+
+        let hosting = try #require(kernel.editorV2?.extensions)
+
+        // 安装一个最小语言贡献包（盖戳由 PluginManager 负责，这里直接盖）。
+        let bundle = EditorContributionBundle(
+            pluginID: "test.bundle",
+            languages: [EditorLanguageContribution(
+                language: EditorLanguageDescriptor(
+                    languageId: "bundletest",
+                    displayName: "BundleTest",
+                    fileExtensions: ["bundletest"]
+                )
+            )]
+        )
+        try await hosting.replaceBundle(for: "test.bundle", with: bundle.stamped(pluginID: "test.bundle", generation: 1))
+
+        let document = EditorDocumentSummary(
+            id: .makeUnique(),
+            uri: URL(fileURLWithPath: "/tmp/a.bundletest"),
+            languageID: "bundletest",
+            revision: 1,
+            isDirty: false,
+            isReadOnly: false,
+            largeFileMode: .normal
+        )
+        // 语言已安装但未带 grammar：应为降级可用，而不是 noProvider。
+        if case .noProvider = hosting.availability(for: .syntax, document: document).state {
+            Issue.record("expected degraded availability for grammar-less language, got noProvider")
+        }
+
+        // 撤回后能力消失。
+        try await hosting.replaceBundle(for: "test.bundle", with: nil)
+        #expect(hosting.availability(for: .syntax, document: document).state == .noProvider)
     }
 
     @Test("OnBoot 同时注册 legacy EditorProviding 与 V2 EditorProvidingV2")

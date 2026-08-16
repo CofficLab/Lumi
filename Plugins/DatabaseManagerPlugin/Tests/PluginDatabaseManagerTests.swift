@@ -4,11 +4,13 @@ import Testing
 @testable import DatabaseManagerPlugin
 
 @MainActor
-@Test func databasePluginContributesSQLLanguageSupport() {
-    let editorPlugins = DatabaseManagerPlugin().editorPlugins(kernel: KernelLumi())
+@Test func databasePluginContributesSQLLanguageSupport() async throws {
+    let bundle = try await DatabaseManagerPlugin().editorContributionBundle(kernel: KernelLumi())
 
-    #expect(editorPlugins.count == 1)
-    #expect(editorPlugins[0].id == "DatabaseManager.sql-language")
+    #expect(bundle?.pluginID == "com.coffic.lumi.plugin.database-manager")
+    #expect(bundle?.languages.count == 1)
+    #expect(bundle?.languages[0].language.languageId == "sql")
+    #expect(bundle?.languages[0].grammar?.grammarId == "sql")
 }
 
 @Test func sqlGrammarProviderExposesBundledHighlightQuery() {

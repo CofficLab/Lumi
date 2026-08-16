@@ -1,6 +1,5 @@
-import EditorService
 import Foundation
-import LanguageServerProtocol
+import KernelLumi
 
 @MainActor
 enum ProblemsAddToChat {
@@ -10,19 +9,19 @@ enum ProblemsAddToChat {
             userInfo["windowId"] = windowId
         }
         NotificationCenter.default.post(
-            name: EditorContext.addToChatNotificationName,
+            name: LumiEditorNotifications.addToChat,
             object: nil,
             userInfo: userInfo
         )
     }
 
     static func message(
-        for diagnostic: Diagnostic,
+        for diagnostic: EditorDiagnosticItem,
         relativeFilePath: String,
         prompt: String
     ) -> String {
-        let line = Int(diagnostic.range.start.line) + 1
-        let column = Int(diagnostic.range.start.character) + 1
+        let line = diagnostic.range.start.line + 1
+        let column = diagnostic.range.start.character + 1
         let severity = severityLabel(for: diagnostic.severity)
         let source = diagnostic.source ?? "LSP"
         return """
@@ -33,25 +32,12 @@ enum ProblemsAddToChat {
         """
     }
 
-    static func message(
-        for problem: EditorSemanticProblem,
-        prompt: String
-    ) -> String {
-        """
-        \(prompt)
-
-        \(problem.title)
-        \(problem.message)
-        """
-    }
-
-    private static func severityLabel(for severity: DiagnosticSeverity?) -> String {
+    private static func severityLabel(for severity: EditorDiagnosticSeverity) -> String {
         switch severity {
         case .error: "Error"
         case .warning: "Warning"
         case .information: "Information"
         case .hint: "Hint"
-        case .none: "Diagnostic"
         }
     }
 }

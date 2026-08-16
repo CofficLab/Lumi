@@ -1,6 +1,6 @@
 import SwiftUI
+import KernelLumi
 import AppKit
-import EditorService
 
 /// 文件搜索结果行视图
 public struct FileSearchResultRow: View {

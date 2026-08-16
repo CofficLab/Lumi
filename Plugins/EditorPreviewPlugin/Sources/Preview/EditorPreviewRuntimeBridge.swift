@@ -1,4 +1,3 @@
-import EditorService
 import Foundation
 import KernelLumi
 
@@ -7,14 +6,9 @@ import KernelLumi
 public enum EditorPreviewRuntimeBridge {
     nonisolated(unsafe) public static var kernel: KernelLumi?
     public static var addToChatHandler: ((String) -> Void)?
-    public static var editorServiceProvider: (() -> EditorService?)?
 
-    public static var editorService: EditorService? {
-        editorServiceProvider?()
-    }
-
-    static func previewViewModel() -> EditorPreviewViewModel {
-        EditorPreviewViewModelStore.shared.viewModel(for: editorService)
+    static func previewViewModel(for editorV2: (any EditorProvidingV2)?) -> EditorPreviewViewModel {
+        EditorPreviewViewModelStore.shared.viewModel(for: editorV2)
     }
 }
 
@@ -22,13 +16,13 @@ public enum EditorPreviewRuntimeBridge {
 final class EditorPreviewViewModelStore {
     static let shared = EditorPreviewViewModelStore()
 
-    private var viewModelsByEditorService: [ObjectIdentifier: EditorPreviewViewModel] = [:]
+    private var viewModelsByEditorV2: [ObjectIdentifier: EditorPreviewViewModel] = [:]
     private var fallbackViewModel: EditorPreviewViewModel?
 
     private init() {}
 
-    func viewModel(for editorService: EditorService?) -> EditorPreviewViewModel {
-        guard let editorService else {
+    func viewModel(for editorV2: (any EditorProvidingV2)?) -> EditorPreviewViewModel {
+        guard let editorV2 else {
             if let fallbackViewModel {
                 return fallbackViewModel
             }
@@ -37,19 +31,19 @@ final class EditorPreviewViewModelStore {
             return viewModel
         }
 
-        let key = ObjectIdentifier(editorService)
-        if let viewModel = viewModelsByEditorService[key] {
+        let key = ObjectIdentifier(editorV2)
+        if let viewModel = viewModelsByEditorV2[key] {
             return viewModel
         }
 
         let viewModel = EditorPreviewViewModel()
-        viewModel.wireEditorService(editorService)
-        viewModelsByEditorService[key] = viewModel
+        viewModel.wireEditorV2(editorV2)
+        viewModelsByEditorV2[key] = viewModel
         return viewModel
     }
 
     func resetForTesting() {
-        viewModelsByEditorService.removeAll()
+        viewModelsByEditorV2.removeAll()
         fallbackViewModel = nil
     }
 }

@@ -1,5 +1,4 @@
 import Combine
-import EditorService
 import Foundation
 import KernelLumi
 import LumiPreviewKit
@@ -12,7 +11,7 @@ import SwiftUI
 ///
 /// 职责：
 /// - 管理 `InlinePreviewSession` 启动/停止；frame 转 `@Published`；canvas resize forward。
-/// - 自动构建：直接订阅 `EditorService` 的 `currentFileURL` / `saveRevision` / `contentRevision`，
+/// - 自动构建：直接订阅 EditorProvidingV2 的 `documents.statePublisher`，
 ///   按 Xcode 风格"保存触发"重建 dylib（`PreviewBuilder`）并自动 `loadDylib`。
 ///   **不依赖 View 层的 `onAppear`/`onChange`**——即使 Inline Preview tab 未被选中也能感知文件变化。
 @MainActor
@@ -139,6 +138,8 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
 
     // MARK: - 已发布状态
 
+    @Published private(set) var currentFileURL: URL?
+    @Published private(set) var sourceText: String?
     @Published private(set) var currentFrame: LumiPreviewFacade.IOSurfaceFrame?
     @Published private(set) var canvasSize: CGSize = .zero {
         didSet {
@@ -193,7 +194,12 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
     /// 最近一次成功 loadDylib 的 build fingerprint，避免重复加载相同产物。
     private var lastLoadedFingerprint: String?
     private var isViewVisible = false
-    private var didWireEditorService = false
+    private var didWireEditorV2 = false
+    private var wiredDocuments: (any EditorDocumentProviding)?
+    /// 上一次 statePublisher 事件的活动文档状态，用于区分文件切换/保存/内容变化。
+    private var lastActiveDocumentID: EditorDocumentID?
+    private var lastRevision: UInt64?
+    private var lastWasDirty: Bool?
     private var warmupTask: Task<Void, Never>?
     private var pendingCanvasResizeTask: Task<Void, Never>?
     private var cacheSummaryTask: Task<Void, Never>?
@@ -202,7 +208,7 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
     /// 每次切换文件或启动一次新的 build 都递增，用于丢弃旧文件/旧构建的异步回调。
     private var previewGeneration: UInt64 = 0
 
-    /// Combine 订阅令牌（订阅 EditorService 状态变化）。
+    /// Combine 订阅令牌（订阅 EditorProvidingV2 文档状态变化）。
     private var editorCancellables = Set<AnyCancellable>()
 
     // MARK: - 初始化
@@ -229,45 +235,72 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         cacheSummaryTask?.cancel()
     }
 
-    /// 订阅 EditorService 的状态变化，直接感知文件切换/保存/内容变化。
+    /// 订阅 EditorProvidingV2 的文档状态变化，直接感知文件切换/保存/内容变化。
     /// 不再依赖 View 层的 `onAppear`/`onChange`——即使 Inline Preview tab 未被选中也能工作。
-    public func wireEditorService(_ service: EditorService) {
-        guard !didWireEditorService else { return }
-        didWireEditorService = true
-        let state = service.state
+    public func wireEditorV2(_ editor: any EditorProvidingV2) {
+        guard !didWireEditorV2 else { return }
+        didWireEditorV2 = true
+        wiredDocuments = editor.documents
 
-        // 文件切换 → setActiveFile
-        state.$currentFileURL
+        editor.documents.statePublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] url in
-                guard let self else { return }
-                let sourceText = service.files.content?.string
-                self.handleFileURLChange(url, sourceText: sourceText)
-            }
-            .store(in: &editorCancellables)
-
-        // 保存 → applySaveRevision
-        state.$saveRevision
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                let sourceText = service.files.content?.string
-                self.handleSaveRevision(sourceText: sourceText)
-            }
-            .store(in: &editorCancellables)
-
-        // 内容变化（未保存）→ updateBufferText
-        state.$contentRevision
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                let sourceText = service.files.content?.string
-                self.handleBufferTextUpdate(sourceText)
+            .sink { [weak self] state in
+                self?.handleDocumentState(state, documents: editor.documents)
             }
             .store(in: &editorCancellables)
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)🔗 已订阅 EditorService 状态变化")
+            Self.logger.info("\(Self.t)🔗 已订阅 EditorProvidingV2 文档状态变化")
+        }
+    }
+
+    /// 处理文档集合状态变化：区分文件切换、保存与未保存内容变化，
+    /// 并通过 `snapshot(documentID:)` 获取完整文本。
+    private func handleDocumentState(
+        _ state: EditorDocumentState,
+        documents: any EditorDocumentProviding
+    ) {
+        guard let summary = state.activeDocument else {
+            let didHaveDocument = lastActiveDocumentID != nil
+            lastActiveDocumentID = nil
+            lastRevision = nil
+            lastWasDirty = nil
+            currentFileURL = nil
+            sourceText = nil
+            if didHaveDocument {
+                setActiveFile(nil, sourceText: nil)
+            }
+            return
+        }
+
+        let didChangeDocument = summary.id != lastActiveDocumentID
+            || summary.uri.standardizedFileURL != currentFileURL?.standardizedFileURL
+        let revisionChanged = summary.revision != lastRevision
+        let didSave = summary.isDirty == false && lastWasDirty == true
+        lastActiveDocumentID = summary.id
+        lastRevision = summary.revision
+        lastWasDirty = summary.isDirty
+        currentFileURL = summary.uri
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let snapshot = try await documents.snapshot(documentID: summary.id)
+                // 文档可能在 snapshot 期间被切换/关闭，丢弃 stale 结果。
+                guard self.lastActiveDocumentID == snapshot.id else { return }
+                self.sourceText = snapshot.text
+                if didChangeDocument {
+                    self.setActiveFile(snapshot.uri, sourceText: snapshot.text)
+                } else if didSave {
+                    self.applySaveRevision(sourceText: snapshot.text)
+                } else if revisionChanged {
+                    self.updateBufferText(snapshot.text)
+                }
+            } catch {
+                if Self.verbose {
+                    Self.logger.warning("\(Self.t)⚠️ 获取文档快照失败：\(error.localizedDescription)")
+                }
+            }
         }
     }
 
@@ -541,20 +574,6 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             }
             self?.isRequestingEntryDebugState = false
         }
-    }
-
-    // MARK: - 私有 — Combine 订阅处理器
-
-    private func handleFileURLChange(_ url: URL?, sourceText: String?) {
-        setActiveFile(url, sourceText: sourceText)
-    }
-
-    private func handleSaveRevision(sourceText: String?) {
-        applySaveRevision(sourceText: sourceText)
-    }
-
-    private func handleBufferTextUpdate(_ sourceText: String?) {
-        updateBufferText(sourceText)
     }
 
     // MARK: - 私有 — 自动构建
@@ -1169,11 +1188,51 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         return false
     }
 
+    // MARK: - V2 契约 — 文档文本替换与保存
+
+    /// 将活动文档（与 `fileURL` 匹配时）的全文替换为 `newText` 并保存。
+    ///
+    /// 通过 `EditorDocumentProviding.apply`（revision 校验的 Workspace Edit）实现，
+    /// 不直接触碰文本存储。文档与 `fileURL` 不匹配时返回 false（调用方回退到直接写磁盘）。
+    @discardableResult
+    public func replaceActiveDocumentText(
+        _ newText: String,
+        reason: String,
+        matching fileURL: URL
+    ) async throws -> Bool {
+        guard let documents = wiredDocuments,
+              let active = documents.activeDocument,
+              active.uri.standardizedFileURL == fileURL.standardizedFileURL else {
+            return false
+        }
+        let snapshot = try await documents.snapshot(documentID: active.id)
+        guard let end = snapshot.position(atOffset: snapshot.text.utf16.count) else {
+            return false
+        }
+        let edit = EditorWorkspaceEdit(documentEdits: [
+            EditorDocumentEdit(
+                documentID: active.id,
+                edits: [
+                    EditorTextEdit(
+                        range: EditorRange(start: .zero, end: end),
+                        newText: newText
+                    )
+                ]
+            )
+        ])
+        _ = try await documents.apply(
+            edit,
+            expectedRevisions: [active.id: snapshot.revision],
+            options: EditorEditOptions(label: reason)
+        )
+        try await documents.save(documentID: active.id, reason: .explicit)
+        return true
+    }
+
     public func cleanCurrentStringCatalog(
         fileURL: URL?,
-        sourceText: String?,
-        editorService: EditorService
-    ) throws -> Int {
+        sourceText: String?
+    ) async throws -> Int {
         guard let fileURL, fileURL.pathExtension.lowercased() == "xcstrings" else {
             return 0
         }
@@ -1189,13 +1248,11 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             return 0
         }
 
-        if editorService.files.currentFileURL?.standardizedFileURL == fileURL.standardizedFileURL {
-            _ = editorService.files.replaceCurrentDocumentText(
-                result.source,
-                reason: "string_catalog_remove_stale_entries"
-            )
-            editorService.files.saveNow()
-        } else {
+        if try await replaceActiveDocumentText(
+            result.source,
+            reason: "string_catalog_remove_stale_entries",
+            matching: fileURL
+        ) == false {
             try result.source.write(to: fileURL, atomically: true, encoding: .utf8)
         }
 
@@ -1205,9 +1262,8 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
     public func removeStaleStringCatalogEntry(
         key: String,
         fileURL: URL?,
-        sourceText: String?,
-        editorService: EditorService
-    ) throws -> Bool {
+        sourceText: String?
+    ) async throws -> Bool {
         guard let fileURL, fileURL.pathExtension.lowercased() == "xcstrings" else {
             return false
         }
@@ -1223,13 +1279,11 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
             return false
         }
 
-        if editorService.files.currentFileURL?.standardizedFileURL == fileURL.standardizedFileURL {
-            _ = editorService.files.replaceCurrentDocumentText(
-                result.source,
-                reason: "string_catalog_remove_stale_entry"
-            )
-            editorService.files.saveNow()
-        } else {
+        if try await replaceActiveDocumentText(
+            result.source,
+            reason: "string_catalog_remove_stale_entry",
+            matching: fileURL
+        ) == false {
             try result.source.write(to: fileURL, atomically: true, encoding: .utf8)
         }
 
@@ -1239,8 +1293,7 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
     func cleanProjectStringCatalogs(
         projectRootPath: String,
         currentFileURL: URL?,
-        currentSourceText: String?,
-        editorService: EditorService
+        currentSourceText: String?
     ) async throws -> StringCatalogProjectCleanSummary {
         let rootURL = URL(fileURLWithPath: projectRootPath)
         let currentStandardizedURL = currentFileURL?.standardizedFileURL
@@ -1253,13 +1306,12 @@ public final class EditorPreviewViewModel: ObservableObject, SuperLog {
         }.value
 
         if let currentCleanedSource = cleanResult.currentCleanedSource,
-           let currentStandardizedURL,
-           editorService.files.currentFileURL?.standardizedFileURL == currentStandardizedURL {
-            _ = editorService.files.replaceCurrentDocumentText(
+           let currentStandardizedURL {
+            _ = try? await replaceActiveDocumentText(
                 currentCleanedSource,
-                reason: "string_catalog_remove_project_stale_entries"
+                reason: "string_catalog_remove_project_stale_entries",
+                matching: currentStandardizedURL
             )
-            editorService.files.saveNow()
         }
 
         return cleanResult.summary

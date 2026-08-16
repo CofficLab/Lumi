@@ -1,5 +1,5 @@
 import Foundation
-import EditorService
+import KernelLumi
 
 /// 文件索引存储
 public struct FileIndexStore {

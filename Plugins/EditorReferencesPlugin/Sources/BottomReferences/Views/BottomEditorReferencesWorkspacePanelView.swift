@@ -1,15 +1,14 @@
-import EditorService
 import LumiUI
 import SwiftUI
 import KernelLumi
 
 public struct BottomEditorReferencesWorkspacePanelView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    @ObservedObject var service: EditorService
+    @ObservedObject var viewModel: BottomReferencesViewModel
     public var showsHeader: Bool = true
 
-    public init(service: EditorService, showsHeader: Bool = true) {
-        self._service = ObservedObject(wrappedValue: service)
+    public init(viewModel: BottomReferencesViewModel, showsHeader: Bool = true) {
+        self._viewModel = ObservedObject(wrappedValue: viewModel)
         self.showsHeader = showsHeader
     }
 
@@ -33,7 +32,7 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
             Spacer(minLength: 0)
 
             Button {
-                service.panel.performPanelCommand(.closeReferences)
+                viewModel.close()
             } label: {
                 Image(systemName: "xmark")
                     .font(.appMicroEmphasized)
@@ -47,35 +46,25 @@ public struct BottomEditorReferencesWorkspacePanelView: View {
     }
 
     private var panelTitle: String {
-        let count = service.panel.panelState.referenceResults.count
+        let count = viewModel.state.results.count
         return count > 0 ? LumiPluginLocalization.string("References (\(count))", bundle: .module) : LumiPluginLocalization.string("References", bundle: .module)
     }
 
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
-                if service.panel.panelState.referenceResults.isEmpty {
+                if viewModel.state.results.isEmpty {
                     emptyState(LumiPluginLocalization.string("No References", bundle: .module), systemImage: "arrow.triangle.branch")
                 } else {
-                    ForEach(service.panel.panelState.referenceResults) { item in
+                    ForEach(viewModel.state.results) { item in
                         Button {
-                            service.navigation.performOpenItem(
-                                .reference(
-                                    .init(
-                                        url: item.url,
-                                        line: item.line,
-                                        column: item.column,
-                                        path: item.path,
-                                        preview: item.preview
-                                    )
-                                )
-                            )
+                            viewModel.open(item)
                         } label: {
                             panelCard(
                                 title: "\(item.path):\(item.line):\(item.column)",
                                 subtitle: item.preview,
                                 badge: LumiPluginLocalization.string("Reference", bundle: .module),
-                                isSelected: service.panel.panelState.selectedReferenceResult == item
+                                isSelected: viewModel.state.selected == item
                             )
                         }
                         .buttonStyle(.plain)

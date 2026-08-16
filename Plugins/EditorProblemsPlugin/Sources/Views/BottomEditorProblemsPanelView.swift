@@ -1,19 +1,15 @@
-import EditorService
-import LanguageServerProtocol
+import KernelLumi
 import LumiUI
 import SwiftUI
-import KernelLumi
 
 public struct BottomEditorProblemsPanelView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @ObservedObject var service: EditorService
-    @ObservedObject private var panelState: EditorPanelState
+    @StateObject private var model: ProblemsEditorModel
     public var showsHeader: Bool = true
 
-    public init(service: EditorService, showsHeader: Bool = true) {
-        self._service = ObservedObject(wrappedValue: service)
-        self._panelState = ObservedObject(wrappedValue: service.panel.panelState)
+    public init(editor: any EditorProvidingV2, showsHeader: Bool = true) {
+        self._model = StateObject(wrappedValue: ProblemsEditorModel(editor: editor))
         self.showsHeader = showsHeader
     }
 
@@ -37,7 +33,7 @@ public struct BottomEditorProblemsPanelView: View {
             Spacer(minLength: 0)
 
             Button {
-                service.panel.presentBottomPanel(nil)
+                model.closePanel()
             } label: {
                 Image(systemName: "xmark")
                     .font(.appMicroEmphasized)
@@ -51,54 +47,37 @@ public struct BottomEditorProblemsPanelView: View {
     }
 
     private var panelTitle: String {
-        let count = panelState.semanticProblems.count + panelState.problemDiagnostics.count
+        let count = model.diagnostics.count
         return count > 0 ? LumiPluginLocalization.string("Problems (\(count))", bundle: .module) : LumiPluginLocalization.string("Problems", bundle: .module)
     }
 
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 8) {
-                if panelState.semanticProblems.isEmpty && panelState.problemDiagnostics.isEmpty {
+                // 语义问题（EditorSemanticProblem）暂无 V2 等价能力，
+                // 该分区在 Phase 5 语义能力落地后恢复。
+                if model.diagnostics.isEmpty {
                     emptyState(LumiPluginLocalization.string("No Problems", bundle: .module), systemImage: "checkmark.circle")
                 } else {
-                    if !panelState.semanticProblems.isEmpty {
-                        sectionLabel(LumiPluginLocalization.string("Project Context", bundle: .module))
-                        ForEach(panelState.semanticProblems) { problem in
-                            HStack(alignment: .top, spacing: 8) {
+                    sectionLabel(LumiPluginLocalization.string("Diagnostics", bundle: .module))
+                    ForEach(model.diagnostics) { diagnostic in
+                        let line = diagnostic.range.start.line + 1
+                        let column = diagnostic.range.start.character + 1
+                        HStack(alignment: .top, spacing: 8) {
+                            Button {
+                                model.open(diagnostic)
+                            } label: {
                                 panelCard(
-                                    title: problem.title,
-                                    subtitle: problem.message,
-                                    badge: LumiPluginLocalization.string("Project", bundle: .module),
-                                    severity: problem.severity.toDiagnosticSeverity()
+                                    title: "\(model.relativeFilePath):\(line):\(column)",
+                                    subtitle: diagnostic.message,
+                                    badge: diagnostic.source ?? "LSP",
+                                    severity: diagnostic.severity
                                 )
-                                ProblemAskAIButton {
-                                    sendProblemToChat(problem)
-                                }
                             }
-                        }
-                    }
+                            .buttonStyle(.plain)
 
-                    if !panelState.problemDiagnostics.isEmpty {
-                        sectionLabel(LumiPluginLocalization.string("Diagnostics", bundle: .module))
-                        ForEach(Array(panelState.problemDiagnostics.enumerated()), id: \.offset) { _, diagnostic in
-                            let line = Int(diagnostic.range.start.line) + 1
-                            let column = Int(diagnostic.range.start.character) + 1
-                            HStack(alignment: .top, spacing: 8) {
-                                Button {
-                                    service.navigation.performOpenItem(.problem(diagnostic))
-                                } label: {
-                                    panelCard(
-                                        title: "\(service.files.relativeFilePath):\(line):\(column)",
-                                        subtitle: diagnostic.message,
-                                        badge: diagnostic.source ?? "LSP",
-                                        severity: diagnostic.severity
-                                    )
-                                }
-                                .buttonStyle(.plain)
-
-                                ProblemAskAIButton {
-                                    sendDiagnosticToChat(diagnostic)
-                                }
+                            ProblemAskAIButton {
+                                sendDiagnosticToChat(diagnostic)
                             }
                         }
                     }
@@ -114,7 +93,7 @@ public struct BottomEditorProblemsPanelView: View {
             .foregroundColor(theme.textSecondary)
     }
 
-    private func panelCard(title: String, subtitle: String, badge: String, severity: DiagnosticSeverity? = nil) -> some View {
+    private func panelCard(title: String, subtitle: String, badge: String, severity: EditorDiagnosticSeverity? = nil) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .center, spacing: 8) {
                 Image(systemName: severityIcon(for: severity))
@@ -147,7 +126,7 @@ public struct BottomEditorProblemsPanelView: View {
         .appSurface(style: .custom(severityColor(for: severity).opacity(0.06)), cornerRadius: 10)
     }
 
-    private func severityIcon(for severity: DiagnosticSeverity?) -> String {
+    private func severityIcon(for severity: EditorDiagnosticSeverity?) -> String {
         switch severity {
         case .error: "xmark.circle.fill"
         case .warning: "exclamationmark.triangle.fill"
@@ -157,7 +136,7 @@ public struct BottomEditorProblemsPanelView: View {
         }
     }
 
-    private func severityColor(for severity: DiagnosticSeverity?) -> SwiftUI.Color {
+    private func severityColor(for severity: EditorDiagnosticSeverity?) -> SwiftUI.Color {
         switch severity {
         case .error: theme.error
         case .warning: theme.warning
@@ -182,31 +161,14 @@ public struct BottomEditorProblemsPanelView: View {
         LumiPluginLocalization.string("Please help me fix the following problem:", bundle: .module)
     }
 
-    private func sendDiagnosticToChat(_ diagnostic: Diagnostic) {
+    private func sendDiagnosticToChat(_ diagnostic: EditorDiagnosticItem) {
         ProblemsAddToChat.post(
             ProblemsAddToChat.message(
                 for: diagnostic,
-                relativeFilePath: service.files.relativeFilePath,
+                relativeFilePath: model.relativeFilePath,
                 prompt: problemPrompt
             ),
-            windowId: service.state.windowId
+            windowId: model.editor.scope.windowID.rawValue
         )
-    }
-
-    private func sendProblemToChat(_ problem: EditorSemanticProblem) {
-        ProblemsAddToChat.post(
-            ProblemsAddToChat.message(for: problem, prompt: problemPrompt),
-            windowId: service.state.windowId
-        )
-    }
-}
-
-private extension EditorSemanticAvailabilitySeverity {
-    func toDiagnosticSeverity() -> DiagnosticSeverity {
-        switch self {
-        case .error: .error
-        case .warning: .warning
-        case .info: .information
-        }
     }
 }

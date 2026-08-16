@@ -32,7 +32,10 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
     /// 共享同一份连接/选中状态，避免"在 popover 选了连接但面板没同步"的问题。
     private let sharedViewModel = DatabaseViewModel()
 
-    public func onBoot(kernel: KernelLumi) async throws {}
+    public func onBoot(kernel: KernelLumi) async throws {
+        // 记录内核引用，供嵌入式编辑器解析 EditorEmbeddedEditorProviding（§17.2）。
+        EmbeddedEditorServiceLocator.kernel = kernel
+    }
 
     public func onReady(kernel: KernelLumi) async throws {}
 
@@ -45,8 +48,17 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
         ]
     }
 
-    public func editorPlugins(kernel: KernelLumi) -> [any EditorPlugin] {
-        [DatabaseSQLEditorPlugin()]
+    /// 编辑器贡献包（契约 V2，§9.1）：SQL 语言 + grammar。
+    public func editorContributionBundle(kernel: KernelLumi) async throws -> EditorContributionBundle? {
+        EditorContributionBundle(
+            pluginID: id,
+            languages: [
+                EditorLanguageContribution(
+                    language: DatabaseSQLLanguageSupport.descriptor,
+                    grammar: DatabaseSQLGrammarProvider()
+                )
+            ]
+        )
     }
 
     public func viewContainers(kernel: KernelLumi) -> [ViewContainerItem] {
@@ -168,6 +180,4 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
         }
         return true
     }
-    public func registerEditorExtensions(into registry: AnyObject, kernel: KernelLumi) async {}
-    public func configureEditorRuntime(kernel: KernelLumi) async {}
 }

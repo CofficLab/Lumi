@@ -14,7 +14,6 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/HTMLPreviewKit"),
         .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/LumiPreviewKit"),
@@ -29,7 +28,6 @@ let package = Package(
         .target(
             name: "EditorPreviewPlugin",
             dependencies: [
-                .product(name: "EditorService", package: "EditorService"),
                 .product(name: "HTMLPreviewKit", package: "HTMLPreviewKit"),
                 .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LumiPreviewKit", package: "LumiPreviewKit"),

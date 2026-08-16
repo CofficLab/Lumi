@@ -3,7 +3,7 @@ import SwiftUI
 @testable import KernelLumi
 
 /// 测试用 `LumiPlugin`,所有贡献方法返回空,仅可配置 id/order/policy
-/// 与编辑器运行时插件。用于测试 `BuiltinPluginManager` 的贡献收集/排序/装配。
+/// 与编辑器贡献包。用于测试 `BuiltinPluginManager` 的贡献收集/排序/装配。
 @MainActor
 final class MockLumiPlugin: LumiPlugin {
     let id: String
@@ -11,7 +11,7 @@ final class MockLumiPlugin: LumiPlugin {
     let order: Int
     let policy: LumiPluginPolicy
     let stage: LumiPluginStage
-    private let editorRuntimePlugins: [any EditorPlugin]
+    private let editorBundle: EditorContributionBundle?
     private let commandGroups: [CommandMenuGroup]
     private let promptSuggestionItems: [LumiPromptSuggestion]
 
@@ -20,7 +20,7 @@ final class MockLumiPlugin: LumiPlugin {
         name: String? = nil,
         order: Int,
         policy: LumiPluginPolicy = .alwaysOn,
-        editorRuntimePlugins: [any EditorPlugin] = [],
+        editorBundle: EditorContributionBundle? = nil,
         commandGroups: [CommandMenuGroup] = [],
         promptSuggestions: [LumiPromptSuggestion] = []
     ) {
@@ -29,7 +29,7 @@ final class MockLumiPlugin: LumiPlugin {
         self.order = order
         self.policy = policy
         self.stage = .stable
-        self.editorRuntimePlugins = editorRuntimePlugins
+        self.editorBundle = editorBundle
         self.commandGroups = commandGroups
         self.promptSuggestionItems = promptSuggestions
     }
@@ -64,5 +64,5 @@ final class MockLumiPlugin: LumiPlugin {
     func promptSuggestions(kernel: KernelLumi) -> [LumiPromptSuggestion] { promptSuggestionItems }
     func onTurnFinished(kernel: KernelLumi, conversationID: UUID, reason: LumiTurnEndReason) async {}
     func onContainerActivated(kernel: KernelLumi, containerID: String) {}
-    func editorPlugins(kernel: KernelLumi) -> [any EditorPlugin] { editorRuntimePlugins }
+    func editorContributionBundle(kernel: KernelLumi) async throws -> EditorContributionBundle? { editorBundle }
 }
