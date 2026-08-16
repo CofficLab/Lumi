@@ -14,6 +14,7 @@ import ProviderStorage
 import ProviderTheme
 import ProviderToast
 import ProviderToolbar
+import ProviderToolManager
 import SwiftUI
 
 /// KernelFactory — 内核工厂。
@@ -40,8 +41,23 @@ public enum KernelFactory {
     ///
     /// - Returns: 已装配默认 Provider 的 KernelCore 容器。
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
-    public static func makeKernel() throws -> KernelCoreContainer {
-        let factory = DefaultProviderFactory()
+    public static func makeKernel(
+        additionalPlugins: [any SuperPlugin] = []
+    ) throws -> KernelCoreContainer {
+        try makeKernel(
+            providerFactory: DefaultProviderFactory(),
+            pluginFactory: DefaultPluginFactory(),
+            additionalPlugins: additionalPlugins
+        )
+    }
+
+    /// 使用宿主提供的 Provider / Plugin 工厂装配内核。
+    public static func makeKernel(
+        providerFactory: any ProviderFactory,
+        pluginFactory: any PluginFactory,
+        additionalPlugins: [any SuperPlugin] = []
+    ) throws -> KernelCoreContainer {
+        let factory = providerFactory
         let kernel = KernelCoreContainer()
         try kernel.registerProvider((any StorageProviding).self, factory.makeStorageProvider())
 
@@ -66,8 +82,21 @@ public enum KernelFactory {
         try kernel.registerProvider((any ActivityBarProviding).self, factory.makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, factory.makeRailViewProvider())
         try kernel.registerProvider((any SettingViewProviding).self, factory.makeSettingViewProvider())
-        // 启动插件（由 DefaultPluginFactory 产出）：注册各自的贡献。
-        try kernel.start(plugins: DefaultPluginFactory().makePlugins())
+
+        // Agent 工具管理：默认实现 + SwiftData 调用记录（存储目录遵循 Storage 约定
+        // <数据根目录>/Plugins/ToolManager/tool_calls.sqlite）。
+        let toolManager = factory.makeToolManagerProvider()
+        if let storage = kernel.resolveProvider((any StorageProviding).self),
+           let defaultToolManager = toolManager as? DefaultToolManagerProviding {
+            defaultToolManager.recordStore = ToolCallRecordStore(
+                databaseRootURL: storage.pluginDataDirectory(for: "ToolManager")
+            )
+        }
+        try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
+
+        // 默认目录与宿主附加插件在同一个依赖图中统一校验、排序、原子启动。
+        // 后续复刻插件只需由 App/专用 Factory 传入，不必继续修改内核工厂。
+        try kernel.start(plugins: pluginFactory.makePlugins() + additionalPlugins)
         return kernel
     }
 

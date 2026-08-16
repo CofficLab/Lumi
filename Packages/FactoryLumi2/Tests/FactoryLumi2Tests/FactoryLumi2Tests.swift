@@ -22,6 +22,10 @@ import Testing
 @Suite("FactoryLumi2")
 struct FactoryLumi2Tests {
 
+    private final class AdditionalPlugin: SuperPlugin {
+        let id = "test.additional-plugin"
+    }
+
     @Test("makeKernel 创建内核并注册默认 StorageProviding")
     func makeKernelRegistersDefaultStorageProviding() throws {
         let kernel = try KernelFactory.makeKernel()
@@ -83,6 +87,31 @@ struct FactoryLumi2Tests {
         let resolved: (any ActivityBarProviding)? = kernel.resolveProvider((any ActivityBarProviding).self)
         #expect(resolved != nil)
         #expect(resolved is DefaultActivityBarProviding)
+    }
+
+    @Test("默认内容插件注册 ActivityBar 入口且设备入口初始激活")
+    func defaultContentPluginsRegisterActivityBarEntries() throws {
+        let kernel = try KernelFactory.makeKernel()
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+
+        #expect(activityBar?.items.map(\.id) == [
+            "com.coffic.lumi.plugin.device-info.entry",
+            "com.coffic.lumi.plugin.app-icon-designer.entry",
+            "com.coffic.lumi.plugin.white-noise.entry",
+            "com.coffic.lumi.plugin.video-converter.entry",
+        ])
+        #expect(activityBar?.activeItemID == "com.coffic.lumi.plugin.device-info.entry")
+
+        activityBar?.activateItem(id: "com.coffic.lumi.plugin.video-converter.entry")
+        #expect(activityBar?.activeItemID == "com.coffic.lumi.plugin.video-converter.entry")
+
+        let rail = kernel.resolveProvider((any RailViewProviding).self)
+        #expect(rail?.activeGroupID == "com.coffic.lumi.plugin.video-converter")
+        #expect(rail?.activeTabID == nil)
+
+        activityBar?.activateItem(id: "com.coffic.lumi.plugin.app-icon-designer.entry")
+        #expect(rail?.activeGroupID == "com.coffic.lumi.plugin.app-icon-designer")
+        #expect(rail?.activeTabID == "app-icon-designer.documents")
     }
 
     @Test("makeKernel 创建内核并注册默认 RailViewProviding")
@@ -276,5 +305,33 @@ struct FactoryLumi2Tests {
         // 详情视图可渲染（不崩溃）。
         let detail = settings?.entries.first(where: { $0.id == "appearance" })?.makeDetailView()
         #expect(detail != nil)
+    }
+
+    @Test("宿主可注入附加插件而无需修改默认插件目录")
+    func makeKernelAcceptsAdditionalPlugins() throws {
+        let kernel = try KernelFactory.makeKernel(additionalPlugins: [AdditionalPlugin()])
+
+        #expect(kernel.isPluginRegistered(id: "test.additional-plugin"))
+        #expect(kernel.lifecycleState == .running)
+    }
+
+    @Test("停止内核会撤回默认插件写入共享 Provider 的贡献并支持重启")
+    func stopWithdrawsContributionsAndSupportsRestart() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        try kernel.stop()
+
+        #expect(kernel.resolveProvider((any SettingViewProviding).self)?.entries.isEmpty == true)
+        #expect(kernel.resolveProvider((any DocsViewProviding).self)?.aboutEntries.isEmpty == true)
+        #expect(kernel.resolveProvider((any MenuBarProviding).self)?.contentItems.isEmpty == true)
+        #expect(kernel.resolveProvider((any LogoProviding).self)?.highestPriorityLogoItem == nil)
+        #expect(kernel.resolveProvider((any ToolbarProviding).self)?.toolbarItems.isEmpty == true)
+        #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.isEmpty == true)
+        #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 3)
+
+        try kernel.start(plugins: DefaultPluginFactory().makePlugins())
+        #expect(kernel.lifecycleState == .running)
+        #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 22)
+        #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 4)
     }
 }

@@ -10,6 +10,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../LumiUI"),
+        .package(path: "../PluginAppIconDesigner"),
         .package(path: "../PluginDevice"),
         .package(path: "../PluginLogoCoffic"),
         .package(path: "../PluginSettingGeneral"),
@@ -31,6 +32,7 @@ let package = Package(
         .package(path: "../ProviderTheme"),
         .package(path: "../ProviderToast"),
         .package(path: "../ProviderToolbar"),
+        .package(path: "../ProviderToolManager"),
     ],
     targets: [
         .target(
@@ -38,6 +40,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "PluginAppIconDesigner", package: "PluginAppIconDesigner"),
                 .product(name: "PluginDevice", package: "PluginDevice"),
                 .product(name: "PluginLogoCoffic", package: "PluginLogoCoffic"),
                 .product(name: "PluginSettingGeneral", package: "PluginSettingGeneral"),
@@ -59,6 +62,7 @@ let package = Package(
                 .product(name: "ProviderTheme", package: "ProviderTheme"),
                 .product(name: "ProviderToast", package: "ProviderToast"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ],
             path: "Sources/FactoryLumi2"
         ),

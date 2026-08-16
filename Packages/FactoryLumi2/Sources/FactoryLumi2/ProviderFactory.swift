@@ -13,6 +13,7 @@ import ProviderStorage
 import ProviderTheme
 import ProviderToast
 import ProviderToolbar
+import ProviderToolManager
 
 /// 产出各种 Provider 实现的工厂协议。
 ///
@@ -62,6 +63,9 @@ public protocol ProviderFactory {
 
     /// 产出 `SettingViewProviding` 实现。
     func makeSettingViewProvider() -> any SettingViewProviding
+
+    /// 产出 `ToolManagerProviding` 实现（Agent 工具注册/执行/记录）。
+    func makeToolManagerProvider() -> any ToolManagerProviding
 }
 
 /// 默认 `ProviderFactory` 实现：产出各 Provider 的默认实现。
@@ -137,5 +141,10 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `SettingViewProviding` 实现（默认最简设置视图）。
     public func makeSettingViewProvider() -> any SettingViewProviding {
         DefaultSettingViewProviding()
+    }
+
+    /// 产出 `ToolManagerProviding` 实现（默认内存注册表 + SwiftData 记录存储）。
+    public func makeToolManagerProvider() -> any ToolManagerProviding {
+        DefaultToolManagerProviding()
     }
 }
