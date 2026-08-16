@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import ProviderMessage
 import ProviderLLM
@@ -29,21 +28,71 @@ public struct AgentLoopRequest: Sendable {
     }
 }
 
+/// 一次工具/交互导致的回合暂停点。
+///
+/// 对齐旧版 `AgentTurnSuspension`：`kind` 区分暂停原因（`toolApproval` /
+/// `askUser` 等），`payload` 是 JSON 字符串（选项、问题等）。用户回答后经
+/// `resumeTurn(in:request:)` 恢复。
+public struct AgentLoopSuspension: Sendable, Equatable {
+    public let suspensionID: String
+    public let conversationID: UUID
+    public let toolCallID: String?
+    public let kind: String
+    public let payload: String
+
+    public init(
+        suspensionID: String,
+        conversationID: UUID,
+        toolCallID: String? = nil,
+        kind: String,
+        payload: String
+    ) {
+        self.suspensionID = suspensionID
+        self.conversationID = conversationID
+        self.toolCallID = toolCallID
+        self.kind = kind
+        self.payload = payload
+    }
+}
+
+/// 恢复一次暂停回合的请求。
+public struct AgentTurnResumeRequest: Sendable, Equatable {
+    public let suspensionID: String
+    public let answer: String
+
+    public init(suspensionID: String, answer: String) {
+        self.suspensionID = suspensionID
+        self.answer = answer
+    }
+}
+
 /// LLM / tool orchestration is injected through this responder boundary.
 /// The loop itself owns lifecycle and message persistence, not provider protocol details.
 public typealias AgentLoopResponder = @MainActor @Sendable (AgentLoopRequest) async throws -> String
 
+/// Agent 回合管理（KernelCore 体系）。
+///
+/// 复刻旧版 `AgentTurnRunner` 的职责：防并发 runTurn、流式 LLM 调用、
+/// 工具执行与授权暂停/恢复、错误落库、取消。依赖通过 set 注入：
+/// - `MessageManaging`（构造注入，消息历史与落库）
+/// - `LLMProviding` / `LLMStreamingProviding`（setLLMProvider）
+/// - `ToolManagerProviding`（setToolManager）
+/// - `MessageStreamingProviding`（setStreaming）
+/// - `ConversationManaging`（setConversations，读取 automationLevel 等会话设置）
 @MainActor
-public protocol AgentLoopProviding: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
-    /// 执行一轮回合（主入口：用户发送消息后驱动）。
+public protocol AgentLoopProviding: AnyObject, ObservableObject {
     func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome
-    /// 恢复被挂起的回合。
-    func resumeTurn(in conversationID: UUID) async throws -> AgentLoopOutcome
-    /// 显式开始一个回合并返回句柄（由原 `AgentTurnProviding.createTurn` 合并而来）。
-    func createTurn(_ request: AgentTurnRequest) async throws -> AgentTurnHandle
+    func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome
     func cancelTurn(in conversationID: UUID)
     func state(for conversationID: UUID) -> AgentLoopState
+    /// 当前（或最近一次）暂停的详情；无暂停时返回 `nil`。
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension?
     func isRunning(for conversationID: UUID) -> Bool
+    func currentTurnID(for conversationID: UUID) -> UUID?
+
     func setResponder(_ responder: AgentLoopResponder?)
     func setLLMProvider(_ provider: (any LLMProviding)?)
+    func setToolManager(_ toolManager: (any ToolManagerProviding)?)
+    func setStreaming(_ streaming: (any MessageStreamingProviding)?)
+    func setConversations(_ conversations: (any ConversationManaging)?)
 }
