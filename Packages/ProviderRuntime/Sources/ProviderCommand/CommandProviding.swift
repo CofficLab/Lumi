@@ -1,0 +1,4 @@
+import Foundation
+public struct CommandItem: Identifiable, Sendable { public let id: String; public let title: String; public let action: @MainActor @Sendable () -> Void; public init(id: String, title: String, action: @escaping @MainActor @Sendable () -> Void) { self.id = id; self.title = title; self.action = action } }
+@MainActor public protocol CommandProviding: AnyObject { var allCommands: [CommandItem] { get }; func register(_ command: CommandItem); func unregister(id: String) }
+@MainActor public final class DefaultCommandProviding: CommandProviding { public private(set) var allCommands: [CommandItem] = []; public init() {}; public func register(_ command: CommandItem) { allCommands.removeAll { $0.id == command.id }; allCommands.append(command) }; public func unregister(id: String) { allCommands.removeAll { $0.id == id } } }
