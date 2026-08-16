@@ -40,18 +40,23 @@ extension KernelCoreContainer {
             throw KernelCoreError.providerAlreadyRegistered(type: type)
         }
         providers[key] = provider
+        if let activePluginID {
+            providerOwners[key] = activePluginID
+        }
 
         if forwardsObjectWillChange {
             subscribeToObjectWillChange(provider: provider, key: key)
         }
+        objectWillChange.send()
     }
 
     /// 订阅 `ObservableObject` 的 `objectWillChange` 并转发到容器。
     private func subscribeToObjectWillChange<T>(provider: T, key: ObjectIdentifier) {
         guard let observableObject = provider as? any ObservableObject else { return }
 
-        // Force cast to ObservableObjectPublisher which is the concrete type
-        let publisher = observableObject.objectWillChange as! ObservableObjectPublisher
+        guard let publisher = observableObject.objectWillChange as? ObservableObjectPublisher else {
+            return
+        }
         providerSubscriptions[key] = publisher
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
@@ -87,5 +92,12 @@ extension KernelCoreContainer {
         let key = ObjectIdentifier(type)
         providers.removeValue(forKey: key)
         providerSubscriptions.removeValue(forKey: key)
+        providerOwners.removeValue(forKey: key)
+        objectWillChange.send()
+    }
+
+    /// 当前 Provider 是否由指定插件注册（诊断与生命周期测试用）。
+    public func isProvider<T>(_ type: T.Type, ownedByPlugin id: String) -> Bool {
+        providerOwners[ObjectIdentifier(type)] == id
     }
 }

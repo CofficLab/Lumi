@@ -88,10 +88,11 @@ struct KernelCoreCoverageTests {
                 OrderedPlugin(id: "bad", order: 200) { _ in throw BootError() },
             ])
         }
-        // 抛错前已按 order 启动的插件仍保持注册
-        #expect(core.isPluginRegistered(id: "ok"))
-        #expect(core.isPluginRegistered(id: "bad"))
+        // 原子启动失败，不留下半启动插件。
+        #expect(!core.isPluginRegistered(id: "ok"))
+        #expect(!core.isPluginRegistered(id: "bad"))
         #expect(!core.isPluginRegistered(id: "unbooted"))
+        #expect(core.lifecycleState == .failed)
     }
 
     @Test("start 重复 id 抛 pluginAlreadyRegistered")
@@ -104,6 +105,6 @@ struct KernelCoreCoverageTests {
                 OrderedPlugin(id: "dup", order: 200),
             ])
         }
-        #expect(core.registeredPluginCount == 1)
+        #expect(core.registeredPluginCount == 0)
     }
 }

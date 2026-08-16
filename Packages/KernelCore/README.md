@@ -1,6 +1,7 @@
 # KernelCore
 
-Lumi 的**最小内核核心**：只实现「注册 Provider 与访问 Provider」的通用机制，不包含任何具体 Provider。
+Lumi 的**最小内核核心**：提供 Provider 注册表与 SuperPlugin 生命周期，
+不包含任何具体 Provider。
 
 ## 与 KernelLumi 的关系
 
@@ -23,6 +24,8 @@ Generic Service Registry 的机制，形成零依赖的通用容器：
 4. **零外部依赖** — 仅使用 Foundation + Combine。
 5. **对象变化转发** — 默认把 Provider 的 `objectWillChange` 转发到容器；高频变更的
    Provider 可关闭转发改为窄播订阅。
+6. **原子插件启动** — 显式依赖拓扑排序，Boot/Ready 两阶段启动，失败自动逆序回滚。
+7. **完整退出路径** — Shutdown、单插件卸载、插件所有 Provider 的自动清理。
 
 ## 使用方式
 
@@ -46,6 +49,35 @@ if let storage = core.resolveProvider(StorageProviding.self) {
 // 5. 生命周期
 core.unregisterProvider(ProjectProviding.self)
 ```
+
+## 插件生命周期
+
+```swift
+final class FeaturePlugin: SuperPlugin {
+    let id = "com.example.feature"
+    let dependencies = ["com.example.foundation"]
+
+    func onBoot(kernel: KernelCoreContainer) throws {
+        // 注册自身 Provider 与共享 Provider 贡献
+    }
+
+    func onReady(kernel: KernelCoreContainer) throws {
+        // 此时全部插件均已完成 Boot，可解析跨插件能力
+    }
+
+    func onShutdown(kernel: KernelCoreContainer) throws {
+        // 撤回写入共享 Provider 的贡献；自身注册的 Provider 由 Kernel 自动移除
+    }
+}
+
+try core.start(plugins: plugins)
+try core.unloadPlugin(id: "com.example.feature")
+try core.stop()
+```
+
+`dependencies` 表达硬依赖，`order` 仅作为同一依赖层级的排序偏好。
+启动前会完整校验重复 id、缺失依赖与依赖环。任一 Boot/Ready 失败时，
+本批插件不会残留在可用内核中。
 
 ## 完整示例
 

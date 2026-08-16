@@ -1,6 +1,14 @@
 import Combine
 import Foundation
 
+public enum KernelLifecycleState: String, Sendable {
+    case stopped
+    case starting
+    case running
+    case stopping
+    case failed
+}
+
 /// KernelCore 轻量级内核核心
 ///
 /// 架构原则：KernelCore 只提供「注册 Provider 与访问 Provider」的通用机制，
@@ -26,6 +34,9 @@ public final class KernelCoreContainer: ObservableObject {
     /// internal：由 `KernelCore+Provider.swift` 中的 extension 读写。
     var providerSubscriptions: [ObjectIdentifier: AnyCancellable] = [:]
 
+    /// Provider 所属插件。不存在记录时表示由宿主注册。
+    var providerOwners: [ObjectIdentifier: String] = [:]
+
     // MARK: - Plugin Registry
 
     /// 插件注册表：以插件的 `id` 为 key。
@@ -33,9 +44,18 @@ public final class KernelCoreContainer: ObservableObject {
     /// internal：由 `KernelCore+Plugin.swift` 中的 extension 读写。
     var plugins: [String: any SuperPlugin] = [:]
 
+    var pluginStartOrder: [String] = []
+    var activePluginID: String?
+
+    @Published public private(set) var lifecycleState: KernelLifecycleState = .stopped
+
     // MARK: - Initialization
 
     public init() {}
+
+    func setLifecycleState(_ state: KernelLifecycleState) {
+        lifecycleState = state
+    }
 }
 
 /// 兼容命名：用 `KernelCore` 实例化时，使用 `KernelCoreContainer`。

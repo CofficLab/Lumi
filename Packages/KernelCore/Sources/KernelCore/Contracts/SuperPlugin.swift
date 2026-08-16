@@ -8,6 +8,8 @@ import Foundation
 ///
 /// 生命周期：
 /// - `onBoot(kernel:)`：插件启动阶段，注册自己的能力（默认空实现）。
+/// - `onReady(kernel:)`：全部插件完成 Boot 后执行，可安全解析依赖插件贡献。
+/// - `onShutdown(kernel:)`：插件卸载或内核停止时逆序执行，撤回外部贡献。
 @MainActor
 public protocol SuperPlugin: AnyObject {
     /// 插件唯一标识
@@ -16,16 +18,31 @@ public protocol SuperPlugin: AnyObject {
     /// 插件加载顺序（数值越小越先 `onBoot`）。默认 `200`。
     var order: Int { get }
 
+    /// 必须先于当前插件启动的插件 id。默认无依赖。
+    var dependencies: [String] { get }
+
     /// 插件启动：向内核注入能力。
     ///
     /// 在此方法中调用 `kernel.registerProvider(...)`、`kernel.registerPlugin(...)`
     /// 或解析其他 Provider（如 `kernel.resolveProvider(SettingViewProviding.self)`）
     /// 注册自己的贡献。默认空实现。
     func onBoot(kernel: KernelCoreContainer) throws
+
+    /// 全部插件完成 `onBoot` 后调用。
+    func onReady(kernel: KernelCoreContainer) throws
+
+    /// 卸载时调用。插件应在这里撤回注册到共享 Provider 中的贡献。
+    func onShutdown(kernel: KernelCoreContainer) throws
 }
 
 public extension SuperPlugin {
     var order: Int { 200 }
 
+    var dependencies: [String] { [] }
+
     func onBoot(kernel: KernelCoreContainer) throws {}
+
+    func onReady(kernel: KernelCoreContainer) throws {}
+
+    func onShutdown(kernel: KernelCoreContainer) throws {}
 }
