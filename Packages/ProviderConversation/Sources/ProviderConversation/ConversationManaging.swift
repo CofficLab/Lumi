@@ -1,6 +1,17 @@
 import Combine
 import Foundation
 
+/// 选中对话变化观察者的注册令牌。
+///
+/// 调用 `ConversationManaging.addSelectedConversationObserver(_:)` 后持有返回值
+/// 即可持续接收选中对话变化通知；令牌释放（deinit）或显式调用 `cancel()` 时
+/// 自动停止接收，无需手动反注册。
+@MainActor
+public protocol SelectedConversationObserverHandle: AnyObject {
+    /// 停止接收选中对话变化通知。重复调用无副作用。
+    func cancel()
+}
+
 /// 对话管理能力协议
 ///
 /// 定义对话的列表、创建、删除、选择等管理功能。
@@ -89,6 +100,20 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
 
     /// 取消选择当前对话（将 selectedConversationID 置为 nil）
     func deselectConversation()
+
+    // MARK: - Selected Conversation Observation
+
+    /// 注册一个观察者：当 `selectedConversationID` 变化时（含取消选择变为 nil），
+    /// 通过 callback 收到最新选中对话 ID。
+    ///
+    /// 回调在主线程（`@MainActor`）同步执行，携带变化后的 `selectedConversationID`。
+    /// 只有选中值实际发生变化时才会触发，重复设置同一值不会重复通知。
+    ///
+    /// - Parameter callback: 选中对话变化时的通知回调，参数为最新选中 ID（可为 nil）。
+    /// - Returns: 注销令牌；持有返回值即可持续接收，令牌释放（deinit）或调用
+    ///   `cancel()` 后自动停止接收。
+    @discardableResult
+    func addSelectedConversationObserver(_ callback: @escaping (UUID?) -> Void) -> any SelectedConversationObserverHandle
 
     /// 删除对话
     func deleteConversation(id: UUID)
@@ -185,6 +210,13 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
 public extension ConversationManaging {
     var isLoadingConversations: Bool { false }
 
+    /// 默认空实现：不维护选中观察者，返回 no-op 令牌（不会收到任何通知）。
+    /// 测试 mock 或轻量实现无需自行实现即可编译通过。
+    @discardableResult
+    func addSelectedConversationObserver(_ callback: @escaping (UUID?) -> Void) -> any SelectedConversationObserverHandle {
+        NoopSelectedConversationObserverHandle()
+    }
+
     func fetchConversationPage(
         limit: Int,
         beforeUpdatedAt: Date? = nil,
@@ -277,4 +309,14 @@ public extension ConversationManaging {
 
     /// 默认空实现，测试 mock 无需自行实现即可编译通过。
     func setGlobalLanguage(_ language: LumiConversationLanguage) {}
+}
+
+/// 协议默认实现使用的 no-op 注册令牌：注册后不接收任何通知。
+///
+/// 供未实现选中观察者能力的 `ConversationManaging` 轻量实现返回，
+/// 保证调用方拿到令牌后仍可按统一方式持有与释放。
+@MainActor
+public final class NoopSelectedConversationObserverHandle: SelectedConversationObserverHandle {
+    public init() {}
+    public func cancel() {}
 }

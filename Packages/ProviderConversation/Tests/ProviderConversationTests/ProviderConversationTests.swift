@@ -143,4 +143,88 @@ final class ProviderConversationTests: XCTestCase {
         let p1 = await manager.fetchConversationPage(limit: 10, beforeUpdatedAt: nil, beforeID: nil, includingChildConversations: true, projectPath: "/p1")
         XCTAssertEqual(p1.map(\.title), ["A"])
     }
+
+    // MARK: - Selected Conversation Observation
+
+    func testSelectedConversationObserverReceivesChanges() throws {
+        let manager = DefaultConversationManaging()
+        var received: [UUID?] = []
+        let token = manager.addSelectedConversationObserver { received.append($0) }
+
+        let first = try manager.createConversation(title: "A", projectPath: nil, providerID: nil, modelName: nil)
+        let second = try manager.createConversation(title: "B", projectPath: nil, providerID: nil, modelName: nil)
+
+        XCTAssertEqual(received, [first, second], "注册后创建对话自动选中，应逐次收到新 ID")
+
+        manager.selectConversation(id: first)
+        XCTAssertEqual(received.last, first)
+
+        manager.deselectConversation()
+        XCTAssertEqual(received.last ?? nil, nil, "取消选择应收到 nil")
+
+        manager.selectConversation(id: first)
+        XCTAssertEqual(received.last, first)
+
+        // 重复选择同一值不应重复通知
+        manager.selectConversation(id: first)
+        XCTAssertEqual(received.count, 5)
+
+        // 删除当前选中对话会自动切换到剩余对话
+        manager.deleteConversation(id: first)
+        XCTAssertEqual(received.last, second)
+        XCTAssertEqual(received.count, 6)
+
+        token.cancel()
+    }
+
+    func testSelectedConversationObserverStopsAfterCancel() throws {
+        let manager = DefaultConversationManaging()
+        var received: [UUID?] = []
+        let token = manager.addSelectedConversationObserver { received.append($0) }
+
+        let first = try manager.createConversation(title: "A", projectPath: nil, providerID: nil, modelName: nil)
+        XCTAssertEqual(received, [first])
+
+        token.cancel()
+        manager.deselectConversation()
+        XCTAssertEqual(received, [first], "注销后不应再收到通知")
+
+        // 重复 cancel 无副作用
+        token.cancel()
+        manager.selectConversation(id: first)
+        XCTAssertEqual(received, [first])
+    }
+
+    func testSelectedConversationObserverAutoUnregistersOnDeinit() throws {
+        let manager = DefaultConversationManaging()
+        var received: [UUID?] = []
+
+        do {
+            let token = manager.addSelectedConversationObserver { received.append($0) }
+            _ = try manager.createConversation(title: "A", projectPath: nil, providerID: nil, modelName: nil)
+            XCTAssertEqual(received.count, 1)
+            withExtendedLifetime(token) {}
+        }
+
+        // 令牌释放后不再通知
+        manager.deselectConversation()
+        XCTAssertEqual(received.count, 1, "令牌释放（deinit）后应自动注销")
+    }
+
+    func testMultipleSelectedConversationObservers() throws {
+        let manager = DefaultConversationManaging()
+        var firstCount = 0
+        var secondCount = 0
+        let first = manager.addSelectedConversationObserver { _ in firstCount += 1 }
+        let second = manager.addSelectedConversationObserver { _ in secondCount += 1 }
+
+        _ = try manager.createConversation(title: "A", projectPath: nil, providerID: nil, modelName: nil)
+        XCTAssertEqual(firstCount, 1)
+        XCTAssertEqual(secondCount, 1)
+
+        first.cancel()
+        manager.deselectConversation()
+        XCTAssertEqual(firstCount, 1, "已注销的观察者不再收到通知")
+        XCTAssertEqual(secondCount, 2)
+    }
 }

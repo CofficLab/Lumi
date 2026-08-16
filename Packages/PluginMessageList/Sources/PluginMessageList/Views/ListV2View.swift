@@ -6,20 +6,6 @@ import ProviderMessage
 import ProviderMessageSender
 import SwiftUI
 
-/// 新版 PluginMessageList 监听的通知名（与旧版字符串一致）。
-/// 由 PluginConversationManager 等宿主组件桥接发布，无需依赖其包类型。
-enum LumiListNotifications {
-    static let conversationsDidChange = Notification.Name("com.coffic.lumi.conversationsDidChange")
-    static let selectedConversationDidChange = Notification.Name("com.coffic.lumi.selectedConversationDidChange")
-}
-
-extension Notification {
-    /// userInfo 中的会话 ID（旧版约定：conversationID key）。
-    var lumiConversationID: UUID? {
-        userInfo?["conversationID"] as? UUID
-    }
-}
-
 /// Message List V2 View (standard / 标准模式)
 struct ListV2View: View {
     let services: MessageListServices
@@ -34,6 +20,9 @@ struct ListV2View: View {
 
     /// 内容就绪信号：historyRows 首尾消息 id 变化时 +1。
     @State private var scrollTick: Int = 0
+
+    /// 选中对话变化观察者令牌：视图消失时释放（自动注销）。
+    @State private var selectedObserverToken: (any SelectedConversationObserverHandle)?
 
     init(services: MessageListServices) {
         self.services = services
@@ -58,14 +47,23 @@ struct ListV2View: View {
             atBottomBox.value = true
             await viewModel.activate(conversationID: viewModel.selectedConversationID)
         }
-        .onReceive(NotificationCenter.default.publisher(for: LumiListNotifications.selectedConversationDidChange)) { notification in
-            let newID = notification.lumiConversationID
-            atBottomBox.value = true
-            Task { @MainActor in
-                await viewModel.activate(conversationID: newID)
+        // 选中对话变化：callback 机制（替代旧版 `.lumiSelectedConversationDidChange` 通知）。
+        // 视图消失时释放令牌自动注销，无需手动反注册。
+        .onAppear {
+            selectedObserverToken = services.addSelectedConversationObserver { newID in
+                atBottomBox.value = true
+                Task { @MainActor in
+                    await viewModel.activate(conversationID: newID)
+                }
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: LumiListNotifications.conversationsDidChange)) { _ in
+        .onDisappear {
+            selectedObserverToken?.cancel()
+            selectedObserverToken = nil
+        }
+        // 会话设置变化（verbosity 等）：订阅 ConversationManaging 窄播
+        // （替代旧版 `.lumiConversationsDidChange` 通知）。
+        .onReceive(services.conversationsChangesPublisher) { _ in
             viewModel.refreshConversationSettingsIfNeeded()
         }
     }

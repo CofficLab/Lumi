@@ -30,6 +30,9 @@ struct ListV3View: View {
     /// 内容就绪信号：historyRows 首尾消息 id 变化时 +1。
     @State private var scrollTick: Int = 0
 
+    /// 选中对话变化观察者令牌：视图消失时释放（自动注销）。
+    @State private var selectedObserverToken: (any SelectedConversationObserverHandle)?
+
     init(services: MessageListServices) {
         self.services = services
         _viewModel = StateObject(wrappedValue: ListV3ViewModel(services: services))
@@ -53,14 +56,23 @@ struct ListV3View: View {
             atBottomBox.value = true
             await viewModel.activate(conversationID: viewModel.selectedConversationID)
         }
-        .onReceive(NotificationCenter.default.publisher(for: LumiListNotifications.selectedConversationDidChange)) { notification in
-            let newID = notification.lumiConversationID
-            atBottomBox.value = true
-            Task { @MainActor in
-                await viewModel.activate(conversationID: newID)
+        // 选中对话变化：callback 机制（替代旧版 `.lumiSelectedConversationDidChange` 通知）。
+        // 视图消失时释放令牌自动注销，无需手动反注册。
+        .onAppear {
+            selectedObserverToken = services.addSelectedConversationObserver { newID in
+                atBottomBox.value = true
+                Task { @MainActor in
+                    await viewModel.activate(conversationID: newID)
+                }
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: LumiListNotifications.conversationsDidChange)) { _ in
+        .onDisappear {
+            selectedObserverToken?.cancel()
+            selectedObserverToken = nil
+        }
+        // 会话设置变化（verbosity 等）：订阅 ConversationManaging 窄播
+        // （替代旧版 `.lumiConversationsDidChange` 通知）。
+        .onReceive(services.conversationsChangesPublisher) { _ in
             viewModel.refreshConversationSettingsIfNeeded()
         }
     }

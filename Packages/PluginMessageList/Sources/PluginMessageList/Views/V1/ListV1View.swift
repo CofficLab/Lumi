@@ -19,6 +19,9 @@ struct ListV1View: View {
     /// 快照 + 事件刷新：init 同步读初值，之后由事件驱动更新。
     @State private var verbosity: LumiResponseVerbosity = .defaultVerbosity
 
+    /// 选中对话变化观察者令牌：视图消失时释放（自动注销）。
+    @State private var selectedObserverToken: (any SelectedConversationObserverHandle)?
+
     /// 用户是否停在列表底部附近；用于决定新消息到达时是否自动滚到底部。
     ///
     /// 故意不用 `@State`，以切断底部锚点 Preference → body 重建 → 偏好重报的
@@ -54,15 +57,24 @@ struct ListV1View: View {
             atBottomBox.value = true
             await turnViewModel.activate(conversationID: selectedConversationID)
         }
-        .onReceive(NotificationCenter.default.publisher(for: LumiListNotifications.selectedConversationDidChange)) { notification in
-            let newID = notification.lumiConversationID
-            atBottomBox.value = true
-            verbosity = services.verbosity(for: newID)
-            Task { @MainActor in
-                await turnViewModel.activate(conversationID: newID)
+        // 选中对话变化：callback 机制（替代旧版 `.lumiSelectedConversationDidChange` 通知）。
+        // 视图消失时释放令牌自动注销，无需手动反注册。
+        .onAppear {
+            selectedObserverToken = services.addSelectedConversationObserver { newID in
+                atBottomBox.value = true
+                verbosity = services.verbosity(for: newID)
+                Task { @MainActor in
+                    await turnViewModel.activate(conversationID: newID)
+                }
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: LumiListNotifications.conversationsDidChange)) { _ in
+        .onDisappear {
+            selectedObserverToken?.cancel()
+            selectedObserverToken = nil
+        }
+        // 会话设置变化（verbosity 等）：订阅 ConversationManaging 窄播
+        // （替代旧版 `.lumiConversationsDidChange` 通知）。
+        .onReceive(services.conversationsChangesPublisher) { _ in
             refreshVerbosity()
         }
     }

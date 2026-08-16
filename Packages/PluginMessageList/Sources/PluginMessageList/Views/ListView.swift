@@ -23,6 +23,9 @@ struct ListView: View {
     @State private var selectedConversationID: UUID?
     @State private var verbosity: LumiResponseVerbosity = .defaultVerbosity
 
+    /// 选中对话变化观察者令牌：视图消失时释放（自动注销）。
+    @State private var selectedObserverToken: (any SelectedConversationObserverHandle)?
+
     init(services: MessageListServices) {
         self.services = services
         _selectedConversationID = State(initialValue: services.selectedConversationID)
@@ -48,13 +51,19 @@ struct ListView: View {
         .background(theme.surface)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // 选中切换：更新空态/列表路由，并同步新会话的 verbosity。
-        .onReceive(NotificationCenter.default.publisher(for: LumiListNotifications.selectedConversationDidChange)) { notification in
-            let newID = notification.lumiConversationID
-            selectedConversationID = newID
-            verbosity = services.verbosity(for: newID)
+        // callback 机制（替代旧版 `.lumiSelectedConversationDidChange` 通知）。
+        .onAppear {
+            selectedObserverToken = services.addSelectedConversationObserver { newID in
+                selectedConversationID = newID
+                verbosity = services.verbosity(for: newID)
+            }
+        }
+        .onDisappear {
+            selectedObserverToken?.cancel()
+            selectedObserverToken = nil
         }
         // 会话设置变化（setVerbosity 等广播 conversationsDidChange）：刷新路由用 verbosity。
-        .onReceive(NotificationCenter.default.publisher(for: LumiListNotifications.conversationsDidChange)) { _ in
+        .onReceive(services.conversationsChangesPublisher) { _ in
             let newVerbosity = services.verbosity(for: services.selectedConversationID)
             verbosity = newVerbosity
         }
