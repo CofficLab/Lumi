@@ -1,3 +1,4 @@
+import ProviderWorkspace
 import SwiftUI
 import Testing
 @testable import ProviderRootView
@@ -120,6 +121,62 @@ struct ProviderRootViewTests {
         provider.setRailView(AnyView(Text("custom rail")))
         provider.setContentView(AnyView(Text("custom content")))
         provider.setTrailingPane(RootTrailingPane(id: "custom", content: AnyView(Text("custom trailing"))))
+
+        #expect(type(of: provider.makeRootView()) == AnyView.self)
+    }
+
+    // MARK: - 显示条件（复刻旧版 AppLayoutView）
+
+    /// 构造一个含 N 个容器的 workspace。
+    private func makeWorkspace(containerCount: Int) -> DefaultWorkspaceProviding {
+        let workspace = DefaultWorkspaceProviding(
+            pluginDirectory: FileManager.default.temporaryDirectory
+                .appendingPathComponent("ProviderRootViewTests-\(UUID().uuidString)", isDirectory: true)
+        )
+        for index in 0..<containerCount {
+            workspace.registerContainer(
+                WorkspaceContainer(
+                    id: "container.\(index)",
+                    title: "Container \(index)",
+                    systemImage: "square",
+                    order: index
+                ),
+                ownerPluginID: "test"
+            )
+        }
+        return workspace
+    }
+
+    @Test("ActivityBar 注入后仍返回根视图（容器数 > 1 时显示）")
+    func activityBarVisibleWithMultipleContainers() {
+        let provider = DefaultRootViewProviding()
+        provider.setActivityBarView(AnyView(Text("activity bar")))
+        provider.setWorkspaceProvider(makeWorkspace(containerCount: 2))
+
+        #expect(type(of: provider.makeRootView()) == AnyView.self)
+    }
+
+    @Test("无活跃容器时返回根视图（Welcome 占位路径）")
+    func welcomePlaceholderWithoutActiveContainer() {
+        let provider = DefaultRootViewProviding()
+        // 有 workspace 但无活跃容器（未注册任何容器）。
+        let workspace = DefaultWorkspaceProviding(
+            pluginDirectory: FileManager.default.temporaryDirectory
+                .appendingPathComponent("ProviderRootViewTests-\(UUID().uuidString)", isDirectory: true)
+        )
+        provider.setWorkspaceProvider(workspace)
+        provider.setContentView(AnyView(Text("content")))
+
+        #expect(type(of: provider.makeRootView()) == AnyView.self)
+    }
+
+    @Test("存在活跃容器时返回带内容区的根视图")
+    func contentShownWithActiveContainer() {
+        let provider = DefaultRootViewProviding()
+        let workspace = makeWorkspace(containerCount: 1)
+        provider.setWorkspaceProvider(workspace)
+        provider.setContentView(AnyView(Text("content")))
+        provider.setRailView(AnyView(Text("rail")))
 
         #expect(type(of: provider.makeRootView()) == AnyView.self)
     }

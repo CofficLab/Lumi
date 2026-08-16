@@ -29,7 +29,10 @@ let package = Package(
         ),
         .testTarget(
             name: "ProviderRootViewTests",
-            dependencies: ["ProviderRootView"]
+            dependencies: [
+                "ProviderRootView",
+                .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
+            ]
         )
     ]
 )
