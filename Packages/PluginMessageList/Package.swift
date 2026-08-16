@@ -18,6 +18,7 @@ let package = Package(
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../SuperLogKit"),
     ],
     targets: [
         .target(name: "PluginMessageList", dependencies: [
@@ -33,6 +34,7 @@ let package = Package(
             .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
             .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
             .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+            .product(name: "SuperLogKit", package: "SuperLogKit"),
         ]),
         .testTarget(name: "PluginMessageListTests", dependencies: [
             "PluginMessageList",
