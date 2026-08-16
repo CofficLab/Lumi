@@ -9,8 +9,6 @@ import ProviderStorage
 import SwiftUI
 
 /// 设备信息插件
-///
-/// 完美复刻自 Lumi 旧版 `DeviceInfoPlugin`（KernelLumi → KernelCore 适配）：
 /// - 注册设备信息视图为主内容（ContentView）；
 /// - 贡献菜单栏内容（CPU/内存柱状图）与弹窗（CPU、内存两个独立弹窗项）；
 /// - 贡献设置入口（内存监控设置页）；
