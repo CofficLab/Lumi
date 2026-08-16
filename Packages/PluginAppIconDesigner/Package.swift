@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "PluginAppIconDesigner", targets: ["PluginAppIconDesigner"]),
     ],
     dependencies: [
+        .package(path: "../AgentToolKit"),
         .package(path: "../KernelCore"),
         .package(path: "../LocalizationKit"),
         .package(path: "../LumiUI"),
@@ -18,11 +19,13 @@ let package = Package(
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderStorage"),
+        .package(path: "../ProviderToolManager"),
     ],
     targets: [
         .target(
             name: "PluginAppIconDesigner",
             dependencies: [
+                "AgentToolKit",
                 "KernelCore",
                 "LocalizationKit",
                 "LumiUI",
@@ -32,6 +35,7 @@ let package = Package(
                 "ProviderProject",
                 "ProviderRailView",
                 "ProviderStorage",
+                "ProviderToolManager",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
@@ -39,12 +43,14 @@ let package = Package(
             name: "PluginAppIconDesignerTests",
             dependencies: [
                 "PluginAppIconDesigner",
+                "AgentToolKit",
                 "KernelCore",
                 "ProviderActivityBar",
                 "ProviderContentView",
                 "ProviderProject",
                 "ProviderRailView",
                 "ProviderStorage",
+                "ProviderToolManager",
             ]
         ),
     ]

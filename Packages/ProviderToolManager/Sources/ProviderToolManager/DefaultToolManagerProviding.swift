@@ -169,14 +169,16 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
         }
 
         let executionContent: String
+        let executionImages: [ImageAttachment]
         let duration: TimeInterval
         let isError: Bool
 
         do {
-            let content = try await tool.execute(arguments: arguments)
-            executionContent = content
+            let toolResult = try await tool.executeResult(arguments: arguments)
+            executionContent = toolResult.content
+            executionImages = toolResult.images
             duration = Date().timeIntervalSince(startedAt)
-            isError = false
+            isError = toolResult.isError
         } catch {
             let result = ToolCallResult(
                 content: "Tool execution failed: \(error.localizedDescription)",
@@ -205,6 +207,7 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
 
         let result = ToolCallResult(
             content: executionContent,
+            images: executionImages,
             isError: isError,
             executedAt: Date(),
             duration: duration

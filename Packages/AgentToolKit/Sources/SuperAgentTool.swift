@@ -69,4 +69,12 @@ extension SuperAgentTool {
             reason: "\(name) does not implement execute(arguments:)"
         )
     }
+
+    /// 执行工具并返回结构化结果（默认实现）。
+    ///
+    /// 默认将 `execute(arguments:)` 的文本内容包装为 `ToolCallResult`。
+    /// 需要返回图片附件等结构化结果的工具（如预览渲染图）可覆盖此方法。
+    public func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(arguments: arguments))
+    }
 }

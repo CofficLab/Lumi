@@ -1,8 +1,10 @@
+import AgentToolKit
 import KernelCore
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
+import ProviderToolManager
 import SwiftUI
 
 /// KernelCore 版本的 App Icon 设计器插件。
@@ -21,6 +23,13 @@ public final class AppIconDesignerPlugin: SuperPlugin {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         IconDesignerRuntime.configure(kernel: kernel, pluginID: id)
+
+        // 注册 Agent 工具到 ToolManagerProviding
+        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            for tool in Self.agentTools {
+                toolManager.add(tool, pluginID: id)
+            }
+        }
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
@@ -66,6 +75,13 @@ public final class AppIconDesignerPlugin: SuperPlugin {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        // 撤回注册的 Agent 工具。
+        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            for tool in Self.agentTools {
+                toolManager.remove(id: tool.name)
+            }
+        }
+
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
 
@@ -78,4 +94,25 @@ public final class AppIconDesignerPlugin: SuperPlugin {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         IconDesignerRuntime.reset()
     }
+
+    // MARK: - Agent Tools
+
+    /// 本插件贡献的 Agent 工具（复刻旧版 AppIconDesignerPlugin.agentTools）。
+    public static let agentTools: [any SuperAgentTool] = [
+        ListIconDocumentsTool(),
+        CreateIconDocumentTool(),
+        ApplyIconPresetTool(),
+        LoadIconDocumentTool(),
+        SaveIconDocumentTool(),
+        SetIconBackgroundTool(),
+        AddIconShapeTool(),
+        UpdateIconShapeTool(),
+        UpdateIconLayerTool(),
+        LintIconDocumentTool(),
+        PreviewIconTool(),
+        ExportIconSVGTool(),
+        ExportAppIconTool(),
+        RegisterAppIconArtifactTool(),
+        ReviewIconTool(),
+    ]
 }

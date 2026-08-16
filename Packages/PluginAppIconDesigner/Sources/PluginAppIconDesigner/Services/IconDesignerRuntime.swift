@@ -1,3 +1,4 @@
+import AgentToolKit
 import Combine
 import Foundation
 import KernelCore
@@ -19,11 +20,29 @@ public enum IconScope: String, CaseIterable, Sendable {
     }
 }
 
+/// 宿主可注入的图标设计评审 LLM 服务。
+///
+/// KernelCore 精简内核不内置 LLM provider，`review_icon` 工具通过此协议
+/// 调用宿主提供的视觉评审能力；未注入时工具返回「评审不可用」提示。
+@MainActor
+public protocol IconDesignReviewLLMProviding: AnyObject, Sendable {
+    /// 生成一次图标设计评审。
+    ///
+    /// - Parameters:
+    ///   - prompt: 资深设计师人设 + 结构化输出约束的评审提示词
+    ///   - image: 渲染好的图标 PNG
+    /// - Returns: 评审正文
+    func generateDesignReview(prompt: String, image: ImageAttachment) async throws -> String
+}
+
 @MainActor
 enum IconDesignerRuntime {
     static private(set) var appStorageDirectory: URL?
     static private(set) var projectStorageDirectory: URL?
     static private(set) var currentProjectPath: String?
+
+    /// `review_icon` 工具使用的 LLM 评审服务（宿主注入，可空）。
+    static var designReviewLLM: (any IconDesignReviewLLMProviding)?
 
     private static var projectCancellable: AnyCancellable?
     static let projectFolderName = "app-icon-designer"
