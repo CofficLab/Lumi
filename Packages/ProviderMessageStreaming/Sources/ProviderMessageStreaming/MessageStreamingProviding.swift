@@ -3,6 +3,12 @@ import Foundation
 import ProviderMessage
 
 public enum MessageStreamingStage: String, Sendable { case idle, sending, thinking, generating }
+
+/// 流式输出 store（KernelCore 体系）。
+///
+/// `@MainActor` 约束与 `MessageManaging` / `ConversationManaging` 一致：流式行
+/// 由 AgentLoop 在回合循环中写入，UI 窄播订阅；`any MessageStreamingProviding`
+/// 因此是 MainActor 隔离的存在类型，可在 `@Sendable` 流式回调中经 `await` 安全访问。
 @MainActor
 public protocol MessageStreamingProviding: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     func streamingMessage(for conversationID: UUID) -> Message?
