@@ -13,9 +13,30 @@ import PluginVideoConverter
 import PluginWhiteNoise
 import PluginChatPanel
 import PluginConversationInput
+import PluginProjects
 import PluginMessageList
 import PluginConversationList
 import PluginConversationNew
+import PluginLLMProviderAiRouter
+import PluginLLMProviderAliyun
+import PluginLLMProviderAnthropic
+import PluginLLMProviderDeepSeek
+import PluginLLMProviderFeifeimiao
+import PluginLLMProviderFlyMux
+import PluginLLMProviderHappyCode
+import PluginLLMProviderHyperAPI
+import PluginLLMProviderKimiCode
+import PluginLLMProviderLPgpt
+import PluginLLMProviderMegaLLM
+import PluginLLMProviderMiniMax
+import PluginLLMProviderOpenAI
+import PluginLLMProviderOpenCode
+import PluginLLMProviderOpenRouter
+import PluginLLMProviderStepFun
+import PluginLLMProviderSublyx
+import PluginLLMProviderXiaomi
+import PluginLLMProviderXybbz
+import PluginLLMProviderZhipu
 
 /// 产出各种插件的工厂协议。
 ///
@@ -40,6 +61,7 @@ public struct DefaultPluginFactory: PluginFactory {
     public func makePlugins() -> [any SuperPlugin] {
         [
             SettingGeneralPlugin(),
+            ProjectsPlugin(),
             DevicePlugin(),
             AppIconDesignerPlugin(),
             AppStorePromoDesignerPlugin(),
@@ -55,6 +77,26 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationInputPlugin(),
             ConversationListPlugin(),
             ConversationNewPlugin(),
+            AiRouterProviderPlugin(),
+            AliyunProviderPlugin(),
+            AnthropicProviderPlugin(),
+            DeepSeekProviderPlugin(),
+            FeifeimiaoProviderPlugin(),
+            FlyMuxProviderPlugin(),
+            HappyCodeProviderPlugin(),
+            HyperAPIProviderPlugin(),
+            KimiCodeProviderPlugin(),
+            LPgptProviderPlugin(),
+            MegaLLMProviderPlugin(),
+            MiniMaxProviderPlugin(),
+            OpenAIProviderPlugin(),
+            OpenCodeProviderPlugin(),
+            OpenRouterProviderPlugin(),
+            StepFunProviderPlugin(),
+            SublyxProviderPlugin(),
+            XiaomiProviderPlugin(),
+            XybbzProviderPlugin(),
+            ZhipuProviderPlugin(),
         ]
     }
 }

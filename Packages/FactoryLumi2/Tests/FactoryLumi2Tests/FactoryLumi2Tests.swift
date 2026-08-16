@@ -387,7 +387,8 @@ struct FactoryLumi2Tests {
         let manager: (any LLMProviderManagerProviding)? = kernel.resolveProvider((any LLMProviderManagerProviding).self)
         #expect(manager != nil)
         #expect(manager is DefaultLLMProviderManagerProviding)
-        #expect(manager?.providerCount == 0)
+        // 20 个 PluginLLMProviderXXX 插件在启动时注册全部 27 个内建供应商。
+        #expect(manager?.providerCount == 27)
         #expect(manager?.providerID == "llm-provider-manager")
     }
 
@@ -407,6 +408,8 @@ struct FactoryLumi2Tests {
         #expect(manager != nil)
 
         try manager?.register(EchoManagedProvider(id: "echo"))
+        // 启动时已选中内建列表首项 OpenAI；切到 echo 供应商再发送。
+        manager?.select(providerID: "echo", model: nil)
         let response = try await manager?.complete(
             LLMRequest(
                 conversationID: UUID(),
