@@ -141,6 +141,7 @@ struct FactoryLumi2Tests {
             "com.coffic.lumi.plugin.app-icon-designer.entry",
             "com.coffic.lumi.plugin.app-store-promo-designer.entry",
             "com.coffic.lumi.plugin.mind-map-designer.entry",
+            "com.coffic.lumi.plugin.resume-designer.entry",
             "com.coffic.lumi.plugin.white-noise.entry",
             "com.coffic.lumi.plugin.video-converter.entry",
         ])
@@ -376,7 +377,7 @@ struct FactoryLumi2Tests {
         try kernel.start(plugins: DefaultPluginFactory().makePlugins())
         #expect(kernel.lifecycleState == .running)
         #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 22)
-        #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 7)
+        #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 8)
     }
 
     @Test("makeKernel 注册默认 LLMProviderManagerProviding")
