@@ -46,6 +46,19 @@ public protocol SuperAgentTool: Sendable {
     /// - Parameter arguments: 本次调用的参数（由宿主从 `ToolCall.arguments` 解码）
     /// - Returns: 工具执行结果文本
     func execute(arguments: [String: ToolArgument]) async throws -> String
+
+    /// 执行工具并返回结构化结果（协议要求）。
+    ///
+    /// 宿主（`ToolManagerProviding`）对 `any SuperAgentTool` 调用本方法。
+    /// **必须声明为协议要求**：若仅放在扩展中，对存在类型调用时会静态分派到
+    /// 默认实现，工具自身覆盖的版本永远不会被调用（Swift 存在类型 + 扩展方法
+    /// 的静态分派限制）。
+    ///
+    /// 默认实现把 `execute(arguments:)` 的文本包装为 `ToolCallResult`。
+    /// 需要结构化结果的工具（图片附件、`awaitingUserResponse` 挂起等）
+    /// 应覆盖本方法。例如 AskUser 工具返回 `awaitingUserResponse: true`
+    /// 让 Agent 循环暂停等待用户回答。
+    func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult
 }
 
 extension SuperAgentTool {
