@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// `SettingViewProviding` 的默认实现：持有注入的 `SettingEntryItem`，
@@ -44,9 +45,18 @@ public final class DefaultSettingViewProviding: SettingViewProviding, Observable
 }
 
 /// 渲染「左侧入口列表 + 右侧详情视图」的设置界面。
+///
+/// 完整复刻旧版 Lumi（`FactoryCore.SettingsView`）的视觉与交互：
+/// - `AppSettingsSidebarShell` 双栏布局：固定宽侧边栏 + 分隔线 + 详情区
+/// - 侧边栏半透明背景（`AppSettingsSidebarContainer`）、详情区氛围渐变
+///   （`AppSettingsDetailPane`）
+/// - 窗口背景为主题氛围深色（`theme.background`）、强制主题明暗外观、
+///   同步 AppKit 窗口外观（与旧版完全一致）
+/// - 最小尺寸 720 × 520，空状态与旧版一致（gearshape + "Select a tab"）
 private struct SettingView: View {
     @ObservedObject var provider: DefaultSettingViewProviding
     @State private var selectedID: String?
+    @LumiTheme private var theme
 
     init(provider: DefaultSettingViewProviding) {
         self.provider = provider
@@ -54,63 +64,63 @@ private struct SettingView: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            // 左侧：顶部 Header（如 Logo）+ 入口列表
-            VStack(spacing: 0) {
+        AppSettingsSidebarShell { sidebar } detail: { detail }
+            .frame(minWidth: 720, minHeight: 520)
+            .background(theme.background)
+            .appThemedAppearance()
+            #if canImport(AppKit)
+            .background {
+                ThemeWindowAppearanceBridge()
+            }
+            #endif
+            .ignoresSafeArea()
+    }
+
+    /// 左侧：注入的顶部 Header（Logo + 应用名）+ 入口列表。
+    private var sidebar: some View {
+        AppSettingsSidebarContainer(width: 220) {
+            VStack(alignment: .leading, spacing: 10) {
                 if let header = provider.sidebarHeader {
                     header
-                    Divider()
+                    AppSettingsDivider()
                 }
 
-                List {
-                    ForEach(provider.entries) { entry in
-                        Button {
-                            selectedID = entry.id
-                            provider.selectEntry(id: entry.id)
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: entry.systemImage)
-                                    .frame(width: 20)
-                                Text(entry.title)
-                                    .lineLimit(1)
-                                Spacer(minLength: 0)
+                ScrollView {
+                    VStack(spacing: 6) {
+                        ForEach(provider.entries) { entry in
+                            AppSettingsSidebarItem(
+                                title: entry.title,
+                                systemImage: entry.systemImage,
+                                isSelected: (selectedID ?? provider.selectedEntryID) == entry.id
+                            ) {
+                                selectedID = entry.id
+                                provider.selectEntry(id: entry.id)
                             }
-                            .padding(.vertical, 4)
-                            .contentShape(Rectangle())
-                            .background(
-                                (selectedID ?? provider.selectedEntryID) == entry.id
-                                    ? Color.accentColor.opacity(0.12)
-                                    : Color.clear
-                            )
-                            .cornerRadius(6)
                         }
-                        .buttonStyle(.plain)
                     }
+                    .padding(.leading)
                 }
-                .listStyle(.sidebar)
+
+                Spacer()
             }
-            .frame(width: 220)
+        }
+    }
 
-            Divider()
-
-            // 右侧：详情视图
+    /// 右侧：详情视图（氛围渐变背景），无选中时显示与旧版一致的空状态。
+    private var detail: some View {
+        AppSettingsDetailPane {
             Group {
                 if let selected = provider.entries.first(where: { $0.id == selectedID ?? provider.selectedEntryID }) {
                     selected.makeDetailView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    VStack(spacing: 8) {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 32))
-                            .foregroundStyle(.secondary)
-                        Text("Select a setting")
-                            .foregroundStyle(.secondary)
-                    }
+                    AppEmptyState(
+                        icon: "gearshape",
+                        title: "Select a tab"
+                    )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .padding(24)
         }
-        .frame(minWidth: 600, minHeight: 400)
     }
 }
