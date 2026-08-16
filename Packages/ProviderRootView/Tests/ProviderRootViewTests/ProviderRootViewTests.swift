@@ -54,6 +54,7 @@ struct ProviderRootViewTests {
         provider.setActivityBarView(AnyView(Text("activity bar")))
         provider.setRailView(AnyView(Text("rail")))
         provider.setContentView(AnyView(Text("content")))
+        provider.setTrailingPane(RootTrailingPane(id: "chat", content: AnyView(Text("chat"))))
 
         let view = provider.makeRootView()
 
@@ -78,6 +79,7 @@ struct ProviderRootViewTests {
             var activityBarView: AnyView?
             var railView: AnyView?
             var contentView: AnyView?
+            var trailingPane: RootTrailingPane?
 
             func setToolbarView(_ view: AnyView?) {
                 toolbarView = view
@@ -93,6 +95,10 @@ struct ProviderRootViewTests {
 
             func setContentView(_ view: AnyView?) {
                 contentView = view
+            }
+
+            func setTrailingPane(_ pane: RootTrailingPane?) {
+                trailingPane = pane
             }
 
             func makeRootView() -> AnyView {
@@ -113,6 +119,7 @@ struct ProviderRootViewTests {
         provider.setActivityBarView(AnyView(Text("custom activity bar")))
         provider.setRailView(AnyView(Text("custom rail")))
         provider.setContentView(AnyView(Text("custom content")))
+        provider.setTrailingPane(RootTrailingPane(id: "custom", content: AnyView(Text("custom trailing"))))
 
         #expect(type(of: provider.makeRootView()) == AnyView.self)
     }

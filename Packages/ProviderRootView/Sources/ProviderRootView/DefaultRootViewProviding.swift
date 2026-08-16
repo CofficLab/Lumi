@@ -7,11 +7,12 @@ import SwiftUI
 /// 主内容未注入时显示居中占位提示；注入后（通常来自 `ContentViewProviding`）
 /// 显示为内容区。
 @MainActor
-public final class DefaultRootViewProviding: RootViewProviding {
-    private var toolbarView: AnyView?
-    private var activityBarView: AnyView?
-    private var railView: AnyView?
-    private var contentView: AnyView?
+public final class DefaultRootViewProviding: RootViewProviding, ObservableObject {
+    @Published fileprivate var toolbarView: AnyView?
+    @Published fileprivate var activityBarView: AnyView?
+    @Published fileprivate var railView: AnyView?
+    @Published fileprivate var contentView: AnyView?
+    @Published fileprivate var trailingPane: RootTrailingPane?
 
     public init() {}
 
@@ -31,43 +32,95 @@ public final class DefaultRootViewProviding: RootViewProviding {
         contentView = view
     }
 
+    public func setTrailingPane(_ pane: RootTrailingPane?) {
+        trailingPane = pane
+    }
+
     public func makeRootView() -> AnyView {
-        AnyView(
-            VStack(spacing: 0) {
-                if let toolbarView {
-                    toolbarView
+        AnyView(DefaultRootHostView(provider: self))
+    }
+}
+
+@MainActor
+private struct DefaultRootHostView: View {
+    @ObservedObject var provider: DefaultRootViewProviding
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if let toolbarView = provider.toolbarView {
+                toolbarView
+                Divider()
+            }
+
+            HStack(spacing: 0) {
+                if let activityBarView = provider.activityBarView {
+                    activityBarView
                     Divider()
                 }
 
-                HStack(spacing: 0) {
-                    if let activityBarView {
-                        activityBarView
-                        Divider()
-                    }
-
-                    if let railView {
-                        railView
-                        Divider()
-                    }
-
-                    // 内容区：已注入主内容则显示之，否则显示占位提示。
-                    Group {
-                        if let contentView {
-                            contentView
-                        } else {
-                            ContentPlaceholderView()
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if let railView = provider.railView {
+                    railView
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                RootMainContentView(
+                    contentView: provider.contentView,
+                    trailingPane: provider.trailingPane
+                )
             }
-            #if os(macOS)
-            // 与旧版 Lumi（AppLayoutView）一致：内容延伸进标题栏区域，
-            // 工具栏从窗口顶部开始渲染，红绿灯悬浮在工具栏上。
-            .ignoresSafeArea()
-            #endif
-        )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        #if os(macOS)
+        .ignoresSafeArea()
+        #endif
+    }
+}
+
+@MainActor
+private struct RootMainContentView: View {
+    let contentView: AnyView?
+    @ObservedObject var trailingPane: RootTrailingPane
+
+    init(contentView: AnyView?, trailingPane: RootTrailingPane?) {
+        self.contentView = contentView
+        _trailingPane = ObservedObject(wrappedValue: trailingPane ?? RootTrailingPane(
+            id: "root.empty",
+            isVisible: false,
+            content: AnyView(EmptyView())
+        ))
+    }
+
+    private var mainContent: AnyView {
+        contentView ?? AnyView(ContentPlaceholderView())
+    }
+
+    var body: some View {
+        Group {
+            if trailingPane.isVisible {
+                #if os(macOS)
+                HSplitView {
+                    mainContent
+                        .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
+                    trailingPane.content
+                        .frame(
+                            minWidth: trailingPane.minWidth,
+                            idealWidth: trailingPane.idealWidth,
+                            maxWidth: trailingPane.maxWidth,
+                            maxHeight: .infinity
+                        )
+                }
+                #else
+                HStack(spacing: 0) {
+                    mainContent
+                    Divider()
+                    trailingPane.content
+                        .frame(minWidth: trailingPane.minWidth, idealWidth: trailingPane.idealWidth)
+                }
+                #endif
+            } else {
+                mainContent
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

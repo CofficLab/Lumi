@@ -42,6 +42,40 @@ public protocol RootViewProviding: AnyObject {
     /// 显示在内容区（ActivityBar / Rail 右侧）。
     func setContentView(_ view: AnyView?)
 
+    /// 注入根布局右侧的通用面板（传 `nil` 表示没有右侧面板）。
+    ///
+    /// 右侧面板不限定为聊天：聊天、检查器、预览等都可以通过这个契约
+    /// 接入根布局。面板的显隐状态和尺寸元数据由 `RootTrailingPane` 持有。
+    func setTrailingPane(_ pane: RootTrailingPane?)
+
     /// 返回根布局视图（工具栏 + 内容区，内容区左侧可带 ActivityBar 与 Rail）。
     func makeRootView() -> AnyView
+}
+
+/// 根布局的右侧面板描述。
+@MainActor
+public final class RootTrailingPane: ObservableObject {
+    public let id: String
+    public let minWidth: CGFloat
+    public let idealWidth: CGFloat
+    public let maxWidth: CGFloat
+    public let content: AnyView
+
+    @Published public var isVisible: Bool
+
+    public init(
+        id: String,
+        minWidth: CGFloat = 280,
+        idealWidth: CGFloat = 320,
+        maxWidth: CGFloat = .infinity,
+        isVisible: Bool = true,
+        content: AnyView
+    ) {
+        self.id = id
+        self.minWidth = minWidth
+        self.idealWidth = idealWidth
+        self.maxWidth = maxWidth
+        self.isVisible = isVisible
+        self.content = content
+    }
 }

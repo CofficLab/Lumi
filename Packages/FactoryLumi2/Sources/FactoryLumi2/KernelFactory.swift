@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import ProviderActivityBar
 import ProviderContentView
+import ProviderChatSection
 import ProviderDocsView
 import ProviderMenuBar
 import ProviderLogo
@@ -71,6 +72,7 @@ public enum KernelFactory {
         try kernel.registerProvider((any ThemeProviding).self, themeProvider)
 
         try kernel.registerProvider((any ContentViewProviding).self, factory.makeContentViewProvider())
+        try kernel.registerProvider((any ChatSectionProviding).self, factory.makeChatSectionProvider())
         try kernel.registerProvider((any DocsViewProviding).self, factory.makeDocsViewProvider())
         try kernel.registerProvider((any MenuBarProviding).self, factory.makeMenuBarProvider())
         try kernel.registerProvider((any LogoProviding).self, factory.makeLogoProvider())
@@ -134,6 +136,16 @@ public enum KernelFactory {
         }
         if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
             rootView.setContentView(contentView.makeContentView())
+        }
+        if let chatSection = kernel.resolveProvider((any ChatSectionProviding).self) {
+            let pane = RootTrailingPane(
+                id: "chat-section",
+                minWidth: 280,
+                idealWidth: 320,
+                isVisible: chatSection.isVisible,
+                content: chatSection.makeChatSectionView()
+            )
+            rootView.setTrailingPane(pane)
         }
 
         return themed(rootView.makeRootView(), kernel: kernel)

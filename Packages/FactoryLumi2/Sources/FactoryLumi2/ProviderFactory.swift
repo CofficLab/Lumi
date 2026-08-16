@@ -1,6 +1,7 @@
 import Foundation
 import ProviderActivityBar
 import ProviderContentView
+import ProviderChatSection
 import ProviderDocsView
 import ProviderLogo
 import ProviderMenuBar
@@ -30,6 +31,9 @@ public protocol ProviderFactory {
 
     /// 产出 `ContentViewProviding` 实现。
     func makeContentViewProvider() -> any ContentViewProviding
+
+    /// 产出聊天区域 Provider。
+    func makeChatSectionProvider() -> any ChatSectionProviding
 
     /// 产出 `DocsViewProviding` 实现。
     func makeDocsViewProvider() -> any DocsViewProviding
@@ -86,6 +90,10 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `ContentViewProviding` 实现（默认持有当前内容视图）。
     public func makeContentViewProvider() -> any ContentViewProviding {
         DefaultContentViewProviding()
+    }
+
+    public func makeChatSectionProvider() -> any ChatSectionProviding {
+        DefaultChatSectionProviding()
     }
 
     /// 产出 `DocsViewProviding` 实现（默认持有文档条目数组）。
