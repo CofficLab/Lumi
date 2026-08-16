@@ -1,6 +1,7 @@
 import Foundation
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderConversation
 import ProviderDocsView
@@ -51,6 +52,19 @@ struct FactoryLumi2Tests {
             let text = request.messages.last?.content ?? ""
             return LLMResponse(content: "echo:\(text)", model: request.model)
         }
+    }
+
+    @Test("makeKernel 启动 ModelSelectorPlugin 并注册 Action Bar 模型选择按钮")
+    func makeKernelRegistersModelSelectorActionBarButton() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        // 插件本体已启动（保持旧 ID）。
+        #expect(kernel.resolvePlugin(id: "com.coffic.lumi.plugin.model-selector") != nil)
+
+        // Action Bar leading 位置的模型选择按钮已注册。
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self) as? DefaultChatSectionProviding
+        let barItemIDs = chat?.barItems.map { $0.id } ?? []
+        #expect(barItemIDs.contains("com.coffic.lumi.plugin.model-selector.action-bar-button"))
     }
 
     @Test("makeKernel 创建内核并注册默认 StorageProviding")

@@ -4074,7 +4074,7 @@
    "order": 82,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginModelSelector",
    "wave": "P4",
    "owners": [],
    "dependencies": [
@@ -4092,14 +4092,18 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test PluginModelSelector: 3 tests passed",
+    "integrationBuild": "swift build FactoryLumi2 succeeded; swift test FactoryLumi2: 35 tests passed",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "Plugins/ModelSelectorPlugin → Packages/PluginModelSelector（KernelLumi/LumiPlugin → KernelCore/SuperPlugin）",
     "performance": null
+   },
+   "gapAudit": {
+    "grade": "parityReview",
+    "summary": "UI 插件复刻：Action Bar leading 模型选择按钮（chatSectionActionBarItems(.leading) → ChatSectionProviding.addBarItems(.actionLeading)）；popover 左右分栏供应商/模型列表、云端/本地 + API 格式筛选、搜索、能力标签与上下文窗口展示逐字迁移；kernel.resolveService(LLMProviderManaging) → LLMProviderManagerProviding（@ObservedObject 经 ObservableLLMProviderManagerBox 桥接 objectWillChange，替代旧通知订阅）；LumiLLMProviderInfo/LumiModelInfo → LLMProviderInfo/LLMModelInfo（新版模型元数据无 TTS/思考档位/参数规模，能力展示收敛为 Vision/Tools/上下文窗口）；policy alwaysOn→alwaysOn、stage beta→preview、order 82 与插件 ID 保持不变。"
    }
   },
   {

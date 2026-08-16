@@ -1,7 +1,8 @@
 import Foundation
 
 /// 供应商使用的 API 协议格式（决定请求/响应如何构建与解析）。
-public enum LLMProviderAPIFormat: String, Sendable, Equatable {
+/// 对应旧版 `LumiLLMAPIFormat`（含 `CaseIterable`，供筛选菜单枚举）。
+public enum LLMProviderAPIFormat: String, Sendable, Equatable, CaseIterable {
     case openAI
     case anthropic
     case responses
