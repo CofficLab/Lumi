@@ -46,6 +46,7 @@ let package = Package(
             exclude: [
                 "Tests",
                 "build",
+                "README.md",
                 "Sources/PluginDevice/Models/README.md",
                 "Sources/PluginDevice/Services/README.md",
                 "Sources/PluginDevice/ViewModels/README.md",
