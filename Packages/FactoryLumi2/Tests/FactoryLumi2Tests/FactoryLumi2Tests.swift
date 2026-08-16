@@ -18,6 +18,7 @@ import ProviderToolbar
 import ProviderLLMManager
 import ProviderLLM
 import ProviderMessage
+import PluginConversationManager
 import SwiftUI
 import Testing
 @testable import FactoryLumi2
@@ -76,13 +77,17 @@ struct FactoryLumi2Tests {
 
         let resolved: (any ConversationManaging)? = kernel.resolveProvider((any ConversationManaging).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultConversationManaging)
+        // 默认内存实现已被 ConversationManagerPlugin 替换为 SwiftData 持久化实现。
+        #expect(resolved is ConversationManager)
 
-        // 复刻能力冒烟：创建 → 选中 → 查询。
-        let id = try resolved?.createConversation(title: "集成验证", projectPath: nil, providerID: nil, modelName: nil)
-        #expect(id != nil)
+        // 复刻能力冒烟：创建 → 选中 → 查询（结束后删除，避免污染真实用户数据）。
+        guard let id = try resolved?.createConversation(title: "集成验证", projectPath: nil, providerID: nil, modelName: nil) else {
+            Issue.record("创建对话失败")
+            return
+        }
         #expect(resolved?.selectedConversationID == id)
         #expect(resolved?.currentTitle == "集成验证")
+        resolved?.deleteConversation(id: id)
     }
 
     @Test("makeKernel 创建内核并注册默认 ToastProviding")
@@ -142,6 +147,7 @@ struct FactoryLumi2Tests {
             "com.coffic.lumi.plugin.app-store-promo-designer.entry",
             "com.coffic.lumi.plugin.mind-map-designer.entry",
             "com.coffic.lumi.plugin.resume-designer.entry",
+            "com.coffic.lumi.plugin.disk-manager.entry",
             "com.coffic.lumi.plugin.white-noise.entry",
             "com.coffic.lumi.plugin.video-converter.entry",
         ])
@@ -377,7 +383,7 @@ struct FactoryLumi2Tests {
         try kernel.start(plugins: DefaultPluginFactory().makePlugins())
         #expect(kernel.lifecycleState == .running)
         #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 22)
-        #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 8)
+        #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 9)
     }
 
     @Test("makeKernel 注册默认 LLMProviderManagerProviding")
