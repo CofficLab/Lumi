@@ -20,6 +20,20 @@ import ProviderTheme
 import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
+import ProviderAgentTurn
+import ProviderConversationInput
+import ProviderMessageStreaming
+import ProviderMessageRendering
+import ProviderPromptSuggestion
+import ProviderWorkspace
+import ProviderOnboarding
+import ProviderCommand
+import ProviderIdleTime
+import ProviderLegacyData
+import ProviderPluginControl
+import ProviderWebServer
+import ProviderLLMManager
+import KernelCore
 
 /// 产出各种 Provider 实现的工厂协议。
 ///
@@ -49,6 +63,12 @@ public protocol ProviderFactory {
         messages: any MessageManaging,
         agentLoop: any AgentLoopProviding
     ) -> any MessageSendingProviding
+
+    /// 产出 `LLMProviderManagerProviding` 实现（各 LLM 供应商的注册表 + 选中路由）。
+    ///
+    /// 管理器自身即 `LLMProviding`：`complete(_:)` 路由到选中的供应商，
+    /// LLM Provider 插件在 `onBoot` 中把各自供应商注册进来即可生效。
+    func makeLLMProviderManagerProvider() -> any LLMProviderManagerProviding
 
     /// 产出 `DocsViewProviding` 实现。
     func makeDocsViewProvider() -> any DocsViewProviding
@@ -85,6 +105,19 @@ public protocol ProviderFactory {
 
     /// 产出 `ToolManagerProviding` 实现（Agent 工具注册/执行/记录）。
     func makeToolManagerProvider() -> any ToolManagerProviding
+
+    func makeAgentTurnProvider() -> any AgentTurnProviding
+    func makeConversationInputProvider() -> any ConversationInputProviding
+    func makeMessageStreamingProvider() -> any MessageStreamingProviding
+    func makeMessageRenderingProvider() -> any MessageRenderingProviding
+    func makePromptSuggestionProvider() -> any PromptSuggestionProviding
+    func makeWorkspaceProvider(storage: any StorageProviding) -> any WorkspaceProviding
+    func makeOnboardingProvider() -> any OnboardingProviding
+    func makeCommandProvider() -> any CommandProviding
+    func makeIdleTimeProvider() -> any IdleTimeProviding
+    func makeLegacyDataProvider() -> any LegacyDataProviding
+    func makePluginControlProvider(kernel: KernelCoreContainer) -> any PluginControlling
+    func makeWebServerProvider() -> any WebServerProviding
 }
 
 /// 默认 `ProviderFactory` 实现：产出各 Provider 的默认实现。
@@ -121,6 +154,10 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     public func makeLLMProvider() -> any LLMProviding {
         DefaultLLMProviding()
+    }
+
+    public func makeLLMProviderManagerProvider() -> any LLMProviderManagerProviding {
+        DefaultLLMProviderManagerProviding()
     }
 
     public func makeMessageSenderProvider(
@@ -198,5 +235,53 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `ToolManagerProviding` 实现（默认内存注册表 + SwiftData 记录存储）。
     public func makeToolManagerProvider() -> any ToolManagerProviding {
         DefaultToolManagerProviding()
+    }
+
+    public func makeAgentTurnProvider() -> any AgentTurnProviding {
+        DefaultAgentTurnProviding()
+    }
+
+    public func makeConversationInputProvider() -> any ConversationInputProviding {
+        DefaultConversationInputProviding()
+    }
+
+    public func makeMessageStreamingProvider() -> any MessageStreamingProviding {
+        DefaultMessageStreamingProviding()
+    }
+
+    public func makeMessageRenderingProvider() -> any MessageRenderingProviding {
+        DefaultMessageRenderingProviding()
+    }
+
+    public func makePromptSuggestionProvider() -> any PromptSuggestionProviding {
+        DefaultPromptSuggestionProviding()
+    }
+
+    public func makeWorkspaceProvider(storage: any StorageProviding) -> any WorkspaceProviding {
+        DefaultWorkspaceProviding(pluginDirectory: storage.pluginDataDirectory(for: "LayoutKernel"))
+    }
+
+    public func makeOnboardingProvider() -> any OnboardingProviding {
+        DefaultOnboardingProviding()
+    }
+
+    public func makeCommandProvider() -> any CommandProviding {
+        DefaultCommandProviding()
+    }
+
+    public func makeIdleTimeProvider() -> any IdleTimeProviding {
+        DefaultIdleTimeProviding()
+    }
+
+    public func makeLegacyDataProvider() -> any LegacyDataProviding {
+        DefaultLegacyDataProviding()
+    }
+
+    public func makePluginControlProvider(kernel: KernelCoreContainer) -> any PluginControlling {
+        DefaultPluginControlling(kernel: kernel)
+    }
+
+    public func makeWebServerProvider() -> any WebServerProviding {
+        DefaultWebServerProviding()
     }
 }

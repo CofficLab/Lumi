@@ -32,6 +32,8 @@ import ProviderCommand
 import ProviderIdleTime
 import ProviderLegacyData
 import ProviderPluginControl
+import ProviderWebServer
+import ProviderLLMManager
 import SwiftUI
 
 /// KernelFactory — 内核工厂。
@@ -56,6 +58,8 @@ public enum KernelFactory {
     /// - `ActivityBarProviding` → `DefaultActivityBarProviding`（竖直入口栏）
     /// - `RailViewProviding` → `DefaultRailViewProviding`（侧边栏标签 + 内容）
     /// - `SettingViewProviding` → `DefaultSettingViewProviding`（入口 + 详情）
+    /// - `LLMProviderManagerProviding` → `DefaultLLMProviderManagerProviding`
+    ///   （各 LLM 供应商注册表 + 选中路由，AgentLoop 经它发送）
     ///
     /// - Returns: 已装配默认 Provider 的 KernelCore 容器。
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
@@ -67,6 +71,37 @@ public enum KernelFactory {
             pluginFactory: DefaultPluginFactory(),
             additionalPlugins: additionalPlugins
         )
+    }
+
+    /// 异步插件目录的装配入口。
+    ///
+    /// 现有轻量插件可以继续使用同步 `makeKernel`；需要数据库迁移、进程启动、
+    /// Language Server 或网络准备的插件应由宿主通过本入口启动，确保其
+    /// `AsyncSuperPlugin` 生命周期不会被跳过。
+    public static func makeKernelAsync(
+        additionalPlugins: [any SuperPlugin] = []
+    ) async throws -> KernelCoreContainer {
+        try await makeKernelAsync(
+            providerFactory: DefaultProviderFactory(),
+            pluginFactory: DefaultPluginFactory(),
+            additionalPlugins: additionalPlugins
+        )
+    }
+
+    public static func makeKernelAsync(
+        providerFactory: any ProviderFactory,
+        pluginFactory: any PluginFactory,
+        additionalPlugins: [any SuperPlugin] = []
+    ) async throws -> KernelCoreContainer {
+        // 复用同一套 Provider composition；空目录先把内核推进 running，随后
+        // `startAsync` 原子安装真实目录。后续宿主切换为异步启动时无需复制装配图。
+        let kernel = try makeKernel(
+            providerFactory: providerFactory,
+            pluginFactory: EmptyPluginFactory(),
+            additionalPlugins: []
+        )
+        try await kernel.startAsync(plugins: pluginFactory.makePlugins() + additionalPlugins)
+        return kernel
     }
 
     /// 使用宿主提供的 Provider / Plugin 工厂装配内核。
@@ -100,8 +135,14 @@ public enum KernelFactory {
         let llmProvider = factory.makeLLMProvider()
         try kernel.registerProvider((any LLMProviding).self, llmProvider)
 
+        // LLM Provider 管理器：各 LLM 供应商（ManagedLLMProvider）的注册表 +
+        // 选中持久化 + 路由发送。管理器自身即 `LLMProviding`，AgentLoop 直接
+        // 注入它，把请求路由到选中的供应商。
+        let providerManager = factory.makeLLMProviderManagerProvider()
+        try kernel.registerProvider((any LLMProviderManagerProviding).self, providerManager)
+
         let agentLoop = factory.makeAgentLoopProvider(messages: messages)
-        agentLoop.setLLMProvider(llmProvider)
+        agentLoop.setLLMProvider(providerManager)
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
 
         let messageSender = factory.makeMessageSenderProvider(
@@ -110,17 +151,27 @@ public enum KernelFactory {
             agentLoop: agentLoop
         )
         try kernel.registerProvider((any MessageSendingProviding).self, messageSender)
-        try kernel.registerProvider((any AgentTurnProviding).self, DefaultAgentTurnProviding())
-        try kernel.registerProvider((any ConversationInputProviding).self, DefaultConversationInputProviding())
-        try kernel.registerProvider((any MessageStreamingProviding).self, DefaultMessageStreamingProviding(), forwardsObjectWillChange: false)
-        try kernel.registerProvider((any MessageRenderingProviding).self, DefaultMessageRenderingProviding())
-        try kernel.registerProvider((any PromptSuggestionProviding).self, DefaultPromptSuggestionProviding())
-        try kernel.registerProvider((any WorkspaceProviding).self, DefaultWorkspaceProviding())
-        try kernel.registerProvider((any OnboardingProviding).self, DefaultOnboardingProviding())
-        try kernel.registerProvider((any CommandProviding).self, DefaultCommandProviding())
-        try kernel.registerProvider((any IdleTimeProviding).self, DefaultIdleTimeProviding())
-        try kernel.registerProvider((any LegacyDataProviding).self, DefaultLegacyDataProviding())
-        try kernel.registerProvider((any PluginControlling).self, DefaultPluginControlling())
+        try kernel.registerProvider((any AgentTurnProviding).self, factory.makeAgentTurnProvider())
+        try kernel.registerProvider((any ConversationInputProviding).self, factory.makeConversationInputProvider())
+        try kernel.registerProvider((any MessageStreamingProviding).self, factory.makeMessageStreamingProvider(), forwardsObjectWillChange: false)
+        try kernel.registerProvider((any MessageRenderingProviding).self, factory.makeMessageRenderingProvider())
+        try kernel.registerProvider((any PromptSuggestionProviding).self, factory.makePromptSuggestionProvider())
+        guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
+            throw KernelCoreError.providerNotRegistered(type: (any StorageProviding).self)
+        }
+        try kernel.registerProvider(
+            (any WorkspaceProviding).self,
+            factory.makeWorkspaceProvider(storage: storage)
+        )
+        try kernel.registerProvider((any OnboardingProviding).self, factory.makeOnboardingProvider())
+        try kernel.registerProvider((any CommandProviding).self, factory.makeCommandProvider())
+        try kernel.registerProvider((any IdleTimeProviding).self, factory.makeIdleTimeProvider())
+        try kernel.registerProvider((any LegacyDataProviding).self, factory.makeLegacyDataProvider())
+        try kernel.registerProvider(
+            (any PluginControlling).self,
+            factory.makePluginControlProvider(kernel: kernel)
+        )
+        try kernel.registerProvider((any WebServerProviding).self, factory.makeWebServerProvider())
         try kernel.registerProvider((any DocsViewProviding).self, factory.makeDocsViewProvider())
         try kernel.registerProvider((any MenuBarProviding).self, factory.makeMenuBarProvider())
         try kernel.registerProvider((any LogoProviding).self, factory.makeLogoProvider())
@@ -185,6 +236,16 @@ public enum KernelFactory {
         if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
             rootView.setContentView(contentView.makeContentView())
         }
+        if let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
+            rootView.setTrailingPane(RootTrailingPane(
+                id: "com.coffic.lumi.workspace.chat",
+                isVisible: chat.isVisible,
+                content: chat.makeChatSectionView()
+            ))
+        }
+        if let workspace = kernel.resolveProvider((any WorkspaceProviding).self) {
+            rootView.setWorkspaceProvider(workspace)
+        }
         return themed(rootView.makeRootView(), kernel: kernel)
     }
 
@@ -230,6 +291,11 @@ public enum KernelFactory {
         }
         return AnyView(ThemeHostingView(theme: theme, content: view))
     }
+}
+
+@MainActor
+private struct EmptyPluginFactory: PluginFactory {
+    func makePlugins() -> [any SuperPlugin] { [] }
 }
 
 /// 主题感知的视图包装：根据 `ThemeProviding` 的选中主题应用

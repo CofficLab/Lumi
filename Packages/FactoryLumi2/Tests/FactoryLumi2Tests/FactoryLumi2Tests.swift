@@ -15,6 +15,9 @@ import ProviderStorage
 import ProviderTheme
 import ProviderToast
 import ProviderToolbar
+import ProviderLLMManager
+import ProviderLLM
+import ProviderMessage
 import SwiftUI
 import Testing
 @testable import FactoryLumi2
@@ -25,6 +28,28 @@ struct FactoryLumi2Tests {
 
     private final class AdditionalPlugin: SuperPlugin {
         let id = "test.additional-plugin"
+    }
+
+    /// 测试用最小 LLM 供应商：回显最后一条用户消息。
+    @MainActor
+    private final class EchoManagedProvider: ManagedLLMProvider, @preconcurrency LLMProviding {
+        let providerInfo: LLMProviderInfo
+
+        init(id: String = "echo") {
+            providerInfo = LLMProviderInfo(
+                id: id,
+                displayName: id,
+                defaultModel: "echo-1",
+                models: [LLMModelInfo(id: "echo-1")]
+            )
+        }
+
+        var providerID: String { providerInfo.id }
+
+        func complete(_ request: LLMRequest) async throws -> LLMResponse {
+            let text = request.messages.last?.content ?? ""
+            return LLMResponse(content: "echo:\(text)", model: request.model)
+        }
     }
 
     @Test("makeKernel 创建内核并注册默认 StorageProviding")
@@ -115,6 +140,7 @@ struct FactoryLumi2Tests {
             "com.coffic.lumi.plugin.device-info.entry",
             "com.coffic.lumi.plugin.app-icon-designer.entry",
             "com.coffic.lumi.plugin.app-store-promo-designer.entry",
+            "com.coffic.lumi.plugin.mind-map-designer.entry",
             "com.coffic.lumi.plugin.white-noise.entry",
             "com.coffic.lumi.plugin.video-converter.entry",
         ])
@@ -350,6 +376,44 @@ struct FactoryLumi2Tests {
         try kernel.start(plugins: DefaultPluginFactory().makePlugins())
         #expect(kernel.lifecycleState == .running)
         #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 22)
-        #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 6)
+        #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 7)
+    }
+
+    @Test("makeKernel 注册默认 LLMProviderManagerProviding")
+    func makeKernelRegistersDefaultLLMProviderManager() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        let manager: (any LLMProviderManagerProviding)? = kernel.resolveProvider((any LLMProviderManagerProviding).self)
+        #expect(manager != nil)
+        #expect(manager is DefaultLLMProviderManagerProviding)
+        #expect(manager?.providerCount == 0)
+        #expect(manager?.providerID == "llm-provider-manager")
+    }
+
+    @Test("ProviderFactory 产出默认 LLMProviderManagerProviding 实现")
+    func providerFactoryMakesDefaultLLMProviderManager() {
+        let factory = DefaultProviderFactory()
+
+        let manager = factory.makeLLMProviderManagerProvider()
+
+        #expect(manager is DefaultLLMProviderManagerProviding)
+    }
+
+    @Test("内核装配后：注册供应商进管理器即可经管理器路由发送")
+    func kernelRoutesThroughRegisteredProvider() async throws {
+        let kernel = try KernelFactory.makeKernel()
+        let manager = kernel.resolveProvider((any LLMProviderManagerProviding).self)
+        #expect(manager != nil)
+
+        try manager?.register(EchoManagedProvider(id: "echo"))
+        let response = try await manager?.complete(
+            LLMRequest(
+                conversationID: UUID(),
+                messages: [Message(conversationID: UUID(), role: .user, content: "hi")]
+            )
+        )
+
+        #expect(response?.content == "echo:hi")
+        #expect(response?.model == "echo-1")
     }
 }

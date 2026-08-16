@@ -32,6 +32,7 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLLM"),
+        .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderMenuBar"),
@@ -47,6 +48,7 @@ let package = Package(
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderRuntime"),
+        .package(path: "../ProviderWebServer"),
     ],
     targets: [
         .target(
@@ -76,6 +78,7 @@ let package = Package(
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderLLM", package: "ProviderLLM"),
+                .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderMenuBar", package: "ProviderMenuBar"),
@@ -101,12 +104,18 @@ let package = Package(
                 .product(name: "ProviderIdleTime", package: "ProviderRuntime"),
                 .product(name: "ProviderLegacyData", package: "ProviderRuntime"),
                 .product(name: "ProviderPluginControl", package: "ProviderRuntime"),
+                .product(name: "ProviderWebServer", package: "ProviderWebServer"),
             ],
             path: "Sources/FactoryLumi2"
         ),
         .testTarget(
             name: "FactoryLumi2Tests",
-            dependencies: ["FactoryLumi2"]
+            dependencies: [
+                "FactoryLumi2",
+                .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
+                .product(name: "ProviderLLM", package: "ProviderLLM"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
+            ]
         )
     ]
 )
