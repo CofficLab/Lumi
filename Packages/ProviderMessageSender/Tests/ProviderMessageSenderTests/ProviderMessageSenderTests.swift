@@ -14,7 +14,7 @@ struct ProviderMessageSenderTests {
         let messages = DefaultMessageManaging()
         let loop = DefaultAgentLoopProviding(messages: messages)
         loop.setResponder { _ in "response" }
-        let sender = DefaultMessageSendingProviding(
+        let sender = DefaultMessageSender(
             conversations: conversations,
             messages: messages,
             agentLoop: loop
@@ -32,7 +32,7 @@ struct ProviderMessageSenderTests {
         let messages = DefaultMessageManaging()
         let loop = DefaultAgentLoopProviding(messages: messages)
         loop.setResponder { _ in "ok" }
-        let sender = DefaultMessageSendingProviding(
+        let sender = DefaultMessageSender(
             conversations: conversations,
             messages: messages,
             agentLoop: loop
@@ -64,7 +64,7 @@ struct ProviderMessageSenderTests {
             await gate.wait()
             return "done"
         }
-        let sender = DefaultMessageSendingProviding(
+        let sender = DefaultMessageSender(
             conversations: conversations,
             messages: messages,
             agentLoop: loop
@@ -94,7 +94,7 @@ struct ProviderMessageSenderTests {
         let messages = DefaultMessageManaging()
         let loop = DefaultAgentLoopProviding(messages: messages)
         loop.setResponder { _ in "resumed" }
-        let sender = DefaultMessageSendingProviding(
+        let sender = DefaultMessageSender(
             conversations: conversations,
             messages: messages,
             agentLoop: loop

@@ -11,6 +11,7 @@ let package = Package(
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
+        .package(path: "../SuperLogKit"),
     ],
     targets: [
         .target(
@@ -19,6 +20,7 @@ let package = Package(
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources/ProviderMessageSender"
         ),

@@ -1,7 +1,9 @@
 import Foundation
+import os
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
+import SuperLogKit
 
 /// 默认消息发送实现（KernelCore 体系，复刻旧版 `MessageSender`）。
 ///
@@ -13,7 +15,11 @@ import ProviderMessage
 /// 5. 落库 user 消息后交给 AgentLoop 执行完整回合（流式 + 工具 + 授权挂起）；
 /// 6. 回合失败时落库 error 消息。
 @MainActor
-public final class DefaultMessageSendingProviding: MessageSendingProviding {
+public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-message-sender", category: "MessageSender")
+    nonisolated public static let emoji = "📤"
+    nonisolated static let verbose = true
+
     private let conversations: any ConversationManaging
     private let messages: any MessageManaging
     private let agentLoop: any AgentLoopProviding
@@ -32,6 +38,9 @@ public final class DefaultMessageSendingProviding: MessageSendingProviding {
         self.conversations = conversations
         self.messages = messages
         self.agentLoop = agentLoop
+        if Self.verbose {
+            Self.logger.info("\(Self.t)DefaultMessageSender initialized")
+        }
     }
 
     // MARK: - Attachments
@@ -94,7 +103,12 @@ public final class DefaultMessageSendingProviding: MessageSendingProviding {
         conversationID: UUID?
     ) async throws {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty else {
+            if Self.verbose {
+                Self.logger.debug("\(Self.t)sendMessage ignored: empty content after trim")
+            }
+            return
+        }
 
         let targetID: UUID
         if let conversationID {
@@ -108,6 +122,9 @@ public final class DefaultMessageSendingProviding: MessageSendingProviding {
                 providerID: nil,
                 modelName: nil
             )
+            if Self.verbose {
+                Self.logger.info("\(Self.t)created new conversation \(targetID.uuidString) for send")
+            }
         }
         // 新建会话必须成为当前时间线，否则消息落进不可见会话。
         if conversations.selectedConversationID != targetID {
@@ -123,6 +140,9 @@ public final class DefaultMessageSendingProviding: MessageSendingProviding {
                 fileAttachments: fileAttachments
             ))
             clearSentAttachments(imageAttachments, fileAttachments)
+            if Self.verbose {
+                Self.logger.info("\(Self.t)send queued: conversation=\(targetID.uuidString.prefix(8)), queueDepth=\(self.pendingQueues[targetID]?.count ?? 0)")
+            }
             return
         }
 
@@ -139,11 +159,17 @@ public final class DefaultMessageSendingProviding: MessageSendingProviding {
         )
         messages.insertMessage(userMessage, to: targetID)
         clearSentAttachments(imageAttachments, fileAttachments)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)send user message: conversation=\(targetID.uuidString.prefix(8)), message=\(userMessage.id.uuidString.prefix(8)), contentChars=\(trimmed.count), images=\(imageAttachments.count), files=\(fileAttachments.count)")
+        }
 
         await executeTurn(conversationID: targetID, userMessageID: userMessage.id)
     }
 
     public func cancelCurrentRequest() {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)cancel current request: activeTasks=\(self.currentTasks.count)")
+        }
         for task in currentTasks.values {
             task.cancel()
         }
@@ -162,6 +188,9 @@ public final class DefaultMessageSendingProviding: MessageSendingProviding {
     ) async throws -> AgentLoopOutcome {
         isSending = true
         defer { isSending = false }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)resume turn: conversation=\(conversationID.uuidString.prefix(8))")
+        }
         return try await agentLoop.resumeTurn(in: conversationID, request: request)
     }
 
@@ -187,6 +216,9 @@ public final class DefaultMessageSendingProviding: MessageSendingProviding {
     /// 执行一个回合（发送路径与队列消费共用）。
     private func executeTurn(conversationID: UUID, userMessageID: UUID) async {
         isSending = true
+        if Self.verbose {
+            Self.logger.info("\(Self.t)turn started: conversation=\(conversationID.uuidString.prefix(8)), userMessage=\(userMessageID.uuidString.prefix(8))")
+        }
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
             defer {
@@ -197,7 +229,13 @@ public final class DefaultMessageSendingProviding: MessageSendingProviding {
             }
             do {
                 _ = try await self.agentLoop.runTurn(in: conversationID)
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)turn completed: conversation=\(conversationID.uuidString.prefix(8))")
+                }
             } catch {
+                if Self.verbose {
+                    Self.logger.error("\(Self.t)turn failed: conversation=\(conversationID.uuidString.prefix(8)), error=\(error.localizedDescription)")
+                }
                 let errorMessage = Message(
                     conversationID: conversationID,
                     role: .error,
@@ -233,6 +271,9 @@ public final class DefaultMessageSendingProviding: MessageSendingProviding {
             metadata: metadata
         )
         messages.insertMessage(userMessage, to: conversationID)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)drain queue: sending next message, conversation=\(conversationID.uuidString.prefix(8)), message=\(userMessage.id.uuidString.prefix(8))")
+        }
         Task { @MainActor [weak self] in
             await self?.executeTurn(conversationID: conversationID, userMessageID: userMessage.id)
         }
