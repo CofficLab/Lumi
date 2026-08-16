@@ -1,0 +1,116 @@
+import AgentToolKit
+import Foundation
+import KernelCore
+import ProviderProject
+import ProviderSettingView
+import ProviderStorage
+import ProviderToolbar
+import ProviderToolManager
+import SwiftUI
+
+/// 项目管理插件（KernelCore 版本）。
+///
+/// 由旧版 `Plugins/ProjectsPlugin`（KernelLumi / LumiPlugin）复刻而来：
+/// - `onBoot` 中装配带持久化的 `ProjectsStore` + `ProjectsViewModel`,
+///   并通过 `ProjectsSyncCoordinator` 与内核已注册的 `ProjectProviding` 双向同步;
+/// - 注册 Agent 工具（list_projects / add_project / get_current_project）;
+/// - 贡献标题栏项目控件与设置页;
+/// - 相比旧版移除:`willSendToLLM` 项目路径注入（新版无消息钩子）与
+///   「添加项目」动作胶囊（新版 PromptSuggestion 不支持动作）。
+@MainActor
+public final class ProjectsPlugin: SuperPlugin {
+    public let id = "com.coffic.lumi.plugin.projects"
+    public let order = 5
+
+    public var metadata: PluginMetadata {
+        PluginMetadata(
+            id: id,
+            name: "Projects",
+            description: "Manage saved projects, current project state and project tooling.",
+            category: .project,
+            stage: .stable,
+            policy: .required
+        )
+    }
+
+    public init() {}
+
+    public func onBoot(kernel: KernelCoreContainer) throws {
+        // 1. 装配存储（应用数据目录按插件 id 隔离）
+        guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
+            return
+        }
+        let store = ProjectsStore(pluginDirectory: storage.pluginDataDirectory(for: id))
+
+        // 2. v4 历史项目迁移（必须在 ViewModel 初始化之前;幂等、吞错）
+        ProjectsLegacyMigration(
+            currentDataRootDirectory: storage.dataRootDirectory,
+            store: store
+        ).run()
+
+        // 3. 初始化 ViewModel
+        let viewModel = ProjectsViewModel(store: store)
+
+        // 4. 初始化同步协调器并绑定内核（ViewModel ↔ ProjectProviding）
+        let coordinator = ProjectsSyncCoordinator(viewModel: viewModel)
+        coordinator.kernel = kernel
+        ProjectsRuntime.configure(viewModel: viewModel, syncCoordinator: coordinator)
+
+        // 5. 注册 Agent 工具
+        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            for tool in Self.agentTools {
+                toolManager.add(tool, pluginID: id)
+            }
+        }
+
+        // 6. 贡献标题栏项目控件（center placement,与旧版 titleToolbarItems 对齐）
+        if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
+            toolbar.addToolbarItems([
+                ToolbarItem(
+                    id: "\(id).toolbar",
+                    title: "Projects",
+                    placement: .center,
+                    order: 0
+                ) {
+                    ControlView(viewModel: viewModel)
+                },
+            ])
+        }
+
+        // 7. 贡献设置入口（旧版 settingsTabItems → SettingEntryItem）
+        if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
+            settings.addEntries([
+                SettingEntryItem(
+                    id: "\(id).settings",
+                    title: "Projects",
+                    systemImage: "folder",
+                    order: order
+                ) {
+                    SettingsView(viewModel: viewModel)
+                },
+            ])
+        }
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            for tool in Self.agentTools {
+                toolManager.remove(id: tool.name)
+            }
+        }
+        kernel.resolveProvider((any ToolbarProviding).self)?
+            .removeToolbarItems(ids: ["\(id).toolbar"])
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeEntries(ids: ["\(id).settings"])
+        ProjectsRuntime.reset()
+    }
+
+    // MARK: - Agent Tools
+
+    /// 本插件贡献的 Agent 工具（复刻旧版 ProjectsPlugin.agentTools）。
+    public static let agentTools: [any SuperAgentTool] = [
+        ListProjectsTool(),
+        AddProjectTool(),
+        GetCurrentProjectTool(),
+    ]
+}
