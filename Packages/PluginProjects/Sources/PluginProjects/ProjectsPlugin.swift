@@ -35,12 +35,17 @@ public final class ProjectsPlugin: SuperPlugin {
 
     public init() {}
 
+    /// 存储目录 key：必须与旧版 `Plugins/ProjectsPlugin` 的
+    /// `storage.pluginDataDirectory(for: "Projects")` 完全一致，
+    /// 保证新旧版本共享同一份 projects.json（<数据根>/Projects/）。
+    static let storageDirectoryKey = "Projects"
+
     public func onBoot(kernel: KernelCoreContainer) throws {
-        // 1. 装配存储（应用数据目录按插件 id 隔离）
+        // 1. 装配存储（应用数据目录按旧版 storage key "Projects" 隔离）
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
             return
         }
-        let store = ProjectsStore(pluginDirectory: storage.pluginDataDirectory(for: id))
+        let store = ProjectsStore(pluginDirectory: storage.pluginDataDirectory(for: Self.storageDirectoryKey))
 
         // 2. v4 历史项目迁移（必须在 ViewModel 初始化之前;幂等、吞错）
         ProjectsLegacyMigration(

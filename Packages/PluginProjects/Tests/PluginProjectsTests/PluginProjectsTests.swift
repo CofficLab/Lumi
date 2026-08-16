@@ -31,4 +31,10 @@ struct ProjectsStoreTests {
             _ = try store.add(path: "/nonexistent/\(UUID().uuidString)", to: [])
         }
     }
+
+    /// 存储目录 key 必须与旧版 `Plugins/ProjectsPlugin` 一致（"Projects"），
+    /// 保证新旧版本共享同一份 projects.json（<数据根>/Projects/）。
+    @Test func storageDirectoryKeyMatchesLegacyPlugin() {
+        #expect(ProjectsPlugin.storageDirectoryKey == "Projects")
+    }
 }
