@@ -1,4 +1,5 @@
 import Foundation
+import KernelCore
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
@@ -50,6 +51,15 @@ public protocol ProviderFactory {
 
     /// 产出 `SettingViewProviding` 实现。
     func makeSettingViewProvider() -> any SettingViewProviding
+
+    /// 装配并注册全部默认 Provider 到内核。
+    ///
+    /// 实现方负责按依赖顺序创建各 Provider 并调用 `kernel.registerProvider`。
+    /// `KernelFactory.makeKernel` 只负责创建容器、调用本方法并启动插件，
+    /// 不再直接持有注册逻辑。
+    ///
+    /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
+    func registerProviders(into kernel: KernelCoreContainer) throws
 }
 
 /// 默认 `ProviderFactory` 实现：产出各 Provider 的默认实现。
@@ -110,5 +120,25 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `SettingViewProviding` 实现（默认最简设置视图）。
     public func makeSettingViewProvider() -> any SettingViewProviding {
         DefaultSettingViewProviding()
+    }
+
+    // MARK: - Provider Registration
+
+    /// 装配并注册全部默认 Provider。
+    ///
+    /// 由 `KernelFactory.makeKernel` 调用：工厂只负责产出与注册，
+    /// 内核生命周期（`start(plugins:)`）与插件装配留在 KernelFactory。
+    public func registerProviders(into kernel: KernelCoreContainer) throws {
+        try kernel.registerProvider((any StorageProviding).self, makeStorageProvider())
+        try kernel.registerProvider((any ContentViewProviding).self, makeContentViewProvider())
+        try kernel.registerProvider((any DocsViewProviding).self, makeDocsViewProvider())
+        try kernel.registerProvider((any ProjectProviding).self, makeProjectProvider())
+        try kernel.registerProvider((any ToastProviding).self, makeToastProvider())
+        try kernel.registerProvider((any NetworkProviding).self, makeNetworkProvider())
+        try kernel.registerProvider((any ToolbarProviding).self, makeToolbarProvider())
+        try kernel.registerProvider((any RootViewProviding).self, makeRootViewProvider())
+        try kernel.registerProvider((any ActivityBarProviding).self, makeActivityBarProvider())
+        try kernel.registerProvider((any RailViewProviding).self, makeRailViewProvider())
+        try kernel.registerProvider((any SettingViewProviding).self, makeSettingViewProvider())
     }
 }

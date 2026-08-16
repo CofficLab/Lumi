@@ -105,110 +105,16 @@ public enum KernelFactory {
     }
 
     /// 使用宿主提供的 Provider / Plugin 工厂装配内核。
+    ///
+    /// Provider 的创建与注册全部委托给 `providerFactory.registerProviders(into:)`；
+    /// 本方法只负责创建容器、启动插件并完成插件启动后的视图绑定。
     public static func makeKernel(
         providerFactory: any ProviderFactory,
         pluginFactory: any PluginFactory,
         additionalPlugins: [any SuperPlugin] = []
     ) throws -> KernelCoreContainer {
-        let factory = providerFactory
         let kernel = KernelCoreContainer()
-        try kernel.registerProvider((any StorageProviding).self, factory.makeStorageProvider())
-
-        // 主题 Provider：选中主题持久化遵循 Storage 约定
-        // （<数据根目录>/ThemeManager/theme-selection.plist）。
-        let themeProvider = factory.makeThemeProvider()
-        if let storage = kernel.resolveProvider((any StorageProviding).self),
-           let defaultTheme = themeProvider as? DefaultThemeProviding {
-            defaultTheme.setStorageDirectory(storage.pluginDataDirectory(for: "ThemeManager"))
-        }
-        try kernel.registerProvider((any ThemeProviding).self, themeProvider)
-
-        try kernel.registerProvider((any ContentViewProviding).self, factory.makeContentViewProvider())
-        try kernel.registerProvider((any ChatSectionProviding).self, factory.makeChatSectionProvider())
-
-        let conversations = factory.makeConversationProvider()
-        try kernel.registerProvider((any ConversationManaging).self, conversations)
-
-        let messages = factory.makeMessageProvider()
-        try kernel.registerProvider((any MessageManaging).self, messages, forwardsObjectWillChange: false)
-
-        let llmProvider = factory.makeLLMProvider()
-        try kernel.registerProvider((any LLMProviding).self, llmProvider)
-
-        // 流式输出 store：先于 AgentLoop 注册，供回合循环写入临时行
-        // （高频变更，不转发 objectWillChange，由消费方窄播订阅）。
-        try kernel.registerProvider(
-            (any MessageStreamingProviding).self,
-            factory.makeMessageStreamingProvider(),
-            forwardsObjectWillChange: false
-        )
-
-        // LLM Provider 管理器：各 LLM 供应商（ManagedLLMProvider）的注册表 +
-        // 选中持久化 + 路由发送。管理器自身即 `LLMProviding`，AgentLoop 直接
-        // 注入它，把请求路由到选中的供应商。
-        let providerManager = factory.makeLLMProviderManagerProvider()
-        try kernel.registerProvider((any LLMProviderManagerProviding).self, providerManager)
-
-        let agentLoop = factory.makeAgentLoopProvider(messages: messages)
-        agentLoop.setLLMProvider(providerManager)
-        // 完整接线（复刻旧版 AgentTurnRunner 的依赖注入）：
-        // - 工具执行/授权（build 模式高风险调用需用户批准）
-        // - 流式输出（MessageStreaming 临时行，UI 读 store 渲染）
-        // - 会话设置（automationLevel / reasoningEffort / verbosity / language）
-        // - 回合生命周期事件 → 内核事件总线 + 旧 NotificationCenter 通知名
-        let toolManager = factory.makeToolManagerProvider()
-        if let storage = kernel.resolveProvider((any StorageProviding).self),
-           let defaultToolManager = toolManager as? DefaultToolManagerProviding {
-            defaultToolManager.recordStore = ToolCallRecordStore(
-                databaseRootURL: storage.pluginDataDirectory(for: "ToolManager")
-            )
-        }
-        try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
-        agentLoop.setToolManager(toolManager)
-        agentLoop.setStreaming(kernel.resolveProvider((any MessageStreamingProviding).self))
-        agentLoop.setConversations(conversations)
-        agentLoop.setEventHandler { [weak kernel] event in
-            guard let kernel else { return }
-            KernelFactory.bridge(agentLoopEvent: event, kernel: kernel)
-        }
-        try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
-
-        let messageSender = factory.makeMessageSenderProvider(
-            conversations: conversations,
-            messages: messages,
-            agentLoop: agentLoop
-        )
-        try kernel.registerProvider((any MessageSendingProviding).self, messageSender)
-        try kernel.registerProvider((any ConversationInputProviding).self, factory.makeConversationInputProvider())
-        try kernel.registerProvider((any MessageRenderingProviding).self, factory.makeMessageRenderingProvider())
-        try kernel.registerProvider((any PromptSuggestionProviding).self, factory.makePromptSuggestionProvider())
-        guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
-            throw KernelCoreError.providerNotRegistered(type: (any StorageProviding).self)
-        }
-        try kernel.registerProvider(
-            (any WorkspaceProviding).self,
-            factory.makeWorkspaceProvider(storage: storage)
-        )
-        try kernel.registerProvider((any OnboardingProviding).self, factory.makeOnboardingProvider())
-        try kernel.registerProvider((any CommandProviding).self, factory.makeCommandProvider())
-        try kernel.registerProvider((any IdleTimeProviding).self, factory.makeIdleTimeProvider(storage: storage))
-        try kernel.registerProvider((any LegacyDataProviding).self, factory.makeLegacyDataProvider())
-        try kernel.registerProvider(
-            (any PluginControlling).self,
-            factory.makePluginControlProvider(kernel: kernel)
-        )
-        try kernel.registerProvider((any WebServerProviding).self, factory.makeWebServerProvider())
-        try kernel.registerProvider((any DocsViewProviding).self, factory.makeDocsViewProvider())
-        try kernel.registerProvider((any MenuBarProviding).self, factory.makeMenuBarProvider())
-        try kernel.registerProvider((any LogoProviding).self, factory.makeLogoProvider())
-        try kernel.registerProvider((any ProjectProviding).self, factory.makeProjectProvider())
-        try kernel.registerProvider((any ToastProviding).self, factory.makeToastProvider())
-        try kernel.registerProvider((any NetworkProviding).self, factory.makeNetworkProvider())
-        try kernel.registerProvider((any ToolbarProviding).self, factory.makeToolbarProvider())
-        try kernel.registerProvider((any RootViewProviding).self, factory.makeRootViewProvider())
-        try kernel.registerProvider((any ActivityBarProviding).self, factory.makeActivityBarProvider())
-        try kernel.registerProvider((any RailViewProviding).self, factory.makeRailViewProvider())
-        try kernel.registerProvider((any SettingViewProviding).self, factory.makeSettingViewProvider())
+        try providerFactory.registerProviders(into: kernel)
 
         // 默认目录与宿主附加插件在同一个依赖图中统一校验、排序、原子启动。
         // 后续复刻插件只需由 App/专用 Factory 传入，不必继续修改内核工厂。
@@ -311,57 +217,6 @@ public enum KernelFactory {
         return themed(settings.makeSettingView(), kernel: kernel)
     }
 
-    // MARK: - Agent Loop Event Bridging
-
-    /// 把 Agent 回合生命周期事件桥接到内核事件总线 + 旧 NotificationCenter 通知名。
-    ///
-    /// 复刻旧版 `LumiEventManager` 的 4 种通知（lumiTurnStarted / lumiMessageSaved /
-    /// lumiTurnCompleted / lumiTurnFinished），通知 userInfo 键与旧版一致，让
-    /// 尚未迁移的 NotificationCenter 消费者继续工作；同时发布类型化事件
-    /// （`AgentLoopBridgedEvent`），供新架构插件订阅。
-    fileprivate static func bridge(agentLoopEvent event: AgentLoopEvent, kernel: KernelCoreContainer) {
-        switch event {
-        case let .turnStarted(conversationID, turnID):
-            kernel.eventBus.publishAsLegacy(
-                AgentLoopBridgedEvent(event),
-                notificationName: .lumiTurnStarted,
-                userInfo: [
-                    "conversationID": conversationID,
-                    "turnID": turnID,
-                ]
-            )
-        case let .messageSaved(conversationID, messageID, role):
-            kernel.eventBus.publishAsLegacy(
-                AgentLoopBridgedEvent(event),
-                notificationName: .lumiMessageSaved,
-                userInfo: [
-                    "messageID": messageID,
-                    "conversationID": conversationID,
-                    "role": role,
-                ]
-            )
-        case let .turnCompleted(conversationID, turnID):
-            kernel.eventBus.publishAsLegacy(
-                AgentLoopBridgedEvent(event),
-                notificationName: .lumiTurnCompleted,
-                userInfo: [
-                    "conversationID": conversationID,
-                    "turnID": turnID,
-                ]
-            )
-        case let .turnFinished(conversationID, turnID, reason):
-            kernel.eventBus.publishAsLegacy(
-                AgentLoopBridgedEvent(event),
-                notificationName: .lumiTurnFinished,
-                userInfo: [
-                    "conversationID": conversationID,
-                    "turnID": turnID as Any,
-                    "reason": reason.rawValue,
-                ]
-            )
-        }
-    }
-
     // MARK: - LumiUI Theme Bridging
 
     /// 把 `ThemeProviding` 选中的主题桥接到 LumiUI 主题体系（`@LumiTheme` /
@@ -389,17 +244,6 @@ public enum KernelFactory {
             return view
         }
         return AnyView(ThemeHostingView(theme: theme, content: view))
-    }
-}
-
-/// 内核事件总线用的 AgentLoop 事件包装。
-///
-/// `AgentLoopEvent` 定义在 ProviderAgentLoop（不依赖 KernelCore），无法直接
-/// conform `KernelEvent`；此处包装为 `KernelEvent` 让新架构插件可订阅类型化事件。
-public struct AgentLoopBridgedEvent: KernelEvent {
-    public let event: AgentLoopEvent
-    public init(_ event: AgentLoopEvent) {
-        self.event = event
     }
 }
 

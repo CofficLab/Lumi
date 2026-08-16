@@ -37,19 +37,8 @@ public enum KernelFactory {
     /// - Returns: 已装配默认 Provider 的 KernelCore 容器。
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
     public static func makeKernel() throws -> KernelCoreContainer {
-        let factory = DefaultProviderFactory()
         let kernel = KernelCoreContainer()
-        try kernel.registerProvider((any StorageProviding).self, factory.makeStorageProvider())
-        try kernel.registerProvider((any ContentViewProviding).self, factory.makeContentViewProvider())
-        try kernel.registerProvider((any DocsViewProviding).self, factory.makeDocsViewProvider())
-        try kernel.registerProvider((any ProjectProviding).self, factory.makeProjectProvider())
-        try kernel.registerProvider((any ToastProviding).self, factory.makeToastProvider())
-        try kernel.registerProvider((any NetworkProviding).self, factory.makeNetworkProvider())
-        try kernel.registerProvider((any ToolbarProviding).self, factory.makeToolbarProvider())
-        try kernel.registerProvider((any RootViewProviding).self, factory.makeRootViewProvider())
-        try kernel.registerProvider((any ActivityBarProviding).self, factory.makeActivityBarProvider())
-        try kernel.registerProvider((any RailViewProviding).self, factory.makeRailViewProvider())
-        try kernel.registerProvider((any SettingViewProviding).self, factory.makeSettingViewProvider())
+        try DefaultProviderFactory().registerProviders(into: kernel)
         // 启动插件（由 DefaultPluginFactory 产出）：注册各自的贡献。
         try kernel.start(plugins: DefaultPluginFactory().makePlugins())
         return kernel
