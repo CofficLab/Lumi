@@ -26,9 +26,17 @@ let package = Package(
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "ProviderLogo", package: "ProviderLogo"),
             ],
-            path: "Sources/PluginLogoCoffic",
+            path: ".",
+            exclude: [
+                "Tests",
+                "build",
+                "README.md",
+                "Sources/PluginLogoCoffic/Views/README.md",
+                "Sources/PluginLogoCoffic/Views/MenuBar/README.md",
+                "Sources/PluginLogoCoffic/Support/README.md",
+            ],
             resources: [
-                .process("Resources/Localizable.xcstrings")
+                .process("Resources")
             ]
         ),
         .testTarget(
