@@ -1,6 +1,6 @@
 import KernelCore
-import ProviderChatSection
 import ProviderConversation
+import ProviderToolbar
 import SwiftUI
 
 @MainActor
@@ -10,21 +10,25 @@ public final class ConversationNewPlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
+        guard let toolbar = kernel.resolveProvider((any ToolbarProviding).self),
               let conversations = kernel.resolveProvider((any ConversationManaging).self) else { return }
-        chat.addBarItems([ChatSectionBarItem(id: id, order: 10, placement: .toolbarLeading) {
-            Button {
-                if let conversationID = try? conversations.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil) {
-                    conversations.selectConversation(id: conversationID)
+        // 挂载到整个 App 的标题栏工具栏右侧（与旧版 titleToolbarItems / .trailing 对齐），
+        // 而不是 chat 的工具栏。
+        toolbar.addToolbarItems([
+            ToolbarItem(id: "\(id).new-chat", title: "New Chat", placement: .trailing, order: 30) {
+                Button {
+                    if let conversationID = try? conversations.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil) {
+                        conversations.selectConversation(id: conversationID)
+                    }
+                } label: {
+                    Label("New", systemImage: "plus")
                 }
-            } label: {
-                Label("New", systemImage: "plus")
-            }
-            .buttonStyle(.borderless)
-        }])
+                .buttonStyle(.borderless)
+            },
+        ])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ChatSectionProviding).self)?.removeBarItem(id: id)
+        kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).new-chat"])
     }
 }
