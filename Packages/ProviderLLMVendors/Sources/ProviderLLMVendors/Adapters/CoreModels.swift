@@ -118,6 +118,9 @@ public struct StreamChunk: Sendable, Equatable {
     public let toolCalls: [ToolCall]?
     public let error: String?
     public let partialJson: String?
+    /// 当前工具调用增量所属的 index（OpenAI 流式 `tool_calls[].index`），
+    /// 用于跨 chunk 把 arguments 分片精确累积到同一个工具调用上。
+    public let toolCallIndex: Int?
     public let eventType: StreamEventType?
     public let rawEvent: String?
     public let rawStreamPayload: String?
@@ -134,6 +137,7 @@ public struct StreamChunk: Sendable, Equatable {
         toolCalls: [ToolCall]? = nil,
         error: String? = nil,
         partialJson: String? = nil,
+        toolCallIndex: Int? = nil,
         eventType: StreamEventType? = nil,
         rawEvent: String? = nil,
         rawStreamPayload: String? = nil,
@@ -149,6 +153,7 @@ public struct StreamChunk: Sendable, Equatable {
         self.toolCalls = toolCalls
         self.error = error
         self.partialJson = partialJson
+        self.toolCallIndex = toolCallIndex
         self.eventType = eventType
         self.rawEvent = rawEvent
         self.rawStreamPayload = rawStreamPayload
@@ -167,6 +172,7 @@ public struct StreamChunk: Sendable, Equatable {
             toolCalls: toolCalls,
             error: error,
             partialJson: partialJson,
+            toolCallIndex: toolCallIndex,
             eventType: eventType,
             rawEvent: rawEvent,
             rawStreamPayload: raw,
@@ -189,6 +195,7 @@ public struct StreamChunk: Sendable, Equatable {
             toolCalls: newToolCalls,
             error: error,
             partialJson: partialJson,
+            toolCallIndex: toolCallIndex,
             eventType: eventType,
             rawEvent: rawEvent,
             rawStreamPayload: rawStreamPayload,

@@ -404,8 +404,14 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
     private func parseToolCallDelta(_ toolCalls: [[String: Any]], stopReason: String?) -> StreamChunk? {
         var parsedToolCalls: [ToolCall] = []
         var partialJson: String?
+        var toolCallIndex: Int?
 
         for toolCall in toolCalls {
+            // OpenAI 流式 `tool_calls[].index`：用于把多个分片的 arguments 精确累积。
+            if let index = toolCall["index"] as? Int {
+                toolCallIndex = index
+            }
+
             guard let function = toolCall["function"] as? [String: Any] else {
                 continue
             }
@@ -433,6 +439,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             return StreamChunk(
                 toolCalls: parsedToolCalls,
                 partialJson: partialJson,
+                toolCallIndex: toolCallIndex,
                 eventType: .contentBlockStart,
                 stopReason: stopReason
             )
@@ -441,6 +448,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         if let partialJson {
             return StreamChunk(
                 partialJson: partialJson,
+                toolCallIndex: toolCallIndex,
                 eventType: .inputJsonDelta,
                 stopReason: stopReason
             )
