@@ -47,3 +47,16 @@ public extension SettingViewProviding {
         registerEntries(entries.filter { !ids.contains($0.id) })
     }
 }
+
+// MARK: - Optional Selection & Sidebar Header
+
+public extension SettingViewProviding where Self: ObservableObject {
+    /// 当前选中入口的 id。默认 `nil`（无选中）。
+    var selectedEntryID: String? { nil }
+
+    /// 选中指定入口。默认 no-op。
+    func selectEntry(id: String?) {}
+
+    /// 侧边栏顶部的自定义 Header（如 Logo + 应用名）。默认 `nil`。
+    var sidebarHeader: AnyView? { nil }
+}

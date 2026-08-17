@@ -1,6 +1,16 @@
 import SwiftUI
 import LumiUI
 
+/// 公开工厂函数：为任意 `SettingViewProviding & ObservableObject` 实现渲染设置界面。
+///
+/// 供 `PluginSettingView` 等自定义 Provider 在 `makeSettingView()` 中复用
+/// 与 `DefaultSettingViewProviding` 完全一致的视图。
+public func makeSettingView<Provider: SettingViewProviding & ObservableObject>(
+    provider: Provider
+) -> AnyView {
+    AnyView(SettingView(provider: provider))
+}
+
 /// 渲染「左侧入口列表 + 右侧详情视图」的设置界面。
 ///
 /// 完整复刻旧版 Lumi（`FactoryCore.SettingsView`）的视觉与交互：
@@ -10,12 +20,15 @@ import LumiUI
 /// - 窗口背景为主题氛围深色（`theme.background`）、强制主题明暗外观、
 ///   同步 AppKit 窗口外观（与旧版完全一致）
 /// - 最小尺寸 720 × 520，空状态与旧版一致（gearshape + "Select a tab"）
-struct SettingView: View {
-    @ObservedObject var provider: DefaultSettingViewProviding
+///
+/// 泛型 `Provider` 支持任意 `SettingViewProviding & ObservableObject` 实现，
+/// 使 `PluginSettingView` 等自定义 Provider 也可复用同一视图。
+struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
+    @ObservedObject var provider: Provider
     @State private var selectedID: String?
     @LumiTheme private var theme
 
-    init(provider: DefaultSettingViewProviding) {
+    init(provider: Provider) {
         self.provider = provider
         _selectedID = State(initialValue: provider.selectedEntryID)
     }
