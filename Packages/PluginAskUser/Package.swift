@@ -15,7 +15,7 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../ProviderLLM"),
+        .package(path: "../ProviderLLMVendors"),
     ],
     targets: [
         .target(
@@ -37,7 +37,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
-                .product(name: "ProviderLLM", package: "ProviderLLM"),
+                .product(name: "ProviderLLMVendors", package: "ProviderLLMVendors"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ],
