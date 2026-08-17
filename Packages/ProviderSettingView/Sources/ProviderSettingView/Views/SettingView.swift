@@ -5,6 +5,7 @@ import LumiUI
 ///
 /// 供 `PluginSettingView` 等自定义 Provider 在 `makeSettingView()` 中复用
 /// 与 `DefaultSettingViewProviding` 完全一致的视图。
+@MainActor
 public func makeSettingView<Provider: SettingViewProviding & ObservableObject>(
     provider: Provider
 ) -> AnyView {
