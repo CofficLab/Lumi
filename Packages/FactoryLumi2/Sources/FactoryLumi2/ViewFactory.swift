@@ -5,7 +5,6 @@ import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
 import ProviderConversation
-import ProviderLogo
 import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
@@ -16,8 +15,8 @@ import SwiftUI
 
 /// 默认 `ViewFactory` 实现：使用内核已注册的 Provider 组装主视图与设置视图。
 ///
-/// 视图组装逻辑（工具栏 / ActivityBar / Rail / 内容区注入、设置侧边栏 Logo、
-/// LumiUI 主题桥接）集中在此；`KernelFactory.makeMainView(kernel:)` 等入口
+/// 视图组装逻辑（工具栏 / ActivityBar / Rail / 内容区注入、LumiUI 主题桥接）
+/// 集中在此；`KernelFactory.makeMainView(kernel:)` 等入口
 /// 委托本实现，宿主可通过自定义 `ViewFactory` 覆盖视图组装行为。
 @MainActor
 public struct DefaultViewFactory: ViewFactory {
@@ -60,17 +59,11 @@ public struct DefaultViewFactory: ViewFactory {
 
     /// 使用已装配的内核返回设置视图（共享内核时使用）。
     ///
-    /// 复刻 LumiApp 设置体验：侧边栏顶部注入插件贡献的 Logo
-    /// （`SettingsSidebarHeaderView`，`about` 场景，无贡献时回退主题色图标）。
+    /// 侧边栏顶部 Logo 由设置实现（如 `PluginSettingView`）作为内部行为自行渲染，
+    /// 此处不再注入。仅负责把选中主题桥接到 LumiUI 主题体系后返回设置视图。
     public func makeSettingsView(kernel: KernelCoreContainer) throws -> AnyView {
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
             return AnyView(Text("SettingViewProviding not registered"))
-        }
-
-        // 侧边栏顶部 Logo：取当前内核中最高优先级的插件 Logo（about 场景）。
-        let logo = kernel.resolveProvider((any LogoProviding).self)
-        if let defaultSettings = settings as? DefaultSettingViewProviding {
-            defaultSettings.setSidebarHeader(AnyView(SettingsSidebarHeaderView(logo: logo)))
         }
 
         // 先把选中主题桥接到 LumiUI 主题体系，避免首帧渲染时 LumiUI 组件
