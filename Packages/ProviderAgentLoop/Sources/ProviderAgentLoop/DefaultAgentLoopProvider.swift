@@ -272,7 +272,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                     postEvent(.turnFinished(conversationID: conversationID, turnID: turnID, reason: .cancelled))
                     return .cancelled
                 } catch {
-                    await appendError(in: conversationID, content: String(describing: error), turnID: turnID)
+                    await appendError(in: conversationID, error: error, turnID: turnID)
                     failedConversations.insert(conversationID)
                     return .failed(String(describing: error))
                 }
@@ -358,7 +358,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                 }
             } catch {
                 streaming?.end(conversationID: conversationID)
-                await appendError(in: conversationID, content: error.localizedDescription, turnID: turnID)
+                await appendError(in: conversationID, error: error, turnID: turnID)
                 failedConversations.insert(conversationID)
                 return .failed(String(describing: error))
             }
@@ -733,6 +733,24 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
             role: .error,
             content: content,
             turnID: turnID
+        )
+        messages.insertMessage(errorMessage, to: conversationID)
+        postEvent(.messageSaved(conversationID: conversationID, messageID: errorMessage.id, role: errorMessage.role.rawValue))
+    }
+
+    /// 从 `Error` 构造错误消息，透传渲染元数据（`renderKind` / `rawErrorDetail`），
+    /// 让 Key 缺失等错误命中专用渲染器（如 API Key 输入卡）；同时带上会话绑定的
+    /// 供应商 id，供渲染器解析供应商（否则 provider==nil 会把输入框 disabled）。
+    private func appendError(in conversationID: UUID, error: Error, turnID: UUID? = nil) async {
+        let renderInfo = error as? any LLMErrorRenderInfo
+        let errorMessage = Message(
+            conversationID: conversationID,
+            role: .error,
+            content: error.localizedDescription,
+            turnID: turnID,
+            providerID: resolvedProviderID(for: conversationID),
+            rawErrorDetail: renderInfo?.rawErrorDetail,
+            renderKind: renderInfo?.renderKind
         )
         messages.insertMessage(errorMessage, to: conversationID)
         postEvent(.messageSaved(conversationID: conversationID, messageID: errorMessage.id, role: errorMessage.role.rawValue))
