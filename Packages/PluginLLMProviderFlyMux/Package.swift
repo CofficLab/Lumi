@@ -13,8 +13,8 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../ProviderLLMManager"),
-        .package(path: "../ProviderLLM"),
         .package(path: "../ProviderLLMVendors"),
+        .package(path: "../SuperLogKit"),
     ],
     targets: [
         .target(
@@ -22,8 +22,8 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "ProviderLLM", package: "ProviderLLM"),
                 .product(name: "ProviderLLMVendors", package: "ProviderLLMVendors"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources/PluginLLMProviderFlyMux"
         ),
