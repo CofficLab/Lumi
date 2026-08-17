@@ -15,6 +15,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../LumiUI"),
+        .package(path: "../ProviderLogo"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../SuperLogKit"),
     ],
@@ -23,6 +25,8 @@ let package = Package(
             name: "PluginSettingView",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "ProviderLogo", package: "ProviderLogo"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ]
