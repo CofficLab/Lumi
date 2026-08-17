@@ -3,7 +3,7 @@ import KernelCore
 import ProviderConversation
 import ProviderMessage
 import ProviderLLMManager
-import ProviderLLM
+import ProviderLLMVendors
 import ProviderAgentLoop
 
 /// 自动标题服务：监听 `lumiMessageSaved`，为「第一条用户消息」用 LLM 生成标题。
@@ -16,7 +16,7 @@ final class AutoConversationTitleService {
     private let kernel: KernelCoreContainer
     private let conversations: any ConversationManaging
     private let messages: any MessageManaging
-    private let llmProvider: any LLMProviderManagerProviding
+    private let llmProvider: any LLMManaging
     private var observer: ObserverToken?
     private var runningConversationIDs: Set<UUID> = []
 
@@ -24,7 +24,7 @@ final class AutoConversationTitleService {
         kernel: KernelCoreContainer,
         conversations: any ConversationManaging,
         messages: any MessageManaging,
-        llmProvider: any LLMProviderManagerProviding
+        llmProvider: any LLMManaging
     ) {
         self.kernel = kernel
         self.conversations = conversations
@@ -58,7 +58,7 @@ final class AutoConversationTitleService {
                   let conversationID = notification.userInfo?["conversationID"] as? UUID,
                   let messageID = notification.userInfo?["messageID"] as? UUID,
                   let role = notification.userInfo?["role"] as? String,
-                  role == MessageRole.user.rawValue else {
+                  role == ProviderMessage.MessageRole.user.rawValue else {
                 return
             }
             Task { @MainActor [weak self] in

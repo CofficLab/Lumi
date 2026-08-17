@@ -36,7 +36,7 @@ public final class ConversationTitlePlugin: SuperPlugin {
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let conversations = kernel.resolveProvider((any ConversationManaging).self),
               let messages = kernel.resolveProvider((any MessageManaging).self),
-              let llmProvider = kernel.resolveProvider((any LLMProviderManagerProviding).self) else {
+              let llmProvider = kernel.resolveProvider((any LLMManaging).self) else {
             return
         }
 
