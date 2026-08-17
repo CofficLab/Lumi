@@ -1,7 +1,9 @@
 import Foundation
 import os
 import KernelCore
+import ProviderConversation
 import ProviderLLMManager
+import ProviderMessageRendering
 import SuperLogKit
 
 /// LLM 供应商管理器插件（KernelCore 生态）。
@@ -28,7 +30,7 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         PluginMetadata(
             id: id,
             name: "LLM Provider Manager",
-            description: "自研 LLMManaging 实现：供应商注册表 + 选中持久化 + 请求路由",
+            description: "自研 LLMManaging 实现 + API Key 缺失/读取失败消息渲染器",
             category: .chat,
             stage: .preview,
             policy: .enabledByDefault
@@ -37,8 +39,16 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
 
     public init() {}
 
+    /// onBoot 创建并注册的 LLMManaging 实现（observer 回调需要它做同步）。
+    private var manager: CustomLLMManager?
+    /// 当前对话变化观察令牌（onReady 注册,onShutdown 注销）。
+    private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
+    /// 当前对话变化回调里用到的会话管理器。
+    private var conversations: (any ConversationManaging)?
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         let manager = CustomLLMManager()
+        self.manager = manager
 
         // 1. 注销 ProviderFactory 预注册的默认实现（避免 providerAlreadyRegistered）。
         kernel.unregisterProvider((any LLMManaging).self)
@@ -46,12 +56,73 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         // 2. 注册本插件实现（默认转发 objectWillChange，UI 经内核订阅可刷新）。
         try kernel.registerProvider((any LLMManaging).self, manager)
 
+        // 3. 注册 API Key 相关消息渲染器（order 350/340，优先于 core-error-message 的 300）。
+        if let rendering = kernel.resolveProvider((any MessageRenderingProviding).self) {
+            rendering.register(APIKeyMissingRenderer.item(manager: manager))
+            rendering.register(APIKeyAccessFailedRenderer.item(manager: manager))
+            if Self.verbose {
+                Self.logger.info("\(Self.t)registered API Key message renderers (missing / access-failed)")
+            }
+        } else {
+            Self.logger.warning("\(Self.t)MessageRenderingProviding not resolved, API Key renderers skipped")
+        }
+
         if Self.verbose {
             Self.logger.info("\(Self.t)registered CustomLLMManager as LLMManaging")
         }
     }
 
+    /// 全部插件 `onBoot` 完成后执行：监听「当前对话变化」，并把该对话绑定的
+    /// 供应商/模型同步为本插件的当前选中值（`LLMManaging.selectedProviderID/selectedModel`）。
+    ///
+    /// 不能在 `onBoot`(order=5) 里注册——此时 `ConversationManaging` 还是
+    /// `ProviderFactory` 预注册的内存默认版，`PluginConversationManager`(order=7)
+    /// 稍后会替换为持久化实现，监听挂在旧实例上会收不到任何切换事件。
+    public func onReady(kernel: KernelCoreContainer) throws {
+        guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            Self.logger.warning("\(Self.t)ConversationManaging not resolved, skip selected-conversation observer")
+            return
+        }
+        guard let manager else {
+            Self.logger.warning("\(Self.t)manager not initialized, skip selected-conversation observer")
+            return
+        }
+        self.conversations = conversations
+
+        selectedConversationObserver = conversations.addSelectedConversationObserver { [weak self] conversationID in
+            guard let self, let manager = self.manager else { return }
+            Self.logger.info("\(Self.t)selected conversation changed: \(conversationID?.uuidString ?? "nil")")
+            self.syncSelectionFromConversation(conversationID, manager: manager)
+        }
+        Self.logger.info("\(Self.t)registered selected-conversation observer")
+
+        // 启动兜底：立即按当前会话同步一次,避免第一发消息仍用旧全局选中。
+        syncSelectionFromConversation(conversations.selectedConversationID, manager: manager)
+    }
+
+    /// 读取会话绑定的供应商/模型,更新为本插件（LLMManaging）的当前选中值。
+    ///
+    /// 会话未绑定（nil/空）时保持现状不动；供应商未注册时 `select` 静默忽略,
+    /// 不会破坏现有选中。
+    private func syncSelectionFromConversation(_ conversationID: UUID?, manager: CustomLLMManager) {
+        guard let conversationID,
+              let providerID = conversations?.providerID(for: conversationID),
+              !providerID.isEmpty else {
+            if Self.verbose {
+                Self.logger.debug("\(Self.t)conversation has no provider binding, keep current selection")
+            }
+            return
+        }
+        let modelName = conversations?.modelName(for: conversationID)
+        manager.select(providerID: providerID, model: modelName)
+        Self.logger.info("\(Self.t)synced selection from conversation: provider=\(providerID, privacy: .public), model=\(modelName ?? "nil", privacy: .public)")
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        selectedConversationObserver?.cancel()
+        selectedConversationObserver = nil
+        conversations = nil
+        manager = nil
         // 内核会按插件归属自动撤回 onBoot 注册的 Provider，无需手动处理。
     }
 }

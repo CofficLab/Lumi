@@ -12,8 +12,12 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderLLMVendors"),
+        .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderMessageRendering"),
+        .package(path: "../LumiUI"),
         .package(path: "../SuperLogKit"),
     ],
     targets: [
@@ -21,8 +25,12 @@ let package = Package(
             name: "PluginLLMManager",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "ProviderLLMVendors", package: "ProviderLLMVendors"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
+                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources/PluginLLMManager"
@@ -32,8 +40,11 @@ let package = Package(
             dependencies: [
                 "PluginLLMManager",
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "ProviderLLMVendors", package: "ProviderLLMVendors"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
             ],
             path: "Tests/PluginLLMManagerTests"
         ),
