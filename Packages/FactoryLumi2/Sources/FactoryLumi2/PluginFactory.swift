@@ -63,6 +63,7 @@ import PluginResumeDesigner
 import PluginSettingGeneral
 import PluginSkill
 import PluginThemePack
+import PluginToolManager
 import PluginToolbarSettings
 import PluginVideoConverter
 import PluginWebFetch
@@ -128,6 +129,9 @@ public struct DefaultPluginFactory: PluginFactory {
             // LLM 供应商管理器：替换 ProviderFactory 预注册的默认实现，
             // 必须早于 PluginAgentLoop(order=8) 与各供应商插件(order=100)。
             PluginLLMManager(),
+            // 工具管理器：替换默认 ToolManagerProviding 并注册内置工具，
+            // 必须早于 PluginAgentLoop(order=8)。
+            PluginToolManager(),
             AiRouterProviderPlugin(),
             AliyunProviderPlugin(),
             AnthropicProviderPlugin(),
