@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import KernelLumi
 import os
+import ProviderStorage
 import SuperLogKit
 
 /// Message Sender Plugin
@@ -29,23 +30,27 @@ public final class MessageSenderPlugin: LumiPlugin, SuperLog {
     // MARK: - Initialization
 
     public init() {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)\(Self.onInit)MessageSenderPlugin")
-        }
+        Self.logger.info("\(Self.t)\(Self.onInit)MessageSenderPlugin 初始化")
     }
 
     // MARK: - LumiPlugin
 
     public func onBoot(kernel: KernelLumi) async throws {
+        // 通过 StorageProviding 获取插件数据目录
+        if let storage = kernel.storage {
+            let dataDir = storage.pluginDataDirectory(for: id)
+        } else {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)Storage 服务不可用,跳过数据目录初始化")
+            }
+        }
+
         let service = MessageSender(kernel: kernel)
         try kernel.registerMessageSend(service)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)已注册 MessageSender")
-            Self.logger.info("\(Self.t)MessageSenderPlugin boot 完成")
-        }
     }
 
-    public func onReady(kernel: KernelLumi) async throws {}
+    public func onReady(kernel: KernelLumi) async throws {
+    }
 
 
     // MARK: - LumiPlugin stubs
