@@ -7,7 +7,15 @@ let package = Package(
     products: [
         .library(name: "ProviderConversationInput", targets: ["ProviderConversationInput"]),
     ],
+    dependencies: [
+        .package(path: "../SuperLogKit"),
+    ],
     targets: [
-        .target(name: "ProviderConversationInput", path: "Sources/ProviderConversationInput"),
+        .target(
+            name: "ProviderConversationInput",
+            dependencies: [
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
+            ],
+            path: "Sources/ProviderConversationInput"),
     ]
 )
