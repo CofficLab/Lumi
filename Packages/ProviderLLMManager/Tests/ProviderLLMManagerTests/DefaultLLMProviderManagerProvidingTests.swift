@@ -138,6 +138,26 @@ struct DefaultLLMProviderManagerProvidingTests {
         #expect(a.receivedModels == ["a2"])
     }
 
+    @Test("请求自带模型不属于选中供应商时回退解析模型")
+    func requestModelNotOwnedByProviderFallsBack() async throws {
+        let manager = DefaultLLMProviderManagerProviding()
+        let a = MockManagedProvider(id: "a", models: ["a1", "a2"], defaultModel: "a1", prefix: "A")
+        try manager.register(a)
+        manager.select(providerID: "a", model: nil)
+
+        // 模拟会话残留模型（如 gpt-5）与当前供应商错配。
+        let response = try await manager.complete(
+            LLMRequest(
+                conversationID: UUID(),
+                messages: [makeMessage("hi")],
+                model: "gpt-5"
+            )
+        )
+
+        #expect(response.model == "a1")
+        #expect(a.receivedModels == ["a1"])
+    }
+
     @Test("无供应商时 complete 抛 noProviderConfigured")
     func completeWithoutProvidersThrows() async {
         let manager = DefaultLLMProviderManagerProviding()

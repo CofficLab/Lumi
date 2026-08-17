@@ -119,11 +119,13 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency LLMProviding,
 
     /// 把请求路由到选中的供应商；请求未显式指定模型时补上解析出的模型。
     ///
-    /// 解析优先级：请求自带模型 > 选中模型（若属于选中供应商）> 默认模型。
+    /// 解析优先级：请求自带模型（**须属于路由到的供应商**）> 选中模型
+    /// （若属于选中供应商）> 默认模型。请求模型与供应商错配（如会话残留
+    /// 模型名）时回退到解析模型，避免把不认识的模型透传给供应商。
     /// 没有任何已注册供应商时抛 `noProviderConfigured`。
     public func complete(_ request: LLMRequest) async throws -> LLMResponse {
         let resolved = try resolveSelected()
-        let model = request.model ?? resolved.model
+        let model = routedModel(requested: request.model, resolvedProvider: resolved.provider, resolvedModel: resolved.model)
         let routedRequest = LLMRequest(
             conversationID: request.conversationID,
             messages: request.messages,
@@ -144,7 +146,7 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency LLMProviding,
         onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
     ) async throws -> LLMResponse {
         let resolved = try resolveSelected()
-        let model = request.model ?? resolved.model
+        let model = routedModel(requested: request.model, resolvedProvider: resolved.provider, resolvedModel: resolved.model)
         let routedRequest = LLMRequest(
             conversationID: request.conversationID,
             messages: request.messages,
@@ -163,6 +165,23 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency LLMProviding,
     }
 
     // MARK: - Selection Resolution
+
+    /// 解析实际发送的模型：请求自带模型若属于路由到的供应商则沿用；
+    /// 否则回退解析出的选中/默认模型（防止会话残留模型与供应商错配，
+    /// 如会话 modelName="gpt-5" 而当前供应商是 opencode-go）。
+    private func routedModel(
+        requested: String?,
+        resolvedProvider: any SuperLLMProvider,
+        resolvedModel: String?
+    ) -> String? {
+        if let requested, resolvedProvider.providerInfo.contains(model: requested) {
+            return requested
+        }
+        if Self.verbose {
+            Self.logger.warning("\(Self.t)requested model \(requested ?? "nil", privacy: .public) not owned by provider \(resolvedProvider.providerInfo.id, privacy: .public), falling back to \(resolvedModel ?? "nil", privacy: .public)")
+        }
+        return resolvedModel
+    }
 
     /// 解析当前生效的「供应商 + 模型」。
     ///
