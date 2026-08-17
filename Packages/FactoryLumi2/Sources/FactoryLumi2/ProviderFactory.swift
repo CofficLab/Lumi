@@ -60,11 +60,11 @@ public struct DefaultProviderFactory: ProviderFactory {
     }
 
     public func makeMessageProvider() -> any MessageManaging {
-        DefaultMessageManaging()
+        DefaultMessageManager()
     }
 
     public func makeAgentLoopProvider(messages: any MessageManaging) -> any AgentLoopProviding {
-        DefaultAgentLoopProviding(messages: messages)
+        DefaultAgentLoopProvider(messages: messages)
     }
 
     public func makeLLMProvider() -> any LLMProviding {
@@ -157,7 +157,7 @@ public struct DefaultProviderFactory: ProviderFactory {
     }
 
     public func makeConversationInputProvider() -> any ConversationInputProviding {
-        DefaultConversationInputProviding()
+        DefaultConversationInputProvider()
     }
 
     public func makeMessageStreamingProvider() -> any MessageStreamingProviding {
