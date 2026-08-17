@@ -21,6 +21,7 @@ import PluginConversationPendingMessage
 import PluginConversationTitle
 import PluginDevice
 import PluginDiskManager
+import PluginNetworkManager
 import PluginDocxRead
 import PluginHostsManager
 import PluginIdleTime
@@ -84,6 +85,7 @@ public struct DefaultPluginFactory: PluginFactory {
             DevicePlugin(),
             HostsManagerPlugin(),
             DiskManagerPlugin(),
+            NetworkManagerPlugin(),
             DocxReadPlugin(),
             WebFetchPlugin(),
             WebSearchPlugin(),

@@ -348,6 +348,10 @@ final class AgentLoopTurnManager: SuperLog {
             // 会话设置是事实来源：automationLevel 决定是否附带工具。
             let automationLevel = dependencies.conversations?.automationLevel(for: conversationID) ?? .build
             let tools = automationLevel.allowsTools ? (dependencies.toolManager?.allTools() ?? []) : []
+            if Self.verbose {
+                let firstFive = tools.prefix(5).map(\.name)
+                Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)")
+            }
             let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
                 let language = languagePreference(for: conversationID)
                 return LLMFunctionSchema(
