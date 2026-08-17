@@ -12,7 +12,7 @@ import SwiftUI
 struct ListV2View: View, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-list", category: "ListV2View")
     nonisolated public static let emoji = "📄"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     let services: MessageListServices
     @StateObject private var viewModel: ListV2ViewModel
