@@ -24,7 +24,7 @@ import SuperLogKit
 @MainActor
 public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     public nonisolated static let emoji = "💬"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.manager")
 
     /// 数据存储目录（供未来迁移/设置使用）。
@@ -41,6 +41,10 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
 
     /// 后台落盘串行队列,保证同一会话内消息落盘顺序与插入顺序一致。
     private nonisolated let persistQueue = DispatchQueue(label: "com.coffic.lumi.message.persist")
+
+    // MARK: - Message Insertion Observers
+
+    private var messageInsertedObservers: [WeakMessageInsertedObserver] = []
 
     public init(
         store: MessageStore?,
@@ -245,6 +249,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         // 1) 写入内存缓冲,立即通知 UI —— UI 这一刻就能从读路径看到它(read-your-writes)。
         enqueuePending(messageToInsert, conversationID: conversationID)
         notifyMessagesDidChange(conversationID: conversationID)
+        notifyMessageInsertedObservers(messageToInsert, conversationID: conversationID)
 
         // 2) 按 role 分流落盘:
         //    - user / error:立即同步落盘(用户输入与错误不可丢);
@@ -413,4 +418,64 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     private func notifyMessagesDidChange(conversationID: UUID) {
         objectWillChange.send()
     }
+
+    // MARK: - Message Insertion Observation
+
+    @discardableResult
+    public func addMessageInsertedObserver(
+        _ callback: @escaping (Message, UUID) -> Void
+    ) -> any MessageInsertedObserverHandle {
+        let handle = MessageInsertedObserverHandleImpl(owner: self, callback: callback)
+        self.messageInsertedObservers.append(WeakMessageInsertedObserver(handle))
+        if Self.verbose {
+            Self.logger.info("\(self.t)message inserted observer added, total=\(self.messageInsertedObservers.count)")
+        }
+        return handle
+    }
+
+    fileprivate func removeMessageInsertedObserver(_ handle: MessageInsertedObserverHandleImpl) {
+        self.messageInsertedObservers.removeAll { $0.handle === handle }
+        if Self.verbose {
+            Self.logger.info("\(self.t)message inserted observer removed, remaining=\(self.messageInsertedObservers.count)")
+        }
+    }
+
+    private func notifyMessageInsertedObservers(_ message: Message, conversationID: UUID) {
+        messageInsertedObservers.removeAll { $0.handle == nil }
+        let observers = messageInsertedObservers
+        for observer in observers {
+            observer.handle?.invoke(message, conversationID)
+        }
+    }
+}
+
+// MARK: - Message Inserted Observer Handle
+
+@MainActor
+private final class MessageInsertedObserverHandleImpl: MessageInsertedObserverHandle {
+    private weak var owner: MessageManager?
+    private let callback: (Message, UUID) -> Void
+    private var isCancelled = false
+
+    init(owner: MessageManager, callback: @escaping (Message, UUID) -> Void) {
+        self.owner = owner
+        self.callback = callback
+    }
+
+    func cancel() {
+        guard !isCancelled else { return }
+        isCancelled = true
+        owner?.removeMessageInsertedObserver(self)
+    }
+
+    fileprivate func invoke(_ message: Message, _ conversationID: UUID) {
+        guard !isCancelled else { return }
+        callback(message, conversationID)
+    }
+}
+
+@MainActor
+private final class WeakMessageInsertedObserver {
+    fileprivate weak var handle: MessageInsertedObserverHandleImpl?
+    init(_ handle: MessageInsertedObserverHandleImpl) { self.handle = handle }
 }
