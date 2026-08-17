@@ -1,11 +1,5 @@
 import Foundation
 
-// MARK: - 原 ProviderAgentTurn 兼容层
-
-/// 原 `ProviderAgentTurn` 包已合并进 `ProviderAgentLoop`：
-/// `AgentTurnProviding` 协议并入 `AgentLoopProviding`（见 AgentLoopProviding.swift），
-/// 以下类型仅为既有 UI/展示层兼容保留，新代码请直接使用 AgentLoop 类型。
-
 /// 原 `AgentTurnRequest`：显式开启一个回合的入参。
 public struct AgentTurnRequest: Sendable {
     public let conversationID: UUID

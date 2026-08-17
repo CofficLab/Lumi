@@ -1,9 +1,9 @@
 import Foundation
-import ProviderMessage
-import ProviderLLM
-import ProviderToolManager
-import ProviderMessageStreaming
 import ProviderConversation
+import ProviderLLMVendors
+import ProviderMessage
+import ProviderMessageStreaming
+import ProviderToolManager
 
 public enum AgentLoopState: String, Codable, Sendable {
     case idle

@@ -1,10 +1,13 @@
 import AgentToolKit
 import Foundation
 import ProviderMessage
-import ProviderLLM
+import ProviderLLMVendors
 import ProviderToolManager
 import ProviderMessageStreaming
 import ProviderConversation
+
+// 消除 ProviderLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
+private typealias ToolCall = AgentToolKit.ToolCall
 
 /// Agent 回合执行器（KernelCore 体系，完整复刻旧版 `AgentTurnRunner`）。
 ///

@@ -3,7 +3,7 @@ import Foundation
 import Testing
 import AgentToolKit
 import ProviderMessage
-import ProviderLLM
+import ProviderLLMVendors
 import ProviderConversation
 import ProviderToolManager
 import ProviderMessageStreaming

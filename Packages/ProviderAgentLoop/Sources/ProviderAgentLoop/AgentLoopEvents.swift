@@ -1,14 +1,6 @@
 import Foundation
 
-// MARK: - Agent Loop Events
-//
-// 复刻自旧版 KernelLumi 的 `LumiEventManager` 通知（lumiTurnStarted /
-// lumiMessageSaved / lumiTurnCompleted / lumiTurnFinished）。新版不再依赖
-// KernelLumi：`DefaultAgentLoopProviding` 在回合关键节点回调 `AgentLoopEventHandler`，
-// 由宿主（KernelFactory）把事件桥接到 KernelCoreEventBus 类型化事件 +
-// 旧 NotificationCenter 通知名，让已迁移与未迁移的消费者都能收到。
-
-/// 回合结束原因（对齐旧版 `LumiTurnEndReason`）。
+/// 回合结束原因。
 public enum AgentLoopEndReason: String, Sendable, Equatable {
     case completed
     case cancelled
@@ -30,8 +22,6 @@ public enum AgentLoopEvent: Sendable {
 
 /// Agent 循环事件回调（宿主注入，把事件转发到事件总线 / 通知中心）。
 public typealias AgentLoopEventHandler = @MainActor @Sendable (AgentLoopEvent) -> Void
-
-// MARK: - 旧通知名兼容（与旧版 KernelLumi 完全一致）
 
 public extension Notification.Name {
     static let lumiTurnStarted = Notification.Name("com.coffic.lumi.turnStarted")
