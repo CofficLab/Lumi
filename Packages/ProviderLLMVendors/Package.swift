@@ -18,8 +18,6 @@ let package = Package(
         .package(path: "../KeychainKit"),
         .package(path: "../SuperLogKit"),
         .package(path: "../KernelCore"),
-        .package(path: "../ProviderLLMManager"),
-        .package(path: "../ProviderLLM"),
         .package(path: "../ProviderMessage"),
     ],
     targets: [
@@ -30,8 +28,6 @@ let package = Package(
                 .product(name: "KeychainKit", package: "KeychainKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "ProviderLLM", package: "ProviderLLM"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
             ],
             path: "Sources/ProviderLLMVendors"
@@ -40,8 +36,6 @@ let package = Package(
             name: "ProviderLLMVendorsTests",
             dependencies: [
                 "ProviderLLMVendors",
-                .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "ProviderLLM", package: "ProviderLLM"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
             ],
             path: "Tests/ProviderLLMVendorsTests"

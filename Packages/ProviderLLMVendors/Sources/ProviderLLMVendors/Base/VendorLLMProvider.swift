@@ -1,7 +1,7 @@
 import Foundation
-import ProviderLLM
-import ProviderLLMManager
+import os
 import ProviderMessage
+import SuperLogKit
 
 /// 新版内建 LLM 供应商基类（KernelCore 生态，不依赖 KernelLumi）。
 ///
@@ -17,7 +17,12 @@ import ProviderMessage
 /// 两条路径均支持工具 schema 传递（`LLMRequest.tools`）与推理档位
 /// （`LLMRequest.reasoningEffort`）。
 @MainActor
-open class VendorLLMProvider: ManagedLLMProvider, @preconcurrency LLMProviding, LLMStreamingProviding {
+open class VendorLLMProvider: SuperLLMProvider, @preconcurrency LLMProviding, LLMStreamingProviding, SuperLog {
+    nonisolated public class var logger: Logger {
+        Logger(subsystem: "com.coffic.lumi.provider-llm-vendors", category: "VendorLLMProvider")
+    }
+    nonisolated public class var emoji: String { "🔗" }
+    nonisolated public class var verbose: Bool { false }
 
     public let providerInfo: LLMProviderInfo
     public let apiService: VendorAPIService
@@ -87,10 +92,15 @@ open class VendorLLMProvider: ManagedLLMProvider, @preconcurrency LLMProviding, 
     }
 
     public func resolveAPIKey() throws -> String {
-        try VendorAPIKeyTools.resolve(
-            storageKey: providerInfo.apiKeyStorageKey,
-            displayName: providerInfo.displayName
-        )
+        do {
+            return try VendorAPIKeyTools.resolve(
+                storageKey: providerInfo.apiKeyStorageKey,
+                displayName: providerInfo.displayName
+            )
+        } catch {
+            Self.logger.error("\(Self.t)\(self.providerInfo.displayName, privacy: .public) resolveAPIKey failed\(self.r(error.localizedDescription))")
+            throw error
+        }
     }
 
     // MARK: - OpenAI (non-streaming)
