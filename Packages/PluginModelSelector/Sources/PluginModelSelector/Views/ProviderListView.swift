@@ -16,7 +16,7 @@ enum ProviderScope: String, CaseIterable {
 
 /// 供应商列表视图（由旧版 ModelSelectorPlugin 复刻）。
 ///
-/// 显示所有可用的 LLM 供应商，支持搜索、云端/本地切换与 API 格式筛选。
+/// 显示所有可用的 LLM 供应商，支持搜索与云端/本地切换。
 struct ProviderListView: View {
     @LumiTheme private var theme
     @ObservedObject var box: ObservableLLMProviderManagerBox
@@ -25,31 +25,8 @@ struct ProviderListView: View {
 
     @State private var searchText = ""
     @State private var selectedScope = ProviderScope.cloud
-    /// 默认按 OpenAI 格式筛选；nil 表示全部格式
-    @State private var selectedFormat: LLMProviderAPIFormat? = .openAI
 
     private var manager: (any LLMManaging)? { box.manager }
-
-    /// API 格式筛选（菜单）。独立为计算属性以减小 body 的类型推断复杂度。
-    @ViewBuilder
-    private var formatFilter: some View {
-        HStack(spacing: 4) {
-            Text(LumiPluginLocalization.string("Format", bundle: .module))
-                .font(.appMicro)
-                .foregroundColor(theme.textTertiary)
-            Picker("", selection: $selectedFormat) {
-                Text(LumiPluginLocalization.string("All Formats", bundle: .module))
-                    .tag(Optional<LLMProviderAPIFormat>.none)
-                ForEach(LLMProviderAPIFormat.allCases, id: \.self) { format in
-                    Text(format.displayName)
-                        .tag(Optional<LLMProviderAPIFormat>.some(format))
-                }
-            }
-            .labelsHidden()
-            .pickerStyle(.menu)
-        }
-        .fixedSize()
-    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -75,7 +52,7 @@ struct ProviderListView: View {
 
             AppDivider()
 
-            // 云端/本地 + 格式筛选：同一行，一左一右
+            // 云端/本地筛选
             HStack(spacing: 8) {
                 Picker("", selection: $selectedScope) {
                     Text(LumiPluginLocalization.string("Cloud", bundle: .module))
@@ -88,8 +65,6 @@ struct ProviderListView: View {
                 .frame(width: 140)
 
                 Spacer(minLength: 8)
-
-                formatFilter
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
@@ -139,9 +114,6 @@ struct ProviderListView: View {
         .onChange(of: selectedScope) { _, _ in
             selectProviderInCurrentScopeIfNeeded()
         }
-        .onChange(of: selectedFormat) { _, _ in
-            selectProviderInCurrentScopeIfNeeded()
-        }
     }
 
     private func filteredProviders(_ manager: any LLMManaging) -> [LLMProviderInfo] {
@@ -156,10 +128,9 @@ struct ProviderListView: View {
         }
     }
 
-    /// 云端/本地 + API 格式的组合筛选条件
+    /// 云端/本地筛选条件
     private func matchesActiveFilters(_ provider: LLMProviderInfo) -> Bool {
         selectedScope.includes(provider)
-            && (selectedFormat == nil || provider.apiFormat == selectedFormat)
     }
 
     private func providers(in manager: any LLMManaging) -> [LLMProviderInfo] {
