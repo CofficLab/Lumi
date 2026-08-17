@@ -8,7 +8,7 @@ import SwiftUI
 struct SettingViewManagerTests {
 
     private func makeEntry(id: String, order: Int = 200) -> SettingEntryItem {
-        SettingEntryItem(id: id, title: id, systemImage: "gear") {}
+        SettingEntryItem(id: id, title: id, systemImage: "gear", order: order) {}
     }
 
     @Test("registerEntries 按 order 升序排列")
@@ -76,11 +76,19 @@ struct SettingViewManagerTests {
         #expect(manager.selectedEntryID == "b")
     }
 
-    @Test("侧边栏 Header 注入")
+    @Test("默认构建侧边栏 Header（含回退图标）")
+    func defaultSidebarHeader() {
+        let manager = SettingViewManager()
+
+        // 无 Logo 时仍默认构建一个回退 Header（插件内部行为，无需外部注入）。
+        #expect(manager.sidebarHeader != nil)
+    }
+
+    @Test("侧边栏 Header 可覆盖")
     func sidebarHeader() {
         let manager = SettingViewManager()
 
-        #expect(manager.sidebarHeader == nil)
+        #expect(manager.sidebarHeader != nil)
         manager.setSidebarHeader(AnyView(Text("Header")))
         #expect(manager.sidebarHeader != nil)
         manager.setSidebarHeader(nil)
