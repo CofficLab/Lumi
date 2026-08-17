@@ -1,6 +1,17 @@
 import Combine
 import Foundation
 
+/// 消息插入观察者的注册令牌。
+///
+/// 调用 `MessageManaging.addMessageInsertedObserver(_:)` 后持有返回值
+/// 即可持续接收消息插入通知；令牌释放（deinit）或显式调用 `cancel()` 时
+/// 自动停止接收，无需手动反注册。
+@MainActor
+public protocol MessageInsertedObserverHandle: AnyObject {
+    /// 停止接收消息插入通知。重复调用无副作用。
+    func cancel()
+}
+
 @MainActor
 public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     func messages(for conversationID: UUID) -> [Message]
@@ -29,6 +40,20 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
     /// 回合结束（含取消、失败）时调用，避免状态行残留在时间线上；
     /// 实现可依赖 `Message.metadata["isTransientStatus"] == "true"` 识别。
     func clearStatusMessages(in conversationID: UUID)
+
+    // MARK: - Observation
+
+    /// 注册一个观察者：当 `insertMessage` 被调用后通过 callback 收到插入的消息和会话 ID。
+    ///
+    /// 回调在主线程同步执行。仅在消息成功插入（写入内存缓冲）后触发。
+    /// status 消息也会触发回调。
+    ///
+    /// - Parameter callback: 消息插入时的通知回调，参数为 (消息, 会话 ID)。
+    /// - Returns: 注销令牌；持有返回值即可持续接收，令牌释放或调用 `cancel()` 后自动停止。
+    @discardableResult
+    func addMessageInsertedObserver(
+        _ callback: @escaping (Message, UUID) -> Void
+    ) -> any MessageInsertedObserverHandle
 }
 
 public extension MessageManaging {
@@ -40,4 +65,17 @@ public extension MessageManaging {
     ) {}
 
     func clearStatusMessages(in conversationID: UUID) {}
+
+    func addMessageInsertedObserver(
+        _ callback: @escaping (Message, UUID) -> Void
+    ) -> any MessageInsertedObserverHandle {
+        NoopMessageInsertedObserverHandle()
+    }
+}
+
+// MARK: - No-op handle (default implementation)
+
+@MainActor
+private final class NoopMessageInsertedObserverHandle: MessageInsertedObserverHandle {
+    func cancel() {}
 }
