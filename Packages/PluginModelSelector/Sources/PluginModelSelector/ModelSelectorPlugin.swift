@@ -41,7 +41,7 @@ public final class ModelSelectorPlugin: SuperPlugin {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
-              let manager = kernel.resolveProvider((any LLMProviderManagerProviding).self) else {
+              let manager = kernel.resolveProvider((any LLMManaging).self) else {
             return
         }
 

@@ -9,7 +9,7 @@ struct PopoverContent: View {
     @ObservedObject var box: ObservableLLMProviderManagerBox
     @Binding var isPresented: Bool
 
-    private var manager: (any LLMProviderManagerProviding)? { box.manager }
+    private var manager: (any LLMManaging)? { box.manager }
 
     /// 当前选中的供应商（初始来自 `LLMProviderManagerProviding`）。
     @State private var selectedProviderID: String?

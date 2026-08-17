@@ -1,6 +1,7 @@
 import Foundation
 import LumiUI
 import ProviderLLMManager
+import ProviderLLMVendors
 import SwiftUI
 
 /// 模型列表视图（由旧版 ModelSelectorPlugin 复刻）。
@@ -16,7 +17,7 @@ struct ModelListView: View {
 
     @State private var searchText = ""
 
-    private var manager: (any LLMProviderManagerProviding)? { box.manager }
+    private var manager: (any LLMManaging)? { box.manager }
 
     /// 当前选中供应商的显示名称
     private var selectedProviderDisplayName: String? {

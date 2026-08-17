@@ -17,12 +17,12 @@ import ProviderLLMManager
 @MainActor
 public final class ObservableLLMProviderManagerBox: ObservableObject {
     /// 被包装的 LLM Provider 管理器实例。
-    public let manager: any LLMProviderManagerProviding
+    public let manager: any LLMManaging
 
     /// 把 manager.objectWillChange 转发到 self.objectWillChange。
     private var cancellable: AnyCancellable?
 
-    public init(manager: any LLMProviderManagerProviding) {
+    public init(manager: any LLMManaging) {
         self.manager = manager
         // 协议存在类型擦除：先把 publisher 转成 AnyPublisher 让类型对齐。
         self.cancellable = manager.objectWillChange

@@ -1,6 +1,7 @@
 import Foundation
 import LumiUI
 import ProviderLLMManager
+import ProviderLLMVendors
 import SwiftUI
 
 /// 云端 / 本地筛选范围（由旧版复刻，作用于 `LLMProviderInfo.isLocal`）。
@@ -27,7 +28,7 @@ struct ProviderListView: View {
     /// 默认按 OpenAI 格式筛选；nil 表示全部格式
     @State private var selectedFormat: LLMProviderAPIFormat? = .openAI
 
-    private var manager: (any LLMProviderManagerProviding)? { box.manager }
+    private var manager: (any LLMManaging)? { box.manager }
 
     /// API 格式筛选（菜单）。独立为计算属性以减小 body 的类型推断复杂度。
     @ViewBuilder
@@ -143,7 +144,7 @@ struct ProviderListView: View {
         }
     }
 
-    private func filteredProviders(_ manager: any LLMProviderManagerProviding) -> [LLMProviderInfo] {
+    private func filteredProviders(_ manager: any LLMManaging) -> [LLMProviderInfo] {
         let providers = providers(in: manager).filter(matchesActiveFilters)
         let sorted = providers.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
         if searchText.isEmpty {
@@ -161,7 +162,7 @@ struct ProviderListView: View {
             && (selectedFormat == nil || provider.apiFormat == selectedFormat)
     }
 
-    private func providers(in manager: any LLMProviderManagerProviding) -> [LLMProviderInfo] {
+    private func providers(in manager: any LLMManaging) -> [LLMProviderInfo] {
         manager.allProviders().map { $0.providerInfo }
     }
 

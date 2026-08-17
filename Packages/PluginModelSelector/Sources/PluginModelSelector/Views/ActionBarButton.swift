@@ -13,7 +13,7 @@ struct ActionBarButton: View {
 
     @State private var isPopoverPresented = false
 
-    private var manager: (any LLMProviderManagerProviding)? { box.manager }
+    private var manager: (any LLMManaging)? { box.manager }
 
     var body: some View {
         Button {
