@@ -10,7 +10,7 @@ import ProviderConversationInput
 import ProviderDocsView
 import ProviderIdleTime
 import ProviderLegacyData
-import ProviderLLM
+import ProviderLLMVendors
 import ProviderLLMManager
 import ProviderLogo
 import ProviderMenuBar
@@ -68,7 +68,7 @@ public protocol ProviderFactory {
     ///
     /// 管理器自身即 `LLMProviding`：`complete(_:)` 路由到选中的供应商，
     /// LLM Provider 插件在 `onBoot` 中把各自供应商注册进来即可生效。
-    func makeLLMProviderManagerProvider() -> any LLMProviderManagerProviding
+    func makeLLMProviderManagerProvider() -> any LLMManaging
 
     /// 产出 `DocsViewProviding` 实现。
     func makeDocsViewProvider() -> any DocsViewProviding

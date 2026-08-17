@@ -25,6 +25,7 @@ import PluginDocxRead
 import PluginHostsManager
 import PluginIdleTime
 import PluginLLMProviderAiRouter
+import PluginLLMManager
 import PluginLLMProviderAliyun
 import PluginLLMProviderAnthropic
 import PluginLLMProviderDeepSeek
@@ -50,6 +51,7 @@ import PluginMemory
 import PluginMessageList
 import PluginMessageManager
 import PluginMessageRenderer
+import PluginAgentLoop
 import PluginMessageSender
 import PluginMindMapDesigner
 import PluginModelSelector
@@ -120,8 +122,12 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationNewPlugin(),
             ConversationManagerPlugin(),
             MessageManagerPlugin(),
+            PluginAgentLoop(),
             MessageSenderPlugin(),
             PluginPluginManager(),
+            // LLM 供应商管理器：替换 ProviderFactory 预注册的默认实现，
+            // 必须早于 PluginAgentLoop(order=8) 与各供应商插件(order=100)。
+            PluginLLMManager(),
             AiRouterProviderPlugin(),
             AliyunProviderPlugin(),
             AnthropicProviderPlugin(),

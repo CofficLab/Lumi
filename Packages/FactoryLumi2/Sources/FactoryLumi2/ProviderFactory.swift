@@ -4,7 +4,7 @@ import ProviderContentView
 import ProviderChatSection
 import ProviderMessage
 import ProviderAgentLoop
-import ProviderLLM
+import ProviderLLMVendors
 import ProviderMessageSender
 import ProviderConversation
 import ProviderDocsView
@@ -71,8 +71,8 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultLLMProviding()
     }
 
-    public func makeLLMProviderManagerProvider() -> any LLMProviderManagerProviding {
-        DefaultLLMProviderManagerProviding()
+    public func makeLLMProviderManagerProvider() -> any LLMManaging {
+        DefaultLLMManager()
     }
 
     /// 产出 `MessageSendingProviding` 实现的工厂钩子。
@@ -251,7 +251,7 @@ public struct DefaultProviderFactory: ProviderFactory {
         // 选中持久化 + 路由发送。管理器自身即 `LLMProviding`，AgentLoop 直接
         // 注入它，把请求路由到选中的供应商。
         let providerManager = makeLLMProviderManagerProvider()
-        try kernel.registerProvider((any LLMProviderManagerProviding).self, providerManager)
+        try kernel.registerProvider((any LLMManaging).self, providerManager)
 
         let agentLoop = makeAgentLoopProvider(messages: messages)
         agentLoop.setLLMProvider(providerManager)

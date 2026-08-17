@@ -17,7 +17,7 @@ import ProviderTheme
 import ProviderToast
 import ProviderToolbar
 import ProviderLLMManager
-import ProviderLLM
+import ProviderLLMVendors
 import ProviderMessage
 import PluginConversationManager
 import SwiftUI
