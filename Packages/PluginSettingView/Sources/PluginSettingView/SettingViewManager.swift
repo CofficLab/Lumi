@@ -5,7 +5,7 @@ import ProviderSettingView
 import SuperLogKit
 import SwiftUI
 
-/// `SettingViewProviding` 的自研实现：持有设置入口项、选中状态和侧边栏 Header。
+/// `SettingViewProviding` 的自研实现：持有设置入口项、选中状态和侧边栏 Logo。
 ///
 /// 复刻旧版 `SettingsManager`（KernelLumi 体系），迁移至 KernelCore 生态：
 /// - 插件通过 `addEntries(_:)` 追加自己的设置入口（同 id 去重）；
@@ -21,22 +21,12 @@ public final class SettingViewManager: SettingViewProviding, ObservableObject, S
 
     @Published public private(set) var entries: [SettingEntryItem] = []
     @Published public private(set) var selectedEntryID: String?
-    @Published public private(set) var sidebarHeader: AnyView?
 
     /// 侧边栏 Header 需要的 Logo 服务（ps：来自内核解析，可为 nil）。
     private let logo: (any LogoProviding)?
 
     public init(logo: (any LogoProviding)? = nil) {
         self.logo = logo
-        self.sidebarHeader = SettingsSidebarHeaderView(logo: logo).asAnyView()
-    }
-
-    /// 注入侧边栏顶部 Header（如 Logo + 应用名 + 版本），覆盖默认的自建 Header。
-    public func setSidebarHeader(_ view: AnyView?) {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)setSidebarHeader: \(view == nil ? "nil" : "set", privacy: .public)")
-        }
-        sidebarHeader = view
     }
 
     public func registerEntries(_ entries: [SettingEntryItem]) {
@@ -58,10 +48,6 @@ public final class SettingViewManager: SettingViewProviding, ObservableObject, S
     }
 
     public func makeSettingView() -> AnyView {
-        ProviderSettingView.makeSettingView(provider: self)
+        AnyView(SettingView(provider: self, logo: logo))
     }
-}
-
-private extension View {
-    func asAnyView() -> AnyView { AnyView(self) }
 }

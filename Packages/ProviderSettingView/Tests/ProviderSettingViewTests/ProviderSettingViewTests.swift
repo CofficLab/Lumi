@@ -57,18 +57,6 @@ struct ProviderSettingViewTests {
         #expect(type(of: provider.makeSettingView()) == AnyView.self)
     }
 
-    @Test("注入 sidebarHeader 后可取出并随视图渲染")
-    func sidebarHeaderInjection() {
-        let provider = DefaultSettingViewProviding()
-
-        #expect(provider.sidebarHeader == nil)
-
-        provider.setSidebarHeader(AnyView(Text("Logo Header")))
-
-        #expect(provider.sidebarHeader != nil)
-        #expect(type(of: provider.makeSettingView()) == AnyView.self)
-    }
-
     @Test("无入口时返回可渲染的设置视图")
     func defaultProviderRendersEmptyView() {
         let provider = DefaultSettingViewProviding()
