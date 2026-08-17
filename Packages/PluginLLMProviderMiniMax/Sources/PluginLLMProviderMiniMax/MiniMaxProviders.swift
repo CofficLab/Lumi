@@ -34,6 +34,12 @@ public final class MiniMaxOpenAIProvider: VendorLLMProvider {
         )
     }
 
+    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
+    public convenience init(networkProvider: (any NetworkProviding)?) {
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        self.init(apiService: apiService)
+    }
+
     public override var openAIConfiguration: OpenAICompatibleProviderConfiguration? {
         OpenAICompatibleProviderConfiguration(
             baseURL: "https://api.minimaxi.com/v1/chat/completions"
@@ -59,6 +65,12 @@ public final class MiniMaxAnthropicProvider: VendorLLMProvider {
             ),
             apiService: apiService
         )
+    }
+
+    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
+    public convenience init(networkProvider: (any NetworkProviding)?) {
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        self.init(apiService: apiService)
     }
 
     public override var anthropicConfiguration: AnthropicCompatibleProviderConfiguration? {

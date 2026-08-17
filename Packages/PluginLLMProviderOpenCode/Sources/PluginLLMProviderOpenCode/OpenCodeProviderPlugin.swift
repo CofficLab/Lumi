@@ -27,7 +27,8 @@ public final class OpenCodeProviderPlugin: SuperPlugin, SuperLog {
             return
         }
         let networkProvider = kernel.resolveProvider((any NetworkProviding).self)
-        let providers: [any SuperLLMProvider] = [GoProvider(networkProvider: networkProvider), ZenProvider(networkProvider: networkProvider)]
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        let providers: [any SuperLLMProvider] = [GoProvider(apiService: apiService), ZenProvider(apiService: apiService)]
         for provider in providers {
             if Self.verbose {
                 let typeName = String(describing: type(of: provider))

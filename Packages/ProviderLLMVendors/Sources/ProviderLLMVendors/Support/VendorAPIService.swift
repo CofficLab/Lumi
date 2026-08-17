@@ -77,7 +77,7 @@ public final class VendorAPIService: @unchecked Sendable {
         body: [String: Any]
     ) async throws -> Data {
         let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
-        let httpMethod = HTTPMethod(rawValue: request.httpMethod ?? "POST") ?? HTTPMethod.post
+        let httpMethod = HTTPMethod(rawValue: request.httpMethod ?? "POST") ?? .post
         var headers: [String: String] = [:]
         request.allHTTPHeaderFields?.forEach { headers[$0.key] = $0.value }
         headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
@@ -101,7 +101,7 @@ public final class VendorAPIService: @unchecked Sendable {
         onEvent: @escaping @Sendable (Data) async -> Bool
     ) async throws {
         let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
-        let httpMethod = HTTPMethod(rawValue: request.httpMethod ?? "POST") ?? HTTPMethod.post
+        let httpMethod = HTTPMethod(rawValue: request.httpMethod ?? "POST") ?? .post
         var headers: [String: String] = [:]
         request.allHTTPHeaderFields?.forEach { headers[$0.key] = $0.value }
         headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
