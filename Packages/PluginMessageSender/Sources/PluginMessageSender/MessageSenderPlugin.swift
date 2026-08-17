@@ -4,6 +4,8 @@ import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageSender
+import os
+import SuperLogKit
 
 /// 消息发送装配插件。
 ///
@@ -21,7 +23,7 @@ import ProviderMessageSender
 /// `MessageSendingProviding` 消费方（`ConversationForkPlugin` order=80 起），
 /// 保证其 `onBoot` 能 resolve 到本插件注册的实现。
 @MainActor
-public final class MessageSenderPlugin: SuperPlugin {
+public final class MessageSenderPlugin: SuperPlugin,SuperLog {
     public let id = "com.coffic.lumi.plugin.message-sender"
     public let order = 9
 
