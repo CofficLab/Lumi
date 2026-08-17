@@ -49,6 +49,21 @@ public final class PluginSettingView: SuperPlugin, SuperLog {
         let manager = SettingViewManager(logo: logo)
         self.manager = manager
 
+        // 0. 复制旧的默认实现（或先前已注册实现）中已有的数据，避免数据丢失。
+        //    在注销前解析旧的 SettingViewProviding，把已注入的入口和选中状态迁移到本实现。
+        if let old = kernel.resolveProvider((any SettingViewProviding).self) {
+            if !old.entries.isEmpty {
+                manager.registerEntries(old.entries)
+            }
+            // 读取旧的选中 id（仅当旧实现是 ObservableObject 时可由协议扩展读取）。
+            if let oldSelection = (old as? any SettingViewProviding & ObservableObject)?.selectedEntryID {
+                manager.selectEntry(id: oldSelection)
+            }
+            if Self.verbose {
+                Self.logger.info("\(Self.t)copied \(old.entries.count) existing entries from previous SettingViewProviding")
+            }
+        }
+
         // 1. 注销 ProviderFactory 预注册的默认实现（避免 providerAlreadyRegistered）。
         kernel.unregisterProvider((any SettingViewProviding).self)
 
