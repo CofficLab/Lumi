@@ -1,6 +1,7 @@
 import Foundation
 import os
 import KernelCore
+import ProviderLogo
 import ProviderSettingView
 import SuperLogKit
 
@@ -39,7 +40,13 @@ public final class PluginSettingView: SuperPlugin, SuperLog {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        let manager = SettingViewManager()
+        // 侧边栏 Logo 是插件内部行为：从内核解析 LogoProviding，自行构建 Header。
+        let logo = kernel.resolveProvider((any LogoProviding).self)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)resolved LogoProviding: \(logo == nil ? "nil" : "set", privacy: .public)")
+        }
+
+        let manager = SettingViewManager(logo: logo)
         self.manager = manager
 
         // 1. 注销 ProviderFactory 预注册的默认实现（避免 providerAlreadyRegistered）。

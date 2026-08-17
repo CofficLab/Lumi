@@ -1,5 +1,6 @@
 import Foundation
 import os
+import ProviderLogo
 import ProviderSettingView
 import SuperLogKit
 import SwiftUI
@@ -9,6 +10,8 @@ import SwiftUI
 /// 复刻旧版 `SettingsManager`（KernelLumi 体系），迁移至 KernelCore 生态：
 /// - 插件通过 `addEntries(_:)` 追加自己的设置入口（同 id 去重）；
 /// - 消费方订阅 `objectWillChange` 即可感知入口集合变化；
+/// - **侧边栏 Logo 是插件内部行为**：构造时注入可选的 `LogoProviding`，
+///   在 `makeSettingView()` 时自行构建 Header，无需外部类型强转注入；
 /// - 内置结构化日志，便于诊断注册 / 注销 / 选中切换。
 @MainActor
 public final class SettingViewManager: SettingViewProviding, ObservableObject, SuperLog {
@@ -20,9 +23,15 @@ public final class SettingViewManager: SettingViewProviding, ObservableObject, S
     @Published public private(set) var selectedEntryID: String?
     @Published public private(set) var sidebarHeader: AnyView?
 
-    public init() {}
+    /// 侧边栏 Header 需要的 Logo 服务（ps：来自内核解析，可为 nil）。
+    private let logo: (any LogoProviding)?
 
-    /// 注入侧边栏顶部 Header（如 Logo + 应用名 + 版本）。
+    public init(logo: (any LogoProviding)? = nil) {
+        self.logo = logo
+        self.sidebarHeader = SettingsSidebarHeaderView(logo: logo).asAnyView()
+    }
+
+    /// 注入侧边栏顶部 Header（如 Logo + 应用名 + 版本），覆盖默认的自建 Header。
     public func setSidebarHeader(_ view: AnyView?) {
         if Self.verbose {
             Self.logger.info("\(Self.t)setSidebarHeader: \(view == nil ? "nil" : "set", privacy: .public)")
@@ -51,4 +60,8 @@ public final class SettingViewManager: SettingViewProviding, ObservableObject, S
     public func makeSettingView() -> AnyView {
         ProviderSettingView.makeSettingView(provider: self)
     }
+}
+
+private extension View {
+    func asAnyView() -> AnyView { AnyView(self) }
 }
