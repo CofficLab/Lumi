@@ -36,3 +36,31 @@ public enum VendorAPIError: Error, LocalizedError, Sendable, Equatable {
         }
     }
 }
+
+// MARK: - LLMErrorRenderInfo
+
+extension VendorAPIError: LLMErrorRenderInfo {
+    /// 缺失 / 读取失败两类错误携带专属渲染类型，AgentLoop 透传后由
+    /// 对应渲染器（API Key 输入卡）接管；其余错误走默认错误渲染。
+    public var renderKind: String? {
+        switch self {
+        case .missingAPIKey:
+            return LLMErrorRenderKind.apiKeyMissing
+        case .apiKeyAccessFailed:
+            return LLMErrorRenderKind.apiKeyAccessFailed
+        default:
+            return nil
+        }
+    }
+
+    public var rawErrorDetail: String? {
+        switch self {
+        case .missingAPIKey(let provider):
+            return "Missing API key for: \(provider)"
+        case .apiKeyAccessFailed(_, let details):
+            return details
+        default:
+            return nil
+        }
+    }
+}
