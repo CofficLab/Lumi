@@ -158,6 +158,41 @@ public actor ToolCallRecordStore {
         return (try? modelContext.fetchCount(FetchDescriptor<ToolCallRecordModel>())) ?? 0
     }
 
+    /// 分页查询一页记录（按创建时间倒序；游标为「早于某条」语义）。
+    ///
+    /// 复刻旧版 `ToolManagerPlugin.ToolCallRecordStore.fetchPage`，供设置页
+    /// 执行日志等 UI 分页加载。
+    public func fetchPage(
+        limit: Int,
+        beforeCreatedAt: Date? = nil,
+        beforeID: String? = nil
+    ) -> [ToolCallRecord] {
+        guard limit > 0 else { return [] }
+        flush()
+
+        var descriptor: FetchDescriptor<ToolCallRecordModel>
+        if let cursorDate = beforeCreatedAt, let cursorID = beforeID {
+            descriptor = FetchDescriptor<ToolCallRecordModel>(
+                predicate: #Predicate<ToolCallRecordModel> {
+                    $0.createdAt < cursorDate
+                        || ($0.createdAt == cursorDate && $0.id < cursorID)
+                },
+                sortBy: [
+                    SortDescriptor(\.createdAt, order: .reverse),
+                    SortDescriptor(\.id, order: .reverse),
+                ]
+            )
+        } else {
+            descriptor = FetchDescriptor<ToolCallRecordModel>(sortBy: [
+                SortDescriptor(\.createdAt, order: .reverse),
+                SortDescriptor(\.id, order: .reverse),
+            ])
+        }
+        descriptor.fetchLimit = limit
+        guard let models = try? modelContext.fetch(descriptor) else { return [] }
+        return models.map(Self.convert)
+    }
+
     /// 删除某个会话的全部记录，并阻止该会话后续写入。
     public func deleteAll(for conversationID: UUID) {
         deletedConversationIDs.insert(conversationID.uuidString)
