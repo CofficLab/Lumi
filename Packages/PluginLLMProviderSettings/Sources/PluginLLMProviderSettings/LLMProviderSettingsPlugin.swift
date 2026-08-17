@@ -1,6 +1,7 @@
 import Foundation
 import KernelCore
 import ProviderLLMManager
+import ProviderLLMVendors
 import ProviderSettingView
 import SwiftUI
 
@@ -22,7 +23,7 @@ public final class LLMProviderSettingsPlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let manager = kernel.resolveProvider((any LLMProviderManagerProviding).self),
+        guard let manager = kernel.resolveProvider((any LLMManaging).self),
               let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
             return
         }

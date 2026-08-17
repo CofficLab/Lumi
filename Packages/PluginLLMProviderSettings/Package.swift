@@ -15,7 +15,7 @@ let package = Package(
         .package(path: "../LumiUI"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderLLMManager"),
-        .package(path: "../ProviderLLM"),
+        .package(path: "../ProviderLLMVendors"),
     ],
     targets: [
         .target(
@@ -25,7 +25,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "ProviderLLM", package: "ProviderLLM"),
+                .product(name: "ProviderLLMVendors", package: "ProviderLLMVendors"),
             ],
             path: "Sources/PluginLLMProviderSettings"
         ),
@@ -35,7 +35,7 @@ let package = Package(
                 "PluginLLMProviderSettings",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "ProviderLLM", package: "ProviderLLM"),
+                .product(name: "ProviderLLMVendors", package: "ProviderLLMVendors"),
             ],
             path: "Tests/PluginLLMProviderSettingsTests"
         ),

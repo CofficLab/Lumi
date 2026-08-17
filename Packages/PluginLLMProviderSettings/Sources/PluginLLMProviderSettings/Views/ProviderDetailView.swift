@@ -1,6 +1,7 @@
 import Foundation
 import LumiUI
 import ProviderLLMManager
+import ProviderLLMVendors
 import SwiftUI
 
 /// 单个供应商的详情视图（复刻旧版 RemoteProviderSettingsPage 的
@@ -12,14 +13,14 @@ import SwiftUI
 public struct ProviderDetailView: View {
     @LumiTheme private var theme
 
-    private let manager: any LLMProviderManagerProviding
-    private let provider: any ManagedLLMProvider
+    private let manager: any LLMManaging
+    private let provider: any SuperLLMProvider
 
     @State private var apiKey: String = ""
     @State private var savedAPIKey: String = ""
     @State private var apiKeySaveError: String?
 
-    public init(manager: any LLMProviderManagerProviding, provider: any ManagedLLMProvider) {
+    public init(manager: any LLMManaging, provider: any SuperLLMProvider) {
         self.manager = manager
         self.provider = provider
     }

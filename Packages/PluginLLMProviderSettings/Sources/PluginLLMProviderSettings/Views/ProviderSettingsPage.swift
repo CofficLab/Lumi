@@ -1,6 +1,7 @@
 import Foundation
 import LumiUI
 import ProviderLLMManager
+import ProviderLLMVendors
 import SwiftUI
 
 /// 供应商设置页面（主从布局，复刻旧版 `ProviderSettingsPageBase`）。
@@ -14,24 +15,24 @@ import SwiftUI
 public struct ProviderSettingsPage: View {
     @LumiTheme private var theme
 
-    private let manager: any LLMProviderManagerProviding
+    private let manager: any LLMManaging
     private let isLocal: Bool
 
     @State private var selectedProviderID: String?
     @State private var searchText: String = ""
 
-    public init(manager: any LLMProviderManagerProviding, isLocal: Bool) {
+    public init(manager: any LLMManaging, isLocal: Bool) {
         self.manager = manager
         self.isLocal = isLocal
     }
 
     // MARK: - Derived
 
-    private var allProviders: [any ManagedLLMProvider] {
+    private var allProviders: [any SuperLLMProvider] {
         manager.allProviders()
     }
 
-    private var filteredProviders: [any ManagedLLMProvider] {
+    private var filteredProviders: [any SuperLLMProvider] {
         let scope = allProviders.filter { $0.providerInfo.isLocal == isLocal }
         let keyword = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !keyword.isEmpty else { return scope }
@@ -42,7 +43,7 @@ public struct ProviderSettingsPage: View {
         }
     }
 
-    private var selectedProvider: (any ManagedLLMProvider)? {
+    private var selectedProvider: (any SuperLLMProvider)? {
         guard let selectedProviderID else { return nil }
         return filteredProviders.first { $0.providerInfo.id == selectedProviderID }
     }
@@ -126,7 +127,7 @@ public struct ProviderSettingsPage: View {
         .appSurface(style: .panel, cornerRadius: 0)
     }
 
-    private func providerRow(_ provider: any ManagedLLMProvider) -> some View {
+    private func providerRow(_ provider: any SuperLLMProvider) -> some View {
         let info = provider.providerInfo
         let isSelected = selectedProviderID == info.id
         return AppListRow(isSelected: isSelected, action: {
