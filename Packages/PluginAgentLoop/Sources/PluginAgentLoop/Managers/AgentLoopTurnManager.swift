@@ -13,13 +13,124 @@ import SuperLogKit
 // 消除 ProviderLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
 private typealias ToolCall = AgentToolKit.ToolCall
 
-// MARK: - AgentLoopProvider + Loop
+// MARK: - 回合运行依赖集合
 
-extension AgentLoopProvider {
+/// 由 `AgentLoopProvider` 注入/更新的回合运行依赖。
+///
+/// Manager 只依赖这一组 service，不反向持有 Provider（保持门面 → Manager 方向）。
+/// 新增依赖（如未来的消息准备器、工具执行器等）在此扩展字段即可。
+struct AgentLoopTurnDependencies {
+    var responder: AgentLoopResponder?
+    var llmProvider: (any LLMProviding)?
+    var toolManager: (any ToolManagerProviding)?
+    var streaming: (any MessageStreamingProviding)?
+    var conversations: (any ConversationManaging)?
+    var eventHandler: AgentLoopEventHandler?
+    var messagePreparers: [AgentLoopMessagePreparer] = []
+}
 
-    // MARK: - AgentLoopProviding (Turn Lifecycle)
+// MARK: - 回合运行管理器
 
-    public func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
+/// 管理"当前正在运行的 AgentLoop"：回合生命周期、运行状态、LLM 请求、
+/// 工具执行与授权挂起/恢复、未完成工具批次续跑。
+///
+/// 仅被 `AgentLoopProvider`（门面）调用，不对外暴露；Provider 负责注入依赖、
+/// 转发公共 API 并发布 `revision`。状态变更经 `onRevisionChange` 通知 Provider
+/// 递增 `revision`（宿主观察的信号）。
+///
+/// 回合循环：
+/// 1. 把消息历史（含 tool 结果）发送给 LLM；
+/// 2. 流式接收增量（text / thinking）写入 `MessageStreamingProviding`；
+/// 3. 收到带工具调用的响应后逐个执行（按会话 automationLevel 评估授权，
+///    高风险调用挂起等待用户批准/拒绝）；
+/// 4. 工具结果以 `.tool` 消息落库，带回 LLM 继续下一轮；
+/// 5. 直到 LLM 输出无工具调用的最终响应，回合完成。
+@MainActor
+final class AgentLoopTurnManager: SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-loop")
+    nonisolated static let emoji = "🔄"
+    static let verbose = true
+
+    private let messages: any MessageManaging
+    private var dependencies: AgentLoopTurnDependencies
+
+    /// 状态变更回调：宿主（AgentLoopProvider）据此递增 `revision`。
+    var onRevisionChange: (() -> Void)?
+
+    // MARK: - Turn State
+
+    private var states: [UUID: AgentLoopState] = [:]
+    private var tasks: [UUID: Task<AgentLoopOutcome, Never>] = [:]
+    private var suspensions: [UUID: AgentLoopSuspension] = [:]
+    /// 当前 assistant 工具批次中所有挂起的调用（一个批次可含多个 ask_user）。
+    private var pendingSuspensions: [UUID: [String: AgentLoopSuspension]] = [:]
+    private var turnIDs: [UUID: UUID] = [:]
+    private var cancelledConversations: Set<UUID> = []
+    private var awaitingConversations: Set<UUID> = []
+    private var failedConversations: Set<UUID> = []
+
+    private static let toolApprovalSuspensionKind = "toolApproval"
+
+    init(messages: any MessageManaging, dependencies: AgentLoopTurnDependencies = AgentLoopTurnDependencies()) {
+        self.messages = messages
+        self.dependencies = dependencies
+    }
+
+    // MARK: - Dependency Injection
+
+    func setResponder(_ responder: AgentLoopResponder?) {
+        dependencies.responder = responder
+    }
+
+    func setLLMProvider(_ provider: (any LLMProviding)?) {
+        dependencies.llmProvider = provider
+    }
+
+    func setToolManager(_ toolManager: (any ToolManagerProviding)?) {
+        dependencies.toolManager = toolManager
+    }
+
+    func setStreaming(_ streaming: (any MessageStreamingProviding)?) {
+        dependencies.streaming = streaming
+    }
+
+    func setConversations(_ conversations: (any ConversationManaging)?) {
+        dependencies.conversations = conversations
+    }
+
+    func setEventHandler(_ handler: AgentLoopEventHandler?) {
+        dependencies.eventHandler = handler
+    }
+
+    func addMessagePreparer(_ preparer: @escaping AgentLoopMessagePreparer) {
+        dependencies.messagePreparers.append(preparer)
+    }
+
+    // MARK: - State Accessors
+
+    func state(for conversationID: UUID) -> AgentLoopState {
+        let state = states[conversationID] ?? .idle
+        if Self.verbose && state != .idle {
+            Self.logger.debug("\(Self.t)查询状态 - conversationID: \(conversationID), state: \(state.rawValue)")
+        }
+        return state
+    }
+
+    func isRunning(for conversationID: UUID) -> Bool {
+        tasks[conversationID] != nil || states[conversationID] == .running
+    }
+
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? {
+        suspensions[conversationID]
+    }
+
+    func currentTurnID(for conversationID: UUID) -> UUID? {
+        turnIDs[conversationID]
+    }
+
+    // MARK: - Turn Lifecycle
+
+    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
         if Self.verbose {
             Self.logger.info("\(Self.t)开始执行回合 - conversationID: \(conversationID)")
         }
@@ -34,7 +145,7 @@ extension AgentLoopProvider {
         let turnID = UUID()
         turnIDs[conversationID] = turnID
         states[conversationID] = .running
-        revision += 1
+        notifyRevisionChange()
         postEvent(.turnStarted(conversationID: conversationID, turnID: turnID))
 
         let task: Task<AgentLoopOutcome, Never> = Task { @MainActor [weak self] in
@@ -45,7 +156,7 @@ extension AgentLoopProvider {
         let outcome = await task.value
         tasks.removeValue(forKey: conversationID)
         turnIDs.removeValue(forKey: conversationID)
-        revision += 1
+        notifyRevisionChange()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)回合执行完成 - conversationID: \(conversationID), outcome: \(String(describing: outcome))")
@@ -56,7 +167,7 @@ extension AgentLoopProvider {
 
     /// 恢复被挂起的回合：把用户回答写入工具结果，继续执行同一批次中剩余调用；
     /// 批次全部终态后开启新一轮 LLM 请求。
-    public func resumeTurn(
+    func resumeTurn(
         in conversationID: UUID,
         request: AgentTurnResumeRequest
     ) async throws -> AgentLoopOutcome {
@@ -67,7 +178,7 @@ extension AgentLoopProvider {
         // 挂起工具可能在 runTurn 外层收尾前就发布了 messageSaved，用户可能
         // 提前作答。等待生命周期完全结束，避免被当成并发回合取消。
         if let activeTask = tasks[conversationID] {
-            await activeTask.value
+            _ = await activeTask.value
             tasks.removeValue(forKey: conversationID)
         }
 
@@ -147,10 +258,30 @@ extension AgentLoopProvider {
         return try await runTurn(in: conversationID)
     }
 
+    func cancelTurn(in conversationID: UUID) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)取消回合 - conversationID: \(conversationID)")
+        }
+        cancelledConversations.insert(conversationID)
+        suspensions.removeValue(forKey: conversationID)
+        pendingSuspensions.removeValue(forKey: conversationID)
+        awaitingConversations.remove(conversationID)
+        states[conversationID] = .cancelled
+        tasks[conversationID]?.cancel()
+        tasks.removeValue(forKey: conversationID)
+        notifyRevisionChange()
+    }
+
+    /// 兼容旧 API：显式开启一个回合并置为运行态（`AgentTurnHandle` 句柄）。
+    func createTurn(_ request: AgentTurnRequest) {
+        states[request.conversationID] = .running
+        notifyRevisionChange()
+    }
+
     // MARK: - Turn Loop
 
     private func executeTurnLoop(conversationID: UUID, turnID: UUID) async -> AgentLoopOutcome {
-        guard responder != nil || llmProvider != nil else {
+        guard dependencies.responder != nil || dependencies.llmProvider != nil else {
             await appendError(in: conversationID, content: "agent responder is not configured")
             failedConversations.insert(conversationID)
             return .failed("agent responder is not configured")
@@ -161,7 +292,7 @@ extension AgentLoopProvider {
 
             // Responder 路径：宿主注入自定义响应者（测试 / 嵌入场景）时直接
             // 调用一次并把结果落库，不做工具循环（responder 无工具能力）。
-            if let responder, llmProvider == nil {
+            if let responder = dependencies.responder, dependencies.llmProvider == nil {
                 let request = AgentLoopRequest(
                     conversationID: conversationID,
                     messages: messages.messages(for: conversationID)
@@ -192,7 +323,7 @@ extension AgentLoopProvider {
                 }
             }
 
-            guard let llmProvider else {
+            guard let llmProvider = dependencies.llmProvider else {
                 await appendError(in: conversationID, content: "LLM provider is not configured")
                 failedConversations.insert(conversationID)
                 return .failed("LLM provider is not configured")
@@ -215,8 +346,8 @@ extension AgentLoopProvider {
             }
 
             // 会话设置是事实来源：automationLevel 决定是否附带工具。
-            let automationLevel = conversations?.automationLevel(for: conversationID) ?? .build
-            let tools = automationLevel.allowsTools ? (toolManager?.allTools() ?? []) : []
+            let automationLevel = dependencies.conversations?.automationLevel(for: conversationID) ?? .build
+            let tools = automationLevel.allowsTools ? (dependencies.toolManager?.allTools() ?? []) : []
             let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
                 let language = languagePreference(for: conversationID)
                 return LLMFunctionSchema(
@@ -225,14 +356,14 @@ extension AgentLoopProvider {
                     parameters: tool.inputSchema(for: language)
                 )
             }
-            let reasoningEffort = conversations?.reasoningEffortOptional(for: conversationID)
+            let reasoningEffort = dependencies.conversations?.reasoningEffortOptional(for: conversationID)
                 .flatMap { $0.rawValue }
 
             // LLM 请求前的消息准备钩子（对齐旧版 willSendToLLM）：
             // 详细度 / 语言 / 自动化级别等插件按注册顺序串行修改消息历史，
             // 注入 system 指令（不落库，仅本次请求生效）。
             var preparedHistory = history
-            for preparer in messagePreparers {
+            for preparer in dependencies.messagePreparers {
                 preparedHistory = await preparer(preparedHistory)
             }
 
@@ -244,12 +375,12 @@ extension AgentLoopProvider {
             let request = LLMRequest(
                 conversationID: conversationID,
                 messages: preparedHistory,
-                model: conversations?.modelName(for: conversationID),
+                model: dependencies.conversations?.modelName(for: conversationID),
                 tools: schemas.isEmpty ? nil : schemas,
                 reasoningEffort: reasoningEffort
             )
 
-            streaming?.start(conversationID: conversationID)
+            dependencies.streaming?.start(conversationID: conversationID)
 
             let response: LLMResponse
             do {
@@ -257,7 +388,7 @@ extension AgentLoopProvider {
                     // streaming 是 MainActor 隔离的存在类型，不能直接捕获进
                     // @Sendable 流式回调；用 @unchecked Sendable 桥接包装，
                     // 在回调内经 await 跳回 MainActor 写入。
-                    let bridge = StreamingBridge(streaming: streaming)
+                    let bridge = StreamingBridge(streaming: dependencies.streaming)
                     response = try await streamingProvider.streamComplete(request) { [weak bridge] chunk in
                         guard let bridge else { return }
                         let piece = chunk.content ?? ""
@@ -271,7 +402,7 @@ extension AgentLoopProvider {
                     response = try await llmProvider.complete(request)
                 }
             } catch {
-                streaming?.end(conversationID: conversationID)
+                dependencies.streaming?.end(conversationID: conversationID)
                 await appendError(in: conversationID, error: error, turnID: turnID)
                 failedConversations.insert(conversationID)
                 return .failed(String(describing: error))
@@ -291,7 +422,7 @@ extension AgentLoopProvider {
                 outputTokenCount: response.outputTokenCount
             )
             assistant.providerID = resolvedProviderID(for: conversationID)
-            if let toolManager, let toolCalls = assistant.toolCalls {
+            if let toolManager = dependencies.toolManager, let toolCalls = assistant.toolCalls {
                 assistant.toolCalls = toolCalls.map { toolCall in
                     var enriched = toolCall
                     enriched.displayDescription = toolManager.displayDescription(for: ToolCall(
@@ -304,7 +435,7 @@ extension AgentLoopProvider {
             }
             messages.insertMessage(assistant, to: conversationID)
             postEvent(.messageSaved(conversationID: conversationID, messageID: assistant.id, role: assistant.role.rawValue))
-            streaming?.end(conversationID: conversationID)
+            dependencies.streaming?.end(conversationID: conversationID)
 
             // 无工具调用 → 回合完成。
             guard let toolCalls = assistant.toolCalls, !toolCalls.isEmpty else {
@@ -330,7 +461,7 @@ extension AgentLoopProvider {
                     )
                 )
 
-                guard toolManager != nil else {
+                guard dependencies.toolManager != nil else {
                     let result = MessageToolResult(content: "Tool manager is unavailable", isError: true)
                     messages.updateToolCallResult(result, toolCallID: toolCall.id, assistantMessageID: assistant.id, in: conversationID)
                     insertToolResultMessage(result, toolCallID: toolCall.id, conversationID: conversationID, turnID: turnID)
@@ -403,7 +534,7 @@ extension AgentLoopProvider {
         conversationID: UUID,
         turnID: UUID?
     ) async -> MessageToolResult {
-        guard let toolManager else {
+        guard let toolManager = dependencies.toolManager else {
             return MessageToolResult(content: "Tool manager is unavailable", isError: true)
         }
         let tool = ToolCall(
@@ -411,7 +542,7 @@ extension AgentLoopProvider {
             name: toolCall.name,
             arguments: toolCall.arguments
         )
-        let automationLevel = conversations?.automationLevel(for: conversationID) ?? .build
+        let automationLevel = dependencies.conversations?.automationLevel(for: conversationID) ?? .build
         switch automationLevel {
         case .chat:
             return MessageToolResult(
@@ -419,13 +550,13 @@ extension AgentLoopProvider {
                 isError: true
             )
         case .autonomous:
-            return await convertResult(
+            return convertResult(
                 await toolManager.execute(tool, conversationID: conversationID, turnID: turnID)
             )
         case .build:
             let riskLevel = toolManager.riskLevel(for: tool) ?? .high
             guard riskLevel.requiresPermission else {
-                return await convertResult(
+                return convertResult(
                     await toolManager.execute(tool, conversationID: conversationID, turnID: turnID)
                 )
             }
@@ -434,7 +565,7 @@ extension AgentLoopProvider {
     }
 
     private func executeApprovedToolCall(_ toolCall: MessageToolCall, conversationID: UUID) async -> MessageToolResult {
-        guard let toolManager else {
+        guard let toolManager = dependencies.toolManager else {
             return MessageToolResult(content: "Tool manager is unavailable", isError: true)
         }
         let tool = ToolCall(
@@ -442,7 +573,7 @@ extension AgentLoopProvider {
             name: toolCall.name,
             arguments: toolCall.arguments
         )
-        return await convertResult(
+        return convertResult(
             await toolManager.execute(tool, conversationID: conversationID, turnID: turnIDs[conversationID])
         )
     }
@@ -563,7 +694,7 @@ extension AgentLoopProvider {
         conversationID: UUID,
         snapshot: [Message]
     ) async -> Bool {
-        guard let toolManager, let toolCalls = assistantMessage.toolCalls else {
+        guard dependencies.toolManager != nil, let toolCalls = assistantMessage.toolCalls else {
             failedConversations.insert(conversationID)
             return false
         }
@@ -671,7 +802,7 @@ extension AgentLoopProvider {
     }
 
     private func languagePreference(for conversationID: UUID) -> LanguagePreference {
-        let language = conversations?.language(for: conversationID) ?? .chinese
+        let language = dependencies.conversations?.language(for: conversationID) ?? .chinese
         switch language {
         case .chinese: return .chinese
         case .english: return .english
@@ -679,14 +810,16 @@ extension AgentLoopProvider {
     }
 
     private func resolvedProviderID(for conversationID: UUID) -> String? {
-        conversations?.providerID(for: conversationID)
+        dependencies.conversations?.providerID(for: conversationID)
     }
 
     private func postEvent(_ event: AgentLoopEvent) {
-        eventHandler?(event)
+        dependencies.eventHandler?(event)
     }
 
-    private static let toolApprovalSuspensionKind = "toolApproval"
+    private func notifyRevisionChange() {
+        onRevisionChange?()
+    }
 }
 
 // MARK: - Tool Approval Payload（复刻旧版 ToolApprovalPayload）
