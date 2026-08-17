@@ -79,7 +79,7 @@ public final class HTTPClient: SuperLog, @unchecked Sendable {
 
         let metadata = HTTPRequestMetadata(
             requestId: UUID(),
-            method: mutableRequest.httpMethod ?? HTTPMethod.post.rawValue,
+            method: mutableRequest.httpMethod ?? "POST",
             url: mutableRequest.url?.absoluteString ?? "unknown",
             requestHeaders: Self.sanitizeHeaders(mutableRequest.allHTTPHeaderFields ?? [:]),
             requestBodySizeBytes: jsonData.count,
