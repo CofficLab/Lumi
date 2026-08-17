@@ -5,41 +5,61 @@ import SwiftUI
 
 /// Action Bar 上的发送/停止按钮
 ///
-/// 视图本身只负责布局和交互；所有状态管理与发送逻辑由 `SendActionBarViewModel` 承载。
-/// 当 `input` 或 `sender` 任一为 nil 时，显示错误按钮并可通过 popover 查看原因。
+/// 视图负责 nil 检查与错误展示；正常情况下将非 nil 的依赖交给 ViewModel 管理状态和逻辑。
 struct SendActionBarButton: View {
-    @State private var viewModel: SendActionBarViewModel
+    let input: (any ConversationInputProviding)?
+    let sender: (any MessageSendingProviding)?
+
+    @State private var viewModel: SendActionBarViewModel?
     @State private var showErrorPopover = false
 
-    init(input: (any ConversationInputProviding)?, sender: (any MessageSendingProviding)?) {
-        _viewModel = State(wrappedValue: SendActionBarViewModel(input: input, sender: sender))
+    private var missingProviders: [String] {
+        var missing: [String] = []
+        if input == nil { missing.append("ConversationInputProviding") }
+        if sender == nil { missing.append("MessageSendingProviding") }
+        return missing
     }
 
     var body: some View {
         HStack(spacing: 6) {
-            if viewModel.hasError {
+            if let viewModel {
+                normalContent(viewModel: viewModel)
+            } else {
                 ErrorButton {
                     showErrorPopover = true
                 }
                 .popover(isPresented: $showErrorPopover) {
                     errorPopoverContent
                 }
-            } else {
-                let state = viewModel.state
-
-                if state.showsSendButton {
-                    SendButton(canSend: state.canSend, action: { viewModel.send() })
-                        .help(LumiPluginLocalization.string("Send", bundle: .module))
-                }
-
-                if state.showsStopButton {
-                    StopButton(action: { viewModel.cancel() })
-                        .help(LumiPluginLocalization.string("Stop", bundle: .module))
-                }
             }
         }
-        .onAppear { viewModel.setup() }
-        .onDisappear { viewModel.teardown() }
+        .onAppear {
+            guard let input, let sender else { return }
+            let vm = SendActionBarViewModel(input: input, sender: sender)
+            viewModel = vm
+            vm.setup()
+        }
+        .onDisappear {
+            viewModel?.teardown()
+            viewModel = nil
+        }
+    }
+
+    // MARK: - Normal content
+
+    @ViewBuilder
+    private func normalContent(viewModel: SendActionBarViewModel) -> some View {
+        let state = viewModel.state
+
+        if state.showsSendButton {
+            SendButton(canSend: state.canSend, action: { viewModel.send() })
+                .help(LumiPluginLocalization.string("Send", bundle: .module))
+        }
+
+        if state.showsStopButton {
+            StopButton(action: { viewModel.cancel() })
+                .help(LumiPluginLocalization.string("Stop", bundle: .module))
+        }
     }
 
     // MARK: - Popover
@@ -52,12 +72,10 @@ struct SendActionBarButton: View {
                 Text("Provider Error")
                     .font(.headline)
             }
-            if let message = viewModel.initializationError {
-                Text(message)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text("Missing provider(s): \(missingProviders.joined(separator: ", "))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(12)
         .frame(minWidth: 200)
