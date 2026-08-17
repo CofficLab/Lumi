@@ -1,25 +1,36 @@
 import Foundation
+import os
 import KernelCore
 import ProviderLLMManager
+import ProviderLLMVendors
+import SuperLogKit
 
 /// OpenRouter 供应商装配插件（KernelCore 生态）。
 ///
 /// 在 `onBoot` 中把本供应商的 OpenRouterProvider 注册进
 /// `LLMProviderManagerProviding`，聊天链路即可经管理器路由到该供应商。
-/// 对应旧版 com.coffic.lumi.plugin.llm-provider.openrouter 的 `llmProviders(kernel:)` 贡献职责。
 @MainActor
-public final class OpenRouterProviderPlugin: SuperPlugin {
+public final class OpenRouterProviderPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-provider.openrouter", category: "OpenRouter")
+    nonisolated public static let emoji = "🌐"
+    nonisolated static let verbose = false
+
     public let id = "com.coffic.lumi.plugin.llm-provider.openrouter"
     public let order = 100
 
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let manager = kernel.resolveProvider((any LLMProviderManagerProviding).self) else {
+        guard let manager = kernel.resolveProvider((any LLMManaging).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve LLMProviderManagerProviding from kernel\(self.r("manager is nil"))")
             return
         }
-        let providers: [any ManagedLLMProvider] = [OpenRouterProvider()]
+        let providers: [any SuperLLMProvider] = [OpenRouterProvider()]
         for provider in providers {
+            if Self.verbose {
+                let typeName = String(describing: type(of: provider))
+                Self.logger.debug("\(Self.t)Registering provider: \(typeName, privacy: .public)")
+            }
             try? manager.register(provider)
         }
     }
