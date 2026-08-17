@@ -8,7 +8,7 @@ import SwiftUI
 struct SettingViewManagerTests {
 
     private func makeEntry(id: String, order: Int = 200) -> SettingEntryItem {
-        SettingEntryItem(id: id, title: id, systemImage: "gear") {}
+        SettingEntryItem(id: id, title: id, systemImage: "gear", order: order) {}
     }
 
     @Test("registerEntries 按 order 升序排列")
