@@ -3,6 +3,17 @@ import Foundation
 import ProviderAgentLoop
 import ProviderMessage
 
+/// 发送状态变化观察者的注册令牌。
+///
+/// 调用 `MessageSendingProviding.addSendingStateObserver(_:)` 后持有返回值
+/// 即可持续接收发送状态变化通知；令牌释放（deinit）或显式调用 `cancel()` 时
+/// 自动停止接收，无需手动反注册。
+@MainActor
+public protocol SendingStateObserverHandle: AnyObject {
+    /// 停止接收发送状态变化通知。重复调用无副作用。
+    func cancel()
+}
+
 /// 消息发送能力协议（KernelCore 体系）。
 ///
 /// 复刻旧版 `MessageSending` 的职责（对齐 `Plugins/MessageSenderPlugin`）：
@@ -13,6 +24,17 @@ import ProviderMessage
 @MainActor
 public protocol MessageSendingProviding: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     var isSending: Bool { get }
+
+    // MARK: - Observation
+
+    /// 注册一个观察者：当 `isSending` 变化时通过 callback 收到最新状态。
+    ///
+    /// 回调在主线程同步执行。仅当状态实际发生变化时触发。
+    ///
+    /// - Parameter callback: 发送状态变化时的通知回调，参数为最新 `isSending` 值。
+    /// - Returns: 注销令牌；持有返回值即可持续接收，令牌释放或调用 `cancel()` 后自动停止。
+    @discardableResult
+    func addSendingStateObserver(_ callback: @escaping (Bool) -> Void) -> any SendingStateObserverHandle
 
     // MARK: - Attachments（挂起池）
 

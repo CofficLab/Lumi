@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-public final class DefaultMessageManaging: MessageManaging {
+public final class DefaultMessageManager: MessageManaging {
     @Published private var storage: [UUID: [Message]] = [:]
 
     public init() {}

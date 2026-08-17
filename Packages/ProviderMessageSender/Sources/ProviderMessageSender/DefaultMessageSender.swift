@@ -25,10 +25,39 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     private let agentLoop: any AgentLoopProviding
     private var currentTasks: [UUID: Task<Void, Never>] = [:]
 
-    @Published public private(set) var isSending = false
+    @Published public private(set) var isSending = false {
+        didSet {
+            guard isSending != oldValue else { return }
+            notifySendingStateObservers()
+        }
+    }
     @Published public private(set) var pendingImageAttachments: [UserImageAttachment] = []
     @Published public private(set) var pendingFileAttachments: [UserFileAttachment] = []
     @Published public private(set) var pendingQueues: [UUID: [PendingChatMessage]] = [:]
+
+    // MARK: - Sending State Observation
+
+    private var sendingStateObservers: [WeakSendingStateObserver] = []
+
+    @discardableResult
+    public func addSendingStateObserver(_ callback: @escaping (Bool) -> Void) -> any SendingStateObserverHandle {
+        let handle = SendingStateObserverHandleImpl(owner: self, callback: callback)
+        sendingStateObservers.append(WeakSendingStateObserver(handle))
+        return handle
+    }
+
+    fileprivate func removeSendingStateObserver(_ handle: SendingStateObserverHandleImpl) {
+        sendingStateObservers.removeAll { $0.handle === handle }
+    }
+
+    private func notifySendingStateObservers() {
+        sendingStateObservers.removeAll { $0.handle == nil }
+        let observers = sendingStateObservers
+        let currentState = isSending
+        for observer in observers {
+            observer.handle?.invoke(currentState)
+        }
+    }
 
     public init(
         conversations: any ConversationManaging,
@@ -278,4 +307,37 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
             await self?.executeTurn(conversationID: conversationID, userMessageID: userMessage.id)
         }
     }
+}
+
+// MARK: - Sending State Observer Handle
+
+/// 发送状态观察者令牌：弱引用 owner，释放或 cancel 后自动停止接收。
+@MainActor
+private final class SendingStateObserverHandleImpl: SendingStateObserverHandle {
+    private weak var owner: DefaultMessageSender?
+    private let callback: (Bool) -> Void
+    private var isCancelled = false
+
+    init(owner: DefaultMessageSender, callback: @escaping (Bool) -> Void) {
+        self.owner = owner
+        self.callback = callback
+    }
+
+    func cancel() {
+        guard !isCancelled else { return }
+        isCancelled = true
+        owner?.removeSendingStateObserver(self)
+    }
+
+    fileprivate func invoke(_ isSending: Bool) {
+        guard !isCancelled else { return }
+        callback(isSending)
+    }
+}
+
+/// 弱引用包装，令牌释放后自动失效。
+@MainActor
+private final class WeakSendingStateObserver {
+    fileprivate weak var handle: SendingStateObserverHandleImpl?
+    init(_ handle: SendingStateObserverHandleImpl) { self.handle = handle }
 }
