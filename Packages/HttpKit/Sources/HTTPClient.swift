@@ -5,7 +5,7 @@ import SuperLogKit
 
 public final class HTTPClient: SuperLog, @unchecked Sendable {
     public nonisolated static let emoji = "🌐"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "http.client")
 
     private let session: URLSession
