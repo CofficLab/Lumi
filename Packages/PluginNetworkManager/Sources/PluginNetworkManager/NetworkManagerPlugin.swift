@@ -1,3 +1,4 @@
+import AgentToolKit
 import KernelCore
 import os
 import ProviderDocsView
@@ -64,7 +65,7 @@ public final class NetworkManagerPlugin: SuperPlugin {
 
         // 2. 注册 NetworkProviding 到内核（替换默认实现，附带 exchangeStore）
         if let exchangeStore {
-            kernel.registerProvider(
+            try kernel.registerProvider(
                 (any NetworkProviding).self,
                 NetworkProvider(exchangeStore: exchangeStore)
             )
