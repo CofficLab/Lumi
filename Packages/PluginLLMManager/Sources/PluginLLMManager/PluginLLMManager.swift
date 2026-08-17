@@ -64,7 +64,9 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
                 Self.logger.info("\(Self.t)registered API Key message renderers (missing / access-failed)")
             }
         } else {
-            Self.logger.warning("\(Self.t)MessageRenderingProviding not resolved, API Key renderers skipped")
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)MessageRenderingProviding not resolved, API Key renderers skipped")
+            }
         }
 
         if Self.verbose {
@@ -80,21 +82,29 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
     /// 稍后会替换为持久化实现，监听挂在旧实例上会收不到任何切换事件。
     public func onReady(kernel: KernelCoreContainer) throws {
         guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
-            Self.logger.warning("\(Self.t)ConversationManaging not resolved, skip selected-conversation observer")
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)ConversationManaging not resolved, skip selected-conversation observer")
+            }
             return
         }
         guard let manager else {
-            Self.logger.warning("\(Self.t)manager not initialized, skip selected-conversation observer")
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)manager not initialized, skip selected-conversation observer")
+            }
             return
         }
         self.conversations = conversations
 
         selectedConversationObserver = conversations.addSelectedConversationObserver { [weak self] conversationID in
             guard let self, let manager = self.manager else { return }
-            Self.logger.info("\(Self.t)selected conversation changed: \(conversationID?.uuidString ?? "nil")")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)selected conversation changed: \(conversationID?.uuidString ?? "nil")")
+            }
             self.syncSelectionFromConversation(conversationID, manager: manager)
         }
-        Self.logger.info("\(Self.t)registered selected-conversation observer")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)registered selected-conversation observer")
+        }
 
         // 启动兜底：立即按当前会话同步一次,避免第一发消息仍用旧全局选中。
         syncSelectionFromConversation(conversations.selectedConversationID, manager: manager)
@@ -115,7 +125,9 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         }
         let modelName = conversations?.modelName(for: conversationID)
         manager.select(providerID: providerID, model: modelName)
-        Self.logger.info("\(Self.t)synced selection from conversation: provider=\(providerID, privacy: .public), model=\(modelName ?? "nil", privacy: .public)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)synced selection from conversation: provider=\(providerID, privacy: .public), model=\(modelName ?? "nil", privacy: .public)")
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
