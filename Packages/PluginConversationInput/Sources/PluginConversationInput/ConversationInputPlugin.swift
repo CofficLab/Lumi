@@ -55,7 +55,7 @@ public final class ConversationInputPlugin: SuperPlugin {
         let input = kernel.resolveProvider((any ConversationInputProviding).self)
         let sender = kernel.resolveProvider((any MessageSendingProviding).self)
 
-        // 1. 底部固定输入框（沿用旧版 chatSectionItems .bottomFixed）。
+        // 1. 底部固定输入框
         chat.addItems([
             ChatSectionItem(
                 id: id,
@@ -68,7 +68,7 @@ public final class ConversationInputPlugin: SuperPlugin {
             },
         ])
 
-        // 2. Action Bar 发送/停止按钮（沿用旧版 chatSectionActionBarItems .trailing）。
+        // 2. Action Bar 发送/停止按钮
         chat.addBarItems([
             ChatSectionBarItem(
                 id: "\(id).send-button",

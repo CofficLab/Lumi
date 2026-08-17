@@ -40,7 +40,7 @@ struct ConversationInputView: View {
         .background(theme.background)
     }
 
-    /// 发送当前输入框文本（沿用旧版 `InputState.send(kernel:)` 语义）。
+    /// 发送当前输入框文本
     private func send() {
         guard let input, let sender else { return }
         let trimmed = input.text.trimmingCharacters(in: .whitespacesAndNewlines)

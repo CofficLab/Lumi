@@ -5,64 +5,77 @@ import SwiftUI
 
 /// Action Bar 上的发送/停止按钮
 ///
-/// 由旧版 `SendActionBarButton` 复刻而来；`kernel` 依赖改为注入
-/// 内核的 `ConversationInputProviding` 与 `MessageSendingProviding`。
+/// 视图本身只负责布局和交互；所有状态管理与发送逻辑由 `SendActionBarViewModel` 承载。
+/// 当 `input` 或 `sender` 任一为 nil 时，显示错误按钮并可通过 popover 查看原因。
 struct SendActionBarButton: View {
-    let input: (any ConversationInputProviding)?
-    let sender: (any MessageSendingProviding)?
+    @State private var viewModel: SendActionBarViewModel
+    @State private var showErrorPopover = false
+
+    init(input: (any ConversationInputProviding)?, sender: (any MessageSendingProviding)?) {
+        _viewModel = State(wrappedValue: SendActionBarViewModel(input: input, sender: sender))
+    }
 
     var body: some View {
-        let state = SendActionBarState(
-            isSending: sender?.isSending ?? false,
-            canSend: canSend
-        )
-
         HStack(spacing: 6) {
-            if state.showsSendButton {
-                SendButton(canSend: state.canSend, action: { send() })
-                    .help(LumiPluginLocalization.string("Send", bundle: .module))
-            }
+            if viewModel.hasError {
+                ErrorButton {
+                    showErrorPopover = true
+                }
+                .popover(isPresented: $showErrorPopover) {
+                    errorPopoverContent
+                }
+            } else {
+                let state = viewModel.state
 
-            if state.showsStopButton {
-                StopButton(action: { sender?.cancelCurrentRequest() })
-                    .help(LumiPluginLocalization.string("Stop", bundle: .module))
-            }
-        }
-    }
+                if state.showsSendButton {
+                    SendButton(canSend: state.canSend, action: { viewModel.send() })
+                        .help(LumiPluginLocalization.string("Send", bundle: .module))
+                }
 
-    private var canSend: Bool {
-        guard let input else { return false }
-        return !input.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    /// 发送当前输入框文本（沿用旧版 `InputState.send(kernel:)` 语义）。
-    private func send() {
-        guard let input, let sender else { return }
-        let trimmed = input.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-
-        input.text = ""
-        input.errorMessage = nil
-
-        Task { @MainActor in
-            do {
-                try await sender.sendMessage(trimmed, conversationID: nil)
-            } catch {
-                input.errorMessage = error.localizedDescription
+                if state.showsStopButton {
+                    StopButton(action: { viewModel.cancel() })
+                        .help(LumiPluginLocalization.string("Stop", bundle: .module))
+                }
             }
         }
+        .onAppear { viewModel.setup() }
+        .onDisappear { viewModel.teardown() }
+    }
+
+    // MARK: - Popover
+
+    private var errorPopoverContent: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 4) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.red)
+                Text("Provider Error")
+                    .font(.headline)
+            }
+            if let message = viewModel.initializationError {
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .frame(minWidth: 200)
     }
 }
 
-/// Keeps the queue affordance visible while a turn is running.
-///
-/// Sending another non-empty draft during an active turn enqueues it in
-/// `MessageSender`; the stop control is an additional action, not a replacement
-/// for the send control.
-struct SendActionBarState {
-    let isSending: Bool
-    let canSend: Bool
+// MARK: - ErrorButton
 
-    var showsSendButton: Bool { true }
-    var showsStopButton: Bool { isSending }
+private struct ErrorButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .foregroundStyle(.red)
+                .font(.system(size: 16))
+        }
+        .buttonStyle(.plain)
+        .help("Provider configuration error — click for details")
+    }
 }
