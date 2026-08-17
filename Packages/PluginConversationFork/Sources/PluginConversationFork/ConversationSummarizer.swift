@@ -2,7 +2,7 @@ import Foundation
 import ProviderConversation
 import ProviderMessage
 import ProviderLLMManager
-import ProviderLLM
+import ProviderLLMVendors
 
 /// 用当前对话的模型把历史浓缩成摘要，用于在新对话中续写。
 ///
@@ -27,12 +27,12 @@ public struct ConversationSummarizer: @unchecked Sendable {
 
     private let conversations: any ConversationManaging
     private let messages: any MessageManaging
-    private let llmProvider: any LLMProviderManagerProviding
+    private let llmProvider: any LLMManaging
 
     public init(
         conversations: any ConversationManaging,
         messages: any MessageManaging,
-        llmProvider: any LLMProviderManagerProviding
+        llmProvider: any LLMManaging
     ) {
         self.conversations = conversations
         self.messages = messages

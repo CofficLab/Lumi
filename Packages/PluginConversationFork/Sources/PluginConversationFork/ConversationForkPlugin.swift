@@ -37,7 +37,7 @@ public final class ConversationForkPlugin: SuperPlugin {
               let conversations = kernel.resolveProvider((any ConversationManaging).self),
               let messages = kernel.resolveProvider((any MessageManaging).self),
               let sender = kernel.resolveProvider((any MessageSendingProviding).self),
-              let llmProvider = kernel.resolveProvider((any LLMProviderManagerProviding).self) else {
+              let llmProvider = kernel.resolveProvider((any LLMManaging).self) else {
             return
         }
 

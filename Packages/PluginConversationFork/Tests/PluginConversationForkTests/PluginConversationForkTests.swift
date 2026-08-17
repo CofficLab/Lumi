@@ -3,7 +3,7 @@ import Testing
 import ProviderConversation
 import ProviderMessage
 import ProviderLLMManager
-import ProviderLLM
+import ProviderLLMVendors
 import ProviderMessageSender
 import ProviderAgentLoop
 
