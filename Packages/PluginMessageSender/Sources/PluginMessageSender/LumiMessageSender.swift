@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SuperLogKit
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
@@ -18,21 +19,52 @@ import ProviderMessageSender
 ///
 /// 插件自行持有实现，宿主可通过替换本插件列表定制消息发送行为。
 @MainActor
-public final class LumiMessageSender: MessageSendingProviding {
+public final class LumiMessageSender: MessageSendingProviding, SuperLog {
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi.plugin-message-sender",
         category: "MessageSender"
     )
+    nonisolated public static let emoji = "📤"
+    nonisolated static let verbose = false
 
     private let conversations: any ConversationManaging
     private let messages: any MessageManaging
     private let agentLoop: any AgentLoopProviding
     private var currentTasks: [UUID: Task<Void, Never>] = [:]
 
-    @Published public private(set) var isSending = false
+    @Published public private(set) var isSending = false {
+        didSet {
+            guard isSending != oldValue else { return }
+            notifySendingStateObservers()
+        }
+    }
     @Published public private(set) var pendingImageAttachments: [UserImageAttachment] = []
     @Published public private(set) var pendingFileAttachments: [UserFileAttachment] = []
     @Published public private(set) var pendingQueues: [UUID: [PendingChatMessage]] = [:]
+
+    // MARK: - Sending State Observation
+
+    private var sendingStateObservers: [WeakSendingStateObserver] = []
+
+    @discardableResult
+    public func addSendingStateObserver(_ callback: @escaping (Bool) -> Void) -> any SendingStateObserverHandle {
+        let handle = SendingStateObserverHandleImpl(owner: self, callback: callback)
+        sendingStateObservers.append(WeakSendingStateObserver(handle))
+        return handle
+    }
+
+    fileprivate func removeSendingStateObserver(_ handle: SendingStateObserverHandleImpl) {
+        sendingStateObservers.removeAll { $0.handle === handle }
+    }
+
+    private func notifySendingStateObservers() {
+        sendingStateObservers.removeAll { $0.handle == nil }
+        let observers = sendingStateObservers
+        let currentState = isSending
+        for observer in observers {
+            observer.handle?.invoke(currentState)
+        }
+    }
 
     public init(
         conversations: any ConversationManaging,
@@ -105,7 +137,7 @@ public final class LumiMessageSender: MessageSendingProviding {
     ) async throws {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            Self.logger.debug("sendMessage ignored: empty content after trim")
+            Self.logger.debug("\(Self.t)sendMessage ignored: empty content after trim")
             return
         }
 
@@ -121,7 +153,7 @@ public final class LumiMessageSender: MessageSendingProviding {
                 providerID: nil,
                 modelName: nil
             )
-            Self.logger.info("created new conversation \(targetID.uuidString) for send")
+            Self.logger.info("\(self.t)created new conversation \(targetID.uuidString) for send")
         }
         // 新建会话必须成为当前时间线，否则消息落进不可见会话。
         if conversations.selectedConversationID != targetID {
@@ -137,7 +169,7 @@ public final class LumiMessageSender: MessageSendingProviding {
                 fileAttachments: fileAttachments
             ))
             clearSentAttachments(imageAttachments, fileAttachments)
-            Self.logger.info("send queued: conversation=\(targetID.uuidString.prefix(8)), queueDepth=\(self.pendingQueues[targetID]?.count ?? 0)")
+            Self.logger.info("\(self.t)send queued: conversation=\(targetID.uuidString.prefix(8)), queueDepth=\(self.pendingQueues[targetID]?.count ?? 0)")
             return
         }
 
@@ -154,13 +186,13 @@ public final class LumiMessageSender: MessageSendingProviding {
         )
         messages.insertMessage(userMessage, to: targetID)
         clearSentAttachments(imageAttachments, fileAttachments)
-        Self.logger.info("send user message: conversation=\(targetID.uuidString.prefix(8)), message=\(userMessage.id.uuidString.prefix(8)), contentChars=\(trimmed.count), images=\(imageAttachments.count), files=\(fileAttachments.count)")
+        Self.logger.info("\(self.t)send user message: conversation=\(targetID.uuidString.prefix(8)), message=\(userMessage.id.uuidString.prefix(8)), contentChars=\(trimmed.count), images=\(imageAttachments.count), files=\(fileAttachments.count)")
 
         await executeTurn(conversationID: targetID, userMessageID: userMessage.id)
     }
 
     public func cancelCurrentRequest() {
-        Self.logger.info("cancel current request: activeTasks=\(self.currentTasks.count)")
+        Self.logger.info("\(self.t)cancel current request: activeTasks=\(self.currentTasks.count)")
         for task in currentTasks.values {
             task.cancel()
         }
@@ -179,7 +211,7 @@ public final class LumiMessageSender: MessageSendingProviding {
     ) async throws -> AgentLoopOutcome {
         isSending = true
         defer { isSending = false }
-        Self.logger.info("resume turn: conversation=\(conversationID.uuidString.prefix(8))")
+        Self.logger.info("\(self.t)resume turn: conversation=\(conversationID.uuidString.prefix(8))")
         return try await agentLoop.resumeTurn(in: conversationID, request: request)
     }
 
@@ -205,20 +237,32 @@ public final class LumiMessageSender: MessageSendingProviding {
     /// 执行一个回合（发送路径与队列消费共用）。
     private func executeTurn(conversationID: UUID, userMessageID: UUID) async {
         isSending = true
-        Self.logger.info("turn started: conversation=\(conversationID.uuidString.prefix(8)), userMessage=\(userMessageID.uuidString.prefix(8))")
+        // 插入一条瞬时 status 消息（"正在发送…"），由 MessageManager 仅存内存、不落盘。
+        // 后续 agentLoop 开始 LLM 请求时会覆盖为"正在思考…"，回合结束时兜底清除。
+        let statusMessage = Message(
+            conversationID: conversationID,
+            role: .status,
+            content: String(localized: "status.sending", defaultValue: "正在发送消息…"),
+            metadata: ["isTransientStatus": "true"]
+        )
+        messages.insertMessage(statusMessage, to: conversationID)
+        Self.logger.info("\(self.t)turn started: conversation=\(conversationID.uuidString.prefix(8)), userMessage=\(userMessageID.uuidString.prefix(8))")
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
             defer {
                 self.isSending = false
                 self.currentTasks.removeValue(forKey: conversationID)
+                // 兜底清除瞬时 status 消息（流式行出现后 UI 已自动剔除，
+                // 这里是取消等"不落新消息就结束 sending"场景的保险）。
+                self.messages.clearStatusMessages(in: conversationID)
                 // 队列消费：当前回合结束后发下一条。
                 self.drainPendingQueue(conversationID: conversationID)
             }
             do {
                 _ = try await self.agentLoop.runTurn(in: conversationID)
-                Self.logger.info("turn completed: conversation=\(conversationID.uuidString.prefix(8))")
+                Self.logger.info("\(Self.t)turn completed: conversation=\(conversationID.uuidString.prefix(8))")
             } catch {
-                Self.logger.error("turn failed: conversation=\(conversationID.uuidString.prefix(8)), error=\(error.localizedDescription)")
+                Self.logger.error("\(Self.t)turn failed: conversation=\(conversationID.uuidString.prefix(8)), error=\(error.localizedDescription)")
                 let errorMessage = Message(
                     conversationID: conversationID,
                     role: .error,
@@ -254,9 +298,42 @@ public final class LumiMessageSender: MessageSendingProviding {
             metadata: metadata
         )
         messages.insertMessage(userMessage, to: conversationID)
-        Self.logger.info("drain queue: sending next message, conversation=\(conversationID.uuidString.prefix(8)), message=\(userMessage.id.uuidString.prefix(8))")
+        Self.logger.info("\(self.t)drain queue: sending next message, conversation=\(conversationID.uuidString.prefix(8)), message=\(userMessage.id.uuidString.prefix(8))")
         Task { @MainActor [weak self] in
             await self?.executeTurn(conversationID: conversationID, userMessageID: userMessage.id)
         }
     }
+}
+
+// MARK: - Sending State Observer Handle
+
+/// 发送状态观察者令牌：弱引用 owner，释放或 cancel 后自动停止接收。
+@MainActor
+private final class SendingStateObserverHandleImpl: SendingStateObserverHandle {
+    private weak var owner: LumiMessageSender?
+    private let callback: (Bool) -> Void
+    private var isCancelled = false
+
+    init(owner: LumiMessageSender, callback: @escaping (Bool) -> Void) {
+        self.owner = owner
+        self.callback = callback
+    }
+
+    func cancel() {
+        guard !isCancelled else { return }
+        isCancelled = true
+        owner?.removeSendingStateObserver(self)
+    }
+
+    fileprivate func invoke(_ isSending: Bool) {
+        guard !isCancelled else { return }
+        callback(isSending)
+    }
+}
+
+/// 弱引用包装，令牌释放后自动失效。
+@MainActor
+private final class WeakSendingStateObserver {
+    fileprivate weak var handle: SendingStateObserverHandleImpl?
+    init(_ handle: SendingStateObserverHandleImpl) { self.handle = handle }
 }
