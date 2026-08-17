@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Action Bar 上的模型选择按钮（由旧版 ModelSelectorPlugin 复刻）。
 ///
-/// 通过 `ObservableLLMProviderManagerBox` 订阅 `LLMProviderManagerProviding`
+/// 通过 `ObservableLLMProviderManagerBox` 订阅内核 `LLMManaging`
 /// 的选中/注册变化（替代旧版的 `.onLumiSelectedRemoteProviderIDDidChange`
 /// 等通知订阅），按钮标签实时反映「供应商 · 模型」。
 struct ActionBarButton: View {
@@ -57,10 +57,10 @@ struct ActionBarButton: View {
             return "Select Provider"
         }
         let info = provider.providerInfo
-        if let model = manager.selectedModel {
-            let displayModel = info.models.first(where: { $0.id == model })?.displayName ?? model
-            return "\(info.displayName) · \(displayModel)"
-        }
-        return info.displayName
+        // 当前生效模型：显式选中项 > 供应商默认模型（与内核 `resolveSelected()` 回退一致），
+        // 保证按钮始终反映「当前供应商 + 模型」。
+        let model = manager.selectedModel ?? info.defaultModel
+        let displayModel = info.models.first(where: { $0.id == model })?.displayName ?? model
+        return "\(info.displayName) · \(displayModel)"
     }
 }

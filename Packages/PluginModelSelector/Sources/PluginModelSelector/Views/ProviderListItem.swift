@@ -29,11 +29,6 @@ struct ProviderListItem: View {
                         Text("\(info.models.count) models")
                             .font(.appMicro)
                             .foregroundColor(theme.textTertiary)
-
-                        // API 协议格式（如 OpenAI / Anthropic / Responses）
-                        Text("· \(info.apiFormat.displayName)")
-                            .font(.appMicro)
-                            .foregroundColor(theme.textTertiary)
                     }
                 }
 

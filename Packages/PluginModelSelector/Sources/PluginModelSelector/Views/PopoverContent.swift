@@ -11,7 +11,7 @@ struct PopoverContent: View {
 
     private var manager: (any LLMManaging)? { box.manager }
 
-    /// 当前选中的供应商（初始来自 `LLMProviderManagerProviding`）。
+    /// 当前选中的供应商（初始来自内核 `LLMManaging`）。
     @State private var selectedProviderID: String?
 
     var body: some View {

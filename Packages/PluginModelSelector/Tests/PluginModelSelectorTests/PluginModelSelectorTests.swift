@@ -29,16 +29,6 @@ struct ProviderScopeTests {
     }
 }
 
-@Suite("API format display name")
-struct APIFormatDisplayNameTests {
-    @Test("All API formats have stable display names")
-    func displayNames() {
-        #expect(LLMProviderAPIFormat.openAI.displayName == "OpenAI")
-        #expect(LLMProviderAPIFormat.anthropic.displayName == "Anthropic")
-        #expect(LLMProviderAPIFormat.responses.displayName == "Responses")
-    }
-}
-
 @Suite("ModelSelectorPlugin metadata")
 @MainActor
 struct ModelSelectorPluginMetadataTests {

@@ -2,11 +2,11 @@ import Combine
 import Foundation
 import ProviderLLMManager
 
-/// SwiftUI 友好的 `LLMProviderManagerProviding` 包装器。
+/// SwiftUI 友好的内核 `LLMManaging` 包装器。
 ///
-/// SwiftUI 的 `@ObservedObject` 不支持 `any LLMProviderManagerProviding` 类型的
+/// SwiftUI 的 `@ObservedObject` 不支持 `any LLMManaging` 类型的
 /// existentials（`ObservableObject` 要求具体类型，报错
-/// `type 'any LLMProviderManagerProviding' cannot conform to 'ObservableObject'`）。
+/// `type 'any LLMManaging' cannot conform to 'ObservableObject'`）。
 ///
 /// 解法与旧版 `KernelLumi.ObservableMessageSendingBox` 一致：用具体类包装
 /// 协议实例，并把它的 `objectWillChange` 桥接到自己的 publisher 上，视图即可：
