@@ -7,7 +7,7 @@ import Testing
 @MainActor
 struct OpenCodeProviderPluginTests {
 
-    @Test("onBoot 把 OpenCode 供应商注册进管理器")
+    @Test("onBoot 把 Go 和 Zen 供应商注册进管理器")
     func pluginRegistersProviders() throws {
         let kernel = KernelCoreContainer()
         let manager = DefaultLLMProviderManagerProviding()
@@ -16,7 +16,8 @@ struct OpenCodeProviderPluginTests {
         let plugin = OpenCodeProviderPlugin()
         try plugin.onBoot(kernel: kernel)
 
-        #expect(manager.providerCount == 1)
+        #expect(manager.providerCount == 2)
         #expect(manager.provider(id: "opencode-go")?.providerInfo.id == "opencode-go")
+        #expect(manager.provider(id: "opencode-zen")?.providerInfo.id == "opencode-zen")
     }
 }

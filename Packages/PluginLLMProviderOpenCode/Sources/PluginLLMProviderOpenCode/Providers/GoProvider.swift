@@ -1,15 +1,28 @@
 import ProviderLLMVendors
 import Foundation
+import os
 import ProviderLLMManager
-import ProviderLLM
+import SuperLogKit
 
-/// OpenCode Go 供应商（迁移自旧 LLMProviderOpenCodePlugin 的 `OpenCodeProvider`）。
+/// OpenCode Go 供应商（Go 系列模型网关）。
 ///
-/// 特例：同一网关下按模型走三种协议（Responses / OpenAI / Anthropic），
+/// 同一网关下按模型走三种协议（Responses / OpenAI / Anthropic），
 /// 端点路径不同（`/responses`、`/chat/completions`、`/messages`），因此
-/// 覆盖 `complete(_:)` 按模型路由，不复用基类的单一协议路径。
+/// 覆盖 `complete(_:)` 和 `streamComplete` 按模型路由，不复用基类的单一协议路径。
 @MainActor
-public final class OpenCodeProvider: VendorLLMProvider {
+public final class GoProvider: VendorLLMProvider {
+    // 基类已声明 emoji/logger/verbose；子类不应跨模块重定义 static let。
+    // 本类自定义 emoji 通过扩展在文件末尾提供。
+
+    /// 包装基类 `resolveAPIKey()`，在抛出前记录 error 日志。
+    private func resolvedAPIKey() throws -> String {
+        do {
+            return try resolveAPIKey()
+        } catch {
+            Self.logger.error("\(Self.t)resolveAPIKey failed\(self.r(error.localizedDescription))")
+            throw error
+        }
+    }
 
     private enum Kind {
         case responses
@@ -87,9 +100,13 @@ public final class OpenCodeProvider: VendorLLMProvider {
     public override func complete(_ request: LLMRequest) async throws -> LLMResponse {
         let model = request.model ?? providerInfo.defaultModel
         guard let kind = Self.kinds[model] else {
+            Self.logger.error("\(Self.t)Unknown model: \(model, privacy: .public)")
             throw VendorAPIError.requestFailed("OpenCode Go 未知模型：\(model)")
         }
-        let apiKey = try resolveAPIKey()
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)complete model=\(model, privacy: .public) kind=\(String(describing: kind), privacy: .public)")
+        }
+        let apiKey = try resolvedAPIKey()
         switch kind {
         case .responses:
             return try await sendResponses(request, model: model, apiKey: apiKey)
@@ -100,7 +117,30 @@ public final class OpenCodeProvider: VendorLLMProvider {
         }
     }
 
-    // MARK: - OpenAI / Anthropic
+    public override func streamComplete(
+        _ request: LLMRequest,
+        onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
+    ) async throws -> LLMResponse {
+        let model = request.model ?? providerInfo.defaultModel
+        guard let kind = Self.kinds[model] else {
+            Self.logger.error("\(Self.t)Unknown model: \(model, privacy: .public)")
+            throw VendorAPIError.requestFailed("OpenCode Go 未知模型：\(model)")
+        }
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)streamComplete model=\(model, privacy: .public) kind=\(String(describing: kind), privacy: .public)")
+        }
+        let apiKey = try resolvedAPIKey()
+        switch kind {
+        case .responses:
+            return try await sendResponses(request, model: model, apiKey: apiKey)
+        case .openAI:
+            return try await streamChat(request, model: model, apiKey: apiKey, anthropic: false, onChunk: onChunk)
+        case .anthropic:
+            return try await streamChat(request, model: model, apiKey: apiKey, anthropic: true, onChunk: onChunk)
+        }
+    }
+
+    // MARK: - OpenAI / Anthropic (non-streaming)
 
     private func sendChat(
         _ request: LLMRequest,
@@ -138,6 +178,76 @@ public final class OpenCodeProvider: VendorLLMProvider {
         )
         let parsed = try adapter.parseResponse(data: data)
         return LLMResponse(content: parsed.content, model: model)
+    }
+
+    // MARK: - OpenAI / Anthropic (streaming)
+
+    private func streamChat(
+        _ request: LLMRequest,
+        model: String,
+        apiKey: String,
+        anthropic: Bool,
+        onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
+    ) async throws -> LLMResponse {
+        if anthropic {
+            let adapter = AnthropicCompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
+            nonisolated(unsafe) let body = try adapter.buildStreamingRequestBody(
+                messages: VendorMessageBridging.chatMessages(from: request.messages),
+                model: model,
+                tools: nil,
+                systemPrompt: "",
+                config: LLMConfig(model: model, providerId: providerInfo.id)
+            )
+            nonisolated(unsafe) var content = ""
+            try await apiService.sendStreamingChatRequest(
+                request: adapter.buildRequest(url: try endpointURL("\(Self.base)/messages"), apiKey: apiKey),
+                body: body
+            ) { data in
+                do {
+                    guard let chunk = try adapter.parseStreamChunk(data: data) else { return true }
+                    if chunk.eventType == .thinkingDelta, let piece = chunk.content {
+                        await onChunk(LLMStreamChunk(content: piece, isThinking: true))
+                    } else if let piece = chunk.content, !piece.isEmpty {
+                        content += piece
+                        await onChunk(LLMStreamChunk(content: piece, isThinking: false))
+                    }
+                    if chunk.isDone { return false }
+                    return true
+                } catch {
+                    return false
+                }
+            }
+            return LLMResponse(content: content, model: model)
+        }
+
+        let adapter = OpenAICompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
+        nonisolated(unsafe) let body = try adapter.buildStreamingRequestBody(
+            messages: VendorMessageBridging.chatMessages(from: request.messages),
+            model: model,
+            tools: nil,
+            systemPrompt: "",
+            config: LLMConfig(model: model, providerId: providerInfo.id)
+        )
+        nonisolated(unsafe) var content = ""
+        try await apiService.sendStreamingChatRequest(
+            request: adapter.buildRequest(url: try endpointURL("\(Self.base)/chat/completions"), apiKey: apiKey),
+            body: body
+        ) { data in
+            do {
+                guard let chunk = try adapter.parseStreamChunk(data: data) else { return true }
+                if chunk.eventType == .thinkingDelta, let piece = chunk.content {
+                    await onChunk(LLMStreamChunk(content: piece, isThinking: true))
+                } else if let piece = chunk.content, !piece.isEmpty {
+                    content += piece
+                    await onChunk(LLMStreamChunk(content: piece, isThinking: false))
+                }
+                if chunk.isDone { return false }
+                return true
+            } catch {
+                return false
+            }
+        }
+        return LLMResponse(content: content, model: model)
     }
 
     // MARK: - Responses
