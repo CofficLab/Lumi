@@ -48,6 +48,7 @@ import PluginLLMProviderXiaomi
 import PluginLLMProviderXybbz
 import PluginLLMProviderZhipu
 import PluginLogoCoffic
+import PluginLogoManager
 import PluginMemory
 import PluginMessageList
 import PluginMessageManager
@@ -128,6 +129,9 @@ public struct DefaultPluginFactory: PluginFactory {
             PluginAgentLoop(),
             MessageSenderPlugin(),
             PluginPluginManager(),
+            // Logo 管理器：替换 ProviderFactory 预注册的默认 LogoProviding 实现，
+            // 必须先于各 Logo 贡献插件（如 LogoCofficPlugin order=100）。
+            PluginLogoManager(),
             // LLM 供应商管理器：替换 ProviderFactory 预注册的默认实现，
             // 必须早于 PluginAgentLoop(order=8) 与各供应商插件(order=100)。
             PluginLLMManager(),
