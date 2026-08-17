@@ -43,6 +43,19 @@ public final class PluginLogoManager: SuperPlugin, SuperLog {
         let manager = LogoManager()
         self.manager = manager
 
+        // 0. 复制旧的默认实现（或先前已注册实现）中已有的数据，避免数据丢失。
+        //    LogoProviding 协议要求 AnyObject & ObservableObject，可直接读取协议属性。
+        if let old = kernel.resolveProvider((any LogoProviding).self) {
+            // 逐个重新注册，保持去重与 order 降序排序逻辑一致。
+            for item in old.allLogoItems {
+                manager.registerLogoItem(item)
+            }
+            manager.setLogoHighlighted(old.isLogoHighlighted)
+            if Self.verbose {
+                Self.logger.info("\(Self.t)copied \(old.allLogoItems.count) existing logo items from previous LogoProviding")
+            }
+        }
+
         // 1. 注销 ProviderFactory 预注册的默认实现（避免 providerAlreadyRegistered）。
         kernel.unregisterProvider((any LogoProviding).self)
 
