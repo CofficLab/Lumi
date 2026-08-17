@@ -4,6 +4,7 @@ import KernelCore
 import ProviderLLMManager
 import ProviderLLMVendors
 import SuperLogKit
+import ProviderNetwork
 
 /// HyperAPI 供应商装配插件（KernelCore 生态）。
 ///
@@ -25,7 +26,8 @@ public final class HyperAPIProviderPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve LLMProviderManagerProviding from kernel\(self.r("manager is nil"))")
             return
         }
-        let providers: [any SuperLLMProvider] = [HyperAPIProvider()]
+        let networkProvider = kernel.resolveProvider((any NetworkProviding).self)
+        let providers: [any SuperLLMProvider] = [HyperAPIProvider(networkProvider: networkProvider)]
         for provider in providers {
             if Self.verbose {
                 let typeName = String(describing: type(of: provider))

@@ -19,6 +19,7 @@ let package = Package(
         .package(path: "../SuperLogKit"),
         .package(path: "../KernelCore"),
         .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderNetwork"),
     ],
     targets: [
         .target(
@@ -29,6 +30,7 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderNetwork", package: "ProviderNetwork"),
             ],
             path: "Sources/ProviderLLMVendors"
         ),

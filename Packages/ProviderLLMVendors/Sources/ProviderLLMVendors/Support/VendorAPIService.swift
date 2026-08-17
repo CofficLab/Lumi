@@ -1,5 +1,6 @@
 import Foundation
 import HttpKit
+import ProviderNetwork
 
 /// 新版供应商统一的 API 传输服务（精简自旧版 `LLMAPIService`）。
 ///
@@ -7,12 +8,19 @@ import HttpKit
 /// - `sendChatRequest` / `sendJSON`：非流式 JSON，`.sortedKeys` 保证字节稳定（前缀缓存匹配）；
 /// - `sendStreamingChatRequest`：SSE 流式，逐事件回调原始 `Data`（含 `data:` 前缀），
 ///   由调用方（adapter 的 `parseStreamChunk`）自行解析；
-/// - 底层传输由 `HttpKit` 的 `HTTPClient` 提供，不依赖 KernelLumi 网络层。
+/// - 优先使用 `NetworkProviding`（支持 HTTP 交换记录），回退到 `HttpKit.HTTPClient`。
 public final class VendorAPIService: @unchecked Sendable {
     private let client: HTTPClient
+    private let networkProvider: (any NetworkProviding)?
 
-    public init(client: HTTPClient = HTTPClient()) {
+    /// 初始化传输服务。
+    ///
+    /// - Parameters:
+    ///   - client: HttpKit 客户端（当 `networkProvider` 为 nil 时使用）
+    ///   - networkProvider: 可选的网络提供者，优先使用以支持 HTTP 交换记录
+    public init(client: HTTPClient = HTTPClient(), networkProvider: (any NetworkProviding)? = nil) {
         self.client = client
+        self.networkProvider = networkProvider
     }
 
     /// 发送聊天完成请求（单次，不含重试）。
@@ -20,7 +28,10 @@ public final class VendorAPIService: @unchecked Sendable {
         request: URLRequest,
         body: [String: Any]
     ) async throws -> Data {
-        try await client.sendJSONRequest(request: request, body: body)
+        if let networkProvider {
+            return try await sendViaNetworkProvider(networkProvider, request: request, body: body)
+        }
+        return try await client.sendJSONRequest(request: request, body: body)
     }
 
     /// 发送任意 JSON 请求（Responses 协议等）。
@@ -28,7 +39,10 @@ public final class VendorAPIService: @unchecked Sendable {
         request: URLRequest,
         body: [String: Any]
     ) async throws -> Data {
-        try await client.sendJSONRequest(request: request, body: body)
+        if let networkProvider {
+            return try await sendViaNetworkProvider(networkProvider, request: request, body: body)
+        }
+        return try await client.sendJSONRequest(request: request, body: body)
     }
 
     /// 发送流式聊天完成请求（SSE）。
@@ -43,10 +57,69 @@ public final class VendorAPIService: @unchecked Sendable {
         body: [String: Any],
         onEvent: @escaping @Sendable (Data) async -> Bool
     ) async throws {
+        if let networkProvider {
+            try await streamViaNetworkProvider(networkProvider, request: request, body: body, onEvent: onEvent)
+            return
+        }
         try await client.sendStreamingJSONRequest(
             request: request,
             body: body,
             onEvent: onEvent
+        )
+    }
+
+    // MARK: - NetworkProviding Bridge
+
+    /// 通过 NetworkProviding 发送非流式请求
+    private func sendViaNetworkProvider(
+        _ provider: any NetworkProviding,
+        request: URLRequest,
+        body: [String: Any]
+    ) async throws -> Data {
+        let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
+        let httpMethod = HTTPMethod(rawValue: request.httpMethod ?? "POST") ?? HTTPMethod.post
+        var headers: [String: String] = [:]
+        request.allHTTPHeaderFields?.forEach { headers[$0.key] = $0.value }
+        headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
+
+        let httpRequest = HTTPRequest(
+            url: request.url ?? URL(string: "about:blank")!,
+            method: httpMethod,
+            headers: headers,
+            body: bodyData,
+            timeout: request.timeoutInterval
+        )
+        let response = try await provider.request(httpRequest)
+        return response.body
+    }
+
+    /// 通过 NetworkProviding 发送流式请求
+    private func streamViaNetworkProvider(
+        _ provider: any NetworkProviding,
+        request: URLRequest,
+        body: [String: Any],
+        onEvent: @escaping @Sendable (Data) async -> Bool
+    ) async throws {
+        let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
+        let httpMethod = HTTPMethod(rawValue: request.httpMethod ?? "POST") ?? HTTPMethod.post
+        var headers: [String: String] = [:]
+        request.allHTTPHeaderFields?.forEach { headers[$0.key] = $0.value }
+        headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
+
+        let httpRequest = HTTPRequest(
+            url: request.url ?? URL(string: "about:blank")!,
+            method: httpMethod,
+            headers: headers,
+            body: bodyData,
+            timeout: request.timeoutInterval
+        )
+
+        try await provider.stream(
+            httpRequest,
+            onResponse: { _ in },
+            onChunk: { chunk in
+                await onEvent(chunk)
+            }
         )
     }
 }

@@ -1,6 +1,7 @@
 import ProviderLLMVendors
 import Foundation
 import ProviderLLMManager
+import ProviderNetwork
 
 /// MegaLLM 供应商（迁移自旧 LLMProviderMegaLLMPlugin）。
 @MainActor
@@ -40,5 +41,11 @@ public final class MegaLLMProvider: VendorLLMProvider {
         OpenAICompatibleProviderConfiguration(
             baseURL: "https://ai.megallm.io/v1/chat/completions"
         )
+    }
+
+    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
+    public convenience init(networkProvider: (any NetworkProviding)?) {
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        self.init(apiService: apiService)
     }
 }

@@ -1,6 +1,7 @@
 import ProviderLLMVendors
 import Foundation
 import ProviderLLMManager
+import ProviderNetwork
 
 /// Kimi Code Anthropic 协议变体（迁移自旧 `KimiCodeAnthropicProvider`）。
 @MainActor
@@ -31,5 +32,11 @@ public final class KimiCodeAnthropicProvider: VendorLLMProvider {
         AnthropicCompatibleProviderConfiguration(
             baseURL: "https://api.kimi.com/coding/v1/messages"
         )
+    }
+
+    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
+    public convenience init(networkProvider: (any NetworkProviding)?) {
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        self.init(apiService: apiService)
     }
 }

@@ -1,6 +1,7 @@
 import ProviderLLMVendors
 import Foundation
 import ProviderLLMManager
+import ProviderNetwork
 
 /// 智谱 API 供应商（迁移自旧 LLMProviderZhipuPlugin 的 `ZhipuAPIProvider`）。
 @MainActor
@@ -35,5 +36,11 @@ public final class ZhipuProvider: VendorLLMProvider {
         OpenAICompatibleProviderConfiguration(
             baseURL: "https://open.bigmodel.cn/api/paas/v4/chat/completions"
         )
+    }
+
+    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
+    public convenience init(networkProvider: (any NetworkProviding)?) {
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        self.init(apiService: apiService)
     }
 }

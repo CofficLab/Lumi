@@ -1,6 +1,7 @@
 import Foundation
 import os
 import ProviderMessage
+import ProviderNetwork
 import SuperLogKit
 
 /// 新版内建 LLM 供应商基类（KernelCore 生态，不依赖 KernelLumi）。
@@ -39,6 +40,18 @@ open class VendorLLMProvider: SuperLLMProvider, @preconcurrency LLMProviding, LL
     ) {
         self.providerInfo = info
         self.apiService = apiService
+    }
+
+    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
+    ///
+    /// 所有通过此初始化创建的供应商，其网络请求都会经过 `NetworkProviding`，
+    /// 从而可以被 `HTTPExchangeStore` 记录。
+    public convenience init(
+        info: LLMProviderInfo,
+        networkProvider: (any NetworkProviding)?
+    ) {
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        self.init(info: info, apiService: apiService)
     }
 
     public var providerID: String { providerInfo.id }

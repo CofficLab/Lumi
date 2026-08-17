@@ -1,6 +1,7 @@
 import ProviderLLMVendors
 import Foundation
 import ProviderLLMManager
+import ProviderNetwork
 
 /// Sublyx 供应商（迁移自旧 LLMProviderSublyxPlugin 的 `SublyxProvider`）。
 @MainActor
@@ -32,5 +33,11 @@ public final class SublyxProvider: VendorLLMProvider {
         OpenAICompatibleProviderConfiguration(
             baseURL: "https://api.sublyx.org/v1/chat/completions"
         )
+    }
+
+    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
+    public convenience init(networkProvider: (any NetworkProviding)?) {
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        self.init(apiService: apiService)
     }
 }

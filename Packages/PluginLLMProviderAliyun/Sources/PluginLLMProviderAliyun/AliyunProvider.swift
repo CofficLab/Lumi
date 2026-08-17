@@ -1,6 +1,7 @@
 import ProviderLLMVendors
 import Foundation
 import ProviderLLMManager
+import ProviderNetwork
 
 /// 阿里云 CodingPlan 供应商（Anthropic 兼容协议，迁移自旧 LLMProviderAliyunPlugin）。
 @MainActor
@@ -37,5 +38,11 @@ public final class AliyunProvider: VendorLLMProvider {
         AnthropicCompatibleProviderConfiguration(
             baseURL: "https://coding.dashscope.aliyuncs.com/apps/anthropic"
         )
+    }
+
+    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
+    public convenience init(networkProvider: (any NetworkProviding)?) {
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        self.init(apiService: apiService)
     }
 }

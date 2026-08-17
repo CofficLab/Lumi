@@ -1,6 +1,7 @@
 import ProviderLLMVendors
 import Foundation
 import ProviderLLMManager
+import ProviderNetwork
 
 /// HappyCode 供应商（迁移自旧 LLMProviderHappyCodePlugin）。
 @MainActor
@@ -28,5 +29,11 @@ public final class HappyCodeProvider: VendorLLMProvider {
         OpenAICompatibleProviderConfiguration(
             baseURL: "https://happycode.vip/v1/chat/completions"
         )
+    }
+
+    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
+    public convenience init(networkProvider: (any NetworkProviding)?) {
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        self.init(apiService: apiService)
     }
 }

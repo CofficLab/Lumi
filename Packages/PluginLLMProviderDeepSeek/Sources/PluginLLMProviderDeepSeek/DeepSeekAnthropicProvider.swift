@@ -1,6 +1,7 @@
 import ProviderLLMVendors
 import Foundation
 import ProviderLLMManager
+import ProviderNetwork
 
 /// DeepSeek Anthropic 协议变体（迁移自旧 `DeepSeekAnthropicProvider`）。
 @MainActor
@@ -29,5 +30,11 @@ public final class DeepSeekAnthropicProvider: VendorLLMProvider {
         AnthropicCompatibleProviderConfiguration(
             baseURL: "https://api.deepseek.com/anthropic"
         )
+    }
+
+    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
+    public convenience init(networkProvider: (any NetworkProviding)?) {
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        self.init(apiService: apiService)
     }
 }

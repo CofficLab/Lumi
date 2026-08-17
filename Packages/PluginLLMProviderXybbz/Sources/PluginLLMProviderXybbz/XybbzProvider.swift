@@ -1,6 +1,7 @@
 import ProviderLLMVendors
 import Foundation
 import ProviderLLMManager
+import ProviderNetwork
 
 /// Xybbz 供应商（迁移自旧 LLMProviderXybbzPlugin）。
 @MainActor
@@ -29,5 +30,11 @@ public final class XybbzProvider: VendorLLMProvider {
         OpenAICompatibleProviderConfiguration(
             baseURL: "https://sub2api.xybbz.xyz/v1/chat/completions"
         )
+    }
+
+    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
+    public convenience init(networkProvider: (any NetworkProviding)?) {
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        self.init(apiService: apiService)
     }
 }

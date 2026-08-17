@@ -1,6 +1,7 @@
 import ProviderLLMVendors
 import Foundation
 import ProviderLLMManager
+import ProviderNetwork
 
 /// Anthropic 供应商（迁移自旧 LLMProviderAnthropicPlugin）。
 @MainActor
@@ -28,6 +29,12 @@ public final class AnthropicProvider: VendorLLMProvider {
             ),
             apiService: apiService
         )
+    }
+
+    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
+    public convenience init(networkProvider: (any NetworkProviding)?) {
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        self.init(apiService: apiService)
     }
 
     public override var anthropicConfiguration: AnthropicCompatibleProviderConfiguration? {
