@@ -52,7 +52,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     private let store: ConversationStore?
     public let dataDirectory: URL
     private let project: (any ProjectProviding)?
-    private let llmProviderManager: (any LLMProviderManagerProviding)?
+    private let llmProviderManager: (any LLMManaging)?
     private let messageManager: (any MessageManaging)?
     private let toolManager: (any ToolManagerProviding)?
     private let agentTurn: (any AgentLoopProviding)?
@@ -64,7 +64,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         store: ConversationStore?,
         dataDirectory: URL,
         project: (any ProjectProviding)? = nil,
-        llmProviderManager: (any LLMProviderManagerProviding)? = nil,
+        llmProviderManager: (any LLMManaging)? = nil,
         messageManager: (any MessageManaging)? = nil,
         toolManager: (any ToolManagerProviding)? = nil,
         agentTurn: (any AgentLoopProviding)? = nil,

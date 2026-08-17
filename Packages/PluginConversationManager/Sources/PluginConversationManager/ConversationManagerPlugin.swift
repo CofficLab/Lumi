@@ -63,7 +63,7 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
             store: store,
             dataDirectory: databaseRootURL,
             project: kernel.resolveProvider((any ProjectProviding).self),
-            llmProviderManager: kernel.resolveProvider((any LLMProviderManagerProviding).self),
+            llmProviderManager: kernel.resolveProvider((any LLMManaging).self),
             messageManager: kernel.resolveProvider((any MessageManaging).self),
             toolManager: kernel.resolveProvider((any ToolManagerProviding).self),
             agentTurn: kernel.resolveProvider((any AgentLoopProviding).self),
