@@ -23,7 +23,7 @@ import ProviderConversation
 /// - 瞬时 status 消息（正在思考…/正在执行…）由 `MessageManaging` 仅存内存；
 /// - 回合生命周期经 `AgentLoopEventHandler` 广播（宿主桥接事件总线/通知）。
 @MainActor
-public final class DefaultAgentLoopProviding: AgentLoopProviding {
+public final class DefaultAgentLoopProvider: AgentLoopProviding {
     private let messages: any MessageManaging
     private var responder: AgentLoopResponder?
     private var llmProvider: (any LLMProviding)?
