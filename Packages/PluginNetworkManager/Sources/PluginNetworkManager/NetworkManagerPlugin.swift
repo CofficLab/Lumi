@@ -64,10 +64,14 @@ public final class NetworkManagerPlugin: SuperPlugin {
         NetworkService.shared.configureHTTPExchangeStore(exchangeStore)
 
         // 2. 注册 NetworkProviding 到内核（替换默认实现，附带 exchangeStore）
+        // 先注销默认的 NetworkProviding，再注册自定义实现
+        kernel.unregisterProvider((any NetworkProviding).self)
         if let exchangeStore {
+            let customProvider = NetworkProvider(exchangeStore: exchangeStore)
             try kernel.registerProvider(
                 (any NetworkProviding).self,
-                NetworkProvider(exchangeStore: exchangeStore)
+                customProvider,
+                forwardsObjectWillChange: false
             )
         }
 
