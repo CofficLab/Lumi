@@ -6,6 +6,7 @@ let package = Package(
     products: [.library(name: "PluginConversationList", targets: ["PluginConversationList"])],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../SuperLogKit"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderRailView"),
@@ -18,6 +19,7 @@ let package = Package(
     ],
     targets: [.target(name: "PluginConversationList", dependencies: [
         .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
         .product(name: "ProviderConversation", package: "ProviderConversation"),
         .product(name: "ProviderChatSection", package: "ProviderChatSection"),
         .product(name: "ProviderRailView", package: "ProviderRailView"),
