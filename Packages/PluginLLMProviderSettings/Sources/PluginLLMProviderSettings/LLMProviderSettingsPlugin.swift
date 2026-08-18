@@ -1,5 +1,7 @@
+import os
 import Foundation
 import KernelCore
+import SuperLogKit
 import ProviderLLMManager
 import KitLLM
 import ProviderSettingView
@@ -16,7 +18,9 @@ import SwiftUI
 /// `selectedModel` / `select(providerID:model:)`），并通过 ObservableObject
 /// 订阅管理器变化即时刷新。
 @MainActor
-public final class LLMProviderSettingsPlugin: SuperPlugin {
+public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-provider-settings", category: "LLMProviderSettings")
+
     public let id = "com.coffic.lumi.plugin.llm-provider-settings"
     public let order = 100
 
@@ -25,6 +29,7 @@ public final class LLMProviderSettingsPlugin: SuperPlugin {
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let manager = kernel.resolveProvider((any LLMManaging).self),
               let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve LLMManaging, SettingViewProviding from kernel")
             return
         }
         settings.addEntries([
