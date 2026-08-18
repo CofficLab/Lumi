@@ -3,6 +3,12 @@ import KernelCore
 import PluginAgentRules
 import PluginAgentTempStorage
 import PluginAgentTurnNotification
+import PluginDebugBadge
+import PluginFileLog
+import PluginShowImage
+import PluginStorage
+import PluginToast
+import PluginCommand
 import PluginActivityBar
 import PluginAppIconDesigner
 import PluginAppStorePromoDesigner
@@ -83,6 +89,10 @@ public struct DefaultPluginFactory: PluginFactory {
     /// 产出默认插件列表。
     public func makePlugins() -> [any SuperPlugin] {
         [
+            // 核心基础插件（order 10-20）：必须最先启动
+            try! StorageSuperPlugin(),
+            CommandSuperPlugin(),
+            ToastSuperPlugin(),
             CaffeinatePlugin(),
             SettingGeneralPlugin(),
             ProjectsPlugin(),
@@ -123,6 +133,9 @@ public struct DefaultPluginFactory: PluginFactory {
             AskUserPlugin(),
             OpenInPlugin(),
             AgentTurnNotificationPlugin(),
+            DebugBadgeSuperPlugin(),
+            FileLogPlugin(),
+            ShowImagePlugin(),
             SkillPlugin(),
             MemoryPlugin(),
             ModelSelectorPlugin(),
