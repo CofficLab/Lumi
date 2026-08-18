@@ -58,7 +58,8 @@ public final class MindMapDesignerPlugin: SuperPlugin {
                     id: entryID,
                     title: name,
                     systemImage: "brain.head.profile",
-                    order: order
+                    order: order,
+                    ownerPluginID: id
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
                     MindMapStore.shared.reload()
