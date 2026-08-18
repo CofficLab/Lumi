@@ -57,7 +57,8 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
                     id: entryID,
                     title: name,
                     systemImage: "photo.artframe",
-                    order: order
+                    order: order,
+                    ownerPluginID: id
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
                     WorkspaceStore.shared.reload()
