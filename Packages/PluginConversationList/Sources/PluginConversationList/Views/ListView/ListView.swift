@@ -2,9 +2,7 @@ import Combine
 import ProviderConversation
 import SwiftUI
 
-/// 对话列表视图（复刻旧版 ConversationListPlugin.ListView）
-///
-/// 行为与旧版完全一致：
+/// 对话列表视图：
 /// - 分页加载（每页 40），滚动到底自动加载下一页；
 /// - 粘性排序（ConversationSortStabilizer），防止高频消息导致列表跳动；
 /// - 乐观选中：点击时立刻高亮，再与管理器真实状态对齐；
@@ -23,13 +21,9 @@ struct ListView: View {
     /// 点击时立刻写入的乐观选中 ID：不等 selectConversation 的同步持久化/通知
     /// 链路，让选中高亮即时跟上点击；随后由 onChange 与管理器真实状态对齐。
     @State private var immediateSelectionID: UUID?
-    /// conversationManager 是协议存在类型，无法直接 @ObservedObject；
-    /// 通过 onReceive(objectWillChange) 递增它来强制 body 重新求值。
-    @State private var managerRevision = 0
+    @ObservedObject private var context: ConversationListContext
     @ObservedObject private var attentionStore: ConversationAttentionStore
     @ObservedObject private var sortStabilizer: ConversationSortStabilizer
-
-    private let context: ConversationListContext
 
     /// The project path to filter by, or nil if showing all conversations.
     private let projectPath: String?
@@ -40,7 +34,7 @@ struct ListView: View {
         sortStabilizer: ConversationSortStabilizer,
         projectPath: String? = nil
     ) {
-        self.context = context
+        self._context = ObservedObject(wrappedValue: context)
         self._attentionStore = ObservedObject(wrappedValue: attentionStore)
         self._sortStabilizer = ObservedObject(wrappedValue: sortStabilizer)
         self.projectPath = projectPath
@@ -69,14 +63,11 @@ struct ListView: View {
                 await reload()
             }
         }
-        // 外部选中变化（删除自动选中、启动恢复、其他入口切换）时对齐乐观状态
-        .onChange(of: context.conversations.selectedConversationID) { _, newID in
+        // 外部选中变化（删除自动选中、启动恢复、其他入口切换）时对齐乐观状态。
+        // context 是 ObservableObject，selectedConversationID 由 addSelectedConversationObserver
+        // 回调同步更新，@ObservedObject 直接追踪，无需间接订阅 objectWillChange。
+        .onChange(of: context.selectedConversationID) { _, newID in
             immediateSelectionID = newID
-        }
-        // 管理器是协议存在类型，无法 @ObservedObject；用 Combine 订阅
-        // objectWillChange 并递增 revision，强制 body 重新求值读取最新选中。
-        .onReceive(context.conversations.objectWillChange) { _ in
-            managerRevision += 1
         }
     }
 
@@ -92,7 +83,7 @@ struct ListView: View {
                     ForEach(conversations, id: \.id) { conversation in
                         ItemView(
                             conversation: conversation,
-                            isSelected: (immediateSelectionID ?? context.conversations.selectedConversationID) == conversation.id,
+                            isSelected: (immediateSelectionID ?? context.selectedConversationID) == conversation.id,
                             isActive: context.agentTurn?.isRunning(for: conversation.id) == true,
                             needsAttention: attentionStore.needsAttention(for: conversation.id),
                             onSelect: {
