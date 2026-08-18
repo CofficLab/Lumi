@@ -71,8 +71,6 @@ public final class PluginAgentLoop: SuperPlugin {
         
         // 6. 注册自定义实现（不转发 objectWillChange，与默认注册保持一致）
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
-        
-        Self.logger.info("\(Self.emoji)Registered custom AgentLoopProvider with full dependencies")
     }
     
     public func onShutdown(kernel: KernelCoreContainer) throws {
