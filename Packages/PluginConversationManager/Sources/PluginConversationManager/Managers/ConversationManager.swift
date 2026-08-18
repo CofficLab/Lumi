@@ -20,13 +20,13 @@ import SuperLogKit
 public final class ConversationManager: ObservableObject, ConversationManaging, SuperLog {
     private static let initialPageSize = 40
     /// 选中状态写盘队列：串行执行，保证连续切换会话时最后一次写入生效。
-    nonisolated private static let stateWriteQueue = DispatchQueue(
+    private nonisolated static let stateWriteQueue = DispatchQueue(
         label: "com.coffic.lumi.conversation-manager.state-write",
         qos: .utility
     )
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager")
-    nonisolated public static let emoji = "💬"
-    public nonisolated static let verbose = false
+    public nonisolated static let emoji = "💬"
+    public nonisolated static let verbose = true
 
     @Published public private(set) var conversations: [LumiConversationSummary] = []
     @Published public private(set) var selectedConversationID: UUID? {
@@ -35,6 +35,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
             notifySelectedConversationObservers()
         }
     }
+
     @Published public private(set) var currentTitle: String = "No conversation"
     @Published public private(set) var isLoadingConversations = true
     @Published public private(set) var globalVerbosity: LumiResponseVerbosity = .defaultVerbosity
@@ -78,9 +79,6 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         self.toolManager = toolManager
         self.agentTurn = agentTurn
         self.eventBus = eventBus
-        if Self.verbose {
-            Self.logger.info("\(Self.t)ConversationManager initialized")
-        }
         observeProjectChanges()
     }
 
