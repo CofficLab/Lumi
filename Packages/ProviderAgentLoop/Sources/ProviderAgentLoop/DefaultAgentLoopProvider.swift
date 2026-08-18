@@ -52,8 +52,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
     private var streaming: (any MessageStreamingProviding)?
     private var conversations: (any ConversationManaging)?
     private var eventHandler: AgentLoopEventHandler?
-    /// LLM 请求前的消息准备钩子（对齐旧版 `willSendToLLM`），按注册顺序执行。
-    private var messagePreparers: [AgentLoopMessagePreparer] = []
     /// 生命周期钩子管理器：回合循环在各关键节点触发对应钩子。
     private var lifecycleHooks: (any LifecycleHooksProviding)?
 
@@ -100,10 +98,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
 
     public func setEventHandler(_ handler: AgentLoopEventHandler?) {
         eventHandler = handler
-    }
-
-    public func addMessagePreparer(_ preparer: @escaping AgentLoopMessagePreparer) {
-        messagePreparers.append(preparer)
     }
 
     public func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {
@@ -347,9 +341,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
             // 详细度 / 语言 / 自动化级别等插件按注册顺序串行修改消息历史，
             // 注入 system 指令（不落库，仅本次请求生效）。
             var preparedHistory = history
-            for preparer in messagePreparers {
-                preparedHistory = await preparer(preparedHistory)
-            }
             // 生命周期钩子 willSendToLLM：插件可在 LLM 请求前修改消息历史。
             if let lifecycleHooks {
                 let ctx = WillSendToLLMContext(

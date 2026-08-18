@@ -74,13 +74,6 @@ public struct AgentTurnResumeRequest: Sendable, Equatable {
 /// The loop itself owns lifecycle and message persistence, not provider protocol details.
 public typealias AgentLoopResponder = @MainActor @Sendable (AgentLoopRequest) async throws -> String
 
-/// LLM 请求前的消息准备钩子（对齐旧版 `willSendToLLM` 插件钩子）。
-///
-/// 插件（详细度、语言、自动化级别等）在请求发往 LLM 前拿到消息历史快照，
-/// 注入/修改 system 指令（如 verbosity prompt、语言偏好），返回准备后的消息。
-/// 多个钩子按注入顺序串行执行，后一个拿到前一个的结果。
-public typealias AgentLoopMessagePreparer = @MainActor @Sendable ([Message]) async -> [Message]
-
 /// Agent 回合管理（KernelCore 体系）。
 ///
 /// 复刻旧版 `AgentTurnRunner` 的职责：防并发 runTurn、流式 LLM 调用、
@@ -110,19 +103,12 @@ public protocol AgentLoopProviding: AnyObject, ObservableObject {
     /// 注入回合生命周期事件回调（宿主桥接到事件总线 / 通知中心）。
     func setEventHandler(_ handler: AgentLoopEventHandler?)
 
-    /// 注册一个 LLM 请求前的消息准备钩子（对齐旧版 `willSendToLLM`）。
-    ///
-    /// 多个钩子按注册顺序串行执行；后一个拿到前一个的结果。
-    func addMessagePreparer(_ preparer: @escaping AgentLoopMessagePreparer)
-
     /// 注入生命周期钩子管理器，回合循环在各关键节点触发对应钩子。
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?)
 }
 
 public extension AgentLoopProviding {
     func setEventHandler(_ handler: AgentLoopEventHandler?) {}
-
-    func addMessagePreparer(_ preparer: @escaping AgentLoopMessagePreparer) {}
 
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
 

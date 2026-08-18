@@ -36,7 +36,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
     }
 
     /// 本插件注册的自定义 Provider（保存引用便于 onShutdown / 调试诊断）。
-    private var provider: CustomActivityBarProviding?
+    private var provider: ActivityBarProvider?
 
     public init() {}
 
@@ -54,7 +54,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         kernel.unregisterProvider((any ActivityBarProviding).self)
 
         // 3. 用旧数据预填新实例，确保 `unregisterProvider` 不会"误伤"已注册入口。
-        let provider = CustomActivityBarProviding(
+        let provider = ActivityBarProvider(
             preloadedItems: preloadedItems,
             activeItemID: preloadedActiveItemID
         )
@@ -73,7 +73,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
     /// 这里不能放进 `onBoot`：业务插件（order=81+）在 `onBoot` 中也会
     /// 注册自己的入口，必须让它们先注册，最后本插件再以"内置入口"兜底。
     public func onReady(kernel: KernelCoreContainer) throws {
-        guard let provider = kernel.resolveProvider((any ActivityBarProviding).self) as? CustomActivityBarProviding else {
+        guard let provider = kernel.resolveProvider((any ActivityBarProviding).self) as? ActivityBarProvider else {
             if Self.verbose {
                 Self.logger.warning("\(Self.t)ActivityBarProviding not resolved as CustomActivityBarProviding, skip bootstrap")
             }
