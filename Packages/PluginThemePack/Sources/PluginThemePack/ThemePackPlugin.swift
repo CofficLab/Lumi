@@ -1,4 +1,6 @@
+import os
 import KernelCore
+import SuperLogKit
 import ProviderSettingView
 import ProviderTheme
 import SwiftUI
@@ -14,7 +16,9 @@ import SwiftUI
 /// 消费方（设置项、主窗口）通过 `ThemeProviding.themes` 读取全部主题
 /// （内置 3 个 + 本插件 19 个），订阅 `objectWillChange` 感知切换。
 @MainActor
-public final class ThemePackPlugin: SuperPlugin {
+public final class ThemePackPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.theme-pack", category: "ThemePack")
+
     public let id = "com.coffic.lumi.plugin.theme-pack"
     public let order = 100
 
@@ -22,6 +26,7 @@ public final class ThemePackPlugin: SuperPlugin {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let theme = kernel.resolveProvider((any ThemeProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ThemeProviding from kernel")
             return
         }
         for legacy in LegacyThemeCatalog.all {
