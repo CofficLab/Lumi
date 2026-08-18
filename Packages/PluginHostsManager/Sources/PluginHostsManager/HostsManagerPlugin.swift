@@ -52,7 +52,8 @@ public final class HostsManagerPlugin: SuperPlugin {
                     id: entryID,
                     title: name,
                     systemImage: "list.bullet.rectangle",
-                    order: order
+                    order: order,
+                    ownerPluginID: id
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
                     contentView?.setContentView(AnyView(HostsManagerView()))
