@@ -28,7 +28,9 @@ import SwiftUI
 /// 相比旧版移除：图片拖拽经 `messageSender.addAttachment` 作为附件发送——新版
 /// `MessageSendingProviding` 无附件管道，图片文件与其他文件一样以路径文本插入输入框。
 @MainActor
-public final class ConversationInputPlugin: SuperPlugin {
+public final class ConversationInputPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-input", category: "ConversationInput")
+
     public let id = "com.coffic.lumi.plugin.conversation-input"
     public let order = 83
 
@@ -50,7 +52,10 @@ public final class ConversationInputPlugin: SuperPlugin {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else { return }
+        guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding from kernel")
+            return
+        }
 
         let input = kernel.resolveProvider((any ConversationInputProviding).self)
         let sender = kernel.resolveProvider((any MessageSendingProviding).self)
