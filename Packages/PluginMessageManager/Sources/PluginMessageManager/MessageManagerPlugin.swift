@@ -37,7 +37,7 @@ public final class MessageManagerPlugin: SuperPlugin, SuperLog {
         description: "SwiftData 持久化消息管理（write-behind），替代默认内存实现",
         category: .chat,
         stage: .preview,
-        policy: .enabledByDefault
+        policy: .required
     )
 
     public init() {}
