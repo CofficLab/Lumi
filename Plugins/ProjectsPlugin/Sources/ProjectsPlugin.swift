@@ -14,6 +14,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
     public var name: String {
         LumiPluginLocalization.string("Projects Plugin", bundle: .module)
     }
+
     public let order = 5
     public let policy: LumiPluginPolicy = .alwaysOn // 核心插件
     public let stage: LumiPluginStage = .beta
@@ -47,7 +48,7 @@ public final class ProjectsPlugin: LumiPlugin, SuperLog {
                 action: .pickProjectFolder,
                 visibility: .onlyWithoutProject,
                 style: .additive
-            )
+            ),
         ]
     }
 
