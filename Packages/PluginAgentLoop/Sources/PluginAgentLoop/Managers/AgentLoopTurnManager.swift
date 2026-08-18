@@ -1,12 +1,13 @@
 import AgentToolKit
-import Foundation
 import Combine
+import Foundation
+import KitLLM
 import os
 import ProviderAgentLoop
 import ProviderMessage
-import KitLLM
 
 // MARK: - ProviderMessage ↔ KitLLM 桥接
+
 extension Message {
     var llmMessage: LLMMessage {
         LLMMessage(
@@ -19,9 +20,10 @@ extension Message {
         )
     }
 }
-import ProviderToolManager
-import ProviderMessageStreaming
+
 import ProviderConversation
+import ProviderMessageStreaming
+import ProviderToolManager
 import SuperLogKit
 
 // 消除 KitLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
