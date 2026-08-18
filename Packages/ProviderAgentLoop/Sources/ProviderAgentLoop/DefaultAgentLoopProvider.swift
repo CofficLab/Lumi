@@ -2,6 +2,7 @@ import AgentToolKit
 import Foundation
 import ProviderMessage
 import KitLLM
+import ProviderLifecycleHooks
 
 // MARK: - ProviderMessage ↔ KitLLM 桥接
 
@@ -53,6 +54,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
     private var eventHandler: AgentLoopEventHandler?
     /// LLM 请求前的消息准备钩子（对齐旧版 `willSendToLLM`），按注册顺序执行。
     private var messagePreparers: [AgentLoopMessagePreparer] = []
+    /// 生命周期钩子管理器：回合循环在各关键节点触发对应钩子。
+    private var lifecycleHooks: (any LifecycleHooksProviding)?
 
     // MARK: - Turn State
 
@@ -103,6 +106,10 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
         messagePreparers.append(preparer)
     }
 
+    public func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {
+        lifecycleHooks = hooks
+    }
+
     // MARK: - AgentLoopProviding
 
     public func state(for conversationID: UUID) -> AgentLoopState {
@@ -151,6 +158,11 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
         states[conversationID] = .running
         revision += 1
         postEvent(.turnStarted(conversationID: conversationID, turnID: turnID))
+        if let lifecycleHooks {
+            await lifecycleHooks.notifyTurnStarted(TurnLifecycleContext(
+                conversationID: conversationID, turnID: turnID
+            ))
+        }
 
         let task: Task<AgentLoopOutcome, Never> = Task { @MainActor [weak self] in
             guard let self else { return .cancelled }
@@ -338,6 +350,23 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
             for preparer in messagePreparers {
                 preparedHistory = await preparer(preparedHistory)
             }
+            // 生命周期钩子 willSendToLLM：插件可在 LLM 请求前修改消息历史。
+            if let lifecycleHooks {
+                let ctx = WillSendToLLMContext(
+                    messages: preparedHistory.map(\.llmMessage),
+                    conversationID: conversationID
+                )
+                let result = await lifecycleHooks.runWillSendToLLM(ctx)
+                preparedHistory = result.messages.map { msg in
+                    Message(
+                        conversationID: conversationID,
+                        role: .init(rawValue: msg.role.rawValue) ?? .system,
+                        content: msg.content,
+                        toolCallID: msg.toolCallID,
+                        reasoningContent: msg.reasoningContent
+                    )
+                }
+            }
 
             insertStatusMessage(
                 conversationID: conversationID,
@@ -408,6 +437,14 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
             messages.insertMessage(assistant, to: conversationID)
             postEvent(.messageSaved(conversationID: conversationID, messageID: assistant.id, role: assistant.role.rawValue))
             streaming?.end(conversationID: conversationID)
+            // 生命周期钩子 didReceiveLLMResponse：插件可在 LLM 响应到达后执行逻辑。
+            if let lifecycleHooks {
+                await lifecycleHooks.notifyDidReceiveLLMResponse(DidReceiveLLMResponseContext(
+                    response: response,
+                    requestMessages: preparedHistory.map(\.llmMessage),
+                    conversationID: conversationID
+                ))
+            }
 
             // 无工具调用 → 回合完成。
             guard let toolCalls = assistant.toolCalls, !toolCalls.isEmpty else {

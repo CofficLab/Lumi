@@ -14,6 +14,7 @@ let package = Package(
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../ProviderConversation"),
+        .package(path: "../ProviderLifecycleHooks"),
     ],
     targets: [
         .target(
@@ -25,6 +26,7 @@ let package = Package(
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
             ],
             path: "Sources/ProviderAgentLoop"
         ),

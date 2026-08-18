@@ -216,7 +216,7 @@ public struct DefaultProviderFactory: ProviderFactory {
         kernel: KernelCoreContainer,
         controlling: any PluginControlling
     ) -> any PluginManaging {
-        DefaultPluginManaging(kernel: kernel, controlling: controlling)
+        DefaultPluginManager(kernel: kernel, controlling: controlling)
     }
 
     public func makeWebServerProvider() -> any WebServerProviding {
@@ -308,6 +308,10 @@ public struct DefaultProviderFactory: ProviderFactory {
         agentLoop.setToolManager(toolManager)
         agentLoop.setStreaming(kernel.resolveProvider((any MessageStreamingProviding).self))
         agentLoop.setConversations(conversations)
+        // 生命周期钩子接线：回合循环在各关键节点触发钩子。
+        if let lifecycleHooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
+            agentLoop.setLifecycleHooks(lifecycleHooks)
+        }
         agentLoop.setEventHandler { [weak kernel] event in
             guard let kernel else { return }
             Self.bridge(agentLoopEvent: event, kernel: kernel)

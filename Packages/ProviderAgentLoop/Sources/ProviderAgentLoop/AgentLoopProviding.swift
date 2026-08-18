@@ -4,6 +4,7 @@ import KitLLM
 import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
+import ProviderLifecycleHooks
 
 public enum AgentLoopState: String, Codable, Sendable {
     case idle
@@ -113,12 +114,17 @@ public protocol AgentLoopProviding: AnyObject, ObservableObject {
     ///
     /// 多个钩子按注册顺序串行执行；后一个拿到前一个的结果。
     func addMessagePreparer(_ preparer: @escaping AgentLoopMessagePreparer)
+
+    /// 注入生命周期钩子管理器，回合循环在各关键节点触发对应钩子。
+    func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?)
 }
 
 public extension AgentLoopProviding {
     func setEventHandler(_ handler: AgentLoopEventHandler?) {}
 
     func addMessagePreparer(_ preparer: @escaping AgentLoopMessagePreparer) {}
+
+    func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
 
     /// 兼容重载：无 request 的恢复（合并自旧版 `AgentTurnManaging.resumeTurn(in:)`），
     /// 视为对新回合直接执行。
