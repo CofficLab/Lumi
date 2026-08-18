@@ -97,7 +97,8 @@ public final class DiskManagerPlugin: SuperPlugin {
                     id: entryID,
                     title: name,
                     systemImage: "internaldrive",
-                    order: order
+                    order: order,
+                    ownerPluginID: id
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
                     contentView?.setContentView(AnyView(
