@@ -1,5 +1,7 @@
+import os
 import Foundation
 import KernelCore
+import SuperLogKit
 import ProviderChatSection
 import ProviderConversation
 import SwiftUI
@@ -16,7 +18,9 @@ import SwiftUI
 /// - `kernel.conversations` → 内核 `ConversationManaging`（FactoryLumi2 已装配，
 ///   且 PluginConversationManager order=7 可能已替换为持久化实现）。
 @MainActor
-public final class ConversationModePlugin: SuperPlugin {
+public final class ConversationModePlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-mode", category: "ConversationMode")
+
     /// 保持旧版插件 ID，插件启用状态 / 存储 / 自动化不失效。
     public let id = "com.coffic.lumi.plugin.conversation-mode"
     public let order = 84
@@ -37,6 +41,7 @@ public final class ConversationModePlugin: SuperPlugin {
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
               let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding, ConversationManaging from kernel")
             return
         }
 
