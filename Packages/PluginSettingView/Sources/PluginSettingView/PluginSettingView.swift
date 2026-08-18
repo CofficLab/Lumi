@@ -41,12 +41,15 @@ public final class PluginSettingView: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 侧边栏 Logo 是插件内部行为：从内核解析 LogoProviding，自行构建 Header。
-        let logo = kernel.resolveProvider((any LogoProviding).self)
-        if Self.verbose {
-            Self.logger.info("\(Self.t)resolved LogoProviding: \(logo == nil ? "nil" : "set", privacy: .public)")
-        }
-
-        let manager = SettingViewManager(logo: logo)
+        // 注意：这里不能固定持有解析到的实例。LogoProviding 会先后被
+        // PluginLogoManager(order=4) 替换、再由 LogoCofficPlugin(order=100) 注册，
+        // 若在 order=3 时固定拿到 DefaultLogoProviding，将永远读不到 Coffic Logo。
+        // 因此改为惰性闭包：在真正渲染设置视图时（启动完成）再动态解析，拿到
+        // 已装配好 Logo 贡献的最新实现。
+        weak var weakKernel = kernel
+        let manager = SettingViewManager(logoProvider: { [weak weakKernel] in
+            weakKernel?.resolveProvider((any LogoProviding).self)
+        })
         self.manager = manager
 
         // 0. 复制旧的默认实现（或先前已注册实现）中已有的数据，避免数据丢失。
