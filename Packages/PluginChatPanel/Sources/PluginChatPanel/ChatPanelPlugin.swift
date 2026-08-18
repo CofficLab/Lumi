@@ -35,7 +35,8 @@ public final class ChatPanelPlugin: SuperPlugin {
             id: entryID,
             title: "Chat",
             systemImage: "bubble.left.and.bubble.right.fill",
-            order: order
+            order: order,
+            ownerPluginID: id
         ) { activeID in
             let isChatActive = activeID == entryID
             chat?.setVisible(isChatActive)
