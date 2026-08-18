@@ -35,7 +35,7 @@ public final class AgentRulesPlugin: SuperPlugin {
             description: "Manage rule documents in .agent/rules directory.",
             category: .general,
             stage: .preview,
-            policy: .enabledByDefault
+            policy: .required
         )
     }
 
