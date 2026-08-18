@@ -47,7 +47,7 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
             description: "Chat input editor with send and stop controls",
             category: .chat,
             stage: .preview,
-            policy: .enabledByDefault
+            policy: .required
         )
     }
 
