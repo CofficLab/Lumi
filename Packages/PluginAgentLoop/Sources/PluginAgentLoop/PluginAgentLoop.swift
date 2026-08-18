@@ -1,13 +1,13 @@
 import Foundation
 import KernelCore
-import ProviderAgentLoop
-import ProviderMessage
 import KitLLM
-import ProviderLLMManager
-import ProviderToolManager
-import ProviderMessageStreaming
-import ProviderConversation
 import os
+import ProviderAgentLoop
+import ProviderConversation
+import ProviderLLMManager
+import ProviderMessage
+import ProviderMessageStreaming
+import ProviderToolManager
 
 /// AgentLoop 插件
 ///
@@ -23,10 +23,10 @@ import os
 public final class PluginAgentLoop: SuperPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-loop")
     public nonisolated static let emoji = "🔄"
-    
+
     public let id = "com.coffic.lumi.plugin.agent-loop"
     public let order = 8
-    
+
     public var metadata: PluginMetadata {
         PluginMetadata(
             id: id,
@@ -34,51 +34,51 @@ public final class PluginAgentLoop: SuperPlugin {
             description: "自定义 Agent 回合循环实现",
             category: .chat,
             stage: .preview,
-            policy: .enabledByDefault
+            policy: .required
         )
     }
-    
+
     public init() {}
-    
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 1. 获取必需依赖
         guard let messages = kernel.resolveProvider((any MessageManaging).self) else {
             Self.logger.error("\(Self.emoji)MessageManaging not found, skip AgentLoop replacement")
             return
         }
-        
+
         // 2. 创建自定义实现
         let agentLoop = AgentLoopProvider(messages: messages)
-        
+
         // 3. 注入所有依赖（对齐 ProviderFactory.registerProviders 的接线）
         if let providerManager = kernel.resolveProvider((any LLMManaging).self) {
             agentLoop.setLLMProvider(providerManager)
         } else if let llmProvider = kernel.resolveProvider((any LLMProviding).self) {
             agentLoop.setLLMProvider(llmProvider)
         }
-        
+
         agentLoop.setToolManager(kernel.resolveProvider((any ToolManagerProviding).self))
         agentLoop.setStreaming(kernel.resolveProvider((any MessageStreamingProviding).self))
         agentLoop.setConversations(kernel.resolveProvider((any ConversationManaging).self))
-        
+
         // 4. 事件桥接：发布到 NotificationCenter（对齐 ProviderFactory.bridge 通知名）
         agentLoop.setEventHandler { event in
             Self.postNotification(for: event)
         }
-        
+
         // 5. 注销默认的 AgentLoopProviding
         kernel.unregisterProvider((any AgentLoopProviding).self)
-        
+
         // 6. 注册自定义实现（不转发 objectWillChange，与默认注册保持一致）
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
     }
-    
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
         // 插件卸载时，内核会自动按归属移除 Provider
     }
-    
+
     // MARK: - Notification Bridge
-    
+
     /// 把 `AgentLoopEvent` 桥接到旧版 NotificationCenter，
     /// 通知名与 `ProviderFactory.bridge` 完全一致。
     private static func postNotification(for event: AgentLoopEvent) {
