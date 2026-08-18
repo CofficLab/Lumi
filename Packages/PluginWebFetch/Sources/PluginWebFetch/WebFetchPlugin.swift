@@ -28,7 +28,7 @@ public final class WebFetchPlugin: SuperPlugin {
             description: "Fetch and extract content from web pages.",
             category: .integration,
             stage: .preview,
-            policy: .enabledByDefault
+            policy: .required
         )
     }
 
