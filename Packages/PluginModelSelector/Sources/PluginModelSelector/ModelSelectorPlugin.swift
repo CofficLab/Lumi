@@ -1,5 +1,7 @@
+import os
 import Foundation
 import KernelCore
+import SuperLogKit
 import ProviderChatSection
 import ProviderLLMManager
 
@@ -19,7 +21,9 @@ import ProviderLLMManager
 /// - 旧版 `.onLumiSelectedRemoteProviderIDDidChange` 等通知订阅 → SwiftUI 友好包装器
 ///   `ObservableLLMProviderManagerBox`（桥接 `LLMManaging.objectWillChange`）。
 @MainActor
-public final class ModelSelectorPlugin: SuperPlugin {
+public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.model-selector", category: "ModelSelector")
+
     /// 保持旧版插件 ID，插件启用状态 / 存储 / 自动化不失效。
     public let id = "com.coffic.lumi.plugin.model-selector"
     public let order = 82
@@ -44,6 +48,7 @@ public final class ModelSelectorPlugin: SuperPlugin {
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
               let manager = kernel.resolveProvider((any LLMManaging).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding, LLMManaging from kernel")
             return
         }
 

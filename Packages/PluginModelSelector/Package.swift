@@ -10,6 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../SuperLogKit"),
         .package(path: "../LocalizationKit"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderChatSection"),
