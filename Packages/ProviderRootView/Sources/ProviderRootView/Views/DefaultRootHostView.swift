@@ -17,7 +17,8 @@ struct DefaultRootHostView: View {
             }
 
             HStack(spacing: 0) {
-                if provider.showsActivityBar, let activityBarView = provider.activityBarView {
+                // ActivityBar 始终显示。
+                if let activityBarView = provider.activityBarView {
                     activityBarView
                     // 与旧版 AppLayoutView 一致：ActivityBar 右侧使用主题竖向分隔线。
                     AppDivider(.vertical)

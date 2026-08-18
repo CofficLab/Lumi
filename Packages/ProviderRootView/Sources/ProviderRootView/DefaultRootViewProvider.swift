@@ -11,7 +11,7 @@ import SwiftUI
 ///
 /// 与旧版 `AppLayoutView` 对齐的行为：
 /// - 主内容未注入、且无活跃容器时显示 `WelcomeView` 风格的欢迎占位；
-/// - ActivityBar 仅在已注册容器数 > 1 时显示；
+/// - ActivityBar 始终显示；
 /// - Rail 仅在存在活跃容器（且容器可见）时显示；
 /// - 根视图应用主题背景、`appThemedAppearance`、`ThemeWindowAppearanceBridge`
 ///   与 `AppThemeVM` 环境对象（复刻旧版主题链）。
@@ -116,15 +116,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         return AnyView(DefaultRootHostView(provider: self))
     }
 
-    // MARK: - 显示条件（复刻旧版 AppLayoutView）
-
-    /// 与旧版 `showsActivityBar && activityBarContainerCount > 1` 一致：
-    /// 容器数 ≤ 1 时整条 ActivityBar 隐藏（仅剩一个入口时无需竖直选择栏）。
-    var showsActivityBar: Bool {
-        guard activityBarView != nil else { return false }
-        guard let workspaceProvider else { return true }
-        return workspaceProvider.containers.count > 1
-    }
+    // MARK: - 显示条件
 
     /// 是否存在活跃容器（旧版 `activeViewContainerID != nil` 且容器可解析）。
     var hasActiveContainer: Bool {
