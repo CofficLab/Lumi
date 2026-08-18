@@ -10,10 +10,10 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../KitLLM"),
         .package(path: "../SuperLogKit"),
         .package(path: "../ProviderChatSection"),
-        .package(path: "../ProviderAgentLoop"),
-        .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderProject"),
     ],
     targets: [
@@ -22,8 +22,7 @@ let package = Package(
             dependencies: [
                 "KernelCore",
                 "ProviderChatSection",
-                "ProviderAgentLoop",
-                "ProviderMessage",
+                "ProviderLifecycleHooks",
                 "ProviderProject",
             ],
             path: "Sources/PluginSkill"
@@ -35,8 +34,6 @@ let package = Package(
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
-                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
-                .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
             ],
             path: "Tests/PluginSkillTests"

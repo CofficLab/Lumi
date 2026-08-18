@@ -64,10 +64,6 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
         turnManager.setEventHandler(handler)
     }
 
-    public func addMessagePreparer(_ preparer: @escaping AgentLoopMessagePreparer) {
-        turnManager.addMessagePreparer(preparer)
-    }
-
     // MARK: - AgentLoopProviding
 
     public func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {

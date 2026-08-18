@@ -1,10 +1,10 @@
 import Foundation
 import os
+import KitLLM
 import KernelCore
 import ProviderChatSection
 import ProviderConversation
-import ProviderAgentLoop
-import ProviderMessage
+import ProviderLifecycleHooks
 import SuperLogKit
 import SwiftUI
 
@@ -41,10 +41,19 @@ public final class ConversationLanguagePlugin: SuperPlugin, SuperLog {
             return
         }
 
-        if let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self) {
-            agentLoop.addMessagePreparer { [weak conversations] messages in
-                guard let conversations else { return messages }
-                return await LanguagePreparer(conversations: conversations).prepare(messages)
+        if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self),
+           let conversations = kernel.resolveProvider((any ConversationManaging).self) {
+            hooks.addWillSendToLLMHook { [weak conversations] context in
+                guard let conversations else { return context }
+                let language = conversations.language(for: context.conversationID)
+                let prompt: String
+                switch language {
+                case .chinese: prompt = "## 语言偏好\n请用中文回复用户。"
+                case .english: prompt = "## Language Preference\nPlease respond in English."
+                }
+                var ctx = context
+                ctx.messages = [LLMMessage(role: .system, content: prompt)] + ctx.messages
+                return ctx
             }
         }
 
@@ -52,7 +61,7 @@ public final class ConversationLanguagePlugin: SuperPlugin, SuperLog {
             ChatSectionBarItem(
                 id: "\(id).toolbar-button",
                 order: 83,
-                placement: .toolbarLeading
+                placement: .toolbarTrailing
             ) {
                 LanguageToolbarView(conversations: conversations)
             },
@@ -62,39 +71,6 @@ public final class ConversationLanguagePlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar-button")
-    }
-}
-
-/// 语言消息准备器：注入瞬态 system 语言指令。
-@MainActor
-struct LanguagePreparer {
-    private static let promptMarker = "languagePrompt"
-
-    let conversations: any ConversationManaging
-
-    func prepare(_ messages: [Message]) async -> [Message] {
-        guard let conversationID = messages.first?.conversationID else { return messages }
-        let language = conversations.language(for: conversationID)
-
-        let withoutPreviousPrompt = messages.filter {
-            $0.metadata[Self.promptMarker] != "true"
-        }
-        let prompt = Message(
-            conversationID: conversationID,
-            role: .system,
-            content: Self.languagePrompt(for: language),
-            metadata: [Self.promptMarker: "true"]
-        )
-        return [prompt] + withoutPreviousPrompt
-    }
-
-    static func languagePrompt(for language: LumiConversationLanguage) -> String {
-        switch language {
-        case .chinese:
-            return "## 语言偏好\n请用中文回复用户。"
-        case .english:
-            return "## Language Preference\nPlease respond in English."
-        }
     }
 }
 

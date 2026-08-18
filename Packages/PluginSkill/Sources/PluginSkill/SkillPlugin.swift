@@ -1,10 +1,10 @@
 import os
 import Foundation
+import KitLLM
 import KernelCore
 import SuperLogKit
-import ProviderAgentLoop
+import ProviderLifecycleHooks
 import ProviderChatSection
-import ProviderMessage
 import ProviderProject
 import SwiftUI
 
@@ -42,11 +42,18 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
         }
 
         // willSendToLLM 钩子：注入项目技能列表。
-        if let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self) {
+        if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
             let service = SkillService.shared
-            agentLoop.addMessagePreparer { [weak project] messages in
-                guard let project else { return messages }
-                return await SkillMessagePreparer(project: project, service: service).prepare(messages)
+            hooks.addWillSendToLLMHook { [weak project] context in
+                guard let project else { return context }
+                guard let projectPath = project.currentProject?.path,
+                      !projectPath.isEmpty else { return context }
+                let skills = await service.listSkills(projectPath: projectPath)
+                guard !skills.isEmpty else { return context }
+                let prompt = SkillPromptBuilder.buildPrompt(skills: skills)
+                var ctx = context
+                ctx.messages = [LLMMessage(role: .system, content: prompt)] + ctx.messages
+                return ctx
             }
         }
 
@@ -67,31 +74,6 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar")
-    }
-}
-
-/// 技能消息准备器：把项目技能列表注入为瞬态 system 消息。
-@MainActor
-struct SkillMessagePreparer {
-    let project: any ProjectProviding
-    let service: SkillService
-
-    func prepare(_ messages: [Message]) async -> [Message] {
-        guard let projectPath = project.currentProject?.path,
-              !projectPath.isEmpty,
-              let conversationID = messages.last?.conversationID else {
-            return messages
-        }
-        let skills = await service.listSkills(projectPath: projectPath)
-        guard !skills.isEmpty else { return messages }
-
-        let prompt = SkillPromptBuilder.buildPrompt(skills: skills)
-        let skillMessage = Message(
-            conversationID: conversationID,
-            role: .system,
-            content: prompt
-        )
-        return [skillMessage] + messages
     }
 }
 

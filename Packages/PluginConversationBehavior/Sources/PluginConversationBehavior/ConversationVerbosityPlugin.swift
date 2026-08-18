@@ -1,10 +1,10 @@
 import Foundation
 import os
+import KitLLM
 import KernelCore
 import ProviderChatSection
 import ProviderConversation
-import ProviderAgentLoop
-import ProviderMessage
+import ProviderLifecycleHooks
 import SuperLogKit
 import SwiftUI
 
@@ -12,7 +12,7 @@ import SwiftUI
 ///
 /// 复刻自旧版 `Plugins/ConversationVerbosityPlugin`：
 /// - 在 Chat 分区工具栏注册详细度 chip（`ChatSectionBarPlacement.toolbarLeading`）；
-/// - 向 AgentLoop 注册 `AgentLoopMessagePreparer`（对齐旧版 `willSendToLLM`）：
+/// - 通过 `LifecycleHooksProviding` 注册 `willSendToLLM` 钩子：
 ///   请求发往 LLM 前注入一条瞬态 system 指令（response style prompt），
 ///   不落库、只对本次请求生效。
 @MainActor
@@ -44,10 +44,22 @@ public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
         }
 
         // willSendToLLM 钩子：详细度指令注入 system。
-        if let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self) {
-            agentLoop.addMessagePreparer { [weak conversations] messages in
-                guard let conversations else { return messages }
-                return await VerbosityPreparer(conversations: conversations).prepare(messages)
+        if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
+            hooks.addWillSendToLLMHook { [weak conversations] context in
+                guard let conversations else { return context }
+                let verbosity = conversations.verbosity(for: context.conversationID)
+                let prompt: String
+                switch verbosity {
+                case .brief:
+                    prompt = "## Response style: V1 (brief)\nGive the user the direct answer first. Keep the response concise and focused on the requested outcome."
+                case .standard:
+                    prompt = "## Response style: V2 (standard)\nProvide the answer first, followed by the necessary explanation, steps, and important caveats."
+                case .detailed:
+                    prompt = "## Response style: V3 (detailed)\nProvide a thorough answer with relevant background, reasoning summaries, implementation details, alternatives, and important edge cases."
+                }
+                var ctx = context
+                ctx.messages = [LLMMessage(role: .system, content: prompt)] + ctx.messages
+                return ctx
             }
         }
 
@@ -65,49 +77,5 @@ public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar-button")
-    }
-}
-
-/// 详细度消息准备器：把选中的 response style 作为瞬态 system 消息注入。
-@MainActor
-struct VerbosityPreparer {
-    private static let promptMarker = "verbosityPrompt"
-
-    let conversations: any ConversationManaging
-
-    func prepare(_ messages: [Message]) async -> [Message] {
-        guard let conversationID = messages.first?.conversationID else { return messages }
-        let verbosity = conversations.verbosity(for: conversationID)
-
-        let withoutPreviousPrompt = messages.filter {
-            $0.metadata[Self.promptMarker] != "true"
-        }
-        let prompt = Message(
-            conversationID: conversationID,
-            role: .system,
-            content: Self.responseStylePrompt(for: verbosity),
-            metadata: [Self.promptMarker: "true"]
-        )
-        return [prompt] + withoutPreviousPrompt
-    }
-
-    static func responseStylePrompt(for verbosity: LumiResponseVerbosity) -> String {
-        switch verbosity {
-        case .brief:
-            return """
-            ## Response style: V1 (brief)
-            Give the user the direct answer first. Keep the response concise and focused on the requested outcome. Use short paragraphs or a small number of bullets when useful. Omit unnecessary background, repetition, and optional explanations, but do not omit required steps, warnings, errors, or information needed to act on the answer. Do not expose private chain-of-thought; provide only a concise, verifiable explanation when explanation is necessary.
-            """
-        case .standard:
-            return """
-            ## Response style: V2 (standard)
-            Provide the answer first, followed by the necessary explanation, steps, and important caveats. Keep the response clear and reasonably concise. Include enough context for the user to understand and act on the result. Do not expose private chain-of-thought; summarize reasoning with concise, verifiable explanations.
-            """
-        case .detailed:
-            return """
-            ## Response style: V3 (detailed)
-            Provide a thorough answer with relevant background, reasoning summaries, implementation details, alternatives, and important edge cases when they help the user. Organize longer responses with clear sections or bullets. Remain focused on the request and do not expose private chain-of-thought; provide concise, verifiable reasoning summaries instead.
-            """
-        }
     }
 }

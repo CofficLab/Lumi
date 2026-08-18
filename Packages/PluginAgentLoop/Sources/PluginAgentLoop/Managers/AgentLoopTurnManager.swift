@@ -42,7 +42,6 @@ struct AgentLoopTurnDependencies {
     var streaming: (any MessageStreamingProviding)?
     var conversations: (any ConversationManaging)?
     var eventHandler: AgentLoopEventHandler?
-    var messagePreparers: [AgentLoopMessagePreparer] = []
 }
 
 // MARK: - 回合运行管理器
@@ -116,10 +115,6 @@ final class AgentLoopTurnManager: SuperLog {
 
     func setEventHandler(_ handler: AgentLoopEventHandler?) {
         dependencies.eventHandler = handler
-    }
-
-    func addMessagePreparer(_ preparer: @escaping AgentLoopMessagePreparer) {
-        dependencies.messagePreparers.append(preparer)
     }
 
     // MARK: - State Accessors
@@ -383,9 +378,6 @@ final class AgentLoopTurnManager: SuperLog {
             // 详细度 / 语言 / 自动化级别等插件按注册顺序串行修改消息历史，
             // 注入 system 指令（不落库，仅本次请求生效）。
             var preparedHistory = history
-            for preparer in dependencies.messagePreparers {
-                preparedHistory = await preparer(preparedHistory)
-            }
 
             insertStatusMessage(
                 conversationID: conversationID,
