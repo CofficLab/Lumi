@@ -11,6 +11,7 @@ let package = Package(
     dependencies: [
         .package(path: "../AgentToolKit"),
         .package(path: "../KernelCore"),
+        .package(path: "../SuperLogKit"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderToolManager"),
