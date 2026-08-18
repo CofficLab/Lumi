@@ -1,5 +1,7 @@
+import os
 import Foundation
 import KernelCore
+import SuperLogKit
 import ProviderAgentLoop
 import ProviderChatSection
 import ProviderMessage
@@ -13,7 +15,9 @@ import SwiftUI
 ///   作为瞬态 system 消息注入（不落库，仅本次请求生效）；
 /// - 在 Chat 工具栏注册技能入口（无项目 / 无技能时自动隐藏）。
 @MainActor
-public final class SkillPlugin: SuperPlugin {
+public final class SkillPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.skill", category: "Skill")
+
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.skill"
     public let order = 51
@@ -32,7 +36,10 @@ public final class SkillPlugin: SuperPlugin {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let project = kernel.resolveProvider((any ProjectProviding).self) else { return }
+        guard let project = kernel.resolveProvider((any ProjectProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ProjectProviding from kernel")
+            return
+        }
 
         // willSendToLLM 钩子：注入项目技能列表。
         if let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self) {

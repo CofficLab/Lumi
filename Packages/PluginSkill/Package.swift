@@ -10,6 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../SuperLogKit"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderMessage"),
@@ -32,6 +33,7 @@ let package = Package(
             dependencies: [
                 "PluginSkill",
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
