@@ -1,6 +1,6 @@
 import Foundation
-import os
 import KernelCore
+import os
 import ProviderActivityBar
 import SuperLogKit
 
@@ -18,7 +18,7 @@ import SuperLogKit
 @MainActor
 public final class PluginActivityBar: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.activity-bar", category: "Plugin")
-    nonisolated public static let emoji = "🧱"
+    public nonisolated static let emoji = "🧱"
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.activity-bar"
@@ -31,7 +31,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
             description: "自定义 ActivityBarProviding 实现，替换 ProviderFactory 预注册的默认实现",
             category: .system,
             stage: .preview,
-            policy: .enabledByDefault
+            policy: .required
         )
     }
 
