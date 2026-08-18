@@ -1,10 +1,14 @@
+import os
 import KernelCore
+import SuperLogKit
 import ProviderConversation
 import ProviderToolbar
 import SwiftUI
 
 @MainActor
-public final class ConversationNewPlugin: SuperPlugin {
+public final class ConversationNewPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-new", category: "ConversationNew")
+
     public let id = "com.coffic.lumi.plugin.conversation-new"
     public let order = 80
 
@@ -27,9 +31,11 @@ public final class ConversationNewPlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let toolbar = kernel.resolveProvider((any ToolbarProviding).self) else { return }
-        // 挂载到整个 App 的标题栏工具栏右侧（与旧版 titleToolbarItems / .trailing 对齐），
-        // 而不是 chat 的工具栏。
+        guard let toolbar = kernel.resolveProvider((any ToolbarProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ToolbarProviding from kernel")
+            return
+        }
+
         toolbar.addToolbarItems([
             ToolbarItem(id: "\(id).new-chat", title: "New Chat", placement: .trailing, order: 30) {
                 NewChatButton(kernel: kernel)

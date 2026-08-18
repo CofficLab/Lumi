@@ -19,7 +19,6 @@ public struct NewChatButton: View {
 
     public var body: some View {
         Group {
-            // 与旧版一致：ChatSection 不可见或当前没有选中对话时，整个按钮不渲染。
             if selectionObserver.isChatSectionVisible && selectionObserver.hasSelectedConversation {
                 AppIconButton(
                     systemImage: "plus"
