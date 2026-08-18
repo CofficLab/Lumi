@@ -1,7 +1,7 @@
 import Foundation
 import KernelCore
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
 import ProviderSettingView
 import SwiftUI
 

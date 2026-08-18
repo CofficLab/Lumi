@@ -1,5 +1,5 @@
 import Foundation
-import ProviderLLMVendors
+import KitLLM
 import ProviderMessage
 
 /// API Key 相关错误消息的判定与渲染类型常量（KernelCore 生态）。

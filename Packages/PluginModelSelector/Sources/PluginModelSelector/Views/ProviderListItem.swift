@@ -1,7 +1,7 @@
 import Foundation
 import LumiUI
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
 import SwiftUI
 
 /// 供应商列表中的单行视图（由旧版复刻）。

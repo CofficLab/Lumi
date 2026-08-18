@@ -2,7 +2,20 @@ import Foundation
 import ProviderConversation
 import ProviderMessage
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
+
+extension Message {
+    var llmMessage: LLMMessage {
+        LLMMessage(
+            role: KitLLM.MessageRole(rawValue: role.rawValue) ?? .unknown,
+            content: content,
+            toolCalls: toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
+            toolCallID: toolCallID,
+            reasoningContent: reasoningContent,
+            images: []
+        )
+    }
+}
 
 /// 用当前对话的模型把历史浓缩成摘要，用于在新对话中续写。
 ///
@@ -50,9 +63,8 @@ public struct ConversationSummarizer: @unchecked Sendable {
             let request = LLMRequest(
                 conversationID: conversationID,
                 messages: [
-                    Message(conversationID: conversationID, role: .system, content: Self.summarySystemPrompt),
-                    Message(
-                        conversationID: conversationID,
+                    LLMMessage(role: .system, content: Self.summarySystemPrompt),
+                    LLMMessage(
                         role: .user,
                         content: "Conversation to summarize:\n\n\(Self.renderHistory(history))"
                     ),

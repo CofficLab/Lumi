@@ -2,9 +2,8 @@ import Foundation
 import os
 import KernelCore
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
 import SuperLogKit
-import ProviderNetwork
 
 /// Aliyun 供应商装配插件（KernelCore 生态）。
 ///
@@ -26,8 +25,7 @@ public final class AliyunProviderPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve LLMProviderManagerProviding from kernel\(self.r("manager is nil"))")
             return
         }
-        let networkProvider = kernel.resolveProvider((any NetworkProviding).self)
-        let providers: [any SuperLLMProvider] = [AliyunProvider(networkProvider: networkProvider), AliyunTokenPlanProvider(networkProvider: networkProvider)]
+        let providers: [any SuperLLMProvider] = [AliyunProvider(), AliyunTokenPlanProvider()]
         for provider in providers {
             if Self.verbose {
                 let typeName = String(describing: type(of: provider))

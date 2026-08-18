@@ -1,7 +1,6 @@
-import ProviderLLMVendors
+import KitLLM
 import Foundation
 import ProviderLLMManager
-import ProviderNetwork
 
 /// FlyMux 供应商（迁移自旧 LLMProviderFlyMuxPlugin）。
 @MainActor
@@ -32,9 +31,4 @@ public final class FlyMuxProvider: VendorLLMProvider {
         )
     }
 
-    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
-    public convenience init(networkProvider: (any NetworkProviding)?) {
-        let apiService = VendorAPIService(networkProvider: networkProvider)
-        self.init(apiService: apiService)
-    }
 }

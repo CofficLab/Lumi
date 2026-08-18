@@ -1,6 +1,6 @@
 import Foundation
 import ProviderConversation
-import ProviderLLMVendors
+import KitLLM
 import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager

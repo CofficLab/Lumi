@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import ProviderMessage
-import ProviderLLMVendors
+import KitLLM
 @testable import ProviderAgentLoop
 
 @Suite("ProviderAgentLoop")

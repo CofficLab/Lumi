@@ -1,12 +1,29 @@
 import AgentToolKit
 import Foundation
 import ProviderMessage
-import ProviderLLMVendors
+import KitLLM
+
+// MARK: - ProviderMessage ↔ KitLLM 桥接
+
+extension Message {
+    var llmMessage: LLMMessage {
+        LLMMessage(
+            role: KitLLM.MessageRole(rawValue: role.rawValue) ?? .unknown,
+            content: content,
+            toolCalls: toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
+            toolCallID: toolCallID,
+            reasoningContent: reasoningContent,
+            images: (toolCalls ?? []).compactMap { $0.result }.flatMap { $0.imageAttachments }.map {
+                MessageImage(data: Data(base64Encoded: $0.data) ?? Data(), mimeType: $0.mimeType)
+            }
+        )
+    }
+}
 import ProviderToolManager
 import ProviderMessageStreaming
 import ProviderConversation
 
-// 消除 ProviderLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
+// 消除 KitLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
 private typealias ToolCall = AgentToolKit.ToolCall
 
 /// Agent 回合执行器（KernelCore 体系，完整复刻旧版 `AgentTurnRunner`）。
@@ -329,7 +346,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
 
             let request = LLMRequest(
                 conversationID: conversationID,
-                messages: preparedHistory,
+                messages: preparedHistory.map(\.llmMessage),
                 model: conversations?.modelName(for: conversationID),
                 tools: schemas.isEmpty ? nil : schemas,
                 reasoningEffort: reasoningEffort
@@ -347,7 +364,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                     response = try await streamingProvider.streamComplete(request) { [weak bridge] chunk in
                         guard let bridge else { return }
                         let piece = chunk.content ?? ""
-                        if chunk.isThinking {
+                        if let rc = chunk.reasoningContent, !rc.isEmpty {
                             await bridge.appendThinking(piece, conversationID: conversationID)
                         } else {
                             await bridge.appendContent(piece, conversationID: conversationID)
@@ -372,7 +389,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                 providerID: response.model.flatMap { _ in nil } ?? nil,
                 modelName: response.model,
                 reasoningContent: response.reasoningContent,
-                toolCalls: response.toolCalls,
+                toolCalls: response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
                 inputTokenCount: response.inputTokenCount,
                 outputTokenCount: response.outputTokenCount
             )

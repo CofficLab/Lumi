@@ -1,5 +1,5 @@
 import Foundation
-import ProviderLLMVendors
+import KitLLM
 import ProviderMessage
 import Testing
 @testable import ProviderLLMManager
@@ -7,8 +7,8 @@ import Testing
 @MainActor
 struct DefaultLLMProviderManagerProvidingTests {
 
-    private func makeMessage(_ content: String) -> Message {
-        Message(conversationID: UUID(), role: .user, content: content)
+    private func makeMessage(_ content: String) -> LLMMessage {
+        LLMMessage(role: .user, content: content)
     }
 
     // MARK: - Registration

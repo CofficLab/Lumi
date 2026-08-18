@@ -3,7 +3,20 @@ import KernelCore
 import ProviderConversation
 import ProviderMessage
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
+
+extension Message {
+    var llmMessage: LLMMessage {
+        LLMMessage(
+            role: KitLLM.MessageRole(rawValue: role.rawValue) ?? .unknown,
+            content: content,
+            toolCalls: toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
+            toolCallID: toolCallID,
+            reasoningContent: reasoningContent,
+            images: []
+        )
+    }
+}
 import ProviderAgentLoop
 
 /// 自动标题服务：监听 `lumiMessageSaved`，为「第一条用户消息」用 LLM 生成标题。
@@ -140,8 +153,8 @@ final class AutoConversationTitleService {
         let request = LLMRequest(
             conversationID: conversationID,
             messages: [
-                Message(conversationID: conversationID, role: .system, content: Self.titlePrompt),
-                Message(conversationID: conversationID, role: .user, content: Self.fencedUserMessage(userMessage)),
+                LLMMessage(role: .system, content: Self.titlePrompt),
+                LLMMessage(role: .user, content: Self.fencedUserMessage(userMessage)),
             ],
             model: conversations.modelName(for: conversationID)
         )

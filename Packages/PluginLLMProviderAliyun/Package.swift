@@ -13,7 +13,8 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../ProviderLLMManager"),
-        .package(path: "../ProviderLLMVendors"),
+        .package(path: "../KitLLM"),
+        .package(path: "../ProviderNetwork"),
         .package(path: "../SuperLogKit"),
     ],
     targets: [
@@ -22,7 +23,8 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "ProviderLLMVendors", package: "ProviderLLMVendors"),
+                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "ProviderNetwork", package: "ProviderNetwork"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources/PluginLLMProviderAliyun"

@@ -1,6 +1,6 @@
 import LumiUI
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
 import ProviderMessage
 import SwiftUI
 

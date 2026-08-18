@@ -1,8 +1,7 @@
-import ProviderLLMVendors
+import KitLLM
 import Foundation
 import os
 import ProviderLLMManager
-import SuperLogKit
 
 /// OpenCode Go 供应商（Go 系列模型网关）。
 ///
@@ -19,7 +18,7 @@ public final class GoProvider: VendorLLMProvider {
         do {
             return try resolveAPIKey()
         } catch {
-            Self.logger.error("\(Self.t)resolveAPIKey failed\(self.r(error.localizedDescription))")
+            Self.logger.error("resolveAPIKey failed\(error.localizedDescription)")
             throw error
         }
     }
@@ -100,11 +99,8 @@ public final class GoProvider: VendorLLMProvider {
     public override func complete(_ request: LLMRequest) async throws -> LLMResponse {
         let model = request.model ?? providerInfo.defaultModel
         guard let kind = Self.kinds[model] else {
-            Self.logger.error("\(Self.t)Unknown model: \(model, privacy: .public)")
+            Self.logger.error("Unknown model: \(model, privacy: .public)")
             throw VendorAPIError.requestFailed("OpenCode Go 未知模型：\(model)")
-        }
-        if Self.verbose {
-            Self.logger.debug("\(Self.t)complete model=\(model, privacy: .public) kind=\(String(describing: kind), privacy: .public)")
         }
         let apiKey = try resolvedAPIKey()
         switch kind {
@@ -123,11 +119,8 @@ public final class GoProvider: VendorLLMProvider {
     ) async throws -> LLMResponse {
         let model = request.model ?? providerInfo.defaultModel
         guard let kind = Self.kinds[model] else {
-            Self.logger.error("\(Self.t)Unknown model: \(model, privacy: .public)")
+            Self.logger.error("Unknown model: \(model, privacy: .public)")
             throw VendorAPIError.requestFailed("OpenCode Go 未知模型：\(model)")
-        }
-        if Self.verbose {
-            Self.logger.debug("\(Self.t)streamComplete model=\(model, privacy: .public) kind=\(String(describing: kind), privacy: .public)")
         }
         let apiKey = try resolvedAPIKey()
         switch kind {
@@ -152,7 +145,7 @@ public final class GoProvider: VendorLLMProvider {
         if anthropic {
             let adapter = AnthropicCompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
             let body = try adapter.buildRequestBody(
-                messages: VendorMessageBridging.chatMessages(from: request.messages),
+                messages: request.messages,
                 model: model,
                 tools: nil,
                 systemPrompt: ""
@@ -167,7 +160,7 @@ public final class GoProvider: VendorLLMProvider {
 
         let adapter = OpenAICompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
         let body = try adapter.buildRequestBody(
-            messages: VendorMessageBridging.chatMessages(from: request.messages),
+            messages: request.messages,
             model: model,
             tools: nil,
             systemPrompt: ""
@@ -192,7 +185,7 @@ public final class GoProvider: VendorLLMProvider {
         if anthropic {
             let adapter = AnthropicCompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
             nonisolated(unsafe) let body = try adapter.buildStreamingRequestBody(
-                messages: VendorMessageBridging.chatMessages(from: request.messages),
+                messages: request.messages,
                 model: model,
                 tools: nil,
                 systemPrompt: "",
@@ -206,10 +199,10 @@ public final class GoProvider: VendorLLMProvider {
                 do {
                     guard let chunk = try adapter.parseStreamChunk(data: data) else { return true }
                     if chunk.eventType == .thinkingDelta, let piece = chunk.content {
-                        await onChunk(LLMStreamChunk(content: piece, isThinking: true))
+                        await onChunk(LLMStreamChunk(reasoningContent: piece))
                     } else if let piece = chunk.content, !piece.isEmpty {
                         content += piece
-                        await onChunk(LLMStreamChunk(content: piece, isThinking: false))
+                        await onChunk(LLMStreamChunk(content: piece))
                     }
                     if chunk.isDone { return false }
                     return true
@@ -222,7 +215,7 @@ public final class GoProvider: VendorLLMProvider {
 
         let adapter = OpenAICompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
         nonisolated(unsafe) let body = try adapter.buildStreamingRequestBody(
-            messages: VendorMessageBridging.chatMessages(from: request.messages),
+            messages: request.messages,
             model: model,
             tools: nil,
             systemPrompt: "",
@@ -236,10 +229,10 @@ public final class GoProvider: VendorLLMProvider {
             do {
                 guard let chunk = try adapter.parseStreamChunk(data: data) else { return true }
                 if chunk.eventType == .thinkingDelta, let piece = chunk.content {
-                    await onChunk(LLMStreamChunk(content: piece, isThinking: true))
+                    await onChunk(LLMStreamChunk(reasoningContent: piece))
                 } else if let piece = chunk.content, !piece.isEmpty {
                     content += piece
-                    await onChunk(LLMStreamChunk(content: piece, isThinking: false))
+                    await onChunk(LLMStreamChunk(content: piece))
                 }
                 if chunk.isDone { return false }
                 return true
@@ -258,7 +251,7 @@ public final class GoProvider: VendorLLMProvider {
         apiKey: String
     ) async throws -> LLMResponse {
         var input: [[String: Any]] = []
-        for message in VendorMessageBridging.chatMessages(from: request.messages) {
+        for message in request.messages {
             input.append(["role": message.role.rawValue, "content": message.content])
         }
         let body: [String: Any] = ["model": model, "input": input]

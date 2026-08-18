@@ -1,7 +1,7 @@
 import Foundation
 import LumiUI
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
 import SwiftUI
 
 /// 单个供应商的详情视图（复刻旧版 RemoteProviderSettingsPage 的

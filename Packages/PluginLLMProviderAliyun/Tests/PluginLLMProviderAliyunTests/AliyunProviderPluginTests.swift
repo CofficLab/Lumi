@@ -11,7 +11,7 @@ struct AliyunProviderPluginTests {
     func pluginRegistersProviders() throws {
         let kernel = KernelCoreContainer()
         let manager = DefaultLLMProviderManagerProviding()
-        try kernel.registerProvider((any LLMProviderManagerProviding).self, manager)
+        try kernel.registerProvider((any LLMManaging).self, manager)
 
         let plugin = AliyunProviderPlugin()
         try plugin.onBoot(kernel: kernel)

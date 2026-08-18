@@ -4,7 +4,7 @@ import Combine
 import os
 import ProviderAgentLoop
 import ProviderMessage
-import ProviderLLMVendors
+import KitLLM
 import ProviderToolManager
 import ProviderMessageStreaming
 import ProviderConversation

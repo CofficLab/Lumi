@@ -1,4 +1,4 @@
-import ProviderLLMVendors
+import KitLLM
 import Foundation
 import ProviderLLMManager
 

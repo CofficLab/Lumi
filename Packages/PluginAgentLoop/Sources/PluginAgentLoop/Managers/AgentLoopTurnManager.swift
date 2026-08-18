@@ -4,13 +4,27 @@ import Combine
 import os
 import ProviderAgentLoop
 import ProviderMessage
-import ProviderLLMVendors
+import KitLLM
+
+// MARK: - ProviderMessage ↔ KitLLM 桥接
+extension Message {
+    var llmMessage: LLMMessage {
+        LLMMessage(
+            role: KitLLM.MessageRole(rawValue: role.rawValue) ?? .unknown,
+            content: content,
+            toolCalls: toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
+            toolCallID: toolCallID,
+            reasoningContent: reasoningContent,
+            images: []
+        )
+    }
+}
 import ProviderToolManager
 import ProviderMessageStreaming
 import ProviderConversation
 import SuperLogKit
 
-// 消除 ProviderLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
+// 消除 KitLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
 private typealias ToolCall = AgentToolKit.ToolCall
 
 // MARK: - 回合运行依赖集合
@@ -378,7 +392,7 @@ final class AgentLoopTurnManager: SuperLog {
 
             let request = LLMRequest(
                 conversationID: conversationID,
-                messages: preparedHistory,
+                messages: preparedHistory.map(\.llmMessage),
                 model: dependencies.conversations?.modelName(for: conversationID),
                 tools: schemas.isEmpty ? nil : schemas,
                 reasoningEffort: reasoningEffort
@@ -396,7 +410,7 @@ final class AgentLoopTurnManager: SuperLog {
                     response = try await streamingProvider.streamComplete(request) { [weak bridge] chunk in
                         guard let bridge else { return }
                         let piece = chunk.content ?? ""
-                        if chunk.isThinking {
+                        if let rc = chunk.reasoningContent, !rc.isEmpty {
                             await bridge.appendThinking(piece, conversationID: conversationID)
                         } else {
                             await bridge.appendContent(piece, conversationID: conversationID)
@@ -421,7 +435,7 @@ final class AgentLoopTurnManager: SuperLog {
                 providerID: response.model.flatMap { _ in nil } ?? nil,
                 modelName: response.model,
                 reasoningContent: response.reasoningContent,
-                toolCalls: response.toolCalls,
+                toolCalls: response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
                 inputTokenCount: response.inputTokenCount,
                 outputTokenCount: response.outputTokenCount
             )

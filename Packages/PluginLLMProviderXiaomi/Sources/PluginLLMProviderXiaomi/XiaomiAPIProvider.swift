@@ -1,7 +1,6 @@
-import ProviderLLMVendors
+import KitLLM
 import Foundation
 import ProviderLLMManager
-import ProviderNetwork
 
 /// Xiaomi API 供应商（独立端点，迁移自旧 `XiaomiAPIProvider`）。
 @MainActor
@@ -35,9 +34,4 @@ public final class XiaomiAPIProvider: VendorLLMProvider {
         )
     }
 
-    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
-    public convenience init(networkProvider: (any NetworkProviding)?) {
-        let apiService = VendorAPIService(networkProvider: networkProvider)
-        self.init(apiService: apiService)
-    }
 }

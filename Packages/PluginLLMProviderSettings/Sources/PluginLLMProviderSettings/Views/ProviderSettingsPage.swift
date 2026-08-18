@@ -1,7 +1,7 @@
 import Foundation
 import LumiUI
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
 import SwiftUI
 
 /// 供应商设置页面（主从布局，复刻旧版 `ProviderSettingsPageBase`）。

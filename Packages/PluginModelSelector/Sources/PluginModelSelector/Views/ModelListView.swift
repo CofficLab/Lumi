@@ -1,7 +1,7 @@
 import Foundation
 import LumiUI
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
 import SwiftUI
 
 /// 模型列表视图（由旧版 ModelSelectorPlugin 复刻）。

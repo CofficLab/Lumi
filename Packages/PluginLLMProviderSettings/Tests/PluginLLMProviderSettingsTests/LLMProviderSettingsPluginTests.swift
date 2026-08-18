@@ -1,6 +1,6 @@
 import Foundation
 import KernelCore
-import ProviderLLMVendors
+import KitLLM
 import ProviderLLMManager
 import ProviderSettingView
 import Testing

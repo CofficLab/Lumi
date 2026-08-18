@@ -2,7 +2,7 @@ import Combine
 import Foundation
 import os
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
 import SuperLogKit
 
 /// PluginLLMManager 自研的 `LLMManaging` 实现。

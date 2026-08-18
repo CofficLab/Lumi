@@ -10,7 +10,7 @@ let package = Package(
     dependencies: [
         .package(path: "../AgentToolKit"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../ProviderLLMVendors"),
+        .package(path: "../KitLLM"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../ProviderConversation"),
@@ -21,7 +21,7 @@ let package = Package(
             dependencies: [
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
-                .product(name: "ProviderLLMVendors", package: "ProviderLLMVendors"),
+                .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),

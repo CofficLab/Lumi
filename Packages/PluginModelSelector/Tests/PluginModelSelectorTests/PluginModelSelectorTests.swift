@@ -2,7 +2,7 @@ import Testing
 import Foundation
 import KernelCore
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
 @testable import PluginModelSelector
 
 @Suite("Provider scope")

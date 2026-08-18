@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import ProviderLLMVendors
+import KitLLM
 
 /// LLM Provider 管理器错误（ProviderLLMManager 自有错误，避免改动 ProviderLLM 的错误集）。
 public enum LLMProviderManagerError: Error, LocalizedError, Sendable, Equatable {

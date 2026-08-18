@@ -2,7 +2,7 @@ import Foundation
 import KernelCore
 import ProviderAgentLoop
 import ProviderMessage
-import ProviderLLMVendors
+import KitLLM
 import ProviderLLMManager
 import ProviderToolManager
 import ProviderMessageStreaming

@@ -1,7 +1,7 @@
 import Foundation
 import LumiUI
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
 import SwiftUI
 
 /// 云端 / 本地筛选范围（由旧版复刻，作用于 `LLMProviderInfo.isLocal`）。

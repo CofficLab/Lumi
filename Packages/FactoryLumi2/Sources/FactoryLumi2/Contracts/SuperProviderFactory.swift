@@ -10,7 +10,7 @@ import ProviderConversationInput
 import ProviderDocsView
 import ProviderIdleTime
 import ProviderLegacyData
-import ProviderLLMVendors
+import KitLLM
 import ProviderLLMManager
 import ProviderLogo
 import ProviderMenuBar

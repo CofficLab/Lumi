@@ -2,13 +2,12 @@ import Foundation
 import os
 import KernelCore
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
 import SuperLogKit
-import ProviderNetwork
 
 /// KimiCode 供应商装配插件（KernelCore 生态）。
 ///
-/// 在 `onBoot` 中把本供应商的 KimiCodeProvider, KimiCodeAnthropicProvider 注册进
+/// 在 `onBoot` 中把本供应商的 KimiCodeProvider(), KimiCodeAnthropicProvider 注册进
 /// `LLMProviderManagerProviding`，聊天链路即可经管理器路由到该供应商。
 @MainActor
 public final class KimiCodeProviderPlugin: SuperPlugin, SuperLog {
@@ -26,8 +25,7 @@ public final class KimiCodeProviderPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve LLMProviderManagerProviding from kernel\(self.r("manager is nil"))")
             return
         }
-        let networkProvider = kernel.resolveProvider((any NetworkProviding).self)
-        let providers: [any SuperLLMProvider] = [KimiCodeProvider(networkProvider: networkProvider), KimiCodeAnthropicProvider(networkProvider: networkProvider)]
+        let providers: [any SuperLLMProvider] = [KimiCodeProvider(), KimiCodeAnthropicProvider()]
         for provider in providers {
             if Self.verbose {
                 let typeName = String(describing: type(of: provider))

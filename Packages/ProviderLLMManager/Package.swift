@@ -14,14 +14,16 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../ProviderLLMVendors"),
+        .package(path: "../KitLLM"),
         .package(path: "../ProviderMessage"),
+        .package(path: "../SuperLogKit"),
     ],
     targets: [
         .target(
             name: "ProviderLLMManager",
             dependencies: [
-                .product(name: "ProviderLLMVendors", package: "ProviderLLMVendors"),
+                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources/ProviderLLMManager"
         ),

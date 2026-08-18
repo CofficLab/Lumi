@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 import os
-import ProviderLLMVendors
+import KitLLM
 import SuperLogKit
 
 /// `DefaultLLMManager` 的历史别名，保持下游测试兼容。

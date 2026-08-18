@@ -1,5 +1,5 @@
 import Foundation
-import ProviderLLMVendors
+import KitLLM
 import Testing
 @testable import ProviderLLMManager
 

@@ -4,7 +4,7 @@ import ProviderContentView
 import ProviderChatSection
 import ProviderMessage
 import ProviderAgentLoop
-import ProviderLLMVendors
+import KitLLM
 import ProviderMessageSender
 import ProviderConversation
 import ProviderDocsView

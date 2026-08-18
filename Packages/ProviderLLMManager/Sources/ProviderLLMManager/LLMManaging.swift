@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import ProviderLLMVendors
+import KitLLM
 
 /// LLM 供应商管理能力
 @MainActor

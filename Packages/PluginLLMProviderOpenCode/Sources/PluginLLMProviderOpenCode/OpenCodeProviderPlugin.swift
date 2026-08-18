@@ -2,9 +2,8 @@ import Foundation
 import os
 import KernelCore
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
 import SuperLogKit
-import ProviderNetwork
 
 /// OpenCode 供应商装配插件（KernelCore 生态）。
 ///
@@ -26,8 +25,7 @@ public final class OpenCodeProviderPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve LLMProviderManagerProviding from kernel\(self.r("manager is nil"))")
             return
         }
-        let networkProvider = kernel.resolveProvider((any NetworkProviding).self)
-        let apiService = VendorAPIService(networkProvider: networkProvider)
+        let apiService = VendorAPIService()
         let providers: [any SuperLLMProvider] = [GoProvider(apiService: apiService), ZenProvider(apiService: apiService)]
         for provider in providers {
             if Self.verbose {

@@ -4,7 +4,7 @@ import KernelCore
 import AgentToolKit
 import ProviderConversation
 import ProviderMessage
-import ProviderLLMVendors
+import KitLLM
 import ProviderAgentLoop
 import ProviderToolManager
 

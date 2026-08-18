@@ -1,7 +1,6 @@
-import ProviderLLMVendors
+import KitLLM
 import Foundation
 import ProviderLLMManager
-import ProviderNetwork
 
 /// MiniMax 供应商族：三个协议变体共用的模型列表。
 enum MiniMaxVendorModels {
@@ -34,11 +33,6 @@ public final class MiniMaxOpenAIProvider: VendorLLMProvider {
         )
     }
 
-    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
-    public convenience init(networkProvider: (any NetworkProviding)?) {
-        let apiService = VendorAPIService(networkProvider: networkProvider)
-        self.init(apiService: apiService)
-    }
 
     public override var openAIConfiguration: OpenAICompatibleProviderConfiguration? {
         OpenAICompatibleProviderConfiguration(
@@ -67,11 +61,6 @@ public final class MiniMaxAnthropicProvider: VendorLLMProvider {
         )
     }
 
-    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
-    public convenience init(networkProvider: (any NetworkProviding)?) {
-        let apiService = VendorAPIService(networkProvider: networkProvider)
-        self.init(apiService: apiService)
-    }
 
     public override var anthropicConfiguration: AnthropicCompatibleProviderConfiguration? {
         AnthropicCompatibleProviderConfiguration(
@@ -104,9 +93,4 @@ public final class MiniMaxResponsesProvider: VendorLLMProvider {
         "https://api.minimaxi.com/v1/responses"
     }
 
-    /// 便捷初始化：注入 `NetworkProviding` 以支持 HTTP 交换记录。
-    public convenience init(networkProvider: (any NetworkProviding)?) {
-        let apiService = VendorAPIService(networkProvider: networkProvider)
-        self.init(apiService: apiService)
-    }
 }

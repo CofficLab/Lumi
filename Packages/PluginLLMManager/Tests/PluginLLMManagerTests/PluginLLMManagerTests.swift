@@ -2,7 +2,7 @@ import Foundation
 import KernelCore
 import ProviderConversation
 import ProviderLLMManager
-import ProviderLLMVendors
+import KitLLM
 import ProviderMessage
 import ProviderMessageRendering
 import Testing
@@ -58,7 +58,7 @@ struct PluginLLMManagerTests {
 
         let response = try await manager.complete(LLMRequest(
             conversationID: UUID(),
-            messages: [Message(conversationID: UUID(), role: .user, content: "ping")]
+            messages: [LLMMessage(role: .user, content: "ping")]
         ))
         #expect(response.content == "ping")
     }
@@ -78,7 +78,7 @@ struct PluginLLMManagerTests {
 
         _ = try await manager.complete(LLMRequest(
             conversationID: UUID(),
-            messages: [Message(conversationID: UUID(), role: .user, content: "ping")]
+            messages: [LLMMessage(role: .user, content: "ping")]
         ))
         #expect(usedOverride)
     }
