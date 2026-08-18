@@ -54,7 +54,8 @@ public final class AppIconDesignerPlugin: SuperPlugin {
                     id: entryID,
                     title: name,
                     systemImage: "app.dashed",
-                    order: order
+                    order: order,
+                    ownerPluginID: id
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
                     IconDocumentStore.shared.reload()
