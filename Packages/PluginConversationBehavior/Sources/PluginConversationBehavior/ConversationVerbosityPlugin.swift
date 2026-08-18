@@ -67,7 +67,7 @@ public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
             ChatSectionBarItem(
                 id: "\(id).toolbar-button",
                 order: 85,
-                placement: .toolbarLeading
+                placement: .toolbarTrailing
             ) {
                 VerbosityToolbarView(conversations: conversations)
             },
