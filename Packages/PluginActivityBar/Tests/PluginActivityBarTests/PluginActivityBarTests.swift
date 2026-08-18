@@ -14,11 +14,11 @@ import ProviderActivityBar
 @MainActor
 struct PluginActivityBarTests {
 
-    // MARK: - CustomActivityBarProviding
+    // MARK: - ActivityBarProvider
 
-    @Test("CustomActivityBarProviding 暴露 items 并按 order 排序")
+    @Test("ActivityBarProvider 暴露 items 并按 order 排序")
     func customProviderStoresItems() {
-        let provider = CustomActivityBarProviding()
+        let provider = ActivityBarProvider()
         provider.registerItems([
             ActivityBarItem(id: "b", title: "B", systemImage: "b", order: 200),
             ActivityBarItem(id: "a", title: "A", systemImage: "a", order: 100),
@@ -28,9 +28,9 @@ struct PluginActivityBarTests {
         #expect(provider.items.map(\.id) == ["a", "b"])
     }
 
-    @Test("CustomActivityBarProviding.makeActivityBarView 返回 AnyView")
+    @Test("ActivityBarProvider.makeActivityBarView 返回 AnyView")
     func customProviderRendersView() {
-        let provider = CustomActivityBarProviding()
+        let provider = ActivityBarProvider()
         provider.registerItems([
             ActivityBarItem(id: "a", title: "A", systemImage: "folder"),
         ])
@@ -38,9 +38,9 @@ struct PluginActivityBarTests {
         #expect(type(of: provider.makeActivityBarView()) == AnyView.self)
     }
 
-    @Test("CustomActivityBarProviding.activateItem 委托内部默认实现")
+    @Test("ActivityBarProvider.activateItem 委托内部默认实现")
     func customProviderActivates() {
-        let provider = CustomActivityBarProviding()
+        let provider = ActivityBarProvider()
         provider.registerItems([
             ActivityBarItem(id: "a", title: "A", systemImage: "a"),
             ActivityBarItem(id: "b", title: "B", systemImage: "b"),
@@ -53,7 +53,7 @@ struct PluginActivityBarTests {
 
     @Test("bootstrapBuiltInItems 注入一条 builtin 入口")
     func bootstrapInjectsBuiltInItem() {
-        let provider = CustomActivityBarProviding()
+        let provider = ActivityBarProvider()
         provider.bootstrapBuiltInItems()
 
         #expect(provider.items.count == 1)
@@ -72,7 +72,7 @@ struct PluginActivityBarTests {
         try plugin.onBoot(kernel: kernel)
 
         let resolved = kernel.resolveProvider((any ActivityBarProviding).self)
-        #expect(resolved is CustomActivityBarProviding)
+        #expect(resolved is ActivityBarProvider)
         #expect(type(of: resolved) != DefaultActivityBarProviding.self)
     }
 
@@ -83,7 +83,7 @@ struct PluginActivityBarTests {
         try plugin.onBoot(kernel: kernel)
         try plugin.onReady(kernel: kernel)
 
-        let resolved = kernel.resolveProvider((any ActivityBarProviding).self) as? CustomActivityBarProviding
+        let resolved = kernel.resolveProvider((any ActivityBarProviding).self) as? ActivityBarProvider
         #expect(resolved?.items.contains(where: { $0.id == "com.coffic.lumi.plugin.activity-bar.welcome" }) == true)
     }
 
@@ -110,9 +110,9 @@ struct PluginActivityBarTests {
 
     // MARK: - 旧实例迁移
 
-    @Test("CustomActivityBarProviding(preloadedItems:activeItemID:) 预填数据并保留激活态")
+    @Test("ActivityBarProvider(preloadedItems:activeItemID:) 预填数据并保留激活态")
     func preloadedInitKeepsItemsAndActive() {
-        let provider = CustomActivityBarProviding(
+        let provider = ActivityBarProvider(
             preloadedItems: [
                 ActivityBarItem(id: "x", title: "X", systemImage: "x", order: 100),
                 ActivityBarItem(id: "y", title: "Y", systemImage: "y", order: 200),
@@ -125,9 +125,9 @@ struct PluginActivityBarTests {
         #expect(provider.activeItemID == "y")
     }
 
-    @Test("CustomActivityBarProviding(preloadedItems:activeItemID:) 忽略未知 activeItemID")
+    @Test("ActivityBarProvider(preloadedItems:activeItemID:) 忽略未知 activeItemID")
     func preloadedInitIgnoresUnknownActive() {
-        let provider = CustomActivityBarProviding(
+        let provider = ActivityBarProvider(
             preloadedItems: [
                 ActivityBarItem(id: "x", title: "X", systemImage: "x", order: 100),
             ],
@@ -135,13 +135,12 @@ struct PluginActivityBarTests {
         )
 
         #expect(provider.items.count == 1)
-        #expect(provider.activeItemID == "x") // 默认实现：未知激活态 → 回退到首个
+        #expect(provider.activeItemID == "x")
     }
 
     @Test("PluginActivityBar.onBoot 替换时不丢失旧实例已注册的 items")
     func pluginPreservesLegacyItemsOnReplace() throws {
         let kernel = KernelCoreContainer()
-        // 模拟 ProviderFactory 预注册的默认实例 + 业务插件 onBoot 已写入两个 item
         let legacy = DefaultActivityBarProviding()
         legacy.addItems([
             ActivityBarItem(id: "legacy.chat", title: "Chat", systemImage: "bubble.left", order: 200),
@@ -150,20 +149,16 @@ struct PluginActivityBarTests {
         legacy.activateItem(id: "legacy.files")
         try kernel.registerProvider((any ActivityBarProviding).self, legacy)
 
-        // 业务插件在 PluginActivityBar 之前已被 bootstrap，items 已写入旧实例
         #expect(legacy.items.count == 2)
 
-        // 现在执行 PluginActivityBar.onBoot（会注销旧实例）
         let plugin = PluginActivityBar()
         try plugin.onBoot(kernel: kernel)
 
-        // 验证：旧实例的 items 必须完整迁移到新实例
         let resolved = kernel.resolveProvider((any ActivityBarProviding).self)
-        #expect(resolved is CustomActivityBarProviding)
-        let custom = try #require(resolved as? CustomActivityBarProviding)
+        #expect(resolved is ActivityBarProvider)
+        let custom = try #require(resolved as? ActivityBarProvider)
         #expect(custom.items.count == 2)
         #expect(Set(custom.items.map(\.id)) == ["legacy.chat", "legacy.files"])
-        // 激活态也应一并迁移
         #expect(custom.activeItemID == "legacy.files")
     }
 
@@ -179,12 +174,11 @@ struct PluginActivityBarTests {
         let plugin = PluginActivityBar()
         try plugin.onBoot(kernel: kernel)
 
-        // 旧实例已被注销，业务插件若仍持有旧引用，会写入"孤立"实例，不会回流到新实例。
         legacy.addItems([
             ActivityBarItem(id: "legacy.late", title: "Late", systemImage: "l", order: 400),
         ])
 
-        let custom = try #require(kernel.resolveProvider((any ActivityBarProviding).self) as? CustomActivityBarProviding)
+        let custom = try #require(kernel.resolveProvider((any ActivityBarProviding).self) as? ActivityBarProvider)
         #expect(custom.items.map(\.id) == ["legacy.chat"])
         #expect(!custom.items.contains(where: { $0.id == "legacy.late" }))
     }
@@ -202,7 +196,7 @@ struct PluginActivityBarTests {
         try plugin.onBoot(kernel: kernel)
         try plugin.onReady(kernel: kernel)
 
-        let custom = try #require(kernel.resolveProvider((any ActivityBarProviding).self) as? CustomActivityBarProviding)
+        let custom = try #require(kernel.resolveProvider((any ActivityBarProviding).self) as? ActivityBarProvider)
         #expect(custom.items.contains(where: { $0.id == "legacy.chat" }))
         #expect(custom.items.contains(where: { $0.id == "com.coffic.lumi.plugin.activity-bar.welcome" }))
     }

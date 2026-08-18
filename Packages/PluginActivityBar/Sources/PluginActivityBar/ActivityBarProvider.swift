@@ -39,6 +39,9 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
     /// 已被业务插件追加/移除的入口历史（仅日志诊断用）。
     public private(set) var customItems: [ActivityBarItem] = []
 
+    /// 隐藏缓存：按插件 id 存储被隐藏的入口，以便插件重新启用时恢复。
+    private var hiddenItemCache: [String: [ActivityBarItem]] = [:]
+
     public init() {}
 
     /// 用一组已存在的内容（即将被替换的旧 `DefaultActivityBarProviding` 数据）
@@ -141,6 +144,37 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
         addItems(builtIn)
     }
 
+    // MARK: - Plugin Lifecycle Observation
+
+    /// 按插件 id 隐藏入口：将该插件贡献的全部入口从可见列表移入隐藏缓存。
+    ///
+    /// 被隐藏的入口在插件重新启用时可通过 `restoreItems(forPluginID:)` 恢复。
+    /// 内置入口（`ownerPluginID == nil`）不受影响。
+    public func hideItems(forPluginID pluginID: String) {
+        let hidden = items.filter { $0.ownerPluginID == pluginID }
+        guard !hidden.isEmpty else { return }
+        hiddenItemCache[pluginID, default: []].append(contentsOf: hidden)
+        let idsToHide = Set(hidden.map(\.id))
+        let remaining = items.filter { !idsToHide.contains($0.id) }
+        registerItems(remaining)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)隐藏插件 \(pluginID, privacy: .public) 的 \(hidden.count, privacy: .public) 个入口")
+        }
+    }
+
+    /// 按插件 id 恢复之前被隐藏的入口。
+    ///
+    /// 插件重新启用时调用，将隐藏缓存中的入口重新合入可见列表。
+    public func restoreItems(forPluginID pluginID: String) {
+        guard let cached = hiddenItemCache.removeValue(forKey: pluginID), !cached.isEmpty else { return }
+        addItems(cached)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)恢复插件 \(pluginID, privacy: .public) 的 \(cached.count, privacy: .public) 个入口")
+        }
+    }
+
+    // MARK: - Private
+
     /// 更新激活态，仅在实际变化时触发 `@Published` 变更与全部已注册项的回调。
     private func setActiveItemID(_ id: String?) {
         guard activeItemID != id else { return }
@@ -150,6 +184,8 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
         }
     }
 }
+
+// MARK: - Views
 
 /// 竖直渲染 ActivityBar 项的视图。
 ///
@@ -166,7 +202,6 @@ private struct ActivityBarView: View {
     var body: some View {
         VStack(spacing: 6) {
             if provider.items.isEmpty {
-                // 无注入项时保持空栏（错误视图属于旧版 workspace 语义，不在此重复）
                 Spacer(minLength: 0)
             } else {
                 ActivityBarScrollableItemList(
@@ -186,7 +221,6 @@ private struct ActivityBarView: View {
         .borderTrailing()
         .contextMenu {
             Button {
-                // 与旧版 ActivityBar 一致：发出通知，由主窗口根视图监听并打开设置窗口。
                 NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
             } label: {
                 Label("打开设置", systemImage: "gearshape")
@@ -199,7 +233,6 @@ private struct ActivityBarView: View {
 /// - 内容溢出时启用滚动（隐藏系统滚动指示器，顶部/底部 8pt 渐隐遮罩暗示可滚动）；
 /// - 内容不足时退化为普通垂直布局，不显示任何滚动提示。
 private struct ActivityBarScrollableItemList: View {
-    /// 上下渐隐遮罩的高度
     private let fadeHeight: CGFloat = 8
 
     let items: [ActivityBarItem]
@@ -220,12 +253,11 @@ private struct ActivityBarScrollableItemList: View {
                     .id(item.id)
                 }
             }
-            .padding(.vertical, 2) // 避免渐隐遮罩切到边缘图标
+            .padding(.vertical, 2)
         }
         .mask(fadeMask)
     }
 
-    /// 上下两端 8pt 渐隐到透明的 LinearGradient，提示该方向上还有更多内容可滚动。
     private var fadeMask: some View {
         VStack(spacing: 0) {
             LinearGradient(
