@@ -1,8 +1,8 @@
 import Combine
 import Foundation
+import KitLLM
 import os
 import ProviderLLMManager
-import KitLLM
 import SuperLogKit
 
 /// PluginLLMManager 自研的 `LLMManaging` 实现。
@@ -16,7 +16,7 @@ import SuperLogKit
 @MainActor
 public final class CustomLLMManager: LLMManaging, @preconcurrency LLMProviding, LLMStreamingProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-manager", category: "CustomLLMManager")
-    nonisolated public static let emoji = "🧭"
+    public nonisolated static let emoji = "🧭"
     nonisolated static let verbose = false
 
     /// 内部引擎：注册表 + 选中持久化 + 默认路由（`DefaultLLMManager`）。
