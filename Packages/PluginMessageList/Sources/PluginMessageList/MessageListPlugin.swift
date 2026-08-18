@@ -1,4 +1,6 @@
+import os
 import KernelCore
+import SuperLogKit
 import LumiUI
 import ProviderAgentLoop
 import ProviderChatSection
@@ -11,7 +13,9 @@ import ProviderToolManager
 import SwiftUI
 
 @MainActor
-public final class MessageListPlugin: SuperPlugin {
+public final class MessageListPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-list", category: "MessageList")
+
     public let id = "com.coffic.lumi.plugin.message-list"
     public let order = 82
 
@@ -27,7 +31,10 @@ public final class MessageListPlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else { return }
+        guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding from kernel")
+            return
+        }
         let services = MessageListServices(
             conversations: kernel.resolveProvider((any ConversationManaging).self),
             messages: kernel.resolveProvider((any MessageManaging).self),
