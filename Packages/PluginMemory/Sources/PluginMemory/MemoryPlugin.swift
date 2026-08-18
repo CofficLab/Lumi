@@ -1,5 +1,7 @@
+import os
 import Foundation
 import KernelCore
+import SuperLogKit
 import ProviderStorage
 import ProviderProject
 import ProviderToolManager
@@ -11,7 +13,9 @@ import ProviderToolManager
 /// - 注册 4 个 Agent 工具：save_memory / recall_memory / list_memories / delete_memory；
 /// - 记忆文件为 Markdown（frontmatter 元数据 + 正文），按 global/projects 分目录。
 @MainActor
-public final class MemoryPlugin: SuperPlugin {
+public final class MemoryPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.memory", category: "Memory")
+
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.memory"
     public let order = 89
@@ -34,6 +38,7 @@ public final class MemoryPlugin: SuperPlugin {
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let storageProvider = kernel.resolveProvider((any StorageProviding).self),
               let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve StorageProviding, ToolManagerProviding from kernel")
             return
         }
         let memoryRoot = storageProvider.pluginDataDirectory(for: "Memory")
@@ -48,7 +53,10 @@ public final class MemoryPlugin: SuperPlugin {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else { return }
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding from kernel")
+            return
+        }
         toolManager.remove(id: "save_memory")
         toolManager.remove(id: "recall_memory")
         toolManager.remove(id: "list_memories")
