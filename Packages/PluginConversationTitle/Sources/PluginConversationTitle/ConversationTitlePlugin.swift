@@ -1,5 +1,7 @@
+import os
 import Foundation
 import KernelCore
+import SuperLogKit
 import ProviderConversation
 import ProviderMessage
 import ProviderLLMManager
@@ -13,7 +15,9 @@ import AgentToolKit
 ///   对每条新会话的第一条用户消息用 LLM 生成简短标题并写入；
 /// - Agent 工具：注册 `update_conversation_title`，让 LLM 可主动改标题。
 @MainActor
-public final class ConversationTitlePlugin: SuperPlugin {
+public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-title", category: "ConversationTitle")
+
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.conversation-title"
     public let order = 77
@@ -37,6 +41,7 @@ public final class ConversationTitlePlugin: SuperPlugin {
         guard let conversations = kernel.resolveProvider((any ConversationManaging).self),
               let messages = kernel.resolveProvider((any MessageManaging).self),
               let llmProvider = kernel.resolveProvider((any LLMManaging).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ConversationManaging, MessageManaging, LLMManaging from kernel")
             return
         }
 
