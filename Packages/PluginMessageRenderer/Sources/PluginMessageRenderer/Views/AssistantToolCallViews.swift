@@ -1,3 +1,4 @@
+import os
 import AgentToolKit
 import KernelCore
 import LocalizationKit
@@ -25,6 +26,8 @@ import SwiftUI
 /// 仅缓存全部结果到位的解析;命中时校验工具调用 id 序列与当前消息一致,
 /// 不一致(消息被编辑等罕见情形)按未命中处理。
 final class ToolCallResolutionCache: @unchecked Sendable {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-renderer", category: "ToolCallResolution")
+
     static let shared = ToolCallResolutionCache()
 
     private let limit = 512
@@ -115,7 +118,10 @@ struct ToolCallRowsView: View {
 
     @MainActor
     private func resolveResults() async {
-        guard let manager = kernel.resolveProvider((any ToolManagerProviding).self) else { return }
+        guard let manager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            ToolCallResolutionCache.logger.error("Failed to resolve ToolManagerProviding from kernel")
+            return
+        }
         var resolved = message.toolCalls ?? []
         for index in resolved.indices where resolved[index].result == nil {
             if let raw = await manager.toolCallResult(for: resolved[index].id),

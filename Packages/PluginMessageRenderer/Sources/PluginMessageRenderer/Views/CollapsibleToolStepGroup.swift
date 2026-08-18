@@ -1,3 +1,4 @@
+import os
 import AgentToolKit
 import KernelCore
 import LocalizationKit
@@ -23,6 +24,8 @@ import SwiftUI
 /// 展开态复用既有 `ToolCallRowView`(经 `ToolCallRowRendererRegistry` 优先走自定义渲染器),
 /// 传入 `showsDetails: false` 以隐藏耗时与参数/结果按钮,保持 V1 的 inline 极简风格。
 struct CollapsibleToolStepGroup: View {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-renderer", category: "CollapsibleToolStepGroup")
+
     let kernel: KernelCoreContainer
     @LumiTheme private var theme
 
@@ -155,7 +158,10 @@ struct CollapsibleToolStepGroup: View {
 
     @MainActor
     private func resolveResults() async {
-        guard resolvedToolCalls == nil, let manager = kernel.resolveProvider((any ToolManagerProviding).self) else { return }
+        guard resolvedToolCalls == nil, let manager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            Self.logger.error("Failed to resolve ToolManagerProviding from kernel")
+            return
+        }
 
         // 命中"完全解析"缓存时跳过逐个 kernel 查询与 loading 态闪烁
         if let cached = ToolCallResolutionCache.shared.resolvedCalls(

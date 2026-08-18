@@ -1,4 +1,6 @@
+import os
 import KernelCore
+import SuperLogKit
 import LumiUI
 import ProviderConversation
 import ProviderMessage
@@ -12,7 +14,9 @@ import SwiftUI
 ///   （优先级与旧版完全一致：turn-completed / status 最高，default-markdown 兜底）；
 /// - `onShutdown` 撤回全部注册，保持可卸载。
 @MainActor
-public final class MessageRendererPlugin: SuperPlugin {
+public final class MessageRendererPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-renderer", category: "MessageRenderer")
+
     public let id = "CoreMessageRenderer"
     public let order = 10
 
@@ -43,7 +47,10 @@ public final class MessageRendererPlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let manager = kernel.resolveProvider((any MessageRenderingProviding).self) else { return }
+        guard let manager = kernel.resolveProvider((any MessageRenderingProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve MessageRenderingProviding from kernel")
+            return
+        }
         let base = Self.baseOrder
 
         // 优先级最高：turn-completed / status 特殊渲染
