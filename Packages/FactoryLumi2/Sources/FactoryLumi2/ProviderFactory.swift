@@ -40,6 +40,19 @@ import KernelCore
 public struct DefaultProviderFactory: ProviderFactory {
     public init() {}
 
+    /// 旧插件 ID → 新插件 ID 的别名映射。
+    ///
+    /// 用于插件启用状态持久化的旧 ID 回退：当某插件的新 ID 与旧版不同时，
+    /// 在此登记，使内核读取/写入持久化状态时先查新 ID、再回退旧 ID，
+    /// 保证旧版存储的禁用状态仍被尊重、新版写的状态回滚到旧版仍一致。
+    ///
+    /// 目前 FactoryLumi2 装配的大多数插件保留旧 ID（无需登记）；
+    /// 将来迁移到 ID 变更的插件时在此补充即可（key 为新 ID，value 为旧 ID）。
+    static let pluginIDAliases: [String: String] = [
+        // 插件管理自身：新旧 ID 一致，登记仅为显式占位与说明。
+        "com.coffic.lumi.plugin.plugin-manager": "com.coffic.lumi.plugin.plugin-manager",
+    ]
+
     /// 产出 `StorageProviding` 实现（默认 Application Support 磁盘存储）。
     public func makeStorageProvider() -> any StorageProviding {
         DefaultStorageProvider()
@@ -217,6 +230,17 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 内核生命周期（`start(plugins:)`）与插件装配留在 KernelFactory。
     public func registerProviders(into kernel: KernelCoreContainer) throws {
         try kernel.registerProvider((any StorageProviding).self, makeStorageProvider())
+
+        // 插件启用状态持久化：写入旧版 PluginManagerPlugin 的同一数据目录
+        // （<数据根>/PluginManager/plugin-enabled-overrides.plist），数据零迁移、
+        // 原位兼容；并配置旧插件 ID 别名回退，保证旧存储的禁用状态仍被尊重。
+        // 必须在 kernel.start(plugins:) 之前设置，使各插件注册时即读到持久化状态。
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            kernel.stateStore = PluginEnabledStateStore(
+                pluginDirectory: storage.pluginDataDirectory(for: "PluginManager")
+            )
+            kernel.legacyPluginIDAliases = Self.pluginIDAliases
+        }
 
         // 主题 Provider：选中主题持久化遵循 Storage 约定
         // （<数据根目录>/ThemeManager/theme-selection.plist）。
