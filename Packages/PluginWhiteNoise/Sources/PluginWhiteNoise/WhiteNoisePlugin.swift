@@ -32,7 +32,8 @@ public final class WhiteNoisePlugin: SuperPlugin {
                     id: entryID,
                     title: "白噪音",
                     systemImage: "waveform",
-                    order: order
+                    order: order,
+                    ownerPluginID: id
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
                     contentView?.setContentView(AnyView(WhiteNoiseView()))
