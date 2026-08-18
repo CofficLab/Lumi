@@ -19,7 +19,7 @@ import SwiftUI
 public final class DefaultRootViewProviding: RootViewProviding, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-root-view", category: "ProviderRootView")
     nonisolated public static let emoji = "🏠"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     @Published fileprivate var toolbarView: AnyView?
     @Published fileprivate var activityBarView: AnyView?
@@ -118,14 +118,6 @@ public final class DefaultRootViewProviding: RootViewProviding, ObservableObject
 
     // MARK: - 显示条件（复刻旧版 AppLayoutView）
 
-    /// 与旧版 `showsActivityBar && activityBarContainerCount > 1` 一致：
-    /// 容器数 ≤ 1 时整条 ActivityBar 隐藏（仅剩一个入口时无需竖直选择栏）。
-    fileprivate var showsActivityBar: Bool {
-        guard let activityBarView else { return false }
-        guard let workspaceProvider else { return true }
-        return workspaceProvider.containers.count > 1
-    }
-
     /// 是否存在活跃容器（旧版 `activeViewContainerID != nil` 且容器可解析）。
     fileprivate var hasActiveContainer: Bool {
         guard let containerID = workspaceProvider?.activeContainerID else { return false }
@@ -152,9 +144,8 @@ private struct DefaultRootHostView: View {
             }
 
             HStack(spacing: 0) {
-                if provider.showsActivityBar, let activityBarView = provider.activityBarView {
+                if let activityBarView = provider.activityBarView {
                     activityBarView
-                    // 与旧版 AppLayoutView 一致：ActivityBar 右侧使用主题竖向分隔线。
                     AppDivider(.vertical)
                 }
 
