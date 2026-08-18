@@ -17,6 +17,7 @@ enum PluginPluginManagerText {
     static let allCategories = "全部"
     static let alwaysOn = "始终启用"
     static let disabled = "已禁用"
+    static let disabledPermanently = "已停用"
     static let enabled = "已启用"
     static let noDetailsProvided = "无详细信息"
     static let noDetailsHint = "插件作者未提供详情视图。"

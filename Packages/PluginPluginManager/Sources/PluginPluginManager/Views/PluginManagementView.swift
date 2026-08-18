@@ -74,8 +74,9 @@ struct PluginManagementView: View {
     // MARK: - Data Source
 
     /// 列表数据源：仅显示用户可配置的插件（对齐旧版行为）。
-    /// `required` / `alwaysOn`（始终启用，不可禁用）不可配置，展示在管理列表中没有
-    /// 可操作控件，故过滤掉，只保留 `enabledByDefault` / `disabledByDefault`。
+    /// `required` / `alwaysOn`（始终启用，不可禁用）和 `disabled`（彻底停用）
+    /// 不可配置，展示在管理列表中没有可操作控件，故过滤掉，
+    /// 只保留 `enabledByDefault` / `disabledByDefault`。
     private var plugins: [any SuperPlugin] {
         kernel.allPlugins.filter { $0.metadata.policy.isConfigurable }
     }
@@ -110,7 +111,7 @@ struct PluginManagementView: View {
     }
 
     /// 当前列表中处于有效启用状态的可配置插件数。
-    /// 基于 `plugins`（已过滤 required），与列表项数口径一致。
+    /// 基于 `plugins`（已过滤 required / alwaysOn / disabled），与列表项数口径一致。
     private var enabledCount: Int {
         plugins.reduce(0) { $0 + (kernel.isPluginEnabled(id: $1.id) ? 1 : 0) }
     }

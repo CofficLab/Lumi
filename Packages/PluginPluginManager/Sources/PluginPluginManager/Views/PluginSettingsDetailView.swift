@@ -144,6 +144,8 @@ struct PluginSettingsDetailView: View {
         switch plugin.metadata.policy {
         case .required, .alwaysOn:
             PluginPluginManagerText.alwaysOn
+        case .disabled:
+            PluginPluginManagerText.disabledPermanently
         case .enabledByDefault, .disabledByDefault:
             kernel.isPluginEnabled(id: plugin.id)
                 ? PluginPluginManagerText.enabled
@@ -192,6 +194,8 @@ struct PluginSettingsDetailView: View {
         switch plugin.metadata.policy {
         case .required, .alwaysOn:
             PluginPluginManagerText.alwaysOn
+        case .disabled:
+            PluginPluginManagerText.disabledPermanently
         case .enabledByDefault, .disabledByDefault:
             kernel.isPluginEnabled(id: plugin.id)
                 ? PluginPluginManagerText.enabled

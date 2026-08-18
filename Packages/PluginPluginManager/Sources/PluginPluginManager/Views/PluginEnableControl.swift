@@ -66,6 +66,12 @@ struct PluginEnableControl: View {
                 systemImage: "lock.fill",
                 style: .accent
             )
+        case .disabled:
+            AppTag(
+                PluginPluginManagerText.disabledPermanently,
+                systemImage: "minus.circle",
+                style: .subtle
+            )
         case .enabledByDefault, .disabledByDefault:
             EmptyView()
         }

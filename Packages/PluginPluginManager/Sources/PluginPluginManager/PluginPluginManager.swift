@@ -18,7 +18,6 @@ import SwiftUI
 /// - 策略：`.required`（宿主必需，语义对应旧版 `.alwaysOn`），本插件自身不可被禁用。
 @MainActor
 public final class PluginPluginManager: SuperPlugin {
-    /// 与旧版 `PluginManagerPlugin` 完全一致的插件 id，保证状态存储兼容。
     public let id = "com.coffic.lumi.plugin.plugin-manager"
     public let order = 90
 
