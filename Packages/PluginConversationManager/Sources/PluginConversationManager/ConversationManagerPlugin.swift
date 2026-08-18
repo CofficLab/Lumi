@@ -41,7 +41,7 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
         description: "SwiftData 持久化对话管理，替代默认内存实现",
         category: .chat,
         stage: .preview,
-        policy: .enabledByDefault
+        policy: .required
     )
 
     public init() {}
@@ -85,7 +85,7 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
                 order: 7
             ) { [weak manager] in
                 ConversationStoreSettingsView(manager: manager)
-            }
+            },
         ])
 
         // 5. 后台启动 v4 历史会话迁移（不 await，onBoot 立即返回）。
