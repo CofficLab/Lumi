@@ -1,8 +1,10 @@
 import AgentToolKit
 import Foundation
+import KitLLM
 import KernelCore
 import os
 import ProviderProject
+import ProviderLifecycleHooks
 import ProviderSettingView
 import ProviderStorage
 import ProviderToolbar
@@ -73,7 +75,23 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
             }
         }
 
-        // 6. 贡献标题栏项目控件（center placement,与旧版 titleToolbarItems 对齐）
+        // 6. willSendToLLM 钩子：将当前项目路径注入 LLM 上下文。
+        if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self),
+           let project = kernel.resolveProvider((any ProjectProviding).self) {
+            hooks.addWillSendToLLMHook { context in
+                guard let projectPath = project.currentProject?.path,
+                      !projectPath.isEmpty else { return context }
+                var ctx = context
+                let projectMessage = LLMMessage(
+                    role: .system,
+                    content: "当前工作项目路径：\(projectPath)"
+                )
+                ctx.messages = [projectMessage] + ctx.messages
+                return ctx
+            }
+        }
+
+        // 7. 贡献标题栏项目控件（center placement,与旧版 titleToolbarItems 对齐）
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
             toolbar.addToolbarItems([
                 ToolbarItem(

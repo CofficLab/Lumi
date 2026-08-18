@@ -11,6 +11,7 @@ let package = Package(
     dependencies: [
         .package(path: "../AgentToolKit"),
         .package(path: "../KernelCore"),
+        .package(path: "../KitLLM"),
         .package(path: "../LocalizationKit"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderProject"),
@@ -18,6 +19,7 @@ let package = Package(
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../SuperLogKit"),
     ],
     targets: [
@@ -26,6 +28,7 @@ let package = Package(
             dependencies: [
                 "AgentToolKit",
                 "KernelCore",
+                "KitLLM",
                 "LocalizationKit",
                 "LumiUI",
                 "ProviderProject",
@@ -33,6 +36,7 @@ let package = Package(
                 "ProviderStorage",
                 "ProviderToolbar",
                 "ProviderToolManager",
+                "ProviderLifecycleHooks",
                 "SuperLogKit",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
