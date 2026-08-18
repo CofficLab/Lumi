@@ -124,6 +124,7 @@ let package = Package(
         .package(path: "../ProviderWorkspace"),
         .package(path: "../ProviderOnboarding"),
         .package(path: "../ProviderWebServer"),
+        .package(path: "../ProviderLifecycleHooks"),
     ],
     targets: [
         .target(
@@ -245,6 +246,7 @@ let package = Package(
                 .product(name: "ProviderPluginControl", package: "ProviderPluginControl"),
                 .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
                 .product(name: "ProviderWebServer", package: "ProviderWebServer"),
+                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
             ],
             path: "Sources/FactoryLumi2"
         ),

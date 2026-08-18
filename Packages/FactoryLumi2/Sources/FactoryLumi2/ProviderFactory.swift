@@ -32,6 +32,7 @@ import ProviderLegacyData
 import ProviderPluginControl
 import ProviderPluginManaging
 import ProviderWebServer
+import ProviderLifecycleHooks
 import ProviderLLMManager
 import KernelCore
 
@@ -222,6 +223,11 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultWebServerProviding()
     }
 
+    /// 产出 `LifecycleHooksProviding` 实现（统一管理生命周期钩子）。
+    public func makeLifecycleHooksProvider() -> any LifecycleHooksProviding {
+        DefaultLifecycleHooksProvider()
+    }
+
     // MARK: - Provider Registration
 
     /// 装配并注册全部默认 Provider，完成依赖接线。
@@ -269,6 +275,13 @@ public struct DefaultProviderFactory: ProviderFactory {
             (any MessageStreamingProviding).self,
             makeMessageStreamingProvider(),
             forwardsObjectWillChange: false
+        )
+
+        // 生命周期钩子管理器：AgentLoop / 插件在各生命周期点挂载钩子。
+        // 先于 AgentLoop 注册，后续可将钩子接线到 AgentLoop 回合循环中。
+        try kernel.registerProvider(
+            (any LifecycleHooksProviding).self,
+            makeLifecycleHooksProvider()
         )
 
         // LLM Provider 管理器：各 LLM 供应商（ManagedLLMProvider）的注册表 +

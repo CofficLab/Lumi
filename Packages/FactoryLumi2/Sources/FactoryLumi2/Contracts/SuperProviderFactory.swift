@@ -34,6 +34,7 @@ import ProviderToolbar
 import ProviderToolManager
 import ProviderWebServer
 import ProviderWorkspace
+import ProviderLifecycleHooks
 
 /// 产出各种 Provider 实现的工厂协议。
 ///
@@ -125,6 +126,10 @@ public protocol ProviderFactory {
     ) -> any PluginManaging
 
     func makeWebServerProvider() -> any WebServerProviding
+
+    /// 产出 `LifecycleHooksProviding` 实现（统一管理生命周期钩子）。
+    func makeLifecycleHooksProvider() -> any LifecycleHooksProviding
+
     /// 装配并注册全部默认 Provider 到内核。
     ///
     /// 实现方负责按依赖顺序创建各 Provider 并调用 `kernel.registerProvider`，
