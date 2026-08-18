@@ -40,7 +40,7 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
     private var sidebar: some View {
         AppSettingsSidebarContainer(width: 220) {
             VStack(alignment: .leading, spacing: 10) {
-                SettingsSidebarHeaderView(logo: logo)
+                HeaderView(logo: logo)
 
                 AppSettingsDivider()
 

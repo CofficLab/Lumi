@@ -30,7 +30,7 @@ public final class PluginSettingView: SuperPlugin, SuperLog {
             description: "自研 SettingViewProviding 实现，替换默认 SettingViewProvider（带结构化日志）",
             category: .system,
             stage: .preview,
-            policy: .enabledByDefault
+            policy: .required
         )
     }
 

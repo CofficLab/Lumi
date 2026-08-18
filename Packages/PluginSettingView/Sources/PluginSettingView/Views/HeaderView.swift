@@ -8,7 +8,7 @@ import SwiftUI
 /// 使用 `AppSettingsSidebarHeader` 统一排版，顶部 Logo 由 `PluginSettingView`
 /// 从共享内核解析的 `LogoProviding` 提供（`about` 场景，彩色/动画），
 /// 未注册 Logo 时回退到主题色 `app.fill` 图标。
-struct SettingsSidebarHeaderView: View {
+struct HeaderView: View {
     /// 从共享内核解析的 Logo 服务；`nil` 时仅显示回退图标。
     let logo: (any LogoProviding)?
 
@@ -48,7 +48,7 @@ struct SettingsSidebarHeaderView: View {
 }
 
 #Preview("Settings Sidebar Header") {
-    SettingsSidebarHeaderView(logo: nil)
+    HeaderView(logo: nil)
         .frame(width: 220)
         .padding()
 }
