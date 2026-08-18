@@ -1,6 +1,8 @@
+import os
 import Combine
 import Foundation
 import KernelCore
+import SuperLogKit
 import ProviderChatSection
 import ProviderConversation
 import ProviderMessageSender
@@ -14,7 +16,9 @@ import SwiftUI
 /// - 数据来自 `MessageSendingProviding.pendingMessages(for:)`（队列能力
 ///   已在新版 `DefaultMessageSendingProviding` 实现）。
 @MainActor
-public final class ConversationPendingMessagePlugin: SuperPlugin {
+public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-pending-message", category: "ConversationPendingMessage")
+
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.conversation-pending-message"
     public let order = 82
@@ -36,6 +40,7 @@ public final class ConversationPendingMessagePlugin: SuperPlugin {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
               let conversations = kernel.resolveProvider((any ConversationManaging).self),
               let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding, ConversationManaging, MessageSendingProviding from kernel")
             return
         }
 
