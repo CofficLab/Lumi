@@ -333,6 +333,60 @@ import Foundation
     #expect(progress.errorMessage == nil)
 }
 
+@Test func emitSSEEventsSplitsByBlankLineAndKeepsTail() async {
+    let provider = NetworkProvider()
+
+    // 多个 `data: {...}` 事件 + 一个 [DONE]，事件间以空行分隔。
+    let event1 = "data: {\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\"}}]}"
+    let event2 = "data: {\"choices\":[{\"delta\":{\"content\":\"# 项目介绍\"}}]}"
+    let event3 = "data: {\"choices\":[{\"delta\":{\"content\":\"\\n\\n正文\"}}]}"
+    let event4 = "data: [DONE]"
+    let body = [event1, event2, event3, event4].joined(separator: "\n\n") + "\n\n"
+
+    final class Collector: @unchecked Sendable { var events: [String] = [] }
+    let collector = Collector()
+
+    let shouldContinue = await provider.emitSSEEvents(from: Data(body.utf8)) { data in
+        collector.events.append(String(data: data, encoding: .utf8) ?? "")
+        return true
+    }
+
+    #expect(shouldContinue)
+    // 空行的 `\n\n` 会匹配双换行，但首个事件前无内容；应切出 4 个事件。
+    #expect(collector.events.count == 4, "应切出 4 个完整事件块，实际 \(collector.events.count)")
+    #expect(collector.events[0].hasPrefix("data: "))
+    #expect(collector.events[1].contains("项目介绍"))
+    #expect(collector.events[2].contains("正文"))
+    #expect(collector.events[3] == "data: [DONE]")
+}
+
+@Test func emitSSEEventsHonorsStopAndHandlesDelimiterVariants() async {
+    let provider = NetworkProvider()
+
+    // 混用 CRLF 结尾事件 + CRCR 边界；并验证返回 false 可提前终止。
+    let crlfEvent = "data: {\"a\":1}\r\n\r\n"
+    final class Counter: @unchecked Sendable { var count = 0 }
+    let counter = Counter()
+    let stopped = await provider.emitSSEEvents(from: Data(crlfEvent.utf8)) { _ in
+        counter.count += 1
+        return false
+    }
+    #expect(counter.count == 1)
+    #expect(!stopped)
+
+    // CRCR 作为空行分隔符也应被识别。
+    let crcrEvent = "data: {\"b\":2}\r\rdata: [DONE]\r\r"
+    final class CrCollector: @unchecked Sendable { var events: [String] = [] }
+    let crCollector = CrCollector()
+    _ = await provider.emitSSEEvents(from: Data(crcrEvent.utf8)) { data in
+        crCollector.events.append(String(data: data, encoding: .utf8) ?? "")
+        return true
+    }
+    #expect(crCollector.events.count == 2)
+    #expect(crCollector.events[0] == "data: {\"b\":2}")
+    #expect(crCollector.events[1] == "data: [DONE]")
+}
+
 private actor PublicIPFetcherStub {
     private(set) var count = 0
     private let values: [String]
