@@ -1,6 +1,6 @@
 import Foundation
-import os
 import KernelCore
+import os
 import ProviderLogo
 import SuperLogKit
 
@@ -17,7 +17,7 @@ import SuperLogKit
 @MainActor
 public final class PluginLogoManager: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.logo-manager", category: "Plugin")
-    nonisolated public static let emoji = "🖼️"
+    public nonisolated static let emoji = "🖼️"
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.logo-manager"
@@ -30,7 +30,7 @@ public final class PluginLogoManager: SuperPlugin, SuperLog {
             description: "自研 LogoProviding 实现，替换默认 LogoProvider（带结构化日志）",
             category: .system,
             stage: .preview,
-            policy: .enabledByDefault
+            policy: .required
         )
     }
 
