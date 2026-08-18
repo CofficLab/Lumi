@@ -1,9 +1,9 @@
-import os
 import Foundation
 import KernelCore
-import SuperLogKit
+import os
 import ProviderChatSection
 import ProviderConversation
+import SuperLogKit
 import SwiftUI
 
 /// 会话行为控制插件：自动化级别切换（对话 / 构建 / 自主）。
@@ -49,7 +49,7 @@ public final class ConversationModePlugin: SuperPlugin, SuperLog {
             ChatSectionBarItem(
                 id: "\(id).toolbar-button",
                 order: 84,
-                placement: .toolbarLeading
+                placement: .toolbarTrailing
             ) {
                 AutomationLevelToolbarView(conversations: conversations)
             },
