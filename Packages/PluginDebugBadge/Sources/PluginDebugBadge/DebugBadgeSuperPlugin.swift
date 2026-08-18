@@ -1,5 +1,7 @@
+import os
 import Foundation
 import KernelCore
+import SuperLogKit
 import LumiUI
 import ProviderToolbar
 import SwiftUI
@@ -14,7 +16,9 @@ import SwiftUI
 /// 徽标视图本身由 `#if DEBUG` 编译剔除，Release 构建中插件不贡献任何工具栏项；
 /// 同时 `enabledByDefault` 在 Release 下为 `false`，确保零足迹。
 @MainActor
-public final class DebugBadgeSuperPlugin: SuperPlugin {
+public final class DebugBadgeSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.debug-badge", category: "DebugBadge")
+
     public let id = "com.coffic.lumi.plugin.debug-badge"
 
     public var metadata: PluginMetadata {
@@ -43,7 +47,10 @@ public final class DebugBadgeSuperPlugin: SuperPlugin {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         #if DEBUG
-        guard let toolbar = kernel.resolveProvider(ToolbarProviding.self) else { return }
+        guard let toolbar = kernel.resolveProvider(ToolbarProviding.self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ToolbarProviding from kernel")
+            return
+        }
         toolbar.addToolbarItems([
             ToolbarItem(
                 id: "\(id).badge",
@@ -59,7 +66,10 @@ public final class DebugBadgeSuperPlugin: SuperPlugin {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         #if DEBUG
-        guard let toolbar = kernel.resolveProvider(ToolbarProviding.self) else { return }
+        guard let toolbar = kernel.resolveProvider(ToolbarProviding.self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ToolbarProviding from kernel")
+            return
+        }
         toolbar.removeToolbarItems(ids: ["\(id).badge"])
         #endif
     }
