@@ -25,6 +25,10 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
     /// 由插件 OnBoot 阶段注入（在 `registerLLMProviderService` 之前赋值）。
     public weak var kernel: KernelLumi?
 
+    /// 网络请求能力：由插件 OnBoot 阶段从 kernel 注入，
+    /// 传递给 CustomLLMProvider 以确保自定义 provider 的请求也被记录。
+    public var network: (any NetworkProviding)?
+
     /// 共享的 provider 可用性状态。ModelSelector / Settings 页面都引用同一个实例。
     public let providerAvailabilityState = ModelAvailabilityState()
 
@@ -357,7 +361,7 @@ public final class LLMProviderManager: LLMProviderManaging, ObservableObject, Su
     }
 
     func registerCustomProvider(_ configuration: CustomProviderConfiguration) throws {
-        let provider = CustomLLMProvider(configuration: configuration)
+        let provider = CustomLLMProvider(configuration: configuration, network: network)
         try registerLLMProvider(provider)
         customProviderConfigurations[configuration.id] = configuration
         kernel?.eventManager.post(.llmProvidersDidChange)

@@ -14,11 +14,16 @@ final class CustomLLMProvider: LumiLLMProvider, @unchecked Sendable {
 
     let configuration: CustomProviderConfiguration
     let providerInfo: LumiLLMProviderInfo
-    private let apiService = LLMAPIService()
+    private let apiService: LLMAPIService
 
-    init(configuration: CustomProviderConfiguration) {
+    init(configuration: CustomProviderConfiguration, network: (any NetworkProviding)? = nil) {
         self.configuration = configuration
         self.providerInfo = configuration.info
+        if let network {
+            self.apiService = LLMAPIService(network: network)
+        } else {
+            self.apiService = LLMAPIService()
+        }
     }
 
     func lumiResolveAPIKey() throws -> String {

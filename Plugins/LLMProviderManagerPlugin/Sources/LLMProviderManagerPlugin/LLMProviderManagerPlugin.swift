@@ -27,6 +27,7 @@ public final class LLMProviderManagerPlugin: LumiPlugin, SuperLog {
     public func onBoot(kernel: KernelLumi) async throws {
         let service = LLMProviderManager()
         service.kernel = kernel
+        service.network = kernel.network
         try kernel.registerLLMProviderService(service)
         self.manager = service
         for configuration in CustomProviderStore.shared.load() {
