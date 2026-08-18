@@ -9,9 +9,9 @@ import Testing
 @MainActor
 struct ProviderRootViewTests {
 
-    @Test("DefaultRootViewProviding 无工具栏时返回根视图")
+    @Test("DefaultRootViewProvider 无工具栏时返回根视图")
     func defaultProviderReturnsRootViewWithoutToolbar() {
-        let provider = DefaultRootViewProviding()
+        let provider = DefaultRootViewProvider()
 
         let view = provider.makeRootView()
 
@@ -20,7 +20,7 @@ struct ProviderRootViewTests {
 
     @Test("注入工具栏后返回根视图")
     func defaultProviderReturnsRootViewWithToolbar() {
-        let provider = DefaultRootViewProviding()
+        let provider = DefaultRootViewProvider()
         provider.setToolbarView(AnyView(Text("toolbar")))
 
         let view = provider.makeRootView()
@@ -30,7 +30,7 @@ struct ProviderRootViewTests {
 
     @Test("注入 ActivityBar 后返回根视图")
     func defaultProviderReturnsRootViewWithActivityBar() {
-        let provider = DefaultRootViewProviding()
+        let provider = DefaultRootViewProvider()
         provider.setActivityBarView(AnyView(Text("activity bar")))
 
         let view = provider.makeRootView()
@@ -40,7 +40,7 @@ struct ProviderRootViewTests {
 
     @Test("同时注入工具栏与 ActivityBar 后返回根视图")
     func defaultProviderReturnsRootViewWithToolbarAndActivityBar() {
-        let provider = DefaultRootViewProviding()
+        let provider = DefaultRootViewProvider()
         provider.setToolbarView(AnyView(Text("toolbar")))
         provider.setActivityBarView(AnyView(Text("activity bar")))
 
@@ -51,7 +51,7 @@ struct ProviderRootViewTests {
 
     @Test("同时注入工具栏、ActivityBar、Rail 与内容后返回根视图")
     func defaultProviderReturnsRootViewWithAllInjections() {
-        let provider = DefaultRootViewProviding()
+        let provider = DefaultRootViewProvider()
         provider.setToolbarView(AnyView(Text("toolbar")))
         provider.setActivityBarView(AnyView(Text("activity bar")))
         provider.setRailView(AnyView(Text("rail")))
@@ -65,7 +65,7 @@ struct ProviderRootViewTests {
 
     @Test("RootViewProviding 可作为 any RootViewProviding 使用")
     func providerAccessibleThroughProtocol() {
-        let provider: any RootViewProviding = DefaultRootViewProviding()
+        let provider: any RootViewProviding = DefaultRootViewProvider()
         provider.setToolbarView(AnyView(Text("toolbar")))
         provider.setActivityBarView(AnyView(Text("activity bar")))
         provider.setRailView(AnyView(Text("rail")))
@@ -150,7 +150,7 @@ struct ProviderRootViewTests {
 
     @Test("ActivityBar 注入后仍返回根视图（容器数 > 1 时显示）")
     func activityBarVisibleWithMultipleContainers() {
-        let provider = DefaultRootViewProviding()
+        let provider = DefaultRootViewProvider()
         provider.setActivityBarView(AnyView(Text("activity bar")))
         provider.setWorkspaceProvider(makeWorkspace(containerCount: 2))
 
@@ -159,7 +159,7 @@ struct ProviderRootViewTests {
 
     @Test("无活跃容器时返回根视图（Welcome 占位路径）")
     func welcomePlaceholderWithoutActiveContainer() {
-        let provider = DefaultRootViewProviding()
+        let provider = DefaultRootViewProvider()
         // 有 workspace 但无活跃容器（未注册任何容器）。
         let workspace = DefaultWorkspaceProviding(
             pluginDirectory: FileManager.default.temporaryDirectory
@@ -173,7 +173,7 @@ struct ProviderRootViewTests {
 
     @Test("存在活跃容器时返回带内容区的根视图")
     func contentShownWithActiveContainer() {
-        let provider = DefaultRootViewProviding()
+        let provider = DefaultRootViewProvider()
         let workspace = makeWorkspace(containerCount: 1)
         provider.setWorkspaceProvider(workspace)
         provider.setContentView(AnyView(Text("content")))
@@ -185,7 +185,7 @@ struct ProviderRootViewTests {
     // MARK: - 注入守卫（值相同则跳过赋值，避免视图更新期间发布 objectWillChange）
 
     /// 订阅 objectWillChange 并返回发送次数计数。
-    private func makeChangeCounter(for provider: DefaultRootViewProviding) -> (() -> Int, AnyCancellable) {
+    private func makeChangeCounter(for provider: DefaultRootViewProvider) -> (() -> Int, AnyCancellable) {
         var count = 0
         let cancellable = provider.objectWillChange.sink { _ in
             count += 1
@@ -195,7 +195,7 @@ struct ProviderRootViewTests {
 
     @Test("重复注入相同类型视图时跳过赋值（不发布 objectWillChange）")
     func repeatedSameTypeInjectionSkipsPublish() {
-        let provider = DefaultRootViewProviding()
+        let provider = DefaultRootViewProvider()
         let (count, cancellable) = makeChangeCounter(for: provider)
 
         provider.setToolbarView(AnyView(Text("toolbar")))
@@ -211,7 +211,7 @@ struct ProviderRootViewTests {
 
     @Test("注入状态变化（nil ↔ 非 nil）时正常更新（发布 objectWillChange）")
     func valueTransitionStillPublishes() {
-        let provider = DefaultRootViewProviding()
+        let provider = DefaultRootViewProvider()
         let (count, cancellable) = makeChangeCounter(for: provider)
 
         provider.setToolbarView(nil)
@@ -231,7 +231,7 @@ struct ProviderRootViewTests {
 
     @Test("重复注入 nil 时跳过赋值（不发布 objectWillChange）")
     func repeatedNilInjectionSkipsPublish() {
-        let provider = DefaultRootViewProviding()
+        let provider = DefaultRootViewProvider()
         let (count, cancellable) = makeChangeCounter(for: provider)
 
         provider.setToolbarView(nil)
@@ -246,7 +246,7 @@ struct ProviderRootViewTests {
 
     @Test("重复注入相同 workspace 实例时跳过（不重复订阅/发布）")
     func repeatedWorkspaceInjectionSkipsPublish() {
-        let provider = DefaultRootViewProviding()
+        let provider = DefaultRootViewProvider()
         let workspace = makeWorkspace(containerCount: 1)
         let (count, cancellable) = makeChangeCounter(for: provider)
 

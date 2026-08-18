@@ -104,7 +104,7 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     /// 产出 `RootViewProviding` 实现（默认「工具栏 + 内容区」根布局）。
     public func makeRootViewProvider() -> any RootViewProviding {
-        DefaultRootViewProviding()
+        DefaultRootViewProvider()
     }
 
     /// 产出 `ActivityBarProviding` 实现（默认竖直入口栏）。
