@@ -55,7 +55,8 @@ public final class DevicePlugin: SuperPlugin {
                     id: entryID,
                     title: "设备信息",
                     systemImage: "gauge.with.dots.needle.50percent",
-                    order: order
+                    order: order,
+                    ownerPluginID: id
                 ) { activeItemID in
                     if activeItemID == entryID {
                         // 本插件被激活：展示主内容并隐藏侧边栏 Rail（全屏展示）。
