@@ -42,6 +42,7 @@ enum ScreenshotFlowRunner {
     private static func insert(kernel: KernelCoreContainer, image: CGImage) {
         guard let storage = kernel.resolveProvider((any StorageProviding).self),
               let input = kernel.resolveProvider((any ConversationInputProviding).self) else {
+            logger.error("Failed to resolve StorageProviding, ConversationInputProviding from kernel")
             return
         }
         let directory = storage.pluginDataDirectory(for: "ChatScreenshot")

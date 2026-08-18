@@ -1,5 +1,7 @@
+import os
 import KernelCore
 import ProviderChatSection
+import SuperLogKit
 
 /// Chat Screenshot Plugin（KernelCore 版本）
 ///
@@ -18,7 +20,9 @@ import ProviderChatSection
 /// - `kernel.messageSender.addAttachment` → 无附件管道，改用
 ///   `ConversationInputProviding.addToConversation(fileURLs:)` 插入文件路径。
 @MainActor
-public final class ChatScreenshotPlugin: SuperPlugin {
+public final class ChatScreenshotPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.chat-screenshot", category: "ChatScreenshot")
+
     /// 保持旧版插件 ID，插件启用状态 / 存储 / 自动化不失效。
     public let id = "com.coffic.lumi.plugin.chat-screenshot"
     public let order = 81
@@ -41,7 +45,10 @@ public final class ChatScreenshotPlugin: SuperPlugin {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else { return }
+        guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding from kernel\(self.r("chat is nil"))")
+            return
+        }
 
         // Action Bar 截图按钮（沿用旧版 chatSectionActionBarItems .leading，order 81）。
         chat.addBarItems([
