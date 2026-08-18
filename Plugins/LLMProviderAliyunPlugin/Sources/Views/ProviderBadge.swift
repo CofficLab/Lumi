@@ -5,7 +5,7 @@ struct ProviderBadge: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
     var body: some View {
-        Text(AliyunProvider.shortName)
+        Text(CodingPlanProvider.shortName)
             .font(.appMicro)
             .fontWeight(.semibold)
             .foregroundColor(theme.textSecondary)

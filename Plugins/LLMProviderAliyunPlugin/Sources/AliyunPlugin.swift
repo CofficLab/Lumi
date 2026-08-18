@@ -1,6 +1,6 @@
-import SwiftUI
 import KernelLumi
 import LumiUI
+import SwiftUI
 
 @MainActor
 public final class AliyunPlugin: LumiPlugin {
@@ -8,8 +8,9 @@ public final class AliyunPlugin: LumiPlugin {
 
     public let id = "com.coffic.lumi.plugin.llm-provider.aliyun"
     public var name: String {
-        LumiPluginLocalization.string("阿里云 CodingPlan", bundle: .module)
+        LumiPluginLocalization.string("阿里云", bundle: .module)
     }
+
     public let order = 105
     public let policy: LumiPluginPolicy = .alwaysOn
     public let stage: LumiPluginStage = .beta
@@ -31,8 +32,8 @@ public final class AliyunPlugin: LumiPlugin {
     public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] {
         let network = kernel.network
         return [
-            AliyunProvider(network: network),
-            AliyunTokenPlanProvider(network: network),
+            CodingPlanProvider(network: network),
+            TokenPlanProvider(network: network),
         ]
     }
 
@@ -47,6 +48,7 @@ public final class AliyunPlugin: LumiPlugin {
             RequestFailedRenderer.item,
         ]
     }
+
     public func menuBarContentItems(kernel: KernelLumi) -> [LumiMenuBarContentItem] { [] }
     public func menuBarPopupItems(kernel: KernelLumi) -> [LumiMenuBarPopupItem] { [] }
     public func titleToolbarItems(kernel: KernelLumi) -> [LumiTitleToolbarItem] { [] }
@@ -67,6 +69,7 @@ public final class AliyunPlugin: LumiPlugin {
             LLMProviderLandingPage(displayName: LumiPluginLocalization.string("阿里云 CodingPlan", bundle: .module), icon: "cloud")
         )
     }
+
     public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
     public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
     public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }

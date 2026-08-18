@@ -20,8 +20,8 @@ enum AliyunRenderKind {
 
     static func isAliyunError(_ message: LumiChatMessage) -> Bool {
         message.isError
-            && (message.providerID == AliyunProvider.info.id
-                || message.providerID == AliyunTokenPlanProvider.info.id)
+            && (message.providerID == CodingPlanProvider.info.id
+                || message.providerID == TokenPlanProvider.info.id)
     }
 
     static func matches(renderKind expected: String, message: LumiChatMessage) -> Bool {

@@ -9,7 +9,7 @@ enum AliyunAvailabilityService {
     private static let cache = AvailabilityDiskCache(pluginName: "LLMProviderAliyun")
 
     static func checkAvailability(
-        provider: AliyunTokenPlanProvider,
+        provider: TokenPlanProvider,
         model: String
     ) async -> LumiModelAvailabilityResult {
         await checkAvailability(
@@ -19,7 +19,7 @@ enum AliyunAvailabilityService {
     }
 
     static func checkAvailability(
-        provider: AliyunProvider,
+        provider: CodingPlanProvider,
         model: String
     ) async -> LumiModelAvailabilityResult {
         await checkAvailability(

@@ -48,7 +48,7 @@ struct ApiKeyMissingView: View {
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
 
-                if let url = URL(string: AliyunProvider.apiKeyHelpURL ?? "") {
+                if let url = URL(string: CodingPlanProvider.apiKeyHelpURL ?? "") {
                     Link(destination: url) {
                         Label(
                             LumiPluginLocalization.string("Get API Key on Aliyun Model Studio", bundle: .module),
@@ -67,7 +67,7 @@ struct ApiKeyMissingView: View {
                             get: { apiKey },
                             set: { newValue in
                                 apiKey = newValue
-                                LumiAPIKeyTools.set(newValue, storageKey: AliyunProvider.info._apiKeyStorageKey)
+                                LumiAPIKeyTools.set(newValue, storageKey: CodingPlanProvider.info._apiKeyStorageKey)
                             }
                         ),
                         fieldType: isApiKeyVisible ? .plain : .secure
@@ -90,7 +90,7 @@ struct ApiKeyMissingView: View {
             }
         }
         .onAppear {
-            apiKey = LumiAPIKeyTools.get(storageKey: AliyunProvider.info._apiKeyStorageKey)
+            apiKey = LumiAPIKeyTools.get(storageKey: CodingPlanProvider.info._apiKeyStorageKey)
         }
     }
 }
