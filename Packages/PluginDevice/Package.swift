@@ -24,6 +24,7 @@ let package = Package(
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderStorage"),
+        .package(path: "../ProviderWorkspace"),
         .package(path: "../SuperLogKit"),
     ],
     targets: [
@@ -40,6 +41,7 @@ let package = Package(
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
