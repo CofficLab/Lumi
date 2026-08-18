@@ -24,6 +24,8 @@ public protocol PluginManagingObserverHandle: AnyObject {
     func cancel()
 }
 
+// MARK: - PluginManaging
+
 /// 插件管理协议：在 `PluginControlling`（启停控制）之上，提供对内核中
 /// `SuperPlugin` 的枚举、查询、卸载与重新加载等管理能力。
 ///
@@ -60,4 +62,17 @@ public protocol PluginManaging: PluginControlling {
     /// 用于热更新插件实现或从异常状态恢复；插件不存在时抛出
     /// `PluginManagingError.pluginNotFound`。
     func reloadPlugin(id: String) throws
+
+    // MARK: - Plugin Observation
+
+    /// 注册一个观察者：当插件系统发生变更（列表变化、启用状态变化等）时，
+    /// 通过 callback 收到对应的事件。
+    ///
+    /// 回调在主线程（`@MainActor`）同步执行。
+    ///
+    /// - Parameter callback: 插件管理事件变化时的通知回调。
+    /// - Returns: 注销令牌；持有返回值即可持续接收，令牌释放（deinit）或调用
+    ///   `cancel()` 后自动停止接收。
+    @discardableResult
+    func addPluginObserver(_ callback: @escaping (PluginManagingEvent) -> Void) -> any PluginManagingObserverHandle
 }

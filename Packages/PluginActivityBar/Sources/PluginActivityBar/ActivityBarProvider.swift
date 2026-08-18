@@ -20,7 +20,7 @@ import SuperLogKit
 /// 替换 `ProviderFactory` 预注册的 `DefaultActivityBarProviding` 后，
 /// 后续 `kernel.resolveProvider((any ActivityBarProviding).self)` 拿到的就是本实现。
 @MainActor
-public final class CustomActivityBarProviding: ActivityBarProviding, ObservableObject, SuperLog {
+public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.activity-bar", category: "Provider")
     nonisolated public static let emoji = "🧱"
     nonisolated static let verbose = false
@@ -161,7 +161,7 @@ public final class CustomActivityBarProviding: ActivityBarProviding, ObservableO
 /// - 内容溢出时滚动，配合上下 8pt 渐隐遮罩提示可滚动；
 /// - 右键菜单提供「打开设置」入口（与旧版一致，通过 `lumi.openSettings` 通知）。
 private struct ActivityBarView: View {
-    @ObservedObject var provider: CustomActivityBarProviding
+    @ObservedObject var provider: ActivityBarProvider
 
     var body: some View {
         VStack(spacing: 6) {
