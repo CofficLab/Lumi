@@ -24,6 +24,8 @@ import SuperLogKit
 /// 保证其 `onBoot` 能 resolve 到本插件注册的实现。
 @MainActor
 public final class MessageSenderPlugin: SuperPlugin,SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-sender", category: "MessageSender")
+
     public let id = "com.coffic.lumi.plugin.message-sender"
     public let order = 9
 
@@ -44,6 +46,7 @@ public final class MessageSenderPlugin: SuperPlugin,SuperLog {
         guard let conversations = kernel.resolveProvider((any ConversationManaging).self),
               let messages = kernel.resolveProvider((any MessageManaging).self),
               let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ConversationManaging, MessageManaging, AgentLoopProviding from kernel")
             return
         }
         
