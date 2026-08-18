@@ -16,7 +16,7 @@ import os
 /// 插件启动时注册工具到 `ToolManagerProviding`，并共享 `ShowImageState`
 /// 供 UI 层观察并渲染图片预览。
 @MainActor
-public final class ShowImagePlugin: SuperPlugin {
+public final class ShowImagePlugin: SuperPlugin, SuperLog {
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.show-image")
 
     public let id = "com.coffic.lumi.plugin.show-image"
@@ -35,7 +35,10 @@ public final class ShowImagePlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else { return }
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding from kernel")
+            return
+        }
 
         let network: (any NetworkProviding)? = kernel.resolveProvider((any NetworkProviding).self)
         let tool = ShowImageTool(network: network)
@@ -43,7 +46,10 @@ public final class ShowImagePlugin: SuperPlugin {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else { return }
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding from kernel")
+            return
+        }
         toolManager.remove(id: ShowImageTool.toolName)
     }
 }
