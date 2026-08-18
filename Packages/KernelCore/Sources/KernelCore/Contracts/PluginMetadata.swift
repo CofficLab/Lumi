@@ -3,7 +3,7 @@ import Foundation
 public enum PluginEnablePolicy: String, Codable, Sendable {
     /// 宿主必需能力，不能由用户禁用。
     case required
-    /// 始终启用，用户不可禁用（对应旧版 `LumiPluginPolicy.alwaysOn`）。
+    /// 始终启用，用户不可禁用。
     case alwaysOn
     /// 默认启用，用户可以在运行时禁用。
     case enabledByDefault
@@ -22,7 +22,7 @@ public extension PluginEnablePolicy {
         }
     }
 
-    /// 默认是否启用（对应旧版 `LumiPluginPolicy.enabledByDefault`）。
+    /// 默认是否启用。
     var enabledByDefault: Bool {
         switch self {
         case .required, .alwaysOn, .enabledByDefault:
