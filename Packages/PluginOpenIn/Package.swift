@@ -10,6 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../SuperLogKit"),
         .package(path: "../AgentToolKit"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderToolManager"),
@@ -30,6 +31,7 @@ let package = Package(
             dependencies: [
                 "PluginOpenIn",
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
             ],
