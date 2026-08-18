@@ -30,7 +30,7 @@ public final class AgentTempStoragePlugin: SuperPlugin {
             description: "Temporary file storage for agent workflows.",
             category: .system,
             stage: .preview,
-            policy: .enabledByDefault
+            policy: .required
         )
     }
 
