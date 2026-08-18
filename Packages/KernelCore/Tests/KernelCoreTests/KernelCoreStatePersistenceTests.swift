@@ -160,4 +160,47 @@ struct KernelCoreStatePersistenceTests {
         #expect(defaults.object(forKey: "test.v1.com.new.plugin.x") as? Bool == false)
         #expect(defaults.object(forKey: "test.v1.com.legacy.plugin.x") as? Bool == false)
     }
+
+    @Test("disabled 策略插件不会被注册、启动或出现在 allPlugins 中")
+    func disabledPluginIsExcluded() async throws {
+        let kernel = KernelCoreContainer()
+        let active = TestPlugin(id: "active-plugin")
+        let dead = TestPlugin(id: "dead-plugin", policy: .disabled)
+
+        try await kernel.startAsync(plugins: [active, dead])
+
+        // disabled 插件不会被注册
+        #expect(kernel.isPluginRegistered(id: "active-plugin"))
+        #expect(!kernel.isPluginRegistered(id: "dead-plugin"))
+
+        // disabled 插件不会出现在 allPlugins
+        #expect(kernel.allPlugins.map(\.id) == ["active-plugin"])
+
+        // disabled 插件 isPluginEnabled 返回 false
+        #expect(kernel.isPluginEnabled(id: "active-plugin"))
+        #expect(!kernel.isPluginEnabled(id: "dead-plugin"))
+
+        try await kernel.stopAsync()
+    }
+
+    @Test("disabled 策略插件不会被同步 start 注册")
+    func disabledPluginExcludedFromSyncStart() throws {
+        let kernel = KernelCoreContainer()
+        let active = TestPlugin(id: "sync-active")
+        let dead = TestPlugin(id: "sync-dead", policy: .disabled)
+
+        try kernel.start(plugins: [active, dead])
+
+        #expect(kernel.isPluginRegistered(id: "sync-active"))
+        #expect(!kernel.isPluginRegistered(id: "sync-dead"))
+        #expect(kernel.allPlugins.map(\.id) == ["sync-active"])
+
+        try kernel.stop()
+    }
+
+    @Test("disabled 策略插件 isConfigurable 为 false")
+    func disabledPolicyIsNotConfigurable() {
+        #expect(!PluginEnablePolicy.disabled.isConfigurable)
+        #expect(!PluginEnablePolicy.disabled.enabledByDefault)
+    }
 }

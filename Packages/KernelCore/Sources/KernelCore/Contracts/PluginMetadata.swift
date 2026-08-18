@@ -9,6 +9,8 @@ public enum PluginEnablePolicy: String, Codable, Sendable {
     case enabledByDefault
     /// 默认不启动运行时资源，由用户显式启用。
     case disabledByDefault
+    /// 彻底停用：插件不会被注册、启动，也不会出现在任何视图中。
+    case disabled
 }
 
 public extension PluginEnablePolicy {
@@ -17,7 +19,7 @@ public extension PluginEnablePolicy {
         switch self {
         case .enabledByDefault, .disabledByDefault:
             true
-        case .required, .alwaysOn:
+        case .required, .alwaysOn, .disabled:
             false
         }
     }
@@ -27,7 +29,7 @@ public extension PluginEnablePolicy {
         switch self {
         case .required, .alwaysOn, .enabledByDefault:
             true
-        case .disabledByDefault:
+        case .disabledByDefault, .disabled:
             false
         }
     }

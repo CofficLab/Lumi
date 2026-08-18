@@ -16,9 +16,13 @@ extension KernelCoreContainer {
     // MARK: - Enable-state persistence
 
     /// 计算插件的有效启用状态：`required` / `alwaysOn` 策略强制启用；
-    /// 否则优先持久化覆盖（先查新 ID，再回退旧 ID 别名），无记录时默认启用。
+    /// `disabled` 策略强制禁用；否则优先持久化覆盖（先查新 ID，再回退旧 ID 别名），无记录时默认启用。
     func effectiveEnabledState(for plugin: any SuperPlugin) -> Bool {
-        if plugin.metadata.policy == .required || plugin.metadata.policy == .alwaysOn { return true }
+        switch plugin.metadata.policy {
+        case .required, .alwaysOn: return true
+        case .disabled: return false
+        case .enabledByDefault, .disabledByDefault: break
+        }
         return storedEnabledState(for: plugin.id) ?? true
     }
 
@@ -59,8 +63,11 @@ extension KernelCoreContainer {
             throw KernelCoreError.asyncLifecycleRequired(pluginID: asyncPlugin.id)
         }
 
+        // 彻底排除策略为 .disabled 的插件：不注册、不启动、不展示。
+        let activePlugins = incomingPlugins.filter { $0.metadata.policy != .disabled }
+
         let previousState = lifecycleState
-        let sorted = try sortedForStartup(incomingPlugins)
+        let sorted = try sortedForStartup(activePlugins)
         guard !sorted.isEmpty else {
             if lifecycleState == .stopped { setLifecycleState(.running) }
             return

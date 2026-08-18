@@ -92,8 +92,11 @@ public extension KernelCoreContainer {
             )
         }
 
+        // 彻底排除策略为 .disabled 的插件：不注册、不启动、不展示。
+        let activePlugins = incomingPlugins.filter { $0.metadata.policy != .disabled }
+
         let previousState = lifecycleState
-        let sorted = try sortedForStartup(incomingPlugins)
+        let sorted = try sortedForStartup(activePlugins)
         guard !sorted.isEmpty else {
             if lifecycleState == .stopped { setLifecycleState(.running) }
             return
@@ -200,7 +203,10 @@ public extension KernelCoreContainer {
             throw KernelCoreError.pluginNotFound(id: id)
         }
         guard isPluginEnabled(id: id) else { return }
-        guard plugin.metadata.policy != .required && plugin.metadata.policy != .alwaysOn else {
+        guard plugin.metadata.policy != .required
+            && plugin.metadata.policy != .alwaysOn
+            && plugin.metadata.policy != .disabled
+        else {
             throw KernelCoreError.pluginRequired(id: id)
         }
         if let dependent = plugins.values.first(where: {
