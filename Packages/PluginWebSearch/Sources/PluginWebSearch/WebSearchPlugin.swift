@@ -28,7 +28,7 @@ public final class WebSearchPlugin: SuperPlugin {
             description: "Search the web for information using search engines.",
             category: .integration,
             stage: .preview,
-            policy: .enabledByDefault
+            policy: .required
         )
     }
 
