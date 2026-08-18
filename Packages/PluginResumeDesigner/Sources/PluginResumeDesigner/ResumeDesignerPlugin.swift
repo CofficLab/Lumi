@@ -59,7 +59,8 @@ public final class ResumeDesignerPlugin: SuperPlugin {
                     id: entryID,
                     title: name,
                     systemImage: "doc.badge.gearshape",
-                    order: order
+                    order: order,
+                    ownerPluginID: id
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
                     WorkspaceStore.shared.reload()
