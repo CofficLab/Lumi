@@ -17,6 +17,7 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../LocalizationKit"),
         .package(path: "../ProviderLogo"),
+        .package(path: "../SuperLogKit"),
     ],
     targets: [
         .target(
@@ -25,6 +26,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "ProviderLogo", package: "ProviderLogo"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: ".",
             exclude: [

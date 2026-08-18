@@ -1,5 +1,7 @@
 import KernelCore
+import os
 import ProviderLogo
+import SuperLogKit
 import SwiftUI
 
 /// Coffic Logo 插件
@@ -11,7 +13,11 @@ import SwiftUI
 /// `onBoot(kernel:)` 中主动解析 `LogoProviding`，用追加语义注册自己的
 /// `LogoItem`；消费方（如菜单栏图标）按 `order` 优先级取用。
 @MainActor
-public final class LogoCofficPlugin: SuperPlugin {
+public final class LogoCofficPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.logo-coffic")
+    nonisolated public static let emoji = "☕️"
+    nonisolated static let verbose = false
+
     public let id = "com.lumi.plugin.logo-coffic"
     public let order = 100
 
@@ -19,6 +25,7 @@ public final class LogoCofficPlugin: SuperPlugin {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let logo = kernel.resolveProvider((any LogoProviding).self) else {
+            Self.logger.info("\(Self.t)未装配 LogoProviding，跳过 Coffic Logo 注册")
             return
         }
 
@@ -31,9 +38,15 @@ public final class LogoCofficPlugin: SuperPlugin {
                 }
             )
         )
+        if Self.verbose {
+            Self.logger.info("\(Self.t)已注册 Coffic Logo 项: \(self.id)")
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any LogoProviding).self)?.unregisterLogoItem(id: id)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)已注销 Coffic Logo 项: \(self.id)")
+        }
     }
 }
