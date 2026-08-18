@@ -27,7 +27,7 @@ public final class DocxReadPlugin: SuperPlugin {
             description: "Extract text from DOCX files",
             category: .integration,
             stage: .preview,
-            policy: .enabledByDefault
+            policy: .required
         )
     }
 
