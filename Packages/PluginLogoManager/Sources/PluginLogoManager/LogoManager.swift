@@ -26,7 +26,6 @@ public final class LogoManager: LogoProviding, SuperLog {
 
     public func setLogoHighlighted(_ highlighted: Bool) {
         guard isLogoHighlighted != highlighted else {
-            Self.logger.debug("[LogoHighlight] no-op, state=\(self.isLogoHighlighted)")
             return
         }
         Self.logger.info("[LogoHighlight] \(self.isLogoHighlighted) -> \(highlighted)")
