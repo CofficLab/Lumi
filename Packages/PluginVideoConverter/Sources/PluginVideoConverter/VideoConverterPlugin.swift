@@ -33,7 +33,8 @@ public final class VideoConverterPlugin: SuperPlugin {
                     id: entryID,
                     title: VideoConverterLocalization.string("Video Converter"),
                     systemImage: "video",
-                    order: order
+                    order: order,
+                    ownerPluginID: id
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
                     contentView?.setContentView(AnyView(VideoConverterMainView()))
