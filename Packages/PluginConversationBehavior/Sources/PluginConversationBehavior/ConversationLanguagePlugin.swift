@@ -1,9 +1,11 @@
 import Foundation
+import os
 import KernelCore
 import ProviderChatSection
 import ProviderConversation
 import ProviderAgentLoop
 import ProviderMessage
+import SuperLogKit
 import SwiftUI
 
 /// 会话回复语言控制插件（中文 / English）。
@@ -12,7 +14,9 @@ import SwiftUI
 /// - 在 Chat 分区工具栏注册语言 chip；
 /// - 向 AgentLoop 注册消息准备钩子：注入瞬态 system 语言指令（不落库）。
 @MainActor
-public final class ConversationLanguagePlugin: SuperPlugin {
+public final class ConversationLanguagePlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-language", category: "ConversationLanguage")
+
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.conversation-language"
     public let order = 83
@@ -33,6 +37,7 @@ public final class ConversationLanguagePlugin: SuperPlugin {
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
               let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding, ConversationManaging from kernel")
             return
         }
 

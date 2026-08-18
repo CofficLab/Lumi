@@ -1,9 +1,11 @@
 import Foundation
+import os
 import KernelCore
 import ProviderChatSection
 import ProviderConversation
 import ProviderAgentLoop
 import ProviderMessage
+import SuperLogKit
 import SwiftUI
 
 /// 会话详细程度控制插件（V1 简洁 / V2 标准 / V3 详细）。
@@ -14,7 +16,9 @@ import SwiftUI
 ///   请求发往 LLM 前注入一条瞬态 system 指令（response style prompt），
 ///   不落库、只对本次请求生效。
 @MainActor
-public final class ConversationVerbosityPlugin: SuperPlugin {
+public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.verbosity", category: "ConversationVerbosity")
+
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.verbosity"
     public let order = 85
@@ -35,6 +39,7 @@ public final class ConversationVerbosityPlugin: SuperPlugin {
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
               let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding, ConversationManaging from kernel")
             return
         }
 

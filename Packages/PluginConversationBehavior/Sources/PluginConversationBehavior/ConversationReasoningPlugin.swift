@@ -1,7 +1,9 @@
 import Foundation
+import os
 import KernelCore
 import ProviderChatSection
 import ProviderConversation
+import SuperLogKit
 import SwiftUI
 
 /// 会话推理强度控制插件（low / medium / high / xhigh / max / 关闭）。
@@ -16,7 +18,9 @@ import SwiftUI
 /// threeLevel / fourLevel）；新版 `LLMModelInfo` 尚无该能力字段，
 /// 此处直接提供全部档位，由供应商侧按能力映射（能力感知过滤可后续补）。
 @MainActor
-public final class ConversationReasoningPlugin: SuperPlugin {
+public final class ConversationReasoningPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-reasoning", category: "ConversationReasoning")
+
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.conversation-reasoning"
     public let order = 81
@@ -37,6 +41,7 @@ public final class ConversationReasoningPlugin: SuperPlugin {
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
               let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding, ConversationManaging from kernel")
             return
         }
 
