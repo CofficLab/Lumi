@@ -36,7 +36,7 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
             description: "内置文件/终端工具 + 工具调用记录（复刻旧版体验，数据目录一致）",
             category: .chat,
             stage: .preview,
-            policy: .enabledByDefault
+            policy: .required
         )
     }
 
