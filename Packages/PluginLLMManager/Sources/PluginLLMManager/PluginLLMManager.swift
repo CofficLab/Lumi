@@ -1,6 +1,6 @@
 import Foundation
-import os
 import KernelCore
+import os
 import ProviderConversation
 import ProviderLLMManager
 import ProviderMessageRendering
@@ -20,7 +20,7 @@ import SuperLogKit
 @MainActor
 public final class PluginLLMManager: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-manager", category: "Plugin")
-    nonisolated public static let emoji = "🧭"
+    public nonisolated static let emoji = "🧭"
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.llm-manager"
@@ -33,7 +33,7 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
             description: "自研 LLMManaging 实现 + API Key 缺失/读取失败消息渲染器",
             category: .chat,
             stage: .preview,
-            policy: .enabledByDefault
+            policy: .required
         )
     }
 
