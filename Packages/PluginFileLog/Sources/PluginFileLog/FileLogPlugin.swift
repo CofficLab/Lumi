@@ -24,7 +24,7 @@ public final class FileLogPlugin: SuperPlugin {
             description: "将 OSLog 日志写入磁盘文件，支持自动轮转和过期清理",
             category: .system,
             stage: .stable,
-            policy: .disabledByDefault
+            policy: .required
         )
     }
 
