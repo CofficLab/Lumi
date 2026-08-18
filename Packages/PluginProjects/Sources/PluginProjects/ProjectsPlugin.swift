@@ -1,6 +1,8 @@
+import os
 import AgentToolKit
 import Foundation
 import KernelCore
+import SuperLogKit
 import ProviderProject
 import ProviderSettingView
 import ProviderStorage
@@ -18,7 +20,9 @@ import SwiftUI
 /// - 相比旧版移除:`willSendToLLM` 项目路径注入（新版无消息钩子）与
 ///   「添加项目」动作胶囊（新版 PromptSuggestion 不支持动作）。
 @MainActor
-public final class ProjectsPlugin: SuperPlugin {
+public final class ProjectsPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.projects", category: "Projects")
+
     public let id = "com.coffic.lumi.plugin.projects"
     public let order = 5
 
@@ -43,6 +47,7 @@ public final class ProjectsPlugin: SuperPlugin {
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 1. 装配存储（应用数据目录按旧版 storage key "Projects" 隔离）
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve StorageProviding from kernel")
             return
         }
         let store = ProjectsStore(pluginDirectory: storage.pluginDataDirectory(for: Self.storageDirectoryKey))
