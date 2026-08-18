@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// 动画咖啡Logo视图
-/// 用于 general 场景
+/// 用于 general、about 场景
 struct CofficAnimatedLogoView: View {
     let size: CGFloat
 

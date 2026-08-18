@@ -129,36 +129,53 @@ public final class NetworkProvider: NetworkProviding {
                 // Decompress the data
                 let decompressed = Self.decompress(compressedData, encoding: contentEncoding ?? "")
                 if let decompressed = decompressed {
-                    // Send decompressed chunks
-                    var offset = 0
-                    let chunkSize = 16 * 1024
-                    while offset < decompressed.count {
-                        let end = min(offset + chunkSize, decompressed.count)
-                        let chunk = decompressed[offset..<end]
-                        if !(await onChunk(Data(chunk))) {
-                            break
-                        }
-                        offset = end
-                    }
+                    // 解压后同样按 SSE 事件块切分（不能按 16KB 块，否则一个块内
+                    // 多个 data 事件被拼成多行 JSON，上层 parseStreamChunk 解析失败）。
+                    let shouldContinue = await emitSSEEvents(from: decompressed, onChunk: onChunk)
+                    if !shouldContinue { return }
                 } else {
                     // Fallback: send compressed data as-is
                     _ = await onChunk(compressedData)
                 }
             } else {
-                // Uncompressed stream - process as before
-                var chunk = Data()
+                // Uncompressed stream - 边接收边按 SSE 空行切分完整事件块，保证
+                // 实时逐事件回调，同时避免把多个 data 事件拼成多行 JSON。
+                //
+                // 历史 bug：这里按每 16KB 一块回调。一个 16KB 网络块通常包含**多个**
+                // SSE `data: {...}` 事件，它们被拼成多行拼进同一份 JSON，导致上层
+                // （OpenAICompatibleProviderAdapter.parseStreamChunk → extractSSEData
+                // → JSONSerialization）对多行 JSON 解析失败并丢弃 —— 流式正文全部丢失，
+                // 最终 assistant 消息落库为空，尽管 wire 上能看到完整内容。
+                var eventBuffer = Data()
+                var lastBytes: [UInt8] = []
                 for try await byte in bytes {
                     try Task.checkCancellation()
-                    chunk.append(byte)
                     receivedBody.append(byte)
-                    if chunk.count >= 16 * 1024 {
-                        let shouldContinue = await onChunk(chunk)
-                        chunk.removeAll(keepingCapacity: true)
-                        if !shouldContinue { break }
+                    eventBuffer.append(byte)
+                    lastBytes.append(byte)
+                    if lastBytes.count > 4 {
+                        lastBytes.removeFirst(lastBytes.count - 4)
+                    }
+
+                    let hitLF = lastBytes.suffix(2).elementsEqual([0x0A, 0x0A])
+                    let hitCR = lastBytes.suffix(2).elementsEqual([0x0D, 0x0D])
+                    let hitCRLF = lastBytes.count >= 4 && lastBytes.suffix(4).elementsEqual([0x0D, 0x0A, 0x0D, 0x0A])
+
+                    if hitLF || hitCR || hitCRLF {
+                        let delimiterLength = hitCRLF ? 4 : 2
+                        let eventData = eventBuffer.dropLast(delimiterLength)
+                        eventBuffer.removeAll(keepingCapacity: true)
+                        lastBytes.removeAll(keepingCapacity: true)
+
+                        guard !eventData.isEmpty else { continue }
+                        let shouldContinue = await onChunk(Data(eventData))
+                        if !shouldContinue { return }
                     }
                 }
-                if !chunk.isEmpty {
-                    _ = await onChunk(chunk)
+                // 流结束前未以空行结尾的剩余内容也要回调，避免丢最后一个事件。
+                if !eventBuffer.isEmpty {
+                    let shouldContinue = await onChunk(eventBuffer)
+                    if !shouldContinue { return }
                 }
             }
 
@@ -186,6 +203,59 @@ public final class NetworkProvider: NetworkProviding {
             exchangeStore?.finishRecord(recordID, response: response, body: receivedBody, error: networkError)
             throw networkError
         }
+    }
+
+    // MARK: - SSE Event Splitting
+
+    /// 把一段完整的 SSE 正文按空行切分成多个事件块，逐块回调 `onChunk`。
+    ///
+    /// SSE 协议以空行（`\n\n` / `\r\r` / `\r\n\r\n`）分隔事件；上层
+    /// `parseStreamChunk` 期望 `onChunk` 收到的是**单个**完整 `data:` 事件，
+    /// 多个事件拼在同一次回调会让其 `JSONSerialization` 因多行 JSON 解析失败而丢弃。
+    ///
+    /// - Returns: `false` 表示调用方要求提前终止。
+    func emitSSEEvents(
+        from data: Data,
+        onChunk: @Sendable @escaping (Data) async -> Bool
+    ) async -> Bool {
+        var eventBuffer = Data()
+        var lastBytes: [UInt8] = []
+
+        for byte in data {
+            eventBuffer.append(byte)
+            lastBytes.append(byte)
+            if lastBytes.count > 4 {
+                lastBytes.removeFirst(lastBytes.count - 4)
+            }
+
+            let hitLF = lastBytes.suffix(2).elementsEqual([0x0A, 0x0A])
+            let hitCR = lastBytes.suffix(2).elementsEqual([0x0D, 0x0D])
+            let hitCRLF = lastBytes.count >= 4 && lastBytes.suffix(4).elementsEqual([0x0D, 0x0A, 0x0D, 0x0A])
+
+            if hitLF || hitCR || hitCRLF {
+                let delimiterLength = hitCRLF ? 4 : 2
+                guard eventBuffer.count >= delimiterLength else {
+                    eventBuffer.removeAll(keepingCapacity: true)
+                    lastBytes.removeAll(keepingCapacity: true)
+                    continue
+                }
+
+                let eventData = eventBuffer.dropLast(delimiterLength)
+                eventBuffer.removeAll(keepingCapacity: true)
+                lastBytes.removeAll(keepingCapacity: true)
+
+                guard !eventData.isEmpty else { continue }
+                let shouldContinue = await onChunk(Data(eventData))
+                if !shouldContinue { return false }
+            }
+        }
+
+        // 流结束前未以空行结尾的剩余内容也要回调，避免丢最后一个事件。
+        if !eventBuffer.isEmpty {
+            let shouldContinue = await onChunk(eventBuffer)
+            if !shouldContinue { return false }
+        }
+        return true
     }
 
     // MARK: - Decompression

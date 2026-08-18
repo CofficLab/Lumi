@@ -50,6 +50,7 @@ import PluginLLMProviderXybbz
 import PluginLLMProviderZhipu
 import PluginLogoCoffic
 import PluginLogoManager
+import PluginLogoSmartLight
 import PluginMemory
 import PluginMessageList
 import PluginMessageManager
@@ -103,6 +104,7 @@ public struct DefaultPluginFactory: PluginFactory {
             // 必须在所有 onBoot 中调用 addItems 的业务插件（如 ResumeDesignerPlugin order=81）之前。
             PluginActivityBar(),
             LogoCofficPlugin(),
+            LogoSmartLightPlugin(),
             SettingsToolbarPlugin(),
             ThemePackPlugin(),
             VideoConverterPlugin(),

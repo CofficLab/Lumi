@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "PluginLogoCoffic",
+    name: "PluginLogoSmartLight",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "PluginLogoCoffic",
-            targets: ["PluginLogoCoffic"]
+            name: "PluginLogoSmartLight",
+            targets: ["PluginLogoSmartLight"]
         ),
     ],
     dependencies: [
@@ -21,7 +21,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "PluginLogoCoffic",
+            name: "PluginLogoSmartLight",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
@@ -33,17 +33,17 @@ let package = Package(
                 "Tests",
                 "build",
                 "README.md",
-                "Sources/PluginLogoCoffic/Views/README.md",
-                "Sources/PluginLogoCoffic/Views/MenuBar/README.md",
-                "Sources/PluginLogoCoffic/Support/README.md",
+                "Sources/PluginLogoSmartLight/Views/README.md",
+                "Sources/PluginLogoSmartLight/Views/MenuBar/README.md",
+                "Sources/PluginLogoSmartLight/Support/README.md",
             ],
             resources: [
                 .process("Resources")
             ]
         ),
         .testTarget(
-            name: "PluginLogoCofficTests",
-            dependencies: ["PluginLogoCoffic"]
+            name: "PluginLogoSmartLightTests",
+            dependencies: ["PluginLogoSmartLight"]
         )
     ]
 )

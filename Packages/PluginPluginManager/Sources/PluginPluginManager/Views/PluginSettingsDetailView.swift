@@ -75,7 +75,7 @@ struct PluginSettingsDetailView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // 启用状态控件置于右上角（当前仅展示）
+            // 启用状态控件置于右上角（可交互：运行时启停 + 持久化）
             PluginEnableControl(kernel: kernel, plugin: plugin)
                 .id(plugin.id)
                 .fixedSize()

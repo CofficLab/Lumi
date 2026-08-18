@@ -13,13 +13,19 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/KernelLumi"),
-        .package(path: "../../Packages/LocalizationKit"),    ],
+        .package(path: "../../Packages/LocalizationKit"),
+        .package(path: "../../Packages/ProviderStorage"),
+        .package(path: "../../Packages/SuperLogKit"),
+    ],
     targets: [
         .target(
             name: "LogoCofficPlugin",
             dependencies: [
                 .product(name: "KernelLumi", package: "KernelLumi"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),            ],
+                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
+            ],
             path: "Sources",
             resources: [
                 .process("../Resources/Localizable.xcstrings")
