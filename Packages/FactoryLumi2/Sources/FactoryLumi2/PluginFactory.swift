@@ -133,6 +133,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationCacheHitRatePlugin(),
             ConversationContextSizePlugin(),
             ConversationSpeedPlugin(),
+            ConversationAgentTurnCountPlugin(),
             ConversationTitlePlugin(),
             ConversationPendingMessagePlugin(),
             ConversationForkPlugin(),

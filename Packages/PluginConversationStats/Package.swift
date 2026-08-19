@@ -15,6 +15,7 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderLLMVendors"),
+        .package(path: "../ProviderAgentLoop"),
         .package(path: "../LumiUI"),
     ],
     targets: [
@@ -28,6 +29,7 @@ let package = Package(
                 "ProviderMessage",
                 "ProviderLLMManager",
                 "ProviderLLMVendors",
+                "ProviderAgentLoop",
                 "LumiUI",
             ],
             path: "Sources/PluginConversationStats"
