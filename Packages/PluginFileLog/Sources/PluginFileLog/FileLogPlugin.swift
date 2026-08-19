@@ -22,7 +22,7 @@ public final class FileLogPlugin: SuperPlugin {
         description: "",
         category: .system,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .required
     )
 
 
