@@ -216,22 +216,25 @@ extension AgentLoopProvider {
 
             let response: LLMResponse
             do {
-                if let streamingManager = llmManager as? any LLMStreamingProviding {
-                    // streaming 是 MainActor 隔离的存在类型，不能直接捕获进
-                    // @Sendable 流式回调；用 @unchecked Sendable 桥接包装，
-                    // 在回调内经 await 跳回 MainActor 写入。
-                    let bridge = StreamingBridge(streaming: streaming)
-                    response = try await streamingManager.streamComplete(request) { [weak bridge] chunk in
-                        guard let bridge else { return }
-                        let piece = chunk.content ?? ""
-                        if let rc = chunk.reasoningContent, !rc.isEmpty {
-                            await bridge.appendThinking(piece, conversationID: conversationID)
-                        } else {
-                            await bridge.appendContent(piece, conversationID: conversationID)
-                        }
+                guard let streamingManager = llmManager as? any LLMStreamingProviding else {
+                    streaming.end(conversationID: conversationID)
+                    let error = AgentLoopError.unsupportedStreaming
+                    await appendError(in: conversationID, error: error, turnID: turnID)
+                    failedConversations.insert(conversationID)
+                    return .failed("unsupported streaming: \(error.localizedDescription)")
+                }
+                // streaming 是 MainActor 隔离的存在类型，不能直接捕获进
+                // @Sendable 流式回调；用 @unchecked Sendable 桥接包装，
+                // 在回调内经 await 跳回 MainActor 写入。
+                let bridge = StreamingBridge(streaming: streaming)
+                response = try await streamingManager.streamComplete(request) { [weak bridge] chunk in
+                    guard let bridge else { return }
+                    let piece = chunk.content ?? ""
+                    if let rc = chunk.reasoningContent, !rc.isEmpty {
+                        await bridge.appendThinking(piece, conversationID: conversationID)
+                    } else {
+                        await bridge.appendContent(piece, conversationID: conversationID)
                     }
-                } else {
-                    response = try await llmManager.complete(request)
                 }
             } catch {
                 streaming.end(conversationID: conversationID)
