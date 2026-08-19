@@ -5,6 +5,7 @@ import os
 import ProviderAgentLoop
 import ProviderMessage
 import KitLLM
+import ProviderLLMManager
 import ProviderToolManager
 import ProviderMessageStreaming
 import ProviderConversation
@@ -44,8 +45,8 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
         turnManager.setResponder(responder)
     }
 
-    public func setLLMProvider(_ provider: (any SuperLLMProvider)?) {
-        turnManager.setLLMProvider(provider)
+    public func setLLMManager(_ manager: (any LLMManaging)?) {
+        turnManager.setLLMManager(manager)
     }
 
     public func setToolManager(_ toolManager: (any ToolManagerProviding)?) {

@@ -2,6 +2,7 @@ import AgentToolKit
 import Foundation
 import ProviderMessage
 import KitLLM
+import ProviderLLMManager
 import ProviderLifecycleHooks
 
 // MARK: - ProviderMessage ↔ KitLLM 桥接
@@ -47,7 +48,7 @@ private typealias ToolCall = AgentToolKit.ToolCall
 public final class DefaultAgentLoopProvider: AgentLoopProviding {
     private let messages: any MessageManaging
     private var responder: AgentLoopResponder?
-    private var llmProvider: (any SuperLLMProvider)?
+    private var llmManager: (any LLMManaging)?
     private var toolManager: (any ToolManagerProviding)?
     private var streaming: (any MessageStreamingProviding)?
     private var conversations: (any ConversationManaging)?
@@ -69,9 +70,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
 
     @Published public private(set) var revision: Int = 0
 
-    public init(messages: any MessageManaging, llmProvider: (any SuperLLMProvider)? = nil) {
+    public init(messages: any MessageManaging, llmManager: (any LLMManaging)? = nil) {
         self.messages = messages
-        self.llmProvider = llmProvider
+        self.llmManager = llmManager
     }
 
     // MARK: - Injection
@@ -80,8 +81,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
         self.responder = responder
     }
 
-    public func setLLMProvider(_ provider: (any SuperLLMProvider)?) {
-        llmProvider = provider
+    public func setLLMManager(_ manager: (any LLMManaging)?) {
+        llmManager = manager
     }
 
     public func setToolManager(_ toolManager: (any ToolManagerProviding)?) {
@@ -259,7 +260,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
     // MARK: - Turn Loop
 
     private func executeTurnLoop(conversationID: UUID, turnID: UUID) async -> AgentLoopOutcome {
-        guard responder != nil || llmProvider != nil else {
+        guard responder != nil || llmManager != nil else {
             await appendError(in: conversationID, content: "agent responder is not configured")
             failedConversations.insert(conversationID)
             return .failed("agent responder is not configured")
@@ -270,7 +271,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
 
             // Responder 路径：宿主注入自定义响应者（测试 / 嵌入场景）时直接
             // 调用一次并把结果落库，不做工具循环（responder 无工具能力）。
-            if let responder, llmProvider == nil {
+            if let responder, llmManager == nil {
                 let request = AgentLoopRequest(
                     conversationID: conversationID,
                     messages: messages.messages(for: conversationID)
@@ -301,10 +302,10 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                 }
             }
 
-            guard let llmProvider else {
-                await appendError(in: conversationID, content: "LLM provider is not configured")
+            guard let llmManager else {
+                await appendError(in: conversationID, content: "LLM manager is not configured")
                 failedConversations.insert(conversationID)
-                return .failed("LLM provider is not configured")
+                return .failed("LLM manager is not configured")
             }
 
             let history = messages.messages(for: conversationID)
@@ -376,12 +377,12 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
 
             let response: LLMResponse
             do {
-                if let streamingProvider = llmProvider as? any LLMStreamingProviding {
+                if let streamingManager = llmManager as? any LLMStreamingProviding {
                     // streaming 是 MainActor 隔离的存在类型，不能直接捕获进
                     // @Sendable 流式回调；用 @unchecked Sendable 桥接包装，
                     // 在回调内经 await 跳回 MainActor 写入。
                     let bridge = StreamingBridge(streaming: streaming)
-                    response = try await streamingProvider.streamComplete(request) { [weak bridge] chunk in
+                    response = try await streamingManager.streamComplete(request) { [weak bridge] chunk in
                         guard let bridge else { return }
                         let piece = chunk.content ?? ""
                         if let rc = chunk.reasoningContent, !rc.isEmpty {
@@ -391,7 +392,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                         }
                     }
                 } else {
-                    response = try await llmProvider.complete(request)
+                    response = try await llmManager.complete(request)
                 }
             } catch {
                 streaming?.end(conversationID: conversationID)

@@ -48,11 +48,9 @@ public final class PluginAgentLoop: SuperPlugin {
         // 2. 创建自定义实现
         let agentLoop = AgentLoopProvider(messages: messages)
 
-        // 3. 注入所有依赖
-        if let providerManager = kernel.resolveProvider((any LLMManaging).self) {
-            agentLoop.setLLMProvider(providerManager)
-        } else if let llmProvider = kernel.resolveProvider((any SuperLLMProvider).self) {
-            agentLoop.setLLMProvider(llmProvider)
+        // 3. 注入 LLM 管理器（管理器内部路由到选中的供应商）
+        if let llmManager = kernel.resolveProvider((any LLMManaging).self) {
+            agentLoop.setLLMManager(llmManager)
         }
 
         agentLoop.setToolManager(kernel.resolveProvider((any ToolManagerProviding).self))

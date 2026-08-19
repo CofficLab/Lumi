@@ -291,7 +291,7 @@ public struct DefaultProviderFactory: ProviderFactory {
         try kernel.registerProvider((any LLMManaging).self, providerManager)
 
         let agentLoop = makeAgentLoopProvider(messages: messages)
-        agentLoop.setLLMProvider(providerManager)
+        agentLoop.setLLMManager(providerManager)
         // 完整接线（复刻旧版 AgentTurnRunner 的依赖注入）：
         // - 工具执行/授权（build 模式高风险调用需用户批准）
         // - 流式输出（MessageStreaming 临时行，UI 读 store 渲染）

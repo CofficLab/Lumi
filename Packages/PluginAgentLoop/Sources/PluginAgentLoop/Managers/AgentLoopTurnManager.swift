@@ -22,6 +22,7 @@ extension Message {
 }
 
 import ProviderConversation
+import ProviderLLMManager
 import ProviderMessageStreaming
 import ProviderToolManager
 import SuperLogKit
@@ -37,7 +38,7 @@ private typealias ToolCall = AgentToolKit.ToolCall
 /// 新增依赖（如未来的消息准备器、工具执行器等）在此扩展字段即可。
 struct AgentLoopTurnDependencies {
     var responder: AgentLoopResponder?
-    var llmProvider: (any SuperLLMProvider)?
+    var llmManager: (any LLMManaging)?
     var toolManager: (any ToolManagerProviding)?
     var streaming: (any MessageStreamingProviding)?
     var conversations: (any ConversationManaging)?
@@ -97,8 +98,8 @@ final class AgentLoopTurnManager: SuperLog {
         dependencies.responder = responder
     }
 
-    func setLLMProvider(_ provider: (any SuperLLMProvider)?) {
-        dependencies.llmProvider = provider
+    func setLLMManager(_ manager: (any LLMManaging)?) {
+        dependencies.llmManager = manager
     }
 
     func setToolManager(_ toolManager: (any ToolManagerProviding)?) {
@@ -292,7 +293,7 @@ final class AgentLoopTurnManager: SuperLog {
     // MARK: - Turn Loop
 
     private func executeTurnLoop(conversationID: UUID, turnID: UUID) async -> AgentLoopOutcome {
-        guard dependencies.responder != nil || dependencies.llmProvider != nil else {
+        guard dependencies.responder != nil || dependencies.llmManager != nil else {
             await appendError(in: conversationID, content: "agent responder is not configured")
             failedConversations.insert(conversationID)
             return .failed("agent responder is not configured")
@@ -303,7 +304,7 @@ final class AgentLoopTurnManager: SuperLog {
 
             // Responder 路径：宿主注入自定义响应者（测试 / 嵌入场景）时直接
             // 调用一次并把结果落库，不做工具循环（responder 无工具能力）。
-            if let responder = dependencies.responder, dependencies.llmProvider == nil {
+            if let responder = dependencies.responder, dependencies.llmManager == nil {
                 let request = AgentLoopRequest(
                     conversationID: conversationID,
                     messages: messages.messages(for: conversationID)
@@ -334,10 +335,10 @@ final class AgentLoopTurnManager: SuperLog {
                 }
             }
 
-            guard let llmProvider = dependencies.llmProvider else {
-                await appendError(in: conversationID, content: "LLM provider is not configured")
+            guard let llmManager = dependencies.llmManager else {
+                await appendError(in: conversationID, content: "LLM manager is not configured")
                 failedConversations.insert(conversationID)
-                return .failed("LLM provider is not configured")
+                return .failed("LLM manager is not configured")
             }
 
             let history = messages.messages(for: conversationID)
@@ -396,12 +397,12 @@ final class AgentLoopTurnManager: SuperLog {
 
             let response: LLMResponse
             do {
-                if let streamingProvider = llmProvider as? any LLMStreamingProviding {
+                if let streamingManager = llmManager as? any LLMStreamingProviding {
                     // streaming 是 MainActor 隔离的存在类型，不能直接捕获进
                     // @Sendable 流式回调；用 @unchecked Sendable 桥接包装，
                     // 在回调内经 await 跳回 MainActor 写入。
                     let bridge = StreamingBridge(streaming: dependencies.streaming)
-                    response = try await streamingProvider.streamComplete(request) { [weak bridge] chunk in
+                    response = try await streamingManager.streamComplete(request) { [weak bridge] chunk in
                         guard let bridge else { return }
                         let piece = chunk.content ?? ""
                         if let rc = chunk.reasoningContent, !rc.isEmpty {
@@ -411,7 +412,7 @@ final class AgentLoopTurnManager: SuperLog {
                         }
                     }
                 } else {
-                    response = try await llmProvider.complete(request)
+                    response = try await llmManager.complete(request)
                 }
             } catch {
                 dependencies.streaming?.end(conversationID: conversationID)
