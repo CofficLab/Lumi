@@ -176,16 +176,6 @@ struct ProviderAgentLoopTests {
         #expect(messages.lastMessage(in: conversationID)?.content == "from provider")
     }
 
-    @Test("createTurn 返回句柄并置为运行态（合并自 AgentTurn）")
-    func createTurnSetsRunning() async throws {
-        let loop = makeLoop(messages: DefaultMessageManager())
-        let conversationID = UUID()
-        let handle = try await loop.createTurn(AgentTurnRequest(conversationID: conversationID, prompt: "hi"))
-        #expect(loop.state(for: conversationID) == .running)
-        #expect(loop.isRunning(for: conversationID))
-        #expect(handle.id != UUID())
-    }
-
     @Test("resumeTurn 无挂起点时抛出 invalidResumeRequest")
     func resumeTurnWithoutSuspensionThrows() async throws {
         let messages = DefaultMessageManager()
@@ -200,28 +190,5 @@ struct ProviderAgentLoopTests {
         } catch {
             #expect(error is AgentLoopError)
         }
-    }
-
-    @Test("AgentTurn 兼容类型别名指向 AgentLoop 状态机")
-    func agentTurnCompatibility() async throws {
-        let loop = makeLoop(messages: DefaultMessageManager())
-        let conversationID = UUID()
-        #expect(AgentTurnState.idle == AgentLoopState.idle)
-        #expect(AgentTurnOutcome.completed == AgentLoopOutcome.completed)
-        #expect(loop.state(for: conversationID) == .idle)
-    }
-
-    @Test("setResponder 不覆盖已有 LLM 驱动逻辑（responder 仅作兼容保留）")
-    func setResponderKeepsLLMDriver() async throws {
-        let messages = DefaultMessageManager()
-        let conversationID = UUID()
-        messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "hi"), to: conversationID)
-        let loop = makeLoop(messages: messages)
-        loop.setResponder { _ in "responder would win" }
-
-        let outcome = try await loop.runTurn(in: conversationID)
-        // 新实现以 LLM 为准，responder 不再参与回合。
-        #expect(outcome == .completed)
-        #expect(messages.lastMessage(in: conversationID)?.content == "from provider")
     }
 }

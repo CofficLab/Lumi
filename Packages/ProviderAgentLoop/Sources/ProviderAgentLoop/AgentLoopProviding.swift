@@ -22,21 +22,10 @@ public enum AgentLoopOutcome: Sendable, Equatable {
     case suspended(String)
 }
 
-public struct AgentLoopRequest: Sendable {
-    public let conversationID: UUID
-    public let messages: [Message]
-
-    public init(conversationID: UUID, messages: [Message]) {
-        self.conversationID = conversationID
-        self.messages = messages
-    }
-}
-
 /// 一次工具/交互导致的回合暂停点。
 ///
-/// 对齐旧版 `AgentTurnSuspension`：`kind` 区分暂停原因（`toolApproval` /
-/// `askUser` 等），`payload` 是 JSON 字符串（选项、问题等）。用户回答后经
-/// `resumeTurn(in:request:)` 恢复。
+/// `kind` 区分暂停原因（`toolApproval` / `askUser` 等），`payload` 是 JSON
+/// 字符串（选项、问题等）。用户回答后经 `resumeTurn(in:request:)` 恢复。
 public struct AgentLoopSuspension: Sendable, Equatable {
     public let suspensionID: String
     public let conversationID: UUID
@@ -70,14 +59,10 @@ public struct AgentTurnResumeRequest: Sendable, Equatable {
     }
 }
 
-/// LLM / tool orchestration is injected through this responder boundary.
-/// The loop itself owns lifecycle and message persistence, not provider protocol details.
-public typealias AgentLoopResponder = @MainActor @Sendable (AgentLoopRequest) async throws -> String
-
-/// Agent 回合管理（KernelCore 体系）。
+/// Agent 回合管理。
 ///
-/// 复刻旧版 `AgentTurnRunner` 的职责：防并发 runTurn、流式 LLM 调用、
-/// 工具执行与授权暂停/恢复、错误落库、取消。依赖通过构造注入：
+/// 防并发 runTurn、流式 LLM 调用、工具执行与授权暂停/恢复、错误落库、取消。
+/// 依赖通过构造注入：
 /// - `MessageManaging`（构造注入，消息历史与落库）
 /// - `llmManager` / `toolManager` / `streaming` / `conversations`（构造注入）
 @MainActor
@@ -91,23 +76,6 @@ public protocol AgentLoopProviding: AnyObject, ObservableObject {
     func isRunning(for conversationID: UUID) -> Bool
     func currentTurnID(for conversationID: UUID) -> UUID?
 
-    func setResponder(_ responder: AgentLoopResponder?)
-
-    /// 注入回合生命周期事件回调（宿主桥接到事件总线 / 通知中心）。
-    func setEventHandler(_ handler: AgentLoopEventHandler?)
-
     /// 注入生命周期钩子管理器，回合循环在各关键节点触发对应钩子。
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?)
-}
-
-public extension AgentLoopProviding {
-    func setEventHandler(_ handler: AgentLoopEventHandler?) {}
-
-    func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
-
-    /// 兼容重载：无 request 的恢复（合并自旧版 `AgentTurnManaging.resumeTurn(in:)`），
-    /// 视为对新回合直接执行。
-    func resumeTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
-        try await runTurn(in: conversationID)
-    }
 }

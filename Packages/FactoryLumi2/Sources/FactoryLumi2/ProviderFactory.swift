@@ -305,10 +305,6 @@ public struct DefaultProviderFactory: ProviderFactory {
         if let lifecycleHooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
             agentLoop.setLifecycleHooks(lifecycleHooks)
         }
-        agentLoop.setEventHandler { [weak kernel] event in
-            guard let kernel else { return }
-            Self.bridge(agentLoopEvent: event, kernel: kernel)
-        }
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
 
         // `MessageSendingProviding` 不再由工厂装配注册：改由 `PluginMessageSender`
@@ -354,67 +350,5 @@ public struct DefaultProviderFactory: ProviderFactory {
         try kernel.registerProvider((any ActivityBarProviding).self, makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, makeRailViewProvider())
         try kernel.registerProvider((any SettingViewProviding).self, makeSettingViewProvider())
-    }
-
-    // MARK: - Agent Loop Event Bridging
-
-    /// 把 Agent 回合生命周期事件桥接到内核事件总线 + 旧 NotificationCenter 通知名。
-    ///
-    /// 复刻旧版 `LumiEventManager` 的 4 种通知（lumiTurnStarted / lumiMessageSaved /
-    /// lumiTurnCompleted / lumiTurnFinished），通知 userInfo 键与旧版一致，让
-    /// 尚未迁移的 NotificationCenter 消费者继续工作；同时发布类型化事件
-    /// （`AgentLoopBridgedEvent`），供新架构插件订阅。
-    private static func bridge(agentLoopEvent event: AgentLoopEvent, kernel: KernelCoreContainer) {
-        switch event {
-        case let .turnStarted(conversationID, turnID):
-            kernel.eventBus.publishAsLegacy(
-                AgentLoopBridgedEvent(event),
-                notificationName: .lumiTurnStarted,
-                userInfo: [
-                    "conversationID": conversationID,
-                    "turnID": turnID,
-                ]
-            )
-        case let .messageSaved(conversationID, messageID, role):
-            kernel.eventBus.publishAsLegacy(
-                AgentLoopBridgedEvent(event),
-                notificationName: .lumiMessageSaved,
-                userInfo: [
-                    "messageID": messageID,
-                    "conversationID": conversationID,
-                    "role": role,
-                ]
-            )
-        case let .turnCompleted(conversationID, turnID):
-            kernel.eventBus.publishAsLegacy(
-                AgentLoopBridgedEvent(event),
-                notificationName: .lumiTurnCompleted,
-                userInfo: [
-                    "conversationID": conversationID,
-                    "turnID": turnID,
-                ]
-            )
-        case let .turnFinished(conversationID, turnID, reason):
-            kernel.eventBus.publishAsLegacy(
-                AgentLoopBridgedEvent(event),
-                notificationName: .lumiTurnFinished,
-                userInfo: [
-                    "conversationID": conversationID,
-                    "turnID": turnID as Any,
-                    "reason": reason.rawValue,
-                ]
-            )
-        }
-    }
-}
-
-/// 内核事件总线用的 AgentLoop 事件包装。
-///
-/// `AgentLoopEvent` 定义在 ProviderAgentLoop（不依赖 KernelCore），无法直接
-/// conform `KernelEvent`；此处包装为 `KernelEvent` 让新架构插件可订阅类型化事件。
-public struct AgentLoopBridgedEvent: KernelEvent {
-    public let event: AgentLoopEvent
-    public init(_ event: AgentLoopEvent) {
-        self.event = event
     }
 }

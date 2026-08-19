@@ -241,7 +241,6 @@ struct AgentLoopFullLoopTests {
         messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "hi"), to: conversationID)
         let provider = StreamingProvider()
         let loop = makeLoop(messages: messages, provider: provider)
-        loop.setEventHandler { _ in }
 
         let outcome = try await loop.runTurn(in: conversationID)
         #expect(outcome == .completed)
@@ -354,30 +353,5 @@ struct AgentLoopFullLoopTests {
         #expect(messages.messages(for: conversationID).contains {
             $0.role == MessageRole.tool && $0.content.contains("blocked")
         })
-    }
-
-    @Test("回合生命周期事件经回调广播")
-    func publishesEvents() async throws {
-        var events: [AgentLoopEvent] = []
-        let messages = DefaultMessageManager()
-        let conversationID = UUID()
-        messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "hi"), to: conversationID)
-        let loop = makeLoop(messages: messages, provider: ScriptedLLMProvider(responses: [LLMResponse(content: "ok")]))
-        loop.setEventHandler { events.append($0) }
-
-        _ = try await loop.runTurn(in: conversationID)
-
-        let kinds = events.map { event -> String in
-            switch event {
-            case .turnStarted: return "started"
-            case .messageSaved: return "saved"
-            case .turnCompleted: return "completed"
-            case .turnFinished: return "finished"
-            }
-        }
-        #expect(kinds.contains("started"))
-        #expect(kinds.contains("saved"))
-        #expect(kinds.contains("completed"))
-        #expect(kinds.contains("finished"))
     }
 }

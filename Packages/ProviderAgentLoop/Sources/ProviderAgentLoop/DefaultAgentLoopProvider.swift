@@ -1,9 +1,12 @@
 import AgentToolKit
 import Foundation
-import ProviderMessage
 import KitLLM
-import ProviderLLMManager
+import ProviderConversation
 import ProviderLifecycleHooks
+import ProviderLLMManager
+import ProviderMessage
+import ProviderMessageStreaming
+import ProviderToolManager
 
 // MARK: - ProviderMessage ↔ KitLLM 桥接
 
@@ -21,9 +24,6 @@ extension Message {
         )
     }
 }
-import ProviderToolManager
-import ProviderMessageStreaming
-import ProviderConversation
 
 // 消除 KitLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
 private typealias ToolCall = AgentToolKit.ToolCall
@@ -42,17 +42,14 @@ private typealias ToolCall = AgentToolKit.ToolCall
 /// - 会话级供应商/模型选择（`ConversationManaging` 为事实来源，全局选中兜底）；
 /// - 流式优先（`LLMStreamingProviding`），未实现流式时回退 `complete(_:)`；
 /// - `MessageStreamingProviding` 临时行 + 最终落库行分离，落库后清理临时行；
-/// - 瞬时 status 消息（正在思考…/正在执行…）由 `MessageManaging` 仅存内存；
-/// - 回合生命周期经 `AgentLoopEventHandler` 广播（宿主桥接事件总线/通知）。
+/// - 瞬时 status 消息（正在思考…/正在执行…）由 `MessageManaging` 仅存内存。
 @MainActor
 public final class DefaultAgentLoopProvider: AgentLoopProviding {
     private let messages: any MessageManaging
-    private var responder: AgentLoopResponder = { _ in "" }
     private let llmManager: any LLMManaging
     private let toolManager: any ToolManagerProviding
     private let streaming: any MessageStreamingProviding
     private let conversations: any ConversationManaging
-    private var eventHandler: AgentLoopEventHandler = { _ in }
     /// 生命周期钩子管理器：回合循环在各关键节点触发对应钩子。
     private var lifecycleHooks: (any LifecycleHooksProviding)?
 
@@ -85,14 +82,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
     }
 
     // MARK: - Injection
-
-    public func setResponder(_ responder: AgentLoopResponder?) {
-        if let responder { self.responder = responder }
-    }
-
-    public func setEventHandler(_ handler: AgentLoopEventHandler?) {
-        if let handler { self.eventHandler = handler }
-    }
 
     public func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {
         lifecycleHooks = hooks
@@ -127,12 +116,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
         revision += 1
     }
 
-    public func createTurn(_ request: AgentTurnRequest) async throws -> AgentTurnHandle {
-        states[request.conversationID] = .running
-        revision += 1
-        return AgentTurnHandle()
-    }
-
     public func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
         guard tasks[conversationID] == nil else {
             return .failed("turn already running")
@@ -145,7 +128,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
         turnIDs[conversationID] = turnID
         states[conversationID] = .running
         revision += 1
-        postEvent(.turnStarted(conversationID: conversationID, turnID: turnID))
         if let lifecycleHooks {
             await lifecycleHooks.notifyTurnStarted(TurnLifecycleContext(
                 conversationID: conversationID, turnID: turnID
@@ -375,7 +357,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                 }
             }
             messages.insertMessage(assistant, to: conversationID)
-            postEvent(.messageSaved(conversationID: conversationID, messageID: assistant.id, role: assistant.role.rawValue))
             streaming.end(conversationID: conversationID)
             // 生命周期钩子 didReceiveLLMResponse：插件可在 LLM 响应到达后执行逻辑。
             if let lifecycleHooks {
@@ -389,8 +370,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
             // 无工具调用 → 回合完成。
             guard let toolCalls = assistant.toolCalls, !toolCalls.isEmpty else {
                 states[conversationID] = .completed
-                postEvent(.turnCompleted(conversationID: conversationID, turnID: turnID))
-                postEvent(.turnFinished(conversationID: conversationID, turnID: turnID, reason: .completed))
                 return .completed
             }
 
@@ -456,7 +435,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                 suspensions[conversationID] = batchSuspensions.values.first
                 awaitingConversations.insert(conversationID)
                 states[conversationID] = .suspended
-                postEvent(.turnFinished(conversationID: conversationID, turnID: turnID, reason: .awaitingUserResponse))
                 return .suspended("awaiting user response")
             }
 
@@ -464,7 +442,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
         }
 
         states[conversationID] = .cancelled
-        postEvent(.turnFinished(conversationID: conversationID, turnID: turnID, reason: .cancelled))
         return .cancelled
     }
 
@@ -579,7 +556,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
             toolCallID: toolCallID
         )
         messages.insertMessage(toolMessage, to: conversationID)
-        postEvent(.messageSaved(conversationID: conversationID, messageID: toolMessage.id, role: toolMessage.role.rawValue))
     }
 
     // MARK: - Incomplete Tool-Call Batch
@@ -716,7 +692,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
             turnID: turnID
         )
         messages.insertMessage(errorMessage, to: conversationID)
-        postEvent(.messageSaved(conversationID: conversationID, messageID: errorMessage.id, role: errorMessage.role.rawValue))
     }
 
     /// 从 `Error` 构造错误消息，透传渲染元数据（`renderKind` / `rawErrorDetail`），
@@ -734,7 +709,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
             renderKind: renderInfo?.renderKind
         )
         messages.insertMessage(errorMessage, to: conversationID)
-        postEvent(.messageSaved(conversationID: conversationID, messageID: errorMessage.id, role: errorMessage.role.rawValue))
     }
 
     private func languagePreference(for conversationID: UUID) -> LanguagePreference {
@@ -747,10 +721,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
 
     private func resolvedProviderID(for conversationID: UUID) -> String? {
         conversations.providerID(for: conversationID)
-    }
-
-    private func postEvent(_ event: AgentLoopEvent) {
-        eventHandler(event)
     }
 
     private static let toolApprovalSuspensionKind = "toolApproval"
