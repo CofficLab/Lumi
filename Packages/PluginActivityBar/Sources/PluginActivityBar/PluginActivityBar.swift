@@ -76,11 +76,11 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         }
     }
 
-    /// 全部插件 `onBoot` 完成后再补充本插件内置的"欢迎"入口，
+    /// 全部插件 `onBoot` 完成后执行收尾工作，
     /// 并订阅内核变化以监听后续插件的卸载/启用。
     ///
     /// 这里不能放进 `onBoot`：业务插件（order=81+）在 `onBoot` 中也会
-    /// 注册自己的入口，必须让它们先注册，最后本插件再以"内置入口"兜底。
+    /// 注册自己的入口，必须让它们先注册完毕。
     public func onReady(kernel: KernelCoreContainer) throws {
         guard let provider = kernel.resolveProvider((any ActivityBarProviding).self) as? ActivityBarProvider else {
             if Self.verbose {
@@ -88,6 +88,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
             }
             return
         }
+        // 预留：业务插件可在此处追加默认入口
         provider.bootstrapBuiltInItems()
         if Self.verbose {
             Self.logger.info("\(Self.t)bootstrapped built-in items: \(provider.items.count, privacy: .public) 项")

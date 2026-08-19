@@ -1,8 +1,6 @@
 import Foundation
 import os
-import SwiftUI
 import KernelCore
-import LumiUI
 import ProviderActivityBar
 import SuperLogKit
 
@@ -30,11 +28,6 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
 
     /// 当前已注入的全部 ActivityBar 项（按 `order` 排序）。
     @Published public private(set) var items: [ActivityBarItem] = []
-
-    /// 本插件自带的"内置默认入口"id，方便业务插件在 `onReady` 期辨识。
-    public static let builtInItemIDs: Set<String> = [
-        "com.coffic.lumi.plugin.activity-bar.welcome",
-    ]
 
     /// 已被业务插件追加/移除的入口历史（仅日志诊断用）。
     public private(set) var customItems: [ActivityBarItem] = []
@@ -87,7 +80,7 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
         setActiveItemID(nextActiveID)
 
         // 局部缓存，便于日志/调试观察。
-        customItems = self.items.filter { !Self.builtInItemIDs.contains($0.id) }
+        customItems = self.items
     }
 
     /// 追加入口，保留已有项。复用协议的默认合并实现。
@@ -124,25 +117,9 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
         AnyView(ActivityBarView(provider: self))
     }
 
-    /// 把插件"内置默认入口"作为初始 items 注入，便于宿主在不引入其他业务插件时
-    /// ActivityBar 也能看到一条"欢迎"入口。
-    ///
-    /// 业务插件在 `kernel.start(plugins:)` 之后（`onReady` 阶段）调用本方法，
-    /// 确保后续 `addItems` 不会覆盖 builtin。
-    ///
-    /// 注意：使用 `addItems`（合并）而非 `registerItems`（替换），以保留
-    /// `onBoot` 阶段迁移过来的旧实例 items（典型如 `PluginChatPanel` 写入的 chat 入口）。
-    public func bootstrapBuiltInItems() {
-        let builtIn: [ActivityBarItem] = [
-            ActivityBarItem(
-                id: "com.coffic.lumi.plugin.activity-bar.welcome",
-                title: "Welcome",
-                systemImage: "sparkles",
-                order: 50
-            ),
-        ]
-        addItems(builtIn)
-    }
+    /// 内置默认入口（已清空）。
+    /// 业务插件通过各自的 onReady 注册自己的 ActivityBarItem。
+    public func bootstrapBuiltInItems() {}
 
     // MARK: - Plugin Lifecycle Observation
 
@@ -183,103 +160,4 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
             item.onActiveItemChanged(id)
         }
     }
-}
-
-// MARK: - Views
-
-/// 竖直渲染 ActivityBar 项的视图。
-///
-/// 视觉与旧版 `FactoryCore.ActivityBar` 保持一致（即与 `DefaultActivityBarProviding`
-/// 相同的渲染），但在此**完全自实现**，不依赖 `DefaultActivityBarProviding`：
-/// - 48pt 宽的 `.panel` 表面 + 右侧 `theme.divider` 分隔线（`borderTrailing()`）；
-/// - 每个入口复用 `AppActivityIconButton`（18pt 图标、左侧 2.5pt 主题色指示条、
-///   hover 高亮与 LumiMotion 动画），激活态由 `activeItemID` 判定；
-/// - 内容溢出时滚动，配合上下 8pt 渐隐遮罩提示可滚动；
-/// - 右键菜单提供「打开设置」入口（与旧版一致，通过 `lumi.openSettings` 通知）。
-private struct ActivityBarView: View {
-    @ObservedObject var provider: ActivityBarProvider
-
-    var body: some View {
-        VStack(spacing: 6) {
-            if provider.items.isEmpty {
-                Spacer(minLength: 0)
-            } else {
-                ActivityBarScrollableItemList(
-                    items: provider.items,
-                    activeItemID: provider.activeItemID
-                ) { item in
-                    provider.activateItem(id: item.id)
-                }
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 8)
-        .frame(width: 48)
-        .frame(maxHeight: .infinity)
-        .appSurface(style: .panel, cornerRadius: 0)
-        .borderTrailing()
-        .contextMenu {
-            Button {
-                NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
-            } label: {
-                Label("打开设置", systemImage: "gearshape")
-            }
-        }
-    }
-}
-
-/// ActivityBar 可滚动的入口列表（与旧版 `ActivityBarScrollableContainerList` 行为一致）：
-/// - 内容溢出时启用滚动（隐藏系统滚动指示器，顶部/底部 8pt 渐隐遮罩暗示可滚动）；
-/// - 内容不足时退化为普通垂直布局，不显示任何滚动提示。
-private struct ActivityBarScrollableItemList: View {
-    private let fadeHeight: CGFloat = 8
-
-    let items: [ActivityBarItem]
-    let activeItemID: String?
-    let onSelect: (ActivityBarItem) -> Void
-
-    var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 6) {
-                ForEach(items) { item in
-                    AppActivityIconButton(
-                        systemImage: item.systemImage,
-                        label: item.title,
-                        isActive: activeItemID == item.id
-                    ) {
-                        onSelect(item)
-                    }
-                    .id(item.id)
-                }
-            }
-            .padding(.vertical, 2)
-        }
-        .mask(fadeMask)
-    }
-
-    private var fadeMask: some View {
-        VStack(spacing: 0) {
-            LinearGradient(
-                colors: [Color.black.opacity(0), Color.black],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: fadeHeight)
-
-            Color.black
-
-            LinearGradient(
-                colors: [Color.black, Color.black.opacity(0)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: fadeHeight)
-        }
-    }
-}
-
-/// 打开设置窗口的通知名（与 KernelLumi 的 `lumi.openSettings` 同字符串，通知可互通）。
-private extension Notification.Name {
-    static let lumiOpenSettings = Notification.Name("lumi.openSettings")
 }

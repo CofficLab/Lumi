@@ -8,8 +8,7 @@ import ProviderActivityBar
 ///
 /// 覆盖点：
 /// - 自定义 provider 替换默认实现后，`kernel.resolveProvider` 拿到的是本插件实现；
-/// - 在 `onReady` 阶段注入的 builtin 入口会被保留；
-/// - 业务插件继续 `addItems` 时，builtin 入口不会被覆盖。
+/// - 旧实例迁移场景（onBoot 替换时不丢失数据，onReady 后继续追加不冲突）。
 @Suite("PluginActivityBar")
 @MainActor
 struct PluginActivityBarTests {
@@ -51,15 +50,6 @@ struct PluginActivityBarTests {
         #expect(provider.activeItemID == "b")
     }
 
-    @Test("bootstrapBuiltInItems 注入一条 builtin 入口")
-    func bootstrapInjectsBuiltInItem() {
-        let provider = ActivityBarProvider()
-        provider.bootstrapBuiltInItems()
-
-        #expect(provider.items.count == 1)
-        #expect(provider.items.first?.id == "com.coffic.lumi.plugin.activity-bar.welcome")
-    }
-
     // MARK: - PluginActivityBar
 
     @Test("PluginActivityBar.onBoot 替换默认 ActivityBarProviding")
@@ -74,38 +64,6 @@ struct PluginActivityBarTests {
         let resolved = kernel.resolveProvider((any ActivityBarProviding).self)
         #expect(resolved is ActivityBarProvider)
         #expect(type(of: resolved) != DefaultActivityBarProviding.self)
-    }
-
-    @Test("PluginActivityBar.onBoot 之后 onReady 注入 builtin 入口")
-    func pluginBootstrapsBuiltInItemsOnReady() throws {
-        let kernel = KernelCoreContainer()
-        let plugin = PluginActivityBar()
-        try plugin.onBoot(kernel: kernel)
-        try plugin.onReady(kernel: kernel)
-
-        let resolved = kernel.resolveProvider((any ActivityBarProviding).self) as? ActivityBarProvider
-        #expect(resolved?.items.contains(where: { $0.id == "com.coffic.lumi.plugin.activity-bar.welcome" }) == true)
-    }
-
-    @Test("onReady 之后，业务插件继续 addItems 不会覆盖 builtin 入口")
-    func subsequentAddItemsPreservesBuiltIn() throws {
-        let kernel = KernelCoreContainer()
-        let plugin = PluginActivityBar()
-        try plugin.onBoot(kernel: kernel)
-        try plugin.onReady(kernel: kernel)
-
-        guard let provider = kernel.resolveProvider((any ActivityBarProviding).self) else {
-            Issue.record("ActivityBarProviding not resolved")
-            return
-        }
-
-        provider.addItems([
-            ActivityBarItem(id: "business.entry", title: "Business", systemImage: "briefcase", order: 200),
-        ])
-
-        #expect(provider.items.contains(where: { $0.id == "com.coffic.lumi.plugin.activity-bar.welcome" }))
-        #expect(provider.items.contains(where: { $0.id == "business.entry" }))
-        #expect(provider.items.count == 2)
     }
 
     // MARK: - 旧实例迁移
@@ -183,7 +141,7 @@ struct PluginActivityBarTests {
         #expect(!custom.items.contains(where: { $0.id == "legacy.late" }))
     }
 
-    @Test("PluginActivityBar.onBoot + onReady 全部路径后，迁移数据 + builtin 入口都存在")
+    @Test("PluginActivityBar.onBoot + onReady 全部路径后，迁移数据保留")
     func migrationPlusBootstrapCoexist() throws {
         let kernel = KernelCoreContainer()
         let legacy = DefaultActivityBarProviding()
@@ -198,6 +156,5 @@ struct PluginActivityBarTests {
 
         let custom = try #require(kernel.resolveProvider((any ActivityBarProviding).self) as? ActivityBarProvider)
         #expect(custom.items.contains(where: { $0.id == "legacy.chat" }))
-        #expect(custom.items.contains(where: { $0.id == "com.coffic.lumi.plugin.activity-bar.welcome" }))
     }
 }
