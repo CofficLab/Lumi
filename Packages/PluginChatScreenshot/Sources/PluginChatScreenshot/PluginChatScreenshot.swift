@@ -32,7 +32,7 @@ public final class ChatScreenshotPlugin: SuperPlugin, SuperLog {
         description: "",
         category: .chat,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .required
     )
 
     public init() {}
