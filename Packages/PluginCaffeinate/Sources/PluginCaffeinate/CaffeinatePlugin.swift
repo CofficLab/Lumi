@@ -33,7 +33,7 @@ public final class CaffeinatePlugin: SuperPlugin {
         description: "",
         category: .integration,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .required
     )
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.caffeinate")
