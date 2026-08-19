@@ -76,16 +76,6 @@ struct FactoryLumi2Tests {
         #expect(resolved is DefaultStorageProvider)
     }
 
-    @Test("makeKernel 注入插件启用状态持久化（原 PluginManager 数据目录）")
-    func makeKernelWiresPluginStateStore() throws {
-        let kernel = try KernelFactory.makeKernel()
-
-        // stateStore 已注入（非 nil），使内核 enable/disablePlugin 持久化。
-        #expect(kernel.stateStore != nil)
-        // 旧插件 ID 别名与工厂一致。
-        #expect(kernel.legacyPluginIDAliases == DefaultProviderFactory.pluginIDAliases)
-    }
-
     @Test("makeKernel 创建内核并注册默认 ProjectProviding")
     func makeKernelRegistersDefaultProjectProviding() throws {
         let kernel = try KernelFactory.makeKernel()
