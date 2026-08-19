@@ -95,7 +95,7 @@ struct SpeedLineChart: View {
                             .position(x: x, y: y)
 
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(tooltipDateFormatter.string(from: sample.createdAt))
+                            Text(Self.tooltipDateFormatter.string(from: sample.createdAt))
                                 .font(.system(size: 10, weight: .medium))
                             Text(String(format: "%.1f tokens/s", sample.tokensPerSecond))
                                 .font(.system(size: 11, weight: .semibold))
