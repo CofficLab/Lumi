@@ -9,12 +9,21 @@ public typealias DefaultLLMProviderManagerProviding = DefaultLLMManager
 
 /// 默认 `LLMManaging` 实现。
 @MainActor
-public final class DefaultLLMManager: LLMManaging, @preconcurrency LLMProviding, LLMStreamingProviding, SuperLog {
+public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvider, LLMStreamingProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-llm-manager", category: "LLMManager")
     nonisolated public static let emoji = "🧭"
     nonisolated static let verbose = false
 
     public var providerID: String { Self.managerProviderID }
+    public var providerInfo: LLMProviderInfo {
+        LLMProviderInfo(
+            id: Self.managerProviderID,
+            displayName: "LLM Manager",
+            defaultModel: "",
+            models: [],
+            isLocal: true
+        )
+    }
 
     // MARK: - Registry
 

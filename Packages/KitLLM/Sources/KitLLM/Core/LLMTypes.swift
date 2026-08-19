@@ -153,12 +153,7 @@ public struct LLMStreamChunk: Sendable {
     }
 }
 
-// MARK: - 协议
-
-public protocol LLMProviding: AnyObject, Sendable {
-    var providerID: String { get }
-    func complete(_ request: LLMRequest) async throws -> LLMResponse
-}
+// MARK: - 流式协议
 
 public protocol LLMStreamingProviding: AnyObject, Sendable {
     func streamComplete(
@@ -184,9 +179,20 @@ public enum LLMProviderError: Error, LocalizedError, Sendable, Equatable {
 }
 
 /// 默认空实现。
-public final class DefaultLLMProviding: LLMProviding, @unchecked Sendable {
-    public let providerID: String
-    public init(providerID: String = "default") { self.providerID = providerID }
+public final class DefaultLLMProviding: SuperLLMProvider, @unchecked Sendable {
+    public let providerInfo: LLMProviderInfo
+    public var providerID: String { providerInfo.id }
+
+    public init(providerID: String = "default") {
+        self.providerInfo = LLMProviderInfo(
+            id: providerID,
+            displayName: "Default",
+            defaultModel: "",
+            models: [],
+            isLocal: true
+        )
+    }
+
     public func complete(_ request: LLMRequest) async throws -> LLMResponse {
         throw LLMProviderError.notConfigured
     }

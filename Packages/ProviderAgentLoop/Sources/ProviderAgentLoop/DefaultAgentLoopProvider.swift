@@ -47,7 +47,7 @@ private typealias ToolCall = AgentToolKit.ToolCall
 public final class DefaultAgentLoopProvider: AgentLoopProviding {
     private let messages: any MessageManaging
     private var responder: AgentLoopResponder?
-    private var llmProvider: (any LLMProviding)?
+    private var llmProvider: (any SuperLLMProvider)?
     private var toolManager: (any ToolManagerProviding)?
     private var streaming: (any MessageStreamingProviding)?
     private var conversations: (any ConversationManaging)?
@@ -69,7 +69,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
 
     @Published public private(set) var revision: Int = 0
 
-    public init(messages: any MessageManaging, llmProvider: (any LLMProviding)? = nil) {
+    public init(messages: any MessageManaging, llmProvider: (any SuperLLMProvider)? = nil) {
         self.messages = messages
         self.llmProvider = llmProvider
     }
@@ -80,7 +80,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
         self.responder = responder
     }
 
-    public func setLLMProvider(_ provider: (any LLMProviding)?) {
+    public func setLLMProvider(_ provider: (any SuperLLMProvider)?) {
         llmProvider = provider
     }
 

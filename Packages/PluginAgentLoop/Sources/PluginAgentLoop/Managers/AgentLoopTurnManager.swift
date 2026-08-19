@@ -37,7 +37,7 @@ private typealias ToolCall = AgentToolKit.ToolCall
 /// 新增依赖（如未来的消息准备器、工具执行器等）在此扩展字段即可。
 struct AgentLoopTurnDependencies {
     var responder: AgentLoopResponder?
-    var llmProvider: (any LLMProviding)?
+    var llmProvider: (any SuperLLMProvider)?
     var toolManager: (any ToolManagerProviding)?
     var streaming: (any MessageStreamingProviding)?
     var conversations: (any ConversationManaging)?
@@ -97,7 +97,7 @@ final class AgentLoopTurnManager: SuperLog {
         dependencies.responder = responder
     }
 
-    func setLLMProvider(_ provider: (any LLMProviding)?) {
+    func setLLMProvider(_ provider: (any SuperLLMProvider)?) {
         dependencies.llmProvider = provider
     }
 

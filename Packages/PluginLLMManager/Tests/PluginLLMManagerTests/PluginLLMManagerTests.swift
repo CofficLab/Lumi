@@ -113,7 +113,7 @@ struct PluginLLMManagerTests {
 
     /// 测试用最小 LLM 供应商：回显最后一条用户消息。
     @MainActor
-    private final class EchoProvider: ManagedLLMProvider, @preconcurrency LLMProviding {
+    private final class EchoProvider: ManagedLLMProvider {
         let providerInfo: LLMProviderInfo
         var providerID: String { providerInfo.id }
 

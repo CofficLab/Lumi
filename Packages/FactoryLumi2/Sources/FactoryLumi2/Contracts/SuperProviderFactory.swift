@@ -58,7 +58,7 @@ public protocol ProviderFactory {
     func makeConversationProvider() -> any ConversationManaging
     func makeMessageProvider() -> any MessageManaging
     func makeAgentLoopProvider(messages: any MessageManaging) -> any AgentLoopProviding
-    func makeLLMProvider() -> any LLMProviding
+    func makeLLMProvider() -> any SuperLLMProvider
     func makeMessageSenderProvider(
         conversations: any ConversationManaging,
         messages: any MessageManaging,

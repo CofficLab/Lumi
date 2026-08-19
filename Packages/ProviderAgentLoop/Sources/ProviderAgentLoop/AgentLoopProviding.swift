@@ -95,7 +95,7 @@ public protocol AgentLoopProviding: AnyObject, ObservableObject {
     func currentTurnID(for conversationID: UUID) -> UUID?
 
     func setResponder(_ responder: AgentLoopResponder?)
-    func setLLMProvider(_ provider: (any LLMProviding)?)
+    func setLLMProvider(_ provider: (any SuperLLMProvider)?)
     func setToolManager(_ toolManager: (any ToolManagerProviding)?)
     func setStreaming(_ streaming: (any MessageStreamingProviding)?)
     func setConversations(_ conversations: (any ConversationManaging)?)

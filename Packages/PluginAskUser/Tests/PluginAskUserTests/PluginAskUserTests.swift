@@ -104,8 +104,9 @@ struct AskUserPluginTests {
     @Test("ask_user 工具经 AgentLoop 挂起后可恢复（端到端）")
     func endToEndSuspension() async throws {
         // 用脚本化 LLM：第一轮要求执行 ask_user，第二轮（恢复后）给出最终答复。
-        final class ScriptedLLM: LLMProviding, @unchecked Sendable {
+        final class ScriptedLLM: SuperLLMProvider, @unchecked Sendable {
             let providerID = "scripted"
+            let providerInfo = LLMProviderInfo(id: "scripted", displayName: "Scripted", defaultModel: "", models: [], isLocal: true)
             var responses: [LLMResponse]
             init(responses: [LLMResponse]) { self.responses = responses }
             func complete(_ request: LLMRequest) async throws -> LLMResponse {

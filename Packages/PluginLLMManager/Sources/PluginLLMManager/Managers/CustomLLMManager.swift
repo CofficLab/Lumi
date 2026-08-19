@@ -14,7 +14,7 @@ import SuperLogKit
 ///   `(provider, model)` 时优先使用，`nil` 时回退引擎默认（选中项 > 首个注册项）。
 /// - 转发 `engine.objectWillChange`，让内核订阅方（UI）在选中态变化时照常刷新。
 @MainActor
-public final class CustomLLMManager: LLMManaging, @preconcurrency LLMProviding, LLMStreamingProviding, SuperLog {
+public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvider, LLMStreamingProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-manager", category: "CustomLLMManager")
     public nonisolated static let emoji = "🧭"
     nonisolated static let verbose = true
@@ -71,9 +71,10 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency LLMProviding, 
         engine.select(providerID: providerID, model: model)
     }
 
-    // MARK: - LLMProviding / LLMStreamingProviding
+    // MARK: - SuperLLMProvider / LLMStreamingProviding
 
     public var providerID: String { engine.providerID }
+    public var providerInfo: LLMProviderInfo { engine.providerInfo }
 
     public func complete(_ request: LLMRequest) async throws -> LLMResponse {
         if let (provider, model) = routingOverride?(request) {

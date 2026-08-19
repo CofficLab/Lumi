@@ -4,7 +4,7 @@ import KitLLM
 
 /// LLM 供应商管理能力
 @MainActor
-public protocol LLMManaging: AnyObject, ObservableObject, LLMProviding where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol LLMManaging: AnyObject, ObservableObject, SuperLLMProvider where ObjectWillChangePublisher == ObservableObjectPublisher {
     // MARK: - Registration（LLM Provider 插件调用）
 
     /// 全部已注册供应商，按注册顺序返回。

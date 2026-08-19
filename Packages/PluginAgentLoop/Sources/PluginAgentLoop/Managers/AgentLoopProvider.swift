@@ -44,7 +44,7 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
         turnManager.setResponder(responder)
     }
 
-    public func setLLMProvider(_ provider: (any LLMProviding)?) {
+    public func setLLMProvider(_ provider: (any SuperLLMProvider)?) {
         turnManager.setLLMProvider(provider)
     }
 

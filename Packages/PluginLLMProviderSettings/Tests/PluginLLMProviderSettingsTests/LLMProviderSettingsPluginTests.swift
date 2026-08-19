@@ -11,7 +11,7 @@ struct LLMProviderSettingsPluginTests {
 
     /// 测试用最小供应商（远程，可配 API Key）。
     @MainActor
-    private final class MockRemoteProvider: ManagedLLMProvider, @preconcurrency LLMProviding {
+    private final class MockRemoteProvider: ManagedLLMProvider {
         let providerInfo: LLMProviderInfo
         private var storedKey: String = ""
 

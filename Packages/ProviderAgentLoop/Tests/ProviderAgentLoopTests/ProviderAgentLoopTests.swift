@@ -7,8 +7,9 @@ import KitLLM
 @Suite("ProviderAgentLoop")
 @MainActor
 struct ProviderAgentLoopTests {
-    private final class TestLLMProvider: LLMProviding, @unchecked Sendable {
+    private final class TestLLMProvider: SuperLLMProvider, @unchecked Sendable {
         let providerID = "test"
+        let providerInfo = LLMProviderInfo(id: "test", displayName: "Test", defaultModel: "", models: [], isLocal: true)
         func complete(_ request: LLMRequest) async throws -> LLMResponse {
             LLMResponse(content: "from provider", model: request.model)
         }

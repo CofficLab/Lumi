@@ -34,7 +34,7 @@ struct FactoryLumi2Tests {
 
     /// 测试用最小 LLM 供应商：回显最后一条用户消息。
     @MainActor
-    private final class EchoManagedProvider: ManagedLLMProvider, @preconcurrency LLMProviding {
+    private final class EchoManagedProvider: ManagedLLMProvider {
         let providerInfo: LLMProviderInfo
 
         init(id: String = "echo") {

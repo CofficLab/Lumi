@@ -81,7 +81,7 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultAgentLoopProvider(messages: messages)
     }
 
-    public func makeLLMProvider() -> any LLMProviding {
+    public func makeLLMProvider() -> any SuperLLMProvider {
         DefaultLLMProviding()
     }
 
@@ -267,7 +267,7 @@ public struct DefaultProviderFactory: ProviderFactory {
         try kernel.registerProvider((any MessageManaging).self, messages, forwardsObjectWillChange: false)
 
         let llmProvider = makeLLMProvider()
-        try kernel.registerProvider((any LLMProviding).self, llmProvider)
+        try kernel.registerProvider((any SuperLLMProvider).self, llmProvider)
 
         // 流式输出 store：先于 AgentLoop 注册，供回合循环写入临时行
         // （高频变更，不转发 objectWillChange，由消费方窄播订阅）。

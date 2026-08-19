@@ -48,10 +48,10 @@ public final class PluginAgentLoop: SuperPlugin {
         // 2. 创建自定义实现
         let agentLoop = AgentLoopProvider(messages: messages)
 
-        // 3. 注入所有依赖（对齐 ProviderFactory.registerProviders 的接线）
+        // 3. 注入所有依赖
         if let providerManager = kernel.resolveProvider((any LLMManaging).self) {
             agentLoop.setLLMProvider(providerManager)
-        } else if let llmProvider = kernel.resolveProvider((any LLMProviding).self) {
+        } else if let llmProvider = kernel.resolveProvider((any SuperLLMProvider).self) {
             agentLoop.setLLMProvider(llmProvider)
         }
 

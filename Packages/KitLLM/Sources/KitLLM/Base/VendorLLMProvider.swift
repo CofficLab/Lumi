@@ -7,7 +7,7 @@ import os
 /// - `providerInfo`（模型列表、协议格式、API Key storage key）
 /// - `openAIConfiguration` 或 `anthropicConfiguration`（对应协议的端点配置）
 @MainActor
-open class VendorLLMProvider: SuperLLMProvider, @preconcurrency LLMProviding, LLMStreamingProviding {
+open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
 
     nonisolated public static let logger = Logger(subsystem: "com.kit.llm", category: "VendorLLMProvider")
 

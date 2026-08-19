@@ -5,7 +5,7 @@ import Testing
 
 /// 测试用最小供应商：按固定前缀回显，可记录收到的模型。
 @MainActor
-final class MockManagedProvider: ManagedLLMProvider, @preconcurrency LLMProviding {
+final class MockManagedProvider: ManagedLLMProvider {
     let providerInfo: LLMProviderInfo
     let prefix: String
     private(set) var receivedModels: [String] = []

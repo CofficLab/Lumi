@@ -16,8 +16,9 @@ struct AgentLoopFullLoopTests {
     // MARK: - Test Doubles
 
     /// 可编排响应序列的 LLM Provider：按调用次数依次返回预设响应。
-    private final class ScriptedLLMProvider: LLMProviding, @unchecked Sendable {
+    private final class ScriptedLLMProvider: SuperLLMProvider, @unchecked Sendable {
         let providerID = "scripted"
+        let providerInfo = LLMProviderInfo(id: "scripted", displayName: "Scripted", defaultModel: "", models: [], isLocal: true)
         var responses: [LLMResponse]
         var receivedRequests: [LLMRequest] = []
 
@@ -159,8 +160,9 @@ struct AgentLoopFullLoopTests {
 
     @Test("流式 Provider 优先走 streamComplete 并写入流式 store")
     func usesStreamingPath() async throws {
-        final class StreamingProvider: LLMProviding, LLMStreamingProviding, @unchecked Sendable {
+        final class StreamingProvider: SuperLLMProvider, LLMStreamingProviding, @unchecked Sendable {
             let providerID = "streaming"
+            let providerInfo = LLMProviderInfo(id: "streaming", displayName: "Streaming", defaultModel: "", models: [], isLocal: true)
             var streamed = false
             func complete(_ request: LLMRequest) async throws -> LLMResponse { LLMResponse(content: "non-stream") }
             func streamComplete(

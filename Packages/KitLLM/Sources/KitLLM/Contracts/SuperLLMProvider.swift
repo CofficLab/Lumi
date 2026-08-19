@@ -2,9 +2,15 @@ import Foundation
 
 /// 可注册进 `LLMProviderManagerProviding` 的单个 LLM 供应商。
 @MainActor
-public protocol SuperLLMProvider: LLMProviding {
+public protocol SuperLLMProvider: AnyObject, Sendable {
+    /// 供应商标识（通常等于 `providerInfo.id`）。
+    var providerID: String { get }
+
     /// 供应商元数据：`providerInfo.id` 即注册表 key。
     var providerInfo: LLMProviderInfo { get }
+
+    /// 发送非流式 LLM 完成请求。
+    func complete(_ request: LLMRequest) async throws -> LLMResponse
 
     /// 是否已配置 API Key（本地供应商无需 Key，默认 `true`）。
     func hasApiKey() -> Bool
