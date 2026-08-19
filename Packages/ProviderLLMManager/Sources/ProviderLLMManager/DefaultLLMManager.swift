@@ -12,7 +12,7 @@ public typealias DefaultLLMProviderManagerProviding = DefaultLLMManager
 public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvider, LLMStreamingProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-llm-manager", category: "LLMManager")
     nonisolated public static let emoji = "🧭"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     public var providerID: String { Self.managerProviderID }
     public var providerInfo: LLMProviderInfo {

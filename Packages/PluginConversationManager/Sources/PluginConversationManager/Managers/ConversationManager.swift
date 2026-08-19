@@ -26,7 +26,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     )
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager")
     public nonisolated static let emoji = "💬"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
 
     @Published public private(set) var conversations: [LumiConversationSummary] = []
     @Published public private(set) var selectedConversationID: UUID? {

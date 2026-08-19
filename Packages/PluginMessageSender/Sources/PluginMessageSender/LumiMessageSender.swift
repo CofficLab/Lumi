@@ -137,7 +137,9 @@ public final class LumiMessageSender: MessageSendingProviding, SuperLog {
     ) async throws {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            Self.logger.debug("\(Self.t)sendMessage ignored: empty content after trim")
+            if Self.verbose {
+                Self.logger.debug("\(Self.t)sendMessage ignored: empty content after trim")
+            }
             return
         }
 
@@ -153,7 +155,9 @@ public final class LumiMessageSender: MessageSendingProviding, SuperLog {
                 providerID: nil,
                 modelName: nil
             )
-            Self.logger.info("\(self.t)created new conversation \(targetID.uuidString) for send")
+            if Self.verbose {
+                Self.logger.info("\(self.t)created new conversation \(targetID.uuidString) for send")
+            }
         }
         // 新建会话必须成为当前时间线，否则消息落进不可见会话。
         if conversations.selectedConversationID != targetID {
@@ -169,7 +173,9 @@ public final class LumiMessageSender: MessageSendingProviding, SuperLog {
                 fileAttachments: fileAttachments
             ))
             clearSentAttachments(imageAttachments, fileAttachments)
-            Self.logger.info("\(self.t)send queued: conversation=\(targetID.uuidString.prefix(8)), queueDepth=\(self.pendingQueues[targetID]?.count ?? 0)")
+            if Self.verbose {
+                Self.logger.info("\(self.t)send queued: conversation=\(targetID.uuidString.prefix(8)), queueDepth=\(self.pendingQueues[targetID]?.count ?? 0)")
+            }
             return
         }
 
@@ -186,13 +192,17 @@ public final class LumiMessageSender: MessageSendingProviding, SuperLog {
         )
         messages.insertMessage(userMessage, to: targetID)
         clearSentAttachments(imageAttachments, fileAttachments)
-        Self.logger.info("\(self.t)send user message: conversation=\(targetID.uuidString.prefix(8)), message=\(userMessage.id.uuidString.prefix(8)), contentChars=\(trimmed.count), images=\(imageAttachments.count), files=\(fileAttachments.count)")
+        if Self.verbose {
+            Self.logger.info("\(self.t)send user message: conversation=\(targetID.uuidString.prefix(8)), message=\(userMessage.id.uuidString.prefix(8)), contentChars=\(trimmed.count), images=\(imageAttachments.count), files=\(fileAttachments.count)")
+        }
 
         await executeTurn(conversationID: targetID, userMessageID: userMessage.id)
     }
 
     public func cancelCurrentRequest() {
-        Self.logger.info("\(self.t)cancel current request: activeTasks=\(self.currentTasks.count)")
+        if Self.verbose {
+            Self.logger.info("\(self.t)cancel current request: activeTasks=\(self.currentTasks.count)")
+        }
         for task in currentTasks.values {
             task.cancel()
         }
@@ -211,7 +221,9 @@ public final class LumiMessageSender: MessageSendingProviding, SuperLog {
     ) async throws -> AgentLoopOutcome {
         isSending = true
         defer { isSending = false }
-        Self.logger.info("\(self.t)resume turn: conversation=\(conversationID.uuidString.prefix(8))")
+        if Self.verbose {
+            Self.logger.info("\(self.t)resume turn: conversation=\(conversationID.uuidString.prefix(8))")
+        }
         return try await agentLoop.resumeTurn(in: conversationID, request: request)
     }
 
@@ -246,7 +258,9 @@ public final class LumiMessageSender: MessageSendingProviding, SuperLog {
             metadata: ["isTransientStatus": "true"]
         )
         messages.insertMessage(statusMessage, to: conversationID)
-        Self.logger.info("\(self.t)turn started: conversation=\(conversationID.uuidString.prefix(8)), userMessage=\(userMessageID.uuidString.prefix(8))")
+        if Self.verbose {
+            Self.logger.info("\(self.t)turn started: conversation=\(conversationID.uuidString.prefix(8)), userMessage=\(userMessageID.uuidString.prefix(8))")
+        }
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
             defer {
@@ -260,9 +274,13 @@ public final class LumiMessageSender: MessageSendingProviding, SuperLog {
             }
             do {
                 _ = try await self.agentLoop.runTurn(in: conversationID)
-                Self.logger.info("\(Self.t)turn completed: conversation=\(conversationID.uuidString.prefix(8))")
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)turn completed: conversation=\(conversationID.uuidString.prefix(8))")
+                }
             } catch {
-                Self.logger.error("\(Self.t)turn failed: conversation=\(conversationID.uuidString.prefix(8)), error=\(error.localizedDescription)")
+                if Self.verbose {
+                    Self.logger.error("\(Self.t)turn failed: conversation=\(conversationID.uuidString.prefix(8)), error=\(error.localizedDescription)")
+                }
                 let errorMessage = Message(
                     conversationID: conversationID,
                     role: .error,
@@ -298,7 +316,9 @@ public final class LumiMessageSender: MessageSendingProviding, SuperLog {
             metadata: metadata
         )
         messages.insertMessage(userMessage, to: conversationID)
-        Self.logger.info("\(self.t)drain queue: sending next message, conversation=\(conversationID.uuidString.prefix(8)), message=\(userMessage.id.uuidString.prefix(8))")
+        if Self.verbose {
+            Self.logger.info("\(self.t)drain queue: sending next message, conversation=\(conversationID.uuidString.prefix(8)), message=\(userMessage.id.uuidString.prefix(8))")
+        }
         Task { @MainActor [weak self] in
             await self?.executeTurn(conversationID: conversationID, userMessageID: userMessage.id)
         }

@@ -1,7 +1,8 @@
-import KitLLM
 import Foundation
+import KitLLM
 import os
 import ProviderLLMManager
+import SuperLogKit
 
 /// OpenCode Go 供应商（Go 系列模型网关）。
 ///
@@ -9,16 +10,16 @@ import ProviderLLMManager
 /// 端点路径不同（`/responses`、`/chat/completions`、`/messages`），因此
 /// 覆盖 `complete(_:)` 和 `streamComplete` 按模型路由，不复用基类的单一协议路径。
 @MainActor
-public final class GoProvider: VendorLLMProvider {
-    // 基类已声明 emoji/logger/verbose；子类不应跨模块重定义 static let。
-    // 本类自定义 emoji 通过扩展在文件末尾提供。
+public final class GoProvider: VendorLLMProvider, SuperLog {
+    public nonisolated static let emoji = "🚀"
+    nonisolated static let verbose = true
 
     /// 包装基类 `resolveAPIKey()`，在抛出前记录 error 日志。
     private func resolvedAPIKey() throws -> String {
         do {
             return try resolveAPIKey()
         } catch {
-            Self.logger.error("resolveAPIKey failed\(error.localizedDescription)")
+            Self.logger.error("\(Self.t)resolveAPIKey failed\(self.r(error.localizedDescription))")
             throw error
         }
     }
@@ -65,26 +66,26 @@ public final class GoProvider: VendorLLMProvider {
                 description: "低成本的开源编程模型订阅服务",
                 defaultModel: "deepseek-v4-flash",
                 models: [
-                    LLMModelInfo(id: "grok-4.5", displayName: "Grok 4.5", contextWindowSize: 500_000),
-                    LLMModelInfo(id: "gpt-5.6-luna", displayName: "GPT 5.6 Luna", contextWindowSize: 1_050_000),
-                    LLMModelInfo(id: "glm-5.3", displayName: "GLM-5.3", contextWindowSize: 1_000_000),
-                    LLMModelInfo(id: "glm-5.2", displayName: "GLM-5.2", contextWindowSize: 1_000_000),
-                    LLMModelInfo(id: "glm-5.1", displayName: "GLM-5.1", contextWindowSize: 202_752),
-                    LLMModelInfo(id: "kimi-k3", displayName: "Kimi K3", contextWindowSize: 1_048_576),
-                    LLMModelInfo(id: "kimi-k2.7-code", displayName: "Kimi K2.7 Code", contextWindowSize: 262_144),
-                    LLMModelInfo(id: "kimi-k2.6", displayName: "Kimi K2.6", contextWindowSize: 262_144),
-                    LLMModelInfo(id: "mimo-v2.5", displayName: "MiMo-V2.5", contextWindowSize: 1_000_000),
-                    LLMModelInfo(id: "mimo-v2.5-pro", displayName: "MiMo-V2.5-Pro", contextWindowSize: 1_048_576),
-                    LLMModelInfo(id: "deepseek-v4-pro", displayName: "DeepSeek V4 Pro", contextWindowSize: 1_000_000),
-                    LLMModelInfo(id: "deepseek-v4-flash", displayName: "DeepSeek V4 Flash", contextWindowSize: 1_000_000),
-                    LLMModelInfo(id: "hy3", displayName: "Hy3", contextWindowSize: 256_000),
-                    LLMModelInfo(id: "minimax-m3", displayName: "MiniMax M3", contextWindowSize: 1_000_000),
-                    LLMModelInfo(id: "minimax-m2.7", displayName: "MiniMax M2.7", contextWindowSize: 204_800),
-                    LLMModelInfo(id: "minimax-m2.5", displayName: "MiniMax M2.5", contextWindowSize: 204_800),
-                    LLMModelInfo(id: "qwen3.8-max", displayName: "Qwen3.8 Max", contextWindowSize: 1_000_000),
-                    LLMModelInfo(id: "qwen3.7-max", displayName: "Qwen3.7 Max", contextWindowSize: 1_000_000),
-                    LLMModelInfo(id: "qwen3.7-plus", displayName: "Qwen3.7 Plus", contextWindowSize: 1_000_000),
-                    LLMModelInfo(id: "qwen3.6-plus", displayName: "Qwen3.6 Plus", contextWindowSize: 1_000_000),
+                    LLMModelInfo(id: "grok-4.5", displayName: "Grok 4.5", contextWindowSize: 500000),
+                    LLMModelInfo(id: "gpt-5.6-luna", displayName: "GPT 5.6 Luna", contextWindowSize: 1050000),
+                    LLMModelInfo(id: "glm-5.3", displayName: "GLM-5.3", contextWindowSize: 1000000),
+                    LLMModelInfo(id: "glm-5.2", displayName: "GLM-5.2", contextWindowSize: 1000000),
+                    LLMModelInfo(id: "glm-5.1", displayName: "GLM-5.1", contextWindowSize: 202752),
+                    LLMModelInfo(id: "kimi-k3", displayName: "Kimi K3", contextWindowSize: 1048576),
+                    LLMModelInfo(id: "kimi-k2.7-code", displayName: "Kimi K2.7 Code", contextWindowSize: 262144),
+                    LLMModelInfo(id: "kimi-k2.6", displayName: "Kimi K2.6", contextWindowSize: 262144),
+                    LLMModelInfo(id: "mimo-v2.5", displayName: "MiMo-V2.5", contextWindowSize: 1000000),
+                    LLMModelInfo(id: "mimo-v2.5-pro", displayName: "MiMo-V2.5-Pro", contextWindowSize: 1048576),
+                    LLMModelInfo(id: "deepseek-v4-pro", displayName: "DeepSeek V4 Pro", contextWindowSize: 1000000),
+                    LLMModelInfo(id: "deepseek-v4-flash", displayName: "DeepSeek V4 Flash", contextWindowSize: 1000000),
+                    LLMModelInfo(id: "hy3", displayName: "Hy3", contextWindowSize: 256000),
+                    LLMModelInfo(id: "minimax-m3", displayName: "MiniMax M3", contextWindowSize: 1000000),
+                    LLMModelInfo(id: "minimax-m2.7", displayName: "MiniMax M2.7", contextWindowSize: 204800),
+                    LLMModelInfo(id: "minimax-m2.5", displayName: "MiniMax M2.5", contextWindowSize: 204800),
+                    LLMModelInfo(id: "qwen3.8-max", displayName: "Qwen3.8 Max", contextWindowSize: 1000000),
+                    LLMModelInfo(id: "qwen3.7-max", displayName: "Qwen3.7 Max", contextWindowSize: 1000000),
+                    LLMModelInfo(id: "qwen3.7-plus", displayName: "Qwen3.7 Plus", contextWindowSize: 1000000),
+                    LLMModelInfo(id: "qwen3.6-plus", displayName: "Qwen3.6 Plus", contextWindowSize: 1000000),
                 ],
                 websiteURL: URL(string: "https://opencode.ai/docs/zh-cn/go/")!,
                 apiFormat: .openAI,
@@ -92,15 +93,21 @@ public final class GoProvider: VendorLLMProvider {
             ),
             apiService: apiService
         )
+        if Self.verbose {
+            Self.logger.info("\(Self.t)GoProvider initialized with \(Self.kinds.count) models")
+        }
     }
 
     // MARK: - 按模型路由协议
 
-    public override func complete(_ request: LLMRequest) async throws -> LLMResponse {
+    override public func complete(_ request: LLMRequest) async throws -> LLMResponse {
         let model = request.model ?? providerInfo.defaultModel
         guard let kind = Self.kinds[model] else {
-            Self.logger.error("Unknown model: \(model, privacy: .public)")
+            Self.logger.error("\(Self.t)Unknown model: \(model, privacy: .public)")
             throw VendorAPIError.requestFailed("OpenCode Go 未知模型：\(model)")
+        }
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)complete model=\(model, privacy: .public) kind=\(String(describing: kind))")
         }
         let apiKey = try resolvedAPIKey()
         switch kind {
@@ -113,14 +120,17 @@ public final class GoProvider: VendorLLMProvider {
         }
     }
 
-    public override func streamComplete(
+    override public func streamComplete(
         _ request: LLMRequest,
         onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
     ) async throws -> LLMResponse {
         let model = request.model ?? providerInfo.defaultModel
         guard let kind = Self.kinds[model] else {
-            Self.logger.error("Unknown model: \(model, privacy: .public)")
+            Self.logger.error("\(Self.t)Unknown model: \(model, privacy: .public)")
             throw VendorAPIError.requestFailed("OpenCode Go 未知模型：\(model)")
+        }
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)streamComplete model=\(model, privacy: .public) kind=\(String(describing: kind))")
         }
         let apiKey = try resolvedAPIKey()
         switch kind {
@@ -142,6 +152,9 @@ public final class GoProvider: VendorLLMProvider {
         anthropic: Bool
     ) async throws -> LLMResponse {
         let url = try endpointURL(anthropic ? "\(Self.base)/messages" : "\(Self.base)/chat/completions")
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)sendChat model=\(model, privacy: .public) anthropic=\(anthropic) url=\(url.path, privacy: .public)")
+        }
         if anthropic {
             let adapter = AnthropicCompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
             let body = try adapter.buildRequestBody(
@@ -155,6 +168,9 @@ public final class GoProvider: VendorLLMProvider {
                 body: body
             )
             let parsed = try adapter.parseResponse(data: data)
+            if Self.verbose {
+                Self.logger.debug("\(Self.t)sendChat anthropic response received, content length=\(parsed.content.count)")
+            }
             return LLMResponse(content: parsed.content, model: model)
         }
 
@@ -170,6 +186,9 @@ public final class GoProvider: VendorLLMProvider {
             body: body
         )
         let parsed = try adapter.parseResponse(data: data)
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)sendChat openAI response received, content length=\(parsed.content.count)")
+        }
         return LLMResponse(content: parsed.content, model: model)
     }
 
@@ -182,6 +201,9 @@ public final class GoProvider: VendorLLMProvider {
         anthropic: Bool,
         onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
     ) async throws -> LLMResponse {
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)streamChat model=\(model, privacy: .public) anthropic=\(anthropic)")
+        }
         if anthropic {
             let adapter = AnthropicCompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
             nonisolated(unsafe) let body = try adapter.buildStreamingRequestBody(
@@ -250,6 +272,9 @@ public final class GoProvider: VendorLLMProvider {
         model: String,
         apiKey: String
     ) async throws -> LLMResponse {
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)sendResponses model=\(model, privacy: .public)")
+        }
         var input: [[String: Any]] = []
         for message in request.messages {
             input.append(["role": message.role.rawValue, "content": message.content])
