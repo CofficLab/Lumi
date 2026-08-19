@@ -9,16 +9,30 @@ import Foundation
 enum ToolArgumentCoding {
     /// 将 JSON 字符串解码为参数字典。空字符串视为空参数字典。
     /// 非对象 JSON（数组、标量）视为解码失败。
+    /// 容错处理：如果 JSON 格式错误（如多个对象拼接 "{}{\"key\":\"value\"}"），
+    /// 尝试提取最后一个有效的 JSON 对象。
     static func decode(_ json: String) throws -> [String: ToolArgument] {
         guard let data = json.data(using: .utf8), !data.isEmpty else { return [:] }
-        let object = try JSONSerialization.jsonObject(with: data)
-        guard let dictionary = object as? [String: Any] else {
-            throw DecodingError.dataCorrupted(.init(
-                codingPath: [],
-                debugDescription: "Tool arguments must be a JSON object"
-            ))
+        do {
+            let object = try JSONSerialization.jsonObject(with: data)
+            guard let dictionary = object as? [String: Any] else {
+                throw DecodingError.dataCorrupted(.init(
+                    codingPath: [],
+                    debugDescription: "Tool arguments must be a JSON object"
+                ))
+            }
+            return dictionary.mapValues { ToolArgument($0) }
+        } catch {
+            // 容错：尝试提取最后一个有效的 JSON 对象
+            // 兼容 LLM 输出格式错误，如 "{}{\"path\":\"...\"}"
+            if let lastObjectRange = json.range(of: "\\{[^{}]*\\}$", options: .regularExpression),
+               let subData = String(json[lastObjectRange]).data(using: .utf8),
+               let object = try? JSONSerialization.jsonObject(with: subData),
+               let dictionary = object as? [String: Any] {
+                return dictionary.mapValues { ToolArgument($0) }
+            }
+            throw error
         }
-        return dictionary.mapValues { ToolArgument($0) }
     }
 
     /// 将参数字典编码回 JSON 字符串（记录用）。失败时回退 `"{}"`。

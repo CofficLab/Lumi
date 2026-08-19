@@ -17,7 +17,7 @@ import SuperLogKit
 final class SendActionBarViewModel: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin-conversation-input", category: "SendActionBarButton")
     nonisolated public static let emoji = "🔘"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private let input: any ConversationInputProviding
     private let sender: any MessageSendingProviding

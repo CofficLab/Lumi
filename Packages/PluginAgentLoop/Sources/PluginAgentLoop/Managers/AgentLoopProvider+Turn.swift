@@ -170,6 +170,9 @@ extension AgentLoopProvider {
                 )
                 if suspended {
                     states[conversationID] = .suspended
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)退出回合循环 - conversationID: \(conversationID), reason: suspended (pending tool calls)")
+                    }
                     return .suspended("awaiting user response")
                 }
                 continue
@@ -194,7 +197,7 @@ extension AgentLoopProvider {
             let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
                 .flatMap { $0.rawValue }
 
-            // LLM 请求前的消息准备钩子（对齐旧版 willSendToLLM）：
+            // LLM 请求前的消息准备钩子：
             // 详细度 / 语言 / 自动化级别等插件按注册顺序串行修改消息历史，
             // 注入 system 指令（不落库，仅本次请求生效）。
             let preparedHistory = history
@@ -221,11 +224,11 @@ extension AgentLoopProvider {
                     let error = AgentLoopError.unsupportedStreaming
                     await appendError(in: conversationID, error: error, turnID: turnID)
                     failedConversations.insert(conversationID)
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)退出回合循环 - conversationID: \(conversationID), reason: failed (unsupported streaming)")
+                    }
                     return .failed("unsupported streaming: \(error.localizedDescription)")
                 }
-                // streaming 是 MainActor 隔离的存在类型，不能直接捕获进
-                // @Sendable 流式回调；用 @unchecked Sendable 桥接包装，
-                // 在回调内经 await 跳回 MainActor 写入。
                 let bridge = StreamingBridge(streaming: streaming)
                 response = try await streamingManager.streamComplete(request) { [weak bridge] chunk in
                     guard let bridge else { return }
@@ -240,6 +243,9 @@ extension AgentLoopProvider {
                 streaming.end(conversationID: conversationID)
                 await appendError(in: conversationID, error: error, turnID: turnID)
                 failedConversations.insert(conversationID)
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)退出回合循环 - conversationID: \(conversationID), reason: failed (stream error)")
+                }
                 return .failed(String(describing: error))
             }
 
@@ -283,6 +289,9 @@ extension AgentLoopProvider {
             // 无工具调用 → 回合完成。
             guard let toolCalls = assistant.toolCalls, !toolCalls.isEmpty else {
                 states[conversationID] = .completed
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)退出回合循环 - conversationID: \(conversationID), reason: completed")
+                }
                 return .completed
             }
 
@@ -291,6 +300,9 @@ extension AgentLoopProvider {
             for toolCall in toolCalls where toolCall.result == nil {
                 try? Task.checkCancellation()
                 if cancelledConversations.contains(conversationID) {
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)退出回合循环 - conversationID: \(conversationID), reason: cancelled (during tool execution)")
+                    }
                     return .cancelled
                 }
 
@@ -351,12 +363,18 @@ extension AgentLoopProvider {
                 suspensions[conversationID] = batchSuspensions.values.first
                 awaitingConversations.insert(conversationID)
                 states[conversationID] = .suspended
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)退出回合循环 - conversationID: \(conversationID), reason: suspended (batch awaiting user response)")
+                }
                 return .suspended("awaiting user response")
             }
 
             // 工具结果已入历史，继续下一轮 LLM 请求。
         }
 
+        if Self.verbose {
+            Self.logger.info("\(Self.t)退出回合循环 - conversationID: \(conversationID), reason: cancelled")
+        }
         states[conversationID] = .cancelled
         return .cancelled
     }

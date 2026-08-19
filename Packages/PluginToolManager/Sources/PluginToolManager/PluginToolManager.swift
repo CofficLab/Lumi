@@ -1,29 +1,17 @@
 import Foundation
-import os
 import KernelCore
+import os
 import ProviderSettingView
 import ProviderStorage
 import ProviderToolManager
 import SuperLogKit
 import SwiftUI
 
-/// 工具管理插件（KernelCore 生态）。
-///
-/// 复刻旧版 `ToolManagerPlugin` 的完整体验：
-/// - 以自研 `ToolManagerService` 替换 `ProviderFactory` 预注册的默认
-///   `ToolManagerProviding`，注册 7 个内置文件/终端工具；
-/// - 工具调用记录存储**复用旧版同一数据库目录**
-///   （`StorageProviding.pluginDataDirectory(for: "ToolManager")`，
-///   数据库文件 `tool_calls.sqlite`），无损恢复旧数据；
-/// - 设置界面注入「Tools」入口（可用工具 / 执行日志 / 使用统计）。
-///
-/// 执行顺序：order = 6（先于 `PluginAgentLoop` order=8，确保 Agent 回合
-/// 循环执行 `toolManager?.allTools()` 时内置工具已就绪；后于
-/// `PluginLLMManager` order=5）。
+/// 工具管理插件。
 @MainActor
 public final class PluginToolManager: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "Plugin")
-    nonisolated public static let emoji = "🔧"
+    public nonisolated static let emoji = "🔧"
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.tool-manager"
@@ -36,7 +24,6 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
         stage: .stable,
         policy: .alwaysOn
     )
-
 
     /// 本插件装配的 ToolManager 实现（设置视图读取）。
     private var service: ToolManagerService?

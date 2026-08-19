@@ -1,26 +1,14 @@
 import Foundation
-import os
 import KernelCore
+import os
 import ProviderActivityBar
 import SuperLogKit
+import SwiftUI
 
-/// 自定义 `ActivityBarProviding` 实现。
-///
-/// 复刻旧版 `FactoryCore.ActivityBar` 的视觉与交互，**完全自实现**：
-/// - 自行维护 `items`（按 `order` 排序）、`activeItemID` 与激活回调，
-///   不封装/委托 `DefaultActivityBarProviding`；
-/// - 自行渲染竖直入口栏视图（48pt 宽、顶部渐隐滚动列表、右侧分隔线、
-///   右键「打开设置」等），与 `DefaultActivityBarProviding` 视觉保持一致；
-/// - 在 `onReady` 阶段把本插件维护的"内置默认入口"作为初始入口合并进去，
-///   便于宿主在不引入其他业务插件时也能看到 ActivityBar 入口；
-/// - 暴露 `customItems` 数组供业务插件继续附加入口（不会清空 builtin）。
-///
-/// 替换 `ProviderFactory` 预注册的 `DefaultActivityBarProviding` 后，
-/// 后续 `kernel.resolveProvider((any ActivityBarProviding).self)` 拿到的就是本实现。
 @MainActor
 public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.activity-bar", category: "Provider")
-    nonisolated public static let emoji = "🧱"
+    public nonisolated static let emoji = "🧱"
     nonisolated static let verbose = false
 
     /// 当前已激活入口的 id。
