@@ -34,6 +34,16 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
     @Published public private(set) var globalAutomationLevel: LumiAutomationLevel = .build
     @Published public private(set) var globalLanguage: LumiConversationLanguage = .chinese
 
+    /// 按最后消息时间倒序排序
+    public var sortedConversations: [LumiConversationSummary] {
+        conversations.sorted { lhs, rhs in
+            if lhs.lastMessageAt == rhs.lastMessageAt {
+                return lhs.createdAt > rhs.createdAt
+            }
+            return lhs.lastMessageAt > rhs.lastMessageAt
+        }
+    }
+
     /// 数据存储目录；内存实现默认使用 Application Support 下的会话目录，
     /// 供未来持久化 / 选中状态写盘使用。
     public var dataDirectory: URL {
