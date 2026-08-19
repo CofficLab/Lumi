@@ -70,12 +70,7 @@ public final class PluginAgentLoop: SuperPlugin {
             conversations: conversations
         )
 
-        // 3. 事件桥接：发布到 NotificationCenter（对齐 ProviderFactory.bridge 通知名）
-        agentLoop.setEventHandler { event in
-            Self.postNotification(for: event)
-        }
-
-        // 4. 注销默认的 AgentLoopProviding
+        // 3. 注销默认的 AgentLoopProviding
         kernel.unregisterProvider((any AgentLoopProviding).self)
 
         // 5. 注册自定义实现（不转发 objectWillChange，与默认注册保持一致）
@@ -84,52 +79,5 @@ public final class PluginAgentLoop: SuperPlugin {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         // 插件卸载时，内核会自动按归属移除 Provider
-    }
-
-    // MARK: - Notification Bridge
-
-    /// 把 `AgentLoopEvent` 桥接到旧版 NotificationCenter，
-    /// 通知名与 `ProviderFactory.bridge` 完全一致。
-    private static func postNotification(for event: AgentLoopEvent) {
-        switch event {
-        case let .turnStarted(conversationID, turnID):
-            NotificationCenter.default.post(
-                name: .lumiTurnStarted,
-                object: nil,
-                userInfo: [
-                    "conversationID": conversationID,
-                    "turnID": turnID,
-                ]
-            )
-        case let .messageSaved(conversationID, messageID, role):
-            NotificationCenter.default.post(
-                name: .lumiMessageSaved,
-                object: nil,
-                userInfo: [
-                    "messageID": messageID,
-                    "conversationID": conversationID,
-                    "role": role,
-                ]
-            )
-        case let .turnCompleted(conversationID, turnID):
-            NotificationCenter.default.post(
-                name: .lumiTurnCompleted,
-                object: nil,
-                userInfo: [
-                    "conversationID": conversationID,
-                    "turnID": turnID,
-                ]
-            )
-        case let .turnFinished(conversationID, turnID, reason):
-            NotificationCenter.default.post(
-                name: .lumiTurnFinished,
-                object: nil,
-                userInfo: [
-                    "conversationID": conversationID,
-                    "turnID": turnID as Any,
-                    "reason": reason.rawValue,
-                ]
-            )
-        }
     }
 }

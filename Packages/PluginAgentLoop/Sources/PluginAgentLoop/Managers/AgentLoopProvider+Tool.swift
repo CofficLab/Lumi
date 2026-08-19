@@ -124,7 +124,6 @@ extension AgentLoopProvider {
             toolCallID: toolCallID
         )
         messages.insertMessage(toolMessage, to: conversationID)
-        postEvent(.messageSaved(conversationID: conversationID, messageID: toolMessage.id, role: toolMessage.role.rawValue))
     }
 }
 
@@ -265,7 +264,6 @@ extension AgentLoopProvider {
             turnID: turnID
         )
         messages.insertMessage(errorMessage, to: conversationID)
-        postEvent(.messageSaved(conversationID: conversationID, messageID: errorMessage.id, role: errorMessage.role.rawValue))
     }
 
     /// 从 `Error` 构造错误消息，透传渲染元数据（`renderKind` / `rawErrorDetail`），
@@ -283,7 +281,6 @@ extension AgentLoopProvider {
             renderKind: renderInfo?.renderKind
         )
         messages.insertMessage(errorMessage, to: conversationID)
-        postEvent(.messageSaved(conversationID: conversationID, messageID: errorMessage.id, role: errorMessage.role.rawValue))
     }
 }
 

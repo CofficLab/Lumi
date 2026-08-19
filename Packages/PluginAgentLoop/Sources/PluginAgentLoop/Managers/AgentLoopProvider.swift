@@ -5,42 +5,14 @@ import KitLLM
 import os
 import ProviderAgentLoop
 import ProviderConversation
+import ProviderLifecycleHooks
 import ProviderLLMManager
 import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
 import SuperLogKit
 
-// MARK: - ProviderMessage ↔ KitLLM 桥接
-
-extension Message {
-    var llmMessage: LLMMessage {
-        LLMMessage(
-            role: KitLLM.MessageRole(rawValue: role.rawValue) ?? .unknown,
-            content: content,
-            toolCalls: toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
-            toolCallID: toolCallID,
-            reasoningContent: reasoningContent,
-            images: []
-        )
-    }
-}
-
-// 消除 KitLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
-typealias AgentLoopToolCall = AgentToolKit.ToolCall
-
-// MARK: - Agent 回合执行器门面（Facade）
-
 /// Agent 回合执行器门面。
-///
-/// 职责：
-/// - 依赖注入（构造注入所有 service）；
-/// - 实现 `AgentLoopProviding` 公共 API；
-/// - 发布 `revision`（宿主观察状态变化的信号）。
-///
-/// 回合运行、工具执行等逻辑拆分至 extension 文件：
-/// - `AgentLoopProvider+Turn.swift`：回合生命周期（run/resume/cancel/executeTurnLoop）
-/// - `AgentLoopProvider+Tool.swift`：工具执行与授权挂起
 @MainActor
 public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-loop")
@@ -54,9 +26,6 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
     let toolManager: any ToolManagerProviding
     let streaming: any MessageStreamingProviding
     let conversations: any ConversationManaging
-
-    var responder: AgentLoopResponder
-    var eventHandler: AgentLoopEventHandler
 
     @Published public internal(set) var revision: Int = 0
 
@@ -91,22 +60,6 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
         self.toolManager = toolManager
         self.streaming = streaming
         self.conversations = conversations
-        self.responder = { _ in "" }
-        self.eventHandler = { _ in }
-    }
-
-    // MARK: - Injection
-
-    public func setResponder(_ responder: AgentLoopResponder?) {
-        if let responder {
-            self.responder = responder
-        }
-    }
-
-    public func setEventHandler(_ handler: AgentLoopEventHandler?) {
-        if let handler {
-            self.eventHandler = handler
-        }
     }
 
     // MARK: - AgentLoopProviding
@@ -131,11 +84,9 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
         turnIDs[conversationID]
     }
 
-    // MARK: - Internal Helpers
+    public func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
 
-    func postEvent(_ event: AgentLoopEvent) {
-        eventHandler(event)
-    }
+    // MARK: - Internal Helpers
 
     func notifyRevisionChange() {
         revision += 1

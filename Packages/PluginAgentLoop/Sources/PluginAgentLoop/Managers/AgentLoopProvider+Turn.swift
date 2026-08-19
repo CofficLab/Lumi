@@ -30,7 +30,6 @@ extension AgentLoopProvider {
         turnIDs[conversationID] = turnID
         states[conversationID] = .running
         notifyRevisionChange()
-        postEvent(.turnStarted(conversationID: conversationID, turnID: turnID))
 
         let task: Task<AgentLoopOutcome, Never> = Task { @MainActor [weak self] in
             guard let self else { return .cancelled }
@@ -280,14 +279,11 @@ extension AgentLoopProvider {
                 }
             }
             messages.insertMessage(assistant, to: conversationID)
-            postEvent(.messageSaved(conversationID: conversationID, messageID: assistant.id, role: assistant.role.rawValue))
             streaming.end(conversationID: conversationID)
 
             // 无工具调用 → 回合完成。
             guard let toolCalls = assistant.toolCalls, !toolCalls.isEmpty else {
                 states[conversationID] = .completed
-                postEvent(.turnCompleted(conversationID: conversationID, turnID: turnID))
-                postEvent(.turnFinished(conversationID: conversationID, turnID: turnID, reason: .completed))
                 return .completed
             }
 
@@ -356,7 +352,6 @@ extension AgentLoopProvider {
                 suspensions[conversationID] = batchSuspensions.values.first
                 awaitingConversations.insert(conversationID)
                 states[conversationID] = .suspended
-                postEvent(.turnFinished(conversationID: conversationID, turnID: turnID, reason: .awaitingUserResponse))
                 return .suspended("awaiting user response")
             }
 
@@ -364,7 +359,6 @@ extension AgentLoopProvider {
         }
 
         states[conversationID] = .cancelled
-        postEvent(.turnFinished(conversationID: conversationID, turnID: turnID, reason: .cancelled))
         return .cancelled
     }
 }
