@@ -5,17 +5,188 @@ import os
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
+import ProviderMessageStreaming
 import ProviderToolManager
 import SuperLogKit
+
+// MARK: - LLM Request
+
+extension AgentLoopProvider {
+    enum LLMRequestResult {
+        case success(LLMResponse, assistantMessageID: UUID)
+        case failure(reason: String)
+    }
+
+    /// 执行一次 LLM 流式请求，落库 assistant 消息。
+    func performLLMRequest(conversationID: UUID, turnID: UUID) async -> LLMRequestResult {
+        let history = messages.messages(for: conversationID)
+
+        // 计算工具 schema
+        let automationLevel = conversations.automationLevel(for: conversationID)
+        let rawTools = toolManager.allTools()
+        let tools = automationLevel.allowsTools ? rawTools : []
+        if Self.verbose {
+            let firstFive = tools.prefix(5).map(\.name)
+            Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)，automationLevel=\(automationLevel.rawValue)，rawCount=\(rawTools.count)")
+        }
+        let language = languagePreference(for: conversationID)
+        let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
+            LLMFunctionSchema(
+                name: tool.name,
+                description: tool.description(for: language),
+                parameters: tool.inputSchema(for: language)
+            )
+        }
+        let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
+            .flatMap { $0.rawValue }
+        let modelName = conversations.modelName(for: conversationID)
+        let resolvedProviderID = resolvedProviderID(for: conversationID)
+
+        insertStatusMessage(
+            conversationID: conversationID,
+            content: String(localized: "status.thinking", defaultValue: "正在思考…")
+        )
+
+        let request = LLMRequest(
+            conversationID: conversationID,
+            messages: history.map(\.llmMessage),
+            model: modelName,
+            tools: schemas.isEmpty ? nil : schemas,
+            reasoningEffort: reasoningEffort
+        )
+
+        streaming.start(conversationID: conversationID)
+
+        guard let streamingManager = llmManager as? any LLMStreamingProviding else {
+            streaming.end(conversationID: conversationID)
+            let error = AgentLoopError.unsupportedStreaming
+            await appendError(in: conversationID, error: error, turnID: turnID)
+            return .failure(reason: "unsupported streaming: \(error.localizedDescription)")
+        }
+
+        let bridge = StreamingBridge(streaming: streaming)
+        do {
+            let response = try await streamingManager.streamComplete(request) { [weak bridge] chunk in
+                guard let bridge else { return }
+                let piece = chunk.content ?? ""
+                if let rc = chunk.reasoningContent, !rc.isEmpty {
+                    await bridge.appendThinking(piece, conversationID: conversationID)
+                } else {
+                    await bridge.appendContent(piece, conversationID: conversationID)
+                }
+            }
+
+            if Self.verbose {
+                if let toolCalls = response.toolCalls, !toolCalls.isEmpty {
+                    let toolNames = toolCalls.map { $0.name }
+                    Self.logger.info("\(Self.t)大模型返回工具调用: count=\(toolCalls.count), tools=\(toolNames), model=\(response.model ?? "unknown")")
+                } else {
+                    Self.logger.info("\(Self.t)大模型返回纯文本响应 (无工具调用), model=\(response.model ?? "unknown")")
+                }
+            }
+
+            // 构建并落库 assistant 消息
+            var assistant = Message(
+                conversationID: conversationID,
+                role: .assistant,
+                content: response.content,
+                turnID: turnID,
+                providerID: response.model.flatMap { _ in nil } ?? nil,
+                modelName: response.model,
+                reasoningContent: response.reasoningContent,
+                toolCalls: response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
+                inputTokenCount: response.inputTokenCount,
+                outputTokenCount: response.outputTokenCount
+            )
+            assistant.providerID = resolvedProviderID
+            if let toolCalls = assistant.toolCalls {
+                assistant.toolCalls = toolCalls.map { toolCall in
+                    var enriched = toolCall
+                    enriched.displayDescription = toolManager.displayDescription(for: AgentLoopToolCall(
+                        id: toolCall.id,
+                        name: toolCall.name,
+                        arguments: toolCall.arguments
+                    ))
+                    return enriched
+                }
+            }
+            messages.insertMessage(assistant, to: conversationID)
+            streaming.end(conversationID: conversationID)
+
+            return .success(response, assistantMessageID: assistant.id)
+
+        } catch {
+            streaming.end(conversationID: conversationID)
+            await appendError(in: conversationID, error: error, turnID: turnID)
+            return .failure(reason: String(describing: error))
+        }
+    }
+}
 
 // MARK: - Tool Execution
 
 extension AgentLoopProvider {
-    /// 授权边界：`chat` 拒绝工具、`autonomous` 直接执行、`build` 高风险需确认。
+    /// 工具执行结果（本地枚举，区别于 AgentToolKit.ToolCallResult）。
+    enum AgentLoopToolCallResult {
+        case completed(MessageToolResult)
+        case needsApproval(AgentLoopSuspension)
+        case needsUserInput(AgentLoopSuspension)
+    }
+
+    /// 执行一次工具调用，返回结果或挂起点。
+    func performToolCall(
+        _ toolCall: MessageToolCall,
+        conversationID: UUID,
+        turnID: UUID
+    ) async -> AgentLoopToolCallResult {
+        insertStatusMessage(
+            conversationID: conversationID,
+            content: String(
+                localized: "status.executing-tool",
+                defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
+            )
+        )
+
+        let result = await executeToolCall(toolCall, conversationID: conversationID, turnID: turnID)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)工具执行结果: tool=\(toolCall.name), awaitingUserResponse=\(result.awaitingUserResponse), isError=\(result.isError), contentLen=\(result.content.count)")
+        }
+
+        // 处理挂起
+        if result.awaitingUserResponse {
+            // 检查是否已有挂起点（来自工具内部）
+            if let suspension = runtimes[conversationID]?.activeSuspension, suspension.toolCallID == nil {
+                let bound = AgentLoopSuspension(
+                    suspensionID: suspension.suspensionID,
+                    conversationID: suspension.conversationID,
+                    toolCallID: toolCall.id,
+                    kind: suspension.kind,
+                    payload: suspension.payload
+                )
+                runtimes[conversationID]?.pendingSuspensions[toolCall.id] = bound
+                return .needsUserInput(bound)
+            }
+
+            // 通用交互工具（ask_user 等）
+            let generic = AgentLoopSuspension(
+                suspensionID: "userInput:\(toolCall.id)",
+                conversationID: conversationID,
+                toolCallID: toolCall.id,
+                kind: "userInput",
+                payload: result.content
+            )
+            return .needsUserInput(generic)
+        }
+
+        return .completed(result)
+    }
+
+    /// 授权边界：chat 拒绝工具、autonomous 直接执行、build 高风险需确认。
     func executeToolCall(
         _ toolCall: MessageToolCall,
         conversationID: UUID,
-        turnID: UUID?
+        turnID: UUID
     ) async -> MessageToolResult {
         let tool = AgentLoopToolCall(
             id: toolCall.id,
@@ -55,7 +226,7 @@ extension AgentLoopProvider {
             arguments: toolCall.arguments
         )
         return convertResult(
-            await toolManager.execute(tool, conversationID: conversationID, turnID: turnIDs[conversationID])
+            await toolManager.execute(tool, conversationID: conversationID, turnID: runtimes[conversationID]?.turnID)
         )
     }
 
@@ -92,7 +263,8 @@ extension AgentLoopProvider {
             kind: Self.toolApprovalSuspensionKind,
             payload: content
         )
-        suspensions[conversationID] = suspension
+        // 存储到 runtime 的 pendingSuspensions
+        runtimes[conversationID, default: TurnRuntime()].pendingSuspensions[toolCall.id] = suspension
         return MessageToolResult(
             content: content,
             isError: false,
@@ -101,8 +273,7 @@ extension AgentLoopProvider {
         )
     }
 
-    /// 把 `ToolCallResult` 转换为渲染层 `MessageToolResult`。
-    func convertResult(_ result: ToolCallResult) -> MessageToolResult {
+    func convertResult(_ result: AgentToolKit.ToolCallResult) -> MessageToolResult {
         MessageToolResult(
             content: result.content,
             duration: result.duration,
@@ -112,94 +283,6 @@ extension AgentLoopProvider {
             },
             awaitingUserResponse: result.awaitingUserResponse
         )
-    }
-}
-
-// MARK: - Incomplete Tool-Call Batch
-
-extension AgentLoopProvider {
-    /// 按顺序续跑中断的工具批次（resume 后已完成的调用跳过，下一调用可独立挂起）。
-    /// - Returns: `true` 表示批次再次因用户输入挂起。
-    func executePendingToolCalls(
-        in assistantMessage: Message,
-        conversationID: UUID
-    ) async -> Bool {
-        await executePendingToolCalls(
-            in: assistantMessage,
-            conversationID: conversationID,
-            snapshot: messages.messages(for: conversationID)
-        )
-    }
-
-    func executePendingToolCalls(
-        in assistantMessage: Message,
-        conversationID: UUID,
-        snapshot: [Message]
-    ) async -> Bool {
-        guard let toolCalls = assistantMessage.toolCalls else {
-            failedConversations.insert(conversationID)
-            return false
-        }
-
-        var completedToolCallIDs = Set(
-            snapshot.compactMap { message in
-                message.role == .tool ? message.toolCallID : nil
-            }
-        )
-
-        for toolCall in toolCalls where toolCall.result == nil && !completedToolCallIDs.contains(toolCall.id) {
-            try? Task.checkCancellation()
-            if cancelledConversations.contains(conversationID) {
-                return false
-            }
-
-            insertStatusMessage(
-                conversationID: conversationID,
-                content: String(
-                    localized: "status.executing-tool",
-                    defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
-                )
-            )
-
-            var result = await executeToolCall(toolCall, conversationID: conversationID, turnID: turnIDs[conversationID])
-            if result.awaitingUserResponse, let suspension = suspensions[conversationID],
-               suspension.toolCallID == nil {
-                let bound = AgentLoopSuspension(
-                    suspensionID: suspension.suspensionID,
-                    conversationID: suspension.conversationID,
-                    toolCallID: toolCall.id,
-                    kind: suspension.kind,
-                    payload: suspension.payload
-                )
-                suspensions[conversationID] = bound
-                result = MessageToolResult(
-                    content: result.content,
-                    isError: result.isError,
-                    awaitingUserResponse: true
-                )
-            }
-            // 通用交互工具（AskUser 等）：构造用户输入挂起点。
-            if result.awaitingUserResponse, suspensions[conversationID] == nil {
-                let generic = AgentLoopSuspension(
-                    suspensionID: "userInput:\(toolCall.id)",
-                    conversationID: conversationID,
-                    toolCallID: toolCall.id,
-                    kind: "userInput",
-                    payload: result.content
-                )
-                suspensions[conversationID] = generic
-            }
-
-            messages.updateToolCallResult(result, toolCallID: toolCall.id, assistantMessageID: assistantMessage.id, in: conversationID)
-            insertToolResultMessage(result, toolCallID: toolCall.id, conversationID: conversationID, turnID: turnIDs[conversationID])
-            completedToolCallIDs.insert(toolCall.id)
-
-            if result.awaitingUserResponse {
-                return true
-            }
-        }
-
-        return false
     }
 }
 
