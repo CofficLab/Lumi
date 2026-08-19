@@ -26,7 +26,7 @@ public final class ShowImagePlugin: SuperPlugin, SuperLog {
         description: "",
         category: .integration,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .required
     )
 
 
