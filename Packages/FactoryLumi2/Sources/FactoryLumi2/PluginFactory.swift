@@ -23,6 +23,7 @@ import PluginConversationInput
 import PluginConversationList
 import PluginConversationManager
 import PluginConversationMode
+import PluginConversationStats
 import PluginConversationNew
 import PluginConversationPendingMessage
 import PluginConversationTitle
@@ -127,6 +128,10 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationVerbosityPlugin(),
             ConversationLanguagePlugin(),
             ConversationReasoningPlugin(),
+            // 会话统计：消息计数 / 缓存命中率 / 上下文用量
+            ConversationMessageCountPlugin(),
+            ConversationCacheHitRatePlugin(),
+            ConversationContextSizePlugin(),
             ConversationTitlePlugin(),
             ConversationPendingMessagePlugin(),
             ConversationForkPlugin(),
