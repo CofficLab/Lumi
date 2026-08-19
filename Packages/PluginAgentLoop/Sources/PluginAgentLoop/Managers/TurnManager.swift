@@ -4,7 +4,12 @@ import Foundation
 import KitLLM
 import os
 import ProviderAgentLoop
+import ProviderConversation
+import ProviderLLMManager
 import ProviderMessage
+import ProviderMessageStreaming
+import ProviderToolManager
+import SuperLogKit
 
 // MARK: - ProviderMessage ↔ KitLLM 桥接
 
@@ -21,29 +26,8 @@ extension Message {
     }
 }
 
-import ProviderConversation
-import ProviderLLMManager
-import ProviderMessageStreaming
-import ProviderToolManager
-import SuperLogKit
-
 // 消除 KitLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
 private typealias ToolCall = AgentToolKit.ToolCall
-
-// MARK: - 回合运行依赖集合
-
-/// 由 `AgentLoopProvider` 注入/更新的回合运行依赖。
-///
-/// Manager 只依赖这一组 service，不反向持有 Provider（保持门面 → Manager 方向）。
-/// 新增依赖（如未来的消息准备器、工具执行器等）在此扩展字段即可。
-struct AgentLoopTurnDependencies {
-    var responder: AgentLoopResponder?
-    var llmManager: (any LLMManaging)?
-    var toolManager: (any ToolManagerProviding)?
-    var streaming: (any MessageStreamingProviding)?
-    var conversations: (any ConversationManaging)?
-    var eventHandler: AgentLoopEventHandler?
-}
 
 // MARK: - 回合运行管理器
 
@@ -62,13 +46,13 @@ struct AgentLoopTurnDependencies {
 /// 4. 工具结果以 `.tool` 消息落库，带回 LLM 继续下一轮；
 /// 5. 直到 LLM 输出无工具调用的最终响应，回合完成。
 @MainActor
-final class AgentLoopTurnManager: SuperLog {
+final class TurnManager: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-loop")
     nonisolated static let emoji = "🔄"
     static let verbose = true
 
     private let messages: any MessageManaging
-    private var dependencies: AgentLoopTurnDependencies
+    private var dependencies: AgentLoopDependencies
 
     /// 状态变更回调：宿主（AgentLoopProvider）据此递增 `revision`。
     var onRevisionChange: (() -> Void)?
@@ -87,7 +71,7 @@ final class AgentLoopTurnManager: SuperLog {
 
     private static let toolApprovalSuspensionKind = "toolApproval"
 
-    init(messages: any MessageManaging, dependencies: AgentLoopTurnDependencies = AgentLoopTurnDependencies()) {
+    init(messages: any MessageManaging, dependencies: AgentLoopDependencies = AgentLoopDependencies()) {
         self.messages = messages
         self.dependencies = dependencies
     }
@@ -359,10 +343,12 @@ final class AgentLoopTurnManager: SuperLog {
 
             // 会话设置是事实来源：automationLevel 决定是否附带工具。
             let automationLevel = dependencies.conversations?.automationLevel(for: conversationID) ?? .build
-            let tools = automationLevel.allowsTools ? (dependencies.toolManager?.allTools() ?? []) : []
+            let toolManagerAvailable = dependencies.toolManager != nil
+            let rawTools = toolManagerAvailable ? dependencies.toolManager!.allTools() : []
+            let tools = automationLevel.allowsTools ? rawTools : []
             if Self.verbose {
                 let firstFive = tools.prefix(5).map(\.name)
-                Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)")
+                Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)，toolManager=\(toolManagerAvailable)，automationLevel=\(automationLevel.rawValue)，rawCount=\(rawTools.count)")
             }
             let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
                 let language = languagePreference(for: conversationID)

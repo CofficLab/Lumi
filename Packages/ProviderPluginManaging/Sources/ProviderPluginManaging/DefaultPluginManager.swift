@@ -93,6 +93,17 @@ public final class DefaultPluginManager: PluginManaging {
         notifyObservers(.listChanged)
     }
 
+    // MARK: - Plugin Filtering
+
+    public func enabledPlugins(from candidates: [any SuperPlugin]) -> [any SuperPlugin] {
+        candidates.filter { plugin in
+            // 不可配置的插件（required / alwaysOn）始终保留。
+            guard plugin.metadata.policy.isConfigurable else { return true }
+            // 可配置插件：查询用户持久化的启用状态。
+            return isEnabled(id: plugin.id)
+        }
+    }
+
     // MARK: - Plugin Observation
 
     @discardableResult

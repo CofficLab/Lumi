@@ -63,6 +63,16 @@ public protocol PluginManaging: PluginControlling {
     /// `PluginManagingError.pluginNotFound`。
     func reloadPlugin(id: String) throws
 
+    /// 从候选插件列表中过滤出应当启动的插件。
+    ///
+    /// 不可配置的插件（`required` / `alwaysOn`）始终保留；可配置插件
+    /// 根据用户持久化的启用状态决定是否保留。`KernelFactory` 在调用
+    /// `kernel.start(plugins:)` 前通过此方法过滤，避免启动用户已禁用的插件。
+    ///
+    /// - Parameter candidates: 插件工厂产出的全部候选插件。
+    /// - Returns: 应当启动的插件子集（保持原始顺序）。
+    func enabledPlugins(from candidates: [any SuperPlugin]) -> [any SuperPlugin]
+
     // MARK: - Plugin Observation
 
     /// 注册一个观察者：当插件系统发生变更（列表变化、启用状态变化等）时，
