@@ -1,5 +1,4 @@
 import Foundation
-import KernelCore
 
 /// 插件启用状态的持久化实现：写入旧版 `PluginManagerPlugin` 的同一数据目录。
 ///
@@ -9,12 +8,8 @@ import KernelCore
 /// - 文件格式：binary plist，`[String: Bool]`。
 /// - 迁移：首次初始化且文件为空时，从旧版内核持有的 UserDefaults key
 ///   `com.coffic.lumi.pluginEnabledOverrides` 迁移，成功后清除该 key。
-///
-/// 实现 `PluginStatePersisting`（KernelCore 契约），使内核的
-/// `persistEnabledState` / `storedEnabledState` 直接读写本目录，保证运行时
-/// 启停与新架构内核生命周期（`enablePlugin` / `disablePlugin`）原样持久化。
 @MainActor
-public final class PluginEnabledStateStore: PluginStatePersisting {
+public final class PluginEnabledStateStore {
     private static let filename = "plugin-enabled-overrides.plist"
     private static let legacyDefaultsKey = "com.coffic.lumi.pluginEnabledOverrides"
 
@@ -35,7 +30,7 @@ public final class PluginEnabledStateStore: PluginStatePersisting {
         }
     }
 
-    // MARK: - PluginStatePersisting
+    // MARK: - State Access
 
     public func enabledState(pluginID: String) -> Bool? {
         overrides[pluginID]
