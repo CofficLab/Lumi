@@ -156,6 +156,28 @@ extension AgentLoopProvider {
 
 extension AgentLoopProvider {
     private func executeTurnLoop(conversationID: UUID, turnID: UUID) async -> AgentLoopOutcome {
+        // 以下计算在整个回合中不变，提取到循环外避免重复计算
+        let automationLevel = conversations.automationLevel(for: conversationID)
+        let rawTools = toolManager.allTools()
+        let tools = automationLevel.allowsTools ? rawTools : []
+        if Self.verbose {
+            let firstFive = tools.prefix(5).map(\.name)
+            Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)，automationLevel=\(automationLevel.rawValue)，rawCount=\(rawTools.count)")
+        }
+        let language = languagePreference(for: conversationID)
+        let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
+            LLMFunctionSchema(
+                name: tool.name,
+                description: tool.description(for: language),
+                parameters: tool.inputSchema(for: language)
+            )
+        }
+        let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
+            .flatMap { $0.rawValue }
+        let modelName = conversations.modelName(for: conversationID)
+        let resolvedProviderID = resolvedProviderID(for: conversationID)
+        let streamingManager = llmManager as? any LLMStreamingProviding
+
         while !cancelledConversations.contains(conversationID) {
             try? Task.checkCancellation()
 
@@ -178,30 +200,6 @@ extension AgentLoopProvider {
                 continue
             }
 
-            // 会话设置是事实来源：automationLevel 决定是否附带工具。
-            let automationLevel = conversations.automationLevel(for: conversationID)
-            let rawTools = toolManager.allTools()
-            let tools = automationLevel.allowsTools ? rawTools : []
-            if Self.verbose {
-                let firstFive = tools.prefix(5).map(\.name)
-                Self.logger.info("\(Self.t)加载 AgentTool 数量: \(tools.count)，前5个: \(firstFive)，automationLevel=\(automationLevel.rawValue)，rawCount=\(rawTools.count)")
-            }
-            let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
-                let language = languagePreference(for: conversationID)
-                return LLMFunctionSchema(
-                    name: tool.name,
-                    description: tool.description(for: language),
-                    parameters: tool.inputSchema(for: language)
-                )
-            }
-            let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
-                .flatMap { $0.rawValue }
-
-            // LLM 请求前的消息准备钩子：
-            // 详细度 / 语言 / 自动化级别等插件按注册顺序串行修改消息历史，
-            // 注入 system 指令（不落库，仅本次请求生效）。
-            let preparedHistory = history
-
             insertStatusMessage(
                 conversationID: conversationID,
                 content: String(localized: "status.thinking", defaultValue: "正在思考…")
@@ -209,8 +207,8 @@ extension AgentLoopProvider {
 
             let request = LLMRequest(
                 conversationID: conversationID,
-                messages: preparedHistory.map(\.llmMessage),
-                model: conversations.modelName(for: conversationID),
+                messages: history.map(\.llmMessage),
+                model: modelName,
                 tools: schemas.isEmpty ? nil : schemas,
                 reasoningEffort: reasoningEffort
             )
@@ -219,7 +217,7 @@ extension AgentLoopProvider {
 
             let response: LLMResponse
             do {
-                guard let streamingManager = llmManager as? any LLMStreamingProviding else {
+                guard let streamingManager else {
                     streaming.end(conversationID: conversationID)
                     let error = AgentLoopError.unsupportedStreaming
                     await appendError(in: conversationID, error: error, turnID: turnID)
@@ -271,7 +269,7 @@ extension AgentLoopProvider {
                 inputTokenCount: response.inputTokenCount,
                 outputTokenCount: response.outputTokenCount
             )
-            assistant.providerID = resolvedProviderID(for: conversationID)
+            assistant.providerID = resolvedProviderID
             if let toolCalls = assistant.toolCalls {
                 assistant.toolCalls = toolCalls.map { toolCall in
                     var enriched = toolCall

@@ -6,21 +6,6 @@ import ProviderMessage
 import SuperLogKit
 
 /// Message Manager Service
-///
-/// 复刻自旧版 `MessageManagerPlugin` 的 `MessageManager`，适配新版 KernelCore 体系：
-/// - 去掉 `KernelLumi` 依赖，改用注入的 `ConversationManaging`（markConversationActive）
-///   与 `MessageStore`（SwiftData 持久化）；
-/// - 变更通知由 `objectWillChange`（@Published 兼容 ObservableObject 协议）驱动，
-///   消费方（PluginMessageList 等）订阅 `MessageManaging.objectWillChange`；
-/// - user 消息落盘后额外发旧 `.lumiMessageSaved` 通知名，兼容尚未迁移的消费者。
-///
-/// **Write-behind + read-your-writes（参考 ChatGPT 策略）**:
-/// `insertMessage` 把消息先写入内存 `pendingMessages` 并立即通知 UI —— UI 这一刻
-/// 就能从读路径看到它，不等落盘。落盘按 role 分流:
-/// - user / error:立即同步落盘(用户输入与错误不可丢);
-/// - assistant / tool:后台串行落盘(丢了可重发/重算,不阻塞 UI)。
-/// 读路径会合并磁盘结果与 `pendingMessages`(read-your-writes),所以即便某条
-/// assistant 消息还没落盘,UI 也照常显示。
 @MainActor
 public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     public nonisolated static let emoji = "💬"
