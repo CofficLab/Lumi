@@ -22,7 +22,7 @@ public final class MindMapDesignerPlugin: SuperPlugin {
         description: "",
         category: .design,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public static let railTabID = "mind-map.documents"

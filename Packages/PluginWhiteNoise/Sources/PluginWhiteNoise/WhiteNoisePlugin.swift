@@ -23,7 +23,7 @@ public final class WhiteNoisePlugin: SuperPlugin {
         description: "白噪音播放插件，提供白噪音主内容视图与说明书文档。",
         category: .general,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public init() {}

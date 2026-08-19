@@ -27,7 +27,7 @@ public final class DevicePlugin: SuperPlugin {
         description: "",
         category: .system,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public init() {}

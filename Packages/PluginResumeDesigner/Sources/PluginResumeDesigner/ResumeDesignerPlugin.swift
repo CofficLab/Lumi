@@ -22,7 +22,7 @@ public final class ResumeDesignerPlugin: SuperPlugin {
         description: "",
         category: .design,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     /// 本插件 rail 面板的稳定标识（注册为 `RailTabItem.id`）。

@@ -24,7 +24,7 @@ public final class VideoConverterPlugin: SuperPlugin {
         description: "视频格式转换插件，提供视频转换主内容视图与说明书文档。",
         category: .general,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public init() {}

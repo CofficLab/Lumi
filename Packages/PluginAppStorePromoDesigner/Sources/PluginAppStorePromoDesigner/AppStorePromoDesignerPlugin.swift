@@ -21,7 +21,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
         description: "",
         category: .design,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public static let railTabID = "app-store-promo.tasks"

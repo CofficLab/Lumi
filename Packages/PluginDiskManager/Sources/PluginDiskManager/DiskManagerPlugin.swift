@@ -33,7 +33,7 @@ public final class DiskManagerPlugin: SuperPlugin {
         description: "",
         category: .system,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     /// 本插件 rail 面板的稳定标识（注册为 `RailTabItem.id`）。

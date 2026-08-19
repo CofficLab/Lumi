@@ -18,7 +18,7 @@ public final class AppIconDesignerPlugin: SuperPlugin {
         description: "",
         category: .design,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public static let railTabID = "app-icon-designer.documents"

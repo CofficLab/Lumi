@@ -26,7 +26,7 @@ public final class HostsManagerPlugin: SuperPlugin {
         description: "",
         category: .system,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.hosts-manager")
