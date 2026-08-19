@@ -17,7 +17,7 @@ import SuperLogKit
 public final class CustomLLMManager: LLMManaging, @preconcurrency LLMProviding, LLMStreamingProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-manager", category: "CustomLLMManager")
     public nonisolated static let emoji = "🧭"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     /// 内部引擎：注册表 + 选中持久化 + 默认路由（`DefaultLLMManager`）。
     private let engine: DefaultLLMManager
