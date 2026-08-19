@@ -1,16 +1,7 @@
 import AgentToolKit
 import Foundation
 
-/// Agent 工具管理与执行能力（KernelCore 体系）。
-///
-/// 复刻自旧内核（KernelLumi）的 `ToolManaging`，供精简宿主（LumiMinimalApp 等）
-/// 在 KernelCore 容器中以 Provider 形式使用。与旧版不同，本协议基于
-/// `AgentToolKit` 的类型（`SuperAgentTool` / `ToolCall` / `ToolCallResult` /
-/// `ToolArgument` / `CommandRiskLevel`），不依赖任何 KernelLumi 类型。
-///
-/// 合并了两类职责：
-/// - 工具注册（插件通过 `add(_:pluginID:)` 贡献工具）
-/// - 工具执行（Agent 循环通过 `execute(_:conversationID:turnID:)` 调用）
+/// Agent 工具管理与执行能力。
 @MainActor
 public protocol ToolManagerProviding: AnyObject {
     // MARK: - Registration（插件调用）

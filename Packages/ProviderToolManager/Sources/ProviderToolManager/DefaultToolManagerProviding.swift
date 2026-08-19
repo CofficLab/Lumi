@@ -2,16 +2,7 @@ import AgentToolKit
 import Combine
 import Foundation
 
-/// `ToolManagerProviding` 的默认实现（KernelCore 体系）。
-///
-/// 复刻自旧内核 `ToolManagerPlugin` 的 `ToolManagerService`：
-/// - 工具注册表（按插件分组、保持注册顺序）
-/// - 风险等级评估与面向用户的展示描述
-/// - 工具执行（含结果缓存与调用记录）
-/// - 记录持久化（接入 `ToolCallRecordStore`）
-///
-/// 与旧实现的差异：不依赖 `KernelLumi` 类型与 `kernel` 引用；
-/// 工具执行上下文（取消、路径白名单）由 Agent 循环侧负责，不在本服务内维护。
+/// `ToolManagerProviding` 的默认实现。
 @MainActor
 public final class DefaultToolManagerProviding: ToolManagerProviding, ObservableObject {
 
