@@ -3,6 +3,7 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderNetwork
+import ProviderPluginManaging
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
@@ -74,5 +75,126 @@ struct DefaultFactoryTests {
     @Test("DefaultPluginFactory 产出空插件列表")
     func defaultPluginsEmpty() {
         #expect(DefaultPluginFactory().makePlugins().isEmpty)
+    }
+}
+
+// MARK: - PluginManaging Filtering Tests
+
+/// 用于测试的 mock PluginManaging：可指定哪些插件 ID 应当被过滤掉。
+@MainActor
+private final class MockPluginManaging: PluginManaging {
+    var disabledIDs: Set<String>
+
+    init(disabledIDs: Set<String> = []) {
+        self.disabledIDs = disabledIDs
+    }
+
+    // MARK: - PluginControlling
+
+    var lastErrorDescription: String?
+
+    func enablePlugin(id: String) async -> Bool {
+        disabledIDs.remove(id)
+        return true
+    }
+
+    func disablePlugin(id: String) async -> Bool {
+        disabledIDs.insert(id)
+        return true
+    }
+
+    func isEnabled(id: String) -> Bool {
+        !disabledIDs.contains(id)
+    }
+
+    // MARK: - PluginManaging
+
+    var allPlugins: [any SuperPlugin] { [] }
+    var configurablePlugins: [any SuperPlugin] { [] }
+    var pluginCount: Int { 0 }
+    var enabledCount: Int { 0 }
+
+    func plugin(id: String) -> (any SuperPlugin)? { nil }
+    func isRegistered(id: String) -> Bool { false }
+    func unloadPlugin(id: String) throws {}
+    func reloadPlugin(id: String) throws {}
+
+    func enabledPlugins(from candidates: [any SuperPlugin]) -> [any SuperPlugin] {
+        candidates.filter { plugin in
+            guard plugin.metadata.policy.isConfigurable else { return true }
+            return isEnabled(id: plugin.id)
+        }
+    }
+
+    @discardableResult
+    func addPluginObserver(_ callback: @escaping (PluginManagingEvent) -> Void) -> any PluginManagingObserverHandle {
+        MockObserverHandle()
+    }
+}
+
+@MainActor
+private final class MockObserverHandle: PluginManagingObserverHandle {
+    func cancel() {}
+}
+
+/// 用于测试的 mock 插件。
+@MainActor
+private final class MockPlugin: SuperPlugin {
+    let id: String
+    let metadata: PluginMetadata
+
+    init(id: String, policy: PluginEnablePolicy = .enabledByDefault) {
+        self.id = id
+        self.metadata = PluginMetadata(id: id, policy: policy)
+    }
+}
+
+@Suite("PluginManaging Filtering")
+@MainActor
+struct PluginManagingFilteringTests {
+
+    @Test("enabledPlugins 保留不可配置插件（required）")
+    func keepsRequiredPlugins() {
+        let manager = MockPluginManaging(disabledIDs: ["required-plugin"])
+        let required = MockPlugin(id: "required-plugin", policy: .required)
+        let result = manager.enabledPlugins(from: [required])
+        #expect(result.count == 1)
+        #expect(result.first?.id == "required-plugin")
+    }
+
+    @Test("enabledPlugins 保留不可配置插件（alwaysOn）")
+    func keepsAlwaysOnPlugins() {
+        let manager = MockPluginManaging(disabledIDs: ["always-on-plugin"])
+        let alwaysOn = MockPlugin(id: "always-on-plugin", policy: .alwaysOn)
+        let result = manager.enabledPlugins(from: [alwaysOn])
+        #expect(result.count == 1)
+        #expect(result.first?.id == "always-on-plugin")
+    }
+
+    @Test("enabledPlugins 过滤掉用户禁用的可配置插件")
+    func filtersDisabledConfigurablePlugins() {
+        let manager = MockPluginManaging(disabledIDs: ["disabled-plugin"])
+        let enabled = MockPlugin(id: "enabled-plugin", policy: .enabledByDefault)
+        let disabled = MockPlugin(id: "disabled-plugin", policy: .enabledByDefault)
+        let result = manager.enabledPlugins(from: [enabled, disabled])
+        #expect(result.count == 1)
+        #expect(result.first?.id == "enabled-plugin")
+    }
+
+    @Test("enabledPlugins 保持原始顺序")
+    func preservesOrder() {
+        let manager = MockPluginManaging(disabledIDs: [])
+        let a = MockPlugin(id: "a", policy: .enabledByDefault)
+        let b = MockPlugin(id: "b", policy: .enabledByDefault)
+        let c = MockPlugin(id: "c", policy: .enabledByDefault)
+        let result = manager.enabledPlugins(from: [a, b, c])
+        #expect(result.map(\.id) == ["a", "b", "c"])
+    }
+
+    @Test("enabledPlugins 空列表返回空")
+    func emptyCandidatesReturnsEmpty() {
+        let manager = MockPluginManaging()
+        let result = manager.enabledPlugins(from: [])
+        #expect(result.isEmpty)
     }
 }

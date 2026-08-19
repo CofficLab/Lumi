@@ -4,6 +4,7 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderNetwork
+import ProviderPluginManaging
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
@@ -34,13 +35,22 @@ public enum KernelFactory {
     /// - `RailViewProviding` → `DefaultRailViewProviding`（侧边栏标签 + 内容）
     /// - `SettingViewProviding` → `DefaultSettingViewProviding`（入口 + 详情）
     ///
+    /// 插件启动前通过 `pluginManaging` 过滤：只有用户启用的插件才会被启动，
+    /// 被用户禁用的插件不会注册到内核。
+    ///
+    /// - Parameter pluginManaging: 插件管理器，用于判断哪些插件应当启动。
+    ///   默认使用 `DefaultPluginManager()`（无持久化状态时所有可配置插件按默认策略启动）。
     /// - Returns: 已装配默认 Provider 的 KernelCore 容器。
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
-    public static func makeKernel() throws -> KernelCoreContainer {
+    public static func makeKernel(
+        pluginManaging: any PluginManaging = DefaultPluginManager()
+    ) throws -> KernelCoreContainer {
         let kernel = KernelCoreContainer()
         try DefaultProviderFactory().registerProviders(into: kernel)
-        // 启动插件（由 DefaultPluginFactory 产出）：注册各自的贡献。
-        try kernel.start(plugins: DefaultPluginFactory().makePlugins())
+        // 从插件工厂拿到全部插件，通过 PluginManaging 过滤出用户启用的，再注册到内核。
+        let allPlugins = DefaultPluginFactory().makePlugins()
+        let enabledPlugins = pluginManaging.enabledPlugins(from: allPlugins)
+        try kernel.start(plugins: enabledPlugins)
         return kernel
     }
 
