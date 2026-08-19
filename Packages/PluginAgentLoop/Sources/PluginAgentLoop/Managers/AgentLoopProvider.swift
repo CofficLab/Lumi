@@ -66,10 +66,6 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
         return state
     }
 
-    public func isRunning(for conversationID: UUID) -> Bool {
-        tasks[conversationID] != nil || states[conversationID] == .running
-    }
-
     public func suspension(for conversationID: UUID) -> AgentLoopSuspension? {
         suspensions[conversationID]
     }
