@@ -35,7 +35,10 @@ public final class DeepSeekProviderPlugin: SuperPlugin, SuperLog {
         }
         let networkProvider = kernel.resolveProvider((any LLMNetworkProviding).self)
         let apiService = VendorAPIService(networkProvider: networkProvider)
-        let providers: [any SuperLLMProvider] = [DeepSeekProvider(apiService: apiService), DeepSeekAnthropicProvider(apiService: apiService)]
+        let providers: [any SuperLLMProvider] = [
+            DeepSeekProvider(apiService: apiService),
+//            DeepSeekAnthropicProvider(apiService: apiService),
+        ]
         for provider in providers {
             if Self.verbose {
                 let typeName = String(describing: type(of: provider))
