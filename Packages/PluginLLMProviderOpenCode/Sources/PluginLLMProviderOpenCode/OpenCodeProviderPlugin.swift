@@ -33,7 +33,8 @@ public final class OpenCodeProviderPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve LLMProviderManagerProviding from kernel\(self.r("manager is nil"))")
             return
         }
-        let apiService = VendorAPIService()
+        let networkProvider = kernel.resolveProvider((any LLMNetworkProviding).self)
+        let apiService = VendorAPIService(networkProvider: networkProvider)
         let providers: [any SuperLLMProvider] = [
             GoProvider(apiService: apiService),
             ZenProvider(apiService: apiService)

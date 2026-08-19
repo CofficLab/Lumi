@@ -33,7 +33,9 @@ public final class ZhipuProviderPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve LLMProviderManagerProviding from kernel\(self.r("manager is nil"))")
             return
         }
-        let providers: [any SuperLLMProvider] = [ZhipuProvider(), ZhipuCodingPlanProvider()]
+        let networkProvider = kernel.resolveProvider((any LLMNetworkProviding).self)
+        let apiService = VendorAPIService(networkProvider: networkProvider)
+        let providers: [any SuperLLMProvider] = [ZhipuProvider(apiService: apiService), ZhipuCodingPlanProvider(apiService: apiService)]
         for provider in providers {
             if Self.verbose {
                 let typeName = String(describing: type(of: provider))
