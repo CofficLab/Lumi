@@ -193,7 +193,7 @@ extension AgentLoopProvider {
                 }
 
             case .executingTools(let tid, let assistantID, let pending):
-                guard let nextTool = pending.first else {
+                guard !pending.isEmpty else {
                     // 不应到达这里（reducer 应在 pending 为空时转到 requestingLLM）
                     let (updated, _) = TurnReducer.reduce(runtime, event: .llmResponded(
                         response: LLMResponse(content: "", model: nil, toolCalls: nil),
@@ -203,22 +203,41 @@ extension AgentLoopProvider {
                     continue
                 }
 
-                let result = await performToolCall(nextTool, conversationID: conversationID, turnID: tid)
+                // 批量执行所有工具
+                let batchResult = await performToolBatch(pending, conversationID: conversationID, turnID: tid)
                 var rt = runtimes[conversationID] ?? TurnRuntime()
-                let event: TurnEvent
-                switch result {
-                case .completed(let toolResult):
-                    event = .toolCallCompleted(toolCallID: nextTool.id, result: toolResult)
-                case .needsApproval(let suspension):
-                    event = .toolNeedsApproval(toolCallID: nextTool.id, suspension: suspension)
-                case .needsUserInput(let suspension):
-                    event = .toolNeedsUserInput(toolCallID: nextTool.id, suspension: suspension)
+
+                switch batchResult {
+                case .allCompleted(let results):
+                    // 所有工具执行完成，插入结果消息并派发事件
+                    for (toolCallID, result) in results {
+                        insertToolResultMessage(result, toolCallID: toolCallID, conversationID: conversationID, turnID: tid)
+                        let (updated, outcome) = TurnReducer.reduce(rt, event: .toolCallCompleted(toolCallID: toolCallID, result: result))
+                        rt = updated
+                        runtimes[conversationID] = rt
+                        if let o = outcome { return o }
+                    }
+
+                case .suspended(let suspension, let completedResults):
+                    // 先插入已完成的结果
+                    for (toolCallID, result) in completedResults {
+                        insertToolResultMessage(result, toolCallID: toolCallID, conversationID: conversationID, turnID: tid)
+                        let (updated, _) = TurnReducer.reduce(rt, event: .toolCallCompleted(toolCallID: toolCallID, result: result))
+                        rt = updated
+                        runtimes[conversationID] = rt
+                    }
+                    // 然后派发挂起事件
+                    let event: TurnEvent
+                    if suspension.kind == Self.toolApprovalSuspensionKind {
+                        event = .toolNeedsApproval(toolCallID: suspension.toolCallID ?? "", suspension: suspension)
+                    } else {
+                        event = .toolNeedsUserInput(toolCallID: suspension.toolCallID ?? "", suspension: suspension)
+                    }
+                    let (updated, outcome) = TurnReducer.reduce(rt, event: event)
+                    rt = updated
+                    runtimes[conversationID] = rt
+                    if let o = outcome { return o }
                 }
-                let (updated, outcome) = TurnReducer.reduce(rt, event: event)
-                rt = updated
-                runtimes[conversationID] = rt
-                if let o = outcome { return o }
-                // 继续循环，下一个 phase 是 requestingLLM 或继续 executingTools
 
             case .awaitingUser:
                 // 挂起状态，返回 suspended outcome

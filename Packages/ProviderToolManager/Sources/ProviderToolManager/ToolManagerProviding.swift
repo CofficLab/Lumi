@@ -39,6 +39,24 @@ public protocol ToolManagerProviding: AnyObject {
         turnID: UUID?
     ) async -> ToolCallResult
 
+    /// 批量执行工具调用，内部处理授权判断。
+    ///
+    /// 按顺序逐个执行，根据 `policy` 决定每个工具是直接执行、拒绝还是标记为需要审批。
+    /// 返回与输入 `toolCalls` 等长的 `[BatchToolResult]`，位置一一对应。
+    ///
+    /// - Parameters:
+    ///   - toolCalls: 待执行的工具调用列表
+    ///   - policy: 执行策略（由调用方从会话 automationLevel 映射）
+    ///   - conversationID: 会话 ID
+    ///   - turnID: 回合 ID（用于调用记录）
+    /// - Returns: 与 `toolCalls` 等长的结果数组
+    func executeBatch(
+        _ toolCalls: [ToolCall],
+        policy: ToolExecutionPolicy,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> [BatchToolResult]
+
     // MARK: - Records（调用记录）
 
     /// 查询某个 AgentTurn 下全部已持久化的工具调用。
@@ -76,5 +94,38 @@ public extension ToolManagerProviding {
     /// 向后兼容的执行入口：不携带 turnID。
     func execute(_ toolCall: ToolCall, conversationID: UUID) async -> ToolCallResult {
         await execute(toolCall, conversationID: conversationID, turnID: nil)
+    }
+
+    /// 批量执行的默认实现：逐个调用 `execute`，根据 policy 做授权判断。
+    func executeBatch(
+        _ toolCalls: [ToolCall],
+        policy: ToolExecutionPolicy,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> [BatchToolResult] {
+        var results: [BatchToolResult] = []
+        results.reserveCapacity(toolCalls.count)
+
+        for toolCall in toolCalls {
+            switch policy {
+            case .blockAll:
+                results.append(.blocked(reason: "Tool execution was blocked because this conversation is in Chat mode."))
+
+            case .autoExecute:
+                let result = await execute(toolCall, conversationID: conversationID, turnID: turnID)
+                results.append(.executed(result))
+
+            case .requireApprovalForHighRisk:
+                let riskLevel = self.riskLevel(for: toolCall) ?? .high
+                if riskLevel.requiresPermission {
+                    results.append(.needsApproval(riskLevel: riskLevel))
+                } else {
+                    let result = await execute(toolCall, conversationID: conversationID, turnID: turnID)
+                    results.append(.executed(result))
+                }
+            }
+        }
+
+        return results
     }
 }

@@ -75,6 +75,15 @@ public final class ToolManagerService: ToolManagerProviding, ObservableObject {
         await engine.execute(toolCall, conversationID: conversationID, turnID: turnID)
     }
 
+    public func executeBatch(
+        _ toolCalls: [ToolCall],
+        policy: ToolExecutionPolicy,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> [BatchToolResult] {
+        await engine.executeBatch(toolCalls, policy: policy, conversationID: conversationID, turnID: turnID)
+    }
+
     // MARK: - ToolManagerProviding: Records
 
     public func toolCalls(for turnID: UUID) async -> [ToolCallRecord] {

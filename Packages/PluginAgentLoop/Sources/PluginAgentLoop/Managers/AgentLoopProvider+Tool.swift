@@ -126,60 +126,135 @@ extension AgentLoopProvider {
 // MARK: - Tool Execution
 
 extension AgentLoopProvider {
-    /// 工具执行结果（本地枚举，区别于 AgentToolKit.ToolCallResult）。
-    enum AgentLoopToolCallResult {
-        case completed(MessageToolResult)
-        case needsApproval(AgentLoopSuspension)
-        case needsUserInput(AgentLoopSuspension)
+    /// 工具批次执行结果。
+    enum AgentLoopBatchResult {
+        /// 所有工具执行完成，结果已落库。
+        case allCompleted(results: [(toolCallID: String, result: MessageToolResult)])
+        /// 某个工具需要用户响应（审批或输入），已挂起。
+        case suspended(suspension: AgentLoopSuspension, completedResults: [(toolCallID: String, result: MessageToolResult)])
     }
 
-    /// 执行一次工具调用，返回结果或挂起点。
-    func performToolCall(
-        _ toolCall: MessageToolCall,
+    /// 批量执行工具调用，内部处理授权判断和挂起。
+    ///
+    /// 调用 `toolManager.executeBatch`，根据策略执行或拒绝工具。
+    /// 如果遇到需要审批或用户输入的工具，立即挂起并返回。
+    func performToolBatch(
+        _ toolCalls: [MessageToolCall],
         conversationID: UUID,
         turnID: UUID
-    ) async -> AgentLoopToolCallResult {
-        insertStatusMessage(
-            conversationID: conversationID,
-            content: String(
-                localized: "status.executing-tool",
-                defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
-            )
-        )
-
-        let result = await executeToolCall(toolCall, conversationID: conversationID, turnID: turnID)
+    ) async -> AgentLoopBatchResult {
+        // 映射 automationLevel → ToolExecutionPolicy
+        let automationLevel = conversations.automationLevel(for: conversationID)
+        let policy: ToolExecutionPolicy
+        switch automationLevel {
+        case .chat: policy = .blockAll
+        case .autonomous: policy = .autoExecute
+        case .build: policy = .requireApprovalForHighRisk
+        }
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)工具执行结果: tool=\(toolCall.name), awaitingUserResponse=\(result.awaitingUserResponse), isError=\(result.isError), contentLen=\(result.content.count)")
+            Self.logger.info("\(Self.t)批量执行工具: count=\(toolCalls.count), automationLevel=\(automationLevel.rawValue), policy=\(policy)")
         }
 
-        // 处理挂起
-        if result.awaitingUserResponse {
-            // 检查是否已有挂起点（来自工具内部）
-            if let suspension = runtimes[conversationID]?.activeSuspension, suspension.toolCallID == nil {
-                let bound = AgentLoopSuspension(
-                    suspensionID: suspension.suspensionID,
-                    conversationID: suspension.conversationID,
-                    toolCallID: toolCall.id,
-                    kind: suspension.kind,
-                    payload: suspension.payload
+        // 转换为 ToolCall
+        let toolCallInputs = toolCalls.map { tc in
+            AgentLoopToolCall(id: tc.id, name: tc.name, arguments: tc.arguments)
+        }
+
+        // 调用 executeBatch
+        let batchResults = await toolManager.executeBatch(
+            toolCallInputs,
+            policy: policy,
+            conversationID: conversationID,
+            turnID: turnID
+        )
+
+        // 处理结果
+        var completedResults: [(toolCallID: String, result: MessageToolResult)] = []
+
+        for (toolCall, batchResult) in zip(toolCalls, batchResults) {
+            switch batchResult {
+            case .executed(let toolResult):
+                let result = convertResult(toolResult)
+                // 插入 status 消息
+                insertStatusMessage(
+                    conversationID: conversationID,
+                    content: String(
+                        localized: "status.executing-tool",
+                        defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
+                    )
                 )
-                runtimes[conversationID]?.pendingSuspensions[toolCall.id] = bound
-                return .needsUserInput(bound)
-            }
+                // 检查是否需要挂起（ask_user 等工具）
+                if result.awaitingUserResponse {
+                    let suspension = AgentLoopSuspension(
+                        suspensionID: "userInput:\(toolCall.id)",
+                        conversationID: conversationID,
+                        toolCallID: toolCall.id,
+                        kind: "userInput",
+                        payload: result.content
+                    )
+                    return .suspended(suspension: suspension, completedResults: completedResults)
+                }
+                completedResults.append((toolCall.id, result))
 
-            // 通用交互工具（ask_user 等）
-            let generic = AgentLoopSuspension(
-                suspensionID: "userInput:\(toolCall.id)",
-                conversationID: conversationID,
-                toolCallID: toolCall.id,
-                kind: "userInput",
-                payload: result.content
-            )
-            return .needsUserInput(generic)
+            case .blocked(let reason):
+                // 工具被拒绝
+                let result = MessageToolResult(content: reason, isError: true)
+                insertStatusMessage(
+                    conversationID: conversationID,
+                    content: String(
+                        localized: "status.executing-tool",
+                        defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
+                    )
+                )
+                completedResults.append((toolCall.id, result))
+
+            case .needsApproval(let riskLevel):
+                // 工具需要审批
+                insertStatusMessage(
+                    conversationID: conversationID,
+                    content: String(
+                        localized: "status.executing-tool",
+                        defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
+                    )
+                )
+                let suspension = makeToolApprovalSuspension(
+                    for: toolCall,
+                    riskLevel: riskLevel,
+                    conversationID: conversationID
+                )
+                return .suspended(suspension: suspension, completedResults: completedResults)
+            }
         }
 
-        return .completed(result)
+        return .allCompleted(results: completedResults)
+    }
+
+    /// 创建工具审批挂起点（不存储，由调用方决定如何处理）。
+    func makeToolApprovalSuspension(
+        for toolCall: MessageToolCall,
+        riskLevel: CommandRiskLevel,
+        conversationID: UUID
+    ) -> AgentLoopSuspension {
+        let suspensionID = "approval:\(toolCall.id)"
+        let operation = toolCall.displayDescription ?? toolCall.name
+        let payload = ToolApprovalPayload(
+            toolCallId: suspensionID,
+            question: "此操作被判定为\(riskLevel.displayName)，是否允许执行？\n\(operation)",
+            options: ["允许", "拒绝"],
+            mode: "yes_no",
+            conversationId: conversationID.uuidString,
+            verbosity: "standard"
+        )
+        let content = (try? String(data: JSONEncoder().encode(payload), encoding: .utf8))
+            ?? "Unable to create tool approval request."
+        return AgentLoopSuspension(
+            suspensionID: suspensionID,
+            conversationID: conversationID,
+            toolCallID: toolCall.id,
+            kind: Self.toolApprovalSuspensionKind,
+            payload: content
+        )
     }
 
     /// 授权边界：chat 拒绝工具、autonomous 直接执行、build 高风险需确认。
