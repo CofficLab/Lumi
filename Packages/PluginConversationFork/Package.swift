@@ -18,6 +18,7 @@ let package = Package(
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
         .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../LumiUI"),
         .package(path: "../LocalizationKit"),
     ],
@@ -47,6 +48,7 @@ let package = Package(
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
             ],
             path: "Tests/PluginConversationForkTests"
         ),

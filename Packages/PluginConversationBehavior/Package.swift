@@ -39,6 +39,7 @@ let package = Package(
             dependencies: [
                 "PluginConversationBehavior",
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
             ],
             path: "Tests/PluginConversationBehaviorTests"
         ),

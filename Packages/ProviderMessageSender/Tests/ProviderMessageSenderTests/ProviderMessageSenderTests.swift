@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import ProviderLifecycleHooks
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
@@ -13,7 +14,7 @@ struct ProviderMessageSenderTests {
         let conversations = DefaultConversationManager()
         let messages = DefaultMessageManager()
         let loop = StubAgentLoop(messages: messages)
-        loop.setResponder { _ in "response" }
+        loop.responseContent = "response"
         let sender = DefaultMessageSender(
             conversations: conversations,
             messages: messages,
@@ -31,7 +32,7 @@ struct ProviderMessageSenderTests {
         let conversations = DefaultConversationManager()
         let messages = DefaultMessageManager()
         let loop = StubAgentLoop(messages: messages)
-        loop.setResponder { _ in "ok" }
+        loop.responseContent = "ok"
         let sender = DefaultMessageSender(
             conversations: conversations,
             messages: messages,
@@ -57,10 +58,10 @@ struct ProviderMessageSenderTests {
     func queuesWhileSending() async throws {
         let conversations = DefaultConversationManager()
         let messages = DefaultMessageManager()
-        // responder 通过 continuation 控制回合时序
+        // onRunTurn 通过 continuation 控制回合时序
         let gate = Gate()
         let loop = StubAgentLoop(messages: messages)
-        loop.setResponder { _ in
+        loop.onRunTurn = { _ in
             await gate.wait()
             return "done"
         }
@@ -72,7 +73,7 @@ struct ProviderMessageSenderTests {
 
         // 第一轮发送开始（挂起在 gate）
         let first = Task { try await sender.sendMessage("first", conversationID: nil) }
-        // 等待回合真正进入 running（responder 已开始等待 gate）
+        // 等待回合真正进入 running（onRunTurn 已开始等待 gate）
         try await Task.sleep(nanoseconds: 50_000_000)
 
         // 第二轮入队
@@ -93,7 +94,7 @@ struct ProviderMessageSenderTests {
         let conversations = DefaultConversationManager()
         let messages = DefaultMessageManager()
         let loop = StubAgentLoop(messages: messages)
-        loop.setResponder { _ in "resumed" }
+        loop.responseContent = "resumed"
         let sender = DefaultMessageSender(
             conversations: conversations,
             messages: messages,
@@ -115,31 +116,21 @@ struct ProviderMessageSenderTests {
     }
 }
 
-/// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。
-///
-/// 新 `DefaultAgentLoopProvider` 完全由 LLM 驱动（responder 路径已移除），
-/// 下游测试聚焦 sender 行为而非 LLM 编排，因此用最小桩实现替代。
+/// 测试用 AgentLoop 桩：最小实现，直接返回预设内容。
 @MainActor
 private final class StubAgentLoop: AgentLoopProviding {
     private let messages: any MessageManaging
-    private var responder: AgentLoopResponder = { _ in "" }
+    var responseContent: String = ""
+    var onRunTurn: ((@MainActor (UUID) async throws -> AgentLoopOutcome))?
 
     init(messages: any MessageManaging) {
         self.messages = messages
     }
 
-    func setResponder(_ responder: AgentLoopResponder?) {
-        if let responder { self.responder = responder }
-    }
-
     func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
-        let request = AgentLoopRequest(
-            conversationID: conversationID,
-            messages: messages.messages(for: conversationID)
-        )
-        let content = try await responder(request)
+        if let onRunTurn { return try await onRunTurn(conversationID) }
         messages.insertMessage(
-            Message(conversationID: conversationID, role: .assistant, content: content),
+            Message(conversationID: conversationID, role: .assistant, content: responseContent),
             to: conversationID
         )
         return .completed
@@ -154,9 +145,11 @@ private final class StubAgentLoop: AgentLoopProviding {
     func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
     func isRunning(for conversationID: UUID) -> Bool { false }
     func currentTurnID(for conversationID: UUID) -> UUID? { nil }
+    func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
+
 }
 
-/// 测试用门闩：控制 responder 时序。
+/// 测试用门闩：控制回合时序。
 @MainActor
 private final class Gate {
     private var continuation: CheckedContinuation<Void, Never>?

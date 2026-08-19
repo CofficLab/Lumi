@@ -16,6 +16,7 @@ let package = Package(
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../LumiUI"),
         .package(path: "../LocalizationKit"),
     ],
@@ -38,6 +39,7 @@ let package = Package(
             dependencies: [
                 "PluginConversationPendingMessage",
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
             ],
             path: "Tests/PluginConversationPendingMessageTests"
         ),

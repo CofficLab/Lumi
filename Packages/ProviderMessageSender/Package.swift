@@ -11,6 +11,7 @@ let package = Package(
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../SuperLogKit"),
     ],
     targets: [

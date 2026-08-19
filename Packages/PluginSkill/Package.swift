@@ -39,6 +39,7 @@ let package = Package(
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
             ],
             path: "Tests/PluginSkillTests"
         ),

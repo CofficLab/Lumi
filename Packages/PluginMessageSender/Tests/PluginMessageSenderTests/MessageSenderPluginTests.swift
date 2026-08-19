@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import ProviderLifecycleHooks
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
@@ -52,7 +53,6 @@ struct MessageSenderPluginTests {
         let messages = DefaultMessageManager()
         try kernel.registerProvider((any MessageManaging).self, messages, forwardsObjectWillChange: false)
         let agentLoop = StubAgentLoop(messages: messages)
-        agentLoop.setResponder { _ in "response" }
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
 
         let plugin = MessageSenderPlugin()
@@ -66,28 +66,19 @@ struct MessageSenderPluginTests {
     }
 }
 
-/// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。
+/// 测试用 AgentLoop 桩：最小实现，直接返回预设内容。
 @MainActor
 private final class StubAgentLoop: AgentLoopProviding {
     private let messages: any MessageManaging
-    private var responder: AgentLoopResponder = { _ in "" }
+    var responseContent: String = "response"
 
     init(messages: any MessageManaging) {
         self.messages = messages
     }
 
-    func setResponder(_ responder: AgentLoopResponder?) {
-        if let responder { self.responder = responder }
-    }
-
     func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
-        let request = AgentLoopRequest(
-            conversationID: conversationID,
-            messages: messages.messages(for: conversationID)
-        )
-        let content = try await responder(request)
         messages.insertMessage(
-            Message(conversationID: conversationID, role: .assistant, content: content),
+            Message(conversationID: conversationID, role: .assistant, content: responseContent),
             to: conversationID
         )
         return .completed
@@ -102,4 +93,6 @@ private final class StubAgentLoop: AgentLoopProviding {
     func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
     func isRunning(for conversationID: UUID) -> Bool { false }
     func currentTurnID(for conversationID: UUID) -> UUID? { nil }
+    func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
+
 }

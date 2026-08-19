@@ -3,6 +3,7 @@ import Foundation
 import Testing
 import KernelCore
 import ProviderChatSection
+import ProviderLifecycleHooks
 import ProviderAgentLoop
 import ProviderMessage
 import ProviderProject
@@ -79,27 +80,12 @@ struct SkillPluginTests {
 @MainActor
 private final class StubAgentLoop: AgentLoopProviding {
     private let messages: any MessageManaging
-    private var responder: AgentLoopResponder = { _ in "" }
-
     init(messages: any MessageManaging) {
         self.messages = messages
     }
 
-    func setResponder(_ responder: AgentLoopResponder?) {
-        if let responder { self.responder = responder }
-    }
-
     func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
-        let request = AgentLoopRequest(
-            conversationID: conversationID,
-            messages: messages.messages(for: conversationID)
-        )
-        let content = try await responder(request)
-        messages.insertMessage(
-            Message(conversationID: conversationID, role: .assistant, content: content),
-            to: conversationID
-        )
-        return .completed
+        .completed
     }
 
     func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
@@ -111,4 +97,6 @@ private final class StubAgentLoop: AgentLoopProviding {
     func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
     func isRunning(for conversationID: UUID) -> Bool { false }
     func currentTurnID(for conversationID: UUID) -> UUID? { nil }
+    func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
+
 }
