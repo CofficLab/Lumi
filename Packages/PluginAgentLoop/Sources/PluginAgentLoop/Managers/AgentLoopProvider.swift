@@ -1,14 +1,14 @@
 import AgentToolKit
-import Foundation
 import Combine
+import Foundation
+import KitLLM
 import os
 import ProviderAgentLoop
-import ProviderMessage
-import KitLLM
-import ProviderLLMManager
-import ProviderToolManager
-import ProviderMessageStreaming
 import ProviderConversation
+import ProviderLLMManager
+import ProviderMessage
+import ProviderMessageStreaming
+import ProviderToolManager
 import SuperLogKit
 
 /// Agent 回合执行器门面（Facade）。
@@ -28,12 +28,12 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
     public nonisolated static let emoji = "🔄"
     public static let verbose = true
 
-    private let turnManager: AgentLoopTurnManager
+    private let turnManager: TurnManager
 
     @Published public internal(set) var revision: Int = 0
 
     public init(messages: any MessageManaging) {
-        self.turnManager = AgentLoopTurnManager(messages: messages)
+        self.turnManager = TurnManager(messages: messages)
         self.turnManager.onRevisionChange = { [weak self] in
             self?.revision += 1
         }
