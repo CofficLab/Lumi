@@ -183,7 +183,7 @@ public struct DefaultProviderFactory: ProviderFactory {
     }
 
     public func makePromptSuggestionProvider() -> any PromptSuggestionProviding {
-        DefaultPromptSuggestionProviding()
+        DefaultPromptSuggestionProvider()
     }
 
     public func makeWorkspaceProvider(storage: any StorageProviding) -> any WorkspaceProviding {

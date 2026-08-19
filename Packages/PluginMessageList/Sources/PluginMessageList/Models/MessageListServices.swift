@@ -6,6 +6,7 @@ import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageSender
 import ProviderMessageStreaming
+import ProviderPromptSuggestion
 import ProviderToolManager
 
 /// 新版 PluginMessageList 的服务容器。
@@ -22,6 +23,7 @@ struct MessageListServices {
     let streaming: (any MessageStreamingProviding)?
     let toolManager: (any ToolManagerProviding)?
     let agentTurn: (any AgentLoopProviding)?
+    let promptSuggestions: (any PromptSuggestionProviding)?
 
     var selectedConversationID: UUID? {
         conversations?.selectedConversationID

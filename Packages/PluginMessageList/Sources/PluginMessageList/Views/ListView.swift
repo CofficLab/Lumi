@@ -49,7 +49,7 @@ struct ListView: View, SuperLog {
                 // The empty state is not a message list. Keep it in the
                 // normal AppKit/SwiftUI resize path instead of snapshotting
                 // and freezing it during a split resize.
-                NoConversationSelectedView()
+                NoConversationSelectedView(services: services)
             } else {
                 LiveResizeFrozenView {
                     routedMessageList

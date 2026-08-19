@@ -45,7 +45,7 @@ struct ListV1View: View {
             if turnViewModel.isLoading {
                 MessageLoadingView()
             } else if !turnViewModel.hasVisibleContent {
-                MessageEmptyStateView()
+                MessageEmptyStateView(services: services)
             } else {
                 messageScrollView
             }

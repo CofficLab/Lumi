@@ -9,6 +9,7 @@ import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageSender
 import ProviderMessageStreaming
+import ProviderPromptSuggestion
 import ProviderToolManager
 import SwiftUI
 
@@ -42,7 +43,8 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
             sender: kernel.resolveProvider((any MessageSendingProviding).self),
             streaming: kernel.resolveProvider((any MessageStreamingProviding).self),
             toolManager: kernel.resolveProvider((any ToolManagerProviding).self),
-            agentTurn: kernel.resolveProvider((any AgentLoopProviding).self)
+            agentTurn: kernel.resolveProvider((any AgentLoopProviding).self),
+            promptSuggestions: kernel.resolveProvider((any PromptSuggestionProviding).self)
         )
         chat.addItems([ChatSectionItem(id: id, order: 100, fillsRemainingHeight: true) {
             ListView(services: services)

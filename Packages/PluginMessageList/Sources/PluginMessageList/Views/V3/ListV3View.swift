@@ -43,7 +43,7 @@ struct ListV3View: View {
             if viewModel.hasPersistedMessages {
                 messageScrollView
             } else {
-                MessageEmptyStateView()
+                MessageEmptyStateView(services: services)
             }
             if viewModel.isLoading {
                 MessageLoadingView()

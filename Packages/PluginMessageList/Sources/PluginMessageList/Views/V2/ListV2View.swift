@@ -44,7 +44,7 @@ struct ListV2View: View, SuperLog {
             if viewModel.hasPersistedMessages {
                 messageScrollView
             } else {
-                MessageEmptyStateView()
+                MessageEmptyStateView(services: services)
             }
             if viewModel.isLoading {
                 MessageLoadingView()
