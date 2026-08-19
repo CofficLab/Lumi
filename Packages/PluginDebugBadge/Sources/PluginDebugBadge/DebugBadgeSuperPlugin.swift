@@ -1,9 +1,9 @@
-import os
 import Foundation
 import KernelCore
-import SuperLogKit
 import LumiUI
+import os
 import ProviderToolbar
+import SuperLogKit
 import SwiftUI
 
 // MARK: - Debug Badge SuperPlugin
@@ -26,38 +26,37 @@ public final class DebugBadgeSuperPlugin: SuperPlugin, SuperLog {
         description: "",
         category: .general,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .required
     )
-
 
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         #if DEBUG
-        guard let toolbar = kernel.resolveProvider(ToolbarProviding.self) else {
-            Self.logger.error("\(Self.t)Failed to resolve ToolbarProviding from kernel")
-            return
-        }
-        toolbar.addToolbarItems([
-            ToolbarItem(
-                id: "\(id).badge",
-                title: "Running a Debug build",
-                placement: .leading,
-                order: 900
-            ) {
-                DebugBadgeView()
-            },
-        ])
+            guard let toolbar = kernel.resolveProvider(ToolbarProviding.self) else {
+                Self.logger.error("\(Self.t)Failed to resolve ToolbarProviding from kernel")
+                return
+            }
+            toolbar.addToolbarItems([
+                ToolbarItem(
+                    id: "\(id).badge",
+                    title: "Running a Debug build",
+                    placement: .leading,
+                    order: 900
+                ) {
+                    DebugBadgeView()
+                },
+            ])
         #endif
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         #if DEBUG
-        guard let toolbar = kernel.resolveProvider(ToolbarProviding.self) else {
-            Self.logger.error("\(Self.t)Failed to resolve ToolbarProviding from kernel")
-            return
-        }
-        toolbar.removeToolbarItems(ids: ["\(id).badge"])
+            guard let toolbar = kernel.resolveProvider(ToolbarProviding.self) else {
+                Self.logger.error("\(Self.t)Failed to resolve ToolbarProviding from kernel")
+                return
+            }
+            toolbar.removeToolbarItems(ids: ["\(id).badge"])
         #endif
     }
 }
@@ -69,17 +68,17 @@ public final class DebugBadgeSuperPlugin: SuperPlugin, SuperLog {
 /// 使用主题 `warning` 色（橙 #FF9F0A）作为背景，白色粗体文字，
 /// 与 Lumi 主题体系保持一致。
 #if DEBUG
-private struct DebugBadgeView: View {
-    @LumiTheme private var theme: any LumiUITheme
+    private struct DebugBadgeView: View {
+        @LumiTheme private var theme: any LumiUITheme
 
-    var body: some View {
-        Text("DEBUG")
-            .font(.appMicroEmphasized)
-            .tracking(0.3)
-            .foregroundStyle(.white)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(theme.warning, in: Capsule())
+        var body: some View {
+            Text("DEBUG")
+                .font(.appMicroEmphasized)
+                .tracking(0.3)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(theme.warning, in: Capsule())
+        }
     }
-}
 #endif

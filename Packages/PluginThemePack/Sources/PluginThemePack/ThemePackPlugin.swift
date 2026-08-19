@@ -27,7 +27,7 @@ public final class ThemePackPlugin: SuperPlugin, SuperLog {
         description: "批量注册 19 个旧版主题，并在设置中提供外观切换入口。",
         category: .design,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .required
     )
 
     public init() {}
