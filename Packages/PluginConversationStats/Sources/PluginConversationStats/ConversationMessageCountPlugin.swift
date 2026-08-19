@@ -20,19 +20,17 @@ public final class ConversationMessageCountPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.conversation-message-count"
     public let order = 84
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.conversation-message-count",
+        name: "Conversation Message Count",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Message Count",
-            description: "Display message count for the current conversation",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),

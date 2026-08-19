@@ -21,6 +21,14 @@ import SwiftUI
 public final class DevicePlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.device-info"
     public let order = 6
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.device-info",
+        name: "Device",
+        description: "",
+        category: .system,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public init() {}
 

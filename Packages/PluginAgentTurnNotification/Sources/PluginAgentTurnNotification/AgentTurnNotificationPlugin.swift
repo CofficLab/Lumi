@@ -17,6 +17,14 @@ public final class AgentTurnNotificationPlugin: SuperPlugin {
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.turn-notification"
     public let order = 99
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.turn-notification",
+        name: "Agent Turn Notification",
+        description: "",
+        category: .general,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     private var observers: [NSObjectProtocol] = []
     /// 通知发送器（测试可注入 no-op）。
@@ -35,16 +43,6 @@ public final class AgentTurnNotificationPlugin: SuperPlugin {
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Turn Notification",
-            description: "Show a system notification when an agent turn finishes",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 注意：不在插件启动时请求通知授权（测试/无 bundle 环境会崩溃）。

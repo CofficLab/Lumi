@@ -19,21 +19,19 @@ public final class MemoryPlugin: SuperPlugin, SuperLog {
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.memory"
     public let order = 89
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.memory",
+        name: "Memory",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     private var storage: MemoryFileStorage?
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Memory",
-            description: "Persistent memory for the agent",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let storageProvider = kernel.resolveProvider((any StorageProviding).self),

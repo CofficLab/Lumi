@@ -22,17 +22,15 @@ public final class PluginSettingView: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.setting-view"
     public let order = 3
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.setting-view",
+        name: "Plugin Setting View",
+        description: "",
+        category: .general,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Setting View Manager",
-            description: "自研 SettingViewProviding 实现，替换默认 SettingViewProvider（带结构化日志）",
-            category: .system,
-            stage: .preview,
-            policy: .required
-        )
-    }
 
     /// 本插件装配的 SettingViewManager 实现。
     private var manager: SettingViewManager?

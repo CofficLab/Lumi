@@ -33,6 +33,14 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.conversation-input"
     public let order = 83
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.conversation-input",
+        name: "Conversation Input",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
@@ -40,16 +48,6 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
         LumiPluginLocalization.string("Conversation Input", bundle: .module)
     }
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Conversation Input",
-            description: "Chat input editor with send and stop controls",
-            category: .chat,
-            stage: .preview,
-            policy: .required
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else {

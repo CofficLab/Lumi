@@ -17,6 +17,14 @@ public final class KimiCodeProviderPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.llm-provider.kimicode"
     public let order = 100
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.llm-provider.kimicode",
+        name: "KimiCode 供应商",
+        description: "",
+        category: .llm,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 

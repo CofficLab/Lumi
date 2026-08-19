@@ -21,19 +21,17 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.skill"
     public let order = 51
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.skill",
+        name: "Skill",
+        description: "",
+        category: .core,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Skills",
-            description: "Manage skills in .agent/skills directory",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let project = kernel.resolveProvider((any ProjectProviding).self) else {

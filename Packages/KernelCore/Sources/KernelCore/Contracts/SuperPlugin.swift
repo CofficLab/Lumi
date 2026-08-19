@@ -49,8 +49,6 @@ public extension SuperPlugin {
 
     var dependencies: [String] { [] }
 
-    var metadata: PluginMetadata { PluginMetadata(id: id) }
-
     func onBoot(kernel: KernelCoreContainer) throws {}
 
     func onReady(kernel: KernelCoreContainer) throws {}

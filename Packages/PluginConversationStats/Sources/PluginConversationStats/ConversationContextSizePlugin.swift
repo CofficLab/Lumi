@@ -21,19 +21,17 @@ public final class ConversationContextSizePlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.conversation-context-size"
     public let order = 85
+    public let metadata = PluginMetadata(
+        id: "com.coffic.conversation-context-size",
+        name: "Conversation Context Size",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Context Size",
-            description: "Display context window size and token usage for the current model",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),

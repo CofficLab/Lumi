@@ -20,28 +20,15 @@ public final class DebugBadgeSuperPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.debug-badge", category: "DebugBadge")
 
     public let id = "com.coffic.lumi.plugin.debug-badge"
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.debug-badge",
+        name: "Debug Badge Super",
+        description: "",
+        category: .general,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
-    public var metadata: PluginMetadata {
-        #if DEBUG
-        PluginMetadata(
-            id: id,
-            name: "Debug Badge",
-            description: "在标题工具栏左上角显示 DEBUG 徽标",
-            category: .system,
-            stage: .stable,
-            policy: .alwaysOn
-        )
-        #else
-        PluginMetadata(
-            id: id,
-            name: "Debug Badge",
-            description: "在标题工具栏左上角显示 DEBUG 徽标",
-            category: .system,
-            stage: .stable,
-            policy: .disabledByDefault
-        )
-        #endif
-    }
 
     public init() {}
 

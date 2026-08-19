@@ -28,19 +28,17 @@ public final class MessageSenderPlugin: SuperPlugin,SuperLog {
 
     public let id = "com.coffic.lumi.plugin.message-sender"
     public let order = 9
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.message-sender",
+        name: "Message Sender",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Message Sender",
-            description: "消息发送：挂起附件、pending 队列、取消与回合恢复",
-            category: .chat,
-            stage: .preview,
-            policy: .required
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let conversations = kernel.resolveProvider((any ConversationManaging).self),

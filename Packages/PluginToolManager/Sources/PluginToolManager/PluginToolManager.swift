@@ -28,17 +28,15 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.tool-manager"
     public let order = 6
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.tool-manager",
+        name: "Plugin Tool Manager",
+        description: "",
+        category: .core,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Tool Manager",
-            description: "内置文件/终端工具 + 工具调用记录（复刻旧版体验，数据目录一致）",
-            category: .chat,
-            stage: .preview,
-            policy: .required
-        )
-    }
 
     /// 本插件装配的 ToolManager 实现（设置视图读取）。
     private var service: ToolManagerService?

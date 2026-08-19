@@ -22,19 +22,17 @@ public final class ConversationForkPlugin: SuperPlugin, SuperLog {
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.conversation-fork"
     public let order = 80
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.conversation-fork",
+        name: "Conversation Fork",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Conversation Fork",
-            description: "Summarize the current conversation and continue in a new chat",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),

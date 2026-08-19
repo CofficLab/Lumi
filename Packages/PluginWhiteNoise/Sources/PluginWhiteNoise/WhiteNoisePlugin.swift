@@ -17,6 +17,14 @@ import SwiftUI
 public final class WhiteNoisePlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.white-noise"
     public let order = 261
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.white-noise",
+        name: "白噪音",
+        description: "白噪音播放插件，提供白噪音主内容视图与说明书文档。",
+        category: .general,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public init() {}
 

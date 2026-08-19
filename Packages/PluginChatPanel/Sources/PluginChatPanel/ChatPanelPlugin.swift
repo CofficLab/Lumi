@@ -10,6 +10,14 @@ public final class ChatPanelPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.chat-panel"
     // Chat is the default workbench, matching the legacy app's initial state.
     public let order = 1
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.chat-panel",
+        name: "Chat Panel",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {

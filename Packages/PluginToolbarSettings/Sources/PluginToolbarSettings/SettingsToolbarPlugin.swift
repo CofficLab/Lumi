@@ -20,6 +20,14 @@ import SwiftUI
 public final class SettingsToolbarPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.toolbar-settings"
     public let order = 200
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.toolbar-settings",
+        name: "设置按钮",
+        description: "在工具栏右侧注册设置按钮，点击打开设置窗口。",
+        category: .system,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 

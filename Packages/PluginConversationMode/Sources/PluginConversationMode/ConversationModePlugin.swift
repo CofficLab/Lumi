@@ -24,19 +24,17 @@ public final class ConversationModePlugin: SuperPlugin, SuperLog {
     /// 保持旧版插件 ID，插件启用状态 / 存储 / 自动化不失效。
     public let id = "com.coffic.lumi.plugin.conversation-mode"
     public let order = 84
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.conversation-mode",
+        name: "Conversation Mode",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Conversation Mode",
-            description: "Automation level switch (chat / build / autonomous)",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),

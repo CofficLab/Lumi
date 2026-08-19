@@ -21,6 +21,14 @@ public final class ThemePackPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.theme-pack"
     public let order = 100
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.theme-pack",
+        name: "主题包",
+        description: "批量注册 19 个旧版主题，并在设置中提供外观切换入口。",
+        category: .design,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public init() {}
 

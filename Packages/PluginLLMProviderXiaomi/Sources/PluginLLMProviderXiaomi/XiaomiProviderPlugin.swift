@@ -17,6 +17,14 @@ public final class XiaomiProviderPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.llm-provider.xiaomi"
     public let order = 100
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.llm-provider.xiaomi",
+        name: "小米供应商",
+        description: "注册 XiaomiProvider 和 XiaomiAPIProvider 到 LLM 管理器。",
+        category: .llm,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 

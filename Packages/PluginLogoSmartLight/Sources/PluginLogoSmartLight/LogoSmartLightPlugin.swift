@@ -20,6 +20,14 @@ public final class LogoSmartLightPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.lumi.plugin.logo-smart-light"
     public let order = 200
+    public let metadata = PluginMetadata(
+        id: "com.lumi.plugin.logo-smart-light",
+        name: "智能灯光 Logo",
+        description: "贡献智能灯光主题 Logo，提供动画灯泡图标。",
+        category: .design,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public init() {}
 

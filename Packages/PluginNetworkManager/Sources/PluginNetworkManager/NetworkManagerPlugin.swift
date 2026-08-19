@@ -29,21 +29,19 @@ public final class NetworkManagerPlugin: SuperPlugin {
 
     public let id = "com.coffic.lumi.plugin.network-manager"
     public let order = 30
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.network-manager",
+        name: "Network Manager",
+        description: "",
+        category: .system,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public var name: String {
         LumiPluginLocalization.string("Network Monitor", bundle: .module)
     }
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Network Manager",
-            description: "HTTP exchange monitoring and network diagnostics",
-            category: .system,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     private var httpExchangeStore: HTTPExchangeStore?
 

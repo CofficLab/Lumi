@@ -18,19 +18,17 @@ public final class OpenInPlugin: SuperPlugin, SuperLog {
     /// 合并包的插件 ID（新版唯一入口）。
     public let id = "com.coffic.lumi.plugin.open-in"
     public let order = 61
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.open-in",
+        name: "Open In",
+        description: "",
+        category: .integration,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Open In",
-            description: "Open the current project in Finder / Xcode / Cursor / VS Code / Antigravity / GitHub Desktop / GitOK",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {

@@ -18,6 +18,14 @@ import SwiftUI
 public final class IdleTimePlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.idle-time"
     public let order = 96
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.idle-time",
+        name: "Idle Time",
+        description: "",
+        category: .system,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     /// 事件观察者 token（onShutdown 时移除）。
     private var observers: [NSObjectProtocol] = []

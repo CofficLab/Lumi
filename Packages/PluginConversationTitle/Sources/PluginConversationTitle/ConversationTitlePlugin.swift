@@ -21,21 +21,19 @@ public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.conversation-title"
     public let order = 77
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.conversation-title",
+        name: "Conversation Title",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     private var autoTitleService: AutoConversationTitleService?
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Conversation Title",
-            description: "Auto-generate conversation titles from the first user message",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let conversations = kernel.resolveProvider((any ConversationManaging).self),

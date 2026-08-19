@@ -20,19 +20,17 @@ public final class ConversationSpeedPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.conversation-speed"
     public let order = 86
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.conversation-speed",
+        name: "Conversation Speed",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Conversation Speed",
-            description: "Display streaming output speed (tokens/s) for the current conversation",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),

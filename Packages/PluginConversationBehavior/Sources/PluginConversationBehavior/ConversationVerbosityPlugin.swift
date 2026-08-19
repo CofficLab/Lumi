@@ -22,19 +22,17 @@ public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.verbosity"
     public let order = 85
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.verbosity",
+        name: "Conversation Verbosity",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Verbosity",
-            description: "Response detail level (brief / standard / detailed)",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),

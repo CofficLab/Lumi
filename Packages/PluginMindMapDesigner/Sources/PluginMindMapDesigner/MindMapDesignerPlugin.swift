@@ -16,6 +16,14 @@ import SwiftUI
 public final class MindMapDesignerPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.mind-map-designer"
     public let order = 81
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.mind-map-designer",
+        name: "Mind Map Designer",
+        description: "",
+        category: .design,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public static let railTabID = "mind-map.documents"
 

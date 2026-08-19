@@ -20,19 +20,17 @@ public final class ConversationCacheHitRatePlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.conversation-cache-hit-rate"
     public let order = 86
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.conversation-cache-hit-rate",
+        name: "Conversation Cache Hit Rate",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Cache Hit Rate",
-            description: "Display average cache hit rate for the current conversation",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),

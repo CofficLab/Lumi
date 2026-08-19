@@ -14,6 +14,14 @@ import SuperLogKit
 public final class AgentTempStoragePlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.agent-temp-storage"
     public let order = 80
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.agent-temp-storage",
+        name: "Agent Temp Storage",
+        description: "",
+        category: .system,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-temp-storage")
 
@@ -23,16 +31,6 @@ public final class AgentTempStoragePlugin: SuperPlugin {
         LumiPluginLocalization.string("Agent Temp Storage", bundle: .module)
     }
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Agent Temp Storage",
-            description: "Temporary file storage for agent workflows.",
-            category: .system,
-            stage: .preview,
-            policy: .required
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 配置插件数据目录（沿用旧版 onReady 的 storage 配置）。

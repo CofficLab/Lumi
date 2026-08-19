@@ -27,6 +27,14 @@ import SwiftUI
 public final class DiskManagerPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.disk-manager"
     public let order = 250
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.disk-manager",
+        name: "Disk Manager",
+        description: "",
+        category: .system,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     /// 本插件 rail 面板的稳定标识（注册为 `RailTabItem.id`）。
     public static let railTabID = "com.coffic.lumi.plugin.disk-manager.categories"
@@ -35,16 +43,6 @@ public final class DiskManagerPlugin: SuperPlugin {
         PluginDiskManagerLocalization.string("Disk Manager")
     }
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Disk Manager",
-            description: "Disk space analysis and large file cleaning",
-            category: .system,
-            stage: .preview,
-            policy: .disabledByDefault
-        )
-    }
 
     // MARK: - Logging（兼容旧版 ViewModel 的 DiskManagerPlugin.verbose / logger 引用）
 

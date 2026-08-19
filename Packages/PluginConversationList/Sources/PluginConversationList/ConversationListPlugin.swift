@@ -28,18 +28,15 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.conversation-list"
     public let order = 81
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.conversation-list",
+        name: "Conversation List",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Conversation List",
-            description: "侧栏对话列表 + 标题栏会话浏览器，复刻旧版 ConversationListPlugin 体验",
-            version: "1.0.0",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public init() {}
 

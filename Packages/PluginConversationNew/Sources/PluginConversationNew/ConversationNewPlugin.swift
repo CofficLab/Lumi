@@ -11,22 +11,19 @@ public final class ConversationNewPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.conversation-new"
     public let order = 80
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.conversation-new",
+        name: "Conversation New",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     /// 对齐旧版 ConversationNewPlugin 的元数据：
     /// - name "New Chat Button"（旧版 LumiPluginLocalization）
     /// - policy .alwaysOn → .required（不可禁用）
     /// - stage .beta → .preview
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "New Chat Button",
-            description: "在标题栏提供「新对话」按钮：点击取消当前选中对话，回到新会话状态。",
-            version: "1.0.0",
-            category: .chat,
-            stage: .preview,
-            policy: .required
-        )
-    }
 
     public init() {}
 

@@ -12,17 +12,15 @@ import ProviderToast
 @MainActor
 public final class ToastSuperPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.toast"
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.toast",
+        name: "Toast Super",
+        description: "",
+        category: .core,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Toast",
-            description: "在应用窗口顶部展示瞬时 Toast 提示，供内核与其他插件调用",
-            category: .general,
-            stage: .stable,
-            policy: .alwaysOn
-        )
-    }
 
     /// Toast 状态机，由根覆盖层订阅渲染。
     public let center = ToastCenter()

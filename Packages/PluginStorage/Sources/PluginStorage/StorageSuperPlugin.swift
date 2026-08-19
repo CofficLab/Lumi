@@ -11,17 +11,15 @@ import ProviderStorage
 @MainActor
 public final class StorageSuperPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.storage"
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.storage",
+        name: "Storage Super",
+        description: "",
+        category: .system,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Storage",
-            description: "管理应用数据根目录，为各插件分配独立存储路径",
-            category: .core,
-            stage: .stable,
-            policy: .alwaysOn
-        )
-    }
 
     /// 数据根目录
     public let dataRootDirectory: URL

@@ -16,17 +16,15 @@ import os
 @MainActor
 public final class FileLogPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.file-log"
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.file-log",
+        name: "File Log",
+        description: "",
+        category: .system,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "File Log",
-            description: "将 OSLog 日志写入磁盘文件，支持自动轮转和过期清理",
-            category: .system,
-            stage: .stable,
-            policy: .required
-        )
-    }
 
     public init() {}
 

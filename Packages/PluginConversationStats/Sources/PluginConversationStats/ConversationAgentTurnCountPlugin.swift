@@ -19,19 +19,17 @@ public final class ConversationAgentTurnCountPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.conversation-agent-turn-count"
     public let order = 87
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.conversation-agent-turn-count",
+        name: "Conversation Agent Turn Count",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Agent Turn Status",
-            description: "Show whether an agent turn is running in the current conversation",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),

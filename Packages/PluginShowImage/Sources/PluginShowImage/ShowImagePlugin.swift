@@ -20,17 +20,15 @@ public final class ShowImagePlugin: SuperPlugin, SuperLog {
     nonisolated public static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.show-image")
 
     public let id = "com.coffic.lumi.plugin.show-image"
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.show-image",
+        name: "Show Image",
+        description: "",
+        category: .integration,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Show Image",
-            description: "在聊天 UI 中显示图片，支持本地路径和远程 URL",
-            category: .chat,
-            stage: .stable,
-            policy: .alwaysOn
-        )
-    }
 
     public init() {}
 

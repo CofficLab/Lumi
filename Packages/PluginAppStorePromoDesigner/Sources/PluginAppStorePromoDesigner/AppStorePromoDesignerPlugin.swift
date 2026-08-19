@@ -15,6 +15,14 @@ import SwiftUI
 public final class AppStorePromoDesignerPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.app-store-promo-designer"
     public let order = 80
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.app-store-promo-designer",
+        name: "App Store Promo Designer",
+        description: "",
+        category: .design,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public static let railTabID = "app-store-promo.tasks"
 

@@ -16,6 +16,14 @@ import SwiftUI
 public final class ResumeDesignerPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.resume-designer"
     public let order = 81
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.resume-designer",
+        name: "Resume Designer",
+        description: "",
+        category: .design,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     /// 本插件 rail 面板的稳定标识（注册为 `RailTabItem.id`）。
     public static let railTabID = "resume-designer.resumes"

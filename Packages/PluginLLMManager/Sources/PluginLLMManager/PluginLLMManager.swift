@@ -6,7 +6,7 @@ import ProviderLLMManager
 import ProviderMessageRendering
 import SuperLogKit
 
-/// LLM 供应商管理器插件（KernelCore 生态）。
+/// LLM 供应商管理器插件。
 ///
 /// 替换 `DefaultProviderFactory` 预注册的 `DefaultLLMManager`：在 `onBoot`
 /// 中把自研的 `CustomLLMManager` 注册为 `LLMManaging`，让所有后续解析
@@ -25,17 +25,14 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.llm-manager"
     public let order = 5
-
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "LLM Provider Manager",
-            description: "自研 LLMManaging 实现 + API Key 缺失/读取失败消息渲染器",
-            category: .chat,
-            stage: .preview,
-            policy: .required
-        )
-    }
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.llm-manager",
+        name: "Plugin LLM Manager",
+        description: "",
+        category: .core,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 

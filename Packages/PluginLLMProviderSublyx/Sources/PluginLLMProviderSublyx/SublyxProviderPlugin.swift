@@ -17,6 +17,14 @@ public final class SublyxProviderPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.llm-provider.sublyx"
     public let order = 100
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.llm-provider.sublyx",
+        name: "Sublyx 供应商",
+        description: "注册 SublyxProvider 到 LLM 管理器。",
+        category: .llm,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 

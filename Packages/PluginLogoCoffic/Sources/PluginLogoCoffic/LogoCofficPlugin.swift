@@ -20,6 +20,14 @@ public final class LogoCofficPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.lumi.plugin.logo-coffic"
     public let order = 100
+    public let metadata = PluginMetadata(
+        id: "com.lumi.plugin.logo-coffic",
+        name: "Coffic Logo",
+        description: "贡献咖啡主题 Logo，提供动画咖啡杯图标。",
+        category: .design,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public init() {}
 

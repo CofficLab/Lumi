@@ -27,6 +27,14 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
     /// 保持旧版插件 ID，插件启用状态 / 存储 / 自动化不失效。
     public let id = "com.coffic.lumi.plugin.model-selector"
     public let order = 82
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.model-selector",
+        name: "Model Selector",
+        description: "",
+        category: .core,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
@@ -34,16 +42,6 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
         LumiPluginLocalization.string("Model Selector", bundle: .module)
     }
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Model Selector",
-            description: "LLM provider and model selection in the chat composer toolbar",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),

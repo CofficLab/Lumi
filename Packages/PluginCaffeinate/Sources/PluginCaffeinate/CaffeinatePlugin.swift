@@ -27,6 +27,14 @@ import SwiftUI
 public final class CaffeinatePlugin: SuperPlugin {
     public let id = "Caffeinate"
     public let order = 1
+    public let metadata = PluginMetadata(
+        id: "Caffeinate",
+        name: "Caffeinate",
+        description: "",
+        category: .integration,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.caffeinate")
     public nonisolated static let verbose: Bool = false
@@ -37,16 +45,6 @@ public final class CaffeinatePlugin: SuperPlugin {
         LumiPluginLocalization.string("Caffeinate", bundle: .module)
     }
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Caffeinate",
-            description: "Prevent system sleep during long-running tasks.",
-            category: .system,
-            stage: .preview,
-            policy: .enabledByDefault
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 配置 Manager：存储目录 + Logo 高亮（沿用旧版 onReady 的 configure）。

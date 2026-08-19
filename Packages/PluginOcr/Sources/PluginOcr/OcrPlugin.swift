@@ -17,6 +17,14 @@ import SwiftUI
 public final class OcrPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.ocr"
     public let order = 286
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.ocr",
+        name: "Ocr",
+        description: "",
+        category: .integration,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.ocr")
 
@@ -24,16 +32,6 @@ public final class OcrPlugin: SuperPlugin {
 
     public var name: String { OcrLocalization.string("OCR", "OCR 文字识别") }
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "OCR",
-            description: "Recognize text in local image files using on-device macOS Vision (fully offline).",
-            category: .system,
-            stage: .preview,
-            policy: .disabledByDefault
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 注册 Agent 工具。

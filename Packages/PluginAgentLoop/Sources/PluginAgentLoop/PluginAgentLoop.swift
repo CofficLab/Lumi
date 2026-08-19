@@ -26,17 +26,15 @@ public final class PluginAgentLoop: SuperPlugin {
 
     public let id = "com.coffic.lumi.plugin.agent-loop"
     public let order = 8
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.agent-loop",
+        name: "Plugin Agent Loop",
+        description: "",
+        category: .core,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Custom Agent Loop",
-            description: "自定义 Agent 回合循环实现",
-            category: .chat,
-            stage: .preview,
-            policy: .required
-        )
-    }
 
     public init() {}
 

@@ -27,17 +27,15 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.projects"
     public let order = 5
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.projects",
+        name: "Projects",
+        description: "",
+        category: .project,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Projects",
-            description: "Manage saved projects, current project state and project tooling.",
-            category: .project,
-            stage: .stable,
-            policy: .required
-        )
-    }
 
     public init() {}
 

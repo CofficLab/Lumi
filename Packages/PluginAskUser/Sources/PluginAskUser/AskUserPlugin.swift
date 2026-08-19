@@ -19,19 +19,17 @@ public final class AskUserPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.ask-user"
     public let order = 88
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.ask-user",
+        name: "Ask User",
+        description: "",
+        category: .general,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Ask User",
-            description: "Ask the user a question and wait for their response",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let conversations = kernel.resolveProvider((any ConversationManaging).self),

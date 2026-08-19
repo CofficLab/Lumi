@@ -17,6 +17,14 @@ public final class OpenCodeProviderPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.llm-provider.opencode"
     public let order = 100
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.llm-provider.opencode",
+        name: "OpenCode 供应商",
+        description: "注册 GoProvider 和 ZenProvider 到 LLM 管理器。",
+        category: .llm,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
@@ -26,7 +34,10 @@ public final class OpenCodeProviderPlugin: SuperPlugin, SuperLog {
             return
         }
         let apiService = VendorAPIService()
-        let providers: [any SuperLLMProvider] = [GoProvider(apiService: apiService), ZenProvider(apiService: apiService)]
+        let providers: [any SuperLLMProvider] = [
+            GoProvider(apiService: apiService),
+            ZenProvider(apiService: apiService)
+        ]
         for provider in providers {
             if Self.verbose {
                 let typeName = String(describing: type(of: provider))

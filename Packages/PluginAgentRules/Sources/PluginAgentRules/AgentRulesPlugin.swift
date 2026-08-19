@@ -21,6 +21,14 @@ import SwiftUI
 public final class AgentRulesPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.agent-rules"
     public let order = 50
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.agent-rules",
+        name: "Agent Rules",
+        description: "",
+        category: .general,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
@@ -28,16 +36,6 @@ public final class AgentRulesPlugin: SuperPlugin {
         LumiPluginLocalization.string("Agent Rules", bundle: .module)
     }
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Agent Rules",
-            description: "Manage rule documents in .agent/rules directory.",
-            category: .general,
-            stage: .preview,
-            policy: .required
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 配置运行时：项目服务（工具 fallback 到当前项目路径）。

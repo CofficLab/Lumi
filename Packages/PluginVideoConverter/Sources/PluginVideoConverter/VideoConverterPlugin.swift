@@ -18,6 +18,14 @@ import SwiftUI
 public final class VideoConverterPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.video-converter"
     public let order = 870
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.video-converter",
+        name: "视频转换",
+        description: "视频格式转换插件，提供视频转换主内容视图与说明书文档。",
+        category: .general,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public init() {}
 

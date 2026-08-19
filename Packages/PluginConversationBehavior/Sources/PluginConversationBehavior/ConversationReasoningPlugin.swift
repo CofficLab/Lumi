@@ -24,19 +24,17 @@ public final class ConversationReasoningPlugin: SuperPlugin, SuperLog {
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.conversation-reasoning"
     public let order = 81
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.conversation-reasoning",
+        name: "Conversation Reasoning",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Conversation Reasoning",
-            description: "Reasoning effort control (low / medium / high / xhigh / max)",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),

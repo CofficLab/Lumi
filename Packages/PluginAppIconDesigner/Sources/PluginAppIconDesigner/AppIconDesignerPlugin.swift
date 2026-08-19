@@ -12,6 +12,14 @@ import SwiftUI
 public final class AppIconDesignerPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.app-icon-designer"
     public let order = 79
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.app-icon-designer",
+        name: "App Icon Designer",
+        description: "",
+        category: .design,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public static let railTabID = "app-icon-designer.documents"
 

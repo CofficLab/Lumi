@@ -22,17 +22,15 @@ public final class PluginLogoManager: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.logo-manager"
     public let order = 4
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.logo-manager",
+        name: "Plugin Logo Manager",
+        description: "",
+        category: .design,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Logo Manager",
-            description: "自研 LogoProviding 实现，替换默认 LogoProvider（带结构化日志）",
-            category: .system,
-            stage: .preview,
-            policy: .required
-        )
-    }
 
     /// 本插件装配的 LogoManager 实现。
     private var manager: LogoManager?

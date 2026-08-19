@@ -20,6 +20,14 @@ import SwiftUI
 public final class HostsManagerPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.hosts-manager"
     public let order = 21
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.hosts-manager",
+        name: "Hosts Manager",
+        description: "",
+        category: .system,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.hosts-manager")
     public nonisolated static let verbose: Bool = false
@@ -30,16 +38,6 @@ public final class HostsManagerPlugin: SuperPlugin {
         LumiPluginLocalization.string("Hosts Manager", bundle: .module)
     }
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Hosts Manager",
-            description: "Manage the hosts file",
-            category: .system,
-            stage: .preview,
-            policy: .disabledByDefault
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)

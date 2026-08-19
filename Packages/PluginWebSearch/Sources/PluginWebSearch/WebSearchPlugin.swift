@@ -12,6 +12,14 @@ import ProviderToolManager
 public final class WebSearchPlugin: SuperPlugin {
     public let id = "WebSearch"
     public let order = 101
+    public let metadata = PluginMetadata(
+        id: "WebSearch",
+        name: "Web Search",
+        description: "",
+        category: .integration,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.web-search")
 
@@ -21,16 +29,6 @@ public final class WebSearchPlugin: SuperPlugin {
         LumiPluginLocalization.string("WebSearch", bundle: .module)
     }
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "WebSearch",
-            description: "Search the web for information using search engines.",
-            category: .integration,
-            stage: .preview,
-            policy: .required
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         WebSearchRuntime.configure(kernel: kernel)

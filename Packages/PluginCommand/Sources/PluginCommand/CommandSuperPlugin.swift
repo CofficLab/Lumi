@@ -13,17 +13,15 @@ import ProviderStorage
 @MainActor
 public final class CommandSuperPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.command"
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.command",
+        name: "Command Super",
+        description: "",
+        category: .core,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Command",
-            description: "管理所有插件的命令菜单注册、分组和查询",
-            category: .core,
-            stage: .stable,
-            policy: .alwaysOn
-        )
-    }
 
     public let commandService = CommandManager()
 

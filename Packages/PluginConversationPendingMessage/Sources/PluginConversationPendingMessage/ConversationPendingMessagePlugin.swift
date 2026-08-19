@@ -22,19 +22,17 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.conversation-pending-message"
     public let order = 82
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.conversation-pending-message",
+        name: "Conversation Pending Message",
+        description: "",
+        category: .chat,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Conversation Pending Messages",
-            description: "Show queued messages waiting behind the active turn",
-            category: .chat,
-            stage: .preview,
-            policy: .alwaysOn
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),

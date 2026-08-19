@@ -17,6 +17,14 @@ public final class MegaLLMProviderPlugin: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.llm-provider.megallm"
     public let order = 100
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.llm-provider.megallm",
+        name: "MegaLLM 供应商",
+        description: "",
+        category: .llm,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
     public init() {}
 

@@ -27,17 +27,15 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
 
     public let id = "com.coffic.lumi.plugin.activity-bar"
     public let order = 10
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.activity-bar",
+        name: "Plugin Activity Bar",
+        description: "",
+        category: .core,
+        stage: .stable,
+        policy: .alwaysOn
+    )
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "ActivityBar",
-            description: "自定义 ActivityBarProviding 实现，替换 ProviderFactory 预注册的默认实现",
-            category: .system,
-            stage: .preview,
-            policy: .required
-        )
-    }
 
     /// 本插件注册的自定义 Provider（保存引用便于 onShutdown / 调试诊断）。
     private var provider: ActivityBarProvider?

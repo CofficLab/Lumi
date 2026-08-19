@@ -11,6 +11,14 @@ import ProviderToolManager
 public final class DocxReadPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.docx-read"
     public let order = 90
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.docx-read",
+        name: "Docx Read",
+        description: "",
+        category: .integration,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.docx-read")
 
@@ -20,16 +28,6 @@ public final class DocxReadPlugin: SuperPlugin {
         LumiPluginLocalization.string("Docx Read", bundle: .module)
     }
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "Docx Read",
-            description: "Extract text from DOCX files",
-            category: .integration,
-            stage: .preview,
-            policy: .required
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {

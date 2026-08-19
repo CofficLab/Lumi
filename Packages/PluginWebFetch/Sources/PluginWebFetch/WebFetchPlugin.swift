@@ -12,6 +12,14 @@ import ProviderToolManager
 public final class WebFetchPlugin: SuperPlugin {
     public let id = "WebFetch"
     public let order = 100
+    public let metadata = PluginMetadata(
+        id: "WebFetch",
+        name: "Web Fetch",
+        description: "",
+        category: .integration,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.web-fetch")
 
@@ -21,16 +29,6 @@ public final class WebFetchPlugin: SuperPlugin {
         LumiPluginLocalization.string("WebFetch", bundle: .module)
     }
 
-    public var metadata: PluginMetadata {
-        PluginMetadata(
-            id: id,
-            name: "WebFetch",
-            description: "Fetch and extract content from web pages.",
-            category: .integration,
-            stage: .preview,
-            policy: .required
-        )
-    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         WebFetchRuntime.configure(kernel: kernel)
