@@ -17,9 +17,9 @@ struct ConversationPendingMessagePluginTests {
         let kernel = KernelCoreContainer()
         let conversations = DefaultConversationManager()
         let chat = DefaultChatSectionProviding()
-        let messages = DefaultMessageManaging()
-        let loop = DefaultAgentLoopProviding(messages: messages)
-        let sender = DefaultMessageSendingProviding(
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        let sender = DefaultMessageSender(
             conversations: conversations,
             messages: messages,
             agentLoop: loop
@@ -38,9 +38,9 @@ struct ConversationPendingMessagePluginTests {
     @Test("ObservableMessageSendingBox 桥接 sender 状态")
     func boxBridges() {
         let conversations = DefaultConversationManager()
-        let messages = DefaultMessageManaging()
-        let loop = DefaultAgentLoopProviding(messages: messages)
-        let sender = DefaultMessageSendingProviding(
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        let sender = DefaultMessageSender(
             conversations: conversations,
             messages: messages,
             agentLoop: loop
@@ -48,4 +48,42 @@ struct ConversationPendingMessagePluginTests {
         let box = ObservableMessageSendingBox(sender: sender)
         #expect(box.sender.isSending == false)
     }
+}
+
+/// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。
+@MainActor
+private final class StubAgentLoop: AgentLoopProviding {
+    private let messages: any MessageManaging
+    private var responder: AgentLoopResponder = { _ in "" }
+
+    init(messages: any MessageManaging) {
+        self.messages = messages
+    }
+
+    func setResponder(_ responder: AgentLoopResponder?) {
+        if let responder { self.responder = responder }
+    }
+
+    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
+        let request = AgentLoopRequest(
+            conversationID: conversationID,
+            messages: messages.messages(for: conversationID)
+        )
+        let content = try await responder(request)
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .assistant, content: content),
+            to: conversationID
+        )
+        return .completed
+    }
+
+    func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
+        throw AgentLoopError.invalidResumeRequest
+    }
+
+    func cancelTurn(in conversationID: UUID) {}
+    func state(for conversationID: UUID) -> AgentLoopState { .idle }
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
+    func isRunning(for conversationID: UUID) -> Bool { false }
+    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
 }

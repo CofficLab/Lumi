@@ -15,6 +15,8 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderProject"),
+        .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderAgentLoop"),
     ],
     targets: [
         .target(
@@ -35,6 +37,8 @@ let package = Package(
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
             ],
             path: "Tests/PluginSkillTests"
         ),

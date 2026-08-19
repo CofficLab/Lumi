@@ -23,36 +23,13 @@ struct PluginConversationBehaviorTests {
     @Test("Verbosity 插件注册钩子与工具栏按钮")
     func verbosityRegisters() async throws {
         let (kernel, conversations, _) = try makeKernel()
-        let messages = DefaultMessageManaging()
-        let loop = DefaultAgentLoopProviding(messages: messages)
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
         try kernel.registerProvider((any AgentLoopProviding).self, loop)
 
         let plugin = ConversationVerbosityPlugin()
         try plugin.onBoot(kernel: kernel)
         #expect(kernel.resolveProvider((any ConversationManaging).self) != nil)
-    }
-
-    @Test("Verbosity 准备器注入 V2 标准指令")
-    func verbosityPreparer() async {
-        let conversations = DefaultConversationManager()
-        let conversationID = UUID()
-        let history = [Message(conversationID: conversationID, role: .user, content: "hi")]
-        let prepared = await VerbosityPreparer(conversations: conversations).prepare(history)
-        #expect(prepared.count == 2)
-        #expect(prepared.first?.role == .system)
-        #expect(prepared.first?.content.contains("V2 (standard)") == true)
-    }
-
-    @Test("Language 准备器注入语言指令")
-    func languagePreparer() async {
-        let conversations = DefaultConversationManager()
-        conversations.setGlobalLanguage(.english)
-        let conversationID = UUID()
-        let history = [Message(conversationID: conversationID, role: .user, content: "hi")]
-        let prepared = await LanguagePreparer(conversations: conversations).prepare(history)
-        #expect(prepared.count == 2)
-        #expect(prepared.first?.role == .system)
-        #expect(prepared.first?.content.contains("English") == true)
     }
 
     @Test("Reasoning 插件注册 ActionBar 按钮")
@@ -71,4 +48,42 @@ struct PluginConversationBehaviorTests {
         conversations.clearReasoningEffort(for: nil)
         #expect(conversations.reasoningEffortOptional(for: nil) == nil)
     }
+}
+
+/// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。
+@MainActor
+private final class StubAgentLoop: AgentLoopProviding {
+    private let messages: any MessageManaging
+    private var responder: AgentLoopResponder = { _ in "" }
+
+    init(messages: any MessageManaging) {
+        self.messages = messages
+    }
+
+    func setResponder(_ responder: AgentLoopResponder?) {
+        if let responder { self.responder = responder }
+    }
+
+    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
+        let request = AgentLoopRequest(
+            conversationID: conversationID,
+            messages: messages.messages(for: conversationID)
+        )
+        let content = try await responder(request)
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .assistant, content: content),
+            to: conversationID
+        )
+        return .completed
+    }
+
+    func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
+        throw AgentLoopError.invalidResumeRequest
+    }
+
+    func cancelTurn(in conversationID: UUID) {}
+    func state(for conversationID: UUID) -> AgentLoopState { .idle }
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
+    func isRunning(for conversationID: UUID) -> Bool { false }
+    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
 }

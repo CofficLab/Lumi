@@ -16,6 +16,8 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../ProviderLLMManager"),
+        .package(path: "../ProviderMessageStreaming"),
         .package(path: "../KitLLM"),
     ],
     targets: [
@@ -42,6 +44,9 @@ let package = Package(
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
+                .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
             ],
             path: "Tests/PluginAskUserTests"
         ),

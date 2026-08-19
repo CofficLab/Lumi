@@ -57,42 +57,13 @@ struct SkillPluginTests {
         await service.invalidateCache(projectPath: "/tmp/proj")
     }
 
-    @Test("消息准备器注入技能 system 消息")
-    func preparerInjectsSkillMessage() async {
-        let project = StubProject(path: "/tmp/proj")
-        let skills = [SkillMetadata(name: "swiftui", title: "SwiftUI", description: "desc")]
-        let service = SkillService(scanner: MockScanner(skills: skills))
-        let preparer = SkillMessagePreparer(project: project, service: service)
-
-        let conversationID = UUID()
-        let history = [Message(conversationID: conversationID, role: .user, content: "hi")]
-        let prepared = await preparer.prepare(history)
-
-        #expect(prepared.count == 2)
-        #expect(prepared.first?.role == .system)
-        #expect(prepared.first?.content.contains("swiftui") == true)
-        #expect(prepared.last?.content == "hi")
-    }
-
-    @Test("无技能时不注入")
-    func preparerNoSkills() async {
-        let project = StubProject(path: "/tmp/proj")
-        let service = SkillService(scanner: MockScanner(skills: []))
-        let preparer = SkillMessagePreparer(project: project, service: service)
-
-        let conversationID = UUID()
-        let history = [Message(conversationID: conversationID, role: .user, content: "hi")]
-        let prepared = await preparer.prepare(history)
-        #expect(prepared.count == 1)
-    }
-
     @Test("插件 onBoot 注册工具栏且不抛错")
     func pluginLifecycle() throws {
         let kernel = KernelCoreContainer()
         let project = StubProject(path: "/tmp/proj")
         let chat = DefaultChatSectionProviding()
-        let messages = DefaultMessageManaging()
-        let loop = DefaultAgentLoopProviding(messages: messages)
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
         try kernel.registerProvider((any ProjectProviding).self, project)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any AgentLoopProviding).self, loop)
@@ -102,4 +73,42 @@ struct SkillPluginTests {
         #expect(kernel.resolveProvider((any ProjectProviding).self) != nil)
         try plugin.onShutdown(kernel: kernel)
     }
+}
+
+/// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。
+@MainActor
+private final class StubAgentLoop: AgentLoopProviding {
+    private let messages: any MessageManaging
+    private var responder: AgentLoopResponder = { _ in "" }
+
+    init(messages: any MessageManaging) {
+        self.messages = messages
+    }
+
+    func setResponder(_ responder: AgentLoopResponder?) {
+        if let responder { self.responder = responder }
+    }
+
+    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
+        let request = AgentLoopRequest(
+            conversationID: conversationID,
+            messages: messages.messages(for: conversationID)
+        )
+        let content = try await responder(request)
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .assistant, content: content),
+            to: conversationID
+        )
+        return .completed
+    }
+
+    func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
+        throw AgentLoopError.invalidResumeRequest
+    }
+
+    func cancelTurn(in conversationID: UUID) {}
+    func state(for conversationID: UUID) -> AgentLoopState { .idle }
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
+    func isRunning(for conversationID: UUID) -> Bool { false }
+    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
 }

@@ -15,7 +15,7 @@ struct ConversationForkPluginTests {
     @Test("Summarizer 回退摘要：无历史时返回占位")
     func summarizerEmptyFallback() async {
         let conversations = DefaultConversationManager()
-        let messages = DefaultMessageManaging()
+        let messages = DefaultMessageManager()
         let llmProvider = DefaultLLMProviderManagerProviding()
         let summarizer = ConversationSummarizer(
             conversations: conversations,
@@ -31,7 +31,7 @@ struct ConversationForkPluginTests {
     @Test("Summarizer 回退摘要：有历史时拼装本地摘要")
     func summarizerFallbackWithHistory() async {
         let conversations = DefaultConversationManager()
-        let messages = DefaultMessageManaging()
+        let messages = DefaultMessageManager()
         let llmProvider = DefaultLLMProviderManagerProviding()
         let id = UUID()
         messages.insertMessage(Message(conversationID: id, role: .user, content: "帮我写个排序"), to: id)
@@ -63,10 +63,10 @@ struct ConversationForkPluginTests {
     @Test("Fork 按钮通过 sender 发送摘要到新对话")
     func forkSendsSummary() async throws {
         let conversations = DefaultConversationManager()
-        let messages = DefaultMessageManaging()
-        let loop = DefaultAgentLoopProviding(messages: messages)
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
         loop.setResponder { _ in "ok" }
-        let sender = DefaultMessageSendingProviding(
+        let sender = DefaultMessageSender(
             conversations: conversations,
             messages: messages,
             agentLoop: loop
@@ -80,4 +80,42 @@ struct ConversationForkPluginTests {
         let newID = try #require(conversations.selectedConversationID)
         #expect(messages.messages(for: newID).contains { $0.content == "摘要内容" })
     }
+}
+
+/// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。
+@MainActor
+private final class StubAgentLoop: AgentLoopProviding {
+    private let messages: any MessageManaging
+    private var responder: AgentLoopResponder = { _ in "" }
+
+    init(messages: any MessageManaging) {
+        self.messages = messages
+    }
+
+    func setResponder(_ responder: AgentLoopResponder?) {
+        if let responder { self.responder = responder }
+    }
+
+    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
+        let request = AgentLoopRequest(
+            conversationID: conversationID,
+            messages: messages.messages(for: conversationID)
+        )
+        let content = try await responder(request)
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .assistant, content: content),
+            to: conversationID
+        )
+        return .completed
+    }
+
+    func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
+        throw AgentLoopError.invalidResumeRequest
+    }
+
+    func cancelTurn(in conversationID: UUID) {}
+    func state(for conversationID: UUID) -> AgentLoopState { .idle }
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
+    func isRunning(for conversationID: UUID) -> Bool { false }
+    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
 }

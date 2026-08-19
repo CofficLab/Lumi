@@ -16,9 +16,9 @@ struct MessageSenderPluginTests {
         let kernel = KernelCoreContainer()
         let conversations = DefaultConversationManager()
         try kernel.registerProvider((any ConversationManaging).self, conversations)
-        let messages = DefaultMessageManaging()
+        let messages = DefaultMessageManager()
         try kernel.registerProvider((any MessageManaging).self, messages, forwardsObjectWillChange: false)
-        let agentLoop = DefaultAgentLoopProviding(messages: messages)
+        let agentLoop = StubAgentLoop(messages: messages)
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
 
         // 走真实装配路径：`start(plugins:)` 会设置 activePluginID，
@@ -49,9 +49,9 @@ struct MessageSenderPluginTests {
         let kernel = KernelCoreContainer()
         let conversations = DefaultConversationManager()
         try kernel.registerProvider((any ConversationManaging).self, conversations)
-        let messages = DefaultMessageManaging()
+        let messages = DefaultMessageManager()
         try kernel.registerProvider((any MessageManaging).self, messages, forwardsObjectWillChange: false)
-        let agentLoop = DefaultAgentLoopProviding(messages: messages)
+        let agentLoop = StubAgentLoop(messages: messages)
         agentLoop.setResponder { _ in "response" }
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
 
@@ -64,4 +64,42 @@ struct MessageSenderPluginTests {
         #expect(messages.messages(for: id).map(\.content) == ["hello", "response"])
         #expect(sender.isSending == false)
     }
+}
+
+/// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。
+@MainActor
+private final class StubAgentLoop: AgentLoopProviding {
+    private let messages: any MessageManaging
+    private var responder: AgentLoopResponder = { _ in "" }
+
+    init(messages: any MessageManaging) {
+        self.messages = messages
+    }
+
+    func setResponder(_ responder: AgentLoopResponder?) {
+        if let responder { self.responder = responder }
+    }
+
+    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
+        let request = AgentLoopRequest(
+            conversationID: conversationID,
+            messages: messages.messages(for: conversationID)
+        )
+        let content = try await responder(request)
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .assistant, content: content),
+            to: conversationID
+        )
+        return .completed
+    }
+
+    func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
+        throw AgentLoopError.invalidResumeRequest
+    }
+
+    func cancelTurn(in conversationID: UUID) {}
+    func state(for conversationID: UUID) -> AgentLoopState { .idle }
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
+    func isRunning(for conversationID: UUID) -> Bool { false }
+    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
 }

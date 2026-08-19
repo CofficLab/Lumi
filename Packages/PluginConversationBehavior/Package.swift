@@ -16,6 +16,7 @@ let package = Package(
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderLLMManager"),
+        .package(path: "../ProviderAgentLoop"),
         .package(path: "../LumiUI"),
         .package(path: "../LocalizationKit"),
     ],
@@ -35,7 +36,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginConversationBehaviorTests",
-            dependencies: ["PluginConversationBehavior"],
+            dependencies: [
+                "PluginConversationBehavior",
+                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+            ],
             path: "Tests/PluginConversationBehaviorTests"
         ),
     ]

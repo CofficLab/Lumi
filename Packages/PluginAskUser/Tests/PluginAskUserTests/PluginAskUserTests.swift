@@ -7,8 +7,38 @@ import ProviderMessage
 import KitLLM
 import ProviderAgentLoop
 import ProviderToolManager
+import ProviderLLMManager
+import ProviderMessageStreaming
 
 @testable import PluginAskUser
+
+/// 测试用 LLMManaging：转发到脚本化 provider。
+@MainActor
+private final class ScriptedLLMManager: LLMManaging {
+    var provider: any SuperLLMProvider
+
+    init(provider: any SuperLLMProvider) {
+        self.provider = provider
+    }
+
+    var providerID: String { "scripted-manager" }
+    var providerInfo: LLMProviderInfo {
+        LLMProviderInfo(id: "scripted-manager", displayName: "Scripted Manager", defaultModel: "", models: [], isLocal: true)
+    }
+    func complete(_ request: LLMRequest) async throws -> LLMResponse {
+        try await provider.complete(request)
+    }
+
+    func allProviders() -> [any SuperLLMProvider] { [provider] }
+    func provider(id: String) -> (any SuperLLMProvider)? { provider }
+    var providerCount: Int { 1 }
+    func register(_ provider: any SuperLLMProvider) throws {}
+    func unregister(id: String) {}
+    var selectedProviderID: String? { "scripted-manager" }
+    var selectedModel: String? { nil }
+    func models(for providerID: String) -> [String] { [] }
+    func select(providerID: String, model: String?) {}
+}
 
 @Suite("AskUserPlugin")
 @MainActor
@@ -129,18 +159,22 @@ struct AskUserPluginTests {
 
         let provider = ScriptedLLM(responses: [
             LLMResponse(content: "", toolCalls: [
-                MessageToolCall(id: "ask-1", name: "ask_user", arguments: #"{"question":"继续吗?","mode":"yes_no"}"#),
+                LLMToolCall(id: "ask-1", name: "ask_user", arguments: #"{"question":"继续吗?","mode":"yes_no"}"#),
             ]),
             LLMResponse(content: "好的，继续"),
         ])
 
-        let messages = DefaultMessageManaging()
+        let messages = DefaultMessageManager()
         let conversationID = UUID()
         messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "帮我做决定"), to: conversationID)
 
-        let loop = DefaultAgentLoopProviding(messages: messages, llmProvider: provider)
-        loop.setToolManager(toolManager)
-        loop.setConversations(conversations)
+        let loop = DefaultAgentLoopProvider(
+            messages: messages,
+            llmManager: ScriptedLLMManager(provider: provider),
+            toolManager: toolManager,
+            streaming: DefaultMessageStreamingProviding(),
+            conversations: conversations
+        )
 
         // 第一轮：ask_user → 挂起等待用户回答
         let outcome = try await loop.runTurn(in: conversationID)
