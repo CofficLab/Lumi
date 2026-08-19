@@ -1,5 +1,4 @@
 import AgentToolKit
-import Combine
 import Foundation
 import KitLLM
 import os
@@ -29,7 +28,6 @@ extension AgentLoopProvider {
         let turnID = UUID()
         turnIDs[conversationID] = turnID
         states[conversationID] = .running
-        notifyRevisionChange()
 
         let task: Task<AgentLoopOutcome, Never> = Task { @MainActor [weak self] in
             guard let self else { return .cancelled }
@@ -39,7 +37,6 @@ extension AgentLoopProvider {
         let outcome = await task.value
         tasks.removeValue(forKey: conversationID)
         turnIDs.removeValue(forKey: conversationID)
-        notifyRevisionChange()
 
         if Self.verbose {
             Self.logger.info("\(Self.t)回合执行完成 - conversationID: \(conversationID), outcome: \(String(describing: outcome))")
@@ -152,7 +149,6 @@ extension AgentLoopProvider {
         states[conversationID] = .cancelled
         tasks[conversationID]?.cancel()
         tasks.removeValue(forKey: conversationID)
-        notifyRevisionChange()
     }
 }
 

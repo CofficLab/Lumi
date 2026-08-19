@@ -1,5 +1,4 @@
 import AgentToolKit
-import Combine
 import Foundation
 import KitLLM
 import os
@@ -26,11 +25,6 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
     let toolManager: any ToolManagerProviding
     let streaming: any MessageStreamingProviding
     let conversations: any ConversationManaging
-
-    @Published public internal(set) var revision: Int = 0
-
-    /// 状态变更回调：宿主据此递增 `revision`。
-    var onRevisionChange: (() -> Void)?
 
     // MARK: - Turn State
 
@@ -87,11 +81,6 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
     public func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
 
     // MARK: - Internal Helpers
-
-    func notifyRevisionChange() {
-        revision += 1
-        onRevisionChange?()
-    }
 
     func languagePreference(for conversationID: UUID) -> LanguagePreference {
         let language = conversations.language(for: conversationID)
