@@ -26,7 +26,7 @@ public final class LogoSmartLightPlugin: SuperPlugin, SuperLog {
         description: "贡献智能灯光主题 Logo，提供动画灯泡图标。",
         category: .design,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .required
     )
 
     public init() {}
