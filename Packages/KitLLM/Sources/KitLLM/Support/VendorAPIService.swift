@@ -1,15 +1,20 @@
 import Foundation
 
-/// 供应商统一的 API 传输服务（纯 URLSession 实现，无项目依赖）。
+/// 供应商统一的 API 传输服务。
 ///
 /// 提供两条发送路径：
 /// - `sendChatRequest` / `sendJSON`：非流式 JSON
 /// - `sendStreamingChatRequest`：SSE 流式，逐事件回调原始 `Data`
+///
+/// 优先使用 `LLMNetworkProviding`（由宿主注入，支持 HTTP 交换记录等），
+/// 未注入时回退到 URLSession。
 public final class VendorAPIService: @unchecked Sendable {
     private let session: URLSession
+    private let networkProvider: (any LLMNetworkProviding)?
 
-    public init(session: URLSession = .shared) {
+    public init(session: URLSession = .shared, networkProvider: (any LLMNetworkProviding)? = nil) {
         self.session = session
+        self.networkProvider = networkProvider
     }
 
     /// 发送聊天完成请求（单次，不含重试）。
@@ -17,8 +22,15 @@ public final class VendorAPIService: @unchecked Sendable {
         request: URLRequest,
         body: [String: Any]
     ) async throws -> Data {
-        var mutableRequest = request
         let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
+
+        if let networkProvider {
+            let (data, response) = try await networkProvider.send(request: request, body: bodyData)
+            try validateResponse(response, data: data)
+            return data
+        }
+
+        var mutableRequest = request
         mutableRequest.httpBody = bodyData
         let (data, response) = try await session.data(for: mutableRequest)
         try validateResponse(response, data: data)
@@ -44,8 +56,14 @@ public final class VendorAPIService: @unchecked Sendable {
         body: [String: Any],
         onEvent: @escaping @Sendable (Data) async -> Bool
     ) async throws {
-        var mutableRequest = request
         let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
+
+        if let networkProvider {
+            try await networkProvider.stream(request: request, body: bodyData, onEvent: onEvent)
+            return
+        }
+
+        var mutableRequest = request
         mutableRequest.httpBody = bodyData
 
         let (bytes, response) = try await session.bytes(for: mutableRequest)
