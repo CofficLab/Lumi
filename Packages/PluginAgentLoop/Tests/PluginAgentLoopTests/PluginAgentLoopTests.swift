@@ -13,6 +13,6 @@ import Foundation
 @Test func testPluginMetadata() async throws {
     let plugin = PluginAgentLoop()
     let metadata = plugin.metadata
-    #expect(metadata.name == "Custom Agent Loop")
-    #expect(metadata.category == .chat)
+    #expect(metadata.name == "Plugin Agent Loop")
+    #expect(metadata.category == .core)
 }

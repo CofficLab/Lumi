@@ -5,6 +5,7 @@ import AgentToolKit
 import ProviderMessage
 import KitLLM
 import ProviderConversation
+import ProviderLLMManager
 import ProviderToolManager
 import ProviderMessageStreaming
 @testable import ProviderAgentLoop
@@ -13,12 +14,16 @@ import ProviderMessageStreaming
 @MainActor
 struct AgentLoopFullLoopTests {
 
+    // 消除 KitLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
+    private typealias ToolCall = AgentToolKit.ToolCall
+
     // MARK: - Test Doubles
 
     /// 可编排响应序列的 LLM Provider：按调用次数依次返回预设响应。
-    private final class ScriptedLLMProvider: SuperLLMProvider, @unchecked Sendable {
-        let providerID = "scripted"
-        let providerInfo = LLMProviderInfo(id: "scripted", displayName: "Scripted", defaultModel: "", models: [], isLocal: true)
+    @MainActor
+    private final class ScriptedLLMProvider: SuperLLMProvider {
+        nonisolated let providerID = "scripted"
+        nonisolated let providerInfo = LLMProviderInfo(id: "scripted", displayName: "Scripted", defaultModel: "", models: [], isLocal: true)
         var responses: [LLMResponse]
         var receivedRequests: [LLMRequest] = []
 
@@ -31,6 +36,45 @@ struct AgentLoopFullLoopTests {
             guard !responses.isEmpty else { return LLMResponse(content: "") }
             return responses.removeFirst()
         }
+    }
+
+    /// 包一层 LLMManaging：测试用管理器，转发到脚本化 provider。
+    /// 同时实现 LLMStreamingProviding：底层 provider 支持流式时转发，
+    /// 以验证 AgentLoop 的流式优先路径。
+    @MainActor
+    private final class ScriptedLLMManager: LLMManaging, LLMStreamingProviding, @unchecked Sendable {
+        var provider: any SuperLLMProvider
+
+        init(provider: any SuperLLMProvider) {
+            self.provider = provider
+        }
+
+        var providerID: String { "scripted-manager" }
+        var providerInfo: LLMProviderInfo {
+            LLMProviderInfo(id: "scripted-manager", displayName: "Scripted Manager", defaultModel: "", models: [], isLocal: true)
+        }
+        func complete(_ request: LLMRequest) async throws -> LLMResponse {
+            try await provider.complete(request)
+        }
+        func streamComplete(
+            _ request: LLMRequest,
+            onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
+        ) async throws -> LLMResponse {
+            if let streamingProvider = provider as? any LLMStreamingProviding {
+                return try await streamingProvider.streamComplete(request, onChunk: onChunk)
+            }
+            return try await complete(request)
+        }
+
+        func allProviders() -> [any SuperLLMProvider] { [provider] }
+        func provider(id: String) -> (any SuperLLMProvider)? { provider }
+        var providerCount: Int { 1 }
+        func register(_ provider: any SuperLLMProvider) throws {}
+        func unregister(id: String) {}
+        var selectedProviderID: String? { "scripted-manager" }
+        var selectedModel: String? { nil }
+        func models(for providerID: String) -> [String] { [] }
+        func select(providerID: String, model: String?) {}
     }
 
     /// 可编程工具：返回预设结果。
@@ -50,9 +94,6 @@ struct AgentLoopFullLoopTests {
         func inputSchema(for language: LanguagePreference) -> [String: Any] { [:] }
         func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { risk }
         func displayDescription(for arguments: [String: ToolArgument]) -> String { "执行 \(name)" }
-        // 注意：executeResult 是 SuperAgentTool 协议扩展方法（非协议要求），
-        // 对 `any SuperAgentTool` 调用时静态分派到扩展默认实现（内部调 execute），
-        // 因此在 execute 中计数。
         func execute(arguments: [String: ToolArgument]) async throws -> String {
             executionCount += 1
             return result.content
@@ -60,7 +101,8 @@ struct AgentLoopFullLoopTests {
     }
 
     /// 内存 ToolManager（对齐协议）。
-    private final class TestToolManager: ToolManagerProviding, @unchecked Sendable {
+    @MainActor
+    private final class TestToolManager: ToolManagerProviding {
         private var tools: [String: any SuperAgentTool] = [:]
         private var order: [String] = []
 
@@ -156,13 +198,31 @@ struct AgentLoopFullLoopTests {
         func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}
     }
 
+    /// 组装测试用的 AgentLoop（构造注入）。
+    private func makeLoop(
+        messages: any MessageManaging,
+        provider: any SuperLLMProvider,
+        toolManager: any ToolManagerProviding = TestToolManager(),
+        conversations: any ConversationManaging = TestConversationManager()
+    ) -> DefaultAgentLoopProvider {
+        let llmManager = ScriptedLLMManager(provider: provider)
+        let streaming = DefaultMessageStreamingProviding()
+        return DefaultAgentLoopProvider(
+            messages: messages,
+            llmManager: llmManager,
+            toolManager: toolManager,
+            streaming: streaming,
+            conversations: conversations
+        )
+    }
+
     // MARK: - Tests
 
     @Test("流式 Provider 优先走 streamComplete 并写入流式 store")
     func usesStreamingPath() async throws {
         final class StreamingProvider: SuperLLMProvider, LLMStreamingProviding, @unchecked Sendable {
-            let providerID = "streaming"
-            let providerInfo = LLMProviderInfo(id: "streaming", displayName: "Streaming", defaultModel: "", models: [], isLocal: true)
+            nonisolated let providerID = "streaming"
+            nonisolated let providerInfo = LLMProviderInfo(id: "streaming", displayName: "Streaming", defaultModel: "", models: [], isLocal: true)
             var streamed = false
             func complete(_ request: LLMRequest) async throws -> LLMResponse { LLMResponse(content: "non-stream") }
             func streamComplete(
@@ -170,26 +230,25 @@ struct AgentLoopFullLoopTests {
                 onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
             ) async throws -> LLMResponse {
                 streamed = true
-                await onChunk(LLMStreamChunk(content: "你", isThinking: false))
-                await onChunk(LLMStreamChunk(content: "好", isThinking: false))
+                await onChunk(LLMStreamChunk(content: "你"))
+                await onChunk(LLMStreamChunk(content: "好"))
                 return LLMResponse(content: "你好", model: "test")
             }
         }
 
-        let messages = DefaultMessageManaging()
+        let messages = DefaultMessageManager()
         let conversationID = UUID()
         messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "hi"), to: conversationID)
-        let streaming = DefaultMessageStreamingProviding()
         let provider = StreamingProvider()
-        let loop = DefaultAgentLoopProviding(messages: messages, llmProvider: provider)
-        loop.setStreaming(streaming)
+        let loop = makeLoop(messages: messages, provider: provider)
+        loop.setEventHandler { _ in }
 
         let outcome = try await loop.runTurn(in: conversationID)
         #expect(outcome == .completed)
         #expect(provider.streamed)
         #expect(messages.lastMessage(in: conversationID)?.content == "你好")
         // 临时行已清理
-        #expect(streaming.streamingMessage(for: conversationID) == nil)
+        #expect(DefaultMessageStreamingProviding().streamingMessage(for: conversationID) == nil)
     }
 
     @Test("工具调用循环：assistant 带工具 → 执行 → 结果回传 → 最终回复")
@@ -202,21 +261,19 @@ struct AgentLoopFullLoopTests {
             // 第一轮：请求执行工具
             LLMResponse(
                 content: "",
-                toolCalls: [MessageToolCall(id: "call-1", name: "fetch_weather", arguments: "{}")]
+                toolCalls: [LLMToolCall(id: "call-1", name: "fetch_weather", arguments: "{}")]
             ),
             // 第二轮：拿到工具结果后的最终回复
             LLMResponse(content: "今天晴天"),
         ])
 
-        let messages = DefaultMessageManaging()
+        let messages = DefaultMessageManager()
         let conversationID = UUID()
         messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "天气如何？"), to: conversationID)
         let conversations = TestConversationManager()
         conversations.setAutomation(.build, for: conversationID)
 
-        let loop = DefaultAgentLoopProviding(messages: messages, llmProvider: provider)
-        loop.setToolManager(toolManager)
-        loop.setConversations(conversations)
+        let loop = makeLoop(messages: messages, provider: provider, toolManager: toolManager, conversations: conversations)
 
         let outcome = try await loop.runTurn(in: conversationID)
         #expect(outcome == .completed)
@@ -225,10 +282,10 @@ struct AgentLoopFullLoopTests {
         #expect(tool.executionCount == 1)
         #expect(toolManager.tool(named: "fetch_weather") != nil)
         // 工具结果消息已落库
-        #expect(messages.messages(for: conversationID).contains { $0.role == .tool && $0.content == "sunny" })
+        #expect(messages.messages(for: conversationID).contains { $0.role == MessageRole.tool && $0.content == "sunny" })
         // LLM 第二次请求的历史包含工具结果
         #expect(provider.receivedRequests.count == 2)
-        #expect(provider.receivedRequests[1].messages.contains { $0.role == .tool })
+        #expect(provider.receivedRequests[1].messages.contains { $0.role == MessageRole.tool })
     }
 
     @Test("build 模式高风险工具挂起等待批准，批准后执行并完成")
@@ -238,19 +295,17 @@ struct AgentLoopFullLoopTests {
         toolManager.add(tool, pluginID: "test")
 
         let provider = ScriptedLLMProvider(responses: [
-            LLMResponse(content: "", toolCalls: [MessageToolCall(id: "call-1", name: "delete_file", arguments: "{}")]),
+            LLMResponse(content: "", toolCalls: [LLMToolCall(id: "call-1", name: "delete_file", arguments: "{}")]),
             LLMResponse(content: "已删除"),
         ])
 
-        let messages = DefaultMessageManaging()
+        let messages = DefaultMessageManager()
         let conversationID = UUID()
         messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "删掉它"), to: conversationID)
         let conversations = TestConversationManager()
         conversations.setAutomation(.build, for: conversationID)
 
-        let loop = DefaultAgentLoopProviding(messages: messages, llmProvider: provider)
-        loop.setToolManager(toolManager)
-        loop.setConversations(conversations)
+        let loop = makeLoop(messages: messages, provider: provider, toolManager: toolManager, conversations: conversations)
 
         // 第一轮：高风险工具 → 挂起
         let outcome = try await loop.runTurn(in: conversationID)
@@ -280,36 +335,34 @@ struct AgentLoopFullLoopTests {
         toolManager.add(tool, pluginID: "test")
 
         let provider = ScriptedLLMProvider(responses: [
-            LLMResponse(content: "", toolCalls: [MessageToolCall(id: "call-1", name: "run_shell", arguments: "{}")]),
+            LLMResponse(content: "", toolCalls: [LLMToolCall(id: "call-1", name: "run_shell", arguments: "{}")]),
             LLMResponse(content: "完成"),
         ])
 
-        let messages = DefaultMessageManaging()
+        let messages = DefaultMessageManager()
         let conversationID = UUID()
         messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "执行"), to: conversationID)
         let conversations = TestConversationManager()
         conversations.setAutomation(.chat, for: conversationID)
 
-        let loop = DefaultAgentLoopProviding(messages: messages, llmProvider: provider)
-        loop.setToolManager(toolManager)
-        loop.setConversations(conversations)
+        let loop = makeLoop(messages: messages, provider: provider, toolManager: toolManager, conversations: conversations)
 
         let outcome = try await loop.runTurn(in: conversationID)
         #expect(outcome == .completed)
         #expect(tool.executionCount == 0, "chat 模式不应执行任何工具")
         // 工具被拒绝的说明应回传给 LLM（.tool 消息带拒绝文案）
         #expect(messages.messages(for: conversationID).contains {
-            $0.role == .tool && $0.content.contains("blocked")
+            $0.role == MessageRole.tool && $0.content.contains("blocked")
         })
     }
 
     @Test("回合生命周期事件经回调广播")
     func publishesEvents() async throws {
         var events: [AgentLoopEvent] = []
-        let messages = DefaultMessageManaging()
+        let messages = DefaultMessageManager()
         let conversationID = UUID()
         messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "hi"), to: conversationID)
-        let loop = DefaultAgentLoopProviding(messages: messages, llmProvider: ScriptedLLMProvider(responses: [LLMResponse(content: "ok")]))
+        let loop = makeLoop(messages: messages, provider: ScriptedLLMProvider(responses: [LLMResponse(content: "ok")]))
         loop.setEventHandler { events.append($0) }
 
         _ = try await loop.runTurn(in: conversationID)
