@@ -261,7 +261,11 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
 
     // MARK: - Helpers
 
-    private func toolSchemas(from schemas: [LLMFunctionSchema]?)
+    /// 把请求级工具 schema（`[LLMFunctionSchema]`）转成适配器可消费的
+    /// `[any LLMToolSchemaProviding]`，并构建工具名 sanitize 的 reverseMap，
+    /// 供响应解析时把下划线还原成注册 id。子类（如 GoProvider）覆写协议路由时
+    /// 必须复用此方法注入 tools，否则工具定义会丢失。
+    public func toolSchemas(from schemas: [LLMFunctionSchema]?)
         -> ([any LLMToolSchemaProviding]?, [String: String]?) {
         guard let schemas, !schemas.isEmpty else { return (nil, nil) }
         var reverseMap: [String: String] = [:]
@@ -282,7 +286,8 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         )
     }
 
-    private func normalizedReasoningEffort(_ value: String?) -> String? {
+    /// 归一化推理档位字符串，供子类覆写协议路由时复用（如 GoProvider 的 Responses 路径）。
+    public func normalizedReasoningEffort(_ value: String?) -> String? {
         guard let value else { return nil }
         let normalized = value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         guard ["minimal", "low", "medium", "high", "xhigh", "max"].contains(normalized) else { return nil }

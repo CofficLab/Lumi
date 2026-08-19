@@ -155,19 +155,20 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
         if Self.verbose {
             Self.logger.debug("\(Self.t)sendChat model=\(model, privacy: .public) anthropic=\(anthropic) url=\(url.path, privacy: .public)")
         }
+        let (tools, reverseMap) = toolSchemas(from: request.tools)
         if anthropic {
             let adapter = AnthropicCompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
             let body = try adapter.buildRequestBody(
                 messages: request.messages,
                 model: model,
-                tools: nil,
+                tools: tools,
                 systemPrompt: ""
             )
             let data = try await apiService.sendChatRequest(
                 request: adapter.buildRequest(url: url, apiKey: apiKey),
                 body: body
             )
-            let parsed = try adapter.parseResponse(data: data)
+            let parsed = try adapter.parseResponse(data: data, reverseMap: reverseMap)
             if Self.verbose {
                 Self.logger.debug("\(Self.t)sendChat anthropic response received, content length=\(parsed.content.count)")
             }
@@ -178,14 +179,14 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
         let body = try adapter.buildRequestBody(
             messages: request.messages,
             model: model,
-            tools: nil,
+            tools: tools,
             systemPrompt: ""
         )
         let data = try await apiService.sendChatRequest(
             request: adapter.buildRequest(url: url, apiKey: apiKey),
             body: body
         )
-        let parsed = try adapter.parseResponse(data: data)
+        let parsed = try adapter.parseResponse(data: data, reverseMap: reverseMap)
         if Self.verbose {
             Self.logger.debug("\(Self.t)sendChat openAI response received, content length=\(parsed.content.count)")
         }
@@ -204,12 +205,13 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
         if Self.verbose {
             Self.logger.debug("\(Self.t)streamChat model=\(model, privacy: .public) anthropic=\(anthropic)")
         }
+        let (tools, reverseMap) = toolSchemas(from: request.tools)
         if anthropic {
             let adapter = AnthropicCompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
             nonisolated(unsafe) let body = try adapter.buildStreamingRequestBody(
                 messages: request.messages,
                 model: model,
-                tools: nil,
+                tools: tools,
                 systemPrompt: "",
                 config: LLMConfig(model: model, providerId: providerInfo.id)
             )
@@ -219,7 +221,13 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
                 body: body
             ) { data in
                 do {
-                    guard let chunk = try adapter.parseStreamChunk(data: data) else { return true }
+                    var chunk = try adapter.parseStreamChunk(data: data)
+                    if let reverseMap, !reverseMap.isEmpty, let toolCalls = chunk?.toolCalls {
+                        chunk = chunk?.withToolCalls(
+                            toolCalls.map { ToolCall(id: $0.id, name: reverseMap[$0.name] ?? $0.name, arguments: $0.arguments) }
+                        )
+                    }
+                    guard let chunk else { return true }
                     if chunk.eventType == .thinkingDelta, let piece = chunk.content {
                         await onChunk(LLMStreamChunk(reasoningContent: piece))
                     } else if let piece = chunk.content, !piece.isEmpty {
@@ -239,7 +247,7 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
         nonisolated(unsafe) let body = try adapter.buildStreamingRequestBody(
             messages: request.messages,
             model: model,
-            tools: nil,
+            tools: tools,
             systemPrompt: "",
             config: LLMConfig(model: model, providerId: providerInfo.id)
         )
@@ -249,7 +257,13 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
             body: body
         ) { data in
             do {
-                guard let chunk = try adapter.parseStreamChunk(data: data) else { return true }
+                var chunk = try adapter.parseStreamChunk(data: data)
+                if let reverseMap, !reverseMap.isEmpty, let toolCalls = chunk?.toolCalls {
+                    chunk = chunk?.withToolCalls(
+                        toolCalls.map { ToolCall(id: $0.id, name: reverseMap[$0.name] ?? $0.name, arguments: $0.arguments) }
+                    )
+                }
+                guard let chunk else { return true }
                 if chunk.eventType == .thinkingDelta, let piece = chunk.content {
                     await onChunk(LLMStreamChunk(reasoningContent: piece))
                 } else if let piece = chunk.content, !piece.isEmpty {
@@ -279,16 +293,33 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
         for message in request.messages {
             input.append(["role": message.role.rawValue, "content": message.content])
         }
-        let body: [String: Any] = ["model": model, "input": input]
+        var body: [String: Any] = ["model": model, "input": input]
+
+        // 注入工具定义，否则模型看不到任何可调用函数、只会返回纯文本。
+        let (tools, reverseMap) = toolSchemas(from: request.tools)
+        if let tools, !tools.isEmpty {
+            body["tools"] = tools.map(formatResponsesTool)
+        }
+        if let reasoningEffort = normalizedReasoningEffort(request.reasoningEffort) {
+            body["reasoning"] = ["effort": reasoningEffort]
+        }
 
         var httpRequest = URLRequest(url: try endpointURL("\(Self.base)/responses"))
         httpRequest.httpMethod = "POST"
         httpRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         httpRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let data = try await apiService.sendJSON(request: httpRequest, body: body)
+        nonisolated(unsafe) let finalBody = body
+        let data = try await apiService.sendJSON(request: httpRequest, body: finalBody)
         let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
-        return LLMResponse(content: Self.responsesText(from: object), model: model)
+        let result = Self.responsesResult(from: object, reverseMap: reverseMap)
+        return LLMResponse(
+            content: result.content,
+            model: model,
+            toolCalls: result.toolCalls?.map {
+                LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
+            }
+        )
     }
 
     private func endpointURL(_ string: String) throws -> URL {
@@ -298,12 +329,67 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
         return url
     }
 
-    private static func responsesText(from object: [String: Any]) -> String {
-        if let text = object["output_text"] as? String { return text }
-        guard let output = object["output"] as? [[String: Any]] else { return "" }
-        return output
-            .flatMap { ($0["content"] as? [[String: Any]]) ?? [] }
-            .compactMap { $0["text"] as? String }
-            .joined()
+    /// Responses API 的 tools 项采用平铺结构（不像 chat 那样套一层 function）。
+    private func formatResponsesTool(_ tool: any LLMToolSchemaProviding) -> [String: Any] {
+        [
+            "type": "function",
+            "name": LLMToolNameSanitizer.sanitize(tool.name),
+            "description": tool.toolDescription,
+            "parameters": tool.inputSchema,
+            "strict": false,
+        ]
+    }
+
+    /// 从 Responses 响应中提取正文文本与工具调用。
+    /// 工具名经 `formatResponsesTool` sanitize，这里按 reverseMap 还原成注册 id。
+    private static func responsesResult(
+        from object: [String: Any],
+        reverseMap: [String: String]?
+    ) -> (content: String, toolCalls: [LLMToolCall]?) {
+        if let text = object["output_text"] as? String, !text.isEmpty {
+            return (text, responsesFunctionCalls(from: object, reverseMap: reverseMap))
+        }
+        guard let output = object["output"] as? [[String: Any]] else {
+            return ("", nil)
+        }
+        var content = ""
+        var calls: [LLMToolCall] = []
+        for item in output {
+            if let text = item["content"] as? String {
+                content += text
+            } else if let blocks = item["content"] as? [[String: Any]] {
+                content += blocks.compactMap { $0["text"] as? String }.joined()
+            }
+            if item["type"] as? String == "function_call",
+               let name = item["name"] as? String,
+               let arguments = item["arguments"] as? String {
+                let id = (item["call_id"] as? String) ?? (item["id"] as? String) ?? UUID().uuidString
+                calls.append(LLMToolCall(
+                    id: id,
+                    name: reverseMap?[name] ?? name,
+                    arguments: arguments
+                ))
+            }
+        }
+        return (content, calls.isEmpty ? nil : calls)
+    }
+
+    private static func responsesFunctionCalls(
+        from object: [String: Any],
+        reverseMap: [String: String]?
+    ) -> [LLMToolCall]? {
+        guard let output = object["output"] as? [[String: Any]] else { return nil }
+        var calls: [LLMToolCall] = []
+        for item in output where item["type"] as? String == "function_call" {
+            guard let name = item["name"] as? String,
+                  let arguments = item["arguments"] as? String else { continue }
+            let id = (item["call_id"] as? String) ?? (item["id"] as? String) ?? UUID().uuidString
+            calls.append(LLMToolCall(
+                id: id,
+                name: reverseMap?[name] ?? name,
+                arguments: arguments
+            ))
+        }
+        return calls.isEmpty ? nil : calls
     }
 }
