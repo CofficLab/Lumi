@@ -8,8 +8,6 @@ import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageSender
 import ProviderToolManager
-import LumiUI
-import MarkdownKit
 import SwiftUI
 
 struct AssistantMessageView: View {

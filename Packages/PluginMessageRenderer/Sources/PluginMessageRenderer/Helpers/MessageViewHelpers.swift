@@ -75,9 +75,6 @@ enum MessageViewHelpers {
         if let providerID = message.providerID, !providerID.isEmpty {
             items.append(providerID)
         }
-        if let modelName = message.modelName, !modelName.isEmpty {
-            items.append(formatModelName(modelName))
-        }
         if let cacheHitRate = cacheHitRateItem(for: message) {
             items.append(cacheHitRate)
         }
@@ -129,12 +126,16 @@ enum MessageViewHelpers {
 
     static func headerTitle(for message: Message) -> String {
         switch message.role {
-        case .user: userDisplayName()
-        case .assistant: "Lumi"
-        case .tool: "Tool"
-        case .system: "System"
-        case .error: "Error"
-        case .status: "Status"
+        case .user: return userDisplayName()
+        case .assistant:
+            if let modelName = message.modelName, !modelName.isEmpty {
+                return formatModelName(modelName)
+            }
+            return "Lumi"
+        case .tool: return "Tool"
+        case .system: return "System"
+        case .error: return "Error"
+        case .status: return "Status"
         }
     }
 
