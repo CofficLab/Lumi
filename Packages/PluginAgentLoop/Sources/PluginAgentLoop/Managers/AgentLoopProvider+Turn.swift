@@ -155,12 +155,6 @@ extension AgentLoopProvider {
         tasks.removeValue(forKey: conversationID)
         notifyRevisionChange()
     }
-
-    /// 兼容旧 API：显式开启一个回合并置为运行态（`AgentTurnHandle` 句柄）。
-    func createTurn(_ request: AgentTurnRequest) {
-        states[request.conversationID] = .running
-        notifyRevisionChange()
-    }
 }
 
 // MARK: - Turn Loop
