@@ -24,7 +24,7 @@ public final class IdleTimePlugin: SuperPlugin {
         description: "",
         category: .system,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .required
     )
 
     /// 事件观察者 token（onShutdown 时移除）。
