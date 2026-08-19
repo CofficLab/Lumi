@@ -62,23 +62,23 @@ final class AutoConversationTitleService {
     }
 
     private func installObserver() {
-        let observer = NotificationCenter.default.addObserver(
-            forName: .lumiMessageSaved,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self,
-                  let conversationID = notification.userInfo?["conversationID"] as? UUID,
-                  let messageID = notification.userInfo?["messageID"] as? UUID,
-                  let role = notification.userInfo?["role"] as? String,
-                  role == ProviderMessage.MessageRole.user.rawValue else {
-                return
-            }
-            Task { @MainActor [weak self] in
-                await self?.handleMessageSaved(conversationID: conversationID, messageID: messageID)
-            }
-        }
-        self.observer = ObserverToken(observer)
+//        let observer = NotificationCenter.default.addObserver(
+//            forName: .lumiMessageSaved,
+//            object: nil,
+//            queue: .main
+//        ) { [weak self] notification in
+//            guard let self,
+//                  let conversationID = notification.userInfo?["conversationID"] as? UUID,
+//                  let messageID = notification.userInfo?["messageID"] as? UUID,
+//                  let role = notification.userInfo?["role"] as? String,
+//                  role == ProviderMessage.MessageRole.user.rawValue else {
+//                return
+//            }
+//            Task { @MainActor [weak self] in
+//                await self?.handleMessageSaved(conversationID: conversationID, messageID: messageID)
+//            }
+//        }
+//        self.observer = ObserverToken(observer)
     }
 
     private func handleMessageSaved(conversationID: UUID, messageID: UUID) async {

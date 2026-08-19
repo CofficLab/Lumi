@@ -301,11 +301,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             "messageID": message.id,
             "role": message.role.rawValue,
         ]
-        NotificationCenter.default.post(
-            name: .lumiMessageSaved,
-            object: nil,
-            userInfo: userInfo
-        )
     }
 
     public func updateMessage(id: UUID, in conversationID: UUID, content: String) {

@@ -15,7 +15,7 @@ struct AgentTurnRecord: Identifiable, Equatable, Sendable {
     let conversationID: UUID
     let startedAt: Date
     let endedAt: Date?
-    let state: AgentTurnState
+    let state: AgentLoopState
 
     var isFinished: Bool {
         switch state {
@@ -31,7 +31,7 @@ enum AgentTurnRecordBuilder {
     static func records(
         from messages: [Message],
         conversationID: UUID,
-        conversationState: AgentTurnState
+        conversationState: AgentLoopState
     ) -> [AgentTurnRecord] {
         let grouped = Dictionary(grouping: messages.compactMap { message -> (UUID, Message)? in
             guard let turnID = message.turnID, message.conversationID == conversationID else { return nil }

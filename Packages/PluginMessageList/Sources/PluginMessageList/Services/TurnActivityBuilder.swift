@@ -7,7 +7,7 @@ enum TurnActivityBuilder {
     static func build(
         turnID: UUID,
         conversationID: UUID,
-        state: AgentTurnState,
+        state: AgentLoopState,
         toolCalls: [ToolCallRecord]
     ) -> LumiTurnActivity {
         LumiTurnActivity(

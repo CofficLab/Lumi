@@ -48,18 +48,18 @@ public final class AgentTurnNotificationPlugin: SuperPlugin {
         // 注意：不在插件启动时请求通知授权（测试/无 bundle 环境会崩溃）。
         // 通知授权由宿主 App 在启动时请求；插件只负责订阅并发送。
 
-        let finishedObserver = NotificationCenter.default.addObserver(
-            forName: .lumiTurnFinished,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self,
-                  let conversationID = notification.userInfo?["conversationID"] as? UUID else { return }
-            let reason = notification.userInfo?["reason"] as? String ?? "completed"
-            let (title, body) = Self.presentation(for: reason)
-            self.notifier(title, body, conversationID)
-        }
-        observers.append(finishedObserver)
+//        let finishedObserver = NotificationCenter.default.addObserver(
+//            forName: .lumiTurnFinished,
+//            object: nil,
+//            queue: .main
+//        ) { [weak self] notification in
+//            guard let self,
+//                  let conversationID = notification.userInfo?["conversationID"] as? UUID else { return }
+//            let reason = notification.userInfo?["reason"] as? String ?? "completed"
+//            let (title, body) = Self.presentation(for: reason)
+//            self.notifier(title, body, conversationID)
+//        }
+//        observers.append(finishedObserver)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

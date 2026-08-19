@@ -10,7 +10,7 @@ import ProviderToolManager
 struct LumiTurnActivity: Identifiable, Equatable, Sendable {
     let id: UUID
     let conversationID: UUID
-    let state: AgentTurnState
+    let state: AgentLoopState
     let toolCalls: [ToolCallRecord]
 
     var totalCount: Int { toolCalls.count }
