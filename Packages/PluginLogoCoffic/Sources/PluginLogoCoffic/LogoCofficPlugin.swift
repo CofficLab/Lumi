@@ -26,7 +26,7 @@ public final class LogoCofficPlugin: SuperPlugin, SuperLog {
         description: "贡献咖啡主题 Logo，提供动画咖啡杯图标。",
         category: .design,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .required
     )
 
     public init() {}
