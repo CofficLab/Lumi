@@ -64,8 +64,20 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultMessageManager()
     }
 
-    public func makeAgentLoopProvider(messages: any MessageManaging) -> any AgentLoopProviding {
-        DefaultAgentLoopProvider(messages: messages)
+    public func makeAgentLoopProvider(
+        messages: any MessageManaging,
+        llmManager: any LLMManaging,
+        toolManager: any ToolManagerProviding,
+        streaming: any MessageStreamingProviding,
+        conversations: any ConversationManaging
+    ) -> any AgentLoopProviding {
+        DefaultAgentLoopProvider(
+            messages: messages,
+            llmManager: llmManager,
+            toolManager: toolManager,
+            streaming: streaming,
+            conversations: conversations
+        )
     }
 
     public func makeLLMProvider() -> any SuperLLMProvider {
@@ -266,13 +278,6 @@ public struct DefaultProviderFactory: ProviderFactory {
         let providerManager = makeLLMProviderManagerProvider()
         try kernel.registerProvider((any LLMManaging).self, providerManager)
 
-        let agentLoop = makeAgentLoopProvider(messages: messages)
-        agentLoop.setLLMManager(providerManager)
-        // 完整接线（复刻旧版 AgentTurnRunner 的依赖注入）：
-        // - 工具执行/授权（build 模式高风险调用需用户批准）
-        // - 流式输出（MessageStreaming 临时行，UI 读 store 渲染）
-        // - 会话设置（automationLevel / reasoningEffort / verbosity / language）
-        // - 回合生命周期事件 → 内核事件总线 + 旧 NotificationCenter 通知名
         let toolManager = makeToolManagerProvider()
         if let storage = kernel.resolveProvider((any StorageProviding).self),
            let defaultToolManager = toolManager as? DefaultToolManagerProviding {
@@ -281,9 +286,21 @@ public struct DefaultProviderFactory: ProviderFactory {
             )
         }
         try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
-        agentLoop.setToolManager(toolManager)
-        agentLoop.setStreaming(kernel.resolveProvider((any MessageStreamingProviding).self))
-        agentLoop.setConversations(conversations)
+
+        let agentLoop: any AgentLoopProviding
+        if let streaming = kernel.resolveProvider((any MessageStreamingProviding).self) {
+            agentLoop = makeAgentLoopProvider(
+                messages: messages,
+                llmManager: providerManager,
+                toolManager: toolManager,
+                streaming: streaming,
+                conversations: conversations
+            )
+        } else {
+            // MessageStreamingProviding 缺失时无法构造 AgentLoop，跳过注册。
+            // 这种情况不应发生（上面已注册），但作为安全回退保留。
+            return
+        }
         // 生命周期钩子接线：回合循环在各关键节点触发钩子。
         if let lifecycleHooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
             agentLoop.setLifecycleHooks(lifecycleHooks)

@@ -32,8 +32,20 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
 
     @Published public internal(set) var revision: Int = 0
 
-    public init(messages: any MessageManaging) {
-        self.turnManager = TurnManager(messages: messages)
+    init(
+        messages: any MessageManaging,
+        llmManager: any LLMManaging,
+        toolManager: any ToolManagerProviding,
+        streaming: any MessageStreamingProviding,
+        conversations: any ConversationManaging
+    ) {
+        self.turnManager = TurnManager(
+            messages: messages,
+            llmManager: llmManager,
+            toolManager: toolManager,
+            streaming: streaming,
+            conversations: conversations
+        )
         self.turnManager.onRevisionChange = { [weak self] in
             self?.revision += 1
         }
@@ -43,22 +55,6 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
 
     public func setResponder(_ responder: AgentLoopResponder?) {
         turnManager.setResponder(responder)
-    }
-
-    public func setLLMManager(_ manager: (any LLMManaging)?) {
-        turnManager.setLLMManager(manager)
-    }
-
-    public func setToolManager(_ toolManager: (any ToolManagerProviding)?) {
-        turnManager.setToolManager(toolManager)
-    }
-
-    public func setStreaming(_ streaming: (any MessageStreamingProviding)?) {
-        turnManager.setStreaming(streaming)
-    }
-
-    public func setConversations(_ conversations: (any ConversationManaging)?) {
-        turnManager.setConversations(conversations)
     }
 
     public func setEventHandler(_ handler: AgentLoopEventHandler?) {

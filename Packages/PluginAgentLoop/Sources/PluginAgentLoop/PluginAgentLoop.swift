@@ -44,28 +44,41 @@ public final class PluginAgentLoop: SuperPlugin {
             Self.logger.error("\(Self.emoji)MessageManaging not found, skip AgentLoop replacement")
             return
         }
-
-        // 2. 创建自定义实现
-        let agentLoop = AgentLoopProvider(messages: messages)
-
-        // 3. 注入 LLM 管理器（管理器内部路由到选中的供应商）
-        if let llmManager = kernel.resolveProvider((any LLMManaging).self) {
-            agentLoop.setLLMManager(llmManager)
+        guard let llmManager = kernel.resolveProvider((any LLMManaging).self) else {
+            Self.logger.error("\(Self.emoji)LLMManaging not found, skip AgentLoop replacement")
+            return
+        }
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            Self.logger.error("\(Self.emoji)ToolManagerProviding not found, skip AgentLoop replacement")
+            return
+        }
+        guard let streaming = kernel.resolveProvider((any MessageStreamingProviding).self) else {
+            Self.logger.error("\(Self.emoji)MessageStreamingProviding not found, skip AgentLoop replacement")
+            return
+        }
+        guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            Self.logger.error("\(Self.emoji)ConversationManaging not found, skip AgentLoop replacement")
+            return
         }
 
-        agentLoop.setToolManager(kernel.resolveProvider((any ToolManagerProviding).self))
-        agentLoop.setStreaming(kernel.resolveProvider((any MessageStreamingProviding).self))
-        agentLoop.setConversations(kernel.resolveProvider((any ConversationManaging).self))
+        // 2. 创建自定义实现
+        let agentLoop = AgentLoopProvider(
+            messages: messages,
+            llmManager: llmManager,
+            toolManager: toolManager,
+            streaming: streaming,
+            conversations: conversations
+        )
 
-        // 4. 事件桥接：发布到 NotificationCenter（对齐 ProviderFactory.bridge 通知名）
+        // 3. 事件桥接：发布到 NotificationCenter（对齐 ProviderFactory.bridge 通知名）
         agentLoop.setEventHandler { event in
             Self.postNotification(for: event)
         }
 
-        // 5. 注销默认的 AgentLoopProviding
+        // 4. 注销默认的 AgentLoopProviding
         kernel.unregisterProvider((any AgentLoopProviding).self)
 
-        // 6. 注册自定义实现（不转发 objectWillChange，与默认注册保持一致）
+        // 5. 注册自定义实现（不转发 objectWillChange，与默认注册保持一致）
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
     }
 

@@ -1,7 +1,6 @@
 import Foundation
 import ProviderConversation
 import KitLLM
-import ProviderLLMManager
 import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
@@ -78,12 +77,9 @@ public typealias AgentLoopResponder = @MainActor @Sendable (AgentLoopRequest) as
 /// Agent 回合管理（KernelCore 体系）。
 ///
 /// 复刻旧版 `AgentTurnRunner` 的职责：防并发 runTurn、流式 LLM 调用、
-/// 工具执行与授权暂停/恢复、错误落库、取消。依赖通过 set 注入：
+/// 工具执行与授权暂停/恢复、错误落库、取消。依赖通过构造注入：
 /// - `MessageManaging`（构造注入，消息历史与落库）
-/// - `LLMManaging`（setLLMManager，管理器内部路由到选中供应商）
-/// - `ToolManagerProviding`（setToolManager）
-/// - `MessageStreamingProviding`（setStreaming）
-/// - `ConversationManaging`（setConversations，读取 automationLevel 等会话设置）
+/// - `llmManager` / `toolManager` / `streaming` / `conversations`（构造注入）
 @MainActor
 public protocol AgentLoopProviding: AnyObject, ObservableObject {
     func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome
@@ -96,10 +92,6 @@ public protocol AgentLoopProviding: AnyObject, ObservableObject {
     func currentTurnID(for conversationID: UUID) -> UUID?
 
     func setResponder(_ responder: AgentLoopResponder?)
-    func setLLMManager(_ manager: (any LLMManaging)?)
-    func setToolManager(_ toolManager: (any ToolManagerProviding)?)
-    func setStreaming(_ streaming: (any MessageStreamingProviding)?)
-    func setConversations(_ conversations: (any ConversationManaging)?)
 
     /// 注入回合生命周期事件回调（宿主桥接到事件总线 / 通知中心）。
     func setEventHandler(_ handler: AgentLoopEventHandler?)

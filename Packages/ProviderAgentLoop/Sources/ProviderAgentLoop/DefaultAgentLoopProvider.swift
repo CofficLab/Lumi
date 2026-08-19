@@ -47,12 +47,12 @@ private typealias ToolCall = AgentToolKit.ToolCall
 @MainActor
 public final class DefaultAgentLoopProvider: AgentLoopProviding {
     private let messages: any MessageManaging
-    private var responder: AgentLoopResponder?
-    private var llmManager: (any LLMManaging)?
-    private var toolManager: (any ToolManagerProviding)?
-    private var streaming: (any MessageStreamingProviding)?
-    private var conversations: (any ConversationManaging)?
-    private var eventHandler: AgentLoopEventHandler?
+    private var responder: AgentLoopResponder = { _ in "" }
+    private let llmManager: any LLMManaging
+    private let toolManager: any ToolManagerProviding
+    private let streaming: any MessageStreamingProviding
+    private let conversations: any ConversationManaging
+    private var eventHandler: AgentLoopEventHandler = { _ in }
     /// 生命周期钩子管理器：回合循环在各关键节点触发对应钩子。
     private var lifecycleHooks: (any LifecycleHooksProviding)?
 
@@ -70,35 +70,28 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
 
     @Published public private(set) var revision: Int = 0
 
-    public init(messages: any MessageManaging, llmManager: (any LLMManaging)? = nil) {
+    public init(
+        messages: any MessageManaging,
+        llmManager: any LLMManaging,
+        toolManager: any ToolManagerProviding,
+        streaming: any MessageStreamingProviding,
+        conversations: any ConversationManaging
+    ) {
         self.messages = messages
         self.llmManager = llmManager
+        self.toolManager = toolManager
+        self.streaming = streaming
+        self.conversations = conversations
     }
 
     // MARK: - Injection
 
     public func setResponder(_ responder: AgentLoopResponder?) {
-        self.responder = responder
-    }
-
-    public func setLLMManager(_ manager: (any LLMManaging)?) {
-        llmManager = manager
-    }
-
-    public func setToolManager(_ toolManager: (any ToolManagerProviding)?) {
-        self.toolManager = toolManager
-    }
-
-    public func setStreaming(_ streaming: (any MessageStreamingProviding)?) {
-        self.streaming = streaming
-    }
-
-    public func setConversations(_ conversations: (any ConversationManaging)?) {
-        self.conversations = conversations
+        if let responder { self.responder = responder }
     }
 
     public func setEventHandler(_ handler: AgentLoopEventHandler?) {
-        eventHandler = handler
+        if let handler { self.eventHandler = handler }
     }
 
     public func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {
@@ -260,53 +253,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
     // MARK: - Turn Loop
 
     private func executeTurnLoop(conversationID: UUID, turnID: UUID) async -> AgentLoopOutcome {
-        guard responder != nil || llmManager != nil else {
-            await appendError(in: conversationID, content: "agent responder is not configured")
-            failedConversations.insert(conversationID)
-            return .failed("agent responder is not configured")
-        }
-
         while !cancelledConversations.contains(conversationID) {
             try? Task.checkCancellation()
-
-            // Responder 路径：宿主注入自定义响应者（测试 / 嵌入场景）时直接
-            // 调用一次并把结果落库，不做工具循环（responder 无工具能力）。
-            if let responder, llmManager == nil {
-                let request = AgentLoopRequest(
-                    conversationID: conversationID,
-                    messages: messages.messages(for: conversationID)
-                )
-                do {
-                    let content = try await responder(request)
-                    try Task.checkCancellation()
-                    let assistant = Message(
-                        conversationID: conversationID,
-                        role: .assistant,
-                        content: content,
-                        turnID: turnID
-                    )
-                    messages.insertMessage(assistant, to: conversationID)
-                    postEvent(.messageSaved(conversationID: conversationID, messageID: assistant.id, role: assistant.role.rawValue))
-                    states[conversationID] = .completed
-                    postEvent(.turnCompleted(conversationID: conversationID, turnID: turnID))
-                    postEvent(.turnFinished(conversationID: conversationID, turnID: turnID, reason: .completed))
-                    return .completed
-                } catch is CancellationError {
-                    states[conversationID] = .cancelled
-                    postEvent(.turnFinished(conversationID: conversationID, turnID: turnID, reason: .cancelled))
-                    return .cancelled
-                } catch {
-                    await appendError(in: conversationID, error: error, turnID: turnID)
-                    failedConversations.insert(conversationID)
-                    return .failed(String(describing: error))
-                }
-            }
-
-            guard let llmManager else {
-                await appendError(in: conversationID, content: "LLM manager is not configured")
-                failedConversations.insert(conversationID)
-                return .failed("LLM manager is not configured")
-            }
 
             let history = messages.messages(for: conversationID)
 
@@ -325,8 +273,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
             }
 
             // 会话设置是事实来源：automationLevel 决定是否附带工具。
-            let automationLevel = conversations?.automationLevel(for: conversationID) ?? .build
-            let tools = automationLevel.allowsTools ? (toolManager?.allTools() ?? []) : []
+            let automationLevel = conversations.automationLevel(for: conversationID)
+            let tools = automationLevel.allowsTools ? toolManager.allTools() : []
             let schemas = tools.compactMap { tool -> LLMFunctionSchema? in
                 let language = languagePreference(for: conversationID)
                 return LLMFunctionSchema(
@@ -335,7 +283,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                     parameters: tool.inputSchema(for: language)
                 )
             }
-            let reasoningEffort = conversations?.reasoningEffortOptional(for: conversationID)
+            let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
                 .flatMap { $0.rawValue }
 
             // LLM 请求前的消息准备钩子（对齐旧版 willSendToLLM）：
@@ -368,12 +316,12 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
             let request = LLMRequest(
                 conversationID: conversationID,
                 messages: preparedHistory.map(\.llmMessage),
-                model: conversations?.modelName(for: conversationID),
+                model: conversations.modelName(for: conversationID),
                 tools: schemas.isEmpty ? nil : schemas,
                 reasoningEffort: reasoningEffort
             )
 
-            streaming?.start(conversationID: conversationID)
+            streaming.start(conversationID: conversationID)
 
             let response: LLMResponse
             do {
@@ -395,7 +343,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                     response = try await llmManager.complete(request)
                 }
             } catch {
-                streaming?.end(conversationID: conversationID)
+                streaming.end(conversationID: conversationID)
                 await appendError(in: conversationID, error: error, turnID: turnID)
                 failedConversations.insert(conversationID)
                 return .failed(String(describing: error))
@@ -415,7 +363,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                 outputTokenCount: response.outputTokenCount
             )
             assistant.providerID = resolvedProviderID(for: conversationID)
-            if let toolManager, let toolCalls = assistant.toolCalls {
+            if let toolCalls = assistant.toolCalls {
                 assistant.toolCalls = toolCalls.map { toolCall in
                     var enriched = toolCall
                     enriched.displayDescription = toolManager.displayDescription(for: ToolCall(
@@ -428,7 +376,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
             }
             messages.insertMessage(assistant, to: conversationID)
             postEvent(.messageSaved(conversationID: conversationID, messageID: assistant.id, role: assistant.role.rawValue))
-            streaming?.end(conversationID: conversationID)
+            streaming.end(conversationID: conversationID)
             // 生命周期钩子 didReceiveLLMResponse：插件可在 LLM 响应到达后执行逻辑。
             if let lifecycleHooks {
                 await lifecycleHooks.notifyDidReceiveLLMResponse(DidReceiveLLMResponseContext(
@@ -461,13 +409,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                         defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
                     )
                 )
-
-                guard toolManager != nil else {
-                    let result = MessageToolResult(content: "Tool manager is unavailable", isError: true)
-                    messages.updateToolCallResult(result, toolCallID: toolCall.id, assistantMessageID: assistant.id, in: conversationID)
-                    insertToolResultMessage(result, toolCallID: toolCall.id, conversationID: conversationID, turnID: turnID)
-                    continue
-                }
 
                 var result = await executeToolCall(toolCall, conversationID: conversationID, turnID: turnID)
                 // 工具实现拿不到外层 tool-call id：此处绑定后再持久化挂起点。
@@ -535,15 +476,12 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
         conversationID: UUID,
         turnID: UUID?
     ) async -> MessageToolResult {
-        guard let toolManager else {
-            return MessageToolResult(content: "Tool manager is unavailable", isError: true)
-        }
         let tool = ToolCall(
             id: toolCall.id,
             name: toolCall.name,
             arguments: toolCall.arguments
         )
-        let automationLevel = conversations?.automationLevel(for: conversationID) ?? .build
+        let automationLevel = conversations.automationLevel(for: conversationID)
         switch automationLevel {
         case .chat:
             return MessageToolResult(
@@ -566,9 +504,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
     }
 
     private func executeApprovedToolCall(_ toolCall: MessageToolCall, conversationID: UUID) async -> MessageToolResult {
-        guard let toolManager else {
-            return MessageToolResult(content: "Tool manager is unavailable", isError: true)
-        }
         let tool = ToolCall(
             id: toolCall.id,
             name: toolCall.name,
@@ -695,7 +630,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
         conversationID: UUID,
         snapshot: [Message]
     ) async -> Bool {
-        guard let toolManager, let toolCalls = assistantMessage.toolCalls else {
+        guard let toolCalls = assistantMessage.toolCalls else {
             failedConversations.insert(conversationID)
             return false
         }
@@ -803,7 +738,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
     }
 
     private func languagePreference(for conversationID: UUID) -> LanguagePreference {
-        let language = conversations?.language(for: conversationID) ?? .chinese
+        let language = conversations.language(for: conversationID)
         switch language {
         case .chinese: return .chinese
         case .english: return .english
@@ -811,11 +746,11 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
     }
 
     private func resolvedProviderID(for conversationID: UUID) -> String? {
-        conversations?.providerID(for: conversationID)
+        conversations.providerID(for: conversationID)
     }
 
     private func postEvent(_ event: AgentLoopEvent) {
-        eventHandler?(event)
+        eventHandler(event)
     }
 
     private static let toolApprovalSuspensionKind = "toolApproval"
@@ -856,19 +791,19 @@ public enum AgentLoopError: Error, LocalizedError {
 /// `@unchecked Sendable`，回调内经 `await` 跳回 MainActor 写入，保证对
 /// `@Published` 的写安全。
 private final class StreamingBridge: @unchecked Sendable {
-    private let streaming: (any MessageStreamingProviding)?
+    private let streaming: any MessageStreamingProviding
 
-    init(streaming: (any MessageStreamingProviding)?) {
+    init(streaming: any MessageStreamingProviding) {
         self.streaming = streaming
     }
 
     @MainActor
     func appendContent(_ content: String, conversationID: UUID) {
-        streaming?.appendContent(content, conversationID: conversationID)
+        streaming.appendContent(content, conversationID: conversationID)
     }
 
     @MainActor
     func appendThinking(_ content: String, conversationID: UUID) {
-        streaming?.appendThinking(content, conversationID: conversationID)
+        streaming.appendThinking(content, conversationID: conversationID)
     }
 }
