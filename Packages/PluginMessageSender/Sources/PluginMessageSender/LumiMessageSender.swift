@@ -6,18 +6,7 @@ import ProviderConversation
 import ProviderMessage
 import ProviderMessageSender
 
-/// 插件自带的 `MessageSendingProviding` 实现（不复用 `ProviderMessageSender.DefaultMessageSender`）。
-///
-/// 独立复刻旧版 `MessageSender` 的完整职责，行为与默认实现对齐：
-/// 1. 发送前 trim，空白直接返回；
-/// 2. 解析目标会话（显式 id > 选中会话 > 自动创建新会话）并置为当前时间线；
-/// 3. 图片/文件附件挂起池随下一条消息一起送出，编码进 `Message.metadata`；
-/// 4. 同一会话发送中时新消息进入 pending 队列，当前回合结束后依次发出；
-/// 5. 落库 user 消息后交给 AgentLoop 执行完整回合（流式 + 工具 + 授权挂起）；
-/// 6. 回合失败时落库 error 消息；
-/// 7. `cancelCurrentRequest` 取消当前回合；`resumeTurn` 恢复被挂起的回合。
-///
-/// 插件自行持有实现，宿主可通过替换本插件列表定制消息发送行为。
+/// 插件自带的 `MessageSendingProviding` 实现。
 @MainActor
 public final class LumiMessageSender: MessageSendingProviding, SuperLog {
     nonisolated static let logger = Logger(
