@@ -109,6 +109,11 @@ public extension KernelCoreContainer {
             for plugin in sorted {
                 try registerPlugin(plugin)
                 bootedIDs.append(plugin.id)
+
+                // 用户已禁用的插件仅注册、不 Boot：跳过 onBoot/onReady，
+                // 等待运行时 enablePlugin 时再恢复。
+                guard isPluginEnabled(id: plugin.id) else { continue }
+
                 activePluginID = plugin.id
                 if let plugin = plugin as? any AsyncSuperPlugin {
                     try await withLifecycleTimeout(timeout?.boot, phase: "boot", pluginID: plugin.id) {
@@ -124,6 +129,7 @@ public extension KernelCoreContainer {
             }
 
             for plugin in sorted {
+                guard isPluginEnabled(id: plugin.id) else { continue }
                 activePluginID = plugin.id
                 if let plugin = plugin as? any AsyncSuperPlugin {
                     try await withLifecycleTimeout(timeout?.ready, phase: "ready", pluginID: plugin.id) {
@@ -223,11 +229,13 @@ public extension KernelCoreContainer {
         try await plugin.onDisable(kernel: self)
         cancelContributions(ownedBy: id)
         pluginEnabledStates[id] = false
-        persistEnabledState(false, pluginID: id)
         objectWillChange.send()
     }
 
-    /// 运行时重新启用已注册插件。插件在 `onEnable` 中恢复动态资源与贡献。
+    /// 运行时重新启用已注册插件。
+    ///
+    /// - 曾经 Boot 过（在 `pluginStartOrder` 中）：调用 `onEnable` 恢复贡献。
+    /// - 启动时被跳过、从未 Boot 过：先执行 `onBoot` + `onReady` 完成初始化。
     func enablePlugin(id: String) async throws {
         guard lifecycleState == .running else {
             throw KernelCoreError.invalidLifecycleOperation(operation: "enable plugin", state: lifecycleState)
@@ -245,16 +253,32 @@ public extension KernelCoreContainer {
 
         activePluginID = id
         defer { activePluginID = nil }
-        do {
-            try await plugin.onEnable(kernel: self)
-        } catch {
-            // onEnable 可能已经向多个共享 Host 写入部分贡献；启用失败时
-            // 必须恢复到禁用前的无贡献状态。
-            cancelContributions(ownedBy: id)
-            throw error
+
+        if pluginStartOrder.contains(id) {
+            // 曾经 Boot 过再被禁用：走 onEnable 恢复路径。
+            do {
+                try await plugin.onEnable(kernel: self)
+            } catch {
+                cancelContributions(ownedBy: id)
+                throw error
+            }
+        } else {
+            // 启动时跳过、从未 Boot：执行完整初始化。
+            do {
+                if let plugin = plugin as? any AsyncSuperPlugin {
+                    try await plugin.onBootAsync(kernel: self)
+                    try await plugin.onReadyAsync(kernel: self)
+                } else {
+                    try plugin.onBoot(kernel: self)
+                    try plugin.onReady(kernel: self)
+                }
+                pluginStartOrder.append(id)
+            } catch {
+                cancelContributions(ownedBy: id)
+                throw error
+            }
         }
         pluginEnabledStates[id] = true
-        persistEnabledState(true, pluginID: id)
         objectWillChange.send()
     }
 

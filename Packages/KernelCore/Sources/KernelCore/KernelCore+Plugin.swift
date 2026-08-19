@@ -9,41 +9,8 @@ extension KernelCoreContainer {
             throw KernelCoreError.pluginAlreadyRegistered(id: plugin.id)
         }
         plugins[plugin.id] = plugin
-        pluginEnabledStates[plugin.id] = effectiveEnabledState(for: plugin)
+        pluginEnabledStates[plugin.id] = plugin.metadata.policy.enabledByDefault
         objectWillChange.send()
-    }
-
-    // MARK: - Enable-state persistence
-
-    /// 计算插件的有效启用状态：`required` / `alwaysOn` 策略强制启用；
-    /// `disabled` 策略强制禁用；否则优先持久化覆盖（先查新 ID，再回退旧 ID 别名），无记录时默认启用。
-    func effectiveEnabledState(for plugin: any SuperPlugin) -> Bool {
-        switch plugin.metadata.policy {
-        case .required, .alwaysOn: return true
-        case .disabled: return false
-        case .enabledByDefault, .disabledByDefault: break
-        }
-        return storedEnabledState(for: plugin.id) ?? true
-    }
-
-    func storedEnabledState(for pluginID: String) -> Bool? {
-        guard let store = stateStore else { return nil }
-        if let value = store.enabledState(pluginID: pluginID) { return value }
-        if let legacyID = legacyPluginIDAliases[pluginID],
-           let value = store.enabledState(pluginID: legacyID) {
-            return value
-        }
-        return nil
-    }
-
-    /// 持久化插件启用状态：写新 ID，同时同步写旧 ID 别名，
-    /// 保证回滚到旧版时状态仍然一致。
-    func persistEnabledState(_ enabled: Bool, pluginID: String) {
-        guard let store = stateStore else { return }
-        store.setEnabled(enabled, pluginID: pluginID)
-        if let legacyID = legacyPluginIDAliases[pluginID] {
-            store.setEnabled(enabled, pluginID: legacyID)
-        }
     }
 
     /// 原子启动一批插件。
@@ -81,6 +48,11 @@ extension KernelCoreContainer {
                 try registerPlugin(plugin)
                 // 即使 onBoot 中途失败，也必须给插件一次 Shutdown 清理机会。
                 bootedIDs.append(plugin.id)
+
+                // 用户已禁用的插件仅注册、不 Boot：跳过 onBoot/onReady，
+                // 等待运行时 enablePlugin 时再恢复。
+                guard isPluginEnabled(id: plugin.id) else { continue }
+
                 activePluginID = plugin.id
                 try plugin.onBoot(kernel: self)
                 activePluginID = nil
@@ -88,6 +60,7 @@ extension KernelCoreContainer {
             }
 
             for plugin in sorted {
+                guard isPluginEnabled(id: plugin.id) else { continue }
                 activePluginID = plugin.id
                 try plugin.onReady(kernel: self)
                 activePluginID = nil

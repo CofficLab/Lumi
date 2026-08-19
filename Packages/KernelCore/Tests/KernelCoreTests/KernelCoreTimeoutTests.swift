@@ -12,6 +12,7 @@ struct KernelCoreTimeoutTests {
     private final class SlowPlugin: AsyncSuperPlugin {
         let id: String
         let order: Int
+        let metadata: PluginMetadata
         let bootDelay: Duration
         let readyDelay: Duration
         let shutdownDelay: Duration
@@ -27,6 +28,7 @@ struct KernelCoreTimeoutTests {
         ) {
             self.id = id
             self.order = order
+            self.metadata = PluginMetadata(id: id)
             self.bootDelay = bootDelay
             self.readyDelay = readyDelay
             self.shutdownDelay = shutdownDelay

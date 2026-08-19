@@ -11,7 +11,11 @@ struct KernelCorePluginTests {
 
     private final class MockPlugin: SuperPlugin {
         let id: String
-        init(id: String) { self.id = id }
+        let metadata: PluginMetadata
+        init(id: String) {
+            self.id = id
+            self.metadata = PluginMetadata(id: id)
+        }
     }
 
     @Test("注入后可通过 id 解析")

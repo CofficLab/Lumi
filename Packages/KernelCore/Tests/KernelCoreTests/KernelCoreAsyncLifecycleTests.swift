@@ -14,6 +14,7 @@ struct KernelCoreAsyncLifecycleTests {
         let id: String
         let order: Int
         let dependencies: [String]
+        let metadata: PluginMetadata
         let events: EventLog
         var failReady = false
 
@@ -26,6 +27,7 @@ struct KernelCoreAsyncLifecycleTests {
             self.id = id
             self.order = order
             self.dependencies = dependencies
+            self.metadata = PluginMetadata(id: id)
             self.events = events
         }
 

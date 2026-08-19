@@ -11,6 +11,7 @@ struct KernelCoreLifecycleTests {
         let id: String
         let order: Int
         let dependencies: [String]
+        let metadata: PluginMetadata
         let events: EventLog
         var registerProvider = false
         var bootError: Error?
@@ -21,11 +22,13 @@ struct KernelCoreLifecycleTests {
             id: String,
             order: Int = 200,
             dependencies: [String] = [],
+            policy: PluginEnablePolicy = .enabledByDefault,
             events: EventLog
         ) {
             self.id = id
             self.order = order
             self.dependencies = dependencies
+            self.metadata = PluginMetadata(id: id, policy: policy)
             self.events = events
         }
 

@@ -8,7 +8,11 @@ struct SuperPluginTests {
 
     private final class MockPlugin: SuperPlugin {
         let id: String
-        init(id: String) { self.id = id }
+        let metadata: PluginMetadata
+        init(id: String) {
+            self.id = id
+            self.metadata = PluginMetadata(id: id)
+        }
     }
 
     @Test("SuperPlugin 可被实现并通过协议访问")

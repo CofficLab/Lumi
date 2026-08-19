@@ -34,6 +34,7 @@ struct KernelCoreCoverageTests {
     func pluginDefaults() throws {
         final class DefaultPlugin: SuperPlugin {
             let id = "default"
+            let metadata = PluginMetadata(id: "default")
         }
 
         let plugin: any SuperPlugin = DefaultPlugin()
@@ -46,12 +47,14 @@ struct KernelCoreCoverageTests {
     private final class OrderedPlugin: SuperPlugin {
         let id: String
         let order: Int
+        let metadata: PluginMetadata
         static var bootOrder: [String] = []
         var onBootHandler: ((KernelCoreContainer) throws -> Void)?
 
         init(id: String, order: Int = 200, onBootHandler: ((KernelCoreContainer) throws -> Void)? = nil) {
             self.id = id
             self.order = order
+            self.metadata = PluginMetadata(id: id)
             self.onBootHandler = onBootHandler
         }
 
