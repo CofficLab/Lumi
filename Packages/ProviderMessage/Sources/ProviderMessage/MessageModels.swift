@@ -20,10 +20,6 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
     public var isError: Bool
 
     // MARK: - Rendering metadata
-    //
-    // 复刻自旧版内核 KernelLumi 的 `LumiChatMessage` 渲染字段，供消息渲染器
-    // （PluginMessageRenderer）读取；全部为可选字段，合成 Codable 对缺失键
-    // 自动 decodeIfPresent，历史消息无需迁移即可解码。
 
     /// LLM 供应商 ID（如 "openai"）。
     public var providerID: String?
@@ -108,9 +104,6 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
 }
 
 // MARK: - Tool Calls
-//
-// 复刻自旧版内核 KernelLumi 的 `LumiToolCall` / `LumiToolResult`（渲染层所需
-// 字段）；去掉 `AgentTurnControl` 依赖，保持 Provider 层自包含。
 
 /// 一次工具调用的展示快照。
 public struct MessageToolCall: Identifiable, Codable, Equatable, Sendable {
@@ -152,25 +145,30 @@ public struct MessageToolResult: Codable, Equatable, Sendable {
     /// 工具正在等待用户回答，Agent 循环应暂停（对齐 `ToolCallResult.awaitingUserResponse`）。
     /// 缺失视为 `false`（旧数据兼容）。
     public let awaitingUserResponse: Bool
+    /// 交互状态（对齐 `ToolCallResult.interactionState`），用于渲染层判断是否显示自定义 UI。
+    /// 缺失视为 `nil`（旧数据兼容）。
+    public let interactionState: MessageToolInteractionState?
 
     public init(
         content: String,
         duration: TimeInterval? = nil,
         isError: Bool = false,
         imageAttachments: [MessageImageAttachment] = [],
-        awaitingUserResponse: Bool = false
+        awaitingUserResponse: Bool = false,
+        interactionState: MessageToolInteractionState? = nil
     ) {
         self.content = content
         self.duration = duration
         self.isError = isError
         self.imageAttachments = imageAttachments
         self.awaitingUserResponse = awaitingUserResponse
+        self.interactionState = interactionState
     }
 
     // MARK: Codable（兼容旧数据：awaitingUserResponse 缺失视为 false）
 
     private enum CodingKeys: String, CodingKey {
-        case content, duration, isError, imageAttachments, awaitingUserResponse
+        case content, duration, isError, imageAttachments, awaitingUserResponse, interactionState
     }
 
     public init(from decoder: Decoder) throws {
@@ -180,6 +178,7 @@ public struct MessageToolResult: Codable, Equatable, Sendable {
         isError = try c.decodeIfPresent(Bool.self, forKey: .isError) ?? false
         imageAttachments = try c.decodeIfPresent([MessageImageAttachment].self, forKey: .imageAttachments) ?? []
         awaitingUserResponse = try c.decodeIfPresent(Bool.self, forKey: .awaitingUserResponse) ?? false
+        interactionState = try c.decodeIfPresent(MessageToolInteractionState.self, forKey: .interactionState)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -189,6 +188,18 @@ public struct MessageToolResult: Codable, Equatable, Sendable {
         if isError { try c.encode(isError, forKey: .isError) }
         if !imageAttachments.isEmpty { try c.encode(imageAttachments, forKey: .imageAttachments) }
         if awaitingUserResponse { try c.encode(awaitingUserResponse, forKey: .awaitingUserResponse) }
+        if let interactionState { try c.encode(interactionState, forKey: .interactionState) }
+    }
+}
+
+/// 工具调用交互状态（对齐 AgentToolKit.ToolCallInteractionState）。
+public enum MessageToolInteractionState: Codable, Sendable, Equatable {
+    case waiting
+    case answered(String)
+
+    public var answer: String? {
+        guard case let .answered(answer) = self else { return nil }
+        return answer
     }
 }
 

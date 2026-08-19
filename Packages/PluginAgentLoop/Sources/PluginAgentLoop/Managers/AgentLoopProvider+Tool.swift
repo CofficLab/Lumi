@@ -93,7 +93,12 @@ extension AgentLoopProvider {
             payload: content
         )
         suspensions[conversationID] = suspension
-        return MessageToolResult(content: content, isError: false, awaitingUserResponse: true)
+        return MessageToolResult(
+            content: content,
+            isError: false,
+            awaitingUserResponse: true,
+            interactionState: .waiting
+        )
     }
 
     /// 把 `ToolCallResult` 转换为渲染层 `MessageToolResult`。

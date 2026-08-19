@@ -27,11 +27,23 @@ extension MessageToolCall {
                         return ImageAttachment(data: data, mimeType: attachment.mimeType)
                     },
                     isError: lumiResult.isError,
-                    duration: lumiResult.duration
+                    duration: lumiResult.duration,
+                    awaitingUserResponse: lumiResult.awaitingUserResponse,
+                    interactionState: lumiResult.interactionState?.agentInteractionState
                 )
             },
             displayDescription: displayDescription
         )
+    }
+}
+
+extension MessageToolInteractionState {
+    /// 桥接到 AgentToolKit 的 `ToolCallInteractionState`。
+    var agentInteractionState: ToolCallInteractionState {
+        switch self {
+        case .waiting: return .waiting
+        case .answered(let answer): return .answered(answer)
+        }
     }
 }
 
