@@ -62,7 +62,7 @@ public final class DiskManagerPlugin: SuperPlugin {
     // MARK: - SuperPlugin
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        // 1. 注册 Agent 工具到 ToolManagerProviding（沿用旧版 agentTools）。
+        // 1. 注册 Agent 工具到 ToolManagerProviding。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
                 toolManager.add(tool, pluginID: id)
@@ -72,7 +72,7 @@ public final class DiskManagerPlugin: SuperPlugin {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
 
-        // 2. 注册 Rail 标签（清理类型侧边栏，沿用旧版 panelRailTabItems）。
+        // 2. 注册 Rail 标签。
         //    必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         railView?.addTabs([
             RailTabItem(
@@ -86,8 +86,7 @@ public final class DiskManagerPlugin: SuperPlugin {
             },
         ])
 
-        // 3. 注册 ActivityBar 入口；入口被激活时由插件切换自己的主内容
-        //    （沿用旧版 viewContainers + DiskManagerView）。
+        // 3. 注册 ActivityBar 入口；入口被激活时由插件切换自己的主内容。
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
             activityBar.addItems([
