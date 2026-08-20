@@ -1,6 +1,7 @@
 import os
 import KernelCore
 import ProviderChatSection
+import ProviderCommand
 import SuperLogKit
 
 /// Chat Screenshot Plugin（KernelCore 版本）
@@ -58,9 +59,31 @@ public final class ChatScreenshotPlugin: SuperPlugin, SuperLog {
                 ChatScreenshotButtonView(kernel: kernel)
             },
         ])
+
+        kernel.resolveProvider((any CommandProviding).self)?.registerCommandGroup(
+            CommandMenuGroup(
+                id: "\(id).commands",
+                name: name,
+                items: [
+                    CommandItem(
+                        id: "\(id).capture",
+                        title: LumiPluginLocalization.string("Capture Screenshot", bundle: .module),
+                        shortcut: "s",
+                        modifiers: [.command, .shift]
+                    ) {
+                        Task { @MainActor in
+                            await ScreenshotFlowRunner.run(kernel: kernel)
+                        }
+                    },
+                ],
+                placement: .toolbar
+            )
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any CommandProviding).self)?
+            .unregisterCommandGroup(id: "\(id).commands")
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).button")
     }
