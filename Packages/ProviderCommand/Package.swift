@@ -9,5 +9,6 @@ let package = Package(
     ],
     targets: [
         .target(name: "ProviderCommand", path: "Sources/ProviderCommand"),
+        .testTarget(name: "ProviderCommandTests", dependencies: ["ProviderCommand"]),
     ]
 )

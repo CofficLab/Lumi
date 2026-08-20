@@ -1,4 +1,112 @@
 import Foundation
-public struct CommandItem: Identifiable, Sendable { public let id: String; public let title: String; public let action: @MainActor @Sendable () -> Void; public init(id: String, title: String, action: @escaping @MainActor @Sendable () -> Void) { self.id = id; self.title = title; self.action = action } }
-@MainActor public protocol CommandProviding: AnyObject { var allCommands: [CommandItem] { get }; func register(_ command: CommandItem); func unregister(id: String) }
-@MainActor public final class DefaultCommandProviding: CommandProviding { public private(set) var allCommands: [CommandItem] = []; public init() {}; public func register(_ command: CommandItem) { allCommands.removeAll { $0.id == command.id }; allCommands.append(command) }; public func unregister(id: String) { allCommands.removeAll { $0.id == id } } }
+
+public enum CommandMenuPlacement: String, Sendable {
+    case appMenu
+    case toolbar
+    case topLevelMenu
+}
+
+public enum CommandState: Sendable {
+    case off
+    case on
+}
+
+public struct CommandModifiers: OptionSet, Sendable {
+    public let rawValue: Int
+
+    public init(rawValue: Int) {
+        self.rawValue = rawValue
+    }
+
+    public static let command = Self(rawValue: 1 << 0)
+    public static let shift = Self(rawValue: 1 << 1)
+    public static let option = Self(rawValue: 1 << 2)
+    public static let control = Self(rawValue: 1 << 3)
+}
+
+public struct CommandItem: Identifiable, Sendable {
+    public let id: String
+    public let title: String
+    public let shortcut: Character?
+    public let modifiers: CommandModifiers
+    public let action: @MainActor @Sendable () -> Void
+
+    private let stateProvider: @MainActor @Sendable () -> CommandState
+
+    public init(
+        id: String,
+        title: String,
+        shortcut: Character? = nil,
+        modifiers: CommandModifiers = [],
+        state: CommandState = .off,
+        action: @escaping @MainActor @Sendable () -> Void
+    ) {
+        self.id = id
+        self.title = title
+        self.shortcut = shortcut
+        self.modifiers = modifiers
+        self.stateProvider = { state }
+        self.action = action
+    }
+
+    public init(
+        id: String,
+        title: String,
+        shortcut: Character? = nil,
+        modifiers: CommandModifiers = [],
+        stateProvider: @escaping @MainActor @Sendable () -> CommandState,
+        action: @escaping @MainActor @Sendable () -> Void
+    ) {
+        self.id = id
+        self.title = title
+        self.shortcut = shortcut
+        self.modifiers = modifiers
+        self.stateProvider = stateProvider
+        self.action = action
+    }
+
+    @MainActor
+    public var state: CommandState {
+        stateProvider()
+    }
+}
+
+public struct CommandMenuGroup: Identifiable, Sendable {
+    public let id: String
+    public let name: String
+    public let items: [CommandItem]
+    public let placement: CommandMenuPlacement
+
+    public init(id: String, name: String, items: [CommandItem], placement: CommandMenuPlacement) {
+        self.id = id
+        self.name = name
+        self.items = items
+        self.placement = placement
+    }
+}
+
+@MainActor
+public protocol CommandProviding: AnyObject {
+    var allCommandGroups: [CommandMenuGroup] { get }
+    func registerCommandGroup(_ group: CommandMenuGroup)
+    func unregisterCommandGroup(id: String)
+}
+
+@MainActor
+public final class DefaultCommandProviding: CommandProviding {
+    public private(set) var allCommandGroups: [CommandMenuGroup] = []
+
+    public init() {}
+
+    public func registerCommandGroup(_ group: CommandMenuGroup) {
+        if let index = allCommandGroups.firstIndex(where: { $0.id == group.id }) {
+            allCommandGroups[index] = group
+        } else {
+            allCommandGroups.append(group)
+        }
+    }
+
+    public func unregisterCommandGroup(id: String) {
+        allCommandGroups.removeAll { $0.id == id }
+    }
+}
