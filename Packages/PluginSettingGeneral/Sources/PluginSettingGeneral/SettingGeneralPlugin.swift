@@ -1,5 +1,6 @@
 import KernelCore
 import LumiUI
+import ProviderCommand
 import ProviderDocsView
 import ProviderSettingView
 import SwiftUI
@@ -36,6 +37,27 @@ public final class SettingGeneralPlugin: SuperPlugin {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any CommandProviding).self)?.registerCommandGroup(
+            CommandMenuGroup(
+                id: "\(id).commands",
+                name: "Settings",
+                items: [
+                    CommandItem(
+                        id: "\(id).openSettings",
+                        title: "Settings...",
+                        shortcut: ",",
+                        modifiers: .command
+                    ) {
+                        NotificationCenter.default.post(
+                            name: Notification.Name("lumi.openSettings"),
+                            object: nil
+                        )
+                    },
+                ],
+                placement: .appMenu
+            )
+        )
+
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
             // 设置视图未注册：优雅降级，不贡献入口。
             return
@@ -60,6 +82,8 @@ public final class SettingGeneralPlugin: SuperPlugin {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any CommandProviding).self)?
+            .unregisterCommandGroup(id: "\(id).commands")
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["general"])
     }

@@ -18,6 +18,7 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderDocsView"),
+        .package(path: "../ProviderCommand"),
         .package(path: "../ProviderSettingView"),
     ],
     targets: [
@@ -27,6 +28,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "ProviderCommand", package: "ProviderCommand"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
             ],
             path: "Sources/PluginSettingGeneral"
