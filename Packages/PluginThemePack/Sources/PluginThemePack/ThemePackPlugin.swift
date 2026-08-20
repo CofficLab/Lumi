@@ -1,6 +1,7 @@
 import os
 import KernelCore
 import SuperLogKit
+import ProviderCommand
 import ProviderSettingView
 import ProviderTheme
 import SwiftUI
@@ -41,6 +42,10 @@ public final class ThemePackPlugin: SuperPlugin, SuperLog {
             theme.registerTheme(legacy)
         }
 
+        if let commands = kernel.resolveProvider((any CommandProviding).self) {
+            commands.registerCommandGroup(Self.makeCommandGroup(theme: theme))
+        }
+
         // 设置入口：外观 / 主题选择（设置视图未注册时优雅降级）。
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
             settings.addEntries([
@@ -57,6 +62,8 @@ public final class ThemePackPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any CommandProviding).self)?
+            .unregisterCommandGroup(id: Self.commandGroupID)
         if let theme = kernel.resolveProvider((any ThemeProviding).self) {
             for legacy in LegacyThemeCatalog.all {
                 theme.unregisterTheme(id: legacy.id)
@@ -64,5 +71,26 @@ public final class ThemePackPlugin: SuperPlugin, SuperLog {
         }
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["appearance"])
+    }
+
+    private static let commandGroupID = "com.coffic.lumi.theme.menu"
+
+    private static func makeCommandGroup(theme: any ThemeProviding) -> CommandMenuGroup {
+        CommandMenuGroup(
+            id: commandGroupID,
+            name: "Theme",
+            items: theme.themes.map { item in
+                CommandItem(
+                    id: "\(commandGroupID).select.\(item.id)",
+                    title: item.displayName,
+                    stateProvider: {
+                        theme.selectedThemeId == item.id ? .on : .off
+                    }
+                ) {
+                    try? theme.selectTheme(id: item.id)
+                }
+            },
+            placement: .topLevelMenu
+        )
     }
 }
