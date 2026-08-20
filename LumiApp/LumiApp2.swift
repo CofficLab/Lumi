@@ -1,4 +1,5 @@
 import AppKit
+import AppUpdatePlugin
 import FactoryLumi2
 import KernelCore
 import ProviderLogo
@@ -43,6 +44,10 @@ struct LumiMinimalApp: App {
                 ?? AnyView(BootstrapFailureView(message: "Failed to assemble main view"))
             settingsView = (try? KernelFactory.makeSettingsView(kernel: assembledKernel))
                 ?? AnyView(BootstrapFailureView(message: "Failed to assemble settings view"))
+            // Lumi 直营分发继续启用 Sparkle。触发单例初始化以安装更新通知观察者，
+            // 并在启动时完成 feed URL 探测；菜单命令直接复用同一服务。
+            _ = UpdateService.shared
+            UpdateService.shared.setupFeedURLIfNeeded()
         } catch {
             _kernel = StateObject(wrappedValue: KernelCoreContainer())
             bootstrapErrorDescription = error.localizedDescription
@@ -52,7 +57,7 @@ struct LumiMinimalApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("LumiMinimal", id: "lumi-minimal.main") {
+        WindowGroup("Lumi", id: "lumi.main") {
             // App 只做一件事：让 Factory 给一个视图。
             // 主窗口 / 设置窗口 / 菜单栏共享同一内核（kernel），
             // 主题切换后各窗口即时同步。
@@ -68,14 +73,19 @@ struct LumiMinimalApp: App {
                 }
                 // 工具栏「设置」按钮点击后，通知 → 打开设置窗口
                 .onReceive(NotificationCenter.default.publisher(for: .lumiOpenSettings)) { _ in
-                    openWindow(id: "lumi-minimal.settings")
+                    openWindow(id: "lumi.settings")
                 }
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 480, height: 320)
+        .commands {
+            AppCommands(kernel: kernel) {
+                UpdateService.shared.checkForUpdates()
+            }
+        }
 
-        Window("设置", id: "lumi-minimal.settings") {
+        Window("设置", id: "lumi.settings") {
             settingsView
         }
         .windowStyle(.hiddenTitleBar)
