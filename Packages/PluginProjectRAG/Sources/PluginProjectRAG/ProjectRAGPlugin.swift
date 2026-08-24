@@ -5,6 +5,7 @@ import ProjectRAGPlugin
 import ProviderProject
 import ProviderIdleTime
 import ProviderStorage
+import ProviderSettingView
 import ProviderToolManager
 
 /// Project RAG 的 KernelCore 适配器。
@@ -43,6 +44,13 @@ public final class ProjectRAGSuperPlugin: SuperPlugin {
         ProjectRAGRuntime.configure(service: service, project: project)
         kernel.resolveProvider((any ToolManagerProviding).self)?
             .add(RAGCodeSearchTool(), pluginID: id)
+        if let settings = kernel.resolveProvider((any SettingViewProviding).self), let project {
+            settings.addEntries([
+                SettingEntryItem(id: "\(id).settings", title: "Code Index", systemImage: "magnifyingglass", order: order) {
+                    RAGIndexSettingsView(service: service, projects: project)
+                },
+            ])
+        }
 
         // Indexing deliberately happens off the boot path: startup remains
         // responsive and RAGService deduplicates concurrent index requests.
@@ -67,6 +75,7 @@ public final class ProjectRAGSuperPlugin: SuperPlugin {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: RAGCodeSearchTool.toolName)
+        kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: ["\(id).settings"])
         schedulerTask?.cancel()
         schedulerTask = nil
         if let service { Task { await service.cancelBackgroundIndexing() } }

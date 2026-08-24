@@ -13,6 +13,7 @@ let package = Package(
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderIdleTime"),
         .package(path: "../ProviderStorage"),
+        .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderToolManager"),
         // This product owns the stable SQLite schema, embedding implementations,
         // and bundled vec0 extension. Keeping the engine product name preserves
@@ -28,6 +29,7 @@ let package = Package(
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProjectRAGPlugin", package: "ProjectRAGPlugin"),
             ]
