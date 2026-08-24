@@ -4,7 +4,9 @@ import Foundation
 
 @MainActor
 @Test func packageLoads() async throws {
-    #expect(RClickPlugin().id == "com.coffic.lumi.plugin.rclick")
+    let plugin = RClickSuperPlugin()
+    #expect(plugin.id == "com.coffic.lumi.plugin.rclick")
+    #expect(plugin.metadata.policy == .disabledByDefault)
 }
 
 @Test func actionTypePersistenceKeepsLegacyHiddenMenuID() throws {

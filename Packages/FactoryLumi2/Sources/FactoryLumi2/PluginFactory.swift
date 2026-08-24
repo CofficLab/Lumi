@@ -17,6 +17,7 @@ import DisplayControlPlugin
 import PortManagerPlugin
 import DockerManagerPlugin
 import RegistryManagerPlugin
+import RClickPlugin
 import PluginStorage
 import PluginToast
 import PluginCommand
@@ -174,6 +175,7 @@ public struct DefaultPluginFactory: PluginFactory {
             PortManagerSuperPlugin(),
             DockerManagerSuperPlugin(),
             RegistryManagerSuperPlugin(),
+            RClickSuperPlugin(),
             SkillPlugin(),
             StateMonitorPlugin(),
             OnboardingPlugin(),
