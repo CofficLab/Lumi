@@ -13,7 +13,7 @@ let package = Package(
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../../Plugins/CADDesignerPlugin"),
+        .package(path: "../PluginCADDesignerPlugin"),
     ],
     targets: [
         .target(

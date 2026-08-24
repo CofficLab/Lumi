@@ -18,7 +18,7 @@ let package = Package(
         // This product owns the stable SQLite schema, embedding implementations,
         // and bundled vec0 extension. Keeping the engine product name preserves
         // existing on-disk indexes without retaining a KernelLumi dependency.
-        .package(path: "../../Plugins/ProjectRAGPlugin"),
+        .package(path: "../PluginProjectRAGPlugin"),
     ],
     targets: [
         .target(

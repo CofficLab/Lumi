@@ -16,9 +16,9 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../ProviderNetwork"),
-        .package(path: "../../Packages/LocalizationKit"),
-        .package(path: "../../Packages/LumiUI"),
-        .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../LocalizationKit"),
+        .package(path: "../LumiUI"),
+        .package(path: "../SuperLogKit"),
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.5.0"),
     ],
     targets: [

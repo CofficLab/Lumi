@@ -109,7 +109,7 @@
 			);
 			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
 		};
-		LF000000000000000010 /* Exceptions for "Plugins/RClickPlugin/FinderExtension" folder in "LumiFinder" target */ = {
+		LF000000000000000010 /* Exceptions for "Packages/PluginRClick/FinderExtension" folder in "LumiFinder" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -167,12 +167,12 @@
 			path = LumiApp;
 			sourceTree = "<group>";
 		};
-		LF000000000000000009 /* Plugins/RClickPlugin/FinderExtension */ = {
+		LF000000000000000009 /* Packages/PluginRClick/FinderExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				LF000000000000000010 /* Exceptions for "Plugins/RClickPlugin/FinderExtension" folder in "LumiFinder" target */,
+				LF000000000000000010 /* Exceptions for "Packages/PluginRClick/FinderExtension" folder in "LumiFinder" target */,
 			);
-			path = Plugins/RClickPlugin/FinderExtension;
+			path = Packages/PluginRClick/FinderExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -256,7 +256,7 @@
 				BM2A00000000000000000004 /* BookletMakerApp2 */,
 				CD0000000000000000000004 /* CADDesignerApp */,
 				DB0000000000000000000004 /* DatabaseManagerApp */,
-				LF000000000000000009 /* Plugins/RClickPlugin/FinderExtension */,
+				LF000000000000000009 /* Packages/PluginRClick/FinderExtension */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
 				AI0000000000000000000002 /* AppIconDesigner.app */,
 				BM0000000000000000000002 /* BookletMaker.app */,
@@ -438,7 +438,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				LF000000000000000009 /* Plugins/RClickPlugin/FinderExtension */,
+				LF000000000000000009 /* Packages/PluginRClick/FinderExtension */,
 			);
 			name = LumiFinder;
 			packageProductDependencies = (
@@ -583,7 +583,7 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/Plugins/ProjectRAGPlugin/Resources/vec0.dylib",
+				"$(SRCROOT)/Packages/PluginProjectRAG/Resources/vec0.dylib",
 			);
 			name = "Embed Signed RAG Vector Extension";
 			outputFileListPaths = (
@@ -593,7 +593,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "set -euo pipefail\n\nAPP_RESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nAPP_FRAMEWORKS=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nSOURCE=\"\"\n\nif [[ -d \"${APP_RESOURCES}\" ]]; then\n  SOURCE=\"$(/usr/bin/find \"${APP_RESOURCES}\" -path '*ProjectRAGPlugin_ProjectRAGPlugin.bundle*' -name 'vec0.dylib' -type f -print -quit)\"\nfi\n\nif [[ -z \"${SOURCE}\" ]]; then\n  SOURCE=\"${SRCROOT}/Plugins/ProjectRAGPlugin/Resources/vec0.dylib\"\nfi\n\nDEST=\"${APP_FRAMEWORKS}/vec0.dylib\"\n/bin/mkdir -p \"${APP_FRAMEWORKS}\"\n/bin/cp -f \"${SOURCE}\" \"${DEST}\"\n/bin/chmod 755 \"${DEST}\"\n\nif [[ \"${CODE_SIGNING_ALLOWED:-NO}\" == \"YES\" ]]; then\n  SIGN_IDENTITY=\"${EXPANDED_CODE_SIGN_IDENTITY:-}\"\n  if [[ -z \"${SIGN_IDENTITY}\" ]]; then\n    SIGN_IDENTITY=\"${CODE_SIGN_IDENTITY:-}\"\n  fi\n  if [[ -n \"${SIGN_IDENTITY}\" ]]; then\n    /usr/bin/codesign --force --sign \"${SIGN_IDENTITY}\" --timestamp=none \"${DEST}\"\n  fi\nfi\n";
+			shellScript = "set -euo pipefail\n\nAPP_RESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nAPP_FRAMEWORKS=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nSOURCE=\"\"\n\nif [[ -d \"${APP_RESOURCES}\" ]]; then\n  SOURCE=\"$(/usr/bin/find \"${APP_RESOURCES}\" -path '*ProjectRAGPlugin_ProjectRAGPlugin.bundle*' -name 'vec0.dylib' -type f -print -quit)\"\nfi\n\nif [[ -z \"${SOURCE}\" ]]; then\n  SOURCE=\"${SRCROOT}/Packages/PluginProjectRAG/Resources/vec0.dylib\"\nfi\n\nDEST=\"${APP_FRAMEWORKS}/vec0.dylib\"\n/bin/mkdir -p \"${APP_FRAMEWORKS}\"\n/bin/cp -f \"${SOURCE}\" \"${DEST}\"\n/bin/chmod 755 \"${DEST}\"\n\nif [[ \"${CODE_SIGNING_ALLOWED:-NO}\" == \"YES\" ]]; then\n  SIGN_IDENTITY=\"${EXPANDED_CODE_SIGN_IDENTITY:-}\"\n  if [[ -z \"${SIGN_IDENTITY}\" ]]; then\n    SIGN_IDENTITY=\"${CODE_SIGN_IDENTITY:-}\"\n  fi\n  if [[ -n \"${SIGN_IDENTITY}\" ]]; then\n    /usr/bin/codesign --force --sign \"${SIGN_IDENTITY}\" --timestamp=none \"${DEST}\"\n  fi\nfi\n";
 		};
 		IPH1000000000000000001 /* Embed Inline Preview Host */ = {
 			isa = PBXShellScriptBuildPhase;
