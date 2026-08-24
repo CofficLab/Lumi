@@ -70,6 +70,7 @@ import PluginOcr
 import PluginOpenIn
 import PluginPluginManager
 import PluginProjects
+import PluginProjectRAG
 import PluginResumeDesigner
 import PluginSettingGeneral
 import PluginSettingView
@@ -97,6 +98,8 @@ public struct DefaultPluginFactory: PluginFactory {
             CaffeinatePlugin(),
             SettingGeneralPlugin(),
             ProjectsPlugin(),
+            // 原 LumiApp 显式注入的项目 RAG：保留旧索引数据库和 search_code 工具。
+            ProjectRAGSuperPlugin(),
             DevicePlugin(),
             HostsManagerPlugin(),
             DiskManagerPlugin(),

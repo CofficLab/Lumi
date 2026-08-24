@@ -16,6 +16,7 @@ import ProviderStorage
 import ProviderTheme
 import ProviderToast
 import ProviderToolbar
+import ProviderToolManager
 import ProviderLLMManager
 import KitLLM
 import ProviderMessage
@@ -258,6 +259,15 @@ struct FactoryLumi2Tests {
         let settings = kernel.resolveProvider((any SettingViewProviding).self)
         #expect(settings?.entries.contains(where: { $0.id == "general" }) == true)
         #expect(settings?.entries.contains(where: { $0.id == "com.coffic.lumi.plugin.device-info.memory-settings" }) == true)
+    }
+
+    @Test("默认目录复刻旧版 Project RAG 插件与 search_code 工具")
+    func defaultCatalogIncludesProjectRAG() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        #expect(kernel.isPluginRegistered(id: "com.coffic.lumi.plugin.project.rag"))
+        let tools = kernel.resolveProvider((any ToolManagerProviding).self)
+        #expect(tools?.tool(named: "search_code") != nil)
     }
 
     @Test("makeKernel 启动 SettingsToolbarPlugin 后工具栏含设置按钮")

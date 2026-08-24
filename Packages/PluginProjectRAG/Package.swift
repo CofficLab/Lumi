@@ -1,0 +1,38 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "PluginProjectRAG",
+    platforms: [.macOS(.v14)],
+    products: [
+        .library(name: "PluginProjectRAG", targets: ["PluginProjectRAG"]),
+    ],
+    dependencies: [
+        .package(path: "../KernelCore"),
+        .package(path: "../AgentToolKit"),
+        .package(path: "../ProviderProject"),
+        .package(path: "../ProviderStorage"),
+        .package(path: "../ProviderToolManager"),
+        // The legacy package owns the SQLite schema, embedding implementations,
+        // and bundled vec0 extension. The V2 plugin is an adapter around that
+        // proven RAG engine, rather than a second incompatible database format.
+        .package(path: "../../Plugins/ProjectRAGPlugin"),
+    ],
+    targets: [
+        .target(
+            name: "PluginProjectRAG",
+            dependencies: [
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProjectRAGPlugin", package: "ProjectRAGPlugin"),
+            ]
+        ),
+        .testTarget(
+            name: "PluginProjectRAGTests",
+            dependencies: ["PluginProjectRAG"]
+        ),
+    ]
+)

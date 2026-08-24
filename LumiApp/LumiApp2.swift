@@ -105,6 +105,11 @@ struct LumiMinimalApp: App {
         } label: {
             LumiMenuBarLabel(kernel: kernel)
         }
+        // 默认 `.menu` 会把 SwiftUI 内容降级为原生 NSMenu 项：HStack 会被拆成
+        // 竖排文本，图表和自定义背景也会丢失（即新版截图中的粗糙样式）。旧版
+        // 使用 NSPopover，因此这里必须使用 `.window`，保留每个插件贡献的完整
+        // SwiftUI 视图树及 280pt 的弹窗尺寸。
+        .menuBarExtraStyle(.window)
     }
 
     /// 与旧版 `MenuBarManagerPlugin.showMainWindow()` 保持相同行为：从状态栏
@@ -202,36 +207,85 @@ private struct LumiMenuBarPopover: View {
         .frame(width: 280)
         .padding(.vertical, 6)
         .background(Color(nsColor: .windowBackgroundColor))
+        .preferredColorScheme(systemColorScheme)
     }
 
     private var actionSection: some View {
         VStack(spacing: 0) {
-            actionRow("Open Lumi", icon: "macwindow", color: .accentColor, action: onShowMainWindow)
+            LumiMenuBarActionRow(
+                title: localized("Open Lumi", chinese: "打开 Lumi"),
+                icon: "macwindow",
+                color: .accentColor,
+                action: perform(onShowMainWindow)
+            )
             Divider().padding(.leading, 36)
-            actionRow("Check for Updates", icon: "arrow.down.circle", color: .accentColor, action: onCheckForUpdates)
+            LumiMenuBarActionRow(
+                title: localized("Check for Updates", chinese: "检查更新"),
+                icon: "arrow.down.circle",
+                color: .accentColor,
+                action: perform(onCheckForUpdates)
+            )
             Divider().padding(.leading, 36)
-            actionRow("Quit Lumi", icon: "power", color: .red, action: onQuit)
+            LumiMenuBarActionRow(
+                title: localized("Quit Lumi", chinese: "退出 Lumi"),
+                icon: "power",
+                color: .red,
+                action: perform(onQuit)
+            )
         }
         .padding(.vertical, 8)
     }
 
-    private func actionRow(
-        _ title: String,
-        icon: String,
-        color: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button {
+    /// 与旧版资源表一致的宿主级本地化。菜单栏动作并不属于任一插件，不能再
+    /// 硬编码英文；插件自己的文字仍继续由各自的 `.module` 资源提供。
+    private func localized(_ english: String, chinese: String) -> String {
+        Locale.preferredLanguages.first?.lowercased().hasPrefix("zh") == true ? chinese : english
+    }
+
+    private var systemColorScheme: ColorScheme {
+        NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
+    }
+
+    private func perform(_ action: @escaping () -> Void) -> () -> Void {
+        {
             dismiss()
             action()
-        } label: {
-            Label(title, systemImage: icon)
-                .foregroundStyle(color)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
+        }
+    }
+}
+
+/// 逐项复刻旧版 `MenuBarActionRow` 的密度、图标占位、悬停和文字层级。
+/// 放在 App 宿主内是因为底部三个动作不是插件贡献，避免把 Lumi 产品文案
+/// 误放入通用的 `ProviderMenuBar` 包。
+private struct LumiMenuBarActionRow: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 11))
+                    .foregroundStyle(isHovering ? Color.primary : color)
+                    .frame(width: 18)
+
+                Text(title)
+                    .font(.system(size: 11))
+                    .foregroundStyle(isHovering ? Color.primary : Color.secondary)
+
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .background(isHovering ? Color.accentColor.opacity(0.16) : .clear)
+        .onHover { isHovering = $0 }
     }
 }
 
