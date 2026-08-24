@@ -7,6 +7,19 @@ import Testing
 @MainActor
 struct ProviderWebServerTests {
 
+    @Test("请求活动区分写操作与成功状态")
+    func requestActivityClassification() {
+        let activity = WebRequestActivity(
+            pluginID: "theme",
+            method: "POST",
+            path: "/api/theme/dark",
+            description: "Switch theme",
+            statusCode: 204
+        )
+        #expect(activity.isMutation)
+        #expect(activity.isSuccess)
+    }
+
     /// 测试用实现：验证协议可被任意实现注入。
     private final class MockWebServerProvider: WebServerProviding, @unchecked Sendable {
         let port = 0
