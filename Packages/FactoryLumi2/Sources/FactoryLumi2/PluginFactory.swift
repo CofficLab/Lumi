@@ -13,6 +13,7 @@ import ClipboardManagerPlugin
 import BrowserPlugin
 import ComputerUsePlugin
 import BrewManagerPlugin
+import DisplayControlPlugin
 import PluginStorage
 import PluginToast
 import PluginCommand
@@ -166,6 +167,7 @@ public struct DefaultPluginFactory: PluginFactory {
             BrowserSuperPlugin(),
             ComputerUseSuperPlugin(),
             BrewManagerSuperPlugin(),
+            DisplayControlSuperPlugin(),
             SkillPlugin(),
             StateMonitorPlugin(),
             OnboardingPlugin(),

@@ -1,27 +1,29 @@
 import Foundation
 import Testing
-import KernelLumi
 @testable import DisplayControlPlugin
 
+@MainActor
 @Test("Plugin info has correct identifier")
 func pluginInfoIdentifier() {
-    #expect(DisplayControlPlugin().id == "com.coffic.lumi.plugin.display-control")
+    #expect(DisplayControlSuperPlugin().id == "com.coffic.lumi.plugin.display-control")
 }
 
+@MainActor
 @Test("Plugin info has correct display name")
 func pluginInfoDisplayName() {
-    let expected = LumiPluginLocalization.string("Display Control", bundle: .module, locale: Locale(identifier: "en"))
-    #expect(DisplayControlPlugin().name == expected)
+    #expect(DisplayControlSuperPlugin().metadata.name == "Display Control")
 }
 
+@MainActor
 @Test("Plugin category is system")
 func pluginCategory() {
-    #expect(DisplayControlPlugin().category == .system)
+    #expect(DisplayControlSuperPlugin().metadata.category == .system)
 }
 
+@MainActor
 @Test("Plugin policy is optIn")
 func pluginPolicy() {
-    #expect(DisplayControlPlugin().policy == .optIn)
+    #expect(DisplayControlSuperPlugin().metadata.policy == .disabledByDefault)
 }
 
 @Test("Plugin iconName is display")
