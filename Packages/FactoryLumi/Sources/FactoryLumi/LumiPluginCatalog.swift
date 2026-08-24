@@ -253,7 +253,6 @@ public enum LumiPluginCatalog {
             MenuBarManagerPlugin(),
             MenuBarHelperPlugin(),
             DebugBadgePlugin(),
-            PromoDesignerPlugin(),
             ResumeDesignerPlugin(),
             MemoryPlugin(),
             DownloadPlugin(),
