@@ -8,12 +8,14 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../ProviderContentView"),
+        .package(path: "../ProviderDocsView"),
+        .package(path: "../ProviderToolbar"),
         .package(path: "../../Plugins/CADDesignerPlugin"),
     ],
     targets: [
         .target(
             name: "PluginCADDesigner",
-            dependencies: ["KernelCore", "ProviderContentView", "CADDesignerPlugin"]
+            dependencies: ["KernelCore", "ProviderContentView", "ProviderDocsView", "ProviderToolbar", "CADDesignerPlugin"]
         ),
         .testTarget(name: "PluginCADDesignerTests", dependencies: ["PluginCADDesigner", "KernelCore", "ProviderContentView"]),
     ]

@@ -4,11 +4,13 @@ import SwiftUI
 // MARK: - About View
 
 /// CAD 设计器插件关于视图 —— 以产品落地页的形式介绍功能。
-struct CADDesignerAboutView: View {
+public struct CADDesignerAboutView: View {
     @Environment(\.locale) private var locale
     @LumiTheme private var theme
 
-    var body: some View {
+    public init() {}
+
+    public var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             hero
             capabilitiesSection

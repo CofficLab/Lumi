@@ -6,10 +6,12 @@ import SwiftUI
 /// CAD 设计使用手册 —— 模拟纸质说明书的章节式文档:
 /// 编号章节、编号步骤、条目列表与线框示意图,克制严谨,不含宣传性内容。
 /// 通过 `pluginManualView` 暴露,在 设置 → 通用 → 新手引导 → 说明书 中阅读。
-struct CADDesignerManualView: View {
+public struct CADDesignerManualView: View {
     @LumiTheme private var theme
 
-    var body: some View {
+    public init() {}
+
+    public var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             ManualHeader(
                 title: L("CAD Designer"),

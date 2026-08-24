@@ -1,6 +1,8 @@
 import CADDesignerPlugin
 import KernelCore
 import ProviderContentView
+import ProviderDocsView
+import ProviderToolbar
 import SwiftUI
 
 /// CAD 编辑器的 KernelCore 入口。
@@ -25,9 +27,20 @@ public final class CADDesignerSuperPlugin: SuperPlugin {
     public func onBoot(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ContentViewProviding).self)?
             .setContentView(AnyView(CADDesignerView()))
+        kernel.resolveProvider((any ToolbarProviding).self)?.addToolbarItems([
+            ToolbarItem(id: "\(id).title", title: metadata.name, placement: .center, order: 0) {
+                Text(self.metadata.name).font(.headline)
+            },
+        ])
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { CADDesignerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { CADDesignerManualView() })
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
+        kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }
