@@ -1,6 +1,5 @@
 import SwiftUI
 import LumiUI
-import KernelLumi
 
 /// 查询历史面板：搜索 + 列表 + 点击载入编辑器。
 ///

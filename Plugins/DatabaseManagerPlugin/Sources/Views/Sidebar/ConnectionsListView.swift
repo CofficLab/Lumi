@@ -1,5 +1,4 @@
 import SwiftUI
-import KernelLumi
 import LumiUI
 
 /// 侧边栏连接列表视图。

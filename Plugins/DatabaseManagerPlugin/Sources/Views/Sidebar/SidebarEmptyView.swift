@@ -1,5 +1,4 @@
 import SwiftUI
-import KernelLumi
 import LumiUI
 
 /// Database Sidebar 列表为空时的占位视图。

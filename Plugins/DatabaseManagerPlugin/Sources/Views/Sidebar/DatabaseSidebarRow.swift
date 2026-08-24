@@ -1,5 +1,4 @@
 import SwiftUI
-import KernelLumi
 import LumiUI
 
 /// Redis Key 列表项。

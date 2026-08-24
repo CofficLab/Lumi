@@ -1,6 +1,5 @@
 import SwiftUI
 import LumiUI
-import KernelLumi
 
 /// ``MainView`` 的空状态视图。
 ///

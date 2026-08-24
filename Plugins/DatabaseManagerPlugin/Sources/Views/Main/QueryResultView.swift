@@ -1,6 +1,5 @@
 import SwiftUI
 import LumiUI
-import KernelLumi
 
 /// 查询结果的表格渲染视图。
 ///
