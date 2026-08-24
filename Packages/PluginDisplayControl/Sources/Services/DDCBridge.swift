@@ -29,7 +29,7 @@ func _IOAVServiceReadI2C(_: CFTypeRef, _: UInt32, _: UInt32, _: UnsafeMutablePoi
 // Made optional so that missing symbol is handled gracefully instead of crashing at launch.
 private let ioAVServiceCreateWithService: (@convention(c) (UnsafeRawPointer?, io_service_t) -> UnsafeRawPointer?)? = {
     guard let sym = dlsym(dlopen(nil, RTLD_LAZY), "IOAVServiceCreateWithService") else {
-        DisplayControlPlugin.logger.warning("\(DisplayDDCBridge.t)DDC: IOAVServiceCreateWithService symbol not found — DDC control unavailable")
+        DisplayService.logger.warning("\(DisplayDDCBridge.t)DDC: IOAVServiceCreateWithService symbol not found — DDC control unavailable")
         return nil
     }
     return unsafeBitCast(sym, to: (@convention(c) (UnsafeRawPointer?, io_service_t) -> UnsafeRawPointer?).self)
@@ -290,7 +290,7 @@ private final class Arm64DDCMatcher: SuperLog {
         }
 
         if Self.verbose {
-            DisplayControlPlugin.logger.debug("\(Self.t)Matched \(matched.count) services from \(registryServices.count) registry services")
+            DisplayService.logger.debug("\(Self.t)Matched \(matched.count) services from \(registryServices.count) registry services")
         }
         return matched
     }
