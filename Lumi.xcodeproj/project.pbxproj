@@ -13,8 +13,7 @@
 		BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = BMFB000000000000000001 /* FactoryBookletMaker */; };
 		BMFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = BMFC000000000000000001 /* FactoryCore */; };
 		CD2AFB000000000000000001 /* FactoryCADDesigner2 in Frameworks */ = {isa = PBXBuildFile; productRef = CD2AFD000000000000000001 /* FactoryCADDesigner2 */; };
-		DBFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = DBFC000000000000000001 /* FactoryCore */; };
-		DBFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = DBFL000000000000000001 /* FactoryLumi */; };
+		DB2AFB000000000000000001 /* FactoryDatabaseManager2 in Frameworks */ = {isa = PBXBuildFile; productRef = DB2AFD000000000000000001 /* FactoryDatabaseManager2 */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F5FL20000000000000B001 /* FactoryLumi2 in Frameworks */ = {isa = PBXBuildFile; productRef = F5FL200000000000000001 /* FactoryLumi2 */; };
 		FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = FBMIOD000000000000000001 /* FactoryBookletMakerMobile */; };
@@ -219,8 +218,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DBFC00000000000000B001 /* FactoryCore in Frameworks */,
-				DBFL00000000000000B001 /* FactoryLumi in Frameworks */,
+				DB2AFB000000000000000001 /* FactoryDatabaseManager2 in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -399,8 +397,7 @@
 			);
 			name = DatabaseManager;
 			packageProductDependencies = (
-				DBFC000000000000000001 /* FactoryCore */,
-				DBFL000000000000000001 /* FactoryLumi */,
+				DB2AFD000000000000000001 /* FactoryDatabaseManager2 */,
 			);
 			productName = DatabaseManager;
 			productReference = DB0000000000000000000002 /* DatabaseManager.app */;
@@ -515,6 +512,7 @@
 				BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker2" */,
 				AI2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryAppIconDesigner2" */,
 				CD2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCADDesigner2" */,
+				DB2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryDatabaseManager2" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -892,6 +890,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FactoryCADDesigner2;
 		};
+		DB2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryDatabaseManager2" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FactoryDatabaseManager2;
+		};
 		F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdate" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/PluginAppUpdate;
@@ -952,15 +954,10 @@
 			package = CD2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCADDesigner2" */;
 			productName = FactoryCADDesigner2;
 		};
-		DBFC000000000000000001 /* FactoryCore */ = {
+		DB2AFD000000000000000001 /* FactoryDatabaseManager2 */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
-			productName = FactoryCore;
-		};
-		DBFL000000000000000001 /* FactoryLumi */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
-			productName = FactoryLumi;
+			package = DB2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryDatabaseManager2" */;
+			productName = FactoryDatabaseManager2;
 		};
 		F5CBA1A13020000000425FF6 /* AppUpdatePlugin */ = {
 			isa = XCSwiftPackageProductDependency;

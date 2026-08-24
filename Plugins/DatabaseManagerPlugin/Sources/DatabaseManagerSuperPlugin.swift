@@ -1,9 +1,11 @@
 import EditorContracts
 import EditorService
 import KernelCore
+import ProviderDocsView
 import ProviderContentView
 import ProviderExternalFile
 import ProviderToolbar
+import ProviderToolManager
 import SwiftUI
 
 /// DatabaseManager 的 KernelCore 入口，复用既有数据库连接、查询与 SQL 编辑体验。
@@ -41,12 +43,27 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin {
         kernel.resolveProvider((any ExternalFileOpening).self)?.registerHandler(pluginID: id) { url in
             self.openSQLiteDatabase(url)
         }
+        let tools = kernel.resolveProvider((any ToolManagerProviding).self)
+        tools?.add(DatabaseListConnectionsV2Tool(), pluginID: id)
+        tools?.add(DatabaseDescribeSchemaV2Tool(), pluginID: id)
+        tools?.add(DatabaseReadonlyQueryV2Tool(), pluginID: id)
+        tools?.add(DatabaseSampleTableV2Tool(), pluginID: id)
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { AboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { DatabaseManagerManualView() })
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
         kernel.resolveProvider((any ExternalFileOpening).self)?.unregisterHandlers(pluginID: id)
+        let tools = kernel.resolveProvider((any ToolManagerProviding).self)
+        tools?.remove(id: DatabaseListConnectionsV2Tool.toolName)
+        tools?.remove(id: DatabaseDescribeSchemaV2Tool.toolName)
+        tools?.remove(id: DatabaseReadonlyQueryV2Tool.toolName)
+        tools?.remove(id: DatabaseSampleTableV2Tool.toolName)
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         EmbeddedEditorServiceLocator.provider = nil
     }
 
