@@ -5,6 +5,12 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderToolbar
 import SwiftUI
+import os
+
+struct BrewManagerPlugin {
+    nonisolated static let verbose = false
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "BrewManagerPlugin")
+}
 
 @MainActor
 public final class BrewManagerSuperPlugin: SuperPlugin {
