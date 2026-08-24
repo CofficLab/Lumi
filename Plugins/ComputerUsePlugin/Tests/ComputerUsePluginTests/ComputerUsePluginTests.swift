@@ -9,11 +9,12 @@ struct ComputerUsePluginTests {
     @MainActor
     @Test("plugin is always on and contributes both tools")
     func pluginContributions() {
-        let plugin = ComputerUsePlugin()
-        #expect(plugin.policy == .alwaysOn)
-        #expect(plugin.category == .agent)
-        #expect(Set(plugin.agentTools(kernel: KernelLumi()).map(\.name)) == ["computer_observe", "computer_act"])
-        #expect(plugin.settingsTabItems(kernel: KernelLumi()).count == 1)
+        let plugin = ComputerUseSuperPlugin()
+        #expect(plugin.id == "com.coffic.lumi.plugin.computer-use")
+        #expect(plugin.metadata.policy == .alwaysOn)
+        #expect(ComputerObserveV2Tool().name == "computer_observe")
+        #expect(ComputerActV2Tool().name == "computer_act")
+        #expect(ComputerActV2Tool().inputSchema(for: .english)["required"] as? [String] == ["observation_id", "actions"])
     }
 
     @Test("action parser accepts a complete batch")

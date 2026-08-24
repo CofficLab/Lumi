@@ -11,6 +11,7 @@ import DownloadPlugin
 import AppManagerPlugin
 import ClipboardManagerPlugin
 import BrowserPlugin
+import ComputerUsePlugin
 import PluginStorage
 import PluginToast
 import PluginCommand
@@ -162,6 +163,7 @@ public struct DefaultPluginFactory: PluginFactory {
             AppManagerSuperPlugin(),
             ClipboardManagerSuperPlugin(),
             BrowserSuperPlugin(),
+            ComputerUseSuperPlugin(),
             SkillPlugin(),
             StateMonitorPlugin(),
             OnboardingPlugin(),
