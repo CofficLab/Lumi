@@ -618,7 +618,7 @@
    "order": 80,
    "policy": "optin",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginCADDesigner",
    "wave": "P7",
    "owners": [],
    "dependencies": [
@@ -637,13 +637,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "implementing",
    "evidence": {
-    "packageTests": null,
+    "packageTests": "swift test --package-path Packages/PluginCADDesigner",
     "integrationBuild": null,
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "V2 SuperPlugin publishes the existing CAD workspace through ContentViewProviding. The CAD engine currently remains in Plugins/CADDesignerPlugin; legacy Agent tools, toolbar contribution, docs, and storage lifecycle still require V2 replacements before dependency removal.",
     "performance": null
    }
   },
