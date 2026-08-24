@@ -5,6 +5,13 @@ import ProviderDocsView
 import ProviderStorage
 import SwiftUI
 
+enum InputPluginRuntimeBridge {
+    nonisolated(unsafe) static var dataRootDirectory: URL?
+    static var fallbackRootDirectory: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
+    }
+}
+
 @MainActor
 public final class InputSuperPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.input-manager"
