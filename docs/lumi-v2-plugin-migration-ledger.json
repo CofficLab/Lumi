@@ -155,7 +155,7 @@
    "order": 99,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginAgentTurnNotification",
    "wave": "P4",
    "owners": [],
    "dependencies": [
@@ -164,9 +164,13 @@
     "LumiUI",
     "SuperLogKit"
    ],
-   "providersConsumed": [],
+   "providersConsumed": [
+    "LifecycleHooksProviding"
+   ],
    "providersPublished": [],
-   "contributions": [],
+   "contributions": [
+    "System notification when an agent turn finishes"
+   ],
    "storage": [],
    "userDefaultsKeys": [],
    "keychainKeys": [],
@@ -174,13 +178,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/PluginAgentTurnNotification (2026-08-24; 3 tests passed)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "FactoryLumi2 registers PluginAgentTurnNotification. The V2 plugin subscribes to LifecycleHooksProviding turn-finished events and presents the same completion, failure and cancellation notifications without relying on KernelLumi notifications.",
     "performance": null
    }
   },
