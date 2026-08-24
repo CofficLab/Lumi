@@ -62,7 +62,7 @@
     "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": "V2 package is registered in FactoryLumi2 and preserves the settings entry, 30/90/365-day period preference, daily message heatmap, and token trend. Legacy disk cache, idle-time card, and about screen require parity review before deleting the old plugin.",
+    "migration": "V2 package is registered in FactoryLumi2 and preserves the settings entry, 30/90/365-day period preference, daily message heatmap, token trend, idle-time card, about entry, and data-directory action. Historical activity is stored in the V2 plugin-data directory and reused on reload; today remains real-time. The legacy plugin can now be deleted after the host-wide migration cutover.",
     "performance": null
    }
   },

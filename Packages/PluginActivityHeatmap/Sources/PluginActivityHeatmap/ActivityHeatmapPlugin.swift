@@ -4,7 +4,11 @@ import ProviderMessage
 import ProviderSettingView
 import ProviderIdleTime
 import ProviderDocsView
+import ProviderStorage
 import SwiftUI
+#if canImport(AppKit)
+import AppKit
+#endif
 
 /// V2 activity dashboard. It preserves the legacy heatmap's three time ranges,
 /// daily message intensity, token trend, and persisted range preference while
@@ -22,12 +26,20 @@ public final class ActivityHeatmapPlugin: SuperPlugin {
         policy: .alwaysOn
     )
 
+    private var cache: ActivityHeatmapCache?
+    private var cacheDirectory: URL?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else { return }
         let messages = kernel.resolveProvider((any MessageManaging).self)
         let idleTime = kernel.resolveProvider((any IdleTimeProviding).self)
+        let directory = kernel.resolveProvider((any StorageProviding).self)?
+            .pluginDataDirectory(for: "ActivityHeatmap")
+        ActivityHeatmapViewModel.restoreLegacyPeriodIfNeeded(from: directory)
+        cacheDirectory = directory
+        cache = ActivityHeatmapCache(directory: directory)
         settings.addEntries([
             SettingEntryItem(
                 id: id,
@@ -35,7 +47,12 @@ public final class ActivityHeatmapPlugin: SuperPlugin {
                 systemImage: "chart.bar.xaxis",
                 order: order
             ) {
-                ActivityHeatmapSettingsView(messages: messages, idleTime: idleTime)
+                ActivityHeatmapSettingsView(
+                    messages: messages,
+                    idleTime: idleTime,
+                    cache: self.cache,
+                    cacheDirectory: directory
+                )
             },
         ])
         kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
@@ -46,6 +63,8 @@ public final class ActivityHeatmapPlugin: SuperPlugin {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+        cache = nil
+        cacheDirectory = nil
     }
 }
 
@@ -75,8 +94,9 @@ public struct ActivityDay: Identifiable, Sendable, Equatable {
 @Observable
 public final class ActivityHeatmapViewModel {
     private let messages: (any MessageManaging)?
+    private let cache: ActivityHeatmapCache?
     private var insertionObserver: (any MessageInsertedObserverHandle)?
-    private static let periodKey = "com.coffic.activity-heatmap.period"
+    static let periodKey = "com.coffic.activity-heatmap.period"
 
     public var period: ActivityHeatmapPeriod {
         didSet { UserDefaults.standard.set(period.rawValue, forKey: Self.periodKey) }
@@ -84,15 +104,27 @@ public final class ActivityHeatmapViewModel {
     public private(set) var days: [ActivityDay] = []
     public private(set) var isLoading = false
 
-    public init(messages: (any MessageManaging)?) {
+    public init(messages: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil) {
         self.messages = messages
+        self.cache = cache
         self.period = ActivityHeatmapPeriod(rawValue: UserDefaults.standard.integer(forKey: Self.periodKey)) ?? .days30
         insertionObserver = messages?.addMessageInsertedObserver { [weak self] _, _ in
-            self?.reload()
+            Task { await self?.reload() }
         }
     }
 
-    public func reload() {
+    static func restoreLegacyPeriodIfNeeded(from directory: URL?) {
+        guard UserDefaults.standard.object(forKey: periodKey) == nil,
+              let directory,
+              let data = try? Data(contentsOf: directory.appendingPathComponent("settings/settings.json")),
+              let legacy = try? JSONDecoder().decode(LegacyPeriodPreference.self, from: data),
+              let rawValue = legacy.selectedPeriodRawValue,
+              ActivityHeatmapPeriod(rawValue: rawValue) != nil
+        else { return }
+        UserDefaults.standard.set(rawValue, forKey: periodKey)
+    }
+
+    public func reload() async {
         guard let messages else { days = []; return }
         isLoading = true
         let calendar = Calendar.current
@@ -101,23 +133,55 @@ public final class ActivityHeatmapViewModel {
             isLoading = false
             return
         }
-        let messageCounts = messages.dailyMessageCounts(since: start)
-        let tokenCounts = messages.dailyTokenCounts(since: start)
+        let historicalDates = (0..<(period.rawValue - 1)).compactMap {
+            calendar.date(byAdding: .day, value: $0, to: start)
+        }
+        let cached = await cache?.counts(for: historicalDates) ?? [:]
+        let missingDates = historicalDates.filter { cached[$0] == nil }
+        let fetchedHistoricalMessages = missingDates.first.map { messages.dailyMessageCounts(since: $0) } ?? [:]
+        let fetchedHistoricalTokens = missingDates.first.map { messages.dailyTokenCounts(since: $0) } ?? [:]
+        let historical = missingDates.reduce(into: [Date: ActivityHeatmapCache.Counts]()) { values, date in
+            values[date] = .init(
+                messages: fetchedHistoricalMessages[date, default: 0],
+                tokens: fetchedHistoricalTokens[date, default: 0]
+            )
+        }
+        await cache?.save(historical)
+        let todayMessages = messages.dailyMessageCounts(since: today)
+        let todayTokens = messages.dailyTokenCounts(since: today)
         days = (0..<period.rawValue).compactMap { offset in
             guard let date = calendar.date(byAdding: .day, value: offset, to: start) else { return nil }
-            return ActivityDay(date: date, messages: messageCounts[date, default: 0], tokens: tokenCounts[date, default: 0])
+            let isToday = date == today
+            let cachedDay = cached[date]
+            return ActivityDay(
+                date: date,
+                messages: isToday ? todayMessages[date, default: 0] : cachedDay?.messages ?? historical[date]?.messages ?? 0,
+                tokens: isToday ? todayTokens[date, default: 0] : cachedDay?.tokens ?? historical[date]?.tokens ?? 0
+            )
         }
         isLoading = false
     }
+}
+
+private struct LegacyPeriodPreference: Decodable {
+    let selectedPeriodRawValue: Int?
 }
 
 public struct ActivityHeatmapSettingsView: View {
     @State private var model: ActivityHeatmapViewModel
     private let idleTime: (any IdleTimeProviding)?
 
-    public init(messages: (any MessageManaging)?, idleTime: (any IdleTimeProviding)? = nil) {
-        _model = State(initialValue: ActivityHeatmapViewModel(messages: messages))
+    private let cacheDirectory: URL?
+
+    public init(
+        messages: (any MessageManaging)?,
+        idleTime: (any IdleTimeProviding)? = nil,
+        cache: ActivityHeatmapCache? = nil,
+        cacheDirectory: URL? = nil
+    ) {
+        _model = State(initialValue: ActivityHeatmapViewModel(messages: messages, cache: cache))
         self.idleTime = idleTime
+        self.cacheDirectory = cacheDirectory
     }
 
     public var body: some View {
@@ -136,7 +200,7 @@ public struct ActivityHeatmapSettingsView: View {
                     }
                     .labelsHidden()
                     .frame(width: 130)
-                    Button { model.reload() } label: {
+                    Button { Task { await model.reload() } } label: {
                         Image(systemName: "arrow.clockwise")
                     }
                     .help("Refresh activity")
@@ -145,14 +209,15 @@ public struct ActivityHeatmapSettingsView: View {
                 summary
                 heatmap
                 tokenTrend
+                if let cacheDirectory { dataDirectoryButton(cacheDirectory) }
                 if let idleTime {
                     IdleTimeSummaryCard(provider: idleTime)
                 }
             }
             .padding(24)
         }
-        .onChange(of: model.period) { _, _ in model.reload() }
-        .task { model.reload() }
+        .onChange(of: model.period) { _, _ in Task { await model.reload() } }
+        .task { await model.reload() }
     }
 
     private var summary: some View {
@@ -235,11 +300,72 @@ public struct ActivityHeatmapSettingsView: View {
         value >= 1_000_000 ? String(format: "%.1fM", Double(value) / 1_000_000) : value >= 1_000 ? "\(value / 1_000)K" : "\(value)"
     }
 
+    @ViewBuilder
+    private func dataDirectoryButton(_ directory: URL) -> some View {
+        #if canImport(AppKit)
+        Button("Open Data Directory", systemImage: "folder") {
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            NSWorkspace.shared.open(directory)
+        }
+        .buttonStyle(.bordered)
+        #endif
+    }
+
     private static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         return formatter
     }()
+}
+
+/// Historical days do not change. Keeping them in a compact local JSON cache
+/// preserves the legacy plugin's fast reload behaviour without a KernelLumi or
+/// SwiftData dependency. The current day always comes from MessageManaging.
+public actor ActivityHeatmapCache {
+    public struct Counts: Codable, Sendable, Equatable {
+        public let messages: Int
+        public let tokens: Int
+    }
+
+    private let url: URL?
+    private var values: [String: Counts]?
+    private let calendar = Calendar.current
+
+    public init(directory: URL?) {
+        self.url = directory?.appendingPathComponent("activity-cache-v2.json")
+    }
+
+    public func counts(for dates: [Date]) -> [Date: Counts] {
+        let stored = loadIfNeeded()
+        return Dictionary(uniqueKeysWithValues: dates.compactMap { date in
+            stored[key(for: date)].map { (calendar.startOfDay(for: date), $0) }
+        })
+    }
+
+    public func save(_ updates: [Date: Counts]) {
+        guard !updates.isEmpty else { return }
+        var stored = loadIfNeeded()
+        for (date, counts) in updates { stored[key(for: date)] = counts }
+        values = stored
+        guard let url, let data = try? JSONEncoder().encode(stored) else { return }
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? data.write(to: url, options: .atomic)
+    }
+
+    private func loadIfNeeded() -> [String: Counts] {
+        if let values { return values }
+        guard let url,
+              let data = try? Data(contentsOf: url),
+              let decoded = try? JSONDecoder().decode([String: Counts].self, from: data)
+        else { values = [:]; return [:] }
+        values = decoded
+        return decoded
+    }
+
+    private func key(for date: Date) -> String {
+        let components = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", components.year ?? 0, components.month ?? 0, components.day ?? 0)
+    }
 }
 
 private struct IdleTimeSummaryCard: View {
