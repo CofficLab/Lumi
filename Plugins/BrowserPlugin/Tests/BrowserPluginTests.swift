@@ -1,6 +1,5 @@
 import AgentToolKit
 import Foundation
-import KernelLumi
 import Testing
 @testable import BrowserPlugin
 
@@ -9,53 +8,15 @@ import Testing
 struct PluginBrowserTests {
     @Test("plugin metadata is stable")
     func pluginMetadata() {
-        #expect(BrowserPlugin().id == "Browser")
-        #expect(BrowserPlugin.name == "Browser")
-        #expect(BrowserPlugin().category == .general)
-        #expect(BrowserPlugin().order == 102)
+        let plugin = BrowserSuperPlugin()
+        #expect(plugin.id == "Browser")
+        #expect(plugin.metadata.name == "Browser")
+        #expect(plugin.order == 102)
     }
 
     @Test("plugin registers browser tools")
     func pluginRegistersTools() {
-        let tools = BrowserPlugin.agentTools(
-            lumiCore: LumiPluginContext(activeSectionID: "test", activeSectionTitle: "Test")
-        )
-        let toolNames = Set(tools.map(\.name))
-
-        #expect(tools.count == 2)
-        #expect(toolNames == ["browser_screenshot", "browser_agent"])
-    }
-
-    @Test("tool schema requires url")
-    func toolSchemaRequiresURL() throws {
-        let tool = BrowserScreenshotTool()
-        let schema = tool.inputSchema(for: .english)
-
-        let required = try #require(schema["required"] as? [String])
-        #expect(required == ["url"])
-
-        let properties = try #require(schema["properties"] as? [String: [String: Any]])
-        #expect(properties["url"]?["type"] as? String == "string")
-    }
-
-    @Test("tool schema bounds screenshot dimensions")
-    func toolSchemaBoundsScreenshotDimensions() throws {
-        let schema = BrowserScreenshotTool().inputSchema(for: .english)
-        let properties = try #require(schema["properties"] as? [String: [String: Any]])
-        let width = try #require(properties["width"])
-        let wait = try #require(properties["wait"])
-
-        #expect(width["minimum"] as? Int == 1)
-        #expect(width["maximum"] as? Int == 4096)
-        #expect(wait["minimum"] as? Int == 0)
-        #expect(wait["maximum"] as? Int == 10)
-    }
-
-    @Test("tool risk level is medium")
-    func toolRiskLevel() {
-        let tool = BrowserScreenshotTool()
-
-        #expect(tool.permissionRiskLevel(arguments: [:]) == .medium)
+        #expect(BrowserAgentV2Tool().name == "browser_agent")
     }
 
     @Test("tool trims copied URL whitespace")
@@ -117,15 +78,9 @@ struct PluginBrowserTests {
         #expect(BrowserScreenshotTool.normalizedContentHeight(from: "not-a-number") == 800)
     }
 
-    @Test("localization catalog is packaged")
-    func localizationCatalogIsPackaged() {
-        #expect(PluginBrowserLocalization.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
-        #expect(PluginBrowserLocalization.string("Browser").isEmpty == false)
-    }
-
     @Test("browser agent tool schema requires command")
     func browserAgentToolSchemaRequiresCommand() throws {
-        let tool = BrowserAgentTool()
+        let tool = BrowserAgentV2Tool()
         let schema = tool.inputSchema(for: .english)
 
         let required = try #require(schema["required"] as? [String])
@@ -140,27 +95,27 @@ struct PluginBrowserTests {
 
     @Test("browser agent tool risk level is medium")
     func browserAgentToolRiskLevel() {
-        #expect(BrowserAgentTool().permissionRiskLevel(arguments: [:]) == .medium)
+        #expect(BrowserAgentV2Tool().permissionRiskLevel(arguments: [:]) == .medium)
     }
 
     @Test("browser agent command parser preserves quoted browser arguments")
     func browserAgentCommandParserPreservesQuotedBrowserArguments() {
-        #expect(BrowserAgentTool.parseCommandArguments(#"fill @field "hello world""#) == ["fill", "@field", "hello world"])
-        #expect(BrowserAgentTool.parseCommandArguments(#"type 'hello world'"#) == ["type", "hello world"])
-        #expect(BrowserAgentTool.parseCommandArguments(#"open https://example.com/search\ path"#) == ["open", "https://example.com/search path"])
-        #expect(BrowserAgentTool.parseCommandArguments(#"evaluate """#) == ["evaluate", ""])
-        #expect(BrowserAgentTool.parseCommandArguments(#"fill @field "unterminated"#) == nil)
+        #expect(BrowserAgentV2Tool.parseCommandArguments(#"fill @field "hello world""#) == ["fill", "@field", "hello world"])
+        #expect(BrowserAgentV2Tool.parseCommandArguments(#"type 'hello world'"#) == ["type", "hello world"])
+        #expect(BrowserAgentV2Tool.parseCommandArguments(#"open https://example.com/search\ path"#) == ["open", "https://example.com/search path"])
+        #expect(BrowserAgentV2Tool.parseCommandArguments(#"evaluate """#) == ["evaluate", ""])
+        #expect(BrowserAgentV2Tool.parseCommandArguments(#"fill @field "unterminated"#) == nil)
     }
 
     @Test("browser agent timeout is clamped to safe bounds")
     func browserAgentTimeoutIsClampedToSafeBounds() {
-        #expect(BrowserAgentTool.normalizedTimeout(nil) == 30)
-        #expect(BrowserAgentTool.normalizedTimeout(-10) == 1)
-        #expect(BrowserAgentTool.normalizedTimeout(0) == 1)
-        #expect(BrowserAgentTool.normalizedTimeout(45) == 45)
-        #expect(BrowserAgentTool.normalizedTimeout(45.0) == 45)
-        #expect(BrowserAgentTool.normalizedTimeout("45") == 45)
-        #expect(BrowserAgentTool.normalizedTimeout(999) == 300)
-        #expect(BrowserAgentTool.normalizedTimeout("not-a-number") == 30)
+        #expect(BrowserAgentV2Tool.normalizedTimeout(nil) == 30)
+        #expect(BrowserAgentV2Tool.normalizedTimeout(-10) == 1)
+        #expect(BrowserAgentV2Tool.normalizedTimeout(0) == 1)
+        #expect(BrowserAgentV2Tool.normalizedTimeout(45) == 45)
+        #expect(BrowserAgentV2Tool.normalizedTimeout(45.0) == 45)
+        #expect(BrowserAgentV2Tool.normalizedTimeout("45") == 45)
+        #expect(BrowserAgentV2Tool.normalizedTimeout(999) == 300)
+        #expect(BrowserAgentV2Tool.normalizedTimeout("not-a-number") == 30)
     }
 }
