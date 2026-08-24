@@ -3,6 +3,11 @@ import KernelCore
 import ProviderCommand
 import ProviderMessageSender
 import ProviderSettingView
+import os
+
+struct QuickLauncherPlugin {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "QuickLauncherPlugin")
+}
 
 /// KernelCore lifecycle for the Raycast-style global launcher.
 ///
