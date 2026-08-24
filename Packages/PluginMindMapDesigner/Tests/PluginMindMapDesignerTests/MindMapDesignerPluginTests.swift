@@ -10,7 +10,7 @@ struct MindMapDesignerPluginTests {
 
     @Test func contributesRailTabAndCompleteToolSet() {
         let plugin = MindMapDesignerPlugin()
-        #expect(plugin.id == "com.coffic.lumi.plugin.mind-map-designer")
+        #expect(plugin.id == "com.coffic.lumi.plugin.mind-map")
         #expect(plugin.order == 81)
         #expect(MindMapDesignerPlugin.railTabID == "mind-map.documents")
         let names = Set(MindMapDesignerPlugin.agentTools.map(\.name))

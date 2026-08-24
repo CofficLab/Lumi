@@ -14,10 +14,12 @@ import SwiftUI
 /// SuperPlugin + SuperAgentTool + Provider 注册表。
 @MainActor
 public final class MindMapDesignerPlugin: SuperPlugin {
-    public let id = "com.coffic.lumi.plugin.mind-map-designer"
+    /// Preserve the legacy plugin identity so enablement and app-scope data
+    /// continue to resolve under the same key after the KernelCore migration.
+    public let id = "com.coffic.lumi.plugin.mind-map"
     public let order = 81
     public let metadata = PluginMetadata(
-        id: "com.coffic.lumi.plugin.mind-map-designer",
+        id: "com.coffic.lumi.plugin.mind-map",
         name: "Mind Map Designer",
         description: "",
         category: .design,

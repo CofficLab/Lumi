@@ -4090,7 +4090,7 @@
    "order": 81,
    "policy": "optin",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginMindMapDesigner",
    "wave": "P7",
    "owners": [],
    "dependencies": [
@@ -4098,9 +4098,22 @@
     "LumiUI",
     "SuperLogKit"
    ],
-   "providersConsumed": [],
+   "providersConsumed": [
+    "ActivityBarProviding",
+    "ContentViewProviding",
+    "RailViewProviding",
+    "ToolManagerProviding",
+    "DocsViewProviding",
+    "ProviderProject",
+    "ProviderStorage"
+   ],
    "providersPublished": [],
-   "contributions": [],
+   "contributions": [
+    "mind-map workspace and rail",
+    "ten mind-map tools",
+    "project and app storage scopes",
+    "about and manual docs"
+   ],
    "storage": [],
    "userDefaultsKeys": [],
    "keychainKeys": [],
@@ -4108,13 +4121,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "migrated",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/PluginMindMapDesigner",
+    "integrationBuild": "swift test --package-path Packages/FactoryLumi2",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "MindMapDesignerPlugin preserves the legacy stable ID, opt-in policy, .lumi/mind-map storage, workspace, rail, and ten tools.",
     "performance": null
    }
   },

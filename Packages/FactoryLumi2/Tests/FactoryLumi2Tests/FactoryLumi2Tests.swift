@@ -182,7 +182,7 @@ struct FactoryLumi2Tests {
             "com.coffic.lumi.plugin.hosts-manager.entry",
             "com.coffic.lumi.plugin.app-icon-designer.entry",
             "com.coffic.lumi.plugin.app-store-promo-designer.entry",
-            "com.coffic.lumi.plugin.mind-map-designer.entry",
+            "com.coffic.lumi.plugin.mind-map.entry",
             "com.coffic.lumi.plugin.resume-designer.entry",
             "com.coffic.lumi.plugin.disk-manager.entry",
             "com.coffic.lumi.plugin.white-noise.entry",
