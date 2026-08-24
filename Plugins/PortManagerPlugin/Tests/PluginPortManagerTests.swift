@@ -1,6 +1,14 @@
 import Testing
 @testable import PortManagerPlugin
 
+@MainActor
+@Test func v2PluginMetadataIsStable() {
+    let plugin = PortManagerSuperPlugin()
+    #expect(plugin.id == "com.coffic.lumi.plugin.port-manager")
+    #expect(plugin.metadata.name == "Port Manager")
+    #expect(plugin.metadata.policy == .disabled)
+}
+
 @Test func parsesLsofListeningPorts() {
     let output = """
     COMMAND   PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
