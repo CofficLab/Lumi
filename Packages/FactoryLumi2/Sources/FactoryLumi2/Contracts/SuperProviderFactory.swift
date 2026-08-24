@@ -8,6 +8,7 @@ import ProviderContentView
 import ProviderConversation
 import ProviderConversationInput
 import ProviderDocsView
+import ProviderExternalFile
 import ProviderIdleTime
 import ProviderLegacyData
 import KitLLM
@@ -132,6 +133,7 @@ public protocol ProviderFactory {
     ) -> any PluginManaging
 
     func makeWebServerProvider() -> any WebServerProviding
+    func makeExternalFileProvider() -> any ExternalFileOpening
 
     /// 产出 `LifecycleHooksProviding` 实现（统一管理生命周期钩子）。
     func makeLifecycleHooksProvider() -> any LifecycleHooksProviding
@@ -145,4 +147,10 @@ public protocol ProviderFactory {
     ///
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
     func registerProviders(into kernel: KernelCoreContainer) throws
+}
+
+public extension ProviderFactory {
+    func makeExternalFileProvider() -> any ExternalFileOpening {
+        DefaultExternalFileOpening()
+    }
 }

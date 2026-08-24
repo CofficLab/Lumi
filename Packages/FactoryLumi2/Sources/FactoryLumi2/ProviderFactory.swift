@@ -32,6 +32,7 @@ import ProviderLegacyData
 import ProviderPluginControl
 import ProviderPluginManaging
 import ProviderWebServer
+import ProviderExternalFile
 import ProviderLifecycleHooks
 import ProviderLLMManager
 import KernelCore
@@ -222,6 +223,10 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultWebServerProviding()
     }
 
+    public func makeExternalFileProvider() -> any ExternalFileOpening {
+        DefaultExternalFileOpening()
+    }
+
     /// 产出 `LifecycleHooksProviding` 实现（统一管理生命周期钩子）。
     public func makeLifecycleHooksProvider() -> any LifecycleHooksProviding {
         DefaultLifecycleHooksProvider()
@@ -339,6 +344,7 @@ public struct DefaultProviderFactory: ProviderFactory {
             )
         )
         try kernel.registerProvider((any WebServerProviding).self, makeWebServerProvider())
+        try kernel.registerProvider((any ExternalFileOpening).self, makeExternalFileProvider())
         try kernel.registerProvider((any DocsViewProviding).self, makeDocsViewProvider())
         try kernel.registerProvider((any MenuBarProviding).self, makeMenuBarProvider())
         try kernel.registerProvider((any LogoProviding).self, makeLogoProvider())
