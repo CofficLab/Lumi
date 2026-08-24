@@ -38,26 +38,15 @@ let package = Package(
             path: "Sources",
             exclude: [
                 "CSQLite",
-                // Legacy LumiPlugin facade/UI are retained in source history only.
-                // The product is now the shared V2 RAG engine consumed by PluginProjectRAG.
-                "ProjectRAGPlugin.swift",
-                "Core/RAGPluginRuntime.swift",
-                "Core/RAGPluginService.swift",
-                "Hooks",
-                "Tools",
-                "Views",
-                "Support",
             ],
             resources: [
-                .process("../Resources/Localizable.xcstrings"),
                 .copy("../Resources/vec0.dylib")
             ]
         ),
         .testTarget(
             name: "ProjectRAGPluginTests",
             dependencies: ["ProjectRAGPlugin"],
-            path: "Tests",
-            exclude: ["ProjectRAGPluginTests.swift"]
+            path: "Tests"
         )
     ]
 )

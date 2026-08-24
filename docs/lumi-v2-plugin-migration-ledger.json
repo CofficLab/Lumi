@@ -4856,7 +4856,7 @@
     "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers ProjectRAGSuperPlugin. ProjectRAGPlugin product is now a KernelLumi-free engine target retaining the established RAG SQLite schema and vec0.dylib. Its idle multi-project scheduler consumes V2 ProjectProviding and IdleTimeProviding, while the V2 Code Index settings entry restores per-project status, pause, and manual rebuild controls.",
+    "migration": "FactoryLumi2 registers ProjectRAGSuperPlugin. The legacy LumiPlugin facade, legacy RAG tool, project-detail view, and KernelLumi lifecycle hooks were removed. The retained engine product preserves the established RAG SQLite schema and vec0.dylib; its idle multi-project scheduler consumes V2 ProjectProviding and IdleTimeProviding, and the V2 Code Index entry supplies per-project status, pause, and manual rebuild controls.",
     "performance": null
    }
   },
