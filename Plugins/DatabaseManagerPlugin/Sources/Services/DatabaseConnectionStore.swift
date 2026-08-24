@@ -1,5 +1,4 @@
 import Foundation
-import KernelLumi
 import KeychainKit
 
 /// 数据库连接配置的持久化存储。
@@ -12,10 +11,17 @@ enum DatabaseConnectionStore {
     private static let configsKey = "DatabaseManager.savedConfigs"
     private static let lastSelectedKey = "DatabaseManager.lastSelectedConfigID"
     private static let keychain = KeychainStore(
-        service: LumiRuntimeEnvironment.current.keychainService(
-            for: "com.coffic.lumi.database-manager"
-        )
+        service: keychainService
     )
+    /// 保持 release/debug 的既有 Keychain 命名空间，避免迁移后丢失保存的密码。
+    private static var keychainService: String {
+        guard let suffix = Bundle.main.object(forInfoDictionaryKey: "LumiKeychainServiceSuffix") as? String,
+              !suffix.isEmpty,
+              !suffix.contains("$(") else {
+            return "com.coffic.lumi.database-manager"
+        }
+        return "com.coffic.lumi.database-manager" + suffix
+    }
 
     // MARK: - Configs
 
