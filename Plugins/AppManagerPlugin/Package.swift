@@ -13,6 +13,12 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/KernelLumi"),
+        .package(path: "../../Packages/KernelCore"),
+        .package(path: "../../Packages/ProviderActivityBar"),
+        .package(path: "../../Packages/ProviderContentView"),
+        .package(path: "../../Packages/ProviderDocsView"),
+        .package(path: "../../Packages/ProviderRailView"),
+        .package(path: "../../Packages/ProviderStorage"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit")
@@ -22,6 +28,12 @@ let package = Package(
             name: "AppManagerPlugin",
             dependencies: [
                 .product(name: "KernelLumi", package: "KernelLumi"),
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderContentView", package: "ProviderContentView"),
+                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit")

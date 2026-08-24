@@ -8,6 +8,7 @@ import PluginFileLog
 import PluginShowImage
 import ImageToPDFPlugin
 import DownloadPlugin
+import AppManagerPlugin
 import PluginStorage
 import PluginToast
 import PluginCommand
@@ -156,6 +157,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ShowImagePlugin(),
             ImageToPDFSuperPlugin(),
             DownloadSuperPlugin(),
+            AppManagerSuperPlugin(),
             SkillPlugin(),
             StateMonitorPlugin(),
             OnboardingPlugin(),
