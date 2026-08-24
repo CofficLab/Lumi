@@ -657,13 +657,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "migrated",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": "swift test --package-path Packages/PluginCADDesigner",
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/PluginCADDesigner; swift test --package-path Packages/FactoryCADDesigner2",
+    "integrationBuild": "xcodebuild -project Lumi.xcodeproj -scheme CADDesigner -configuration Debug build CODE_SIGNING_ALLOWED=NO -quiet",
     "runtime": null,
     "uiDiff": null,
-    "migration": "V2 SuperPlugin publishes the existing CAD workspace through ContentViewProviding, registers its title/about/manual through V2 Toolbar/Docs providers, configures the CAD runtime with V2 StorageProviding paths, and restores all ten stable CAD Agent tools (project lifecycle, frame creation, component assembly/editing, BOM, connections, and cutting optimization) without changing .cadproj JSON persistence, geometry, assembly graph, BOM aggregation, or FFD cutting results. The obsolete KernelLumi plugin facade, hooks, agent tools, toolbar adapter, legacy catalog entry, and kernel/logging dependencies have been removed; Plugins/CADDesignerPlugin now contains only the reusable CAD engine and UI.",
+    "migration": "V2 SuperPlugin publishes the existing CAD workspace through ContentViewProviding, registers its title/about/manual through V2 Toolbar/Docs providers, configures the CAD runtime with V2 StorageProviding paths, and restores all ten stable CAD Agent tools (project lifecycle, frame creation, component assembly/editing, BOM, connections, and cutting optimization) without changing .cadproj JSON persistence, geometry, assembly graph, BOM aggregation, or FFD cutting results. FactoryCADDesigner2 now makes CAD always-on in its own KernelCore assembly and the CADDesigner target uses that assembly for both main and settings windows. The obsolete KernelLumi plugin facade, hooks, agent tools, toolbar adapter, legacy catalog entry, and kernel/logging dependencies have been removed; Plugins/CADDesignerPlugin now contains only the reusable CAD engine and UI. Legacy external-file routing did not handle CAD because the old plugin never implemented its openFile hook; opening .cadproj remains available from the CAD workspace. Visual parity is still pending a manual review.",
     "performance": null
    }
   },
