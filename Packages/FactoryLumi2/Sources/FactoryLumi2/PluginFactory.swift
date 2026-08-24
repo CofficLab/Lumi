@@ -24,6 +24,7 @@ import ScreenRecorderPlugin
 import StoryWriterPlugin
 import QuickFileSearchPlugin
 import ProjectOverviewPlugin
+import QuickLauncherPlugin
 import PluginStorage
 import PluginToast
 import PluginCommand
@@ -189,6 +190,7 @@ public struct DefaultPluginFactory: PluginFactory {
             StoryWriterSuperPlugin(),
             QuickFileSearchSuperPlugin(),
             ProjectOverviewSuperPlugin(),
+            QuickLauncherSuperPlugin(),
             NettoSuperPlugin(),
             SkillPlugin(),
             StateMonitorPlugin(),

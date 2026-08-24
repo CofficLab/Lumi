@@ -57,7 +57,15 @@ public final class QuickLauncherPlugin: LumiPlugin, SuperLog {
 
         // 注入内核桥：命令组（来自 CommandProviding）
         LauncherBridge.commandGroupsProvider = { [weak kernel] in
-            kernel?.command?.allCommandGroups ?? []
+            (kernel?.command?.allCommandGroups ?? []).map { group in
+                LauncherCommandGroup(
+                    id: group.id,
+                    name: group.name,
+                    items: group.items.map { item in
+                        LauncherCommandItem(id: item.id, title: item.title, action: item.action)
+                    }
+                )
+            }
         }
 
         // 注入内核桥：激活主窗口

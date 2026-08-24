@@ -90,4 +90,28 @@ struct QuickLauncherTests {
         model.reset()
         #expect(model.query.isEmpty)
     }
+
+    @Test func commandSearchUsesKernelAgnosticBridge() {
+        LauncherBridge.commandGroupsProvider = {
+            [LauncherCommandGroup(
+                id: "format",
+                name: "Formatting",
+                items: [LauncherCommandItem(id: "format.document", title: "Format Document", action: {})]
+            )]
+        }
+        defer { LauncherBridge.commandGroupsProvider = nil }
+
+        let model = LauncherSearchModel.shared
+        model.query = "format"
+
+        #expect(model.results.contains { $0.id == "command:Formatting/format.document" })
+        model.reset()
+    }
+
+    @Test func v2PluginPreservesLauncherIdentityAndPolicy() {
+        let plugin = QuickLauncherSuperPlugin()
+        #expect(plugin.id == "com.coffic.lumi.plugin.quick-launcher")
+        #expect(plugin.order == 8)
+        #expect(plugin.metadata.policy == .alwaysOn)
+    }
 }

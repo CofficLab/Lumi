@@ -1,8 +1,37 @@
 import Combine
 import Foundation
-import KernelLumi
 import SuperLogKit
 import os
+
+/// Kernel-agnostic command record used by the launcher search index.
+///
+/// Both the legacy command registry and `ProviderCommand` map into this small
+/// DTO, so the launcher UI does not depend on either kernel architecture.
+@MainActor
+public struct LauncherCommandItem: Sendable {
+    public let id: String
+    public let title: String
+    public let action: @MainActor @Sendable () -> Void
+
+    public init(id: String, title: String, action: @escaping @MainActor @Sendable () -> Void) {
+        self.id = id
+        self.title = title
+        self.action = action
+    }
+}
+
+@MainActor
+public struct LauncherCommandGroup: Sendable {
+    public let id: String
+    public let name: String
+    public let items: [LauncherCommandItem]
+
+    public init(id: String, name: String, items: [LauncherCommandItem]) {
+        self.id = id
+        self.name = name
+        self.items = items
+    }
+}
 
 /// 插件与内核之间的回调桥（onReady 时注入，避免直接持有 kernel）
 @MainActor
@@ -10,7 +39,7 @@ public enum LauncherBridge {
     /// 询问 AI：参数为问题文本，实现需激活主窗口并发送到会话
     public static var askAIHandler: (@MainActor (String) -> Void)?
     /// 提供当前所有命令组（来自内核 CommandProviding）
-    public static var commandGroupsProvider: (@MainActor () -> [CommandMenuGroup])?
+    public static var commandGroupsProvider: (@MainActor () -> [LauncherCommandGroup])?
     /// 激活 Lumi 主窗口
     public static var activateMainWindowHandler: (@MainActor () -> Void)?
 }
@@ -74,7 +103,7 @@ public struct LauncherResult: Identifiable, Hashable, Sendable {
         self.aiQuery = nil
     }
 
-    init(command: CommandItem, groupName: String) {
+    init(command: LauncherCommandItem, groupName: String) {
         self.id = "command:\(groupName)/\(command.id)"
         self.kind = .command
         self.title = command.title
@@ -261,7 +290,7 @@ public final class LauncherSearchModel: ObservableObject, SuperLog {
         return true
     }
 
-    /// 按结果 id 找到原始 CommandItem 并执行（避免闭包非 Sendable 存进结果）
+    /// 按结果 id 找到原始命令并执行（避免闭包非 Sendable 存进结果）。
     private func executeCommand(matching result: LauncherResult) {
         guard let groups = LauncherBridge.commandGroupsProvider?() else { return }
         for group in groups {

@@ -4998,7 +4998,7 @@
    "order": 8,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "QuickLauncherPlugin",
    "wave": "P7",
    "owners": [],
    "dependencies": [
@@ -5017,13 +5017,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "migrated",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Plugins/QuickLauncherPlugin (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "QuickLauncherSuperPlugin preserves the global Carbon hotkey, floating cross-Space launcher, persisted QuickLauncher.Source.* settings, application/Spotlight/command search, and ? direct-send behavior through ProviderCommand and MessageSendingProviding. The launcher command bridge is kernel-agnostic so the legacy and V2 registries provide the same search surface.",
     "performance": null
    }
   },
