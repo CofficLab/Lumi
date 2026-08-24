@@ -3,6 +3,7 @@ import SuperLogKit
 import SwiftUI
 import LumiUI
 import ShellKit
+import os
 
 public struct PortInfo: Identifiable, Hashable, SuperLog {
     public let id = UUID()
@@ -28,6 +29,7 @@ public enum PortScannerError: LocalizedError, Sendable {
 public final class PortScanner: Sendable, SuperLog {
     public nonisolated static let emoji = "🔌"
     public nonisolated static let verbose: Bool = false
+    public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.port-manager", category: "PortScanner")
     public static let shared = PortScanner()
 
     private init() {}
@@ -49,8 +51,8 @@ public final class PortScanner: Sendable, SuperLog {
             return parseLsofOutput(result.stdout)
         } catch {
             if Self.verbose {
-                if PortManagerPlugin.verbose {
-                    PortManagerPlugin.logger.error("\(Self.t)Failed to scan ports: \(error.localizedDescription)")
+                if Self.verbose {
+                    Self.logger.error("\(Self.t)Failed to scan ports: \(error.localizedDescription)")
                 }
             }
             throw error
@@ -118,8 +120,8 @@ public final class PortScanner: Sendable, SuperLog {
             _ = try await Shell.execute(executable: "/bin/kill", arguments: ["-9", pid])
         } catch {
             if Self.verbose {
-                if PortManagerPlugin.verbose {
-                    PortManagerPlugin.logger.error("\(Self.t)Failed to kill process \(pid): \(error.localizedDescription)")
+                if Self.verbose {
+                    Self.logger.error("\(Self.t)Failed to kill process \(pid): \(error.localizedDescription)")
                 }
             }
             throw error
