@@ -1569,7 +1569,7 @@
    "order": 750,
    "policy": "optin",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "DatabaseManagerPlugin",
    "wave": "P7",
    "owners": [],
    "dependencies": [
@@ -1585,9 +1585,21 @@
     "PostgresNIO",
     "SuperLogKit"
    ],
-   "providersConsumed": [],
+   "providersConsumed": [
+    "ContentViewProviding",
+    "ToolbarProviding",
+    "ExternalFileOpening",
+    "ToolManagerProviding",
+    "DocsViewProviding"
+   ],
    "providersPublished": [],
-   "contributions": [],
+   "contributions": [
+    "database workspace",
+    "SQL editor grammar",
+    "external SQLite file handler",
+    "four database tools",
+    "about and manual docs"
+   ],
    "storage": [],
    "userDefaultsKeys": [],
    "keychainKeys": [],
@@ -1595,13 +1607,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "migrated",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Plugins/DatabaseManagerPlugin",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "DatabaseManagerSuperPlugin was registered in FactoryLumi2 with the legacy stable ID, opt-in policy, workspace, editor language, tools, file handler, and docs.",
     "performance": null
    }
   },

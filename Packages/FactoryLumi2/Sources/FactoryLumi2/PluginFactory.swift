@@ -26,6 +26,7 @@ import QuickFileSearchPlugin
 import ProjectOverviewPlugin
 import QuickLauncherPlugin
 import TextActionsPlugin
+import DatabaseManagerPlugin
 import GoalTaskPlugin
 import PluginStorage
 import PluginToast
@@ -194,6 +195,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ProjectOverviewSuperPlugin(),
             QuickLauncherSuperPlugin(),
             TextActionsSuperPlugin(),
+            DatabaseManagerSuperPlugin(),
             GoalTaskSuperPlugin(),
             NettoSuperPlugin(),
             SkillPlugin(),
