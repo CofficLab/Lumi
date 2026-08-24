@@ -83,7 +83,10 @@ struct LumiMinimalApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
-        .defaultSize(width: 480, height: 320)
+        // Preserve the legacy `AppBootstrap.defaultWindowSize` so existing
+        // workspace, rail, chat, and plugin layouts open at their familiar
+        // usable dimensions instead of the temporary minimal-host size.
+        .defaultSize(width: 1100, height: 760)
         .commands {
             AppCommands(kernel: kernel) {
                 UpdateService.shared.checkForUpdates()
@@ -95,7 +98,8 @@ struct LumiMinimalApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
-        .defaultSize(width: 360, height: 260)
+        // Preserve the legacy `AppBootstrap.defaultSettingsWindowSize`.
+        .defaultSize(width: 780, height: 600)
 
         // 菜单栏：复刻旧版的完整组合关系：Logo + 插件常驻内容作为状态栏
         // 标签；插件弹窗内容之后保留应用操作区。不能只渲染 Logo，否则已
