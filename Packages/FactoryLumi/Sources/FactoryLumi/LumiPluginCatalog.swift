@@ -9,7 +9,6 @@ import BookletMakerPlugin
 import BrewManagerPlugin
 import BrowserPlugin
 import ComputerUsePlugin
-import CADDesignerPlugin
 import MindMapPlugin
 import ScreenRecorderPlugin
 import StoryWriterPlugin
@@ -270,7 +269,6 @@ public enum LumiPluginCatalog {
             WebServerPlugin(),
             ProjectOverviewPlugin(),
             AppStoreConnectPlugin(),
-            CADDesignerPlugin(),
             MindMapPlugin(),
             ScreenRecorderPlugin(),
             StoryWriterPlugin(),

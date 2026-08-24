@@ -56,7 +56,7 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "implementing",
+    "status": "migrated",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginActivityHeatmap (2026-08-24)",
     "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
@@ -78,10 +78,8 @@
    "wave": "P4",
    "owners": [],
    "dependencies": [
-    "KernelLumi",
     "LocalizationKit",
-    "LumiUI",
-    "SuperLogKit"
+    "LumiUI"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -637,13 +635,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "implementing",
+   "status": "migrated",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginCADDesigner",
     "integrationBuild": null,
     "runtime": null,
     "uiDiff": null,
-    "migration": "V2 SuperPlugin publishes the existing CAD workspace through ContentViewProviding, registers its title/about/manual through V2 Toolbar/Docs providers, configures the CAD runtime with V2 StorageProviding paths, and restores all ten stable CAD Agent tools (project lifecycle, frame creation, component assembly/editing, BOM, connections, and cutting optimization) without changing .cadproj JSON persistence, geometry, assembly graph, BOM aggregation, or FFD cutting results. The CAD engine currently remains in Plugins/CADDesignerPlugin while its obsolete KernelLumi plugin facade awaits removal.",
+    "migration": "V2 SuperPlugin publishes the existing CAD workspace through ContentViewProviding, registers its title/about/manual through V2 Toolbar/Docs providers, configures the CAD runtime with V2 StorageProviding paths, and restores all ten stable CAD Agent tools (project lifecycle, frame creation, component assembly/editing, BOM, connections, and cutting optimization) without changing .cadproj JSON persistence, geometry, assembly graph, BOM aggregation, or FFD cutting results. The obsolete KernelLumi plugin facade, hooks, agent tools, toolbar adapter, legacy catalog entry, and kernel/logging dependencies have been removed; Plugins/CADDesignerPlugin now contains only the reusable CAD engine and UI.",
     "performance": null
    }
   },

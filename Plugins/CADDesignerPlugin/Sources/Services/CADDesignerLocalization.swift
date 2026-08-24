@@ -1,5 +1,4 @@
 import Foundation
-import KernelLumi
 
 /// CAD Designer 本地化 helper（复用 LumiPluginLocalization）。
 enum CADDesignerLocalization {
@@ -8,11 +7,6 @@ enum CADDesignerLocalization {
 
     static func string(_ key: String, locale: Locale = .current) -> String {
         LumiPluginLocalization.string(key, bundle: Bundle.module, table: "Localizable", locale: locale)
-    }
-
-    static func string(_ key: String, for language: LumiLanguagePreference) -> String {
-        _ = language
-        return string(key)
     }
 
     static func format(_ key: String, _ arguments: CVarArg...) -> String {
