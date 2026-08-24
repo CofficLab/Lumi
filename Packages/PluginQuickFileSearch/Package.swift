@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../EditorContracts"),
         .package(path: "../LocalizationKit"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderProject"),
@@ -27,6 +28,7 @@ let package = Package(
             name: "QuickFileSearchPlugin",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
