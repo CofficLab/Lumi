@@ -1,12 +1,8 @@
 import ActivityHeatmapPlugin
-import AgentRulesPlugin
-import AgentTempStoragePlugin
 import AgentTurnNotificationPlugin
 import AgentTurnRunnerPlugin
-import AppIconDesignerPlugin
 import AppManagerPlugin
 import AppStoreConnectPlugin
-import AppStorePromoDesignerPlugin
 import ResumeDesignerPlugin
 import AskUserPlugin
 import BookletMakerPlugin
@@ -18,7 +14,6 @@ import MindMapPlugin
 import ScreenRecorderPlugin
 import StoryWriterPlugin
 import StateMonitorPlugin
-import CaffeinatePlugin
 import DebugBadgePlugin
 import ConversationAttachmentPlugin
 import ConversationPendingMessagePlugin
@@ -29,23 +24,18 @@ import ChatScreenshotPlugin
 import ClipboardManagerPlugin
 import CommandPlugin
 import ConversationForkPlugin
-import ConversationInputPlugin
 import ConversationLanguagePlugin
 import ConversationListPlugin
 import ConversationMessageCountPlugin
 import ConversationContextSizePlugin
 import ConversationAgentTurnCountPlugin
 import ConversationCacheHitRatePlugin
-import ConversationNewPlugin
 import ConversationSpeedPlugin
 import ConversationManagerPlugin
 import ConversationTitlePlugin
 import DatabaseManagerPlugin
-import DeviceInfoPlugin
-import DiskManagerPlugin
 import DisplayControlPlugin
 import DockerManagerPlugin
-import DocxReadPlugin
 import DownloadPlugin
 import EditorHostPlugin
 import EditorPanelPlugin
@@ -56,7 +46,6 @@ import Foundation
 import GitHubPlugin
 import GitPlugin
 import GoalTaskPlugin
-import HostsManagerPlugin
 import ImageToPDFPlugin
 import IdleTimePlugin
 import InputPlugin
@@ -86,7 +75,6 @@ import LLMProviderSublyxPlugin
 import LLMProviderXiaomiPlugin
 import LLMProviderXybbzPlugin
 import LLMProviderZhipuPlugin
-import LogoCofficPlugin
 import LogoPlugin
 import LogoSmartLightPlugin
 import KernelLumi
@@ -99,10 +87,8 @@ import MessageRendererPlugin
 import MessageStreamingPlugin
 import MessageManagerPlugin
 import MessageSenderPlugin
-import ModelSelectorPlugin
 import NettoPlugin
 import NetworkManagerPlugin
-import OcrPlugin
 import OnboardingPlugin
 import OpenInAntigravityPlugin
 import OpenInCursorPlugin
@@ -112,7 +98,6 @@ import OpenInGitHubDesktopPlugin
 import OpenInGitOKPlugin
 import OpenInXcodePlugin
 import OpenRemotePlugin
-import PluginManagerPlugin
 import PortManagerPlugin
 import ProjectFileBreadcrumbPlugin
 import ProjectFilesPlugin
@@ -151,11 +136,7 @@ import ThemeVscodePlugin
 import ThemeWinterPlugin
 import ToolManagerPlugin
 import ConversationVerbosityPlugin
-import VideoConverterPlugin
-import WebFetchPlugin
-import WebSearchPlugin
 import WebServerPlugin
-import WhiteNoisePlugin
 import PrototypeDesignerPlugin
 
 /// Lumi 完整插件目录
@@ -218,31 +199,25 @@ public enum LumiPluginCatalog {
             ConversationTitlePlugin(),
             StateMonitorPlugin(),
             ConversationListPlugin(),
-            ConversationNewPlugin(),
             GitPlugin(),
-            AgentRulesPlugin(),
             CommandPlugin(),
             ChatPanelPlugin(),
-            ModelSelectorPlugin(),
             MessageListPlugin(),
             // Parallel native AppKit message list. Ships as `.disabled`; the
             // PluginManager filters it out until parity and performance
             // gates pass, so the host app continues to render the SwiftUI
             // message list above.
             MessageListAppKitPlugin(),
-            ConversationInputPlugin(),
             ConversationAttachmentPlugin(),
             ConversationPendingMessagePlugin(),
             ChatScreenshotPlugin(),
             ChatFileAttachmentPlugin(),
-            PluginManagerPlugin(),
             ConversationMessageCountPlugin(),
             ConversationContextSizePlugin(),
             ConversationAgentTurnCountPlugin(),
             ConversationCacheHitRatePlugin(),
             SettingsPlugin(),
             LogoPlugin(),
-            LogoCofficPlugin(),
             LogoSmartLightPlugin(),
             // Editor UI Shell — 贡献 "Code Editor" 视图容器,通过 kernel.editorV2.surface 消费。
             EditorPanelPlugin(),
@@ -255,20 +230,15 @@ public enum LumiPluginCatalog {
             EditorPreviewBottomPanelPlugin(),
             TerminalPlugin(),
             TextActionsPlugin(),
-            DeviceInfoPlugin(),
             ProjectFileTreePlugin(),
             ClipboardManagerPlugin(),
             BrewManagerPlugin(),
-            WhiteNoisePlugin(),
             PrototypeDesignerPlugin(),
-            DiskManagerPlugin(),
-            HostsManagerPlugin(),
             ConversationReasoningPlugin(),
             ConversationVerbosityPlugin(),
             ConversationSpeedPlugin(),
             ConversationModePlugin(),
             ConversationLanguagePlugin(),
-            VideoConverterPlugin(),
             NettoPlugin(),
             ImageToPDFPlugin(),
             BookletMakerPlugin(),
@@ -283,14 +253,9 @@ public enum LumiPluginCatalog {
             IdleTimePlugin(),
             MenuBarManagerPlugin(),
             MenuBarHelperPlugin(),
-            CaffeinatePlugin(),
             DebugBadgePlugin(),
-            AgentTempStoragePlugin(),
-            AppIconDesignerPlugin(),
             PromoDesignerPlugin(),
             ResumeDesignerPlugin(),
-            WebFetchPlugin(),
-            WebSearchPlugin(),
             MemoryPlugin(),
             DownloadPlugin(),
             BrowserPlugin(),
@@ -300,7 +265,6 @@ public enum LumiPluginCatalog {
             GoalTaskPlugin(),
             QuickFileSearchPlugin(),
             SkillPlugin(),
-            DocxReadPlugin(),
             NetworkManagerPlugin(),
             // 本地 Web 服务(127.0.0.1):聚合插件贡献的 webRoutes,默认启用(optOut)。
             WebServerPlugin(),
@@ -309,7 +273,6 @@ public enum LumiPluginCatalog {
             CADDesignerPlugin(),
             MindMapPlugin(),
             ScreenRecorderPlugin(),
-            OcrPlugin(),
             StoryWriterPlugin(),
             ActivityHeatmapPlugin(),
             FileLogPlugin(),
