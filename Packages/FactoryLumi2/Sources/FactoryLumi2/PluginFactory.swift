@@ -33,6 +33,7 @@ import PluginNetworkManager
 import PluginDocxRead
 import PluginHostsManager
 import PluginIdleTime
+import PluginActivityHeatmap
 import PluginLLMProviderAiRouter
 import PluginLLMManager
 import PluginLLMProviderAliyun
@@ -124,6 +125,7 @@ public struct DefaultPluginFactory: PluginFactory {
             VideoConverterPlugin(),
             WhiteNoisePlugin(),
             IdleTimePlugin(),
+            ActivityHeatmapPlugin(),
             ChatPanelPlugin(),
             ChatFileAttachmentPlugin(),
             ChatScreenshotPlugin(),

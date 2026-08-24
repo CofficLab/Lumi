@@ -38,7 +38,7 @@
    "order": 9,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginActivityHeatmap",
    "wave": "P7",
    "owners": [],
    "dependencies": [
@@ -56,13 +56,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "implementing",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/PluginActivityHeatmap (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "V2 package is registered in FactoryLumi2 and preserves the settings entry, 30/90/365-day period preference, daily message heatmap, and token trend. Legacy disk cache, idle-time card, and about screen require parity review before deleting the old plugin.",
     "performance": null
    }
   },
