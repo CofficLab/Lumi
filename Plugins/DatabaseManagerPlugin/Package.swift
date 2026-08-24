@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/KernelLumi"),
+        .package(path: "../../Packages/EditorContracts"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -30,6 +31,7 @@ let package = Package(
             name: "DatabaseManagerPlugin",
             dependencies: [
                 .product(name: "KernelLumi", package: "KernelLumi"),
+                .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 "TreeSitterSQL",
