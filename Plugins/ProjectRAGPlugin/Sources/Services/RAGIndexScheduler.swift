@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
-import KernelLumi
+import ProviderIdleTime
+import ProviderProject
 import SuperLogKit
 import os
 
@@ -10,12 +11,13 @@ import os
 /// connection, so serializing projects here avoids write races and keeps the
 /// foreground query path predictable.
 @MainActor
-final class RAGIndexScheduler: SuperLog {
-    nonisolated static let emoji = ProjectRAGPlugin.emoji
+public final class RAGIndexScheduler: SuperLog {
+    nonisolated public static let emoji = "📚"
     nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.project.rag.scheduler")
 
-    private let kernel: KernelLumi
+    private let projects: any ProjectProviding
+    private let idleTime: any IdleTimeProviding
     private let service: RAGService
     private let configuration: RAGIndexSchedulingConfiguration
     private var retryStates: [String: RAGIndexRetryState] = [:]
@@ -23,21 +25,22 @@ final class RAGIndexScheduler: SuperLog {
     private var nextEligibleAt = Date.distantPast
     private var observers: [NSObjectProtocol] = []
 
-    init(
-        kernel: KernelLumi,
+    public init(
+        projects: any ProjectProviding,
+        idleTime: any IdleTimeProviding,
         service: RAGService,
-        configuration: RAGIndexSchedulingConfiguration = .init()
+        stateDirectory: URL
     ) {
-        self.kernel = kernel
+        self.projects = projects
+        self.idleTime = idleTime
         self.service = service
-        self.configuration = configuration
-        self.retryStateURL = RAGPluginRuntime.databaseDirectoryProvider()
-            .appendingPathComponent("index-scheduler-state.json")
+        self.configuration = .init()
+        self.retryStateURL = stateDirectory.appendingPathComponent("index-scheduler-state.json")
         self.retryStates = Self.loadRetryStates(from: retryStateURL)
         installInterruptionObservers()
     }
 
-    func run() async {
+    public func run() async {
         defer { removeInterruptionObservers() }
         while !Task.isCancelled {
             guard Date() >= nextEligibleAt else {
@@ -49,12 +52,7 @@ final class RAGIndexScheduler: SuperLog {
                 continue
             }
 
-            guard let provider = kernel.idleTime else {
-                await sleep(configuration.schedulerPollInterval)
-                continue
-            }
-
-            let prediction = await provider.idlePrediction(for: configuration.idlePredictionDuration)
+            let prediction = await idleTime.idlePrediction(for: configuration.idlePredictionDuration)
             guard prediction.isLikelyIdle else {
                 await sleep(configuration.schedulerPollInterval)
                 continue
@@ -99,11 +97,11 @@ final class RAGIndexScheduler: SuperLog {
     }
 
     private var currentProjectPath: String? {
-        kernel.project?.currentProject?.path
+        projects.currentProject?.path
     }
 
     private func makeCandidates() async -> [RAGIndexCandidate] {
-        let projects = kernel.project?.projects ?? []
+        let projects = projects.projects
         var candidates: [RAGIndexCandidate] = []
         candidates.reserveCapacity(projects.count)
 

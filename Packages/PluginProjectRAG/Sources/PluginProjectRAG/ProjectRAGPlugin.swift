@@ -3,6 +3,7 @@ import Foundation
 import KernelCore
 import ProjectRAGPlugin
 import ProviderProject
+import ProviderIdleTime
 import ProviderStorage
 import ProviderToolManager
 
@@ -26,6 +27,7 @@ public final class ProjectRAGSuperPlugin: SuperPlugin {
     )
 
     private var service: RAGService?
+    private var schedulerTask: Task<Void, Never>?
 
     public init() {}
 
@@ -37,18 +39,26 @@ public final class ProjectRAGSuperPlugin: SuperPlugin {
         self.service = service
 
         let project = kernel.resolveProvider((any ProjectProviding).self)
+        let idleTime = kernel.resolveProvider((any IdleTimeProviding).self)
         ProjectRAGRuntime.configure(service: service, project: project)
         kernel.resolveProvider((any ToolManagerProviding).self)?
             .add(RAGCodeSearchTool(), pluginID: id)
 
         // Indexing deliberately happens off the boot path: startup remains
         // responsive and RAGService deduplicates concurrent index requests.
-        Task(priority: .utility) { [weak project] in
+        schedulerTask = Task(priority: .utility) { [weak project, weak idleTime] in
             do {
                 try await service.initialize()
                 guard let path = await MainActor.run(body: { project?.currentProject?.path }),
                       !path.isEmpty else { return }
                 await service.ensureIndexedBackground(projectPath: path)
+                guard let project, let idleTime else { return }
+                await RAGIndexScheduler(
+                    projects: project,
+                    idleTime: idleTime,
+                    service: service,
+                    stateDirectory: directory
+                ).run()
             } catch {
                 // Search stays available and can retry indexing on its first use.
             }
@@ -57,6 +67,8 @@ public final class ProjectRAGSuperPlugin: SuperPlugin {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: RAGCodeSearchTool.toolName)
+        schedulerTask?.cancel()
+        schedulerTask = nil
         if let service { Task { await service.cancelBackgroundIndexing() } }
         service = nil
         ProjectRAGRuntime.reset()

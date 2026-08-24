@@ -15,6 +15,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/ProviderIdleTime"),
+        .package(path: "../../Packages/ProviderProject"),
     ],
     targets: [
         .target(
@@ -30,6 +32,8 @@ let package = Package(
             dependencies: [
                 "CSQLite",
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
+                .product(name: "ProviderProject", package: "ProviderProject"),
             ],
             path: "Sources",
             exclude: [
@@ -43,7 +47,6 @@ let package = Package(
                 "Tools",
                 "Views",
                 "Support",
-                "Services/RAGIndexScheduler.swift",
             ],
             resources: [
                 .process("../Resources/Localizable.xcstrings"),
