@@ -4,7 +4,10 @@ import Foundation
 
 @MainActor
 @Test func packageLoads() async throws {
-    #expect(InputPlugin().id == "InputManager")
+    let plugin = InputSuperPlugin()
+
+    #expect(plugin.id == "com.coffic.lumi.plugin.input-manager")
+    #expect(plugin.metadata.policy == .disabledByDefault)
 }
 
 @MainActor
