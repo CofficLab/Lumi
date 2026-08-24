@@ -917,7 +917,7 @@
    "order": 87,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginConversationStats",
    "wave": "P4",
    "owners": [],
    "dependencies": [
@@ -935,13 +935,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
+    "packageTests": "swift test --package-path Packages/PluginConversationStats (2026-08-24)",
     "integrationBuild": null,
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "FactoryLumi2 registers ConversationAgentTurnCountPlugin from the consolidated PluginConversationStats package.",
     "performance": null
    }
   },
@@ -989,7 +989,7 @@
    "order": 86,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginConversationStats",
    "wave": "P4",
    "owners": [],
    "dependencies": [
@@ -1007,13 +1007,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
+    "packageTests": "swift test --package-path Packages/PluginConversationStats (2026-08-24)",
     "integrationBuild": null,
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "FactoryLumi2 registers ConversationCacheHitRatePlugin from the consolidated PluginConversationStats package.",
     "performance": null
    }
   },
@@ -1025,7 +1025,7 @@
    "order": 85,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginConversationStats",
    "wave": "P4",
    "owners": [],
    "dependencies": [
@@ -1043,13 +1043,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
+    "packageTests": "swift test --package-path Packages/PluginConversationStats (2026-08-24)",
     "integrationBuild": null,
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "FactoryLumi2 registers ConversationContextSizePlugin from the consolidated PluginConversationStats package.",
     "performance": null
    }
   },
@@ -1251,7 +1251,7 @@
    "order": 84,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginConversationStats",
    "wave": "P4",
    "owners": [],
    "dependencies": [
@@ -1269,13 +1269,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
+    "packageTests": "swift test --package-path Packages/PluginConversationStats (2026-08-24)",
     "integrationBuild": null,
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "FactoryLumi2 registers ConversationMessageCountPlugin from the consolidated PluginConversationStats package.",
     "performance": null
    }
   },
