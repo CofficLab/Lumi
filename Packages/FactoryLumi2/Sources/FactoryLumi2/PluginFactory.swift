@@ -201,3 +201,32 @@ public struct DefaultPluginFactory: PluginFactory {
         ]
     }
 }
+
+/// V2 plugin catalog filtered to an explicit host allow-list.
+///
+/// Dedicated applications can retain the old `FactoryLumi.configuration`
+/// behavior while moving their composition root to `KernelCore`. Filtering is
+/// performed before kernel startup, so excluded plugins never boot or publish
+/// UI contributions.
+@MainActor
+public struct SelectedPluginFactory: PluginFactory {
+    private let base: any PluginFactory
+    public let allowedPluginIDs: Set<String>
+
+    public init(allowedPluginIDs: Set<String>) {
+        self.allowedPluginIDs = allowedPluginIDs
+        self.base = DefaultPluginFactory()
+    }
+
+    public init(
+        allowedPluginIDs: Set<String>,
+        base: any PluginFactory
+    ) {
+        self.allowedPluginIDs = allowedPluginIDs
+        self.base = base
+    }
+
+    public func makePlugins() -> [any SuperPlugin] {
+        base.makePlugins().filter { allowedPluginIDs.contains($0.id) }
+    }
+}

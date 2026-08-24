@@ -33,6 +33,21 @@ struct FactoryLumi2Tests {
         let id = "test.additional-plugin"
     }
 
+    @Test("SelectedPluginFactory 仅产出白名单插件并保持原目录顺序")
+    func selectedPluginFactoryFiltersTheCatalog() {
+        let factory = SelectedPluginFactory(
+            allowedPluginIDs: [
+                "com.coffic.lumi.plugin.command",
+                "com.coffic.lumi.plugin.toast",
+            ]
+        )
+
+        #expect(factory.makePlugins().map(\.id) == [
+            "com.coffic.lumi.plugin.command",
+            "com.coffic.lumi.plugin.toast",
+        ])
+    }
+
     /// 测试用最小 LLM 供应商：回显最后一条用户消息。
     @MainActor
     private final class EchoManagedProvider: ManagedLLMProvider {
