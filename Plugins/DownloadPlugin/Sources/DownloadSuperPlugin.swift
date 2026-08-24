@@ -8,8 +8,8 @@ import ProviderToolManager
     public let id = "com.coffic.lumi.plugin.download-agent"; public let order = 92
     public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.download-agent", name: "Download Agent", description: "Download files with progress tracking and batch support.", category: .project, stage: .preview, policy: .alwaysOn)
     public init() {}
-    public func onBoot(kernel: KernelCoreContainer) throws { let tools = kernel.resolveProvider((any ToolManagerProviding).self); tools?.add(DownloadFileV2Tool(), pluginID: id); tools?.add(DownloadListV2Tool(), pluginID: id); tools?.add(DownloadProgressV2Tool(), pluginID: id); tools?.add(DownloadCancelV2Tool(), pluginID: id) }
-    public func onShutdown(kernel: KernelCoreContainer) throws { let tools = kernel.resolveProvider((any ToolManagerProviding).self); [DownloadFileV2Tool.toolName, DownloadListV2Tool.toolName, DownloadProgressV2Tool.toolName, DownloadCancelV2Tool.toolName].forEach { tools?.remove(id: $0) } }
+    public func onBoot(kernel: KernelCoreContainer) throws { let tools = kernel.resolveProvider((any ToolManagerProviding).self); tools?.add(DownloadFileV2Tool(), pluginID: id); tools?.add(DownloadBatchV2Tool(), pluginID: id); tools?.add(DownloadListV2Tool(), pluginID: id); tools?.add(DownloadProgressV2Tool(), pluginID: id); tools?.add(DownloadCancelV2Tool(), pluginID: id) }
+    public func onShutdown(kernel: KernelCoreContainer) throws { let tools = kernel.resolveProvider((any ToolManagerProviding).self); [DownloadFileV2Tool.toolName, DownloadBatchV2Tool.toolName, DownloadListV2Tool.toolName, DownloadProgressV2Tool.toolName, DownloadCancelV2Tool.toolName].forEach { tools?.remove(id: $0) } }
 }
 
 public struct DownloadListV2Tool: SuperAgentTool { public static let toolName = "list_downloads"; public let name = toolName; public init() {}; public func description(for: LanguagePreference) -> String { "List current download tasks." }; public func inputSchema(for: LanguagePreference) -> [String: Any] { ["type": "object", "properties": [:]] }; public func displayDescription(for: [String: ToolArgument]) -> String { "列出所有下载任务" }; public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }; public func execute(arguments: [String: ToolArgument]) async throws -> String { let states = await DownloadRuntime.manager.allTaskStates(); guard !states.isEmpty else { return "📋 当前没有下载任务" }; return (["📋 当前下载任务:"] + states.map { "\($0.key): \(String(describing: $0.value))" }).joined(separator: "\n") } }
@@ -29,5 +29,25 @@ public struct DownloadFileV2Tool: SuperAgentTool {
         let id = UUID().uuidString
         do { let file = try await DownloadRuntime.manager.download(DownloadTask(id: id, url: url, destination: directory.appendingPathComponent(filename), expectedSize: nil)); return "✅ 下载完成\n文件名: \(filename)\n任务 ID: \(id)\n路径: \(file.path)" }
         catch { return "❌ 下载失败: \(error.localizedDescription)\n任务 ID: \(id)" }
+    }
+}
+
+public struct DownloadBatchV2Tool: SuperAgentTool {
+    public static let toolName = "download_batch"; public let name = toolName; public init() {}
+    public func description(for: LanguagePreference) -> String { "Download multiple HTTP/HTTPS files, preserving task tracking for every item." }
+    public func inputSchema(for: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["urls": ["type": "array", "items": ["type": "string"]], "directory": ["type": "string"]], "required": ["urls"]] }
+    public func displayDescription(for arguments: [String: ToolArgument]) -> String { "批量下载" }
+    public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
+    public func execute(arguments: [String: ToolArgument]) async throws -> String {
+        let rawURLs: [String]
+        if let values = arguments["urls"]?.value as? [String] { rawURLs = values }
+        else if let values = arguments["urls"]?.value as? [Any] { rawURLs = values.compactMap { $0 as? String } }
+        else { rawURLs = [] }
+        let urls = rawURLs.compactMap(URL.init(string:)).filter { ["http", "https"].contains($0.scheme?.lowercased() ?? "") }
+        guard !urls.isEmpty else { return "❌ 错误：urls 参数必需且必须是 HTTP/HTTPS 字符串数组" }
+        let directory = (arguments["directory"]?.value as? String).map { URL(fileURLWithPath: $0, isDirectory: true) } ?? DownloadPlugin.defaultDownloadDirectory()
+        var lines = ["📊 下载完成", "保存目录: \(directory.path)"]
+        for url in urls { let id = UUID().uuidString; let name = DownloadPlugin.extractFilename(from: url); do { _ = try await DownloadRuntime.manager.download(DownloadTask(id: id, url: url, destination: directory.appendingPathComponent(name), expectedSize: nil)); lines.append("✅ \(name)\n任务 ID: \(id)") } catch { lines.append("❌ 失败: \(name) — \(error.localizedDescription)\n任务 ID: \(id)") } }
+        return lines.joined(separator: "\n")
     }
 }
