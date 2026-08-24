@@ -1,32 +1,20 @@
 import Testing
-import KernelLumi
 @testable import BrewManagerPlugin
 
 @MainActor
 struct PluginBrewManagerTests {
     @Test
     func pluginMetadataIsStable() {
-        #expect(BrewManagerPlugin().id == "BrewManager")
-        #expect(BrewManagerPlugin.navigationId == "brew_manager")
-        #expect(BrewManagerPlugin.name.isEmpty == false)
-        #expect(BrewManagerPlugin().category == .developerTool)
-        #expect(BrewManagerPlugin().order == 60)
-        #expect(BrewManagerPlugin.isConfigurable == true)
-        #expect(BrewManagerPlugin().policy == .optIn)
-        #expect(BrewManagerPlugin.shared.instanceLabel == BrewManagerPlugin().id)
+        let plugin = BrewManagerSuperPlugin()
+        #expect(plugin.id == "com.coffic.lumi.plugin.brew-manager")
+        #expect(plugin.metadata.name == "Package Management")
+        #expect(plugin.order == 260)
+        #expect(plugin.metadata.policy == .disabledByDefault)
     }
 
     @Test
-    func viewContainerContributionIsAvailable() {
-        let item = BrewManagerPlugin.shared.addViewContainer()
-        #expect(item?.id == BrewManagerPlugin().id)
-        #expect(item?.title == BrewManagerPlugin.name)
-    }
-
-    @Test
-    func localizationCatalogIsPackaged() {
-        #expect(PluginBrewManagerLocalization.bundle.url(forResource: "BrewManager", withExtension: "xcstrings") != nil)
-        #expect(PluginBrewManagerLocalization.string("Package Management").isEmpty == false)
+    func v2IdentifiersRemainStable() {
+        #expect(BrewManagerSuperPlugin().id.hasSuffix("brew-manager"))
     }
 
     @Test
