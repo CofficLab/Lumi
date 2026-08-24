@@ -7,6 +7,7 @@ import ProviderConversation
 import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
+import ProviderLifecycleHooks
 import SuperLogKit
 
 // MARK: - Public API
@@ -31,6 +32,10 @@ extension AgentLoopProvider {
             return outcome
         }
 
+        await lifecycleHooks?.notifyTurnStarted(
+            TurnLifecycleContext(conversationID: conversationID, turnID: turnID)
+        )
+
         // 启动驱动任务
         let task = Task { @MainActor [weak self] in
             guard let self else { return AgentLoopOutcome.cancelled }
@@ -43,6 +48,7 @@ extension AgentLoopProvider {
 
         // 清理 task 引用
         runtimes[conversationID]?.task = nil
+        await notifyTurnFinished(conversationID: conversationID, turnID: turnID, outcome: outcome)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)回合执行完成 - conversationID: \(conversationID), outcome: \(String(describing: outcome))")

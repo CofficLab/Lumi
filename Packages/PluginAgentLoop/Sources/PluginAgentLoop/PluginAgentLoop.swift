@@ -8,6 +8,7 @@ import ProviderLLMManager
 import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
+import ProviderLifecycleHooks
 
 /// AgentLoop 插件
 ///
@@ -69,6 +70,7 @@ public final class PluginAgentLoop: SuperPlugin {
             streaming: streaming,
             conversations: conversations
         )
+        agentLoop.setLifecycleHooks(kernel.resolveProvider((any LifecycleHooksProviding).self))
 
         // 3. 注销默认的 AgentLoopProviding
         kernel.unregisterProvider((any AgentLoopProviding).self)

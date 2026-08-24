@@ -2502,29 +2502,43 @@
    "order": 91,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "GoalTaskPlugin",
    "wave": "P4",
    "owners": [],
    "dependencies": [
     "LocalizationKit"
    ],
-   "providersConsumed": [],
+   "providersConsumed": [
+    "StorageProviding",
+    "ConversationManaging",
+    "ChatSectionProviding",
+    "ToolManagerProviding",
+    "LifecycleHooksProviding",
+    "AgentLoopProviding"
+   ],
    "providersPublished": [],
-   "contributions": [],
-   "storage": [],
+   "contributions": [
+    "five goal tools",
+    "chat goal sidebar",
+    "chat toolbar button",
+    "turn-finished continuation"
+   ],
+   "storage": [
+    "pluginDataDirectory(GoalTaskPlugin)/GoalTaskPlugin/goals.sqlite"
+   ],
    "userDefaultsKeys": [],
    "keychainKeys": [],
    "permissions": [],
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "migrated",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Plugins/GoalTaskPlugin",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "GoalTaskSuperPlugin preserves stable ID, SQLite path, five tool names, chat contributions, and automatic continuation.",
     "performance": null
    }
   },

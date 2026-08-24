@@ -27,7 +27,7 @@ public final class Plugin: LumiPlugin, SuperLog {
     public let pluginDescription = LumiPluginLocalization.string("Goal and task management for multi-step objectives.", bundle: .module)
 
     /// 共享的 GoalStateManager 实例
-    private nonisolated(unsafe) static var _sharedManager: GoalStateManager?
+    nonisolated(unsafe) static var _sharedManager: GoalStateManager?
 
     /// Goal 视图模型,由 Plugin 在初始化时创建并持有。
     /// 作为工具栏弹窗与侧栏的单一数据源,跨 view 重建保留订阅/加载状态;

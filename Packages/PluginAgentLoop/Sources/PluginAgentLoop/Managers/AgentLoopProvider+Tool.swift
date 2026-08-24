@@ -7,6 +7,7 @@ import ProviderConversation
 import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
+import ProviderLifecycleHooks
 import SuperLogKit
 
 // MARK: - LLM Request
@@ -47,9 +48,27 @@ extension AgentLoopProvider {
             content: String(localized: "status.thinking", defaultValue: "正在思考…")
         )
 
+        var preparedHistory = history
+        if let lifecycleHooks {
+            let context = WillSendToLLMContext(
+                messages: history.map(\.llmMessage),
+                conversationID: conversationID
+            )
+            let result = await lifecycleHooks.runWillSendToLLM(context)
+            preparedHistory = result.messages.map { message in
+                Message(
+                    conversationID: conversationID,
+                    role: .init(rawValue: message.role.rawValue) ?? .system,
+                    content: message.content,
+                    toolCallID: message.toolCallID,
+                    reasoningContent: message.reasoningContent
+                )
+            }
+        }
+
         let request = LLMRequest(
             conversationID: conversationID,
-            messages: history.map(\.llmMessage),
+            messages: preparedHistory.map(\.llmMessage),
             model: modelName,
             tools: schemas.isEmpty ? nil : schemas,
             reasoningEffort: reasoningEffort
@@ -112,6 +131,15 @@ extension AgentLoopProvider {
             }
             messages.insertMessage(assistant, to: conversationID)
             streaming.end(conversationID: conversationID)
+            if let lifecycleHooks {
+                await lifecycleHooks.notifyDidReceiveLLMResponse(
+                    DidReceiveLLMResponseContext(
+                        response: response,
+                        requestMessages: preparedHistory.map(\.llmMessage),
+                        conversationID: conversationID
+                    )
+                )
+            }
 
             return .success(response, assistantMessageID: assistant.id)
 

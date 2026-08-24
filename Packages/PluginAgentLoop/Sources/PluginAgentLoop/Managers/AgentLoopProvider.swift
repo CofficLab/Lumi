@@ -28,6 +28,7 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
     let toolManager: any ToolManagerProviding
     let streaming: any MessageStreamingProviding
     let conversations: any ConversationManaging
+    var lifecycleHooks: (any LifecycleHooksProviding)?
 
     // MARK: - FSM State (single source of truth)
 
@@ -81,7 +82,28 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
     }
 
     public func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {
-        // Plugin 版本不使用 lifecycle hooks
+        lifecycleHooks = hooks
+    }
+
+    func notifyTurnFinished(
+        conversationID: UUID,
+        turnID: UUID,
+        outcome: AgentLoopOutcome
+    ) async {
+        let reason: TurnEndReason
+        switch outcome {
+        case .completed: reason = .completed
+        case .failed: reason = .failed
+        case .cancelled: reason = .cancelled
+        case .suspended: reason = .suspended
+        }
+        await lifecycleHooks?.notifyTurnFinished(
+            TurnLifecycleContext(
+                conversationID: conversationID,
+                turnID: turnID,
+                endReason: reason
+            )
+        )
     }
 
     // MARK: - Internal Helpers
