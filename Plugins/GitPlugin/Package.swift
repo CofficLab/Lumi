@@ -17,6 +17,8 @@ let package = Package(
         .package(path: "../../Packages/LLMKit"),
         .package(url: "https://github.com/nookery/LibGit2Swift", .branch("main")),
         .package(path: "../../Packages/KernelLumi"),
+        .package(path: "../../Packages/KernelCore"),
+        .package(path: "../../Packages/EditorContracts"),
         .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/LumiUI"),
         .package(url: "https://github.com/nookery/MagicDiffView", .branch("main")),
         .package(path: "../../Packages/ShellKit"),
@@ -29,6 +31,8 @@ let package = Package(
                 .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LibGit2Swift", package: "Libgit2swift"),
                 .product(name: "KernelLumi", package: "KernelLumi"),
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MagicDiffView", package: "MagicDiffView"),
                 .product(name: "ShellKit", package: "ShellKit"),
@@ -41,7 +45,11 @@ let package = Package(
         ),
         .testTarget(
             name: "GitPluginTests",
-            dependencies: ["GitPlugin"],
+            dependencies: [
+                "GitPlugin",
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "EditorContracts", package: "EditorContracts"),
+            ],
             path: "Tests"
         )
     ]

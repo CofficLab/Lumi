@@ -1,6 +1,8 @@
 import Foundation
 import SwiftUI
 import Testing
+import EditorContracts
+import KernelCore
 @testable import GitPlugin
 
 @MainActor
@@ -10,6 +12,14 @@ import Testing
     #expect(plugin.name.isEmpty == false)
     #expect(plugin.order == 11)
     #expect(plugin.category == .development)
+}
+
+@MainActor
+@Test func sourceControlPluginRegistersEditorContract() throws {
+    let kernel = KernelCoreContainer()
+    let plugin = GitSourceControlSuperPlugin()
+    try plugin.onBoot(kernel: kernel)
+    #expect(kernel.resolveProvider((any SourceControlProviding).self) is GitSourceControlAdapter)
 }
 
 @MainActor

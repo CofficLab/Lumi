@@ -1,5 +1,5 @@
+import EditorContracts
 import Foundation
-import KernelLumi
 import ShellKit
 
 // MARK: - SCM 中立契约适配器（Phase 7 §15.6）
