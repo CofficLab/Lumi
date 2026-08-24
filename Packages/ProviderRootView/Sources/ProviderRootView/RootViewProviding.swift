@@ -20,6 +20,14 @@ import ProviderWorkspace
 /// （`any RootViewProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
 public protocol RootViewProviding: AnyObject {
+    /// 根视图叠层贡献（例如全局搜索、预览浮层）。后注册项显示在更上层。
+    var overlays: [RootOverlayItem] { get }
+
+    /// 追加根视图叠层；同 id 的贡献不会重复注册。
+    func addOverlays(_ overlays: [RootOverlayItem])
+
+    /// 撤回根视图叠层。
+    func removeOverlays(ids: Set<String>)
     /// 注入工具栏视图（传 `nil` 表示无工具栏）。
     ///
     /// 宿主通常把 `ToolbarProviding.makeToolbarView()` 的结果注入进来。
@@ -57,7 +65,23 @@ public protocol RootViewProviding: AnyObject {
 }
 
 public extension RootViewProviding {
+    var overlays: [RootOverlayItem] { [] }
+    func addOverlays(_ overlays: [RootOverlayItem]) {}
+    func removeOverlays(ids: Set<String>) {}
     func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?) {}
+}
+
+@MainActor
+public struct RootOverlayItem: Identifiable {
+    public let id: String
+    public let order: Int
+    public let wrap: @MainActor (AnyView) -> AnyView
+
+    public init<Content: View>(id: String, order: Int = 0, @ViewBuilder wrap: @escaping @MainActor (AnyView) -> Content) {
+        self.id = id
+        self.order = order
+        self.wrap = { AnyView(wrap($0)) }
+    }
 }
 
 /// 根布局的右侧面板描述。

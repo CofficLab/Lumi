@@ -1,0 +1,34 @@
+import KernelCore
+import ProviderProject
+import ProviderRootView
+import ProviderSettingView
+import SwiftUI
+
+@MainActor
+public final class QuickFileSearchSuperPlugin: SuperPlugin {
+    public let id = "QuickFileSearch"
+    public let order = 50
+    public let metadata = PluginMetadata(id: "QuickFileSearch", name: "Quick File Search", description: "Search and open project files with Cmd+P.", category: .editor, stage: .preview, policy: .alwaysOn)
+    public init() {}
+    public func onBoot(kernel: KernelCoreContainer) throws {
+        let project = kernel.resolveProvider((any ProjectProviding).self)
+        QuickFileSearchBridge.selectFileHandler = { path, _ in
+            Task { @MainActor in
+                guard let documents = kernel.resolveProvider((any EditorDocumentProviding).self) else { return }
+                _ = try? await documents.open(EditorOpenRequest(uri: URL(fileURLWithPath: path)))
+            }
+        }
+        QuickFileSearchBridge.activeWindowIdProvider = { nil }
+        FileSearchHotkeyManager.shared.startMonitoring()
+        kernel.resolveProvider((any RootViewProviding).self)?.addOverlays([RootOverlayItem(id: id, order: order) { content in
+            FileSearchOverlay(content: content, projectPathProvider: { project?.currentProject?.path ?? "" }, windowIdProvider: { nil })
+        }])
+        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([SettingEntryItem(id: id, title: metadata.name, systemImage: "magnifyingglass", order: order) { QuickFileSearchSettingsView(projectPath: project?.currentProject?.path ?? "") }])
+    }
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any RootViewProviding).self)?.removeOverlays(ids: [id])
+        kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
+        FileSearchHotkeyManager.shared.stopMonitoring()
+        QuickFileSearchBridge.selectFileHandler = nil; QuickFileSearchBridge.activeWindowIdProvider = nil
+    }
+}

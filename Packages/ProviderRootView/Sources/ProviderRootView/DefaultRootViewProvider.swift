@@ -26,6 +26,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published var railView: AnyView?
     @Published var contentView: AnyView?
     @Published var trailingPane: RootTrailingPane?
+    @Published public private(set) var overlays: [RootOverlayItem] = []
     var workspaceProvider: (any WorkspaceProviding)?
     private var workspaceSubscription: AnyCancellable?
 
@@ -42,6 +43,13 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
             Self.logger.debug("\(self.t)set toolbar view: \(view == nil ? "nil" : "injected")")
         }
     }
+
+    public func addOverlays(_ newOverlays: [RootOverlayItem]) {
+        for overlay in newOverlays where !overlays.contains(where: { $0.id == overlay.id }) { overlays.append(overlay) }
+        overlays.sort { $0.order < $1.order }
+    }
+
+    public func removeOverlays(ids: Set<String>) { overlays.removeAll { ids.contains($0.id) } }
 
     public func setActivityBarView(_ view: AnyView?) {
         guard !isSameView(activityBarView, view) else { return }
@@ -113,7 +121,9 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         if Self.verbose {
             Self.logger.debug("\(self.t)make root view: toolbar=\(self.toolbarView == nil ? "nil" : "set"), activityBar=\(self.activityBarView == nil ? "nil" : "set"), rail=\(self.railView == nil ? "nil" : "set"), content=\(self.contentView == nil ? "nil" : "set"), activeContainer=\(self.containerID)")
         }
-        return AnyView(DefaultRootHostView(provider: self))
+        var root = AnyView(DefaultRootHostView(provider: self))
+        for overlay in overlays { root = overlay.wrap(root) }
+        return root
     }
 
     // MARK: - 显示条件

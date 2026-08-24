@@ -22,6 +22,7 @@ import InputPlugin
 import BookletMakerPlugin
 import ScreenRecorderPlugin
 import StoryWriterPlugin
+import QuickFileSearchPlugin
 import PluginStorage
 import PluginToast
 import PluginCommand
@@ -184,6 +185,7 @@ public struct DefaultPluginFactory: PluginFactory {
             BookletMakerPlugin(),
             ScreenRecorderSuperPlugin(),
             StoryWriterSuperPlugin(),
+            QuickFileSearchSuperPlugin(),
             SkillPlugin(),
             StateMonitorPlugin(),
             OnboardingPlugin(),
