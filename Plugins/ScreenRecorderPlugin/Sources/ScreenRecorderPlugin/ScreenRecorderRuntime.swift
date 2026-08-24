@@ -23,7 +23,23 @@ public enum ScreenRecorderRuntime {
         if let storage = kernel.storage {
             Self.dataDirectory = storage.pluginDataDirectory(for: "ScreenRecorder")
         }
+        purgeStaleTempFiles()
+    }
+
+    /// 新版内核入口。新版不持有 `KernelLumi`，仅注入插件专属的数据目录。
+    public static func configure(dataDirectory: URL) {
+        Self.kernel = nil
+        Self.dataDirectory = dataDirectory
+        purgeStaleTempFiles()
+    }
+
+    public static func reset() {
+        Self.kernel = nil
+        Self.dataDirectory = FileManager.default.temporaryDirectory
+    }
+
+    private static func purgeStaleTempFiles() {
         // 崩溃恢复：清理上次可能残留的临时文件。
-        RecordingFileWriter.purgeStaleTempFiles(in: dataDirectory)
+        RecordingFileWriter.purgeStaleTempFiles(in: Self.dataDirectory)
     }
 }

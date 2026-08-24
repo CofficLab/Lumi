@@ -29,4 +29,15 @@ struct ScreenRecorderPluginTests {
         #expect((RecordingError.targetIsLumi.errorDescription ?? "").isEmpty == false)
         #expect((RecordingError.notRecording.errorDescription ?? "").isEmpty == false)
     }
+
+    @MainActor
+    @Test("新版工具保留录制契约")
+    func v2ToolsPreserveRecordingContract() {
+        let plugin = ScreenRecorderSuperPlugin()
+
+        #expect(plugin.id == "com.coffic.lumi.plugin.screen-recorder")
+        #expect(StartRecordingV2Tool.toolName == "start_recording")
+        #expect(StopRecordingV2Tool.toolName == "stop_recording")
+        #expect(ListRecordableAppsV2Tool.toolName == "list_recordable_apps")
+    }
 }

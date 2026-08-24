@@ -20,6 +20,7 @@ import RegistryManagerPlugin
 import RClickPlugin
 import InputPlugin
 import BookletMakerPlugin
+import ScreenRecorderPlugin
 import PluginStorage
 import PluginToast
 import PluginCommand
@@ -180,6 +181,7 @@ public struct DefaultPluginFactory: PluginFactory {
             RClickSuperPlugin(),
             InputSuperPlugin(),
             BookletMakerPlugin(),
+            ScreenRecorderSuperPlugin(),
             SkillPlugin(),
             StateMonitorPlugin(),
             OnboardingPlugin(),

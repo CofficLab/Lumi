@@ -10,7 +10,13 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/KernelLumi"),
+        .package(path: "../../Packages/KernelCore"),
+        .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiUI"),
+        .package(path: "../../Packages/ProviderDocsView"),
+        .package(path: "../../Packages/ProviderSettingView"),
+        .package(path: "../../Packages/ProviderStorage"),
+        .package(path: "../../Packages/ProviderToolManager"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
     targets: [
@@ -18,7 +24,13 @@ let package = Package(
             name: "ScreenRecorderPlugin",
             dependencies: [
                 .product(name: "KernelLumi", package: "KernelLumi"),
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],
             path: "Sources/ScreenRecorderPlugin"
