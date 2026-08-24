@@ -10,13 +10,14 @@ let package = Package(
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderToolbar"),
+        .package(path: "../ProviderStorage"),
         .package(path: "../../Plugins/CADDesignerPlugin"),
     ],
     targets: [
         .target(
             name: "PluginCADDesigner",
-            dependencies: ["KernelCore", "ProviderContentView", "ProviderDocsView", "ProviderToolbar", "CADDesignerPlugin"]
+            dependencies: ["KernelCore", "ProviderContentView", "ProviderDocsView", "ProviderToolbar", "ProviderStorage", "CADDesignerPlugin"]
         ),
-        .testTarget(name: "PluginCADDesignerTests", dependencies: ["PluginCADDesigner", "KernelCore", "ProviderContentView"]),
+        .testTarget(name: "PluginCADDesignerTests", dependencies: ["PluginCADDesigner", "KernelCore", "ProviderContentView", "ProviderStorage", "CADDesignerPlugin"]),
     ]
 )

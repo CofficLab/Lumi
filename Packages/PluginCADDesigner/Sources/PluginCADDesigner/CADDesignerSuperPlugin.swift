@@ -3,6 +3,7 @@ import KernelCore
 import ProviderContentView
 import ProviderDocsView
 import ProviderToolbar
+import ProviderStorage
 import SwiftUI
 
 /// CAD 编辑器的 KernelCore 入口。
@@ -25,6 +26,12 @@ public final class CADDesignerSuperPlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            CADDesignerRuntimeBridge.configure(
+                dataRootDirectory: storage.dataRootDirectory,
+                pluginSubdirectory: storage.pluginDataDirectory(for: "CADDesignerPlugin")
+            )
+        }
         kernel.resolveProvider((any ContentViewProviding).self)?
             .setContentView(AnyView(CADDesignerView()))
         kernel.resolveProvider((any ToolbarProviding).self)?.addToolbarItems([
