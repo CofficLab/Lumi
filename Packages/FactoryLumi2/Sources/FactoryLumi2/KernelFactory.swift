@@ -1,5 +1,7 @@
 import Foundation
 import KernelCore
+import ProviderExternalFile
+import ProviderProject
 import ProviderChatSection
 import ProviderConversation
 import SwiftUI
@@ -17,6 +19,43 @@ import SwiftUI
 /// 传入自定义 `ViewFactory` 覆盖视图组装逻辑。
 @MainActor
 public enum KernelFactory {
+    /// Routes a path received from Finder, Dock, Launch Services, or the URL
+    /// scheme through the V2 providers. Directories retain the legacy meaning
+    /// of switching the current project; files are offered to registered V2
+    /// external-file handlers (for example DatabaseManager).
+    @discardableResult
+    public static func openExternalPath(
+        _ path: String,
+        kernel: KernelCoreContainer
+    ) async -> Bool {
+        let normalizedPath = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+            .resolvingSymlinksInPath()
+            .standardizedFileURL
+            .path
+        guard !normalizedPath.isEmpty,
+              FileManager.default.fileExists(atPath: normalizedPath) else {
+            return false
+        }
+
+        var isDirectory: ObjCBool = false
+        FileManager.default.fileExists(atPath: normalizedPath, isDirectory: &isDirectory)
+        if isDirectory.boolValue {
+            guard let project = kernel.resolveProvider((any ProjectProviding).self) else {
+                return false
+            }
+            do {
+                try await project.openProject(at: normalizedPath)
+                return true
+            } catch {
+                return false
+            }
+        }
+
+        return kernel.resolveProvider((any ExternalFileOpening).self)?.open(
+            URL(fileURLWithPath: normalizedPath)
+        ) ?? false
+    }
+
     /// 创建 KernelCore 内核，装配并注册全部默认 Provider
     ///
     /// - Returns: 已装配默认 Provider 的 KernelCore 容器。

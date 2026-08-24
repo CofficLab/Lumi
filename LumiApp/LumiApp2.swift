@@ -18,6 +18,7 @@ import SwiftUI
 /// （`lumiOpenSettings`）请求打开设置窗口；菜单栏由 `MenuBarProviding` 贡献。
 @main
 struct LumiMinimalApp: App {
+    @NSApplicationDelegateAdaptor private var appDelegate: LumiAppDelegate
     /// 共享内核：主窗口、设置、菜单栏共用同一实例。
     @StateObject private var kernel: KernelCoreContainer
 
@@ -80,6 +81,17 @@ struct LumiMinimalApp: App {
                 .onReceive(NotificationCenter.default.publisher(for: .lumiOpenSettings)) { _ in
                     openWindow(id: "lumi.settings")
                 }
+                .onReceive(appDelegate.$pendingOpenPath.compactMap { $0 }) { path in
+                    consumePendingOpenPath(path, kernel: kernel)
+                }
+                .onAppear {
+                    // Launch Services may deliver a file before WindowGroup has
+                    // installed its Combine subscription. Consume the retained
+                    // delegate value once the V2 window is actually ready.
+                    if let path = appDelegate.pendingOpenPath {
+                        consumePendingOpenPath(path, kernel: kernel)
+                    }
+                }
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -127,6 +139,14 @@ struct LumiMinimalApp: App {
         NSApp.activate(ignoringOtherApps: true)
         if let window = NSApp.mainWindow ?? NSApp.windows.first(where: { $0.canBecomeKey }) {
             window.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    private func consumePendingOpenPath(_ path: String, kernel: KernelCoreContainer) {
+        guard appDelegate.pendingOpenPath == path else { return }
+        appDelegate.pendingOpenPath = nil
+        Task { @MainActor in
+            _ = await KernelFactory.openExternalPath(path, kernel: kernel)
         }
     }
 }

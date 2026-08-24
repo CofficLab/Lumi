@@ -1,7 +1,6 @@
 import Foundation
 import SwiftTerm
 import SwiftUI
-import KernelLumi
 import LumiUI
 import TerminalCoreKit
 
@@ -24,8 +23,8 @@ public struct TerminalMainView: View {
         self._viewModel = ObservedObject(wrappedValue: viewModel)
     }
 
-    /// V2 hosts use ProviderProject rather than KernelLumi's legacy project
-    /// contract. Accepting a plain path preserves session working-directory
+    /// V2 hosts use ProviderProject rather than the legacy project contract.
+    /// Accepting a plain path preserves session working-directory
     /// behavior without coupling the terminal UI to either kernel.
     public init(projectPath: String?, viewModel: TerminalTabsViewModel = .shared) {
         self.projectProvider = nil

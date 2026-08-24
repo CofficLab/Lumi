@@ -10,13 +10,11 @@
 		0B7F9C3C30306DC5001526F4 /* AppUpdatePlugin in Frameworks */ = {isa = PBXBuildFile; productRef = F5CBA1A13020000000425FF6 /* AppUpdatePlugin */; };
 		AI2AFB000000000000000001 /* FactoryAppIconDesigner2 in Frameworks */ = {isa = PBXBuildFile; productRef = AI2AFD000000000000000001 /* FactoryAppIconDesigner2 */; };
 		BM2AFB000000000000000B001 /* FactoryBookletMaker2 in Frameworks */ = {isa = PBXBuildFile; productRef = BM2AFB0000000000000000001 /* FactoryBookletMaker2 */; };
-		BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = BMFB000000000000000001 /* FactoryBookletMaker */; };
-		BMFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = BMFC000000000000000001 /* FactoryCore */; };
+		BM2BFB000000000000000B001 /* FactoryBookletMaker2 in Frameworks */ = {isa = PBXBuildFile; productRef = BM2AFB0000000000000000001 /* FactoryBookletMaker2 */; };
 		CD2AFB000000000000000001 /* FactoryCADDesigner2 in Frameworks */ = {isa = PBXBuildFile; productRef = CD2AFD000000000000000001 /* FactoryCADDesigner2 */; };
 		DB2AFB000000000000000001 /* FactoryDatabaseManager2 in Frameworks */ = {isa = PBXBuildFile; productRef = DB2AFD000000000000000001 /* FactoryDatabaseManager2 */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F5FL20000000000000B001 /* FactoryLumi2 in Frameworks */ = {isa = PBXBuildFile; productRef = F5FL200000000000000001 /* FactoryLumi2 */; };
-		FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = FBMIOD000000000000000001 /* FactoryBookletMakerMobile */; };
 		LF000000000000000014 /* LumiFinder.appex in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = LF000000000000000001 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		LF000000000000000015 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000016 /* SuperLogKit */; };
 		LF00000000000000001A /* LocalizationKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000019 /* LocalizationKit */; };
@@ -192,9 +190,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BMFC00000000000000B001 /* FactoryCore in Frameworks */,
-				BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */,
-				FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */,
+				BM2BFB000000000000000B001 /* FactoryBookletMaker2 in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -326,9 +322,7 @@
 			);
 			name = BookletMaker;
 			packageProductDependencies = (
-				BMFC000000000000000001 /* FactoryCore */,
-				BMFB000000000000000001 /* FactoryBookletMaker */,
-				FBMIOD000000000000000001 /* FactoryBookletMakerMobile */,
+				BM2AFB0000000000000000001 /* FactoryBookletMaker2 */,
 			);
 			productName = BookletMaker;
 			productReference = BM0000000000000000000002 /* BookletMaker.app */;
@@ -501,13 +495,10 @@
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */,
 				FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi2" */,
-				FB00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */,
 				LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */,
 				LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/LocalizationKit" */,
 				F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdate" */,
-				FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMakerMobile" */,
 				BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker2" */,
 				AI2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryAppIconDesigner2" */,
 				CD2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCADDesigner2" */,
@@ -877,13 +868,13 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker2" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FactoryBookletMaker2;
-		};
 		AI2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryAppIconDesigner2" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FactoryAppIconDesigner2;
+		};
+		BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker2" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FactoryBookletMaker2;
 		};
 		CD2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCADDesigner2" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -896,22 +887,6 @@
 		F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdate" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/PluginAppUpdate;
-		};
-		FB00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FactoryBookletMaker;
-		};
-		FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMakerMobile" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FactoryBookletMakerMobile;
-		};
-		FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FactoryCore;
-		};
-		FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FactoryLumi;
 		};
 		FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi2" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -938,16 +913,6 @@
 			package = BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker2" */;
 			productName = FactoryBookletMaker2;
 		};
-		BMFB000000000000000001 /* FactoryBookletMaker */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FB00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */;
-			productName = FactoryBookletMaker;
-		};
-		BMFC000000000000000001 /* FactoryCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
-			productName = FactoryCore;
-		};
 		CD2AFD000000000000000001 /* FactoryCADDesigner2 */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = CD2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCADDesigner2" */;
@@ -966,11 +931,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi2" */;
 			productName = FactoryLumi2;
-		};
-		FBMIOD000000000000000001 /* FactoryBookletMakerMobile */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMakerMobile" */;
-			productName = FactoryBookletMakerMobile;
 		};
 		LF000000000000000016 /* SuperLogKit */ = {
 			isa = XCSwiftPackageProductDependency;

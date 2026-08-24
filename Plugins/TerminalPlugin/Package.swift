@@ -2,19 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "TerminalPlugin",
+    name: "PluginTerminal",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "TerminalPlugin",
+            name: "PluginTerminal",
             targets: ["TerminalPlugin"]
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/ProviderActivityBar"),
         .package(path: "../../Packages/ProviderContentView"),
@@ -30,7 +29,6 @@ let package = Package(
         .target(
             name: "TerminalPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),

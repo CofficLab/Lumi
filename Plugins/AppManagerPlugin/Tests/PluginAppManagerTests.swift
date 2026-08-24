@@ -1,27 +1,14 @@
 import Foundation
 import Testing
-import KernelLumi
 import SwiftData
 @testable import AppManagerPlugin
 
 @MainActor
 struct PluginAppManagerTests {
     @Test
-    func pluginMetadataIsStable() {
-        #expect(AppManagerPlugin().id == "AppManager")
-        #expect(AppManagerPlugin.navigationId == "app_manager")
-        #expect(AppManagerPlugin.name.isEmpty == false)
-        #expect(AppManagerPlugin().category == .system)
-        #expect(AppManagerPlugin().order == 40)
-        #expect(AppManagerPlugin().policy == .disabled)
-        #expect(AppManagerPlugin.shared.instanceLabel == AppManagerPlugin().id)
-    }
-
-    @Test
-    func viewContainerContributionIsAvailable() {
-        let item = AppManagerPlugin.shared.addViewContainer()
-        #expect(item?.id == AppManagerPlugin().id)
-        #expect(item?.title == AppManagerPlugin.name)
+    func v2PluginStateIsStable() {
+        #expect(AppManagerPlugin.railTabID == "app-manager.sidebar")
+        #expect(AppManagerSuperPlugin().id == "com.coffic.lumi.plugin.app-manager")
     }
 
     @Test

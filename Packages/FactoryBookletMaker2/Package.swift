@@ -8,6 +8,7 @@ let package = Package(
         .library(name: "FactoryBookletMaker2", targets: ["FactoryBookletMaker2"]),
     ],
     dependencies: [
+        .package(path: "../FactoryLumi2"),
         .package(path: "../KernelCore"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
@@ -28,6 +29,7 @@ let package = Package(
         .target(
             name: "FactoryBookletMaker2",
             dependencies: [
+                .product(name: "FactoryLumi2", package: "FactoryLumi2"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
@@ -42,7 +44,7 @@ let package = Package(
                 .product(name: "ProviderToast", package: "ProviderToast"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
-                .product(name: "BookletMakerPlugin", package: "BookletMakerPlugin"),
+                .product(name: "PluginBookletMaker", package: "PluginBookletMaker"),
             ],
             path: "Sources/FactoryBookletMaker2"
         ),

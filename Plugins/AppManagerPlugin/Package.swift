@@ -2,17 +2,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "AppManagerPlugin",
+    name: "PluginAppManager",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(
-            name: "AppManagerPlugin",
+            name: "PluginAppManager",
             targets: ["AppManagerPlugin"]
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/ProviderActivityBar"),
         .package(path: "../../Packages/ProviderContentView"),
@@ -27,7 +26,6 @@ let package = Package(
 .target(
             name: "AppManagerPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),

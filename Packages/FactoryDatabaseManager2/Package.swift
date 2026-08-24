@@ -19,7 +19,7 @@ let package = Package(
                 .product(name: "FactoryLumi2", package: "FactoryLumi2"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "PluginEditorHost", package: "PluginEditorHost"),
-                .product(name: "DatabaseManagerPlugin", package: "DatabaseManagerPlugin"),
+                .product(name: "PluginDatabaseManager", package: "PluginDatabaseManager"),
                 .product(name: "ProviderExternalFile", package: "ProviderExternalFile"),
             ]
         ),

@@ -8,13 +8,6 @@ import ProviderActivityBar
 }
 
 @MainActor
-@Test func pluginPolicyIsOptIn() {
-    let plugin = TerminalPlugin()
-        #expect(plugin.policy == .optIn)
-    #expect(plugin.policy.isConfigurable == true)
-}
-
-@MainActor
 @Test func v2PluginRegistersStableTerminalEntry() throws {
     let kernel = KernelCoreContainer()
     let activityBar = DefaultActivityBarProviding()
