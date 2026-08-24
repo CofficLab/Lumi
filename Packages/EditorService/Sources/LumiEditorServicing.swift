@@ -1,5 +1,5 @@
 import Foundation
-import KernelLumi
+import EditorContracts
 
 @MainActor
 public protocol LumiEditorServicing {

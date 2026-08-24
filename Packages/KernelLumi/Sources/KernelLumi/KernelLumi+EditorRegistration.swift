@@ -1,4 +1,5 @@
 import Foundation
+import EditorContracts
 
 // MARK: - V2 契约注册
 

@@ -1,4 +1,5 @@
 import Foundation
+import EditorContracts
 import LumiUI
 
 // MARK: - Service Accessors

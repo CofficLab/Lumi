@@ -2,7 +2,7 @@ import AppKit
 import Combine
 import EditorKernel
 import Foundation
-import KernelLumi
+import EditorContracts
 import LanguageServerProtocol
 import SwiftUI
 

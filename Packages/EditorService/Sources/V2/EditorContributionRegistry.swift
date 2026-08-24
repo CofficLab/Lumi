@@ -1,8 +1,8 @@
 import EditorLanguageRuntime
 import Foundation
-import KernelLumi
+import EditorContracts
 // 消歧：EditorLanguageRuntime 也有同名 EditorLanguageDescriptor。
-import struct KernelLumi.EditorLanguageDescriptor
+import struct EditorContracts.EditorLanguageDescriptor
 
 /// 编辑器贡献包注册表（`EditorExtensionHosting` 实现，重构方案 §9）。
 ///

@@ -1,5 +1,5 @@
 import Foundation
-import KernelLumi
+import EditorContracts
 
 // Kernel-prefixed type aliases are now defined in the KernelLumi module itself
 // (see KernelEditorTypeAliases.swift in KernelLumi/Types/).

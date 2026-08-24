@@ -1,5 +1,5 @@
 import Foundation
-import KernelLumi
+import EditorContracts
 import EditorSource
 import LanguageServerProtocol
 

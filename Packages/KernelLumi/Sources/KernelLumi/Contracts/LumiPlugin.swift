@@ -1,4 +1,5 @@
 import Foundation
+import EditorContracts
 import SwiftUI
 
 /// Lumi 插件协议

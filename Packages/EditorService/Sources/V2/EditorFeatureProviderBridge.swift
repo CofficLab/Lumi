@@ -1,5 +1,5 @@
 import Foundation
-import KernelLumi
+import EditorContracts
 
 // MARK: - Feature Provider 桥（契约 V2，Phase 5 §10）
 //
