@@ -19,6 +19,7 @@ import DockerManagerPlugin
 import RegistryManagerPlugin
 import RClickPlugin
 import InputPlugin
+import BookletMakerPlugin
 import PluginStorage
 import PluginToast
 import PluginCommand
@@ -178,6 +179,7 @@ public struct DefaultPluginFactory: PluginFactory {
             RegistryManagerSuperPlugin(),
             RClickSuperPlugin(),
             InputSuperPlugin(),
+            BookletMakerPlugin(),
             SkillPlugin(),
             StateMonitorPlugin(),
             OnboardingPlugin(),
