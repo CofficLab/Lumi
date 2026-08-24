@@ -1,5 +1,6 @@
 import Foundation
 import KernelLumi
+import ProviderConversationInput
 
 /// Runtime bridge for accessing the view model from plugin contribution closures.
 ///
@@ -9,4 +10,5 @@ import KernelLumi
 public enum RuntimeBridge {
     public static var viewModel: StoryWriterViewModel?
     public static var kernel: KernelLumi?
+    public static var conversationInput: (any ProviderConversationInput.ConversationInputProviding)?
 }

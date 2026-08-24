@@ -1,4 +1,5 @@
 import SwiftUI
+import ProviderConversationInput
 
 /// Left pane (rail tab): story picker dropdown + chapter tree.
 ///
@@ -232,16 +233,26 @@ struct StoryOutlineView: View {
 
     /// Append chapter path to the conversation input via the kernel service.
     private func addToChat(chapter: Chapter) {
-        guard let conversationInput = RuntimeBridge.kernel?.conversationInput else { return }
         guard let story = viewModel.currentStory else { return }
 
         let text = "\(story.title) - \(chapter.title)"
+        if let conversationInput = RuntimeBridge.conversationInput {
+            appendToChatInput(conversationInput, text: text)
+        } else if let conversationInput = RuntimeBridge.kernel?.conversationInput {
+            if conversationInput.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                conversationInput.text = text
+            } else {
+                conversationInput.text = conversationInput.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    + "\n" + text
+            }
+        }
+    }
 
-        if conversationInput.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            conversationInput.text = text
+    private func appendToChatInput(_ input: any ProviderConversationInput.ConversationInputProviding, text: String) {
+        if input.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            input.text = text
         } else {
-            conversationInput.text = conversationInput.text.trimmingCharacters(in: .whitespacesAndNewlines)
-                + "\n" + text
+            input.text = input.text.trimmingCharacters(in: .whitespacesAndNewlines) + "\n" + text
         }
     }
 }

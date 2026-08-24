@@ -21,6 +21,7 @@ import RClickPlugin
 import InputPlugin
 import BookletMakerPlugin
 import ScreenRecorderPlugin
+import StoryWriterPlugin
 import PluginStorage
 import PluginToast
 import PluginCommand
@@ -182,6 +183,7 @@ public struct DefaultPluginFactory: PluginFactory {
             InputSuperPlugin(),
             BookletMakerPlugin(),
             ScreenRecorderSuperPlugin(),
+            StoryWriterSuperPlugin(),
             SkillPlugin(),
             StateMonitorPlugin(),
             OnboardingPlugin(),

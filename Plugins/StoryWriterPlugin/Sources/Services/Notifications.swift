@@ -13,6 +13,7 @@ extension Notification.Name {
 /// and the view model agree on where to read/write.
 enum StoryWriterStorage {
     static let pluginID = "StoryWriter"
+    @MainActor static var v2Directory: URL?
 
     /// Returns the on-disk directory for the story store, or nil if the
     /// kernel's storage service is not available.
@@ -20,5 +21,9 @@ enum StoryWriterStorage {
         await MainActor.run {
             kernel.storage?.pluginDataDirectory(for: pluginID)
         }
+    }
+
+    @MainActor static func configureV2(directory: URL?) {
+        v2Directory = directory
     }
 }
