@@ -12,6 +12,7 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderIdleTime"),
+        .package(path: "../ProviderDocsView"),
     ],
     targets: [
         .target(
@@ -21,6 +22,7 @@ let package = Package(
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
+                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
             ]
         ),
         .testTarget(

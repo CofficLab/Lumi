@@ -3,6 +3,7 @@ import KernelCore
 import ProviderMessage
 import ProviderSettingView
 import ProviderIdleTime
+import ProviderDocsView
 import SwiftUI
 
 /// V2 activity dashboard. It preserves the legacy heatmap's three time ranges,
@@ -37,10 +38,14 @@ public final class ActivityHeatmapPlugin: SuperPlugin {
                 ActivityHeatmapSettingsView(messages: messages, idleTime: idleTime)
             },
         ])
+        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
+            DocsEntry(id: id, name: "Activity Heatmap") { ActivityHeatmapAboutView() }
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }
 
@@ -290,5 +295,32 @@ private struct IdleTimeSummaryCard: View {
         guard let window = snapshot.restWindow else { return "Learning" }
         func time(_ minute: Int) -> String { String(format: "%02d:%02d", minute / 60, minute % 60) }
         return "\(time(window.startMinuteOfDay)) – \(time(window.endMinuteOfDay))"
+    }
+}
+
+private struct ActivityHeatmapAboutView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                Label("Activity Heatmap", systemImage: "chart.bar.xaxis")
+                    .font(.title2.weight(.semibold))
+                Text("See your conversation rhythm over the last 30 days, 90 days, or year. The heatmap shows daily message activity while the trend chart summarizes token consumption.")
+                    .foregroundStyle(.secondary)
+                feature("Privacy-first", "All statistics are calculated from your local message database.", symbol: "lock")
+                feature("Always current", "The dashboard refreshes as new messages arrive.", symbol: "arrow.clockwise")
+                feature("Activity context", "Idle-time patterns and inferred rest windows help interpret your activity.", symbol: "moon.zzz")
+            }
+            .padding(24)
+        }
+    }
+
+    private func feature(_ title: String, _ detail: String, symbol: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: symbol).frame(width: 18).foregroundStyle(.tint)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.headline)
+                Text(detail).font(.subheadline).foregroundStyle(.secondary)
+            }
+        }
     }
 }
