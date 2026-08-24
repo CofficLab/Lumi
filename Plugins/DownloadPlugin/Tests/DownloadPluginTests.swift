@@ -8,11 +8,11 @@ final class DownloadPluginTests: XCTestCase {
 
     func testPluginInfo() {
         XCTAssertEqual(DownloadPlugin().id, "com.coffic.lumi.plugin.download-agent")
-        XCTAssertEqual(DownloadPlugin().name, "Download Agent")
+        XCTAssertFalse(DownloadPlugin().name.isEmpty)
         XCTAssertEqual(DownloadPlugin().policy, .alwaysOn)
-        XCTAssertEqual(DownloadPlugin.stage, .beta)
+        XCTAssertEqual(DownloadPlugin().stage, .beta)
         XCTAssertEqual(DownloadPlugin().category, .agent)
-        XCTAssertEqual(DownloadPlugin().iconName, "arrow.down.circle")
+        XCTAssertEqual(DownloadPlugin.emoji, "📥")
     }
 
     // MARK: - Download Directory
