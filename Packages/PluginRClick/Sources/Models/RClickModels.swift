@@ -1,5 +1,12 @@
 import Foundation
 
+enum RClickPluginRuntimeBridge {
+    nonisolated(unsafe) static var dataRootDirectory: URL?
+    static var fallbackRootDirectory: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
+    }
+}
+
 public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Sendable {
     case newFile = "newFile" // Acts as a submenu or category
     case copyPath = "copyPath"
