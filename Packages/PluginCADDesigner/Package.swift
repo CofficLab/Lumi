@@ -18,8 +18,8 @@ let package = Package(
     targets: [
         .target(
             name: "PluginCADDesigner",
-            dependencies: ["KernelCore", "AgentToolKit", "ProviderContentView", "ProviderDocsView", "ProviderToolbar", "ProviderStorage", "ProviderToolManager", "CADDesignerPlugin"]
+            dependencies: ["KernelCore", "AgentToolKit", "ProviderContentView", "ProviderDocsView", "ProviderToolbar", "ProviderStorage", "ProviderToolManager", .product(name: "CADDesignerPlugin", package: "PluginCADDesignerPlugin")]
         ),
-        .testTarget(name: "PluginCADDesignerTests", dependencies: ["PluginCADDesigner", "KernelCore", "AgentToolKit", "ProviderContentView", "ProviderStorage", "CADDesignerPlugin"]),
+        .testTarget(name: "PluginCADDesignerTests", dependencies: ["PluginCADDesigner", "KernelCore", "AgentToolKit", "ProviderContentView", "ProviderStorage", .product(name: "CADDesignerPlugin", package: "PluginCADDesignerPlugin")]),
     ]
 )
