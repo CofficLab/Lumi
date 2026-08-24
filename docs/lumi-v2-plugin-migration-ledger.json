@@ -4232,7 +4232,7 @@
    "order": 10,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginOnboarding",
    "wave": "P1-P3/P8",
    "owners": [],
    "dependencies": [
@@ -4241,9 +4241,13 @@
     "LumiUI",
     "SuperLogKit"
    ],
-   "providersConsumed": [],
+   "providersConsumed": [
+    "OnboardingProviding"
+   ],
    "providersPublished": [],
-   "contributions": [],
+   "contributions": [
+    "V2 onboarding welcome and AI setup pages"
+   ],
    "storage": [],
    "userDefaultsKeys": [],
    "keychainKeys": [],
@@ -4251,13 +4255,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "implementing",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/PluginOnboarding",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "PluginOnboarding registers welcome and AI-provider setup pages through ProviderOnboarding. LumiApp2 owns persisted first-run presentation, reset/replay via Onboarding.Show, and navigation. Legacy plugin-management, cursor/activity-bar and detailed presentation customizations still require parity review.",
     "performance": null
    }
   },

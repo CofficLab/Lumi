@@ -4,6 +4,7 @@ import FactoryLumi2
 import KernelCore
 import ProviderLogo
 import ProviderMenuBar
+import ProviderOnboarding
 import PluginToolbarSettings
 import SwiftUI
 
@@ -61,7 +62,7 @@ struct LumiMinimalApp: App {
             // 主窗口 / 设置窗口 / 菜单栏共享同一内核（kernel），
             // 主题切换后各窗口即时同步。
             // 注意：`.onReceive` 需应用到整个 `??` 表达式（否则会误绑到 fallback 分支）。
-            mainView
+            OnboardingHost(content: mainView, kernel: kernel)
                 // 与旧版 Lumi（WindowMain.configureForLumiMainChrome）一致：
                 // 窗口内容延伸到标题栏区域（fullSizeContentView），
                 // 工具栏从窗口顶部开始渲染，红绿灯悬浮在工具栏上。
@@ -132,6 +133,81 @@ private struct BootstrapFailureView: View {
         )
         .textSelection(.enabled)
         .padding(24)
+    }
+}
+
+/// V2 first-run onboarding presenter. Pages are registered by plugins through
+/// `OnboardingProviding`; this host owns persisted completion and replay.
+private struct OnboardingHost<Content: View>: View {
+    let content: Content
+    @ObservedObject var kernel: KernelCoreContainer
+    @AppStorage("com.coffic.lumi.onboarding.completed") private var completed = false
+    @State private var isPresented = false
+    @State private var pageIndex = 0
+
+    private var pages: [OnboardingPageItem] {
+        kernel.resolveProvider((any OnboardingProviding).self)?.allPages ?? []
+    }
+
+    var body: some View {
+        content
+            .onAppear {
+                guard !completed, !pages.isEmpty else { return }
+                isPresented = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("Onboarding.Show"))) { notification in
+                if notification.userInfo?["reset"] as? Bool == true { completed = false }
+                pageIndex = 0
+                isPresented = !pages.isEmpty
+            }
+            .sheet(isPresented: $isPresented) {
+                OnboardingSheet(
+                    pages: pages,
+                    index: $pageIndex,
+                    finish: {
+                        completed = true
+                        isPresented = false
+                    }
+                )
+                .interactiveDismissDisabled()
+            }
+    }
+}
+
+private struct OnboardingSheet: View {
+    let pages: [OnboardingPageItem]
+    @Binding var index: Int
+    let finish: () -> Void
+
+    var body: some View {
+        let safeIndex = min(max(index, 0), max(pages.count - 1, 0))
+        VStack(spacing: 0) {
+            HStack {
+                Label("Getting started", systemImage: "graduationcap.fill")
+                    .font(.headline)
+                Spacer()
+                Text("\(safeIndex + 1) of \(pages.count)").foregroundStyle(.secondary)
+                Button("Skip") { finish() }.buttonStyle(.borderless)
+            }
+            .padding(20)
+            Divider()
+            if pages.indices.contains(safeIndex) {
+                ScrollView { pages[safeIndex].makeView().padding(28) }
+            }
+            Divider()
+            HStack {
+                Button("Back") { index = max(0, safeIndex - 1) }
+                    .disabled(safeIndex == 0)
+                Spacer()
+                Button(safeIndex == pages.count - 1 ? "Finish" : "Continue") {
+                    if safeIndex == pages.count - 1 { finish() }
+                    else { index = safeIndex + 1 }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .padding(20)
+        }
+        .frame(width: 640, height: 550)
     }
 }
 
