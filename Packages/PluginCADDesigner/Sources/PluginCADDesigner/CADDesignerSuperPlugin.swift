@@ -44,6 +44,7 @@ public final class CADDesignerSuperPlugin: SuperPlugin {
         toolManager?.add(PlaceProfileV2Tool(), pluginID: id)
         toolManager?.add(PlaceConnectorV2Tool(), pluginID: id)
         toolManager?.add(UpdateProfileV2Tool(), pluginID: id)
+        toolManager?.add(GenerateBOMV2Tool(), pluginID: id)
         kernel.resolveProvider((any ToolbarProviding).self)?.addToolbarItems([
             ToolbarItem(id: "\(id).title", title: metadata.name, placement: .center, order: 0) {
                 Text(self.metadata.name).font(.headline)
@@ -65,6 +66,7 @@ public final class CADDesignerSuperPlugin: SuperPlugin {
         toolManager?.remove(id: PlaceProfileV2Tool.toolName)
         toolManager?.remove(id: PlaceConnectorV2Tool.toolName)
         toolManager?.remove(id: UpdateProfileV2Tool.toolName)
+        toolManager?.remove(id: GenerateBOMV2Tool.toolName)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }

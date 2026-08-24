@@ -86,4 +86,14 @@ struct CADDesignerSuperPluginTests {
             #expect(currentProfile.transform.rotationY == 45)
         } else { Issue.record("expected the updated profile") }
     }
+
+    @Test("generates the CAD bill of materials through the V2 tool")
+    func generatesBOMThroughV2Tool() async throws {
+        CADDocumentStore.shared.resetForTests()
+        _ = CADDocumentStore.shared.createDocument(name: "V2 BOM")
+        _ = try await PlaceProfileV2Tool().execute(arguments: ["profileId": ToolArgument("profile-40x40-eu"), "length": ToolArgument(500)])
+        let output = try await GenerateBOMV2Tool().execute(arguments: [:])
+        #expect(GenerateBOMV2Tool.toolName == "cad_generate_bom")
+        #expect(output.contains("500"))
+    }
 }
