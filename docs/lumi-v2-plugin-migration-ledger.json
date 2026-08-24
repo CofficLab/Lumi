@@ -254,11 +254,11 @@
    "testFixtures": [],
    "status": "parityReview",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/PluginAppIconDesigner; swift test --package-path Packages/FactoryAppIconDesigner2 (2026-08-24)",
+    "integrationBuild": "xcodebuild -project Lumi.xcodeproj -scheme AppIconDesigner -configuration Debug build CODE_SIGNING_ALLOWED=NO (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "AppIconDesigner target now uses FactoryAppIconDesigner2 and KernelCore. The dedicated host preserves the V2 designer, document rail, persistent storage, documentation, and all 15 icon-design tools; visual parity remains under review before deleting the old plugin source.",
     "performance": null
    },
    "gapAudit": {
