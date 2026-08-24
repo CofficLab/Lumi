@@ -26,6 +26,7 @@ import QuickFileSearchPlugin
 import ProjectOverviewPlugin
 import QuickLauncherPlugin
 import TextActionsPlugin
+import TerminalPlugin
 import DatabaseManagerPlugin
 import GitPlugin
 import GoalTaskPlugin
@@ -196,6 +197,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ProjectOverviewSuperPlugin(),
             QuickLauncherSuperPlugin(),
             TextActionsSuperPlugin(),
+            TerminalSuperPlugin(),
             DatabaseManagerSuperPlugin(),
             GitSourceControlSuperPlugin(),
             GoalTaskSuperPlugin(),

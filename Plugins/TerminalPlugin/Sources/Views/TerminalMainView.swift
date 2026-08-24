@@ -8,6 +8,7 @@ import TerminalCoreKit
 public struct TerminalMainView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
     let projectProvider: (any ProjectProviding)?
+    let projectPath: String?
 
     /// 使用单例 ViewModel，无论 TerminalMainView 被重建多少次，都共享同一份终端会话状态。
     /// ViewContainer 与底部面板必须传入不同的实例（默认 `.shared`，底部面板用 `.bottomPanel`），
@@ -19,6 +20,16 @@ public struct TerminalMainView: View {
         viewModel: TerminalTabsViewModel = .shared
     ) {
         self.projectProvider = projectProvider
+        self.projectPath = nil
+        self._viewModel = ObservedObject(wrappedValue: viewModel)
+    }
+
+    /// V2 hosts use ProviderProject rather than KernelLumi's legacy project
+    /// contract. Accepting a plain path preserves session working-directory
+    /// behavior without coupling the terminal UI to either kernel.
+    public init(projectPath: String?, viewModel: TerminalTabsViewModel = .shared) {
+        self.projectProvider = nil
+        self.projectPath = projectPath
         self._viewModel = ObservedObject(wrappedValue: viewModel)
     }
 
@@ -27,7 +38,7 @@ public struct TerminalMainView: View {
     }
 
     private var currentProjectPathForTerminal: String? {
-        let path = projectProvider?.currentProject?.path ?? ""
+        let path = projectPath ?? projectProvider?.currentProject?.path ?? ""
         let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
@@ -87,6 +98,9 @@ public struct TerminalMainView: View {
             viewModel.ensureInitialSession(workingDirectory: currentProjectPathForTerminal)
         }
         .onChange(of: projectProvider?.currentProject?.path) { _, _ in
+            viewModel.updateDefaultWorkingDirectory(currentProjectPathForTerminal)
+        }
+        .onChange(of: projectPath) { _, _ in
             viewModel.updateDefaultWorkingDirectory(currentProjectPathForTerminal)
         }
     }
