@@ -1214,7 +1214,7 @@
    "order": 7,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginConversationManager",
    "wave": "P4",
    "owners": [],
    "dependencies": [
@@ -1233,13 +1233,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/PluginConversationManager (2026-08-24; 4 tests passed)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "FactoryLumi2 registers PluginConversationManager, which replaces the V2 conversation provider and carries the V4 data migration. CRUD, paging, title updates, cascading child-conversation deletion and idempotent legacy import are covered by package tests.",
     "performance": null
    }
   },
@@ -2362,7 +2362,7 @@
    "order": 1,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginFileLog",
    "wave": "P1-P3/P8",
    "owners": [],
    "dependencies": [
@@ -2380,13 +2380,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/PluginFileLog (2026-08-24; log-directory test passed)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "FactoryLumi2 registers PluginFileLog. The V2 coordinator resolves its directory through StorageProviding and retains OSLog polling, disk rotation and retention behavior. Its test target was repaired to avoid overlapping production sources.",
     "performance": null
    }
   },
@@ -3701,7 +3701,7 @@
    "order": 4,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginMemory",
    "wave": "P4",
    "owners": [],
    "dependencies": [
@@ -3719,13 +3719,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/PluginMemory (2026-08-24; 6 tests passed)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "FactoryLumi2 registers PluginMemory. V2 storage and the four memory tools (save, recall, list and delete) are covered by package tests.",
     "performance": null
    }
   },
@@ -4865,7 +4865,7 @@
    "order": 5,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginProjects",
    "wave": "P1-P3/P8",
    "owners": [],
    "dependencies": [
@@ -4884,13 +4884,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/PluginProjects (2026-08-24; 3 tests passed)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "FactoryLumi2 registers PluginProjects. V2 project persistence, directory validation and the legacy storage directory key are covered by package tests; UI/runtime parity remains under review.",
     "performance": null
    }
   },
