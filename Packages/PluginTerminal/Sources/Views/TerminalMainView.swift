@@ -3,6 +3,7 @@ import SwiftTerm
 import SwiftUI
 import LumiUI
 import TerminalCoreKit
+import ProviderProject
 
 public struct TerminalMainView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
