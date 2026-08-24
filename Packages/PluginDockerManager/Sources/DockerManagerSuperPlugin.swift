@@ -8,6 +8,8 @@ import SwiftUI
 import os
 
 enum DockerManagerPlugin {
+    let name = "Docker"
+    init() {}
     nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "DockerManagerPlugin")
 }
