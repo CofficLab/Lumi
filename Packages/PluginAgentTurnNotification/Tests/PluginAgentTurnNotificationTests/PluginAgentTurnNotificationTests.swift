@@ -2,6 +2,7 @@ import Foundation
 import Testing
 import KernelCore
 import ProviderConversation
+import ProviderLifecycleHooks
 
 @testable import PluginAgentTurnNotification
 
@@ -25,19 +26,23 @@ struct AgentTurnNotificationPluginTests {
         #expect(AgentTurnNotificationPlugin.presentation(for: "unknown").title == "回合结束")
     }
 
-    @Test("lumiTurnFinished 触发 notifier")
-    func finishedTriggersNotifier() throws {
+    @Test("V2 turn-finished hook 触发 notifier")
+    func finishedTriggersNotifier() async throws {
         let kernel = KernelCoreContainer()
+        let hooks = DefaultLifecycleHooksProvider()
+        try kernel.registerProvider((any LifecycleHooksProviding).self, hooks)
         let plugin = AgentTurnNotificationPlugin()
         var notified: [String] = []
         plugin.notifier = { title, _, _ in notified.append(title) }
         try plugin.onBoot(kernel: kernel)
 
         let conversationID = UUID()
-        NotificationCenter.default.post(
-            name: .lumiTurnFinished,
-            object: nil,
-            userInfo: ["conversationID": conversationID, "reason": "completed"]
+        await hooks.notifyTurnFinished(
+            TurnLifecycleContext(
+                conversationID: conversationID,
+                turnID: UUID(),
+                endReason: .completed
+            )
         )
         #expect(notified == ["任务完成"])
 

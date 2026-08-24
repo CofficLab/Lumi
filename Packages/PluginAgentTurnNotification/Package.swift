@@ -12,6 +12,7 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversation"),
+        .package(path: "../ProviderLifecycleHooks"),
     ],
     targets: [
         .target(
@@ -20,6 +21,7 @@ let package = Package(
                 "KernelCore",
                 "ProviderAgentLoop",
                 "ProviderConversation",
+                "ProviderLifecycleHooks",
             ],
             path: "Sources/PluginAgentTurnNotification"
         ),
@@ -29,6 +31,7 @@ let package = Package(
                 "PluginAgentTurnNotification",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
             ],
             path: "Tests/PluginAgentTurnNotificationTests"
         ),

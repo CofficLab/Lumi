@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import ProviderAgentLoop
 import ProviderConversation
+import ProviderLifecycleHooks
 import UserNotifications
 
 /// 回合通知插件：回合结束时发系统通知。
@@ -26,7 +27,7 @@ public final class AgentTurnNotificationPlugin: SuperPlugin {
         policy: .alwaysOn
     )
 
-    private var observers: [NSObjectProtocol] = []
+    private var isActive = false
     /// 通知发送器（测试可注入 no-op）。
     public var notifier: @MainActor (String, String, UUID) -> Void = { title, body, _ in
         let content = UNMutableNotificationContent()
@@ -48,25 +49,16 @@ public final class AgentTurnNotificationPlugin: SuperPlugin {
         // 注意：不在插件启动时请求通知授权（测试/无 bundle 环境会崩溃）。
         // 通知授权由宿主 App 在启动时请求；插件只负责订阅并发送。
 
-//        let finishedObserver = NotificationCenter.default.addObserver(
-//            forName: .lumiTurnFinished,
-//            object: nil,
-//            queue: .main
-//        ) { [weak self] notification in
-//            guard let self,
-//                  let conversationID = notification.userInfo?["conversationID"] as? UUID else { return }
-//            let reason = notification.userInfo?["reason"] as? String ?? "completed"
-//            let (title, body) = Self.presentation(for: reason)
-//            self.notifier(title, body, conversationID)
-//        }
-//        observers.append(finishedObserver)
+        isActive = true
+        kernel.resolveProvider((any LifecycleHooksProviding).self)?.addTurnFinishedHook { [weak self] context in
+            guard let self, self.isActive else { return }
+            let (title, body) = Self.presentation(for: context.endReason?.rawValue ?? "completed")
+            self.notifier(title, body, context.conversationID)
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        for observer in observers {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        observers.removeAll()
+        isActive = false
     }
 
     // MARK: - Presentation
