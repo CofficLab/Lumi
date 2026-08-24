@@ -140,6 +140,26 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         store?.messageCount(conversationId: conversationID) ?? 0
     }
 
+    public func dailyMessageCounts(since: Date) -> [Date: Int] {
+        var counts = store?.dailyMessageCounts(since: since) ?? [:]
+        let calendar = Calendar.current
+        for message in pending.snapshotAll() where message.createdAt >= since {
+            counts[calendar.startOfDay(for: message.createdAt), default: 0] += 1
+        }
+        return counts
+    }
+
+    public func dailyTokenCounts(since: Date) -> [Date: Int] {
+        var counts = store?.dailyTokenCounts(since: since) ?? [:]
+        let calendar = Calendar.current
+        for message in pending.snapshotAll() where message.createdAt >= since {
+            let tokens = (message.inputTokenCount ?? 0) + (message.outputTokenCount ?? 0)
+            guard tokens > 0 else { continue }
+            counts[calendar.startOfDay(for: message.createdAt), default: 0] += tokens
+        }
+        return counts
+    }
+
     /// 分页查询（UI 滚动/历史加载）。
     public func messagePage(
         for conversationID: UUID,
@@ -286,6 +306,11 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             "messageID": message.id,
             "role": message.role.rawValue,
         ]
+        NotificationCenter.default.post(
+            name: Notification.Name("com.coffic.lumi.messageSaved"),
+            object: nil,
+            userInfo: userInfo
+        )
     }
 
     public func updateMessage(id: UUID, in conversationID: UUID, content: String) {

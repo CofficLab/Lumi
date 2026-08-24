@@ -18,6 +18,12 @@ final class PendingMessageBuffer: @unchecked Sendable {
         return storage[conversationID] ?? []
     }
 
+    /// 取全部会话的待落盘消息，用于跨会话统计等全局读路径。
+    func snapshotAll() -> [Message] {
+        lock.lock(); defer { lock.unlock() }
+        return storage.values.flatMap { $0 }
+    }
+
     /// 加入一条（去重：同 id 已在则替换，保持时间升序）。
     func enqueue(_ message: Message, conversationID: UUID) {
         lock.lock(); defer { lock.unlock() }

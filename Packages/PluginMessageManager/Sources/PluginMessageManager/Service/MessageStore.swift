@@ -276,6 +276,42 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 返回指定日期（含）以来、按本地自然日聚合的消息数。
+    func dailyMessageCounts(since: Date) -> [Date: Int] {
+        locked {
+            let context = ModelContext(container)
+            let timestamp = since.timeIntervalSince1970
+            let descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> { $0.createdAt >= timestamp }
+            )
+            guard let models = try? context.fetch(descriptor) else { return [:] }
+            let calendar = Calendar.current
+            return models.reduce(into: [:]) { counts, model in
+                let day = calendar.startOfDay(for: Date(timeIntervalSince1970: model.createdAt))
+                counts[day, default: 0] += 1
+            }
+        }
+    }
+
+    /// 返回指定日期（含）以来、按本地自然日聚合的输入与输出 token 总数。
+    func dailyTokenCounts(since: Date) -> [Date: Int] {
+        locked {
+            let context = ModelContext(container)
+            let timestamp = since.timeIntervalSince1970
+            let descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> { $0.createdAt >= timestamp }
+            )
+            guard let models = try? context.fetch(descriptor) else { return [:] }
+            let calendar = Calendar.current
+            return models.reduce(into: [:]) { counts, model in
+                let tokens = (model.inputTokenCount ?? 0) + (model.outputTokenCount ?? 0)
+                guard tokens > 0 else { return }
+                let day = calendar.startOfDay(for: Date(timeIntervalSince1970: model.createdAt))
+                counts[day, default: 0] += tokens
+            }
+        }
+    }
+
     /// 一次性返回所有「在磁盘上至少有一条消息」的 conversationId 字符串集合。
     ///
     /// 用于批量判定空对话，避免对每个 conversation 单独 `messageCount`（N 次 SQLite

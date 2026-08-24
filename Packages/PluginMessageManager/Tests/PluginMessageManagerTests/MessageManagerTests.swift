@@ -77,7 +77,7 @@ struct MessageManagerWriteBehindTests {
 
         let received = expectationCapture()
         let observer = NotificationCenter.default.addObserver(
-            forName: .lumiMessageSaved,
+            forName: Notification.Name("com.coffic.lumi.messageSaved"),
             object: nil,
             queue: nil
         ) { notification in
@@ -134,6 +134,29 @@ struct MessageManagerWriteBehindTests {
         let page = manager.messagePage(for: conversationID, limit: 10, beforeMessageID: nil, includesToolMessages: false)
         #expect(page.count == 1)
         #expect(page.first?.content == "no disk")
+    }
+
+    @Test("活动聚合包含持久化与待落盘消息")
+    func dailyActivityAggregates() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let calendar = Calendar.current
+        let day = calendar.startOfDay(for: Date())
+        let firstConversation = UUID()
+        let secondConversation = UUID()
+
+        manager.insertMessage(
+            Message(conversationID: firstConversation, role: .user, content: "saved", createdAt: day, inputTokenCount: 10),
+            to: firstConversation
+        )
+        manager.insertMessage(
+            Message(conversationID: secondConversation, role: .assistant, content: "pending", createdAt: day, outputTokenCount: 7),
+            to: secondConversation
+        )
+
+        #expect(manager.dailyMessageCounts(since: day)[day] == 2)
+        #expect(manager.dailyTokenCounts(since: day)[day] == 17)
     }
 
     private func expectationCapture() -> SavedNotificationCapture {
