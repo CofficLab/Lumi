@@ -10,7 +10,7 @@ import WebServerKit
 /// 服务只绑定 `127.0.0.1`，默认端口 7310；保留真实 Hummingbird 监听、
 /// 动态路由、自描述端点和旧版主题 API。启动失败不会阻断主应用。
 @MainActor
-public final class WebServerPlugin: AsyncSuperPlugin {
+public final class WebServerPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.web-server"
     public let order = 150
     public let metadata = PluginMetadata(
@@ -46,8 +46,8 @@ public final class WebServerPlugin: AsyncSuperPlugin {
         registerThemeRoutes(kernel: kernel, server: server)
     }
 
-    public func onReadyAsync(kernel: KernelCoreContainer) async throws {
-        await startIfNeeded()
+    public func onReady(kernel: KernelCoreContainer) throws {
+        Task { await self.startIfNeeded() }
     }
 
     public func onEnable(kernel: KernelCoreContainer) async throws {
@@ -58,9 +58,10 @@ public final class WebServerPlugin: AsyncSuperPlugin {
         await server?.stop()
     }
 
-    public func onShutdownAsync(kernel: KernelCoreContainer) async throws {
-        await server?.stop()
-        server = nil
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        let server = server
+        Task { await server?.stop() }
+        self.server = nil
     }
 
     private func startIfNeeded() async {
