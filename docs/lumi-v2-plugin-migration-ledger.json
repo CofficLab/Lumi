@@ -4261,7 +4261,7 @@
     "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
     "runtime": null,
     "uiDiff": null,
-    "migration": "PluginOnboarding registers welcome and AI-provider setup pages through ProviderOnboarding. LumiApp2 owns persisted first-run presentation, reset/replay via Onboarding.Show, and navigation. Legacy plugin-management, cursor/activity-bar and detailed presentation customizations still require parity review.",
+    "migration": "PluginOnboarding registers welcome and AI-provider setup pages through ProviderOnboarding. The AI setup page now uses V2 LLMManaging to select a provider and persist API keys (or directly enable local providers). LumiApp2 owns persisted first-run presentation, reset/replay via Onboarding.Show, and navigation. Legacy detailed presentation customizations still require parity review.",
     "performance": null
    }
   },

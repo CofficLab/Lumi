@@ -10,6 +10,8 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../ProviderOnboarding"),
+        .package(path: "../ProviderLLMManager"),
+        .package(path: "../KitLLM"),
     ],
     targets: [
         .target(
@@ -17,6 +19,8 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
+                .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
+                .product(name: "KitLLM", package: "KitLLM"),
             ]
         ),
         .testTarget(

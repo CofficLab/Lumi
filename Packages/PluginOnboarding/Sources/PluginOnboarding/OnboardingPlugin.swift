@@ -1,4 +1,6 @@
 import KernelCore
+import KitLLM
+import ProviderLLMManager
 import ProviderOnboarding
 import SwiftUI
 
@@ -26,7 +28,9 @@ public final class OnboardingPlugin: SuperPlugin {
             OnboardingPageItem(id: "onboarding-welcome") { WelcomePage() }
         )
         kernel.resolveProvider((any OnboardingProviding).self)?.register(
-            OnboardingPageItem(id: "onboarding-ai-setup") { AISetupPage() }
+            OnboardingPageItem(id: "onboarding-ai-setup") {
+                AISetupPage(manager: kernel.resolveProvider((any LLMManaging).self))
+            }
         )
     }
 
@@ -73,25 +77,87 @@ private struct WelcomePage: View {
 }
 
 private struct AISetupPage: View {
+    let manager: (any LLMManaging)?
+    @State private var selectedProviderID = ""
+    @State private var apiKey = ""
+    @State private var didSave = false
+
+    private var providers: [any SuperLLMProvider] { manager?.allProviders() ?? [] }
+
+    private var selectedProvider: (any SuperLLMProvider)? {
+        manager?.provider(id: selectedProviderID)
+    }
+
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(alignment: .leading, spacing: 20) {
             Image(systemName: "brain.head.profile")
                 .font(.system(size: 54))
                 .foregroundStyle(.tint)
+                .frame(maxWidth: .infinity)
             Text("Set up your AI provider").font(.title.weight(.bold))
             Text("Add a provider and choose a model in Settings. You can return here at any time from General Settings.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
-            Button("Open Settings") {
-                NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
+
+            if providers.isEmpty {
+                ContentUnavailableView(
+                    "No providers available",
+                    systemImage: "network.slash",
+                    description: Text("You can configure a provider later in Settings.")
+                )
+            } else {
+                Picker("Provider", selection: $selectedProviderID) {
+                    ForEach(providers, id: \.providerID) { provider in
+                        Text(provider.providerInfo.displayName).tag(provider.providerID)
+                    }
+                }
+
+                if let provider = selectedProvider {
+                    Text(provider.providerInfo.description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    if provider.providerInfo.isLocal {
+                        Label("This local provider does not require an API key.", systemImage: "checkmark.circle")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        SecureField("API Key", text: $apiKey)
+                            .textFieldStyle(.roundedBorder)
+                        if let website = provider.providerInfo.websiteURL {
+                            Link("Get a key", destination: website)
+                        }
+                    }
+
+                    Button(provider.providerInfo.isLocal ? "Use Provider" : "Save API Key") {
+                        provider.setApiKey(apiKey)
+                        manager?.select(providerID: provider.providerID, model: nil)
+                        apiKey = provider.getApiKey()
+                        didSave = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!provider.providerInfo.isLocal && apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                    if didSave {
+                        Label("Saved", systemImage: "checkmark.circle.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(.green)
+                    }
+                }
             }
-            .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: 460)
         .padding(.vertical, 46)
+        .onAppear { synchronizeSelection() }
+        .onChange(of: selectedProviderID) { _, _ in
+            apiKey = selectedProvider?.getApiKey() ?? ""
+            didSave = selectedProvider?.hasApiKey() ?? false
+        }
     }
-}
 
-private extension Notification.Name {
-    static let lumiOpenSettings = Notification.Name("lumi.openSettings")
+    private func synchronizeSelection() {
+        guard selectedProviderID.isEmpty else { return }
+        selectedProviderID = manager?.selectedProviderID ?? providers.first?.providerID ?? ""
+        apiKey = selectedProvider?.getApiKey() ?? ""
+        didSave = selectedProvider?.hasApiKey() ?? false
+    }
 }
