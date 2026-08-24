@@ -5,10 +5,11 @@ import Testing
 
 @MainActor
 @Test func pluginMetadataIsStable() {
-    #expect(ClipboardManagerPlugin().id == "ClipboardManager")
-    #expect(ClipboardManagerPlugin.navigationId == "clipboard_manager")
-    #expect(ClipboardManagerPlugin.name.isEmpty == false)
-    #expect(ClipboardManagerPlugin().category == .general)
+    let plugin = ClipboardManagerPlugin()
+
+    #expect(plugin.id == "com.coffic.lumi.plugin.clipboard-manager")
+    #expect(plugin.name.isEmpty == false)
+    #expect(plugin.policy == .optIn)
 }
 
 @MainActor
@@ -62,7 +63,7 @@ import Testing
 }
 
 @MainActor
-@Test func monitorPrefersFileURLsOverStringRepresentations() throws {
+@Test func monitorPrefersFileURLsOverStringRepresentations() async throws {
     let fileURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("clipboard-file-\(UUID().uuidString).txt")
     try "file contents".write(to: fileURL, atomically: true, encoding: .utf8)
@@ -73,7 +74,7 @@ import Testing
     pasteboard.writeObjects([fileURL as NSURL])
     pasteboard.setString(fileURL.path, forType: .string)
 
-    let items = ClipboardMonitor.items(from: pasteboard, appName: "TestApp")
+    let items = await ClipboardMonitor.itemsAsync(from: pasteboard, appName: "TestApp")
 
     #expect(items.count == 1)
     #expect(items.first?.type == .file)
@@ -81,7 +82,7 @@ import Testing
 }
 
 @MainActor
-@Test func monitorPrefersImageOverFallbackString() throws {
+@Test func monitorPrefersImageOverFallbackString() async throws {
     let imageDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent("clipboard-images-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: imageDirectory, withIntermediateDirectories: true)
@@ -92,7 +93,7 @@ import Testing
     pasteboard.writeObjects([makeTestImage()])
     pasteboard.setString("fallback text", forType: .string)
 
-    let items = ClipboardMonitor.items(
+    let items = await ClipboardMonitor.itemsAsync(
         from: pasteboard,
         appName: "TestApp",
         imageDirectory: imageDirectory
@@ -104,7 +105,7 @@ import Testing
 }
 
 @MainActor
-@Test func monitorTreatsFileURLStringsAsFiles() throws {
+@Test func monitorTreatsFileURLStringsAsFiles() async throws {
     let firstURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("clipboard-url-\(UUID().uuidString).txt")
     let secondURL = FileManager.default.temporaryDirectory
@@ -120,14 +121,14 @@ import Testing
     pasteboard.clearContents()
     pasteboard.setString("\(firstURL.absoluteString)\n\(secondURL.path)", forType: .string)
 
-    let items = ClipboardMonitor.items(from: pasteboard, appName: "TestApp")
+    let items = await ClipboardMonitor.itemsAsync(from: pasteboard, appName: "TestApp")
 
     #expect(items.map(\.type) == [.file, .file])
     #expect(items.map(\.content) == [firstURL.path, secondURL.path])
 }
 
 @MainActor
-@Test func monitorTreatsUnescapedFileURLStringsAsFiles() throws {
+@Test func monitorTreatsUnescapedFileURLStringsAsFiles() async throws {
     let fileURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("clipboard url \(UUID().uuidString).txt")
     try "file".write(to: fileURL, atomically: true, encoding: .utf8)
@@ -137,14 +138,14 @@ import Testing
     pasteboard.clearContents()
     pasteboard.setString("file://\(fileURL.path)", forType: .string)
 
-    let items = ClipboardMonitor.items(from: pasteboard, appName: "TestApp")
+    let items = await ClipboardMonitor.itemsAsync(from: pasteboard, appName: "TestApp")
 
     #expect(items.map(\.type) == [.file])
     #expect(items.map(\.content) == [fileURL.path])
 }
 
 @MainActor
-@Test func monitorKeepsMixedPathTextAsText() throws {
+@Test func monitorKeepsMixedPathTextAsText() async throws {
     let fileURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("clipboard-mixed-\(UUID().uuidString).txt")
     try "file".write(to: fileURL, atomically: true, encoding: .utf8)
@@ -155,7 +156,7 @@ import Testing
     pasteboard.clearContents()
     pasteboard.setString(text, forType: .string)
 
-    let items = ClipboardMonitor.items(from: pasteboard, appName: "TestApp")
+    let items = await ClipboardMonitor.itemsAsync(from: pasteboard, appName: "TestApp")
 
     #expect(items.count == 1)
     #expect(items.first?.type == .text)
