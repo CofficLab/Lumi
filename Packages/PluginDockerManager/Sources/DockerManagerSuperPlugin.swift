@@ -5,6 +5,12 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderToolbar
 import SwiftUI
+import os
+
+enum DockerManagerPlugin {
+    nonisolated static let verbose = false
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "DockerManagerPlugin")
+}
 
 @MainActor
 public final class DockerManagerSuperPlugin: SuperPlugin {
