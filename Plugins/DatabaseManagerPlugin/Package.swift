@@ -16,6 +16,11 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/EditorContracts"),
+        .package(path: "../../Packages/EditorService"),
+        .package(path: "../../Packages/KernelCore"),
+        .package(path: "../../Packages/ProviderContentView"),
+        .package(path: "../../Packages/ProviderExternalFile"),
+        .package(path: "../../Packages/ProviderToolbar"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -32,6 +37,11 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "EditorContracts", package: "EditorContracts"),
+                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderContentView", package: "ProviderContentView"),
+                .product(name: "ProviderExternalFile", package: "ProviderExternalFile"),
+                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 "TreeSitterSQL",
@@ -59,7 +69,14 @@ let package = Package(
         ),
         .testTarget(
             name: "DatabaseManagerPluginTests",
-            dependencies: ["DatabaseManagerPlugin"],
+            dependencies: [
+                "DatabaseManagerPlugin",
+                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderContentView", package: "ProviderContentView"),
+                .product(name: "ProviderExternalFile", package: "ProviderExternalFile"),
+                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
+            ],
             path: "Tests"
         )
     ]
