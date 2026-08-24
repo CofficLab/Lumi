@@ -14,7 +14,6 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../LLMKit"),
         .package(url: "https://github.com/nookery/LibGit2Swift", .branch("main")),
         .package(path: "../KernelCore"),
         .package(path: "../EditorContracts"),
@@ -22,7 +21,6 @@ let package = Package(
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../LocalizationKit"),        .package(path: "../LumiUI"),
-        .package(url: "https://github.com/nookery/MagicDiffView", .branch("main")),
         .package(path: "../ShellKit"),
         .package(path: "../SuperLogKit"),
     ],
@@ -30,7 +28,6 @@ let package = Package(
         .target(
             name: "GitPlugin",
             dependencies: [
-                .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LibGit2Swift", package: "Libgit2swift"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "EditorContracts", package: "EditorContracts"),
@@ -38,7 +35,6 @@ let package = Package(
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "MagicDiffView", package: "MagicDiffView"),
                 .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

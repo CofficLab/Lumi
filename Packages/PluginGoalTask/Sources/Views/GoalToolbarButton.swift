@@ -1,5 +1,4 @@
 import LocalizationKit
-import KernelLumi
 import LumiUI
 import SwiftUI
 

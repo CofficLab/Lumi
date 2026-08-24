@@ -1,4 +1,3 @@
-import KernelLumi
 import SuperLogKit
 import SwiftUI
 
@@ -60,10 +59,6 @@ public struct SidebarView: View {
                         .frame(height: 1)
                 }
             }
-        }
-        .onLumiSelectedConversationDidChange { uuid in
-            viewModel.updateCurrentConversationID(uuid)
-            Task { await viewModel.refresh() }
         }
         .onDisappear {
             viewModel.removeObserver()

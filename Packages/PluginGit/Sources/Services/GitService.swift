@@ -1,9 +1,9 @@
 import Foundation
 import SuperLogKit
 import LibGit2Swift
-import KernelLumi
 import os
 import SwiftUI
+import os
 
 /// Git 服务
 ///
@@ -17,6 +17,7 @@ import SwiftUI
 /// 这是因为 libgit2 的 `git_repository` 对象不是线程安全的，
 /// 并发打开同一仓库或并发读取 index 可能导致 C 层内存错误。
 public final class GitService: @unchecked Sendable, SuperLog {
+    nonisolated private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.git")
     public nonisolated static let verbose: Bool = false
     public nonisolated static let emoji = "🌿"
     public static let shared = GitService()
@@ -279,13 +280,13 @@ public final class GitService: @unchecked Sendable, SuperLog {
     /// 使用 LibGit2Swift 原生实现，参考 GitOK 的 Project.getUnPushedCommits()
     public func getUnpushedCommitHashes(path: String?) -> [String] {
         let repoPath = Self.resolvePath(path)
-        return GitAccessCoordinator.queue.sync {
+        return GitAccessCoordinator.performSync {
             do {
                 let unpushedCommits = try LibGit2.getUnPushedCommits(at: repoPath, verbose: true)
                 return unpushedCommits.map { $0.hash }
             } catch {
                 if Self.verbose {
-                    GitPlugin.logger.error("\(Self.t)❌ 获取未推送 commit 失败: \(error.localizedDescription)")
+                    Self.logger.error("\(Self.t)❌ 获取未推送 commit 失败: \(error.localizedDescription)")
                 }
                 return []
             }
