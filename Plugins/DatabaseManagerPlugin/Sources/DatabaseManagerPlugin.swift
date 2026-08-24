@@ -33,8 +33,8 @@ public final class DatabaseManagerPlugin: LumiPlugin, SuperLog {
     private let sharedViewModel = DatabaseViewModel()
 
     public func onBoot(kernel: KernelLumi) async throws {
-        // 记录内核引用，供嵌入式编辑器解析 EditorEmbeddedEditorProviding（§17.2）。
-        EmbeddedEditorServiceLocator.kernel = kernel
+        // 注入嵌入式编辑器能力；V2 宿主复用同一中立契约。
+        EmbeddedEditorServiceLocator.provider = kernel.resolveService(EditorEmbeddedEditorProviding.self)
     }
 
     public func onReady(kernel: KernelLumi) async throws {}

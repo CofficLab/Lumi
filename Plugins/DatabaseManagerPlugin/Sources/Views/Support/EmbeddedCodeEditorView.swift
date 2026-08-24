@@ -1,14 +1,13 @@
 import AppKit
-import KernelLumi
+import EditorContracts
 import SwiftUI
 
 /// 内核引用持有者（§17.2）。
 ///
-/// `DatabaseManagerPlugin.onBoot` 注入内核实例，
-/// 供 `EmbeddedCodeEditorView` 解析 `EditorEmbeddedEditorProviding`。
+/// 宿主在启动时注入编辑器能力；旧、新内核均可提供同一契约。
 @MainActor
 enum EmbeddedEditorServiceLocator {
-    static var kernel: KernelLumi?
+    static var provider: (any EditorEmbeddedEditorProviding)?
 }
 
 /// 嵌入式代码/SQL 编辑器（§17.2）。
@@ -26,7 +25,7 @@ struct EmbeddedCodeEditorView: View {
     }
 
     var body: some View {
-        if let provider = EmbeddedEditorServiceLocator.kernel?.resolveService(EditorEmbeddedEditorProviding.self) {
+        if let provider = EmbeddedEditorServiceLocator.provider {
             provider.makeEmbeddedEditorView(text: $text, options: options)
         } else {
             fallbackEditor
