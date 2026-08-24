@@ -2,6 +2,8 @@ import AppKit
 import ApplicationServices
 import Combine
 import KernelLumi
+import KitLLM
+import ProviderLLMManager
 import LumiUI
 import SwiftUI
 
@@ -176,6 +178,7 @@ final class TextActionMenuController {
 
     private var window: NSPanel?
     private weak var kernel: KernelLumi?
+    private var translationProvider: (any LLMManaging)?
     private var currentText = ""
     private var currentAnchor = CGPoint.zero
     private var translationState: TranslationState = .idle
@@ -189,6 +192,12 @@ final class TextActionMenuController {
 
     func configure(kernel: KernelLumi) {
         self.kernel = kernel
+        translationProvider = nil
+    }
+
+    func configure(translationProvider: any LLMManaging) {
+        kernel = nil
+        self.translationProvider = translationProvider
     }
 
     func show(text: String, at point: CGPoint) {
@@ -250,20 +259,22 @@ final class TextActionMenuController {
 
         translationState = .loading
         render()
-        guard let kernel, let providerManager = kernel.llmProvider else {
-            translationState = .failure("No LLM provider is configured.")
-            render()
-            return
-        }
-
-        let request = TextAction.translationRequest(for: currentText)
         Task { @MainActor [weak self] in
             do {
-                let result = try await providerManager.generateText(
-                    request,
-                    providerID: providerManager.selectedProviderID,
-                    model: providerManager.selectedModel
-                )
+                let result: String
+                if let providerManager = self?.translationProvider {
+                    result = try await providerManager.complete(
+                        TextAction.v2TranslationRequest(for: self?.currentText ?? "")
+                    ).content
+                } else if let providerManager = self?.kernel?.llmProvider {
+                    result = try await providerManager.generateText(
+                        TextAction.translationRequest(for: self?.currentText ?? ""),
+                        providerID: providerManager.selectedProviderID,
+                        model: providerManager.selectedModel
+                    )
+                } else {
+                    throw TextActionTranslationError.noProvider
+                }
                 guard let self else { return }
                 let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
                 self.translationState = trimmed.isEmpty ? .failure("The LLM returned an empty translation.") : .result(trimmed)
@@ -278,6 +289,11 @@ final class TextActionMenuController {
     func hide() {
         window?.orderOut(nil)
     }
+}
+
+private enum TextActionTranslationError: LocalizedError {
+    case noProvider
+    var errorDescription: String? { "No LLM provider is configured." }
 }
 
 struct TextActionMenuView: View {

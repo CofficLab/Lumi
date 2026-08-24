@@ -10,18 +10,28 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/KernelLumi"),
+        .package(path: "../../Packages/KernelCore"),
+        .package(path: "../../Packages/KitLLM"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LocalizationKit"),
-        .package(path: "../../Packages/SuperLogKit")
+        .package(path: "../../Packages/SuperLogKit"),
+        .package(path: "../../Packages/ProviderDocsView"),
+        .package(path: "../../Packages/ProviderLLMManager"),
+        .package(path: "../../Packages/ProviderSettingView")
     ],
     targets: [
         .target(
             name: "TextActionsPlugin",
             dependencies: [
                 .product(name: "KernelLumi", package: "KernelLumi"),
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
-                .product(name: "SuperLogKit", package: "SuperLogKit")
+                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
+                .product(name: "ProviderSettingView", package: "ProviderSettingView")
             ],
             path: "Sources",
             resources: [.process("../Resources/Localizable.xcstrings")]

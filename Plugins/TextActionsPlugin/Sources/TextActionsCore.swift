@@ -1,5 +1,6 @@
 import AppKit
 import KernelLumi
+import KitLLM
 
 enum TextSelectionReadPolicy {
     static let initialDelay: Duration = .milliseconds(60)
@@ -74,6 +75,13 @@ enum TextAction: CaseIterable, Identifiable {
                 content: text
             )
         ], model: "", maxTokens: 2_000)
+    }
+
+    static func v2TranslationRequest(for text: String) -> LLMRequest {
+        LLMRequest(messages: [
+            LLMMessage(role: .system, content: "You are a concise translation assistant. Translate the user's selected text into Simplified Chinese. Preserve meaning, tone, formatting, and line breaks. Return only the translation without explanations."),
+            LLMMessage(role: .user, content: text),
+        ])
     }
 
     func perform(with text: String) {

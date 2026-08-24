@@ -5490,7 +5490,7 @@
    "order": 275,
    "policy": "optin",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "TextActionsPlugin",
    "wave": "P7",
    "owners": [],
    "dependencies": [
@@ -5499,9 +5499,17 @@
     "LumiUI",
     "SuperLogKit"
    ],
-   "providersConsumed": [],
+   "providersConsumed": [
+    "LLMManaging",
+    "SettingViewProviding",
+    "DocsViewProviding"
+   ],
    "providersPublished": [],
-   "contributions": [],
+   "contributions": [
+    "global selected-text menu",
+    "settings entry",
+    "about and manual docs"
+   ],
    "storage": [],
    "userDefaultsKeys": [],
    "keychainKeys": [],
@@ -5509,13 +5517,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "migrated",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Plugins/TextActionsPlugin",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "TextActionsSuperPlugin preserves TextActions.enabled, accessibility monitoring, menu actions, selected-provider translation, settings, and documentation.",
     "performance": null
    }
   },

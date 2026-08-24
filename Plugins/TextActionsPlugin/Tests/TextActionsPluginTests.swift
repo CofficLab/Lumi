@@ -35,6 +35,23 @@ func translationRequestUsesSelectedTextAndTranslationInstruction() {
 }
 
 @Test
+func v2TranslationRequestPreservesPromptAndText() {
+    let request = TextAction.v2TranslationRequest(for: "Hello world")
+    #expect(request.messages.count == 2)
+    #expect(request.messages[0].content.contains("Simplified Chinese"))
+    #expect(request.messages[1].content == "Hello world")
+}
+
+@MainActor
+@Test
+func v2PluginPreservesIdentityAndOptInPolicy() {
+    let plugin = TextActionsSuperPlugin()
+    #expect(plugin.id == "com.coffic.lumi.plugin.text-actions")
+    #expect(plugin.order == 275)
+    #expect(plugin.metadata.policy == .disabledByDefault)
+}
+
+@Test
 func copyActionWritesToPasteboard() {
     TextAction.copy.perform(with: "selected text")
     #expect(NSPasteboard.general.string(forType: .string) == "selected text")
