@@ -37,5 +37,14 @@ let package = Package(
             ],
             path: "Sources/PluginToolManager"
         ),
+        .testTarget(
+            name: "PluginToolManagerTests",
+            dependencies: [
+                "PluginToolManager",
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+            ],
+            path: "Tests/PluginToolManagerTests"
+        ),
     ]
 )

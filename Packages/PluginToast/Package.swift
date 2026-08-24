@@ -21,6 +21,14 @@ let package = Package(
             ],
             path: "Sources/PluginToast"
         ),
-        .testTarget(name: "PluginToastTests", dependencies: ["PluginToast"]),
+        .testTarget(
+            name: "PluginToastTests",
+            dependencies: [
+                "PluginToast",
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderToast", package: "ProviderToast"),
+            ],
+            path: "Tests/PluginToastTests"
+        ),
     ]
 )
