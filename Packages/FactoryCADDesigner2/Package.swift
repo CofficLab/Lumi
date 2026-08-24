@@ -8,14 +8,13 @@ let package = Package(
     dependencies: [
         .package(path: "../FactoryLumi2"),
         .package(path: "../KernelCore"),
-        .package(path: "../PluginCADDesigner"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderToolManager"),
     ],
     targets: [
         .target(
             name: "FactoryCADDesigner2",
-            dependencies: ["FactoryLumi2", "KernelCore", "PluginCADDesigner"]
+            dependencies: ["FactoryLumi2", "KernelCore"]
         ),
         .testTarget(
             name: "FactoryCADDesigner2Tests",
