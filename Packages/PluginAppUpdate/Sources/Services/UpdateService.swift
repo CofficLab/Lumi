@@ -1,5 +1,5 @@
 import AppKit
-import KernelLumi
+import ProviderNetwork
 import Sparkle
 import SuperLogKit
 import os
@@ -73,7 +73,7 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     public func configure(network: any NetworkProviding) {
         feedURLDetector = FeedURLDetector(
             initialURL: UpdateFeedURLProvider.primary,
-            reachabilityChecker: KernelNetworkReachabilityChecker(network: network)
+            reachabilityChecker: ProviderNetworkReachabilityChecker(network: network)
         )
     }
 
@@ -82,7 +82,7 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     /// The original implementation deferred initialization to avoid blocking the
     /// main thread at launch. This method is idempotent.
     public func ensureUpdaterInitialized() {
-        guard LumiRuntimeEnvironment.current.allowsAppUpdates else { return }
+        guard AppUpdateRuntimeEnvironment.current.allowsAppUpdates else { return }
         guard updaterController == nil else { return }
 
         let controller = SPUStandardUpdaterController(
@@ -105,7 +105,7 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     /// probe runs on a detached background task; only the Sparkle controller
     /// initialization hops back to the main actor.
     public func setupFeedURLIfNeeded() {
-        guard LumiRuntimeEnvironment.current.allowsAppUpdates else { return }
+        guard AppUpdateRuntimeEnvironment.current.allowsAppUpdates else { return }
         guard let feedURLDetector else { return }
         Task.detached(priority: .utility) { [feedURLDetector] in
             await feedURLDetector.detectIfNeeded()
@@ -123,7 +123,7 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
 
     /// Trigger an immediate update check.
     public func checkForUpdates() {
-        guard LumiRuntimeEnvironment.current.allowsAppUpdates else { return }
+        guard AppUpdateRuntimeEnvironment.current.allowsAppUpdates else { return }
         ensureUpdaterInitialized()
         updaterController?.checkForUpdates(nil)
     }

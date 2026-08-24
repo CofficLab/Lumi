@@ -46,8 +46,7 @@ struct LumiMinimalApp: App {
                 ?? AnyView(BootstrapFailureView(message: "Failed to assemble settings view"))
             // Lumi 直营分发继续启用 Sparkle。触发单例初始化以安装更新通知观察者，
             // 并在启动时完成 feed URL 探测；菜单命令直接复用同一服务。
-            _ = UpdateService.shared
-            UpdateService.shared.setupFeedURLIfNeeded()
+            AppUpdateBootstrap.start(kernel: assembledKernel)
         } catch {
             _kernel = StateObject(wrappedValue: KernelCoreContainer())
             bootstrapErrorDescription = error.localizedDescription

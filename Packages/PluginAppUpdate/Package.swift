@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "AppUpdatePlugin",
+    name: "PluginAppUpdate",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
@@ -14,7 +14,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
+        .package(path: "../KernelCore"),
+        .package(path: "../ProviderNetwork"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -24,7 +25,8 @@ let package = Package(
         .target(
             name: "AppUpdatePlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderNetwork", package: "ProviderNetwork"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
@@ -38,7 +40,7 @@ let package = Package(
         .testTarget(
             name: "AppUpdatePluginTests",
             dependencies: ["AppUpdatePlugin"],
-            path: "Tests"
+            path: "Tests/AppUpdatePluginTests"
         )
     ]
 )

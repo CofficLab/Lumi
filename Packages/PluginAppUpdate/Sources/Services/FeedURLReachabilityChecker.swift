@@ -1,5 +1,5 @@
 import Foundation
-import KernelLumi
+import ProviderNetwork
 
 /// Probe whether a single URL is reachable.
 ///
@@ -12,8 +12,8 @@ public protocol FeedURLReachabilityChecker: Sendable {
     func isReachable(_ url: URL) async -> Bool
 }
 
-/// Kernel-backed reachability implementation.
-public struct KernelNetworkReachabilityChecker: FeedURLReachabilityChecker {
+/// Provider-backed reachability implementation.
+public struct ProviderNetworkReachabilityChecker: FeedURLReachabilityChecker {
 
     /// Request timeout in seconds. The original `UpdateService` used `5`.
     public let timeout: TimeInterval
