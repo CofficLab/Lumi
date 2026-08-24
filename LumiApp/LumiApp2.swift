@@ -5,6 +5,8 @@ import KernelCore
 import ProviderLogo
 import ProviderMenuBar
 import ProviderOnboarding
+import ProviderToast
+import PluginToast
 import PluginToolbarSettings
 import SwiftUI
 
@@ -62,7 +64,10 @@ struct LumiMinimalApp: App {
             // 主窗口 / 设置窗口 / 菜单栏共享同一内核（kernel），
             // 主题切换后各窗口即时同步。
             // 注意：`.onReceive` 需应用到整个 `??` 表达式（否则会误绑到 fallback 分支）。
-            OnboardingHost(content: mainView, kernel: kernel)
+            ToastHost(
+                content: OnboardingHost(content: mainView, kernel: kernel),
+                kernel: kernel
+            )
                 // 与旧版 Lumi（WindowMain.configureForLumiMainChrome）一致：
                 // 窗口内容延伸到标题栏区域（fullSizeContentView），
                 // 工具栏从窗口顶部开始渲染，红绿灯悬浮在工具栏上。
@@ -133,6 +138,20 @@ private struct BootstrapFailureView: View {
         )
         .textSelection(.enabled)
         .padding(24)
+    }
+}
+
+/// 挂载 V2 ToastCenter，使插件和服务发出的提示真正呈现在主窗口上。
+private struct ToastHost<Content: View>: View {
+    let content: Content
+    @ObservedObject var kernel: KernelCoreContainer
+
+    var body: some View {
+        if let center = kernel.resolveProvider((any ToastProviding).self) as? ToastCenter {
+            ToastOverlay(content: content, center: center)
+        } else {
+            content
+        }
     }
 }
 
