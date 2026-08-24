@@ -76,6 +76,7 @@ import PluginResumeDesigner
 import PluginSettingGeneral
 import PluginSettingView
 import PluginSkill
+import PluginStateMonitor
 import PluginThemePack
 import PluginToolManager
 import PluginToolbarSettings
@@ -149,6 +150,7 @@ public struct DefaultPluginFactory: PluginFactory {
             FileLogPlugin(),
             ShowImagePlugin(),
             SkillPlugin(),
+            StateMonitorPlugin(),
             MemoryPlugin(),
             ModelSelectorPlugin(),
             MessageListPlugin(),
