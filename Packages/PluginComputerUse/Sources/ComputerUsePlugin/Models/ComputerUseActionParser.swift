@@ -1,10 +1,9 @@
 import CoreGraphics
 import Foundation
-import KernelLumi
 
 enum ComputerUseActionParser {
-    static func parse(_ value: LumiJSONValue?) throws -> [ComputerUseAction] {
-        guard case .array(let rawActions) = value else {
+    static func parse(_ value: Any?) throws -> [ComputerUseAction] {
+        guard let rawActions = value as? [Any] else {
             throw ComputerUseError.invalidArguments("actions must be an array")
         }
         guard !rawActions.isEmpty else {
@@ -16,9 +15,9 @@ enum ComputerUseActionParser {
         return try rawActions.map(parseAction)
     }
 
-    private static func parseAction(_ value: LumiJSONValue) throws -> ComputerUseAction {
-        guard case .object(let object) = value,
-              let type = object.string("type")?.lowercased()
+    private static func parseAction(_ value: Any) throws -> ComputerUseAction {
+        guard let object = value as? [String: Any],
+              let type = (object["type"] as? String)?.lowercased()
         else {
             throw ComputerUseError.invalidArguments("every action requires a type")
         }
@@ -28,17 +27,17 @@ enum ComputerUseActionParser {
             return .screenshot
         case "click", "double_click":
             let point = try coordinate(in: object)
-            let button = ComputerMouseButton(rawValue: object.string("button") ?? "left") ?? .left
+            let button = ComputerMouseButton(rawValue: object["button"] as? String ?? "left") ?? .left
             return .click(x: point.x, y: point.y, button: button, count: type == "double_click" ? 2 : 1)
         case "move":
             let point = try coordinate(in: object)
             return .move(x: point.x, y: point.y)
         case "drag":
-            guard case .array(let rawPath) = object["path"] else {
+            guard let rawPath = object["path"] as? [Any] else {
                 throw ComputerUseError.invalidArguments("drag requires path")
             }
             let path = try rawPath.map { value -> CGPoint in
-                guard case .object(let point) = value else {
+                guard let point = value as? [String: Any] else {
                     throw ComputerUseError.invalidArguments("drag path entries must contain x and y")
                 }
                 let coordinate = try coordinate(in: point)
@@ -53,33 +52,40 @@ enum ComputerUseActionParser {
             return .scroll(
                 x: point.x,
                 y: point.y,
-                deltaX: object.double("delta_x") ?? object.double("scroll_x") ?? 0,
-                deltaY: object.double("delta_y") ?? object.double("scroll_y") ?? 0
+                deltaX: number(object["delta_x"] ?? object["scroll_x"]) ?? 0,
+                deltaY: number(object["delta_y"] ?? object["scroll_y"]) ?? 0
             )
         case "type":
-            guard let text = object.string("text"), text.utf8.count <= 20_000 else {
+            guard let text = object["text"] as? String, text.utf8.count <= 20_000 else {
                 throw ComputerUseError.invalidArguments("type requires text no larger than 20 KB")
             }
             return .type(text)
         case "keypress":
-            guard let keys = object.stringArray("keys"), !keys.isEmpty, keys.count <= 8 else {
+            guard let keys = object["keys"] as? [String], !keys.isEmpty, keys.count <= 8 else {
                 throw ComputerUseError.invalidArguments("keypress requires 1...8 keys")
             }
             return .keypress(keys)
         case "wait":
-            let milliseconds = object.int("milliseconds") ?? 1_000
+            let milliseconds = Int(number(object["milliseconds"]) ?? 1_000)
             return .wait(milliseconds: min(max(milliseconds, 0), 10_000))
         default:
             throw ComputerUseError.invalidArguments("unsupported action type: \(type)")
         }
     }
 
-    private static func coordinate(in object: [String: LumiJSONValue]) throws -> (x: Double, y: Double) {
-        guard let x = object.double("x"), let y = object.double("y"),
+    private static func coordinate(in object: [String: Any]) throws -> (x: Double, y: Double) {
+        guard let x = number(object["x"]), let y = number(object["y"]),
               x.isFinite, y.isFinite, x >= 0, y >= 0
         else {
             throw ComputerUseError.invalidArguments("action requires non-negative finite x and y")
         }
         return (x, y)
+    }
+
+    private static func number(_ value: Any?) -> Double? {
+        if let value = value as? Double { return value }
+        if let value = value as? Int { return Double(value) }
+        if let value = value as? NSNumber { return value.doubleValue }
+        return nil
     }
 }

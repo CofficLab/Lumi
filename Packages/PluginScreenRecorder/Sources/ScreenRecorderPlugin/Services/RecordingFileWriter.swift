@@ -29,8 +29,8 @@ public enum RecordingFileWriter {
         try Task.checkCancellation()
 
         try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
-        let baseName = filename?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
-            ?? defaultFilename()
+        let trimmed = filename?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let baseName = (trimmed?.isEmpty == false ? trimmed : nil) ?? defaultFilename()
         let destination = uniqueURL(directory: outputDirectory, baseName: baseName, extension: "mp4")
 
         // 同卷可直接移动；跨卷 moveItem 会抛错，回退为拷贝 + 删除。
@@ -91,6 +91,6 @@ public enum RecordingFileWriter {
     private static func sanitize(_ name: String) -> String {
         let invalid = CharacterSet(charactersIn: "/:\\?*\"<>|")
         let cleaned = name.components(separatedBy: invalid).joined(separator: "-")
-        return cleaned.nilIfEmpty ?? "recording"
+        return cleaned.isEmpty ? "recording" : cleaned
     }
 }

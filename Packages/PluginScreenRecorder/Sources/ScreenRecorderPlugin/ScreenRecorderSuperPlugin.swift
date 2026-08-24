@@ -164,7 +164,9 @@ public struct ListRecordableAppsV2Tool: SuperAgentTool {
 
 private enum ScreenRecorderV2Support {
     static func string(_ arguments: [String: ToolArgument], _ key: String) -> String? {
-        (arguments[key]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        guard let value = arguments[key]?.value as? String else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     static func integer(_ arguments: [String: ToolArgument], _ key: String) -> Int? {

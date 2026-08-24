@@ -1,6 +1,5 @@
 import AppKit
 import Foundation
-import KernelLumi
 import os
 import ScreenCaptureKit
 

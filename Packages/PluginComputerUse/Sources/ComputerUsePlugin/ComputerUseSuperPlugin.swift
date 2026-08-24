@@ -143,22 +143,7 @@ public struct ComputerActV2Tool: SuperAgentTool {
 
 private enum ComputerUseV2Support {
     static func actions(from value: Any?) throws -> [ComputerUseAction] {
-        try ComputerUseActionParser.parse(jsonValue(from: value))
-    }
-
-    static func jsonValue(from value: Any?) -> LumiJSONValue? {
-        switch value {
-        case nil: nil
-        case let value as LumiJSONValue: value
-        case let value as String: .string(value)
-        case let value as Bool: .bool(value)
-        case let value as Int: .int(value)
-        case let value as Double: .double(value)
-        case let value as NSNumber: .double(value.doubleValue)
-        case let value as [String: Any]: .object(value.compactMapValues { jsonValue(from: $0) })
-        case let value as [Any]: .array(value.compactMap { jsonValue(from: $0) })
-        default: nil
-        }
+        try ComputerUseActionParser.parse(value)
     }
 
     static func imageAttachment(from attachment: UserImageAttachment) -> ImageAttachment {

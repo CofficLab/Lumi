@@ -1,5 +1,17 @@
 import Foundation
-import KernelLumi
+
+public struct RecordingActivity: Sendable {
+    public enum State: String, Sendable { case idle, recording, stopping, finished, error }
+    public let state: State
+    public let sessionID: UUID?
+    public let outputPath: String?
+    public let error: String?
+    public let targetDescription: String?
+    public let elapsedSeconds: Int
+    public init(state: State, sessionID: UUID?, targetDescription: String? = nil, elapsedSeconds: Int = 0, outputPath: String? = nil, error: String? = nil) { self.state = state; self.sessionID = sessionID; self.targetDescription = targetDescription; self.elapsedSeconds = elapsedSeconds; self.outputPath = outputPath; self.error = error }
+}
+enum RecordingActivityNotification { static let activityKey = "activity" }
+extension Notification.Name { static let lumiRecordingStateChanged = Notification.Name("com.coffic.lumi.screen-recorder.stateChanged") }
 
 // MARK: - Recording Target
 

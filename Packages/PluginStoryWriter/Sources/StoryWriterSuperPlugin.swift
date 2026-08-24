@@ -25,7 +25,6 @@ public final class StoryWriterSuperPlugin: SuperPlugin {
         StoryWriterStorage.configureV2(directory: directory)
         let viewModel = StoryWriterViewModel(store: StoryStore(pluginDirectory: directory ?? FileManager.default.temporaryDirectory))
         RuntimeBridge.viewModel = viewModel
-        RuntimeBridge.kernel = nil
         RuntimeBridge.conversationInput = kernel.resolveProvider((any ConversationInputProviding).self)
         Task { await viewModel.loadStories() }
 
@@ -57,7 +56,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)
         StoryWriterV2Tool.all.forEach { tools?.remove(id: $0.name) }
-        RuntimeBridge.viewModel = nil; RuntimeBridge.kernel = nil; RuntimeBridge.conversationInput = nil
+        RuntimeBridge.viewModel = nil; RuntimeBridge.conversationInput = nil
         StoryWriterStorage.configureV2(directory: nil)
     }
 }

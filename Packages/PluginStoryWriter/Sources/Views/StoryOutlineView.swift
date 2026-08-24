@@ -238,13 +238,6 @@ struct StoryOutlineView: View {
         let text = "\(story.title) - \(chapter.title)"
         if let conversationInput = RuntimeBridge.conversationInput {
             appendToChatInput(conversationInput, text: text)
-        } else if let conversationInput = RuntimeBridge.kernel?.conversationInput {
-            if conversationInput.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                conversationInput.text = text
-            } else {
-                conversationInput.text = conversationInput.text.trimmingCharacters(in: .whitespacesAndNewlines)
-                    + "\n" + text
-            }
         }
     }
 

@@ -1,4 +1,3 @@
-import KernelLumi
 import SwiftUI
 
 /// Main view for the Story Writer plugin.
