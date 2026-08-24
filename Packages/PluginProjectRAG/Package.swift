@@ -31,7 +31,7 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-                .product(name: "ProjectRAGPlugin", package: "PluginProjectRAGEngine"),
+                .product(name: "PluginProjectRAGEngine", package: "PluginProjectRAGEngine"),
             ]
         ),
         .testTarget(
