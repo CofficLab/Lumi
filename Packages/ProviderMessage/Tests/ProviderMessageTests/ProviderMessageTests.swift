@@ -7,7 +7,7 @@ import Testing
 struct ProviderMessageTests {
     @Test("消息按创建时间返回并支持更新删除")
     func lifecycle() {
-        let manager = DefaultMessageManaging()
+        let manager = DefaultMessageManager()
         let conversationID = UUID()
         let first = Message(conversationID: conversationID, role: .user, content: "hello")
         let second = Message(conversationID: conversationID, role: .assistant, content: "world")
@@ -19,5 +19,31 @@ struct ProviderMessageTests {
         #expect(manager.message(id: first.id, in: conversationID)?.content == "updated")
         manager.deleteMessage(id: second.id, in: conversationID)
         #expect(manager.messageCount(for: conversationID) == 1)
+    }
+
+    @Test("消息与 token 可按自然日跨会话聚合")
+    func dailyAggregates() {
+        let manager = DefaultMessageManager()
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let firstConversation = UUID()
+        let secondConversation = UUID()
+
+        manager.insertMessage(
+            Message(conversationID: firstConversation, role: .user, content: "one", createdAt: yesterday, inputTokenCount: 12),
+            to: firstConversation
+        )
+        manager.insertMessage(
+            Message(conversationID: secondConversation, role: .assistant, content: "two", createdAt: yesterday, outputTokenCount: 8),
+            to: secondConversation
+        )
+        manager.insertMessage(
+            Message(conversationID: firstConversation, role: .assistant, content: "three", createdAt: today, inputTokenCount: 3, outputTokenCount: 5),
+            to: firstConversation
+        )
+
+        #expect(manager.dailyMessageCounts(since: yesterday) == [yesterday: 2, today: 1])
+        #expect(manager.dailyTokenCounts(since: yesterday) == [yesterday: 20, today: 8])
     }
 }

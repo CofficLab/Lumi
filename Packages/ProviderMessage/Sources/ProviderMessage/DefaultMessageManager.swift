@@ -22,6 +22,28 @@ public final class DefaultMessageManager: MessageManaging {
         storage[conversationID]?.count ?? 0
     }
 
+    public func dailyMessageCounts(since: Date) -> [Date: Int] {
+        let calendar = Calendar.current
+        return storage.values
+            .joined()
+            .filter { $0.createdAt >= since }
+            .reduce(into: [:]) { counts, message in
+                counts[calendar.startOfDay(for: message.createdAt), default: 0] += 1
+            }
+    }
+
+    public func dailyTokenCounts(since: Date) -> [Date: Int] {
+        let calendar = Calendar.current
+        return storage.values
+            .joined()
+            .filter { $0.createdAt >= since }
+            .reduce(into: [:]) { counts, message in
+                let tokens = (message.inputTokenCount ?? 0) + (message.outputTokenCount ?? 0)
+                guard tokens > 0 else { return }
+                counts[calendar.startOfDay(for: message.createdAt), default: 0] += tokens
+            }
+    }
+
     public func insertMessage(_ message: Message, to conversationID: UUID) {
         storage[conversationID, default: []].append(message)
     }

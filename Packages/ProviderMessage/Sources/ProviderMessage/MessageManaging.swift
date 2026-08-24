@@ -18,6 +18,13 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
     func message(id: UUID, in conversationID: UUID) -> Message?
     func lastMessage(in conversationID: UUID) -> Message?
     func messageCount(for conversationID: UUID) -> Int
+    /// 返回指定日期（含）以来、按本地日历日聚合的消息数量。
+    ///
+    /// 活动热力图等跨会话统计功能使用此接口；实现必须包含所有会话，
+    /// 并将 key 规范化为 `Calendar.current.startOfDay(for:)`。
+    func dailyMessageCounts(since: Date) -> [Date: Int]
+    /// 返回指定日期（含）以来、按本地日历日聚合的输入和输出 token 总量。
+    func dailyTokenCounts(since: Date) -> [Date: Int]
     func insertMessage(_ message: Message, to conversationID: UUID)
     func updateMessage(id: UUID, in conversationID: UUID, content: String)
     func deleteMessage(id: UUID, in conversationID: UUID)
@@ -57,6 +64,10 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
 }
 
 public extension MessageManaging {
+    func dailyMessageCounts(since: Date) -> [Date: Int] { [:] }
+
+    func dailyTokenCounts(since: Date) -> [Date: Int] { [:] }
+
     func updateToolCallResult(
         _ result: MessageToolResult,
         toolCallID: String,
