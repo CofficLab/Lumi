@@ -11,6 +11,7 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderToast
 import ProviderToolbar
+import ProviderWorkspace
 import Testing
 @testable import FactoryBookletMaker2
 
@@ -26,7 +27,7 @@ struct KernelFactoryTests {
     func makeKernelRegistersAllProviders() throws {
         let kernel = try KernelFactory.makeKernel()
 
-        #expect(kernel.registeredProviderCount == 11)
+        #expect(kernel.registeredProviderCount == 12)
         #expect(kernel.resolveProvider((any StorageProviding).self) != nil)
         #expect(kernel.resolveProvider((any ContentViewProviding).self) != nil)
         #expect(kernel.resolveProvider((any DocsViewProviding).self) != nil)
@@ -38,6 +39,14 @@ struct KernelFactoryTests {
         #expect(kernel.resolveProvider((any ActivityBarProviding).self) != nil)
         #expect(kernel.resolveProvider((any RailViewProviding).self) != nil)
         #expect(kernel.resolveProvider((any SettingViewProviding).self) != nil)
+        let workspace = try #require(kernel.resolveProvider((any WorkspaceProviding).self))
+        #expect(workspace.currentContainer?.id == "com.coffic.lumi.plugin.booklet-maker")
+        #expect(workspace.currentContainer?.railVisibility == .alwaysVisible)
+        #expect(workspace.currentContainer?.chatVisibility == .unsupported)
+        #expect(kernel.resolveProvider((any RailViewProviding).self)?.tabs.map(\.id)
+            == ["booklet-maker.sidebar"])
+        #expect(kernel.resolveProvider((any ToolbarProviding).self)?.toolbarItems.map(\.id)
+            == ["com.coffic.lumi.plugin.booklet-maker.title"])
     }
 
     @Test("makeKernel 每次产出全新容器，互不共享 Provider")
@@ -65,16 +74,25 @@ struct KernelFactoryTests {
         let view = try KernelFactory.makeSettingsView()
         _ = view
     }
+
+    @Test("共享内核可同时组装主窗口与设置窗口")
+    func sharedKernelAssemblesBothViews() throws {
+        let kernel = try KernelFactory.makeKernel()
+        _ = try KernelFactory.makeMainView(kernel: kernel)
+        _ = try KernelFactory.makeSettingsView(kernel: kernel)
+    }
 }
 
-/// 工厂默认实现的测试：DefaultPluginFactory 产出空插件列表。
+/// 工厂默认实现的测试：专用宿主必须装配 BookletMaker 插件。
 @Suite("Default Factories")
 @MainActor
 struct DefaultFactoryTests {
 
-    @Test("DefaultPluginFactory 产出空插件列表")
-    func defaultPluginsEmpty() {
-        #expect(DefaultPluginFactory().makePlugins().isEmpty)
+    @Test("DefaultPluginFactory 产出 BookletMaker 插件")
+    func defaultPluginsIncludeBookletMaker() {
+        let plugins = DefaultPluginFactory().makePlugins()
+        #expect(plugins.map(\.id) == ["com.coffic.lumi.plugin.booklet-maker"])
+        #expect(plugins.first?.metadata.policy == .alwaysOn)
     }
 }
 

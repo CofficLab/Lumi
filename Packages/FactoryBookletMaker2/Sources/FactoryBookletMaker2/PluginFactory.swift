@@ -1,3 +1,4 @@
+import BookletMakerPlugin
 import Foundation
 import KernelCore
 
@@ -18,8 +19,8 @@ public protocol PluginFactory {
 public struct DefaultPluginFactory: PluginFactory {
     public init() {}
 
-    /// 产出默认插件列表（当前为空，等待逐步填充）。
+    /// 产出 BookletMaker 专用宿主的默认插件。
     public func makePlugins() -> [any SuperPlugin] {
-        []
+        [BookletMakerPlugin()]
     }
 }

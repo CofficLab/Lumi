@@ -11,6 +11,7 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderToast
 import ProviderToolbar
+import ProviderWorkspace
 
 /// 产出各种 Provider 实现的工厂协议。
 ///
@@ -51,6 +52,9 @@ public protocol ProviderFactory {
 
     /// 产出 `SettingViewProviding` 实现。
     func makeSettingViewProvider() -> any SettingViewProviding
+
+    /// 产出工作区状态实现（容器、区域可见性与布局持久化）。
+    func makeWorkspaceProvider(storage: any StorageProviding) -> any WorkspaceProviding
 
     /// 装配并注册全部默认 Provider 到内核。
     ///
@@ -122,6 +126,10 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultSettingViewProviding()
     }
 
+    public func makeWorkspaceProvider(storage: any StorageProviding) -> any WorkspaceProviding {
+        DefaultWorkspaceProviding(pluginDirectory: storage.pluginDataDirectory(for: "LayoutKernel"))
+    }
+
     // MARK: - Provider Registration
 
     /// 装配并注册全部默认 Provider。
@@ -140,5 +148,9 @@ public struct DefaultProviderFactory: ProviderFactory {
         try kernel.registerProvider((any ActivityBarProviding).self, makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, makeRailViewProvider())
         try kernel.registerProvider((any SettingViewProviding).self, makeSettingViewProvider())
+        guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
+            throw KernelCoreError.providerNotRegistered(type: (any StorageProviding).self)
+        }
+        try kernel.registerProvider((any WorkspaceProviding).self, makeWorkspaceProvider(storage: storage))
     }
 }

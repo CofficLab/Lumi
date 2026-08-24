@@ -12,6 +12,7 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderToast
 import ProviderToolbar
+import ProviderWorkspace
 import SwiftUI
 
 /// KernelFactory — 内核工厂。
@@ -35,8 +36,8 @@ public enum KernelFactory {
     /// - `RailViewProviding` → `DefaultRailViewProviding`（侧边栏标签 + 内容）
     /// - `SettingViewProviding` → `DefaultSettingViewProviding`（入口 + 详情）
     ///
-    /// 插件启动前通过 `pluginManaging` 过滤：只有用户启用的插件才会被启动，
-    /// 被用户禁用的插件不会注册到内核。
+    /// 插件启动前通过 `pluginManaging` 过滤。BookletMaker 是该专用宿主的
+    /// 必需功能，插件元数据标记为 `.alwaysOn`，不会被过滤掉。
     ///
     /// - Parameter pluginManaging: 插件管理器，用于判断哪些插件应当启动。
     ///   默认使用 `DefaultPluginManager()`（无持久化状态时所有可配置插件按默认策略启动）。
@@ -65,6 +66,11 @@ public enum KernelFactory {
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
     public static func makeMainView() throws -> AnyView {
         let kernel = try makeKernel()
+        return try makeMainView(kernel: kernel)
+    }
+
+    /// 使用既有内核组装主视图，供主窗口与设置窗口共享同一插件与持久化状态。
+    public static func makeMainView(kernel: KernelCoreContainer) throws -> AnyView {
 
         guard let rootView = kernel.resolveProvider((any RootViewProviding).self) else {
             return AnyView(Text("RootViewProviding not registered"))
@@ -82,6 +88,9 @@ public enum KernelFactory {
         if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
             rootView.setContentView(contentView.makeContentView())
         }
+        if let workspace = kernel.resolveProvider((any WorkspaceProviding).self) {
+            rootView.setWorkspaceProvider(workspace)
+        }
 
         return rootView.makeRootView()
     }
@@ -97,6 +106,11 @@ public enum KernelFactory {
     /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
     public static func makeSettingsView() throws -> AnyView {
         let kernel = try makeKernel()
+        return try makeSettingsView(kernel: kernel)
+    }
+
+    /// 使用既有内核组装设置视图，避免设置窗口启动第二份插件状态。
+    public static func makeSettingsView(kernel: KernelCoreContainer) throws -> AnyView {
 
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
             return AnyView(Text("SettingViewProviding not registered"))

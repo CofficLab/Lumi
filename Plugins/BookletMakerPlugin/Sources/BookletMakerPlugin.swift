@@ -1,7 +1,14 @@
 import Foundation
-import KernelLumi
+import KernelCore
 import LumiUI
 import os
+import ProviderActivityBar
+import ProviderContentView
+import ProviderDocsView
+import ProviderRailView
+import ProviderStorage
+import ProviderToolbar
+import ProviderWorkspace
 import SuperLogKit
 import SwiftUI
 
@@ -14,7 +21,7 @@ import SwiftUI
 /// on A4 paper, folded along the centre line, and stapled into a
 /// correctly paginated A5 booklet.
 @MainActor
-public final class BookletMakerPlugin: LumiPlugin, SuperLog {
+public final class BookletMakerPlugin: SuperPlugin, SuperLog {
 
     public nonisolated static let emoji = "📖"
     public nonisolated static let verbose: Bool = false
@@ -30,10 +37,15 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
     /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
     public nonisolated static let railTabID = "booklet-maker.sidebar"
 
-    public var name: String { BookletLocalization.string("PDF Tools") }
     public let order = 880
-    public let policy: LumiPluginPolicy = .optIn
-    public let stage: LumiPluginStage = .beta
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.booklet-maker",
+        name: "PDF Tools",
+        description: "Create booklets and split PDF documents by page range.",
+        category: .editor,
+        stage: .preview,
+        policy: .alwaysOn
+    )
 
     /// 插件级唯一的 BookletMakerViewModel 实例。
     /// 通过 `viewContainers` 和 `panelRailTabItems` 同时注入，
@@ -41,53 +53,94 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
     /// 配置状态，避免"在侧边栏改了设置但内容区没同步"的问题。
     private let sharedViewModel = BookletMakerViewModel()
 
-    public var pluginDescription: String {
-        BookletLocalization.string("Create booklets and split PDF documents by page range.")
-    }
+    public var name: String { BookletLocalization.string("PDF Tools") }
 
     public init() {}
 
     // MARK: - Lifecycle
 
-    public func onBoot(kernel: KernelLumi) async throws {
-        BookletMakerRuntimeBridge.directoryURL = kernel.storage?
+    public func onBoot(kernel: KernelCoreContainer) throws {
+        BookletMakerRuntimeBridge.directoryURL = kernel
+            .resolveProvider((any ProviderStorage.StorageProviding).self)?
             .pluginDataDirectory(for: "BookletMaker")
         if Self.verbose {
             Self.logger.info(
                 "📖 BookletMakerPlugin booted, stagingDir = \(BookletMakerRuntimeBridge.directoryURL?.path ?? "<unavailable>")"
             )
         }
-    }
+        let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let workspace = kernel.resolveProvider((any ProviderWorkspace.WorkspaceProviding).self)
 
-    public func onReady(kernel: KernelLumi) async throws {}
-
-    // MARK: - View Container
-
-    /// Contribute one view container that fills the entire workspace.
-    public func viewContainers(kernel: KernelLumi) -> [ViewContainerItem] {
-        [
-            ViewContainerItem(
+        workspace?.registerContainer(
+            WorkspaceContainer(
                 id: id,
-                title: BookletLocalization.string("PDF Tools"),
+                title: name,
                 systemImage: "doc.on.doc",
+                order: order,
                 railVisibility: .alwaysVisible,
                 chatVisibility: .unsupported,
                 panelHeaderVisibility: .unsupported,
+                panelBodyVisibility: .unsupported,
                 panelBottomVisibility: .unsupported
+            ),
+            ownerPluginID: id
+        )
+        railView?.addTabs([
+            RailTabItem(
+                id: Self.railTabID,
+                groupID: id,
+                title: name,
+                systemImage: "square.grid.2x2",
+                order: order
             ) {
-                BookletMakerMainView(viewModel: self.sharedViewModel)
+                BookletMakerRailView(
+                    viewModel: self.sharedViewModel,
+                    onExportBooklet: { self.presentSavePanel() },
+                    onExportSplit: { self.presentSplitDirectoryPanel() }
+                )
             },
-        ]
-    }
+        ])
 
-    // MARK: - About
+        contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: sharedViewModel)))
+        railView?.activateGroup(id: id)
+        railView?.activateTab(id: Self.railTabID)
+        workspace?.activateContainer(id: id)
 
-    public func pluginAboutView(kernel: KernelLumi) -> AnyView? {
-        AnyView(BookletMakerAboutView())
-    }
+        if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
+            let entryID = "\(id).entry"
+            activityBar.addItems([
+                ActivityBarItem(
+                    id: entryID,
+                    title: name,
+                    systemImage: "doc.on.doc",
+                    order: order,
+                    ownerPluginID: id
+                ) { activeItemID in
+                    guard activeItemID == entryID else { return }
+                    contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: self.sharedViewModel)))
+                    railView?.activateGroup(id: self.id)
+                    railView?.activateTab(id: Self.railTabID)
+                    workspace?.activateContainer(id: self.id)
+                },
+            ])
+        }
 
-    public func pluginManualView(kernel: KernelLumi) -> AnyView? {
-        AnyView(BookletMakerManualView())
+        kernel.resolveProvider((any ToolbarProviding).self)?.addToolbarItems([
+            ToolbarItem(
+                id: "\(id).title",
+                title: BookletLocalization.string("Split PDF or Booklet Maker"),
+                placement: .center,
+                order: 200
+            ) {
+                BookletMakerToolbarTitleView(viewModel: self.sharedViewModel)
+            },
+        ])
+
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { BookletMakerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { BookletMakerManualView() })
+        }
     }
 
     // MARK: - Save Panel
@@ -153,61 +206,14 @@ public final class BookletMakerPlugin: LumiPlugin, SuperLog {
         #endif
     }
 
-    // MARK: - LumiPlugin Stubs
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
+        kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
+        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
+        kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+        kernel.resolveProvider((any ProviderWorkspace.WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
+        BookletMakerRuntimeBridge.directoryURL = nil
+    }
 
-    public func llmProviders(kernel: KernelLumi) -> [any LumiLLMProvider] { [] }
-    public func messageRenderers(kernel: KernelLumi) -> [LumiMessageRendererItem] { [] }
-    public func menuBarContentItems(kernel: KernelLumi) -> [LumiMenuBarContentItem] { [] }
-    public func menuBarPopupItems(kernel: KernelLumi) -> [LumiMenuBarPopupItem] { [] }
-    public func titleToolbarItems(kernel: KernelLumi) -> [LumiTitleToolbarItem] {
-        [
-            LumiTitleToolbarItem(
-                id: "\(id).title",
-                title: BookletLocalization.string("Split PDF or Booklet Maker"),
-                placement: .center,
-                order: 200
-            ) {
-                BookletMakerToolbarTitleView(
-                    containerID: self.id,
-                    kernel: kernel,
-                    viewModel: self.sharedViewModel
-                )
-            },
-        ]
-    }
-    public func panelHeaderItems(kernel: KernelLumi) -> [PanelHeaderItem] { [] }
-    public func panelBottomTabItems(kernel: KernelLumi) -> [PanelBottomTabItem] { [] }
-    public func panelRailTabItems(kernel: KernelLumi) -> [PanelRailTabItem] {
-        [
-            PanelRailTabItem(
-                id: Self.railTabID,
-                title: BookletLocalization.string("PDF Tools"),
-                systemImage: "square.grid.2x2",
-                visibility: .viewContainer(id: id)
-            ) {
-                BookletMakerRailView(
-                    viewModel: self.sharedViewModel,
-                    onExportBooklet: { self.presentSavePanel() },
-                    onExportSplit: { self.presentSplitDirectoryPanel() }
-                )
-            },
-        ]
-    }
-    public func statusBarItems(kernel: KernelLumi) -> [StatusBarItem] { [] }
-    public func chatSectionItems(kernel: KernelLumi) -> [ChatSectionItem] { [] }
-    public func chatSectionToolbarItems(kernel: KernelLumi) -> [ChatSectionToolbarItem] { [] }
-    public func chatSectionToolbarBarItems(kernel: KernelLumi) -> [ChatSectionToolbarBarItem] { [] }
-    public func chatSectionHeaderItems(kernel: KernelLumi) -> [ChatSectionHeaderItem] { [] }
-    public func chatSectionActionBarItems(kernel: KernelLumi) -> [ChatSectionActionBarItem] { [] }
-    public func chatSectionRootWrapper(kernel: KernelLumi, content: AnyView) -> AnyView { content }
-    public func settingsTabItems(kernel: KernelLumi) -> [SettingsTabItem] { [] }
-    public func addSettingsView(kernel: KernelLumi) -> [AnyView] { [] }
-    public func llmProviderSettingsItems(kernel: KernelLumi) -> [LLMProviderSettingsItem] { [] }
-    public func llmProviderSettingsViews(kernel: KernelLumi) -> [LumiLLMProviderSettingsViewItem] { [] }
-    public func rootOverlays(kernel: KernelLumi) -> [LumiRootOverlayItem] { [] }
-    public func onboardingPages(kernel: KernelLumi) -> [OnboardingPageItem] { [] }
-    public func logoItems(kernel: KernelLumi) -> [LogoItem] { [] }
-    public func onTurnFinished(kernel: KernelLumi, conversationID: UUID, reason: LumiTurnEndReason) async {}
-    public func onContainerActivated(kernel: KernelLumi, containerID: String) {}
-    public func agentTools(kernel: KernelLumi) -> [any LumiAgentTool] { [] }
 }

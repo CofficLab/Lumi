@@ -17,9 +17,14 @@ struct BookletMakerApp2: App {
     private let settingsView: AnyView
 
     init() {
-        mainView = (try? KernelFactory.makeMainView())
+        guard let kernel = try? KernelFactory.makeKernel() else {
+            mainView = AnyView(Text("Failed to assemble main view"))
+            settingsView = AnyView(Text("Failed to assemble settings view"))
+            return
+        }
+        mainView = (try? KernelFactory.makeMainView(kernel: kernel))
             ?? AnyView(Text("Failed to assemble main view"))
-        settingsView = (try? KernelFactory.makeSettingsView())
+        settingsView = (try? KernelFactory.makeSettingsView(kernel: kernel))
             ?? AnyView(Text("Failed to assemble settings view"))
     }
 
