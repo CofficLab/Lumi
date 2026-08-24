@@ -502,7 +502,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */,
-				FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */,
 				FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi2" */,
 				FB00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */,
 				LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */,
