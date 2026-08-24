@@ -847,7 +847,7 @@
    "order": 15,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginCommand",
    "wave": "P1-P3/P8",
    "owners": [],
    "dependencies": [
@@ -866,13 +866,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/PluginCommand (2026-08-24; 1 test passed)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "FactoryLumi2 registers CommandSuperPlugin, which replaces the fallback command provider while retaining the Debug menu.",
     "performance": null
    }
   },
@@ -2557,7 +2557,7 @@
    "order": 96,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginIdleTime",
    "wave": "P1-P3/P8",
    "owners": [],
    "dependencies": [
@@ -2576,13 +2576,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/PluginIdleTime (2026-08-24; 2 tests passed)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "FactoryLumi2 registers PluginIdleTime. V2 registers its menu-bar popover, settings/about views and idle event listener; shutdown withdraws all contributions.",
     "performance": null
    }
   },
@@ -6146,7 +6146,7 @@
    "order": 95,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginToast",
    "wave": "P1-P3/P8",
    "owners": [],
    "dependencies": [
@@ -6164,13 +6164,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/PluginToast (2026-08-24; 2 tests passed)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "FactoryLumi2 registers ToastSuperPlugin, which replaces the fallback toast provider and renders the shared ToastCenter through the V2 root overlay.",
     "performance": null
    }
   },
