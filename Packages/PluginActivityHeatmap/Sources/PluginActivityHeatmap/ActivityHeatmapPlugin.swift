@@ -68,6 +68,7 @@ public struct ActivityDay: Identifiable, Sendable, Equatable {
 @Observable
 public final class ActivityHeatmapViewModel {
     private let messages: (any MessageManaging)?
+    private var insertionObserver: (any MessageInsertedObserverHandle)?
     private static let periodKey = "com.coffic.activity-heatmap.period"
 
     public var period: ActivityHeatmapPeriod {
@@ -79,6 +80,9 @@ public final class ActivityHeatmapViewModel {
     public init(messages: (any MessageManaging)?) {
         self.messages = messages
         self.period = ActivityHeatmapPeriod(rawValue: UserDefaults.standard.integer(forKey: Self.periodKey)) ?? .days30
+        insertionObserver = messages?.addMessageInsertedObserver { [weak self] _, _ in
+            self?.reload()
+        }
     }
 
     public func reload() {

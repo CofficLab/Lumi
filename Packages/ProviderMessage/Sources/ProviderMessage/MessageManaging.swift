@@ -4,8 +4,7 @@ import Foundation
 /// 消息插入观察者的注册令牌。
 ///
 /// 调用 `MessageManaging.addMessageInsertedObserver(_:)` 后持有返回值
-/// 即可持续接收消息插入通知；令牌释放（deinit）或显式调用 `cancel()` 时
-/// 自动停止接收，无需手动反注册。
+/// 即可持续接收消息插入通知；不再需要时显式调用 `cancel()` 停止接收。
 @MainActor
 public protocol MessageInsertedObserverHandle: AnyObject {
     /// 停止接收消息插入通知。重复调用无副作用。

@@ -46,4 +46,22 @@ struct ProviderMessageTests {
         #expect(manager.dailyMessageCounts(since: yesterday) == [yesterday: 2, today: 1])
         #expect(manager.dailyTokenCounts(since: yesterday) == [yesterday: 20, today: 8])
     }
+
+    @Test("消息插入观察者可接收事件并注销")
+    func messageInsertionObservation() {
+        let manager = DefaultMessageManager()
+        let conversationID = UUID()
+        var observed: [(UUID, UUID)] = []
+        let handle = manager.addMessageInsertedObserver { message, conversation in
+            observed.append((message.id, conversation))
+        }
+        let first = Message(conversationID: conversationID, role: .user, content: "first")
+        manager.insertMessage(first, to: conversationID)
+        handle.cancel()
+        manager.insertMessage(Message(conversationID: conversationID, role: .assistant, content: "second"), to: conversationID)
+
+        #expect(observed.count == 1)
+        #expect(observed.first?.0 == first.id)
+        #expect(observed.first?.1 == conversationID)
+    }
 }

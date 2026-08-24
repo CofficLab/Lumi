@@ -3,6 +3,7 @@ import Foundation
 @MainActor
 public final class DefaultMessageManager: MessageManaging {
     @Published private var storage: [UUID: [Message]] = [:]
+    private var insertionObservers: [UUID: (Message, UUID) -> Void] = [:]
 
     public init() {}
 
@@ -46,6 +47,18 @@ public final class DefaultMessageManager: MessageManaging {
 
     public func insertMessage(_ message: Message, to conversationID: UUID) {
         storage[conversationID, default: []].append(message)
+        insertionObservers.values.forEach { $0(message, conversationID) }
+    }
+
+    @discardableResult
+    public func addMessageInsertedObserver(
+        _ callback: @escaping (Message, UUID) -> Void
+    ) -> any MessageInsertedObserverHandle {
+        let id = UUID()
+        insertionObservers[id] = callback
+        return InsertionObserverHandle { [weak self] in
+            self?.insertionObservers.removeValue(forKey: id)
+        }
     }
 
     public func updateMessage(id: UUID, in conversationID: UUID, content: String) {
@@ -79,5 +92,19 @@ public final class DefaultMessageManager: MessageManaging {
         guard filtered.count != rows.count else { return }
         rows = filtered
         storage[conversationID] = rows
+    }
+}
+
+@MainActor
+private final class InsertionObserverHandle: MessageInsertedObserverHandle {
+    private var cancellation: (() -> Void)?
+
+    init(cancellation: @escaping () -> Void) {
+        self.cancellation = cancellation
+    }
+
+    func cancel() {
+        cancellation?()
+        cancellation = nil
     }
 }
