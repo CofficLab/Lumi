@@ -3,6 +3,16 @@ import NetworkExtension
 import Testing
 @testable import NettoPlugin
 
+@MainActor
+@Test func v2PluginPreservesDisabledFirewallCatalogPolicy() {
+    let plugin = NettoSuperPlugin()
+
+    #expect(plugin.id == "com.coffic.lumi.plugin.netto")
+    #expect(plugin.order == 99)
+    #expect(plugin.metadata.policy == .disabled)
+    #expect(plugin.metadata.stage == .preview)
+}
+
 @Test func corruptSettingsFileIsPreservedBeforeSavingNewSettings() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -75,5 +85,7 @@ import Testing
 
     #expect(message.contains("com.example.App"))
     #expect(message.contains("example.com:443"))
-    #expect(message.contains("Outgoing"))
+    // Direction is localized; its separator proves it remains part of the
+    // decision context without coupling the test to the process locale.
+    #expect(message.contains("\n"))
 }

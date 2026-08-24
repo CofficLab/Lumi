@@ -104,6 +104,7 @@ import PluginWebFetch
 import PluginWebSearch
 import PluginWebServer
 import PluginWhiteNoise
+import NettoPlugin
 
 /// 默认 `PluginFactory` 实现：产出默认插件。
 @MainActor
@@ -188,6 +189,7 @@ public struct DefaultPluginFactory: PluginFactory {
             StoryWriterSuperPlugin(),
             QuickFileSearchSuperPlugin(),
             ProjectOverviewSuperPlugin(),
+            NettoSuperPlugin(),
             SkillPlugin(),
             StateMonitorPlugin(),
             OnboardingPlugin(),

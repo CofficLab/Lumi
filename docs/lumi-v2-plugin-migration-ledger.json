@@ -4140,7 +4140,7 @@
    "order": 99,
    "policy": "disabled",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "NettoPlugin",
    "wave": "P7",
    "owners": [],
    "dependencies": [
@@ -4159,13 +4159,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "migrated",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Plugins/NettoPlugin (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "NettoSuperPlugin preserves the stable ID, disabled policy, order, firewall dashboard workspace, and about/manual contributions through KernelCore providers. The existing AppSettingRepo continues to use ~/Library/Application Support/Lumi/NettoPlugin/settings.json when the host later enables the plugin.",
     "performance": null
    }
   },
