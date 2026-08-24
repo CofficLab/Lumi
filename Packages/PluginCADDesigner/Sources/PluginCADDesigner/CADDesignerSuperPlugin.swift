@@ -1,9 +1,11 @@
 import CADDesignerPlugin
+import AgentToolKit
 import KernelCore
 import ProviderContentView
 import ProviderDocsView
 import ProviderToolbar
 import ProviderStorage
+import ProviderToolManager
 import SwiftUI
 
 /// CAD 编辑器的 KernelCore 入口。
@@ -34,6 +36,7 @@ public final class CADDesignerSuperPlugin: SuperPlugin {
         }
         kernel.resolveProvider((any ContentViewProviding).self)?
             .setContentView(AnyView(CADDesignerView()))
+        kernel.resolveProvider((any ToolManagerProviding).self)?.add(CreateCADProjectV2Tool(), pluginID: id)
         kernel.resolveProvider((any ToolbarProviding).self)?.addToolbarItems([
             ToolbarItem(id: "\(id).title", title: metadata.name, placement: .center, order: 0) {
                 Text(self.metadata.name).font(.headline)
@@ -47,6 +50,7 @@ public final class CADDesignerSuperPlugin: SuperPlugin {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
+        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: CreateCADProjectV2Tool.toolName)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }

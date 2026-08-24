@@ -7,17 +7,19 @@ let package = Package(
     products: [.library(name: "PluginCADDesigner", targets: ["PluginCADDesigner"])],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../AgentToolKit"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderStorage"),
+        .package(path: "../ProviderToolManager"),
         .package(path: "../../Plugins/CADDesignerPlugin"),
     ],
     targets: [
         .target(
             name: "PluginCADDesigner",
-            dependencies: ["KernelCore", "ProviderContentView", "ProviderDocsView", "ProviderToolbar", "ProviderStorage", "CADDesignerPlugin"]
+            dependencies: ["KernelCore", "AgentToolKit", "ProviderContentView", "ProviderDocsView", "ProviderToolbar", "ProviderStorage", "ProviderToolManager", "CADDesignerPlugin"]
         ),
-        .testTarget(name: "PluginCADDesignerTests", dependencies: ["PluginCADDesigner", "KernelCore", "ProviderContentView", "ProviderStorage", "CADDesignerPlugin"]),
+        .testTarget(name: "PluginCADDesignerTests", dependencies: ["PluginCADDesigner", "KernelCore", "AgentToolKit", "ProviderContentView", "ProviderStorage", "CADDesignerPlugin"]),
     ]
 )

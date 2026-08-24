@@ -1,4 +1,5 @@
 import Foundation
+import AgentToolKit
 import KernelCore
 import ProviderContentView
 import ProviderStorage
@@ -19,5 +20,14 @@ struct CADDesignerSuperPluginTests {
         try CADDesignerSuperPlugin().onBoot(kernel: kernel)
         #expect(kernel.resolveProvider((any ContentViewProviding).self) != nil)
         #expect(CADDesignerRuntimeBridge.configuredPluginSubdirectory == storage.pluginDataDirectory(for: "CADDesignerPlugin"))
+    }
+
+    @Test("keeps the legacy create-project tool identifier")
+    func createsProjectThroughV2Tool() async throws {
+        let output = try await CreateCADProjectV2Tool().execute(arguments: [
+            "name": ToolArgument("V2 Frame"),
+        ])
+        #expect(CreateCADProjectV2Tool.toolName == "cad_create_project")
+        #expect(output.contains("V2 Frame"))
     }
 }
