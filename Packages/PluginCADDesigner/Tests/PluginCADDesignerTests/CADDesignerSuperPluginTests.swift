@@ -48,4 +48,16 @@ struct CADDesignerSuperPluginTests {
         #expect(loaded.contains(document.name))
         #expect(CADDocumentStore.shared.selectedDocument?.name == document.name)
     }
+
+    @Test("builds the legacy frame shape through the V2 tool")
+    func buildsFrameThroughV2Tool() async throws {
+        CADDocumentStore.shared.resetForTests()
+        _ = CADDocumentStore.shared.createDocument(name: "V2 Frame Build")
+        let output = try await BuildFrameV2Tool().execute(arguments: [
+            "width": ToolArgument(800), "depth": ToolArgument(600), "height": ToolArgument(900),
+        ])
+        #expect(BuildFrameV2Tool.toolName == "cad_build_frame")
+        #expect(CADDocumentStore.shared.selectedDocument?.components.count == 20)
+        #expect(output.contains("20"))
+    }
 }

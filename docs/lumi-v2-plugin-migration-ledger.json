@@ -643,7 +643,7 @@
     "integrationBuild": null,
     "runtime": null,
     "uiDiff": null,
-    "migration": "V2 SuperPlugin publishes the existing CAD workspace through ContentViewProviding, registers its title/about/manual through V2 Toolbar/Docs providers, configures the CAD runtime with V2 StorageProviding paths, and restores the stable cad_create_project, cad_load_project, and cad_save_project Agent tools without changing .cadproj JSON persistence. The CAD engine currently remains in Plugins/CADDesignerPlugin; remaining legacy Agent tools still require V2 replacements before dependency removal.",
+    "migration": "V2 SuperPlugin publishes the existing CAD workspace through ContentViewProviding, registers its title/about/manual through V2 Toolbar/Docs providers, configures the CAD runtime with V2 StorageProviding paths, and restores the stable cad_create_project, cad_load_project, cad_save_project, and cad_build_frame Agent tools without changing .cadproj JSON persistence or frame geometry. The CAD engine currently remains in Plugins/CADDesignerPlugin; remaining legacy Agent tools still require V2 replacements before dependency removal.",
     "performance": null
    }
   },

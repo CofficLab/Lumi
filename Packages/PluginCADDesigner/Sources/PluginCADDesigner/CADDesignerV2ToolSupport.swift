@@ -1,8 +1,18 @@
 import AgentToolKit
+import Foundation
 
 enum CADDesignerV2ToolSupport {
     static func string(_ arguments: [String: ToolArgument], _ key: String) -> String? {
         arguments[key]?.value as? String
+    }
+
+    static func double(_ arguments: [String: ToolArgument], _ key: String) -> Double? {
+        switch arguments[key]?.value {
+        case let value as Double: value
+        case let value as Int: Double(value)
+        case let value as NSNumber: value.doubleValue
+        default: nil
+        }
     }
 
     static func localized(en: String, zh: String) -> String {
