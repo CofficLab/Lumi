@@ -1,4 +1,5 @@
 import Foundation
+import os
 import SuperLogKit
 
 /// RClick 配置管理器
@@ -7,6 +8,7 @@ import SuperLogKit
 /// 本地 `RClickPluginLocalStore` 仅作遗留数据迁移与备份。
 @MainActor
 public class RClickConfigManager: ObservableObject, SuperLog {
+    private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.rclick.config")
     public nonisolated static let emoji = "🖱️"
     public nonisolated static let verbose: Bool = false
 
@@ -48,8 +50,8 @@ public class RClickConfigManager: ObservableObject, SuperLog {
         }
 
         guard let legacyData = store.data(forKey: legacyConfigKey) else {
-            if Self.verbose, RClickPlugin.verbose {
-                RClickPlugin.logger.info("\(Self.t)配置文件不存在，使用默认配置并写入 App Group")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)配置文件不存在，使用默认配置并写入 App Group")
             }
             saveConfig()
             return
@@ -66,13 +68,13 @@ public class RClickConfigManager: ObservableObject, SuperLog {
             let data = try JSONEncoder().encode(config)
             let appGroupSaved = writeAppGroupConfigData(data)
             let localBackupSaved = store.set(data, forKey: legacyConfigKey)
-            if Self.verbose, RClickPlugin.verbose {
-                RClickPlugin.logger.info("\(Self.t)💾 已保存配置（App Group + 本地备份）")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)💾 已保存配置（App Group + 本地备份）")
             }
             return appGroupSaved && localBackupSaved
         } catch {
-            if RClickPlugin.verbose {
-                RClickPlugin.logger.error("\(Self.t)❌ 编码配置失败：\(error.localizedDescription)")
+            if Self.verbose {
+                Self.logger.error("\(Self.t)❌ 编码配置失败：\(error.localizedDescription)")
             }
             return false
         }
@@ -137,8 +139,8 @@ public class RClickConfigManager: ObservableObject, SuperLog {
         store.clearAll()
         removeAppGroupConfigData()
         self.config = RClickConfig.default
-        if Self.verbose, RClickPlugin.verbose {
-            RClickPlugin.logger.info("\(Self.t)🗑️ 已清空所有配置")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)🗑️ 已清空所有配置")
         }
     }
 
@@ -179,8 +181,8 @@ public class RClickConfigManager: ObservableObject, SuperLog {
             try data.write(to: fileURL, options: .atomic)
             return true
         } catch {
-            if RClickPlugin.verbose {
-                RClickPlugin.logger.error("\(Self.t)❌ 写入 App Group 配置失败：\(error.localizedDescription)")
+            if Self.verbose {
+                Self.logger.error("\(Self.t)❌ 写入 App Group 配置失败：\(error.localizedDescription)")
             }
             return false
         }
@@ -195,15 +197,15 @@ public class RClickConfigManager: ObservableObject, SuperLog {
         do {
             let decoded = try JSONDecoder().decode(RClickConfig.self, from: data)
             self.config = decoded.normalizedForStorage
-            if Self.verbose, RClickPlugin.verbose {
-                RClickPlugin.logger.info(
+            if Self.verbose {
+                Self.logger.info(
                     "\(Self.t)已加载配置（\(source)）：\(self.config.items.count) 个菜单项，\(self.config.fileTemplates.count) 个模板"
                 )
             }
             return true
         } catch {
-            if RClickPlugin.verbose {
-                RClickPlugin.logger.error("\(Self.t)❌ 解码配置失败：\(error.localizedDescription)")
+            if Self.verbose {
+                Self.logger.error("\(Self.t)❌ 解码配置失败：\(error.localizedDescription)")
             }
             return false
         }
@@ -220,8 +222,8 @@ public class RClickConfigManager: ObservableObject, SuperLog {
             }
             try FileManager.default.moveItem(at: fileURL, to: corruptURL)
         } catch {
-            if RClickPlugin.verbose {
-                RClickPlugin.logger.error("\(Self.t)❌ 隔离损坏 App Group 配置失败：\(error.localizedDescription)")
+            if Self.verbose {
+                Self.logger.error("\(Self.t)❌ 隔离损坏 App Group 配置失败：\(error.localizedDescription)")
             }
         }
     }
