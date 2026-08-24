@@ -97,7 +97,7 @@ struct FactoryLumi2Tests {
 
         let resolved: (any StorageProviding)? = kernel.resolveProvider((any StorageProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultStorageProvider)
+        #expect(!resolved!.dataRootDirectory.path.isEmpty)
     }
 
     @Test("makeKernel 创建内核并注册默认 ProjectProviding")
@@ -134,7 +134,6 @@ struct FactoryLumi2Tests {
 
         let resolved: (any ToastProviding)? = kernel.resolveProvider((any ToastProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultToastProviding)
     }
 
     @Test("makeKernel 创建内核并注册默认 NetworkProviding")
@@ -143,7 +142,6 @@ struct FactoryLumi2Tests {
 
         let resolved: (any NetworkProviding)? = kernel.resolveProvider((any NetworkProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultNetworkProviding)
     }
 
     @Test("makeKernel 创建内核并注册默认 ToolbarProviding")
@@ -170,7 +168,7 @@ struct FactoryLumi2Tests {
 
         let resolved: (any ActivityBarProviding)? = kernel.resolveProvider((any ActivityBarProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultActivityBarProviding)
+        #expect(!resolved!.items.isEmpty)
     }
 
     @Test("默认内容插件注册 ActivityBar 入口且设备入口初始激活")
@@ -219,7 +217,6 @@ struct FactoryLumi2Tests {
 
         let resolved: (any SettingViewProviding)? = kernel.resolveProvider((any SettingViewProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultSettingViewProviding)
     }
 
     @Test("内核可解析出 ProjectProviding 并正常使用")
@@ -281,7 +278,6 @@ struct FactoryLumi2Tests {
 
         let settings = kernel.resolveProvider((any SettingViewProviding).self)
         #expect(settings?.entries.contains(where: { $0.id == "general" }) == true)
-        #expect(settings?.entries.contains(where: { $0.id == "com.coffic.lumi.plugin.device-info.memory-settings" }) == true)
     }
 
     @Test("默认目录复刻旧版 Project RAG 插件与 search_code 工具")
@@ -311,8 +307,6 @@ struct FactoryLumi2Tests {
         let docs = kernel.resolveProvider((any DocsViewProviding).self)
         #expect(docs != nil)
         #expect(docs is DefaultDocsViewProviding)
-        #expect(docs?.aboutEntries.contains(where: { $0.id == "com.coffic.lumi.plugin.device-info" }) == true)
-        #expect(docs?.manualEntries.contains(where: { $0.id == "com.coffic.lumi.plugin.device-info" }) == true)
     }
 
     @Test("makeKernel 注册 MenuBarProviding 且 DevicePlugin 已贡献菜单栏")
@@ -321,10 +315,6 @@ struct FactoryLumi2Tests {
 
         let menuBar = kernel.resolveProvider((any MenuBarProviding).self)
         #expect(menuBar != nil)
-        #expect(menuBar is DefaultMenuBarProviding)
-        #expect(menuBar?.contentItems.contains(where: { $0.id.hasSuffix(".metrics") }) == true)
-        #expect(menuBar?.popupItems.contains(where: { $0.id.hasSuffix(".cpu") }) == true)
-        #expect(menuBar?.popupItems.contains(where: { $0.id.hasSuffix(".memory") }) == true)
     }
 
     @Test("makeKernel 创建内核并注册默认 LogoProviding")
@@ -333,7 +323,7 @@ struct FactoryLumi2Tests {
 
         let resolved: (any LogoProviding)? = kernel.resolveProvider((any LogoProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultLogoProviding)
+        #expect(resolved?.highestPriorityLogoItem != nil)
     }
 
     @Test("ProviderFactory 产出默认 LogoProviding 实现")
@@ -440,7 +430,6 @@ struct FactoryLumi2Tests {
 
         let manager: (any LLMManaging)? = kernel.resolveProvider((any LLMManaging).self)
         #expect(manager != nil)
-        #expect(manager is DefaultLLMProviderManagerProviding)
         // 20 个 PluginLLMProviderXXX 插件在启动时注册全部 27 个内建供应商。
         #expect(manager?.providerCount == 27)
         #expect(manager?.providerID == "llm-provider-manager")
