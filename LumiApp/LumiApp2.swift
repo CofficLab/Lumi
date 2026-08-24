@@ -92,16 +92,27 @@ struct LumiMinimalApp: App {
         .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 360, height: 260)
 
-        // 菜单栏：由 MenuBarProviding 贡献的内容与弹窗；
-        // 图标优先展示最高优先级插件贡献的 Logo（statusBar 场景），无贡献时回退到默认 SF Symbol。
+        // 菜单栏：复刻旧版的完整组合关系：Logo + 插件常驻内容作为状态栏
+        // 标签；插件弹窗内容之后保留应用操作区。不能只渲染 Logo，否则已
+        // 注入的 `MenuBarContentItem` 永远不可见，Popover 也会缺少宿主操作。
         MenuBarExtra {
-            if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
-                menuBar.makePopupView()
-            } else {
-                Text("MenuBarProviding not registered")
-            }
+            LumiMenuBarPopover(
+                items: kernel.resolveProvider((any MenuBarProviding).self)?.popupItems ?? [],
+                onShowMainWindow: showMainWindow,
+                onCheckForUpdates: { UpdateService.shared.checkForUpdates() },
+                onQuit: { NSApp.terminate(nil) }
+            )
         } label: {
-            LogoMenuBarLabel(kernel: kernel)
+            LumiMenuBarLabel(kernel: kernel)
+        }
+    }
+
+    /// 与旧版 `MenuBarManagerPlugin.showMainWindow()` 保持相同行为：从状态栏
+    /// 弹窗唤回应用，并把可成为 key 的主窗口置前。
+    private func showMainWindow() {
+        NSApp.activate(ignoringOtherApps: true)
+        if let window = NSApp.mainWindow ?? NSApp.windows.first(where: { $0.canBecomeKey }) {
+            window.makeKeyAndOrderFront(nil)
         }
     }
 }
@@ -124,19 +135,103 @@ private struct BootstrapFailureView: View {
 ///
 /// 观察共享内核：LogoProvider 注册时默认转发 `objectWillChange`，
 /// 因此 Logo 项增删或高亮状态变化时图标会自动刷新。
-private struct LogoMenuBarLabel: View {
+private struct LumiMenuBarLabel: View {
     @ObservedObject var kernel: KernelCoreContainer
 
     var body: some View {
-        Group {
-            if let logo = kernel.resolveProvider((any LogoProviding).self),
-               let item = logo.highestPriorityLogoItem {
-                item.makeView(.statusBar)
-            } else {
-                Image(systemName: "gauge.with.dots.needle.50percent")
+        HStack(spacing: 4) {
+            Group {
+                if let logo = kernel.resolveProvider((any LogoProviding).self),
+                   let item = logo.highestPriorityLogoItem {
+                    item.makeView(.statusBar)
+                } else {
+                    Image(systemName: "gauge.with.dots.needle.50percent")
+                }
+            }
+            .frame(width: 20, height: 20)
+
+            // 此处必须进入 label，而不是只存在于 Popover：旧版状态栏会并列
+            // 显示所有 `menuBarContentItems`（例如网速、CPU/内存概览）。
+            if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
+                menuBar.makeContentView()
+                    .fixedSize()
             }
         }
-        .frame(width: 22, height: 22)
+        .padding(.horizontal, 2)
+        .frame(height: 22)
+    }
+}
+
+/// 状态栏 Popover 的宿主外壳。插件只贡献其业务区块；应用级操作由宿主统一
+/// 提供，这与旧版 `MenuBarPopupView` 的职责划分一致。
+private struct LumiMenuBarPopover: View {
+    let items: [MenuBarPopupItem]
+    let onShowMainWindow: () -> Void
+    let onCheckForUpdates: () -> Void
+    let onQuit: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    private var sortedItems: [MenuBarPopupItem] {
+        items.sorted {
+            if $0.order == $1.order { return $0.id < $1.id }
+            return $0.order < $1.order
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if !sortedItems.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(sortedItems) { item in
+                        item.makeView()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        if item.id != sortedItems.last?.id {
+                            Divider()
+                        }
+                    }
+                }
+
+                Divider()
+            }
+
+            actionSection
+        }
+        .frame(width: 280)
+        .padding(.vertical, 6)
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    private var actionSection: some View {
+        VStack(spacing: 0) {
+            actionRow("Open Lumi", icon: "macwindow", color: .accentColor, action: onShowMainWindow)
+            Divider().padding(.leading, 36)
+            actionRow("Check for Updates", icon: "arrow.down.circle", color: .accentColor, action: onCheckForUpdates)
+            Divider().padding(.leading, 36)
+            actionRow("Quit Lumi", icon: "power", color: .red, action: onQuit)
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func actionRow(
+        _ title: String,
+        icon: String,
+        color: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            dismiss()
+            action()
+        } label: {
+            Label(title, systemImage: icon)
+                .foregroundStyle(color)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+        }
+        .buttonStyle(.plain)
     }
 }
 
