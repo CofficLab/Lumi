@@ -7,7 +7,7 @@ import ProviderToolbar
 import SwiftUI
 import os
 
-enum DockerManagerPlugin {
+struct DockerManagerPlugin {
     let name = "Docker"
     init() {}
     nonisolated static let verbose = false
