@@ -3,6 +3,8 @@ import SwiftUI
 import Testing
 import EditorContracts
 import KernelCore
+import AgentToolKit
+import ProviderToolManager
 @testable import GitPlugin
 
 @MainActor
@@ -20,6 +22,20 @@ import KernelCore
     let plugin = GitSourceControlSuperPlugin()
     try plugin.onBoot(kernel: kernel)
     #expect(kernel.resolveProvider((any SourceControlProviding).self) is GitSourceControlAdapter)
+}
+
+@MainActor
+@Test func v2PluginRegistersAllLegacyGitToolNames() throws {
+    let kernel = KernelCoreContainer()
+    let toolManager = DefaultToolManagerProviding()
+    try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
+
+    try GitSourceControlSuperPlugin().onBoot(kernel: kernel)
+
+    #expect(toolManager.allTools().map(\.name) == GitV2ToolNames.all)
+    #expect(toolManager.tool(named: "git_status")?.permissionRiskLevel(arguments: [:]) == .low)
+    #expect(toolManager.tool(named: "git_commit")?.permissionRiskLevel(arguments: [:]) == .medium)
+    #expect(toolManager.tool(named: "git_branch")?.permissionRiskLevel(arguments: ["action": ToolArgument("checkout")]) == .medium)
 }
 
 @MainActor

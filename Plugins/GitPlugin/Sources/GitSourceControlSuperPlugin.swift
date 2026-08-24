@@ -1,5 +1,8 @@
+import AgentToolKit
 import EditorContracts
 import KernelCore
+import ProviderProject
+import ProviderToolManager
 
 /// Publishes Git's existing editor-neutral SCM adapter into KernelCore.
 ///
@@ -23,5 +26,25 @@ public final class GitSourceControlSuperPlugin: SuperPlugin {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         try kernel.registerProvider((any SourceControlProviding).self, GitSourceControlAdapter())
+        let project = kernel.resolveProvider((any ProjectProviding).self)
+        let tools: [any SuperAgentTool] = [
+            GitStatusV2Tool(project: project),
+            GitDiffV2Tool(project: project),
+            GitLogV2Tool(project: project),
+            GitShowV2Tool(project: project),
+            GitBranchV2Tool(project: project),
+            GitCommitV2Tool(project: project),
+            GitUnpushedV2Tool(project: project),
+        ]
+        for tool in tools {
+            kernel.resolveProvider((any ToolManagerProviding).self)?.add(tool, pluginID: id)
+        }
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.unregisterProvider((any SourceControlProviding).self)
+        for name in GitV2ToolNames.all {
+            kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: name)
+        }
     }
 }
