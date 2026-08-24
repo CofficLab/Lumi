@@ -15,6 +15,7 @@ import ComputerUsePlugin
 import BrewManagerPlugin
 import DisplayControlPlugin
 import PortManagerPlugin
+import DockerManagerPlugin
 import PluginStorage
 import PluginToast
 import PluginCommand
@@ -170,6 +171,7 @@ public struct DefaultPluginFactory: PluginFactory {
             BrewManagerSuperPlugin(),
             DisplayControlSuperPlugin(),
             PortManagerSuperPlugin(),
+            DockerManagerSuperPlugin(),
             SkillPlugin(),
             StateMonitorPlugin(),
             OnboardingPlugin(),

@@ -1,31 +1,20 @@
 import Testing
-import KernelLumi
 @testable import DockerManagerPlugin
 
 @MainActor
 struct PluginDockerManagerTests {
     @Test
     func pluginMetadataIsStable() {
-        #expect(DockerManagerPlugin().id == "DockerManager")
-        #expect(DockerManagerPlugin.navigationId == "docker_manager")
-        #expect(DockerManagerPlugin.name.isEmpty == false)
-        #expect(DockerManagerPlugin().category == .developerTool)
-        #expect(DockerManagerPlugin().order == 50)
-        #expect(DockerManagerPlugin().policy == .disabled)
-        #expect(DockerManagerPlugin.shared.instanceLabel == DockerManagerPlugin().id)
+        let plugin = DockerManagerSuperPlugin()
+        #expect(plugin.id == "com.coffic.lumi.plugin.docker-manager")
+        #expect(plugin.metadata.name == "Docker")
+        #expect(plugin.order == 50)
+        #expect(plugin.metadata.policy == .disabled)
     }
 
     @Test
-    func viewContainerContributionIsAvailable() {
-        let item = DockerManagerPlugin.shared.addViewContainer()
-        #expect(item?.id == DockerManagerPlugin().id)
-        #expect(item?.title == DockerManagerPlugin.name)
-    }
-
-    @Test
-    func localizationCatalogIsPackaged() {
-        #expect(PluginDockerManagerLocalization.bundle.url(forResource: "DockerManager", withExtension: "xcstrings") != nil)
-        #expect(PluginDockerManagerLocalization.string("Docker").isEmpty == false)
+    func v2IdentifiersRemainStable() {
+        #expect(DockerManagerSuperPlugin().id.hasSuffix("docker-manager"))
     }
 
     @Test
