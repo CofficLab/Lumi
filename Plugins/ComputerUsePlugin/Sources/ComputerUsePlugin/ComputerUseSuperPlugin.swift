@@ -1,7 +1,7 @@
 import AgentToolKit
 import Foundation
 import KernelCore
-import KernelLumi
+import ProviderMessage
 import ProviderSettingView
 import ProviderToolManager
 
@@ -161,7 +161,7 @@ private enum ComputerUseV2Support {
         }
     }
 
-    static func imageAttachment(from attachment: LumiImageAttachment) -> ImageAttachment {
+    static func imageAttachment(from attachment: UserImageAttachment) -> ImageAttachment {
         ImageAttachment(
             id: attachment.id,
             data: Data(base64Encoded: attachment.base64Data) ?? Data(),

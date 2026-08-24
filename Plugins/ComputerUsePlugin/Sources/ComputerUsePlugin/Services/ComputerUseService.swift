@@ -1,7 +1,7 @@
 import AppKit
 import CoreGraphics
 import Foundation
-import KernelLumi
+import ProviderMessage
 import ScreenCaptureKit
 
 actor ComputerUseActionGate {
@@ -13,7 +13,7 @@ actor ComputerUseActionGate {
 final class ComputerUseService: @unchecked Sendable {
     struct ObservationResult: Sendable {
         let observation: ComputerUseObservation
-        let attachment: LumiImageAttachment
+        let attachment: UserImageAttachment
         let isApplicationAllowed: Bool
     }
 

@@ -2,17 +2,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClipboardManagerPlugin",
+    name: "PluginClipboardManager",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(
-            name: "ClipboardManagerPlugin",
+            name: "PluginClipboardManager",
             targets: ["ClipboardManagerPlugin"]
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/ProviderActivityBar"),
         .package(path: "../../Packages/ProviderContentView"),
@@ -25,7 +24,6 @@ let package = Package(
 .target(
             name: "ClipboardManagerPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),

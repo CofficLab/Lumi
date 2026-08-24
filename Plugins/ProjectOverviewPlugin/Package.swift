@@ -2,19 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "ProjectOverviewPlugin",
+    name: "PluginProjectOverview",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "ProjectOverviewPlugin",
+            name: "PluginProjectOverview",
             targets: ["ProjectOverviewPlugin"]
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/SuperLogKit"),
@@ -26,7 +25,6 @@ let package = Package(
         .target(
             name: "ProjectOverviewPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "SuperLogKit", package: "SuperLogKit"),

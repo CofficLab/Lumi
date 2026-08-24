@@ -2,21 +2,20 @@
 import PackageDescription
 
 let package = Package(
-    name: "GitPlugin",
+    name: "PluginGit",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "GitPlugin",
+            name: "PluginGit",
             targets: ["GitPlugin"]
         )
     ],
     dependencies: [
         .package(path: "../../Packages/LLMKit"),
         .package(url: "https://github.com/nookery/LibGit2Swift", .branch("main")),
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/EditorContracts"),
         .package(path: "../../Packages/AgentToolKit"),
@@ -33,7 +32,6 @@ let package = Package(
             dependencies: [
                 .product(name: "LLMKit", package: "LLMKit"),
                 .product(name: "LibGit2Swift", package: "Libgit2swift"),
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "AgentToolKit", package: "AgentToolKit"),

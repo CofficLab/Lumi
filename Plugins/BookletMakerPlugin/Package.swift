@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "BookletMakerPlugin",
+    name: "PluginBookletMaker",
     defaultLocalization: "en",
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(
-            name: "BookletMakerPlugin",
+            name: "PluginBookletMaker",
             targets: ["BookletMakerPlugin"]
         )
     ],

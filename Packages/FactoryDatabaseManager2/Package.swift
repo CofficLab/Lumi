@@ -9,7 +9,7 @@ let package = Package(
         .package(path: "../FactoryLumi2"),
         .package(path: "../KernelCore"),
         .package(path: "../PluginEditorHost"),
-        .package(path: "../../Plugins/DatabaseManagerPlugin"),
+        .package(name: "PluginDatabaseManager", path: "../../Plugins/DatabaseManagerPlugin"),
         .package(path: "../ProviderExternalFile"),
     ],
     targets: [

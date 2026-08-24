@@ -2,19 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "BrowserPlugin",
+    name: "PluginBrowser",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "BrowserPlugin",
+            name: "PluginBrowser",
             targets: ["BrowserPlugin"]
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/ProviderToolManager"),
@@ -26,7 +25,6 @@ let package = Package(
         .target(
             name: "BrowserPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),

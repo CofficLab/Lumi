@@ -2,14 +2,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "TextActionsPlugin",
+    name: "PluginTextActions",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "TextActionsPlugin", targets: ["TextActionsPlugin"])
+        .library(name: "PluginTextActions", targets: ["TextActionsPlugin"])
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/KitLLM"),
         .package(path: "../../Packages/LumiUI"),
@@ -23,7 +22,6 @@ let package = Package(
         .target(
             name: "TextActionsPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "LumiUI", package: "LumiUI"),

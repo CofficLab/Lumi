@@ -1,12 +1,12 @@
 import CoreGraphics
 import Foundation
 import ImageIO
-import KernelLumi
+import ProviderMessage
 import UniformTypeIdentifiers
 
 enum ComputerUseImageEncoder {
     struct Encoded: Sendable {
-        let attachment: LumiImageAttachment
+        let attachment: UserImageAttachment
         let width: Int
         let height: Int
     }
@@ -32,7 +32,7 @@ enum ComputerUseImageEncoder {
             throw ComputerUseError.captureFailed
         }
         return Encoded(
-            attachment: LumiImageAttachment(
+            attachment: UserImageAttachment(
                 mimeType: "image/jpeg",
                 base64Data: (data as Data).base64EncodedString(),
                 fileName: "computer-observation-\(UUID().uuidString).jpg"

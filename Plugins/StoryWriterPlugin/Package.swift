@@ -2,14 +2,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "StoryWriterPlugin",
+    name: "PluginStoryWriter",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "StoryWriterPlugin", targets: ["StoryWriterPlugin"])
+        .library(name: "PluginStoryWriter", targets: ["StoryWriterPlugin"])
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiUI"),
@@ -28,7 +27,6 @@ let package = Package(
         .target(
             name: "StoryWriterPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiUI", package: "LumiUI"),

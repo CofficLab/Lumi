@@ -2,19 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "QuickLauncherPlugin",
+    name: "PluginQuickLauncher",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "QuickLauncherPlugin",
+            name: "PluginQuickLauncher",
             targets: ["QuickLauncherPlugin"]
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
@@ -27,7 +26,6 @@ let package = Package(
         .target(
             name: "QuickLauncherPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),

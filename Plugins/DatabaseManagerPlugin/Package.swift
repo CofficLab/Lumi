@@ -2,19 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "DatabaseManagerPlugin",
+    name: "PluginDatabaseManager",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "DatabaseManagerPlugin",
+            name: "PluginDatabaseManager",
             targets: ["DatabaseManagerPlugin"]
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/EditorContracts"),
         .package(path: "../../Packages/EditorService"),
         .package(path: "../../Packages/KernelCore"),
@@ -38,7 +37,6 @@ let package = Package(
         .target(
             name: "DatabaseManagerPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "KernelCore", package: "KernelCore"),

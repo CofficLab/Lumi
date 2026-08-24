@@ -2,17 +2,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "NettoPlugin",
+    name: "PluginNetto",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(
-            name: "NettoPlugin",
+            name: "PluginNetto",
             targets: ["NettoPlugin"]
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LocalizationKit"),
@@ -25,7 +24,6 @@ let package = Package(
 .target(
             name: "NettoPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),

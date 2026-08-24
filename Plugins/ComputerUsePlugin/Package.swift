@@ -2,18 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "ComputerUsePlugin",
+    name: "PluginComputerUse",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "ComputerUsePlugin", targets: ["ComputerUsePlugin"]),
+        .library(name: "PluginComputerUse", targets: ["ComputerUsePlugin"]),
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/ProviderToolManager"),
         .package(path: "../../Packages/ProviderSettingView"),
+        .package(path: "../../Packages/ProviderMessage"),
         .package(path: "../../Packages/LumiUI"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/SuperLogKit"),
@@ -22,11 +22,11 @@ let package = Package(
         .target(
             name: "ComputerUsePlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
@@ -38,7 +38,6 @@ let package = Package(
             name: "ComputerUsePluginTests",
             dependencies: [
                 "ComputerUsePlugin",
-                .product(name: "KernelLumi", package: "KernelLumi"),
             ],
             path: "Tests/ComputerUsePluginTests"
         ),

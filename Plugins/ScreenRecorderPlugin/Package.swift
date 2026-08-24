@@ -2,14 +2,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "ScreenRecorderPlugin",
+    name: "PluginScreenRecorder",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "ScreenRecorderPlugin", targets: ["ScreenRecorderPlugin"]),
+        .library(name: "PluginScreenRecorder", targets: ["ScreenRecorderPlugin"]),
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LumiUI"),
@@ -23,7 +22,6 @@ let package = Package(
         .target(
             name: "ScreenRecorderPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "AgentToolKit", package: "AgentToolKit"),
                 .product(name: "LumiUI", package: "LumiUI"),
@@ -39,7 +37,6 @@ let package = Package(
             name: "ScreenRecorderPluginTests",
             dependencies: [
                 "ScreenRecorderPlugin",
-                .product(name: "KernelLumi", package: "KernelLumi"),
             ],
             path: "Tests/ScreenRecorderPluginTests"
         ),

@@ -2,14 +2,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "DockerManagerPlugin",
+    name: "PluginDockerManager",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "DockerManagerPlugin", targets: ["DockerManagerPlugin"])
+        .library(name: "PluginDockerManager", targets: ["DockerManagerPlugin"])
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/ProviderActivityBar"),
         .package(path: "../../Packages/ProviderContentView"),
@@ -24,7 +23,6 @@ let package = Package(
 .target(
             name: "DockerManagerPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),

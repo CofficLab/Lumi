@@ -2,19 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "QuickFileSearchPlugin",
+    name: "PluginQuickFileSearch",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "QuickFileSearchPlugin",
+            name: "PluginQuickFileSearch",
             targets: ["QuickFileSearchPlugin"]
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/LocalizationKit"),
         .package(path: "../../Packages/LumiUI"),
@@ -27,7 +26,6 @@ let package = Package(
         .target(
             name: "QuickFileSearchPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
                 .product(name: "LumiUI", package: "LumiUI"),

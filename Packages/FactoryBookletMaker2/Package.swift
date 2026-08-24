@@ -23,7 +23,7 @@ let package = Package(
         .package(path: "../ProviderToast"),
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderWorkspace"),
-        .package(path: "../../Plugins/BookletMakerPlugin"),
+        .package(name: "PluginBookletMaker", path: "../../Plugins/BookletMakerPlugin"),
     ],
     targets: [
         .target(

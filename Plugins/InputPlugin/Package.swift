@@ -2,12 +2,11 @@
 import PackageDescription
 
 let package = Package(
-    name: "InputPlugin",
+    name: "PluginInput",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
-    products: [.library(name: "InputPlugin", targets: ["InputPlugin"])],
+    products: [.library(name: "PluginInput", targets: ["InputPlugin"])],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/ProviderActivityBar"),
         .package(path: "../../Packages/ProviderContentView"),
@@ -21,7 +20,6 @@ let package = Package(
 .target(
             name: "InputPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),

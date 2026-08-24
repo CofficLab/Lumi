@@ -2,17 +2,16 @@
 import PackageDescription
 
 let package = Package(
-    name: "PortManagerPlugin",
+    name: "PluginPortManager",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(
-            name: "PortManagerPlugin",
+            name: "PluginPortManager",
             targets: ["PortManagerPlugin"]
         )
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/ProviderActivityBar"),
         .package(path: "../../Packages/ProviderContentView"),
@@ -26,7 +25,6 @@ let package = Package(
 .target(
             name: "PortManagerPlugin",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),

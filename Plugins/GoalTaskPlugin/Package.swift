@@ -2,16 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "GoalTaskPlugin",
+    name: "PluginGoalTask",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .library(name: "GoalTaskPlugin", targets: ["GoalTaskPlugin"])
+        .library(name: "PluginGoalTask", targets: ["GoalTaskPlugin"])
     ],
     dependencies: [
-        .package(path: "../../Packages/KernelLumi"),
         .package(path: "../../Packages/KernelCore"),
         .package(path: "../../Packages/AgentToolKit"),
         .package(path: "../../Packages/LocalizationKit"),
@@ -28,7 +27,6 @@ let package = Package(
         .target(
             name: "GoalTaskPlugin",
             dependencies: [
-                "KernelLumi",
                 "KernelCore",
                 "AgentToolKit",
                 "SuperLogKit",
