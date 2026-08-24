@@ -3,6 +3,12 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import SwiftUI
+import os
+
+enum ClipboardManagerPlugin {
+    nonisolated static let verbose = false
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "ClipboardManagerPlugin")
+}
 
 @MainActor
 public final class ClipboardManagerSuperPlugin: SuperPlugin {
