@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import ProviderMessage
 import ProviderSettingView
+import ProviderIdleTime
 import SwiftUI
 
 /// V2 activity dashboard. It preserves the legacy heatmap's three time ranges,
@@ -25,6 +26,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin {
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else { return }
         let messages = kernel.resolveProvider((any MessageManaging).self)
+        let idleTime = kernel.resolveProvider((any IdleTimeProviding).self)
         settings.addEntries([
             SettingEntryItem(
                 id: id,
@@ -32,7 +34,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin {
                 systemImage: "chart.bar.xaxis",
                 order: order
             ) {
-                ActivityHeatmapSettingsView(messages: messages)
+                ActivityHeatmapSettingsView(messages: messages, idleTime: idleTime)
             },
         ])
     }
@@ -106,9 +108,11 @@ public final class ActivityHeatmapViewModel {
 
 public struct ActivityHeatmapSettingsView: View {
     @State private var model: ActivityHeatmapViewModel
+    private let idleTime: (any IdleTimeProviding)?
 
-    public init(messages: (any MessageManaging)?) {
+    public init(messages: (any MessageManaging)?, idleTime: (any IdleTimeProviding)? = nil) {
         _model = State(initialValue: ActivityHeatmapViewModel(messages: messages))
+        self.idleTime = idleTime
     }
 
     public var body: some View {
@@ -136,6 +140,9 @@ public struct ActivityHeatmapSettingsView: View {
                 summary
                 heatmap
                 tokenTrend
+                if let idleTime {
+                    IdleTimeSummaryCard(provider: idleTime)
+                }
             }
             .padding(24)
         }
@@ -228,4 +235,60 @@ public struct ActivityHeatmapSettingsView: View {
         formatter.dateStyle = .medium
         return formatter
     }()
+}
+
+private struct IdleTimeSummaryCard: View {
+    let provider: any IdleTimeProviding
+    @State private var snapshot: IdleInferenceSnapshot?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Idle time", systemImage: "moon.zzz").font(.headline)
+                Spacer()
+                Text("Activity patterns and rest windows").font(.caption).foregroundStyle(.secondary)
+            }
+            if let snapshot {
+                HStack(spacing: 12) {
+                    metric("Rest window", value: restWindow(snapshot))
+                    metric("Confidence", value: snapshot.restWindow.map { "\(Int(($0.confidence * 100).rounded()))%" } ?? "Learning")
+                    metric("Events", value: "\(snapshot.eventCount)")
+                    metric("Active days", value: "\(snapshot.observedDayCount)")
+                }
+                if !snapshot.bucketScores.isEmpty {
+                    HStack(alignment: .bottom, spacing: 2) {
+                        let maximum = max(snapshot.bucketScores.max() ?? 0, 1)
+                        ForEach(Array(snapshot.bucketScores.enumerated()), id: \.offset) { _, score in
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color.accentColor.opacity(0.2 + 0.8 * (score / maximum)))
+                                .frame(maxWidth: .infinity, minHeight: 4, maxHeight: 56 * CGFloat(score / maximum) + 4)
+                        }
+                    }
+                    .frame(height: 62, alignment: .bottom)
+                }
+            } else {
+                ProgressView().controlSize(.small)
+            }
+        }
+        .padding(16)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .task { snapshot = await provider.currentSnapshot() }
+        .onReceive(NotificationCenter.default.publisher(for: .idleTimeSnapshotDidChange)) { _ in
+            Task { snapshot = await provider.currentSnapshot() }
+        }
+    }
+
+    private func metric(_ title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.subheadline.weight(.medium)).monospacedDigit()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func restWindow(_ snapshot: IdleInferenceSnapshot) -> String {
+        guard let window = snapshot.restWindow else { return "Learning" }
+        func time(_ minute: Int) -> String { String(format: "%02d:%02d", minute / 60, minute % 60) }
+        return "\(time(window.startMinuteOfDay)) – \(time(window.endMinuteOfDay))"
+    }
 }
