@@ -12,6 +12,10 @@ struct BrewManagerPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "BrewManagerPlugin")
 }
 
+extension Notification.Name {
+    static let brewManagerRefreshRequested = Notification.Name("BrewManagerRefreshRequested")
+}
+
 @MainActor
 public final class BrewManagerSuperPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.brew-manager"
