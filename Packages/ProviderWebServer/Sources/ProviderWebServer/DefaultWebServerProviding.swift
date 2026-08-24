@@ -13,9 +13,15 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
 
     /// 配置端口。骨架实现不真实绑定端口,启动后仍返回此值。
     public let port: Int
+    /// 路由处理完成后的活动事件；宿主可据此显示写操作反馈。
+    public let onActivity: (@Sendable (WebRequestActivity) -> Void)?
 
-    public init(port: Int = 8765) {
+    public init(
+        port: Int = 8765,
+        onActivity: (@Sendable (WebRequestActivity) -> Void)? = nil
+    ) {
         self.port = port
+        self.onActivity = onActivity
     }
 
     public var isRunning: Bool {
@@ -66,7 +72,7 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
     public func handle(_ request: WebRouteRequest) async throws -> WebRouteResponse {
         let routeAndParams = match(request)
         switch routeAndParams {
-        case .matched(let route, let pathParameters):
+        case .matched(let route, let pathParameters, let pluginID):
             let routedRequest = WebRouteRequest(
                 method: request.method,
                 path: request.path,
@@ -75,7 +81,15 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
                 headers: request.headers,
                 body: request.body
             )
-            return try await route.handler(routedRequest)
+            let response = try await route.handler(routedRequest)
+            onActivity?(WebRequestActivity(
+                pluginID: pluginID,
+                method: route.method.rawValue,
+                path: route.path,
+                description: route.description,
+                statusCode: response.statusCode
+            ))
+            return response
         case .methodNotAllowed:
             return .methodNotAllowed
         case .notFound:
@@ -84,7 +98,7 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
     }
 
     private enum MatchResult {
-        case matched(WebRoute, [String: String])
+        case matched(WebRoute, [String: String], String)
         case methodNotAllowed
         case notFound
     }
@@ -93,14 +107,16 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
         lock.lock()
         defer { lock.unlock() }
         var pathMatchedButMethodWrong = false
-        for route in routesByPlugin.values.flatMap({ $0 }) {
+        for (pluginID, routes) in routesByPlugin {
+            for route in routes {
             guard let pathParameters = Self.match(pathTemplate: route.path, requestPath: request.path) else {
                 continue
             }
             if route.method == request.method {
-                return .matched(route, pathParameters)
+                return .matched(route, pathParameters, pluginID)
             }
             pathMatchedButMethodWrong = true
+            }
         }
         return pathMatchedButMethodWrong ? .methodNotAllowed : .notFound
     }
