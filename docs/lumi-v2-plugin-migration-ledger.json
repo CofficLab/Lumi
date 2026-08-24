@@ -4836,10 +4836,9 @@
    "wave": "P6",
    "owners": [],
    "dependencies": [
-    "KernelLumi",
-    "LocalizationKit",
-    "LumiUI",
-    "SuperLogKit"
+    "CSQLite",
+    "SuperLogKit",
+    "vec0.dylib"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -4853,11 +4852,11 @@
    "testFixtures": [],
    "status": "parityReview",
    "evidence": {
-    "packageTests": "swift test --package-path Packages/PluginProjectRAG (2026-08-24)",
-    "integrationBuild": "pending Xcode Lumi target build",
+    "packageTests": "swift test --package-path Plugins/ProjectRAGPlugin (50 engine tests); swift test --package-path Packages/PluginProjectRAG",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers ProjectRAGSuperPlugin. It currently adapts the legacy ProjectRAGPlugin engine and vec0.dylib, so legacy code remains until engine replacement is verified.",
+    "migration": "FactoryLumi2 registers ProjectRAGSuperPlugin. ProjectRAGPlugin product is now a KernelLumi-free engine target retaining the established RAG SQLite schema and vec0.dylib; legacy LumiPlugin facade/UI sources are excluded pending physical deletion with the remaining old app tree.",
     "performance": null
    }
   },

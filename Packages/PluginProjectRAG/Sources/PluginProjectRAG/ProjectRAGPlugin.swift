@@ -9,8 +9,9 @@ import ProviderToolManager
 /// Project RAG 的 KernelCore 适配器。
 ///
 /// 旧版仅在 LumiApp 注入该插件，迁移到 `LumiMinimalApp` 后遗漏，导致
-/// `search_code` 工具和本地项目索引均不可用。此适配器保留旧版的数据库目录
-/// (`RAG`)、SQLite schema 与 vec0 扩展，因此升级不会丢失既有索引。
+/// `search_code` 工具和本地项目索引均不可用。此适配器直接使用已去除
+/// KernelLumi 耦合的 RAG 引擎，并保留数据库目录 (`RAG`)、SQLite schema
+/// 与 vec0 扩展，因此升级不会丢失既有索引。
 @MainActor
 public final class ProjectRAGSuperPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.project.rag"

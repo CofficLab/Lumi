@@ -13,9 +13,9 @@ let package = Package(
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
-        // The legacy package owns the SQLite schema, embedding implementations,
-        // and bundled vec0 extension. The V2 plugin is an adapter around that
-        // proven RAG engine, rather than a second incompatible database format.
+        // This product owns the stable SQLite schema, embedding implementations,
+        // and bundled vec0 extension. Keeping the engine product name preserves
+        // existing on-disk indexes without retaining a KernelLumi dependency.
         .package(path: "../../Plugins/ProjectRAGPlugin"),
     ],
     targets: [
