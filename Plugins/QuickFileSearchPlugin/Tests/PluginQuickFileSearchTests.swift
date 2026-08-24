@@ -3,6 +3,13 @@ import Foundation
 import KernelLumi
 @testable import QuickFileSearchPlugin
 
+@MainActor
+@Test func v2PluginPreservesQuickOpenIdentity() {
+    let plugin = QuickFileSearchSuperPlugin()
+    #expect(plugin.id == "QuickFileSearch")
+    #expect(plugin.metadata.policy == .alwaysOn)
+}
+
 // MARK: - File Index
 
 @Test func fileIndexStoreNeedsReindexWhenNeverUpdated() {

@@ -9,6 +9,22 @@ import Testing
 @MainActor
 struct ProviderRootViewTests {
 
+    @Test("根叠层按顺序注册且可独立撤回")
+    func rootOverlaysRegisterAndRemoveByID() {
+        let provider = DefaultRootViewProvider()
+        provider.addOverlays([
+            RootOverlayItem(id: "later", order: 20) { $0 },
+            RootOverlayItem(id: "first", order: 10) { $0 },
+            RootOverlayItem(id: "first", order: 0) { $0 },
+        ])
+
+        #expect(provider.overlays.map(\.id) == ["first", "later"])
+        #expect(type(of: provider.makeRootView()) == AnyView.self)
+
+        provider.removeOverlays(ids: ["first"])
+        #expect(provider.overlays.map(\.id) == ["later"])
+    }
+
     @Test("DefaultRootViewProvider 无工具栏时返回根视图")
     func defaultProviderReturnsRootViewWithoutToolbar() {
         let provider = DefaultRootViewProvider()
