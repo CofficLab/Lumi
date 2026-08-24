@@ -16,14 +16,12 @@ let package = Package(
     dependencies: [
         .package(path: "../SuperLogKit"),
         .package(path: "../LocalizationKit"),
-        .package(path: "../KernelLumi"),
     ],
     targets: [
         .target(
             name: "AgentToolKit",
             dependencies: [
                 "SuperLogKit",
-                .product(name: "KernelLumi", package: "KernelLumi"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),
             ],
             path: ".",
