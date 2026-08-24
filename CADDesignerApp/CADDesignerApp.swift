@@ -1,4 +1,4 @@
-import FactoryCADDesigner2
+import FactoryCADDesigner
 import SwiftUI
 
 @main
@@ -7,14 +7,14 @@ struct CADDesignerApp: App {
     private let settingsView: AnyView
 
     init() {
-        guard let kernel = try? FactoryCADDesigner2.makeKernel() else {
+        guard let kernel = try? FactoryCADDesigner.makeKernel() else {
             mainView = AnyView(Text("Failed to assemble CAD Designer"))
             settingsView = AnyView(Text("Failed to assemble settings"))
             return
         }
-        mainView = (try? FactoryCADDesigner2.makeMainView(kernel: kernel))
+        mainView = (try? FactoryCADDesigner.makeMainView(kernel: kernel))
             ?? AnyView(Text("Failed to assemble CAD Designer"))
-        settingsView = (try? FactoryCADDesigner2.makeSettingsView(kernel: kernel))
+        settingsView = (try? FactoryCADDesigner.makeSettingsView(kernel: kernel))
             ?? AnyView(Text("Failed to assemble settings"))
     }
 

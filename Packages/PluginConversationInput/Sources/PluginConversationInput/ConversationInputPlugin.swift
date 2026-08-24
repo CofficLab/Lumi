@@ -19,7 +19,7 @@ import SwiftUI
 ///
 /// 与旧版的对应关系：
 /// - `registerConversationInputService(inputState)` → 内核 `ConversationInputProviding`
-///   （FactoryLumi2 已装配 `DefaultConversationInputProviding`）；
+///   （FactoryLumi 已装配 `DefaultConversationInputProviding`）；
 /// - `chatSectionItems(.bottomFixed)` → `ChatSectionProviding.addItems`；
 /// - `chatSectionActionBarItems(.trailing)` → `ChatSectionProviding.addBarItems(.actionTrailing)`；
 /// - `kernel.messageSender`（isSending/send/stop）→ `MessageSendingProviding`

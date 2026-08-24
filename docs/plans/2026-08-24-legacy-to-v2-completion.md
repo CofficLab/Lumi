@@ -2,11 +2,11 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Replace every production Lumi legacy capability with a verified KernelCore/FactoryLumi2 implementation, then remove the legacy architecture without any user-visible regression or data loss.
+**Goal:** Replace every production Lumi legacy capability with a verified KernelCore/FactoryLumi implementation, then remove the legacy architecture without any user-visible regression or data loss.
 
-**Architecture:** `FactoryLumi2` remains the only production composition root. Each old `LumiPlugin` becomes a `Plugin*` package that consumes Provider contracts and preserves its stable plugin ID, data location, commands, menu entries, and user-facing surfaces. Cross-plugin behavior belongs in providers or integration packages; legacy packages remain until their replacement passes all gates.
+**Architecture:** `FactoryLumi` remains the only production composition root. Each old `LumiPlugin` becomes a `Plugin*` package that consumes Provider contracts and preserves its stable plugin ID, data location, commands, menu entries, and user-facing surfaces. Cross-plugin behavior belongs in providers or integration packages; legacy packages remain until their replacement passes all gates.
 
-**Tech Stack:** Swift 6, SwiftUI/AppKit, Swift Package Manager, Xcode, KernelCore, Provider packages, FactoryLumi2, Swift Testing.
+**Tech Stack:** Swift 6, SwiftUI/AppKit, Swift Package Manager, Xcode, KernelCore, Provider packages, FactoryLumi, Swift Testing.
 
 ---
 
@@ -14,7 +14,7 @@
 
 - Production baseline is `LumiApp` + `FactoryLumi` + `KernelLumi` plus the two host-injected packages (`AppUpdatePlugin`, `ProjectRAGPlugin`).
 - Current authoritative inventory is [lumi-v2-plugin-migration-ledger.json](../lumi-v2-plugin-migration-ledger.json); it must be refreshed from source before deletion because its `generatedAt` is 2026-08-16 and the implementation has moved since then.
-- `FactoryLumi` currently instantiates 137 production plugin types. `FactoryLumi2` currently instantiates 88 V2 plugin types, including the recently migrated `ProjectRAGSuperPlugin`.
+- `FactoryLumi` currently instantiates 137 production plugin types. `FactoryLumi` currently instantiates 88 V2 plugin types, including the recently migrated `ProjectRAGSuperPlugin`.
 - A legacy package is eligible for deletion only when its V2 replacement has: matching stable ID and data keys; feature/interaction tests; package and integration builds; UI/accessibility comparison for visible surfaces; and an entry in the migration ledger with evidence.
 - `FactoryLumi`, `FactoryCore`, and `KernelLumi` are deleted only after all production consumers (including the specialist apps) use V2 composition roots and a clean `rg` finds no production imports or Xcode package references.
 
@@ -24,7 +24,7 @@
 - Modify: `docs/lumi-v2-plugin-migration-ledger.json`
 - Test: source-derived inventory command
 
-**Step 1:** Extract current `FactoryLumi` instantiated plugin types and `FactoryLumi2` instantiated `SuperPlugin` types.
+**Step 1:** Extract current `FactoryLumi` instantiated plugin types and `FactoryLumi` instantiated `SuperPlugin` types.
 
 **Step 2:** For every production legacy package, record one of: `replaced`, `merged`, `host-owned`, or `missing`; do not mark a package complete merely because a similarly named V2 package exists.
 
@@ -38,7 +38,7 @@
 - Create: `Packages/PluginAppUpdate/Package.swift`
 - Create: `Packages/PluginAppUpdate/Sources/PluginAppUpdate/*`
 - Create: `Packages/PluginAppUpdate/Tests/PluginAppUpdateTests/*`
-- Modify: `LumiApp/LumiApp2.swift`
+- Modify: `LumiApp/LumiApp.swift`
 - Modify: `Lumi.xcodeproj/project.pbxproj`
 - Test: `swift test --package-path Packages/PluginAppUpdate`
 

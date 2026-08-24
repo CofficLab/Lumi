@@ -1,5 +1,5 @@
-import FactoryBookletMaker2
-import FactoryLumi2
+import FactoryBookletMaker
+import FactoryLumi
 import KernelCore
 import SwiftUI
 
@@ -10,11 +10,11 @@ struct BookletMakerApp: App {
     private let settingsView: AnyView
 
     init() {
-        if let assembledKernel = try? FactoryBookletMaker2.makeKernel() {
+        if let assembledKernel = try? FactoryBookletMaker.makeKernel() {
             _kernel = StateObject(wrappedValue: assembledKernel)
-            mainView = (try? FactoryBookletMaker2.makeMainView(kernel: assembledKernel))
+            mainView = (try? FactoryBookletMaker.makeMainView(kernel: assembledKernel))
                 ?? AnyView(Text("Failed to assemble main view"))
-            settingsView = (try? FactoryBookletMaker2.makeSettingsView(kernel: assembledKernel))
+            settingsView = (try? FactoryBookletMaker.makeSettingsView(kernel: assembledKernel))
                 ?? AnyView(Text("Failed to assemble settings view"))
         } else {
             let fallbackKernel = KernelCoreContainer()

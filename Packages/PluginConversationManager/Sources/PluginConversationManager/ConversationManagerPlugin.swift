@@ -15,7 +15,7 @@ import SwiftUI
 /// Conversation Manager Plugin (v2)
 ///
 /// 复刻自旧版 `ConversationManagerPlugin`：以 SwiftData 持久化的 `ConversationManager`
-/// 替代 FactoryLumi2 默认的内存版 `DefaultConversationManaging`。
+/// 替代 FactoryLumi 默认的内存版 `DefaultConversationManaging`。
 ///
 /// 装配方式（区别于旧版 onReady + `registerConversations`）：
 /// - `onBoot` 中创建 `ConversationStore` + `ConversationManager`，先

@@ -31,7 +31,7 @@ Expose ordered content and popup data from the provider without evaluating plugi
 ### Task 2: Restore the legacy host Popover chrome
 
 **Files:**
-- Modify: `LumiApp/LumiApp2.swift`
+- Modify: `LumiApp/LumiApp.swift`
 - Modify: `Packages/LumiUI/Sources/Components/MenuBarActionRow.swift`
 - Create: `Packages/LumiUI/Sources/Components/MenuBarPopoverScaffold.swift`
 
@@ -45,7 +45,7 @@ Use localized labels and the exact icon, tint, spacing, checkmark, and close-aft
 
 **Step 3: Replace the App-local ad-hoc rows**
 
-Make `LumiApp2` only provide `showMainWindow`, update checking, and termination callbacks; it must not own visual constants or English copy.
+Make `LumiApp` only provide `showMainWindow`, update checking, and termination callbacks; it must not own visual constants or English copy.
 
 **Step 4: Verify visually**
 
@@ -54,7 +54,7 @@ Launch the Lumi scheme, compare at 2× scale against the supplied screenshots, a
 ### Task 3: Restore status-bar label parity and live refresh
 
 **Files:**
-- Modify: `LumiApp/LumiApp2.swift`
+- Modify: `LumiApp/LumiApp.swift`
 - Modify: `Packages/ProviderMenuBar/Sources/ProviderMenuBar/MenuBarProviding.swift`
 - Modify: `Packages/ProviderMenuBar/Sources/ProviderMenuBar/DefaultMenuBarProviding.swift`
 - Test: `Packages/ProviderMenuBar/Tests/ProviderMenuBarTests/MenuBarPresentationTests.swift`

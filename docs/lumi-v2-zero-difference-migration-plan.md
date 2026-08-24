@@ -3,7 +3,7 @@
 > 日期：2026-08-16  
 > 状态：实施蓝图，不代表当前已完成  
 > 旧版基线：`LumiApp` + `FactoryLumi` + `FactoryCore` + `KernelLumi` + `Plugins/*`  
-> 新版目标：`LumiMinimalApp`（最终接管 `LumiApp` 身份）+ `FactoryLumi2` + `KernelCore` + `Provider*` + `Plugin*`
+> 新版目标：`LumiMinimalApp`（最终接管 `LumiApp` 身份）+ `FactoryLumi` + `KernelCore` + `Provider*` + `Plugin*`
 
 ## 1. 终极目标
 
@@ -24,7 +24,7 @@
 
 - `Plugins` 下现有 173 个旧版插件包，包含正式目录、宿主附加插件、可选实现和实验性实现。
 - `FactoryLumi` 的生产目录装配了其中大多数插件，`LumiApp` 另行注入 `AppUpdatePlugin` 和 `ProjectRAGPlugin`。
-- `FactoryLumi2` 当前默认装配 14 个新版插件：
+- `FactoryLumi` 当前默认装配 14 个新版插件：
   - `PluginSettingGeneral`
   - `PluginDevice`
   - `PluginAppIconDesigner`
@@ -112,7 +112,7 @@
 
 ```mermaid
 flowchart TD
-    App["LumiApp：窗口、AppDelegate、分发渠道配置"] --> Factory["FactoryLumi2：唯一 Composition Root"]
+    App["LumiApp：窗口、AppDelegate、分发渠道配置"] --> Factory["FactoryLumi：唯一 Composition Root"]
     Factory --> Kernel["KernelCore：注册表、生命周期、所有权、依赖排序"]
     Factory --> Providers["Provider / Host packages：稳定能力与默认实现"]
     Factory --> Plugins["Plugin* packages：业务贡献"]
@@ -126,9 +126,9 @@ flowchart TD
 
 1. `KernelCore` 只管理 Provider 和插件生命周期，不依赖业务领域、具体插件、SwiftData 模型或具体 UI。
 2. 每个业务能力使用独立 `ProviderX` 包；协议、Sendable DTO、错误类型和默认实现可以分 Target，避免消费者被迫链接重实现。
-3. 跨两个以上 Provider 的编排放进 `IntegrationX`，由 `FactoryLumi2` 组装，不能让 Provider 互相形成依赖环。
+3. 跨两个以上 Provider 的编排放进 `IntegrationX`，由 `FactoryLumi` 组装，不能让 Provider 互相形成依赖环。
 4. 新插件包统一以 `Plugin` 开头；稳定插件 ID 尽量保持旧值，避免状态、存储和自动化失效。
-5. 插件不能直接依赖 `FactoryLumi2`，也不能直接解析其它具体插件类型。
+5. 插件不能直接依赖 `FactoryLumi`，也不能直接解析其它具体插件类型。
 6. 高频状态由消费视图窄播观察，禁止通过 Kernel 全局 `objectWillChange` 广播 token、光标、滚动等事件。
 7. UI 统一复用 `LumiUI`；为了像素一致允许先复用旧版纯 View/Model，但不得把 `KernelLumi` 依赖带进新版。
 
@@ -490,7 +490,7 @@ flowchart TD
 
 ### 13.2 每个迁移波次
 
-- `FactoryLumi2` 全量测试。
+- `FactoryLumi` 全量测试。
 - `LumiMinimal` Debug 完整 Xcode build。
 - 旧数据 fixture 升级测试。
 - 相关真实 UI event replay 和性能场景。

@@ -17,7 +17,7 @@ import ProviderLLMManager
 /// 与旧版的对应关系：
 /// - `chatSectionActionBarItems(.leading)` → `ChatSectionProviding.addBarItems(.actionLeading)`；
 /// - `kernel.resolveService((any LLMProviderManaging).self)` → 内核
-///   `kernel.resolveProvider((any LLMManaging).self)`（FactoryLumi2 已装配 `DefaultLLMManager`）；
+///   `kernel.resolveProvider((any LLMManaging).self)`（FactoryLumi 已装配 `DefaultLLMManager`）；
 /// - 旧版 `.onLumiSelectedRemoteProviderIDDidChange` 等通知订阅 → SwiftUI 友好包装器
 ///   `ObservableLLMProviderManagerBox`（桥接 `LLMManaging.objectWillChange`）。
 @MainActor

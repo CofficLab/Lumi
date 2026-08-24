@@ -4,7 +4,7 @@
 
 ## 功能
 
-这个插件允许你在不修改 `FactoryLumi2` 的情况下自定义 AgentLoop 的行为。通过装饰器模式包装 `DefaultAgentLoopProvider`,你可以在以下场景添加自定义逻辑:
+这个插件允许你在不修改 `FactoryLumi` 的情况下自定义 AgentLoop 的行为。通过装饰器模式包装 `DefaultAgentLoopProvider`,你可以在以下场景添加自定义逻辑:
 
 - 在回合前后添加监控和日志
 - 拦截和修改消息

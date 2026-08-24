@@ -15,7 +15,7 @@ import SwiftUI
 ///
 /// 与旧版的对应关系：
 /// - `chatSectionToolbarBarItems` → `ChatSectionProviding.addBarItems(.toolbarLeading)`；
-/// - `kernel.conversations` → 内核 `ConversationManaging`（FactoryLumi2 已装配，
+/// - `kernel.conversations` → 内核 `ConversationManaging`（FactoryLumi 已装配，
 ///   且 PluginConversationManager order=7 可能已替换为持久化实现）。
 @MainActor
 public final class ConversationModePlugin: SuperPlugin, SuperLog {

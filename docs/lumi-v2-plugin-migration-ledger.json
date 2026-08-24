@@ -19,7 +19,7 @@
   "notes": [
    "Phase 0 自动提取的基础台账；providersConsumed/storage/userDefaultsKeys 等字段待 Phase 0 审计与 Phase 12 回查逐步填充",
    "legacyCatalogState: production=LumiPluginCatalog 实例化; hostInjected=LumiApp 注入(AppUpdate/ProjectRAG); disabled=import 未实例化; experimental=未进生产装配",
-   "newPackage 仅标记 FactoryLumi2 当前已装配的 14 个新版包；其余待迁移",
+   "newPackage 仅标记 FactoryLumi 当前已装配的 14 个新版包；其余待迁移",
    "EditorKernelPlugin/EditorProviderPlugin/SubAgentProviderPlugin/VerbosityPlugin 目录无源码或已迁移至 Packages/",
    "Phase 0 Task 3 反向差距审计：14 个新版包评级 parityReview 9 个（量级相当，进入逐项对照）/ implementing 5 个（明显简化，需继续完善）；ProviderMessageStreaming/MessageRendering/ConversationInput/AgentTurn/Workspace 为空包，聊天主链 Provider 层未建。",
    "Phase 0 Task 3 反向差距审计：14 个新版包评级 parityReview 9 个（量级相当，进入逐项对照）/ implementing 5 个（明显简化，需继续完善）；ProviderMessageStreaming/MessageRendering/ConversationInput/AgentTurn/Workspace 为空包，聊天主链 Provider 层未建。"
@@ -59,10 +59,10 @@
     "status": "migrated",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginActivityHeatmap (2026-08-24)",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": "V2 package is registered in FactoryLumi2 and preserves the settings entry, 30/90/365-day period preference, daily message heatmap, token trend, idle-time card, about entry, and data-directory action. Historical activity is stored in the V2 plugin-data directory and reused on reload; today remains real-time. The legacy plugin can now be deleted after the host-wide migration cutover.",
+    "migration": "V2 package is registered in FactoryLumi and preserves the settings entry, 30/90/365-day period preference, daily message heatmap, token trend, idle-time card, about entry, and data-directory action. Historical activity is stored in the V2 plugin-data directory and reused on reload; today remains real-time. The legacy plugin can now be deleted after the host-wide migration cutover.",
     "performance": null
    }
   },
@@ -179,10 +179,10 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginAgentTurnNotification (2026-08-24; 3 tests passed)",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers PluginAgentTurnNotification. The V2 plugin subscribes to LifecycleHooksProviding turn-finished events and presents the same completion, failure and cancellation notifications without relying on KernelLumi notifications.",
+    "migration": "FactoryLumi registers PluginAgentTurnNotification. The V2 plugin subscribes to LifecycleHooksProviding turn-finished events and presents the same completion, failure and cancellation notifications without relying on KernelLumi notifications.",
     "performance": null
    }
   },
@@ -217,7 +217,7 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test --package-path Packages/WebServerKit; swift test --package-path Packages/PluginWebServer",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi",
     "runtime": null,
     "uiDiff": null,
     "migration": "Plugins/WebServerPlugin + Packages/WebServerKit（KernelLumi/LumiPlugin）→ Packages/PluginWebServer + ProviderWebServer/KernelCore；保留回环监听、鉴权、动态路由、自描述端点及主题 HTTP API。",
@@ -254,11 +254,11 @@
    "testFixtures": [],
    "status": "parityReview",
    "evidence": {
-    "packageTests": "swift test --package-path Packages/PluginAppIconDesigner; swift test --package-path Packages/FactoryAppIconDesigner2 (2026-08-24)",
+    "packageTests": "swift test --package-path Packages/PluginAppIconDesigner; swift test --package-path Packages/FactoryAppIconDesigner (2026-08-24)",
     "integrationBuild": "xcodebuild -project Lumi.xcodeproj -scheme AppIconDesigner -configuration Debug build CODE_SIGNING_ALLOWED=NO (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": "AppIconDesigner target now uses FactoryAppIconDesigner2 and KernelCore. The dedicated host preserves the V2 designer, document rail, persistent storage, documentation, and all 15 icon-design tools; visual parity remains under review before deleting the old plugin source.",
+    "migration": "AppIconDesigner target now uses FactoryAppIconDesigner and KernelCore. The dedicated host preserves the V2 designer, document rail, persistent storage, documentation, and all 15 icon-design tools; visual parity remains under review before deleting the old plugin source.",
     "performance": null
    },
    "gapAudit": {
@@ -547,11 +547,11 @@
    "testFixtures": [],
    "status": "parityReview",
    "evidence": {
-    "packageTests": "swift test --package-path Plugins/BookletMakerPlugin (31 XCTest cases, 2026-08-24); swift test --package-path Packages/FactoryBookletMaker2 (11 Swift Testing cases, 2026-08-24)",
-    "integrationBuild": "xcodebuild -project Lumi.xcodeproj -scheme BookletMakerApp2 -configuration Debug build CODE_SIGNING_ALLOWED=NO (2026-08-24)",
+    "packageTests": "swift test --package-path Plugins/BookletMakerPlugin (31 XCTest cases, 2026-08-24); swift test --package-path Packages/FactoryBookletMaker (11 Swift Testing cases, 2026-08-24)",
+    "integrationBuild": "xcodebuild -project Lumi.xcodeproj -scheme BookletMaker -configuration Debug build CODE_SIGNING_ALLOWED=NO (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": "The PDF booklet and split workflows now use KernelCore through FactoryBookletMaker2. The V2 host preserves its shared view model, export panels, rail, dynamic toolbar title, workspace visibility, documentation, and plugin data directory. It remains parityReview until the legacy BookletMaker host and FactoryBookletMaker references are deleted during the global cutover.",
+    "migration": "The PDF booklet and split workflows now use KernelCore through FactoryBookletMaker. The V2 host preserves its shared view model, export panels, rail, dynamic toolbar title, workspace visibility, documentation, and plugin data directory. It remains parityReview until the legacy BookletMaker host and FactoryBookletMaker references are deleted during the global cutover.",
     "performance": null
    }
   },
@@ -659,11 +659,11 @@
    "testFixtures": [],
    "status": "parityReview",
    "evidence": {
-    "packageTests": "swift test --package-path Packages/PluginCADDesigner; swift test --package-path Packages/FactoryCADDesigner2",
+    "packageTests": "swift test --package-path Packages/PluginCADDesigner; swift test --package-path Packages/FactoryCADDesigner",
     "integrationBuild": "xcodebuild -project Lumi.xcodeproj -scheme CADDesigner -configuration Debug build CODE_SIGNING_ALLOWED=NO -quiet",
     "runtime": null,
     "uiDiff": null,
-    "migration": "V2 SuperPlugin publishes the existing CAD workspace through ContentViewProviding, registers its title/about/manual through V2 Toolbar/Docs providers, configures the CAD runtime with V2 StorageProviding paths, and restores all ten stable CAD Agent tools (project lifecycle, frame creation, component assembly/editing, BOM, connections, and cutting optimization) without changing .cadproj JSON persistence, geometry, assembly graph, BOM aggregation, or FFD cutting results. FactoryCADDesigner2 now makes CAD always-on in its own KernelCore assembly and the CADDesigner target uses that assembly for both main and settings windows. The obsolete KernelLumi plugin facade, hooks, agent tools, toolbar adapter, legacy catalog entry, and kernel/logging dependencies have been removed; Plugins/CADDesignerPlugin now contains only the reusable CAD engine and UI. Legacy external-file routing did not handle CAD because the old plugin never implemented its openFile hook; opening .cadproj remains available from the CAD workspace. Visual parity is still pending a manual review.",
+    "migration": "V2 SuperPlugin publishes the existing CAD workspace through ContentViewProviding, registers its title/about/manual through V2 Toolbar/Docs providers, configures the CAD runtime with V2 StorageProviding paths, and restores all ten stable CAD Agent tools (project lifecycle, frame creation, component assembly/editing, BOM, connections, and cutting optimization) without changing .cadproj JSON persistence, geometry, assembly graph, BOM aggregation, or FFD cutting results. FactoryCADDesigner now makes CAD always-on in its own KernelCore assembly and the CADDesigner target uses that assembly for both main and settings windows. The obsolete KernelLumi plugin facade, hooks, agent tools, toolbar adapter, legacy catalog entry, and kernel/logging dependencies have been removed; Plugins/CADDesignerPlugin now contains only the reusable CAD engine and UI. Legacy external-file routing did not handle CAD because the old plugin never implemented its openFile hook; opening .cadproj remains available from the CAD workspace. Visual parity is still pending a manual review.",
     "performance": null
    }
   },
@@ -889,10 +889,10 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginCommand (2026-08-24; 1 test passed)",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers CommandSuperPlugin, which replaces the fallback command provider while retaining the Debug menu.",
+    "migration": "FactoryLumi registers CommandSuperPlugin, which replaces the fallback command provider while retaining the Debug menu.",
     "performance": null
    }
   },
@@ -965,7 +965,7 @@
     "integrationBuild": null,
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers ConversationAgentTurnCountPlugin from the consolidated PluginConversationStats package.",
+    "migration": "FactoryLumi registers ConversationAgentTurnCountPlugin from the consolidated PluginConversationStats package.",
     "performance": null
    }
   },
@@ -1037,7 +1037,7 @@
     "integrationBuild": null,
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers ConversationCacheHitRatePlugin from the consolidated PluginConversationStats package.",
+    "migration": "FactoryLumi registers ConversationCacheHitRatePlugin from the consolidated PluginConversationStats package.",
     "performance": null
    }
   },
@@ -1073,7 +1073,7 @@
     "integrationBuild": null,
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers ConversationContextSizePlugin from the consolidated PluginConversationStats package.",
+    "migration": "FactoryLumi registers ConversationContextSizePlugin from the consolidated PluginConversationStats package.",
     "performance": null
    }
   },
@@ -1151,7 +1151,7 @@
    },
    "gapAudit": {
     "grade": "parityReview",
-    "summary": "新版 PluginConversationInput 复刻旧版完整编辑器（ChatInputEditorView 882 行原生 AppKit：IME 组合、大段粘贴折叠预览、文件拖放、高度自适应）+ 发送/停止 ActionBar 按钮 + 错误提示。架构差异：输入状态改用内核 ConversationInputProviding（FactoryLumi2 已装配），发送经 MessageSendingProviding；移除 InputState 类（逻辑内联到视图层）；图片拖拽附件上传（旧版 messageSender.addAttachment）因新版无附件管道降级为路径文本；policy alwayson→enabledByDefault、stage beta→preview。"
+    "summary": "新版 PluginConversationInput 复刻旧版完整编辑器（ChatInputEditorView 882 行原生 AppKit：IME 组合、大段粘贴折叠预览、文件拖放、高度自适应）+ 发送/停止 ActionBar 按钮 + 错误提示。架构差异：输入状态改用内核 ConversationInputProviding（FactoryLumi 已装配），发送经 MessageSendingProviding；移除 InputState 类（逻辑内联到视图层）；图片拖拽附件上传（旧版 messageSender.addAttachment）因新版无附件管道降级为路径文本；policy alwayson→enabledByDefault、stage beta→preview。"
    }
   },
   {
@@ -1260,10 +1260,10 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginConversationManager (2026-08-24; 4 tests passed)",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers PluginConversationManager, which replaces the V2 conversation provider and carries the V4 data migration. CRUD, paging, title updates, cascading child-conversation deletion and idempotent legacy import are covered by package tests.",
+    "migration": "FactoryLumi registers PluginConversationManager, which replaces the V2 conversation provider and carries the V4 data migration. CRUD, paging, title updates, cascading child-conversation deletion and idempotent legacy import are covered by package tests.",
     "performance": null
    }
   },
@@ -1299,7 +1299,7 @@
     "integrationBuild": null,
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers ConversationMessageCountPlugin from the consolidated PluginConversationStats package.",
+    "migration": "FactoryLumi registers ConversationMessageCountPlugin from the consolidated PluginConversationStats package.",
     "performance": null
    }
   },
@@ -1610,10 +1610,10 @@
    "status": "migrated",
    "evidence": {
     "packageTests": "swift test --package-path Plugins/DatabaseManagerPlugin",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi",
     "runtime": null,
     "uiDiff": null,
-    "migration": "DatabaseManagerSuperPlugin was registered in FactoryLumi2 with the legacy stable ID, opt-in policy, workspace, editor language, tools, file handler, and docs.",
+    "migration": "DatabaseManagerSuperPlugin was registered in FactoryLumi with the legacy stable ID, opt-in policy, workspace, editor language, tools, file handler, and docs.",
     "performance": null
    }
   },
@@ -1645,11 +1645,11 @@
    "testFixtures": [],
    "status": "parityReview",
    "evidence": {
-    "packageTests": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
+    "packageTests": "swift build --package-path Packages/FactoryLumi (2026-08-24)",
     "integrationBuild": "Lumi target no longer directly links Plugins/DebugBadgePlugin; xcodebuild -list -project Lumi.xcodeproj resolves (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers DebugBadgeSuperPlugin from Packages/PluginDebugBadge; direct legacy Xcode package reference removed.",
+    "migration": "FactoryLumi registers DebugBadgeSuperPlugin from Packages/PluginDebugBadge; direct legacy Xcode package reference removed.",
     "performance": null
    }
   },
@@ -1724,7 +1724,7 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test PluginDiskManager: 35 tests / 7 suites passed",
-    "integrationBuild": "xcodebuild -scheme Lumi build succeeded; FactoryLumi2 DefaultPluginFactory 已装配 DiskManagerPlugin()",
+    "integrationBuild": "xcodebuild -scheme Lumi build succeeded; FactoryLumi DefaultPluginFactory 已装配 DiskManagerPlugin()",
     "runtime": null,
     "uiDiff": null,
     "migration": "Plugins/DiskManagerPlugin → Packages/PluginDiskManager（KernelLumi/LumiPlugin → KernelCore/SuperPlugin）",
@@ -2419,10 +2419,10 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginFileLog (2026-08-24; log-directory test passed)",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers PluginFileLog. The V2 coordinator resolves its directory through StorageProviding and retains OSLog polling, disk rotation and retention behavior. Its test target was repaired to avoid overlapping production sources.",
+    "migration": "FactoryLumi registers PluginFileLog. The V2 coordinator resolves its directory through StorageProviding and retains OSLog polling, disk rotation and retention behavior. Its test target was repaired to avoid overlapping production sources.",
     "performance": null
    }
   },
@@ -2547,7 +2547,7 @@
    "status": "migrated",
    "evidence": {
     "packageTests": "swift test --package-path Plugins/GoalTaskPlugin",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi",
     "runtime": null,
     "uiDiff": null,
     "migration": "GoalTaskSuperPlugin preserves stable ID, SQLite path, five tool names, chat contributions, and automatic continuation.",
@@ -2625,10 +2625,10 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginIdleTime (2026-08-24; 2 tests passed)",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers PluginIdleTime. V2 registers its menu-bar popover, settings/about views and idle event listener; shutdown withdraws all contributions.",
+    "migration": "FactoryLumi registers PluginIdleTime. V2 registers its menu-bar popover, settings/about views and idle event listener; shutdown withdraws all contributions.",
     "performance": null
    }
   },
@@ -3772,10 +3772,10 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginMemory (2026-08-24; 6 tests passed)",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers PluginMemory. V2 storage and the four memory tools (save, recall, list and delete) are covered by package tests.",
+    "migration": "FactoryLumi registers PluginMemory. V2 storage and the four memory tools (save, recall, list and delete) are covered by package tests.",
     "performance": null
    }
   },
@@ -4038,11 +4038,11 @@
    "testFixtures": [],
    "status": "parityReview",
    "evidence": {
-    "packageTests": "swift test PluginMessageSender: 3 tests / 1 suite passed（onBoot 注册/缺依赖降级/sendMessage 完整链路）；swift test FactoryLumi2: 35 tests / 4 suites passed（无回归）",
-    "integrationBuild": "swift build FactoryLumi2 succeeded（依赖图含 PluginMessageSender）",
+    "packageTests": "swift test PluginMessageSender: 3 tests / 1 suite passed（onBoot 注册/缺依赖降级/sendMessage 完整链路）；swift test FactoryLumi: 35 tests / 4 suites passed（无回归）",
+    "integrationBuild": "swift build FactoryLumi succeeded（依赖图含 PluginMessageSender）",
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2.ProviderFactory 直接装配注册 → Packages/PluginMessageSender（SuperPlugin onBoot 解析 ConversationManaging/MessageManaging/AgentLoopProviding 并 registerProvider；ProviderFactory 移除注册避免重复，makeMessageSenderProvider 保留为宿主覆盖钩子）",
+    "migration": "FactoryLumi.ProviderFactory 直接装配注册 → Packages/PluginMessageSender（SuperPlugin onBoot 解析 ConversationManaging/MessageManaging/AgentLoopProviding 并 registerProvider；ProviderFactory 移除注册避免重复，makeMessageSenderProvider 保留为宿主覆盖钩子）",
     "performance": null
    }
   },
@@ -4124,7 +4124,7 @@
    "status": "migrated",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginMindMapDesigner",
-    "integrationBuild": "swift test --package-path Packages/FactoryLumi2",
+    "integrationBuild": "swift test --package-path Packages/FactoryLumi",
     "runtime": null,
     "uiDiff": null,
     "migration": "MindMapDesignerPlugin preserves the legacy stable ID, opt-in policy, .lumi/mind-map storage, workspace, rail, and ten tools.",
@@ -4160,7 +4160,7 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test PluginModelSelector: 3 tests passed",
-    "integrationBuild": "swift build FactoryLumi2 succeeded; swift test FactoryLumi2: 35 tests passed",
+    "integrationBuild": "swift build FactoryLumi succeeded; swift test FactoryLumi: 35 tests passed",
     "runtime": null,
     "uiDiff": null,
     "migration": "Plugins/ModelSelectorPlugin → Packages/PluginModelSelector（KernelLumi/LumiPlugin → KernelCore/SuperPlugin）",
@@ -4201,7 +4201,7 @@
    "status": "migrated",
    "evidence": {
     "packageTests": "swift test --package-path Plugins/NettoPlugin (2026-08-24)",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
     "migration": "NettoSuperPlugin preserves the stable ID, disabled policy, order, firewall dashboard workspace, and about/manual contributions through KernelCore providers. The existing AppSettingRepo continues to use ~/Library/Application Support/Lumi/NettoPlugin/settings.json when the host later enables the plugin.",
@@ -4321,10 +4321,10 @@
    "status": "implementing",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginOnboarding",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi",
     "runtime": null,
     "uiDiff": null,
-    "migration": "PluginOnboarding registers welcome and AI-provider setup pages through ProviderOnboarding. The AI setup page now uses V2 LLMManaging to select a provider and persist API keys (or directly enable local providers). LumiApp2 owns persisted first-run presentation, reset/replay via Onboarding.Show, and navigation. Legacy detailed presentation customizations still require parity review.",
+    "migration": "PluginOnboarding registers welcome and AI-provider setup pages through ProviderOnboarding. The AI setup page now uses V2 LLMManaging to select a provider and persist API keys (or directly enable local providers). LumiApp owns persisted first-run presentation, reset/replay via Onboarding.Show, and navigation. Legacy detailed presentation customizations still require parity review.",
     "performance": null
    }
   },
@@ -4648,7 +4648,7 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test PluginPluginManager: 4 tests / 1 suite passed",
-    "integrationBuild": "swift build FactoryLumi2 succeeded; DefaultPluginFactory 已装配 PluginPluginManager()（onBoot 经 SettingViewProviding.addEntries 注册「插件管理」入口）",
+    "integrationBuild": "swift build FactoryLumi succeeded; DefaultPluginFactory 已装配 PluginPluginManager()（onBoot 经 SettingViewProviding.addEntries 注册「插件管理」入口）",
     "runtime": null,
     "uiDiff": null,
     "migration": "Plugins/PluginManagerPlugin → Packages/PluginPluginManager（KernelLumi/LumiPlugin → KernelCore/SuperPlugin；SettingsTabItem → SettingEntryItem）",
@@ -4912,10 +4912,10 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test --package-path Plugins/ProjectRAGPlugin (50 engine tests); swift test --package-path Packages/PluginProjectRAG",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi",
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers ProjectRAGSuperPlugin. The legacy LumiPlugin facade, legacy RAG tool, project-detail view, and KernelLumi lifecycle hooks were removed. The retained engine product preserves the established RAG SQLite schema and vec0.dylib; its idle multi-project scheduler consumes V2 ProjectProviding and IdleTimeProviding, and the V2 Code Index entry supplies per-project status, pause, and manual rebuild controls.",
+    "migration": "FactoryLumi registers ProjectRAGSuperPlugin. The legacy LumiPlugin facade, legacy RAG tool, project-detail view, and KernelLumi lifecycle hooks were removed. The retained engine product preserves the established RAG SQLite schema and vec0.dylib; its idle multi-project scheduler consumes V2 ProjectProviding and IdleTimeProviding, and the V2 Code Index entry supplies per-project status, pause, and manual rebuild controls.",
     "performance": null
    }
   },
@@ -4949,10 +4949,10 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginProjects (2026-08-24; 3 tests passed)",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers PluginProjects. V2 project persistence, directory validation and the legacy storage directory key are covered by package tests; UI/runtime parity remains under review.",
+    "migration": "FactoryLumi registers PluginProjects. V2 project persistence, directory validation and the legacy storage directory key are covered by package tests; UI/runtime parity remains under review.",
     "performance": null
    }
   },
@@ -5059,7 +5059,7 @@
    "status": "migrated",
    "evidence": {
     "packageTests": "swift test --package-path Plugins/QuickLauncherPlugin (2026-08-24)",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
     "migration": "QuickLauncherSuperPlugin preserves the global Carbon hotkey, floating cross-Space launcher, persisted QuickLauncher.Source.* settings, application/Spotlight/command search, and ? direct-send behavior through ProviderCommand and MessageSendingProviding. The launcher command bridge is kernel-agnostic so the legacy and V2 registries provide the same search surface.",
@@ -5356,7 +5356,7 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginStateMonitor (2026-08-24)",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
     "migration": "V2 PluginStateMonitor restores project-bound conversation follow and incompatible-selection clearing. Provider/model selection is owned by PluginLLMManager; conversation verbosity is owned by PluginConversationBehavior.",
@@ -5545,7 +5545,7 @@
    "status": "migrated",
    "evidence": {
     "packageTests": "swift test --package-path Plugins/TextActionsPlugin",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi",
     "runtime": null,
     "uiDiff": null,
     "migration": "TextActionsSuperPlugin preserves TextActions.enabled, accessibility monitoring, menu actions, selected-provider translation, settings, and documentation.",
@@ -6233,10 +6233,10 @@
    "status": "parityReview",
    "evidence": {
     "packageTests": "swift test --package-path Packages/PluginToast (2026-08-24; 2 tests passed)",
-    "integrationBuild": "swift build --package-path Packages/FactoryLumi2 (2026-08-24)",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi (2026-08-24)",
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi2 registers ToastSuperPlugin, which replaces the fallback toast provider and renders the shared ToastCenter through the V2 root overlay.",
+    "migration": "FactoryLumi registers ToastSuperPlugin, which replaces the fallback toast provider and renders the shared ToastCenter through the V2 root overlay.",
     "performance": null
    }
   },

@@ -39,7 +39,7 @@ public protocol ChatSectionProviding: AnyObject {
     /// 把 header / toolbar 可见性绑定到会话选择状态：
     /// 无选中会话时自动隐藏（复刻旧版 `ChatView` 的 `selectedConversationID != nil` 判断）。
     ///
-    /// 由集成层（FactoryLumi2）在插件全部启动、`ConversationManaging` 最终实例
+    /// 由集成层（FactoryLumi）在插件全部启动、`ConversationManaging` 最终实例
     /// 确定后调用一次；订阅随 Provider 生命周期持有。
     func bindConversationSelection(_ conversations: any ConversationManaging)
 

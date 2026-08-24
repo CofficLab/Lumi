@@ -24,7 +24,7 @@ PLUGINS_DIR = REPO_ROOT / "Plugins"
 # 唯一允许依赖编辑器实现层的 Host 插件。
 EDITOR_HOST_PLUGIN = "EditorHostPlugin"
 # 允许依赖完整编辑器栈的非插件 Package（服务门面层自身）。
-EDITOR_IMPL_PACKAGES = {"EditorService", "FactoryLumi", "FactoryLumi2", "EditorChatInputKit"}
+EDITOR_IMPL_PACKAGES = {"EditorService", "FactoryLumi", "FactoryLumi", "EditorChatInputKit"}
 EDITOR_IMPL_MODULES = {"EditorService", "EditorSource", "EditorTextView", "EditorKernel", "EditorLanguageRuntime"}
 
 PLUGIN_FORBIDDEN_MODULES = {"EditorService", "EditorSource", "EditorTextView", "EditorKernel"}

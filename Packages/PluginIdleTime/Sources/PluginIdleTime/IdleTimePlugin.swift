@@ -10,7 +10,7 @@ import SwiftUI
 /// 空闲时间插件（KernelCore 版本）。
 ///
 /// 由旧版 `Plugins/IdleTimePlugin`（KernelLumi / LumiPlugin 架构）复刻而来：
-/// - onBoot 解析内核注册的 `IdleTimeProviding`（FactoryLumi2 已装配完整服务），
+/// - onBoot 解析内核注册的 `IdleTimeProviding`（FactoryLumi 已装配完整服务），
 ///   注册活动事件监听（应用激活 / 编辑器保存），把事件喂给服务做休息窗口推断；
 /// - 贡献菜单栏弹窗（休息窗口快照与 24 小时活动热条）、设置页、关于文档；
 /// - onShutdown 全部撤回。
@@ -34,7 +34,7 @@ public final class IdleTimePlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        // 1. 解析 IdleTimeProviding（FactoryLumi2 已装配真实 IdleTimeService）。
+        // 1. 解析 IdleTimeProviding（FactoryLumi 已装配真实 IdleTimeService）。
         let provider = kernel.resolveProvider((any IdleTimeProviding).self)
         self.provider = provider
 

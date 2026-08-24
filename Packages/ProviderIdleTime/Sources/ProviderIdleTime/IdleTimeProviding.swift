@@ -40,7 +40,7 @@ public extension IdleTimeProviding {
 /// 轻量内存实现：仅记录最近活动时间，不进行持久化与推断。
 ///
 /// 用于宿主在真实 `IdleTimeService` 迁移完成前的占位；
-/// 迁移后由 FactoryLumi2 的 ProviderFactory 替换为完整实现。
+/// 迁移后由 FactoryLumi 的 ProviderFactory 替换为完整实现。
 public final actor DefaultIdleTimeProviding: IdleTimeProviding {
     private var lastActivityAt: Date?
 

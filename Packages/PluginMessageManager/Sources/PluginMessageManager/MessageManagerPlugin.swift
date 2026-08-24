@@ -10,7 +10,7 @@ import SuperLogKit
 /// Message Manager Plugin (v2)
 ///
 /// 复刻自旧版 `MessageManagerPlugin`：以 SwiftData 持久化的 `MessageManager`
-/// 替代 FactoryLumi2 默认的内存版 `DefaultMessageManaging`。
+/// 替代 FactoryLumi 默认的内存版 `DefaultMessageManaging`。
 ///
 /// 装配方式（对齐 `ConversationManagerPlugin`）：
 /// - `onBoot` 中创建 `MessageStore` + `MessageManager`，先

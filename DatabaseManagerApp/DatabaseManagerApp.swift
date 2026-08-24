@@ -1,5 +1,5 @@
 import AppKit
-import FactoryDatabaseManager2
+import FactoryDatabaseManager
 import KernelCore
 import SwiftUI
 
@@ -12,7 +12,7 @@ private final class DatabaseManagerFileOpenAgent: NSObject, NSApplicationDelegat
         Self.kernel = kernel
         let queuedURLs = Self.pendingURLs
         Self.pendingURLs = []
-        queuedURLs.forEach { _ = FactoryDatabaseManager2.openExternalFile($0, kernel: kernel) }
+        queuedURLs.forEach { _ = FactoryDatabaseManager.openExternalFile($0, kernel: kernel) }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -29,7 +29,7 @@ private final class DatabaseManagerFileOpenAgent: NSObject, NSApplicationDelegat
             pendingURLs.append(url)
             return
         }
-        _ = FactoryDatabaseManager2.openExternalFile(url, kernel: kernel)
+        _ = FactoryDatabaseManager.openExternalFile(url, kernel: kernel)
         NSApp.activate(ignoringOtherApps: true)
         NSApp.windows.first(where: \.canBecomeKey)?.makeKeyAndOrderFront(nil)
     }
@@ -43,15 +43,15 @@ struct DatabaseManagerApp: App {
     private let settingsView: AnyView
 
     init() {
-        guard let kernel = try? FactoryDatabaseManager2.makeKernel() else {
+        guard let kernel = try? FactoryDatabaseManager.makeKernel() else {
             mainView = AnyView(Text("Failed to assemble Database Manager"))
             settingsView = AnyView(Text("Failed to assemble settings"))
             return
         }
         DatabaseManagerFileOpenAgent.configure(kernel: kernel)
-        mainView = (try? FactoryDatabaseManager2.makeMainView(kernel: kernel))
+        mainView = (try? FactoryDatabaseManager.makeMainView(kernel: kernel))
             ?? AnyView(Text("Failed to assemble Database Manager"))
-        settingsView = (try? FactoryDatabaseManager2.makeSettingsView(kernel: kernel))
+        settingsView = (try? FactoryDatabaseManager.makeSettingsView(kernel: kernel))
             ?? AnyView(Text("Failed to assemble settings"))
     }
 

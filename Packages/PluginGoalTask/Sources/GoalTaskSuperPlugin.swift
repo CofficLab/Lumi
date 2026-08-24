@@ -12,7 +12,7 @@ import SwiftUI
 /// KernelCore implementation of the goal and task workflow.
 ///
 /// It intentionally uses the legacy plugin's storage key and SQLite layout so
-/// existing goals remain visible after the host switches to LumiApp2.
+/// existing goals remain visible after the host switches to LumiApp.
 @MainActor
 public final class GoalTaskSuperPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.goal-task"
