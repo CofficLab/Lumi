@@ -7,6 +7,12 @@ import ProviderExternalFile
 import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
+import os
+
+struct DatabaseManagerPlugin {
+    nonisolated static let verbose = false
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "DatabaseManagerPlugin")
+}
 
 /// DatabaseManager 的 KernelCore 入口，复用既有数据库连接、查询与 SQL 编辑体验。
 @MainActor
