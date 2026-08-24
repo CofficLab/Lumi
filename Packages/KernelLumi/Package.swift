@@ -16,6 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../ProviderWebServer"),
         .package(path: "../LumiUI"),
         .package(path: "../SuperLogKit"),
         .package(name: "HttpKit", path: "../HttpKit"),
@@ -26,6 +27,7 @@ let package = Package(
             name: "KernelLumi",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderWebServer", package: "ProviderWebServer"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
                 .product(name: "HttpKit", package: "HttpKit"),
