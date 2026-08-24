@@ -1,5 +1,5 @@
 import XCTest
-import KernelLumi
+import ProviderWebServer
 @testable import WebServerKit
 
 final class LumiWebServerTests: XCTestCase {

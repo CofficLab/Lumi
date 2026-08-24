@@ -196,7 +196,7 @@
    "order": 64,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": null,
+   "newPackage": "PluginWebServer",
    "wave": "P4",
    "owners": [],
    "dependencies": [
@@ -216,13 +216,13 @@
    "notifications": [],
    "commands": [],
    "testFixtures": [],
-   "status": "inventory",
+   "status": "parityReview",
    "evidence": {
-    "packageTests": null,
-    "integrationBuild": null,
+    "packageTests": "swift test --package-path Packages/WebServerKit; swift test --package-path Packages/PluginWebServer",
+    "integrationBuild": "swift build --package-path Packages/FactoryLumi2",
     "runtime": null,
     "uiDiff": null,
-    "migration": null,
+    "migration": "Plugins/WebServerPlugin + Packages/WebServerKit（KernelLumi/LumiPlugin）→ Packages/PluginWebServer + ProviderWebServer/KernelCore；保留回环监听、鉴权、动态路由、自描述端点及主题 HTTP API。",
     "performance": null
    }
   },

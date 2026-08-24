@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "WebServerKit", targets: ["WebServerKit"])
     ],
     dependencies: [
-        .package(name: "KernelLumi", path: "../KernelLumi"),
+        .package(name: "ProviderWebServer", path: "../ProviderWebServer"),
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0"),
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.0.0"),
     ],
@@ -19,7 +19,7 @@ let package = Package(
         .target(
             name: "WebServerKit",
             dependencies: [
-                .product(name: "KernelLumi", package: "KernelLumi"),
+                .product(name: "ProviderWebServer", package: "ProviderWebServer"),
                 .product(name: "Hummingbird", package: "hummingbird"),
                 .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
             ],

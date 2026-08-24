@@ -84,6 +84,7 @@ import PluginToolbarSettings
 import PluginVideoConverter
 import PluginWebFetch
 import PluginWebSearch
+import PluginWebServer
 import PluginWhiteNoise
 
 /// 默认 `PluginFactory` 实现：产出默认插件。
@@ -110,6 +111,7 @@ public struct DefaultPluginFactory: PluginFactory {
             DocxReadPlugin(),
             WebFetchPlugin(),
             WebSearchPlugin(),
+            WebServerPlugin(),
             AgentRulesPlugin(),
             AgentTempStoragePlugin(),
             OcrPlugin(),
