@@ -6,6 +6,7 @@ import PluginAgentTurnNotification
 import PluginDebugBadge
 import PluginFileLog
 import PluginShowImage
+import ImageToPDFPlugin
 import PluginStorage
 import PluginToast
 import PluginCommand
@@ -152,6 +153,7 @@ public struct DefaultPluginFactory: PluginFactory {
             DebugBadgeSuperPlugin(),
             FileLogPlugin(),
             ShowImagePlugin(),
+            ImageToPDFSuperPlugin(),
             SkillPlugin(),
             StateMonitorPlugin(),
             OnboardingPlugin(),
