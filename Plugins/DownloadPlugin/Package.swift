@@ -15,6 +15,9 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../Packages/KernelLumi"),
+        .package(path: "../../Packages/KernelCore"),
+        .package(path: "../../Packages/AgentToolKit"),
+        .package(path: "../../Packages/ProviderToolManager"),
         .package(path: "../../Packages/LocalizationKit"),        .package(path: "../../Packages/DownloadKit"),
         .package(path: "../../Packages/SuperLogKit"),
     ],
@@ -23,6 +26,9 @@ let package = Package(
             name: "DownloadPlugin",
             dependencies: [
                 .product(name: "KernelLumi", package: "KernelLumi"),
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "DownloadKit", package: "DownloadKit"),
                 .product(name: "SuperLogKit", package: "SuperLogKit"),
             ],

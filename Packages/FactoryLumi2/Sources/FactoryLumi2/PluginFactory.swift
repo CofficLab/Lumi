@@ -7,6 +7,7 @@ import PluginDebugBadge
 import PluginFileLog
 import PluginShowImage
 import ImageToPDFPlugin
+import DownloadPlugin
 import PluginStorage
 import PluginToast
 import PluginCommand
@@ -154,6 +155,7 @@ public struct DefaultPluginFactory: PluginFactory {
             FileLogPlugin(),
             ShowImagePlugin(),
             ImageToPDFSuperPlugin(),
+            DownloadSuperPlugin(),
             SkillPlugin(),
             StateMonitorPlugin(),
             OnboardingPlugin(),
