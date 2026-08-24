@@ -96,4 +96,20 @@ struct CADDesignerSuperPluginTests {
         #expect(GenerateBOMV2Tool.toolName == "cad_generate_bom")
         #expect(output.contains("500"))
     }
+
+    @Test("connects components and optimizes profile cuts through V2 tools")
+    func connectsAndOptimizesThroughV2Tools() async throws {
+        CADDocumentStore.shared.resetForTests()
+        _ = CADDocumentStore.shared.createDocument(name: "V2 Assembly")
+        _ = try await PlaceProfileV2Tool().execute(arguments: ["profileId": ToolArgument("profile-40x40-eu"), "length": ToolArgument(1000)])
+        _ = try await PlaceProfileV2Tool().execute(arguments: ["profileId": ToolArgument("profile-40x40-eu"), "length": ToolArgument(500)])
+        guard let components = CADDocumentStore.shared.selectedDocument?.components, components.count == 2 else { Issue.record("expected two components"); return }
+        let connection = try await ConnectComponentsV2Tool().execute(arguments: ["fromComponentId": ToolArgument(components[0].id), "toComponentId": ToolArgument(components[1].id), "connectionType": ToolArgument("bolt")])
+        let cutting = try await OptimizeCuttingV2Tool().execute(arguments: ["stockLength": ToolArgument(1200)])
+        #expect(ConnectComponentsV2Tool.toolName == "cad_connect_components")
+        #expect(OptimizeCuttingV2Tool.toolName == "cad_optimize_cutting")
+        #expect(connection.contains("bolt"))
+        #expect(CADDocumentStore.shared.selectedDocument?.connections.count == 1)
+        #expect(cutting.contains("1200"))
+    }
 }
