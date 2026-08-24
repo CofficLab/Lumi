@@ -41,6 +41,9 @@ public final class CADDesignerSuperPlugin: SuperPlugin {
         toolManager?.add(LoadCADProjectV2Tool(), pluginID: id)
         toolManager?.add(SaveCADProjectV2Tool(), pluginID: id)
         toolManager?.add(BuildFrameV2Tool(), pluginID: id)
+        toolManager?.add(PlaceProfileV2Tool(), pluginID: id)
+        toolManager?.add(PlaceConnectorV2Tool(), pluginID: id)
+        toolManager?.add(UpdateProfileV2Tool(), pluginID: id)
         kernel.resolveProvider((any ToolbarProviding).self)?.addToolbarItems([
             ToolbarItem(id: "\(id).title", title: metadata.name, placement: .center, order: 0) {
                 Text(self.metadata.name).font(.headline)
@@ -59,6 +62,9 @@ public final class CADDesignerSuperPlugin: SuperPlugin {
         toolManager?.remove(id: LoadCADProjectV2Tool.toolName)
         toolManager?.remove(id: SaveCADProjectV2Tool.toolName)
         toolManager?.remove(id: BuildFrameV2Tool.toolName)
+        toolManager?.remove(id: PlaceProfileV2Tool.toolName)
+        toolManager?.remove(id: PlaceConnectorV2Tool.toolName)
+        toolManager?.remove(id: UpdateProfileV2Tool.toolName)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }

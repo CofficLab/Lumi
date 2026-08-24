@@ -1,4 +1,5 @@
 import AgentToolKit
+import CADDesignerPlugin
 import Foundation
 
 enum CADDesignerV2ToolSupport {
@@ -13,6 +14,18 @@ enum CADDesignerV2ToolSupport {
         case let value as NSNumber: value.doubleValue
         default: nil
         }
+    }
+
+    static func double(_ arguments: [String: ToolArgument], _ key: String, default defaultValue: Double) -> Double {
+        double(arguments, key) ?? defaultValue
+    }
+
+    static func componentSummary(_ component: CADComponent) -> String {
+        let name = component.displayName(library: .shared)
+        return localized(
+            en: "componentId: \(component.id)\nname: \(name)\nkind: \(component.kind.rawValue)",
+            zh: "组件ID: \(component.id)\n名称: \(name)\n类型: \(component.kind == .profile ? "型材" : "连接件")"
+        )
     }
 
     static func localized(en: String, zh: String) -> String {

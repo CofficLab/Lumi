@@ -60,4 +60,30 @@ struct CADDesignerSuperPluginTests {
         #expect(CADDocumentStore.shared.selectedDocument?.components.count == 20)
         #expect(output.contains("20"))
     }
+
+    @Test("places and updates CAD components through stable V2 tool IDs")
+    func placesAndUpdatesComponentsThroughV2Tools() async throws {
+        CADDocumentStore.shared.resetForTests()
+        _ = CADDocumentStore.shared.createDocument(name: "V2 Components")
+        let profileOutput = try await PlaceProfileV2Tool().execute(arguments: [
+            "profileId": ToolArgument("profile-40x40-eu"), "length": ToolArgument(750), "x": ToolArgument(120),
+        ])
+        let connectorOutput = try await PlaceConnectorV2Tool().execute(arguments: ["connectorId": ToolArgument("connector-corner-40")])
+        guard let profile = CADDocumentStore.shared.selectedDocument?.components.first else {
+            Issue.record("expected a profile"); return
+        }
+        let updated = try await UpdateProfileV2Tool().execute(arguments: [
+            "componentId": ToolArgument(profile.id), "length": ToolArgument(900), "rotationY": ToolArgument(45),
+        ])
+        #expect(PlaceProfileV2Tool.toolName == "cad_place_profile")
+        #expect(PlaceConnectorV2Tool.toolName == "cad_place_connector")
+        #expect(UpdateProfileV2Tool.toolName == "cad_update_profile")
+        #expect(profileOutput.contains("750"))
+        #expect(connectorOutput.contains("connector-corner-40"))
+        #expect(updated.contains(profile.id))
+        if case .profile(let currentProfile) = CADDocumentStore.shared.selectedDocument?.components.first {
+            #expect(currentProfile.length == 900)
+            #expect(currentProfile.transform.rotationY == 45)
+        } else { Issue.record("expected the updated profile") }
+    }
 }
