@@ -36,7 +36,10 @@ public final class CADDesignerSuperPlugin: SuperPlugin {
         }
         kernel.resolveProvider((any ContentViewProviding).self)?
             .setContentView(AnyView(CADDesignerView()))
-        kernel.resolveProvider((any ToolManagerProviding).self)?.add(CreateCADProjectV2Tool(), pluginID: id)
+        let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
+        toolManager?.add(CreateCADProjectV2Tool(), pluginID: id)
+        toolManager?.add(LoadCADProjectV2Tool(), pluginID: id)
+        toolManager?.add(SaveCADProjectV2Tool(), pluginID: id)
         kernel.resolveProvider((any ToolbarProviding).self)?.addToolbarItems([
             ToolbarItem(id: "\(id).title", title: metadata.name, placement: .center, order: 0) {
                 Text(self.metadata.name).font(.headline)
@@ -50,7 +53,10 @@ public final class CADDesignerSuperPlugin: SuperPlugin {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
-        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: CreateCADProjectV2Tool.toolName)
+        let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
+        toolManager?.remove(id: CreateCADProjectV2Tool.toolName)
+        toolManager?.remove(id: LoadCADProjectV2Tool.toolName)
+        toolManager?.remove(id: SaveCADProjectV2Tool.toolName)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }

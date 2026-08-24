@@ -8,7 +8,7 @@ import CADDesignerPlugin
 @testable import PluginCADDesigner
 
 @MainActor
-@Suite("PluginCADDesigner")
+@Suite("PluginCADDesigner", .serialized)
 struct CADDesignerSuperPluginTests {
     @Test("publishes the CAD workspace into the V2 content provider")
     func publishesWorkspace() throws {
@@ -29,5 +29,23 @@ struct CADDesignerSuperPluginTests {
         ])
         #expect(CreateCADProjectV2Tool.toolName == "cad_create_project")
         #expect(output.contains("V2 Frame"))
+    }
+
+    @Test("preserves CAD project save and load behavior")
+    func savesAndLoadsProjectThroughV2Tools() async throws {
+        CADDocumentStore.shared.resetForTests()
+        let document = CADDocumentStore.shared.createDocument(name: "V2 Persistence")
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CADDesignerV2-\(UUID().uuidString).cadproj")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let saved = try await SaveCADProjectV2Tool().execute(arguments: ["path": ToolArgument(url.path)])
+        #expect(SaveCADProjectV2Tool.toolName == "cad_save_project")
+        #expect(saved.contains(url.path))
+
+        let loaded = try await LoadCADProjectV2Tool().execute(arguments: ["path": ToolArgument(url.path)])
+        #expect(LoadCADProjectV2Tool.toolName == "cad_load_project")
+        #expect(loaded.contains(document.name))
+        #expect(CADDocumentStore.shared.selectedDocument?.name == document.name)
     }
 }
