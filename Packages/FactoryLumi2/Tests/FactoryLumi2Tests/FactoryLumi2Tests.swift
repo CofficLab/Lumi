@@ -31,6 +31,14 @@ struct FactoryLumi2Tests {
 
     private final class AdditionalPlugin: SuperPlugin {
         let id = "test.additional-plugin"
+        let metadata = PluginMetadata(
+            id: "test.additional-plugin",
+            name: "Additional test plugin",
+            description: "",
+            category: .general,
+            stage: .stable,
+            policy: .alwaysOn
+        )
     }
 
     @Test("SelectedPluginFactory 仅产出白名单插件并保持原目录顺序")
@@ -153,7 +161,7 @@ struct FactoryLumi2Tests {
 
         let resolved: (any RootViewProviding)? = kernel.resolveProvider((any RootViewProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultRootViewProviding)
+        #expect(resolved is DefaultRootViewProvider)
     }
 
     @Test("makeKernel 创建内核并注册默认 ActivityBarProviding")
@@ -244,7 +252,7 @@ struct FactoryLumi2Tests {
         #expect(toast is DefaultToastProviding)
         #expect(network is DefaultNetworkProviding)
         #expect(toolbar is DefaultToolbarProviding)
-        #expect(rootView is DefaultRootViewProviding)
+        #expect(rootView is DefaultRootViewProvider)
         #expect(activityBar is DefaultActivityBarProviding)
         #expect(railView is DefaultRailViewProviding)
         #expect(settingView is DefaultSettingViewProviding)
@@ -426,11 +434,11 @@ struct FactoryLumi2Tests {
         #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 10)
     }
 
-    @Test("makeKernel 注册默认 LLMProviderManagerProviding")
+    @Test("makeKernel 注册默认 LLMManaging")
     func makeKernelRegistersDefaultLLMProviderManager() throws {
         let kernel = try KernelFactory.makeKernel()
 
-        let manager: (any LLMProviderManagerProviding)? = kernel.resolveProvider((any LLMProviderManagerProviding).self)
+        let manager: (any LLMManaging)? = kernel.resolveProvider((any LLMManaging).self)
         #expect(manager != nil)
         #expect(manager is DefaultLLMProviderManagerProviding)
         // 20 个 PluginLLMProviderXXX 插件在启动时注册全部 27 个内建供应商。
@@ -438,7 +446,7 @@ struct FactoryLumi2Tests {
         #expect(manager?.providerID == "llm-provider-manager")
     }
 
-    @Test("ProviderFactory 产出默认 LLMProviderManagerProviding 实现")
+    @Test("ProviderFactory 产出默认 LLMManaging 实现")
     func providerFactoryMakesDefaultLLMProviderManager() {
         let factory = DefaultProviderFactory()
 
@@ -450,7 +458,7 @@ struct FactoryLumi2Tests {
     @Test("内核装配后：注册供应商进管理器即可经管理器路由发送")
     func kernelRoutesThroughRegisteredProvider() async throws {
         let kernel = try KernelFactory.makeKernel()
-        let manager = kernel.resolveProvider((any LLMProviderManagerProviding).self)
+        let manager = kernel.resolveProvider((any LLMManaging).self)
         #expect(manager != nil)
 
         try manager?.register(EchoManagedProvider(id: "echo"))
@@ -459,7 +467,7 @@ struct FactoryLumi2Tests {
         let response = try await manager?.complete(
             LLMRequest(
                 conversationID: UUID(),
-                messages: [Message(conversationID: UUID(), role: .user, content: "hi")]
+                messages: [LLMMessage(role: .user, content: "hi")]
             )
         )
 

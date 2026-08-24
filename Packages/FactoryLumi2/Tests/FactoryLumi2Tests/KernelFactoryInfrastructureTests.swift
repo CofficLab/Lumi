@@ -11,6 +11,14 @@ import Testing
 struct KernelFactoryInfrastructureTests {
     private final class AsyncProbePlugin: AsyncSuperPlugin {
         let id = "test.async-probe"
+        let metadata = PluginMetadata(
+            id: "test.async-probe",
+            name: "Async probe",
+            description: "",
+            category: .general,
+            stage: .stable,
+            policy: .alwaysOn
+        )
         var didBoot = false
         var didBecomeReady = false
 
