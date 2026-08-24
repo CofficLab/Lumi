@@ -3,6 +3,14 @@ import Testing
 @testable import RegistryManagerPlugin
 
 @MainActor
+@Test func v2PluginMetadataIsStable() {
+    let plugin = RegistryManagerSuperPlugin()
+    #expect(plugin.id == "com.coffic.lumi.plugin.registry-manager")
+    #expect(plugin.metadata.name == "Registry Manager")
+    #expect(plugin.metadata.policy == .disabled)
+}
+
+@MainActor
 @Test
 func staleRefreshDoesNotOverwriteNewerRegistryResult() async throws {
     let service = FakeRegistryManagerService(
