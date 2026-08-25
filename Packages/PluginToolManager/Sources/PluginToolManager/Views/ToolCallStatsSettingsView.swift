@@ -2,7 +2,7 @@ import LumiUI
 import ProviderToolManager
 import SwiftUI
 
-/// 工具调用统计（复刻旧版 ToolCallStatsSettingsView：按工具聚合）。
+/// 工具调用统计，按工具聚合。
 ///
 /// 新版 `ToolCallRecordStore` 未提供聚合接口，这里分页拉取后在本视图内聚合。
 struct ToolCallStatsSettingsView: View {

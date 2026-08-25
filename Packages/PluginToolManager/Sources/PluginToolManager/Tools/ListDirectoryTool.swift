@@ -1,7 +1,7 @@
 import KitAgentTool
 import Foundation
 
-/// 列出目录内容（复刻旧版 ToolManagerPlugin 的 ListDirectoryTool）。
+/// 列出目录内容。
 public struct ListDirectoryTool: SuperAgentTool, @unchecked Sendable {
     public let name = "ls"
     private let maxItems = 500

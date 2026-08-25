@@ -2,7 +2,7 @@ import KitAgentTool
 import Foundation
 import KitShell
 
-/// 执行终端命令（复刻旧版 ToolManagerPlugin 的 ShellTool）。
+/// 执行终端命令。
 public struct ShellTool: SuperAgentTool, @unchecked Sendable {
     public let name = "run_command"
 

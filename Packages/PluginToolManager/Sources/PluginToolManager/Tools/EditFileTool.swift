@@ -2,7 +2,7 @@ import KitAgentTool
 import KitFileSystem
 import Foundation
 
-/// 精确替换文件内容（复刻旧版 ToolManagerPlugin 的 EditFileTool）。
+/// 精确替换文件内容。
 public struct EditFileTool: SuperAgentTool, @unchecked Sendable {
     public let name = "edit_file"
 

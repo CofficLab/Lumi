@@ -1,7 +1,7 @@
 import KitAgentTool
 import Foundation
 
-/// 按行读取文件（复刻旧版 ToolManagerPlugin 的 ReadFileTool，含 offset/limit 与截断）。
+/// 按行读取文件，支持 offset/limit 与截断。
 public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
     public let name = "read_file"
 

@@ -1,7 +1,7 @@
 import KitAgentTool
 import Foundation
 
-/// Glob 文件匹配（复刻旧版 ToolManagerPlugin 的 GlobTool）。
+/// Glob 文件匹配。
 public struct GlobTool: SuperAgentTool, @unchecked Sendable {
     public let name = "glob"
 

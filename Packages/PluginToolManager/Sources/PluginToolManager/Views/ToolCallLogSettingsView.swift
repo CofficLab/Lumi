@@ -2,7 +2,7 @@ import LumiUI
 import ProviderToolManager
 import SwiftUI
 
-/// 工具调用执行日志（复刻旧版 ToolCallLogSettingsView 的核心体验：分页列表）。
+/// 工具调用执行日志，以分页列表展示。
 struct ToolCallLogSettingsView: View {
     @LumiTheme private var theme
 

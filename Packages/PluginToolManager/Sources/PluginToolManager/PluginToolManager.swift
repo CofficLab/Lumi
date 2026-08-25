@@ -26,7 +26,7 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
     )
 
     /// 本插件装配的 ToolManager 实现（设置视图读取）。
-    private var service: ToolManagerService?
+    private var service: ToolManager?
 
     /// 设置页入口 id（onShutdown 时撤回）。
     private let settingsEntryID = "com.coffic.lumi.plugin.tool-manager.tools"
@@ -34,11 +34,10 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        let service = ToolManagerService()
+        let service = ToolManager()
         self.service = service
 
-        // 1. 复用旧实例的记录存储：与旧版同一数据库目录（tool_calls.sqlite），
-        //    避免两个 SwiftData 容器打开同一文件；旧实例由 ProviderFactory 预注册。
+        // 1. 复用已注册实现的记录存储，避免两个 SwiftData 容器打开同一文件。
         if let previous = kernel.resolveProvider((any ToolManagerProviding).self) as? DefaultToolManagerProviding,
            let store = previous.recordStore {
             service.recordStore = store
@@ -54,14 +53,14 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
             }
         }
 
-        // 2. 注册内置工具（与旧版 Tools 目录一致）。
+        // 2. 注册内置工具。
         service.registerBuiltinTools()
 
         // 3. 替换默认 ToolManagerProviding 实现。
         kernel.unregisterProvider((any ToolManagerProviding).self)
         try kernel.registerProvider((any ToolManagerProviding).self, service, forwardsObjectWillChange: false)
 
-        // 4. 设置界面注入「Tools」入口（复刻旧版 settingsTabItems）。
+        // 4. 设置界面注入「Tools」入口。
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
             settings.addEntries([
                 SettingEntryItem(

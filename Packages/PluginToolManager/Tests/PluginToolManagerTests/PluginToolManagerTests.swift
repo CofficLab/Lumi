@@ -12,7 +12,7 @@ import Testing
     try plugin.onBoot(kernel: kernel)
 
     let manager = try #require(kernel.resolveProvider((any ToolManagerProviding).self))
-    #expect(manager is ToolManagerService)
+    #expect(manager is ToolManager)
     #expect(!manager.allTools().isEmpty)
     #expect(manager.tool(named: "read_file") != nil)
 }

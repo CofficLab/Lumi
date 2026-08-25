@@ -1,7 +1,7 @@
 import KitAgentTool
 import Foundation
 
-/// 写入文件（复刻旧版 ToolManagerPlugin 的 WriteFileTool）。
+/// 写入文件。
 public struct WriteFileTool: SuperAgentTool, @unchecked Sendable {
     public let name = "write_file"
 

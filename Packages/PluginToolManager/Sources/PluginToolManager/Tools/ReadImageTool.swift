@@ -2,7 +2,7 @@ import KitAgentTool
 import AppKit
 import Foundation
 
-/// 读取本地图片并以视觉附件返回给 Agent（复刻旧版 ToolManagerPlugin 的 ReadImageTool）。
+/// 读取本地图片并以视觉附件返回给 Agent。
 public struct ReadImageTool: SuperAgentTool, @unchecked Sendable {
     public let name = "read_image"
 

@@ -6,11 +6,10 @@ import os
 
 /// PluginToolManager 自研的 `ToolManagerProviding` 实现。
 ///
-/// 组合 `DefaultToolManagerProviding`（与旧版 `ToolManagerService` 同源的
-/// 新体系引擎：注册表 / 风险评估 / 执行 / 调用记录），显式实现协议并转发，
+/// 组合 `DefaultToolManagerProviding` 作为执行引擎，显式实现协议并转发，
 /// 同时提供内置文件/终端工具的注册入口与记录存储透传。
 @MainActor
-public final class ToolManagerService: ToolManagerProviding, ObservableObject, SuperLog {
+public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "ToolManager")
     public nonisolated static let emoji = "🛠️"
     nonisolated static let verbose = true
@@ -18,7 +17,7 @@ public final class ToolManagerService: ToolManagerProviding, ObservableObject, S
     private let engine: DefaultToolManagerProviding
     private var observers: [UUID: (ToolManagerEvent) -> Void] = [:]
 
-    /// 工具调用记录存储（与旧版同一数据库目录）。由插件装配阶段注入；
+    /// 工具调用记录存储。由插件装配阶段注入；
     /// 未设置时记录功能 no-op。
     public var recordStore: ProviderToolManager.ToolCallRecordStore? {
         get { engine.recordStore }
@@ -44,7 +43,7 @@ public final class ToolManagerService: ToolManagerProviding, ObservableObject, S
         for callback in observers.values { callback(event) }
     }
 
-    /// 注册内置文件/终端工具（归入 "ToolManager" 分组，与旧版 Tools 目录对齐）。
+    /// 注册内置文件/终端工具（归入 "ToolManager" 分组）。
     public func registerBuiltinTools() {
         add(ListDirectoryTool(), pluginID: Self.toolManagerPluginID)
         add(GlobTool(), pluginID: Self.toolManagerPluginID)

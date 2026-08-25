@@ -4,7 +4,7 @@ import LumiUI
 import ProviderToolManager
 import SwiftUI
 
-/// 工具管理器设置视图（复刻旧版 ToolManagerPlugin 的设置体验）。
+/// 工具管理器设置视图。
 ///
 /// 顶部 Tab：Tools（可用工具列表）/ Execution Log（执行日志）/
 /// Usage Statistics（调用统计）；右上角可打开数据目录。
