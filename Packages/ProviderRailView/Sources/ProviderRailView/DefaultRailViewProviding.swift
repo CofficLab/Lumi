@@ -96,20 +96,22 @@ private struct RailView: View {
     @LumiTheme private var theme
 
     var body: some View {
+        let visibleTabs = provider.visibleTabs
+
         VStack(spacing: 0) {
             // 标签栏：仅在当前分组多于一个 tab 时显示（复刻旧版 showsTabBar）。
-            if provider.visibleTabs.count > 1 {
+            if let firstTab = visibleTabs.first, visibleTabs.count > 1 {
                 AppToolbarContainer(
                     height: 40,
                     backgroundStyle: .panel,
                     padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
                 ) {
                     AppTabBar(
-                        tabs: provider.visibleTabs.map {
+                        tabs: visibleTabs.map {
                             AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id)
                         },
                         selectedTab: Binding(
-                            get: { provider.activeTabID ?? provider.visibleTabs[0].id },
+                            get: { provider.activeTabID ?? firstTab.id },
                             set: { provider.activateTab(id: $0) }
                         ),
                         showText: false
@@ -120,11 +122,11 @@ private struct RailView: View {
             }
 
             // 内容区：激活 tab 视图；未命中时回退首个 tab；无任何 tab 时透明占位。
-            if let active = provider.visibleTabs.first(where: { $0.id == provider.activeTabID }) {
+            if let active = visibleTabs.first(where: { $0.id == provider.activeTabID }) {
                 active.makeView()
                     .id(active.id)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let first = provider.visibleTabs.first {
+            } else if let first = visibleTabs.first {
                 first.makeView()
                     .id(first.id)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
