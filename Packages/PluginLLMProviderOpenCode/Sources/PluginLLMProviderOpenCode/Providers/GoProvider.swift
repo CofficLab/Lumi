@@ -48,6 +48,7 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
         "deepseek-v4-pro": .openAI,
         "deepseek-v4-flash": .openAI,
         "hy3": .openAI,
+        "ox-alpha-free": .openAI,
         // Anthropic-compatible
         "minimax-m3": .anthropic,
         "minimax-m2.7": .anthropic,
@@ -79,6 +80,7 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
                     LLMModelInfo(id: "deepseek-v4-pro", displayName: "DeepSeek V4 Pro", contextWindowSize: 1000000),
                     LLMModelInfo(id: "deepseek-v4-flash", displayName: "DeepSeek V4 Flash", contextWindowSize: 1000000),
                     LLMModelInfo(id: "hy3", displayName: "Hy3", contextWindowSize: 256000),
+                    LLMModelInfo(id: "ox-alpha-free", displayName: "Ox Alpha Free", contextWindowSize: 256000),
                     LLMModelInfo(id: "minimax-m3", displayName: "MiniMax M3", contextWindowSize: 1000000),
                     LLMModelInfo(id: "minimax-m2.7", displayName: "MiniMax M2.7", contextWindowSize: 204800),
                     LLMModelInfo(id: "minimax-m2.5", displayName: "MiniMax M2.5", contextWindowSize: 204800),
