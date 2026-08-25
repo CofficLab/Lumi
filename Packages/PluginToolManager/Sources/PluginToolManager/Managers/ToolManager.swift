@@ -1,16 +1,16 @@
-import KitAgentTool
 import Combine
 import Foundation
-import ProviderToolManager
+import KitAgentTool
 import KitSuperLog
 import os
+import ProviderToolManager
 
 /// PluginToolManager 自己实现的工具注册、执行、授权和调用记录管理。
 @MainActor
 public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "ToolManager")
     public nonisolated static let emoji = "🛠️"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private var recordStoreValue: ToolCallRecordStore? {
         didSet {
@@ -18,6 +18,7 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
             Task { await recordStoreValue.startFlushTask() }
         }
     }
+
     private var registeredTools: [String: any SuperAgentTool] = [:]
     private var toolOrder: [String] = []
     private var pluginToolIndex: [String: [String]] = [:]
@@ -144,7 +145,9 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
     }
 
     public func executeBatch(_ toolCalls: [ToolCall], policy: ToolExecutionPolicy, conversationID: UUID, turnID: UUID?) async -> [BatchToolResult] {
-        if Self.verbose { Self.logger.info("\(Self.t)execute batch count=\(toolCalls.count), conversation=\(conversationID.uuidString.prefix(8)), policy=\(String(describing: policy))") }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)execute batch count=\(toolCalls.count), conversation=\(conversationID.uuidString.prefix(8)), policy=\(String(describing: policy))")
+        }
         var results: [BatchToolResult] = []
         results.reserveCapacity(toolCalls.count)
         for toolCall in toolCalls {

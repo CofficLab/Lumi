@@ -97,7 +97,7 @@ extension AgentLoopManager {
 
         runtimes[conversationID] = runtime
         if case .requestingLLM = runtime.phase {
-            if Self.verbose { Self.logger.info("\(Self.t)工具批次完成，继续请求 LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
+            if Self.verbose { Self.logger.info("\(Self.t)🚛 工具批次完成，继续请求 LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
             launchAdvance(conversationID: conversationID, turnID: turnID)
         }
     }

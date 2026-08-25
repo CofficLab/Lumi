@@ -150,7 +150,7 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
             }
             if case .llmResponseReceived(let conversationID, let turnID, let toolCalls) = event {
                 if Self.verbose {
-                    Self.logger.info("\(Self.t)LLM event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), tools=\(toolCalls.count)")
+                    Self.logger.info("\(Self.t)🍋 LLM event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), tools=\(toolCalls.count)")
                 }
             }
             Task { @MainActor in
