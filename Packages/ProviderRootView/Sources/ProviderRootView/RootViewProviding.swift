@@ -36,7 +36,7 @@ public protocol RootViewProviding: AnyObject {
     /// 注入 ActivityBar 视图（传 `nil` 表示无 ActivityBar）。
     ///
     /// 宿主通常把 `ActivityBarProviding.makeActivityBarView()` 的结果注入进来，
-    /// 显示在内容区左侧。
+    /// 显示在内容区左侧；ActivityBar 自身负责在需要显示时绘制分隔线。
     func setActivityBarView(_ view: AnyView?)
 
     /// 注入 Rail 视图（传 `nil` 表示无 Rail）。

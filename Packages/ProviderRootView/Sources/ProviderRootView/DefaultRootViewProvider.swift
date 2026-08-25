@@ -2,7 +2,7 @@ import Combine
 import LumiUI
 import os
 import ProviderWorkspace
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// `RootViewProviding` 的默认实现：持有注入的工具栏、ActivityBar、Rail
@@ -11,7 +11,7 @@ import SwiftUI
 ///
 /// 与旧版 `AppLayoutView` 对齐的行为：
 /// - 主内容未注入、且无活跃容器时显示 `WelcomeView` 风格的欢迎占位；
-/// - ActivityBar 始终显示；
+/// - ActivityBar 在存在至少两个入口时显示；
 /// - Rail 仅在存在活跃容器（且容器可见）时显示；
 /// - 根视图应用主题背景、`appThemedAppearance`、`ThemeWindowAppearanceBridge`
 ///   与 `AppThemeVM` 环境对象（复刻旧版主题链）。

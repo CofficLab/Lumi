@@ -31,6 +31,23 @@ struct ProviderActivityBarTests {
         #expect(provider.activeItemID == "a")
     }
 
+    @Test("仅一个入口时不显示 ActivityBar")
+    func hidesActivityBarWhenThereIsAtMostOneItem() {
+        let provider = DefaultActivityBarProviding()
+
+        #expect(provider.shouldDisplayActivityBar == false)
+
+        provider.registerItems([
+            ActivityBarItem(id: "a", title: "A", systemImage: "a")
+        ])
+        #expect(provider.shouldDisplayActivityBar == false)
+
+        provider.addItems([
+            ActivityBarItem(id: "b", title: "B", systemImage: "b")
+        ])
+        #expect(provider.shouldDisplayActivityBar == true)
+    }
+
     @Test("激活项变化会回调全部已注册入口")
     func activationNotifiesRegisteredItems() {
         let provider = DefaultActivityBarProviding()

@@ -52,32 +52,31 @@ private struct ActivityBarView: View {
     @ObservedObject var provider: DefaultActivityBarProviding
 
     var body: some View {
-        VStack(spacing: 6) {
-            if provider.items.isEmpty {
-                // 无注入项时保持空栏（错误视图属于旧版 workspace 语义，不在此重复）
-                Spacer(minLength: 0)
-            } else {
-                ActivityBarScrollableItemList(
-                    items: provider.items,
-                    activeItemID: provider.activeItemID
-                ) { item in
-                    provider.activateItem(id: item.id)
-                }
-            }
+        Group {
+            if provider.shouldDisplayActivityBar {
+                VStack(spacing: 6) {
+                    ActivityBarScrollableItemList(
+                        items: provider.items,
+                        activeItemID: provider.activeItemID
+                    ) { item in
+                        provider.activateItem(id: item.id)
+                    }
 
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 8)
-        .frame(width: 48)
-        .frame(maxHeight: .infinity)
-        .appSurface(style: .panel, cornerRadius: 0)
-        .borderTrailing()
-        .contextMenu {
-            Button {
-                // 与旧版 ActivityBar 一致：发出通知，由主窗口根视图监听并打开设置窗口。
-                NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
-            } label: {
-                Label("打开设置", systemImage: "gearshape")
+                    Spacer(minLength: 0)
+                }
+                .padding(.vertical, 8)
+                .frame(width: 48)
+                .frame(maxHeight: .infinity)
+                .appSurface(style: .panel, cornerRadius: 0)
+                .borderTrailing()
+                .contextMenu {
+                    Button {
+                        // 与旧版 ActivityBar 一致：发出通知，由主窗口根视图监听并打开设置窗口。
+                        NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
+                    } label: {
+                        Label("打开设置", systemImage: "gearshape")
+                    }
+                }
             }
         }
     }

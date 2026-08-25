@@ -27,6 +27,21 @@ struct PluginActivityBarTests {
         #expect(provider.items.map(\.id) == ["a", "b"])
     }
 
+    @Test("仅一个入口时不显示 ActivityBar")
+    func hidesActivityBarWhenThereIsAtMostOneItem() {
+        let provider = ActivityBarProvider()
+        provider.registerItems([
+            ActivityBarItem(id: "a", title: "A", systemImage: "a")
+        ])
+
+        #expect(provider.shouldDisplayActivityBar == false)
+
+        provider.addItems([
+            ActivityBarItem(id: "b", title: "B", systemImage: "b")
+        ])
+        #expect(provider.shouldDisplayActivityBar == true)
+    }
+
     @Test("ActivityBarProvider.makeActivityBarView 返回 AnyView")
     func customProviderRendersView() {
         let provider = ActivityBarProvider()

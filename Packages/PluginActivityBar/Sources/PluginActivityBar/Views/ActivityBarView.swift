@@ -20,30 +20,30 @@ internal struct ActivityBarView: View {
     @ObservedObject var provider: ActivityBarProvider
 
     var body: some View {
-        VStack(spacing: 6) {
-            if provider.items.isEmpty {
-                Spacer(minLength: 0)
-            } else {
-                ActivityBarScrollableItemList(
-                    items: provider.items,
-                    activeItemID: provider.activeItemID
-                ) { item in
-                    provider.activateItem(id: item.id)
-                }
-            }
+        Group {
+            if provider.shouldDisplayActivityBar {
+                VStack(spacing: 6) {
+                    ActivityBarScrollableItemList(
+                        items: provider.items,
+                        activeItemID: provider.activeItemID
+                    ) { item in
+                        provider.activateItem(id: item.id)
+                    }
 
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 8)
-        .frame(width: 48)
-        .frame(maxHeight: .infinity)
-        .appSurface(style: .panel, cornerRadius: 0)
-        .borderTrailing()
-        .contextMenu {
-            Button {
-                NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
-            } label: {
-                Label("打开设置", systemImage: "gearshape")
+                    Spacer(minLength: 0)
+                }
+                .padding(.vertical, 8)
+                .frame(width: 48)
+                .frame(maxHeight: .infinity)
+                .appSurface(style: .panel, cornerRadius: 0)
+                .borderTrailing()
+                .contextMenu {
+                    Button {
+                        NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
+                    } label: {
+                        Label("打开设置", systemImage: "gearshape")
+                    }
+                }
             }
         }
     }

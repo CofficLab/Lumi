@@ -16,6 +16,9 @@ public protocol ActivityBarProviding: AnyObject {
     /// 当前已注入的全部 ActivityBar 项。
     var items: [ActivityBarItem] { get }
 
+    /// 只有至少两个入口时才显示 ActivityBar。
+    var shouldDisplayActivityBar: Bool { get }
+
     /// 当前激活入口；无入口时为 nil。
     var activeItemID: String? { get }
 
@@ -38,6 +41,8 @@ public protocol ActivityBarProviding: AnyObject {
 }
 
 public extension ActivityBarProviding {
+    var shouldDisplayActivityBar: Bool { items.count > 1 }
+
     var activeItemID: String? { nil }
 
     /// 追加语义的默认实现：合入已有项并按 `order` 排序（同 id 去重，保留先注册者）。
