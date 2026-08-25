@@ -79,6 +79,7 @@ extension AgentLoopManager {
             Self.logger.error("\(Self.t)无法推进 AgentLoop：会话仍有运行中的任务 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
             return
         }
+        if Self.verbose { Self.logger.info("\(Self.t)launchAdvance accepted conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), phase=\(String(describing: runtime.phase))") }
         runtime.task = Task { @MainActor [weak self] in
             guard let self else {
                 Self.logger.error("\(Self.t)无法推进 AgentLoop：AgentLoopManager 已释放 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
@@ -87,6 +88,7 @@ extension AgentLoopManager {
             await self.driveTurn(conversationID: conversationID, turnID: turnID)
         }
         runtimes[conversationID] = runtime
+        if Self.verbose { Self.logger.info("\(Self.t)launchAdvance task installed conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
     }
 
     private func waitForCompletion(conversationID: UUID) async -> AgentLoopOutcome {

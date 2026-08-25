@@ -36,6 +36,9 @@ extension AgentLoopManager {
     /// 接收 ToolManager 的批量完成事件，推进当前回合状态机。
     func handleToolManagerEvent(_ event: ToolManagerEvent) {
         guard case .batchCompleted(let conversationID, let eventTurnID, let toolCalls, let results) = event else { return }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)handle batch begin conversation=\(conversationID.uuidString.prefix(8)), turn=\(eventTurnID?.uuidString.prefix(8) ?? "nil"), calls=\(toolCalls.map { $0.id }), results=\(results.count)")
+        }
         guard var runtime = runtimes[conversationID] else {
             if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：找不到会话运行时 conversation=\(conversationID.uuidString.prefix(8))") }
             return
@@ -43,6 +46,9 @@ extension AgentLoopManager {
         guard case .executingTools(let turnID, let assistantMessageID, let pending) = runtime.phase else {
             if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：当前状态不是 executingTools，conversation=\(conversationID.uuidString.prefix(8)), phase=\(String(describing: runtime.phase))") }
             return
+        }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)handle batch state accepted phase=executingTools, pending=\(pending.map(\.id)), assistant=\(assistantMessageID.uuidString.prefix(8))")
         }
         guard eventTurnID == nil || eventTurnID == turnID else {
             if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：turnID 不匹配，conversation=\(conversationID.uuidString.prefix(8))") }
@@ -52,6 +58,9 @@ extension AgentLoopManager {
         let callsByID = Dictionary(uniqueKeysWithValues: toolCalls.map { ($0.id, MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)) })
         var suspension: AgentLoopSuspension?
         for (call, batchResult) in zip(toolCalls, results) {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)handle batch result begin id=\(call.id), name=\(call.name), result=\(String(describing: batchResult))")
+            }
             guard pending.contains(where: { $0.id == call.id }) else {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)忽略未等待的工具结果：toolCallID=\(call.id), conversation=\(conversationID.uuidString.prefix(8))")
@@ -81,6 +90,7 @@ extension AgentLoopManager {
                 }
                 let (updated, outcome) = TurnReducer.reduce(runtime, event: .toolCallCompleted(toolCallID: call.id, result: result))
                 runtime = updated
+                if Self.verbose { Self.logger.info("\(Self.t)reducer after tool id=\(call.id), phase=\(String(describing: runtime.phase)), outcome=\(String(describing: outcome))") }
                 if outcome != nil { finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome!) ; return }
             case .blocked(let reason):
                 let result = MessageToolResult(content: reason, isError: true)
@@ -93,6 +103,7 @@ extension AgentLoopManager {
                 insertToolResultMessage(result, toolCallID: call.id, conversationID: conversationID, turnID: turnID)
                 let (updated, outcome) = TurnReducer.reduce(runtime, event: .toolCallCompleted(toolCallID: call.id, result: result))
                 runtime = updated
+                if Self.verbose { Self.logger.info("\(Self.t)reducer after blocked tool id=\(call.id), phase=\(String(describing: runtime.phase)), outcome=\(String(describing: outcome))") }
                 if outcome != nil { finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome!) ; return }
             case .needsApproval(let riskLevel):
                 suspension = makeToolApprovalSuspension(for: messageCall, riskLevel: riskLevel, conversationID: conversationID)
@@ -111,6 +122,7 @@ extension AgentLoopManager {
         }
 
         runtimes[conversationID] = runtime
+        if Self.verbose { Self.logger.info("\(Self.t)handle batch end phase=\(String(describing: runtime.phase)), taskIsNil=\(runtime.task == nil)") }
         if case .requestingLLM = runtime.phase {
             if Self.verbose { Self.logger.info("\(Self.t)🚛 工具批次完成，继续请求 LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
             launchAdvance(conversationID: conversationID, turnID: turnID)
@@ -124,6 +136,7 @@ extension AgentLoopManager {
 
     /// 执行一次 LLM 流式请求，落库 assistant 消息。
     func performLLMRequest(conversationID: UUID, turnID: UUID) async -> LLMRequestResult {
+        if Self.verbose { Self.logger.info("\(Self.t)LLM request begin conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
         let history = messages.messages(for: conversationID)
 
         // 计算工具 schema
