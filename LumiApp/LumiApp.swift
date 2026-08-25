@@ -266,7 +266,10 @@ private struct LumiMenuBarLabel: View {
             Group {
                 if let logo = kernel.resolveProvider((any LogoProviding).self),
                    let item = logo.highestPriorityLogoItem {
-                    item.makeView(.statusBar)
+                    // The legacy menu bar used the full Logo presentation. The
+                    // status-bar scene is intentionally monochrome and, for the
+                    // Smart Light Logo, renders only its lightning glyph.
+                    item.makeView(.general)
                 } else {
                     Image(systemName: "gauge.with.dots.needle.50percent")
                 }
