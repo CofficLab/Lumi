@@ -4,13 +4,19 @@ import ProviderTheme
 import ProviderToast
 import ProviderWebServer
 import KitWebServer
+import KitSuperLog
+import os
 
 /// 旧版本地 HTTP 服务的 V2 迁移实现。
 ///
 /// 服务只绑定 `127.0.0.1`，默认端口 7310；保留真实 Hummingbird 监听、
 /// 动态路由、自描述端点和旧版主题 API。启动失败不会阻断主应用。
 @MainActor
-public final class WebServerPlugin: SuperPlugin {
+public final class WebServerPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.web-server", category: "WebServer")
+    public nonisolated static let emoji = "🌐"
+    nonisolated static let verbose = true
+
     public let id = "com.coffic.lumi.plugin.web-server"
     public let order = 150
     public let metadata = PluginMetadata(
@@ -69,10 +75,12 @@ public final class WebServerPlugin: SuperPlugin {
         do {
             try await server.start()
             if let port = server.boundPort {
-                print("[WebServerPlugin] listening on http://127.0.0.1:\(port)")
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)listening on http://127.0.0.1:\(port)")
+                }
             }
         } catch {
-            print("[WebServerPlugin] failed to start on port \(server.port): \(error)")
+            Self.logger.error("\(Self.t)failed to start on port \(server.port): \(error.localizedDescription)")
         }
     }
 

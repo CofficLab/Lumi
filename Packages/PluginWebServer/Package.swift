@@ -14,11 +14,12 @@ let package = Package(
         .package(path: "../ProviderToast"),
         .package(path: "../ProviderWebServer"),
         .package(path: "../KitWebServer"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "PluginWebServer",
-            dependencies: ["KernelCore", "ProviderTheme", "ProviderToast", "ProviderWebServer", "KitWebServer"]
+            dependencies: ["KernelCore", "ProviderTheme", "ProviderToast", "ProviderWebServer", "KitWebServer", "KitSuperLog"]
         ),
         .testTarget(
             name: "PluginWebServerTests",
