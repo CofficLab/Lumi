@@ -69,7 +69,7 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
         }
 
         // 2. 创建自定义实现
-        let agentLoop = AgentLoopProvider(
+        let agentLoop = AgentLoopManager(
             messages: messages,
             llmManager: llmManager,
             toolManager: toolManager,
@@ -129,7 +129,7 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
                 }
             }
             Task { @MainActor in
-                (agentLoop as? AgentLoopProvider)?.handleToolManagerEvent(event)
+                (agentLoop as? AgentLoopManager)?.handleToolManagerEvent(event)
             }
         }
         agentLoopObserver = agentLoop.addAgentLoopObserver { [weak agentLoop] event in
@@ -140,7 +140,7 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
                 }
             }
             Task { @MainActor in
-                (agentLoop as? AgentLoopProvider)?.handleAgentLoopEvent(event)
+                (agentLoop as? AgentLoopManager)?.handleAgentLoopEvent(event)
             }
         }
     }

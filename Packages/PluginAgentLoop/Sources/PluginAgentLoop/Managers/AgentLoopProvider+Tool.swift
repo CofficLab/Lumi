@@ -12,7 +12,7 @@ import KitSuperLog
 
 // MARK: - LLM Request
 
-extension AgentLoopProvider {
+extension AgentLoopManager {
     /// AgentLoop 只发布 LLM 结果；工具管理器负责消费该事件并执行批次。
     func handleAgentLoopEvent(_ event: AgentLoopEvent) {
         guard case .llmResponseReceived(let conversationID, let turnID, let toolCalls) = event,
@@ -224,7 +224,7 @@ extension AgentLoopProvider {
 
 // MARK: - Tool Execution
 
-extension AgentLoopProvider {
+extension AgentLoopManager {
     /// 工具批次执行结果。
     enum AgentLoopBatchResult {
         /// 所有工具执行完成，结果已落库。

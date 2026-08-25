@@ -4,7 +4,7 @@ import ProviderMessage
 
 // MARK: - Message Helpers
 
-extension AgentLoopProvider {
+extension AgentLoopManager {
     func notifyLLMResponse(conversationID: UUID, turnID: UUID, toolCalls: [MessageToolCall]) {
         notify(.llmResponseReceived(
             conversationID: conversationID,
@@ -67,7 +67,7 @@ extension AgentLoopProvider {
 
 // MARK: - Message Query
 
-extension AgentLoopProvider {
+extension AgentLoopManager {
     func incompleteToolCallMessage(in conversationID: UUID) -> Message? {
         incompleteToolCallMessage(messages: messages.messages(for: conversationID))
     }

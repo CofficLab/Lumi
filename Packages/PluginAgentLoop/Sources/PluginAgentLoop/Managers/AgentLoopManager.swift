@@ -16,7 +16,7 @@ import KitSuperLog
 /// 内部使用有限状态机（`TurnRuntime` + `TurnReducer`）管理回合生命周期，
 /// 替代原先散落在 8 个字典/集合中的状态 + while 循环控制流。
 @MainActor
-public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
+public final class AgentLoopManager: AgentLoopProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-loop")
     public nonisolated static let emoji = "🔄"
     public static let verbose = true

@@ -4,7 +4,7 @@ import ProviderAgentLoop
 import ProviderMessage
 import ProviderLifecycleHooks
 
-extension AgentLoopProvider {
+extension AgentLoopManager {
     public func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
         var runtime = runtimes[conversationID] ?? TurnRuntime()
         guard !runtime.isRunning else { return .failed("turn already running") }
@@ -69,7 +69,7 @@ extension AgentLoopProvider {
     }
 }
 
-extension AgentLoopProvider {
+extension AgentLoopManager {
     func launchAdvance(conversationID: UUID, turnID: UUID) {
         guard var runtime = runtimes[conversationID], runtime.task == nil else { return }
         runtime.task = Task { @MainActor [weak self] in
