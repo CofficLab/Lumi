@@ -4,3 +4,4 @@
 
 # Local build artifacts (e.g. produced by xcodebuild)
 build/
+Package.resolved
