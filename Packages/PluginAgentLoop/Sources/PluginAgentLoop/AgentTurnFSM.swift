@@ -74,7 +74,7 @@ public struct TurnRuntime {
     public var phase: TurnPhase = .idle
 
     /// 当前执行任务句柄（用于取消）。
-    public var task: Task<AgentLoopOutcome, Never>?
+    public var task: Task<Void, Never>?
 
     /// 当前挂起批次中所有挂起点（toolCallID → Suspension）。
     public var pendingSuspensions: [String: AgentLoopSuspension] = [:]

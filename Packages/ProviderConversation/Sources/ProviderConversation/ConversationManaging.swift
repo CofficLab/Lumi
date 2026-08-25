@@ -205,6 +205,33 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?)
 }
 
+/// Lightweight compatibility defaults for providers and test doubles that do
+/// not need paginated conversation storage.
+public extension ConversationManaging {
+    var sortedConversations: [LumiConversationSummary] { conversations }
+    var isLoadingConversations: Bool { false }
+
+    func fetchConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?) async -> [LumiConversationSummary] {
+        Array(conversations.prefix(limit))
+    }
+
+    func fetchConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?, includingChildConversations: Bool) async -> [LumiConversationSummary] {
+        await fetchConversationPage(limit: limit, beforeUpdatedAt: beforeUpdatedAt, beforeID: beforeID)
+    }
+
+    func fetchConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?, includingChildConversations: Bool, projectPath: String) async -> [LumiConversationSummary] {
+        await fetchConversationPage(limit: limit, beforeUpdatedAt: beforeUpdatedAt, beforeID: beforeID, includingChildConversations: includingChildConversations)
+    }
+
+    func fetchConversation(id: UUID) async -> LumiConversationSummary? {
+        conversations.first(where: { $0.id == id })
+    }
+
+    func conversationCount(projectPath: String?) async -> Int { conversations.count }
+    func conversationCount(projectPath: String?, includingChildConversations: Bool) async -> Int { conversations.count }
+    func conversationProjectCount() async -> Int { Set(conversations.compactMap(\.projectPath)).count }
+}
+
 /// no-op 注册令牌：注册后不接收任何通知。
 ///
 /// 协议不再提供默认实现，未实现选中观察者能力的轻量实现（如测试 mock）

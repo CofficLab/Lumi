@@ -34,6 +34,8 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
 
     /// 每会话的回合运行时上下文。替代原先 8 个散落的字典/集合。
     var runtimes: [UUID: TurnRuntime] = [:]
+    var completionWaiters: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
+    private var agentLoopObservers: [UUID: (AgentLoopEvent) -> Void] = [:]
 
     static let toolApprovalSuspensionKind = "toolApproval"
 
@@ -51,6 +53,22 @@ public final class AgentLoopProvider: AgentLoopProviding, SuperLog {
         self.toolManager = toolManager
         self.streaming = streaming
         self.conversations = conversations
+    }
+
+    public func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle {
+        let id = UUID()
+        agentLoopObservers[id] = callback
+        return PluginAgentLoopObserverHandle { [weak self] in
+            self?.agentLoopObservers.removeValue(forKey: id)
+        }
+    }
+
+    func notify(_ event: AgentLoopEvent) {
+        for callback in agentLoopObservers.values {
+            callback(event)
+        }
     }
 
     // MARK: - AgentLoopProviding

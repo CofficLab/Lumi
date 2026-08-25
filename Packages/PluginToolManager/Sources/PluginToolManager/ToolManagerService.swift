@@ -1,6 +1,8 @@
 import KitAgentTool
 import Foundation
 import ProviderToolManager
+import KitSuperLog
+import os
 
 /// PluginToolManager 自研的 `ToolManagerProviding` 实现。
 ///
@@ -8,9 +10,12 @@ import ProviderToolManager
 /// 新体系引擎：注册表 / 风险评估 / 执行 / 调用记录），显式实现协议并转发，
 /// 同时提供内置文件/终端工具的注册入口与记录存储透传。
 @MainActor
-public final class ToolManagerService: ToolManagerProviding, ObservableObject {
+public final class ToolManagerService: ToolManagerProviding, ObservableObject, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "ToolManager")
+    public nonisolated static let emoji = "🛠️"
     /// 内部引擎（注册表 + 执行 + 记录）。
     private let engine: DefaultToolManagerProviding
+    private var observers: [UUID: (ToolManagerEvent) -> Void] = [:]
 
     /// 工具调用记录存储（与旧版同一数据库目录）。由插件装配阶段注入；
     /// 未设置时记录功能 no-op。
@@ -21,6 +26,21 @@ public final class ToolManagerService: ToolManagerProviding, ObservableObject {
 
     public init(engine: DefaultToolManagerProviding = DefaultToolManagerProviding()) {
         self.engine = engine
+    }
+
+    @discardableResult
+    public func addToolManagerObserver(
+        _ callback: @escaping (ToolManagerEvent) -> Void
+    ) -> any ToolManagerObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ToolManagerServiceObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
+    private func notify(_ event: ToolManagerEvent) {
+        for callback in observers.values { callback(event) }
     }
 
     /// 注册内置文件/终端工具（归入 "ToolManager" 分组，与旧版 Tools 目录对齐）。
@@ -81,7 +101,16 @@ public final class ToolManagerService: ToolManagerProviding, ObservableObject {
         conversationID: UUID,
         turnID: UUID?
     ) async -> [BatchToolResult] {
-        await engine.executeBatch(toolCalls, policy: policy, conversationID: conversationID, turnID: turnID)
+        Self.logger.info("\(Self.t)execute batch conversation=\(conversationID.uuidString.prefix(8)), count=\(toolCalls.count), policy=\(String(describing: policy))")
+        let results = await engine.executeBatch(toolCalls, policy: policy, conversationID: conversationID, turnID: turnID)
+        notify(.batchCompleted(
+            conversationID: conversationID,
+            turnID: turnID,
+            toolCalls: toolCalls,
+            results: results
+        ))
+        Self.logger.info("\(Self.t)batch completed conversation=\(conversationID.uuidString.prefix(8)), results=\(results.count)")
+        return results
     }
 
     // MARK: - ToolManagerProviding: Records

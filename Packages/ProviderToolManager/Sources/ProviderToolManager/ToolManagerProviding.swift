@@ -4,6 +4,11 @@ import Foundation
 /// Agent 工具管理与执行能力。
 @MainActor
 public protocol ToolManagerProviding: AnyObject {
+    /// 注册工具执行生命周期观察者。
+    @discardableResult
+    func addToolManagerObserver(
+        _ callback: @escaping (ToolManagerEvent) -> Void
+    ) -> any ToolManagerObserverHandle
     // MARK: - Registration（插件调用）
 
     /// 所有已注册的 Agent 工具，按注册顺序返回。

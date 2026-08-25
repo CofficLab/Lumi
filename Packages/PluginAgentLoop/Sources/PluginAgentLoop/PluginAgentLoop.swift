@@ -1,6 +1,7 @@
 import Foundation
 import KernelCore
 import KitLLM
+import KitSuperLog
 import os
 import ProviderAgentLoop
 import ProviderConversation
@@ -21,7 +22,7 @@ import ProviderLifecycleHooks
 /// - 在 DefaultProviderFactory 注册默认实现之后执行
 /// - 使用 unregisterProvider + registerProvider 模式替换默认实现
 @MainActor
-public final class PluginAgentLoop: SuperPlugin {
+public final class PluginAgentLoop: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-loop")
     public nonisolated static let emoji = "🔄"
 
@@ -35,6 +36,10 @@ public final class PluginAgentLoop: SuperPlugin {
         stage: .stable,
         policy: .alwaysOn
     )
+
+    private var messageObserver: (any MessageInsertedObserverHandle)?
+    private var toolManagerObserver: (any ToolManagerObserverHandle)?
+    private var agentLoopObserver: (any AgentLoopObserverHandle)?
 
 
     public init() {}
@@ -80,6 +85,56 @@ public final class PluginAgentLoop: SuperPlugin {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        messageObserver?.cancel()
+        messageObserver = nil
+        toolManagerObserver?.cancel()
+        toolManagerObserver = nil
+        agentLoopObserver?.cancel()
+        agentLoopObserver = nil
         // 插件卸载时，内核会自动按归属移除 Provider
+    }
+
+    /// 所有 Provider 完成 Boot 后，监听用户消息并启动 Agent 回合。
+    ///
+    /// MessageSender 只负责把 user message 写入 MessageManaging；回合的启动
+    /// 由本插件通过消息事件完成，避免发送器和 AgentLoop 之间的直接调用。
+    public func onReady(kernel: KernelCoreContainer) throws {
+        guard let messages = kernel.resolveProvider((any MessageManaging).self),
+              let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self),
+              let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            Self.logger.error("\(Self.emoji)MessageManaging or AgentLoopProviding not found, skip message subscription")
+            return
+        }
+
+        messageObserver = messages.addMessageInsertedObserver { [weak agentLoop] message, conversationID in
+            guard message.role == .user, let agentLoop else { return }
+            Self.logger.info("\(Self.t)message event starts turn conversation=\(conversationID.uuidString.prefix(8))")
+            Task { @MainActor in
+                guard !agentLoop.isRunning(for: conversationID) else { return }
+                do {
+                    _ = try await agentLoop.runTurn(in: conversationID)
+                } catch {
+                    Self.logger.error("\(Self.emoji)event-driven turn failed: \(error.localizedDescription)")
+                }
+            }
+        }
+        toolManagerObserver = toolManager.addToolManagerObserver { [weak agentLoop] event in
+            guard let agentLoop else { return }
+            if case .batchCompleted(let conversationID, let turnID, _, let results) = event {
+                Self.logger.info("\(Self.t)tool batch event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID?.uuidString.prefix(8) ?? "nil"), results=\(results.count)")
+            }
+            Task { @MainActor in
+                (agentLoop as? AgentLoopProvider)?.handleToolManagerEvent(event)
+            }
+        }
+        agentLoopObserver = agentLoop.addAgentLoopObserver { [weak agentLoop] event in
+            guard let agentLoop else { return }
+            if case .llmResponseReceived(let conversationID, let turnID, let toolCalls) = event {
+                Self.logger.info("\(Self.t)LLM event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), tools=\(toolCalls.count)")
+            }
+            Task { @MainActor in
+                (agentLoop as? AgentLoopProvider)?.handleAgentLoopEvent(event)
+            }
+        }
     }
 }

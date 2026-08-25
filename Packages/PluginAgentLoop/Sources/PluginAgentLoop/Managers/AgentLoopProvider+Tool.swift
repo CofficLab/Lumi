@@ -13,6 +13,77 @@ import KitSuperLog
 // MARK: - LLM Request
 
 extension AgentLoopProvider {
+    /// AgentLoop 只发布 LLM 结果；工具管理器负责消费该事件并执行批次。
+    func handleAgentLoopEvent(_ event: AgentLoopEvent) {
+        guard case .llmResponseReceived(let conversationID, let turnID, let toolCalls) = event,
+              !toolCalls.isEmpty else { return }
+        let policy: ToolExecutionPolicy
+        switch conversations.automationLevel(for: conversationID) {
+        case .chat: policy = .blockAll
+        case .autonomous: policy = .autoExecute
+        case .build: policy = .requireApprovalForHighRisk
+        }
+        let inputs = toolCalls.map { AgentLoopToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            _ = await self.toolManager.executeBatch(inputs, policy: policy, conversationID: conversationID, turnID: turnID)
+        }
+    }
+
+    /// 接收 ToolManager 的批量完成事件，推进当前回合状态机。
+    func handleToolManagerEvent(_ event: ToolManagerEvent) {
+        guard case .batchCompleted(let conversationID, let eventTurnID, let toolCalls, let results) = event,
+              var runtime = runtimes[conversationID],
+              case .executingTools(let turnID, _, let pending) = runtime.phase,
+              eventTurnID == nil || eventTurnID == turnID else { return }
+
+        let callsByID = Dictionary(uniqueKeysWithValues: toolCalls.map { ($0.id, MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)) })
+        var suspension: AgentLoopSuspension?
+        for (call, batchResult) in zip(toolCalls, results) {
+            guard pending.contains(where: { $0.id == call.id }) else { continue }
+            let messageCall = callsByID[call.id]!
+            switch batchResult {
+            case .executed(let toolResult):
+                let result = convertResult(toolResult)
+                insertToolResultMessage(result, toolCallID: call.id, conversationID: conversationID, turnID: turnID)
+                if result.awaitingUserResponse {
+                    suspension = AgentLoopSuspension(
+                        suspensionID: "userInput:\(call.id)", conversationID: conversationID,
+                        toolCallID: call.id, kind: "userInput", payload: result.content
+                    )
+                    break
+                }
+                let (updated, outcome) = TurnReducer.reduce(runtime, event: .toolCallCompleted(toolCallID: call.id, result: result))
+                runtime = updated
+                if outcome != nil { finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome!) ; return }
+            case .blocked(let reason):
+                let result = MessageToolResult(content: reason, isError: true)
+                insertToolResultMessage(result, toolCallID: call.id, conversationID: conversationID, turnID: turnID)
+                let (updated, outcome) = TurnReducer.reduce(runtime, event: .toolCallCompleted(toolCallID: call.id, result: result))
+                runtime = updated
+                if outcome != nil { finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome!) ; return }
+            case .needsApproval(let riskLevel):
+                suspension = makeToolApprovalSuspension(for: messageCall, riskLevel: riskLevel, conversationID: conversationID)
+            }
+            if suspension != nil { break }
+        }
+
+        if let suspension {
+            let event: TurnEvent = suspension.kind == Self.toolApprovalSuspensionKind
+                ? .toolNeedsApproval(toolCallID: suspension.toolCallID ?? "", suspension: suspension)
+                : .toolNeedsUserInput(toolCallID: suspension.toolCallID ?? "", suspension: suspension)
+            let (updated, outcome) = TurnReducer.reduce(runtime, event: event)
+            runtimes[conversationID] = updated
+            if let outcome { finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome) }
+            return
+        }
+
+        runtimes[conversationID] = runtime
+        if case .requestingLLM = runtime.phase {
+            launchAdvance(conversationID: conversationID, turnID: turnID)
+        }
+    }
+
     enum LLMRequestResult {
         case success(LLMResponse, assistantMessageID: UUID)
         case failure(reason: String)
@@ -131,6 +202,11 @@ extension AgentLoopProvider {
             }
             messages.insertMessage(assistant, to: conversationID)
             streaming.end(conversationID: conversationID)
+            notifyLLMResponse(
+                conversationID: conversationID,
+                turnID: turnID,
+                toolCalls: assistant.toolCalls ?? []
+            )
             if let lifecycleHooks {
                 await lifecycleHooks.notifyDidReceiveLLMResponse(
                     DidReceiveLLMResponseContext(

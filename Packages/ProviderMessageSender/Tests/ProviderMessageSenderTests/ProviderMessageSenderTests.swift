@@ -27,6 +27,35 @@ struct ProviderMessageSenderTests {
         #expect(sender.isSending == false)
     }
 
+    @Test("发送回合通过观察者发出 started 和 completed")
+    func sendsTurnEvents() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        loop.responseContent = "response"
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+        var events: [String] = []
+        let handle = sender.addMessageSenderObserver { event in
+            switch event {
+            case .started:
+                events.append("started")
+            case .turnCompleted:
+                events.append("completed")
+            case .turnFailed:
+                events.append("failed")
+            }
+        }
+
+        try await sender.sendMessage("hello", conversationID: nil)
+
+        #expect(events == ["started", "completed"])
+        handle.cancel()
+    }
+
     @Test("附件挂起池随消息送出并编码进 metadata")
     func sendsAttachments() async throws {
         let conversations = DefaultConversationManager()
@@ -63,7 +92,12 @@ struct ProviderMessageSenderTests {
         let loop = StubAgentLoop(messages: messages)
         loop.onRunTurn = { _ in
             await gate.wait()
-            return "done"
+            let id = try! #require(conversations.selectedConversationID)
+            messages.insertMessage(
+                Message(conversationID: id, role: .assistant, content: "done"),
+                to: id
+            )
+            return .completed
         }
         let sender = DefaultMessageSender(
             conversations: conversations,
@@ -120,11 +154,36 @@ struct ProviderMessageSenderTests {
 @MainActor
 private final class StubAgentLoop: AgentLoopProviding {
     private let messages: any MessageManaging
+    private var messageObserver: (any MessageInsertedObserverHandle)?
+    private var observers: [UUID: (AgentLoopEvent) -> Void] = [:]
     var responseContent: String = ""
     var onRunTurn: ((@MainActor (UUID) async throws -> AgentLoopOutcome))?
 
     init(messages: any MessageManaging) {
         self.messages = messages
+        messageObserver = messages.addMessageInsertedObserver { [weak self] message, conversationID in
+            guard message.role == .user else { return }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                let outcome = (try? await self.runTurn(in: conversationID)) ?? .cancelled
+                self.notify(.completed(conversationID: conversationID, turnID: self.currentTurnID(for: conversationID) ?? UUID()))
+                _ = outcome
+            }
+        }
+    }
+
+    func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return StubAgentLoopObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
+    private func notify(_ event: AgentLoopEvent) {
+        for callback in observers.values { callback(event) }
     }
 
     func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
@@ -147,6 +206,20 @@ private final class StubAgentLoop: AgentLoopProviding {
     func currentTurnID(for conversationID: UUID) -> UUID? { nil }
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
 
+}
+
+@MainActor
+private final class StubAgentLoopObserverHandle: AgentLoopObserverHandle {
+    private var cancellation: (() -> Void)?
+
+    init(cancellation: @escaping () -> Void) {
+        self.cancellation = cancellation
+    }
+
+    func cancel() {
+        cancellation?()
+        cancellation = nil
+    }
 }
 
 /// 测试用门闩：控制回合时序。

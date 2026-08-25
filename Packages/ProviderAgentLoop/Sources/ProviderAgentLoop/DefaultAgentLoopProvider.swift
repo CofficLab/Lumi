@@ -1,6 +1,8 @@
 import KitAgentTool
 import Foundation
 import KitLLM
+import KitSuperLog
+import os
 import ProviderConversation
 import ProviderLifecycleHooks
 import ProviderLLMManager
@@ -44,7 +46,9 @@ private typealias ToolCall = KitAgentTool.ToolCall
 /// - `MessageStreamingProviding` 临时行 + 最终落库行分离，落库后清理临时行；
 /// - 瞬时 status 消息（正在思考…/正在执行…）由 `MessageManaging` 仅存内存。
 @MainActor
-public final class DefaultAgentLoopProvider: AgentLoopProviding {
+public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-agent-loop", category: "AgentLoop")
+    public nonisolated static let emoji = "🔄"
     private let messages: any MessageManaging
     private let llmManager: any LLMManaging
     private let toolManager: any ToolManagerProviding
@@ -64,6 +68,12 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
     private var cancelledConversations: Set<UUID> = []
     private var awaitingConversations: Set<UUID> = []
     private var failedConversations: Set<UUID> = []
+    private var agentLoopObservers: [UUID: (AgentLoopEvent) -> Void] = [:]
+    private var eventTasks: [UUID: Task<Void, Never>] = [:]
+    private var completionWaiters: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
+    private var activeToolCalls: [UUID: (assistantID: UUID, calls: [MessageToolCall])] = [:]
+    private var messageObserver: (any MessageInsertedObserverHandle)?
+    private var toolManagerObserver: (any ToolManagerObserverHandle)?
 
     @Published public private(set) var revision: Int = 0
 
@@ -79,6 +89,36 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
         self.toolManager = toolManager
         self.streaming = streaming
         self.conversations = conversations
+        messageObserver = messages.addMessageInsertedObserver { [weak self] message, conversationID in
+            guard message.role == .user else { return }
+            Task { @MainActor in
+                guard let self, !self.isRunning(for: conversationID) else { return }
+                _ = try? await self.runTurn(in: conversationID)
+            }
+        }
+        toolManagerObserver = toolManager.addToolManagerObserver { [weak self] event in
+            Task { @MainActor in
+                self?.handleToolManagerEvent(event)
+            }
+        }
+    }
+
+    @discardableResult
+    public func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle {
+        let id = UUID()
+        agentLoopObservers[id] = callback
+        return DefaultAgentLoopObserverHandle { [weak self] in
+            self?.agentLoopObservers.removeValue(forKey: id)
+        }
+    }
+
+    private func notify(_ event: AgentLoopEvent) {
+        handleAgentLoopEvent(event)
+        for callback in agentLoopObservers.values {
+            callback(event)
+        }
     }
 
     // MARK: - Injection
@@ -94,7 +134,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
     }
 
     public func isRunning(for conversationID: UUID) -> Bool {
-        tasks[conversationID] != nil || states[conversationID] == .running
+        tasks[conversationID] != nil || eventTasks[conversationID] != nil || states[conversationID] == .running
     }
 
     public func suspension(for conversationID: UUID) -> AgentLoopSuspension? {
@@ -106,6 +146,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
     }
 
     public func cancelTurn(in conversationID: UUID) {
+        Self.logger.info("\(Self.t)cancel turn conversation=\(conversationID.uuidString.prefix(8))")
+        let turnID = turnIDs[conversationID]
         cancelledConversations.insert(conversationID)
         suspensions.removeValue(forKey: conversationID)
         pendingSuspensions.removeValue(forKey: conversationID)
@@ -113,11 +155,17 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
         states[conversationID] = .cancelled
         tasks[conversationID]?.cancel()
         tasks.removeValue(forKey: conversationID)
+        eventTasks[conversationID]?.cancel()
+        eventTasks.removeValue(forKey: conversationID)
+        let waiters = completionWaiters.removeValue(forKey: conversationID) ?? []
+        waiters.forEach { $0.resume(returning: .cancelled) }
         revision += 1
+        notify(.cancelled(conversationID: conversationID, turnID: turnID))
     }
 
     public func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
-        guard tasks[conversationID] == nil else {
+        Self.logger.info("\(Self.t)start turn conversation=\(conversationID.uuidString.prefix(8))")
+        guard !isRunning(for: conversationID) else {
             return .failed("turn already running")
         }
 
@@ -133,17 +181,10 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                 conversationID: conversationID, turnID: turnID
             ))
         }
+        notify(.started(conversationID: conversationID, turnID: turnID))
 
-        let task: Task<AgentLoopOutcome, Never> = Task { @MainActor [weak self] in
-            guard let self else { return .cancelled }
-            return await self.executeTurnLoop(conversationID: conversationID, turnID: turnID)
-        }
-        tasks[conversationID] = task
-        let outcome = await task.value
-        tasks.removeValue(forKey: conversationID)
-        turnIDs.removeValue(forKey: conversationID)
-        revision += 1
-        return outcome
+        launchEventStep(conversationID: conversationID, turnID: turnID)
+        return await waitForCompletion(conversationID: conversationID)
     }
 
     /// 恢复被挂起的回合：把用户回答写入工具结果，继续执行同一批次中剩余调用；
@@ -152,13 +193,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
         in conversationID: UUID,
         request: AgentTurnResumeRequest
     ) async throws -> AgentLoopOutcome {
-        // 挂起工具可能在 runTurn 外层收尾前就发布了 messageSaved，用户可能
-        // 提前作答。等待生命周期完全结束，避免被当成并发回合取消。
-        if let activeTask = tasks[conversationID] {
-            await activeTask.value
-            tasks.removeValue(forKey: conversationID)
-        }
-
+        Self.logger.info("\(Self.t)resume turn conversation=\(conversationID.uuidString.prefix(8)), suspension=\(request.suspensionID)")
         guard let suspension = pendingSuspensions[conversationID]?.values.first(where: {
             $0.suspensionID == request.suspensionID
         }) ?? suspensions[conversationID] else {
@@ -174,8 +209,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
             throw AgentLoopError.invalidResumeRequest
         }
 
-        // 授权类挂起：批准才执行；拒绝写入拒绝结果。其余（ask_user 等）：
-        // 直接把用户回答作为工具结果回传。
+        // 授权类挂起：批准才执行；拒绝写入拒绝结果。其余（ask_user 等）直接
+        // 把用户回答作为工具结果回传。恢复动作本身仍通过 ToolManager 执行。
         let result: MessageToolResult
         if suspension.kind == Self.toolApprovalSuspensionKind {
             if isToolApprovalGranted(request.answer) {
@@ -211,32 +246,227 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
         if pendingSuspensions[conversationID]?.isEmpty == true {
             pendingSuspensions.removeValue(forKey: conversationID)
         }
-
-        // 同一 assistant 批次中可能还有未执行调用：继续执行，仍可能独立挂起。
-        if let incomplete = incompleteToolCallMessage(in: conversationID) {
-            let suspendedAgain = await executePendingToolCalls(in: incomplete, conversationID: conversationID)
-            if suspendedAgain {
-                states[conversationID] = .suspended
-                return .suspended("awaiting user response")
+        states[conversationID] = .running
+        activeToolCalls.removeValue(forKey: conversationID)
+        let completedIDs = Set(messages.messages(for: conversationID).compactMap {
+            $0.role == .tool ? $0.toolCallID : nil
+        })
+        let remaining = (assistantMessage.toolCalls ?? []).filter { !completedIDs.contains($0.id) }
+        if remaining.isEmpty {
+            launchEventStep(conversationID: conversationID, turnID: turnIDs[conversationID] ?? UUID())
+        } else {
+            let turnID = turnIDs[conversationID] ?? UUID()
+            activeToolCalls[conversationID] = (assistantMessage.id, remaining)
+            let policy = toolExecutionPolicy(for: conversationID)
+            let calls = remaining.map { ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                _ = await self.toolManager.executeBatch(calls, policy: policy, conversationID: conversationID, turnID: turnID)
             }
         }
-
-        let latestCalls = latestAssistantToolCalls(in: conversationID)
-        guard latestCalls?.isTerminalToolBatch == true else {
-            states[conversationID] = .suspended
-            return .suspended("awaiting user response")
-        }
-
-        states[conversationID] = .running
-        // 答案已写入持久历史，新一轮无需特殊 resume 模式。
-        return try await runTurn(in: conversationID)
+        return await waitForCompletion(conversationID: conversationID)
     }
 
     // MARK: - Turn Loop
 
-    private func executeTurnLoop(conversationID: UUID, turnID: UUID) async -> AgentLoopOutcome {
-        while !cancelledConversations.contains(conversationID) {
-            try? Task.checkCancellation()
+    private func launchEventStep(conversationID: UUID, turnID: UUID) {
+        guard eventTasks[conversationID] == nil else { return }
+        Self.logger.debug("\(Self.t)advance one step conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
+        eventTasks[conversationID] = Task { @MainActor [weak self] in
+            await self?.advanceEventTurn(conversationID: conversationID, turnID: turnID)
+        }
+    }
+
+    private func waitForCompletion(conversationID: UUID) async -> AgentLoopOutcome {
+        await withCheckedContinuation { continuation in
+            completionWaiters[conversationID, default: []].append(continuation)
+        }
+    }
+
+    private func finishEventTurn(conversationID: UUID, turnID: UUID, outcome: AgentLoopOutcome) {
+        Self.logger.info("\(Self.t)finish turn conversation=\(conversationID.uuidString.prefix(8)), outcome=\(String(describing: outcome))")
+        eventTasks[conversationID] = nil
+        if case .suspended = outcome {
+            // 挂起回合需要在 resume 时沿用原 turnID。
+        } else {
+            turnIDs[conversationID] = nil
+        }
+        revision += 1
+        switch outcome {
+        case .completed: notify(.completed(conversationID: conversationID, turnID: turnID))
+        case .failed(let reason): notify(.failed(conversationID: conversationID, turnID: turnID, reason: reason))
+        case .cancelled: notify(.cancelled(conversationID: conversationID, turnID: turnID))
+        case .suspended:
+            if let suspension = suspensions[conversationID] {
+                notify(.suspended(conversationID: conversationID, turnID: turnID, suspension: suspension))
+            }
+        }
+        let waiters = completionWaiters.removeValue(forKey: conversationID) ?? []
+        waiters.forEach { $0.resume(returning: outcome) }
+    }
+
+    private func advanceEventTurn(conversationID: UUID, turnID: UUID) async {
+        defer { eventTasks[conversationID] = nil }
+        if cancelledConversations.contains(conversationID) {
+            finishEventTurn(conversationID: conversationID, turnID: turnID, outcome: .cancelled)
+            return
+        }
+        do {
+            let response = try await requestOneLLM(conversationID: conversationID, turnID: turnID)
+            let toolCalls = response.toolCalls
+            guard !toolCalls.isEmpty else {
+                states[conversationID] = .completed
+                finishEventTurn(conversationID: conversationID, turnID: turnID, outcome: .completed)
+                return
+            }
+            activeToolCalls[conversationID] = (response.assistantID, toolCalls)
+            Self.logger.info("\(Self.t)LLM requested tools conversation=\(conversationID.uuidString.prefix(8)), count=\(toolCalls.count)")
+            notify(.llmResponseReceived(conversationID: conversationID, turnID: turnID, toolCalls: toolCalls))
+        } catch {
+            states[conversationID] = .failed
+            finishEventTurn(conversationID: conversationID, turnID: turnID, outcome: .failed(String(describing: error)))
+        }
+    }
+
+    private struct OneLLMResponse {
+        let response: LLMResponse
+        let assistantID: UUID
+        var toolCalls: [MessageToolCall] { response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) } ?? [] }
+    }
+
+    private func requestOneLLM(conversationID: UUID, turnID: UUID) async throws -> OneLLMResponse {
+        Self.logger.debug("\(Self.t)request LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
+        let history = messages.messages(for: conversationID)
+        let level = conversations.automationLevel(for: conversationID)
+        let language = languagePreference(for: conversationID)
+        let schemas = (level.allowsTools ? toolManager.allTools() : []).compactMap { tool in
+            LLMFunctionSchema(name: tool.name, description: tool.description(for: language), parameters: tool.inputSchema(for: language))
+        }
+        var preparedHistory = history
+        if let lifecycleHooks {
+            let result = await lifecycleHooks.runWillSendToLLM(WillSendToLLMContext(messages: history.map(\.llmMessage), conversationID: conversationID))
+            preparedHistory = result.messages.map { message in
+                Message(conversationID: conversationID, role: .init(rawValue: message.role.rawValue) ?? .system, content: message.content, toolCallID: message.toolCallID, reasoningContent: message.reasoningContent)
+            }
+        }
+        insertStatusMessage(conversationID: conversationID, content: String(localized: "status.thinking", defaultValue: "正在思考…"))
+        let request = LLMRequest(conversationID: conversationID, messages: preparedHistory.map(\.llmMessage), model: conversations.modelName(for: conversationID), tools: schemas.isEmpty ? nil : schemas, reasoningEffort: conversations.reasoningEffortOptional(for: conversationID).flatMap { $0.rawValue })
+        streaming.start(conversationID: conversationID)
+        let response: LLMResponse
+        do {
+            if let streamingManager = llmManager as? any LLMStreamingProviding {
+                let bridge = StreamingBridge(streaming: streaming)
+                response = try await streamingManager.streamComplete(request) { [weak bridge] chunk in
+                    guard let bridge else { return }
+                    if let reasoning = chunk.reasoningContent, !reasoning.isEmpty {
+                        await bridge.appendThinking(reasoning, conversationID: conversationID)
+                    } else {
+                        await bridge.appendContent(chunk.content ?? "", conversationID: conversationID)
+                    }
+                }
+            } else {
+                response = try await llmManager.complete(request)
+            }
+        } catch {
+            streaming.end(conversationID: conversationID)
+            await appendError(in: conversationID, error: error, turnID: turnID)
+            throw error
+        }
+        Self.logger.debug("\(Self.t)LLM response received conversation=\(conversationID.uuidString.prefix(8)), hasTools=\(!(response.toolCalls ?? []).isEmpty)")
+        var assistant = Message(conversationID: conversationID, role: .assistant, content: response.content, turnID: turnID, providerID: nil, modelName: response.model, reasoningContent: response.reasoningContent, toolCalls: response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }, inputTokenCount: response.inputTokenCount, outputTokenCount: response.outputTokenCount)
+        assistant.providerID = resolvedProviderID(for: conversationID)
+        if let calls = assistant.toolCalls {
+            assistant.toolCalls = calls.map { call in
+                var enriched = call
+                enriched.displayDescription = toolManager.displayDescription(for: ToolCall(id: call.id, name: call.name, arguments: call.arguments))
+                return enriched
+            }
+        }
+        messages.insertMessage(assistant, to: conversationID)
+        streaming.end(conversationID: conversationID)
+        if let lifecycleHooks {
+            await lifecycleHooks.notifyDidReceiveLLMResponse(DidReceiveLLMResponseContext(response: response, requestMessages: preparedHistory.map(\.llmMessage), conversationID: conversationID))
+        }
+        return OneLLMResponse(response: response, assistantID: assistant.id)
+    }
+
+    private func handleToolManagerEvent(_ event: ToolManagerEvent) {
+        guard case .batchCompleted(let conversationID, let eventTurnID, let calls, let results) = event,
+              let turnID = turnIDs[conversationID], eventTurnID == nil || eventTurnID == turnID,
+              let active = activeToolCalls[conversationID] else { return }
+        Self.logger.info("\(Self.t)tool batch completed conversation=\(conversationID.uuidString.prefix(8)), count=\(results.count)")
+        var firstSuspension: AgentLoopSuspension?
+        let assistantMessage = messages.messages(for: conversationID).reversed().first(where: { $0.id == active.assistantID })
+        for (call, batchResult) in zip(calls, results) {
+            let result: MessageToolResult
+            switch batchResult {
+            case .executed(let value): result = convertResult(value)
+            case .blocked(let reason): result = MessageToolResult(content: reason, isError: true)
+            case .needsApproval(let risk):
+                firstSuspension = makeApprovalSuspension(for: call, riskLevel: risk, conversationID: conversationID)
+                result = MessageToolResult(content: firstSuspension?.payload ?? "", awaitingUserResponse: true)
+            }
+            if let assistantMessage {
+                messages.updateToolCallResult(result, toolCallID: call.id, assistantMessageID: assistantMessage.id, in: conversationID)
+            }
+            insertToolResultMessage(result, toolCallID: call.id, conversationID: conversationID, turnID: turnID)
+            if result.awaitingUserResponse && firstSuspension == nil {
+                firstSuspension = AgentLoopSuspension(suspensionID: "userInput:\(call.id)", conversationID: conversationID, toolCallID: call.id, kind: "userInput", payload: result.content)
+            }
+            if firstSuspension != nil { break }
+        }
+        activeToolCalls.removeValue(forKey: conversationID)
+        if let suspension = firstSuspension {
+            suspensions[conversationID] = suspension
+            pendingSuspensions[conversationID] = [suspension.toolCallID ?? "": suspension]
+            awaitingConversations.insert(conversationID)
+            states[conversationID] = .suspended
+            finishEventTurn(conversationID: conversationID, turnID: turnID, outcome: .suspended(suspension.suspensionID))
+        } else {
+            states[conversationID] = .running
+            launchEventStep(conversationID: conversationID, turnID: turnID)
+        }
+    }
+
+    private func handleAgentLoopEvent(_ event: AgentLoopEvent) {
+        guard case .llmResponseReceived(let conversationID, let turnID, let toolCalls) = event,
+              !toolCalls.isEmpty else { return }
+        let calls = toolCalls.map { ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            _ = await self.toolManager.executeBatch(
+                calls,
+                policy: self.toolExecutionPolicy(for: conversationID),
+                conversationID: conversationID,
+                turnID: turnID
+            )
+        }
+    }
+
+    private func toolExecutionPolicy(for conversationID: UUID) -> ToolExecutionPolicy {
+        switch conversations.automationLevel(for: conversationID) {
+        case .chat: return .blockAll
+        case .autonomous: return .autoExecute
+        case .build: return .requireApprovalForHighRisk
+        }
+    }
+
+    private func makeApprovalSuspension(for call: ToolCall, riskLevel: CommandRiskLevel, conversationID: UUID) -> AgentLoopSuspension {
+        let id = "approval:\(call.id)"
+        let payload = ToolApprovalPayload(toolCallId: id, question: "此操作被判定为\(riskLevel.displayName)，是否允许执行？", options: ["允许", "拒绝"], mode: "yes_no", conversationId: conversationID.uuidString, verbosity: "standard")
+        let content = (try? String(data: JSONEncoder().encode(payload), encoding: .utf8)) ?? "Unable to create approval request."
+        return AgentLoopSuspension(suspensionID: id, conversationID: conversationID, toolCallID: call.id, kind: Self.toolApprovalSuspensionKind, payload: content)
+    }
+
+    // Kept only as a compatibility reference for old recovery data; active
+    // turns use the event-driven step path above and never call this method.
+    @available(*, unavailable, message: "Use the event-driven step path")
+    private func legacyExecuteTurnStep(conversationID: UUID, turnID: UUID) async -> AgentLoopOutcome {
+        guard !cancelledConversations.contains(conversationID) else {
+            states[conversationID] = .cancelled
+            return .cancelled
+        }
+        try? Task.checkCancellation()
 
             let history = messages.messages(for: conversationID)
 
@@ -251,7 +481,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                     states[conversationID] = .suspended
                     return .suspended("awaiting user response")
                 }
-                continue
+                return .failed("legacy turn path disabled")
             }
 
             // 会话设置是事实来源：automationLevel 决定是否附带工具。
@@ -358,6 +588,15 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
             }
             messages.insertMessage(assistant, to: conversationID)
             streaming.end(conversationID: conversationID)
+            notify(.llmResponseReceived(
+                conversationID: conversationID,
+                turnID: turnID,
+                toolCalls: assistant.toolCalls?.map { MessageToolCall(
+                    id: $0.id,
+                    name: $0.name,
+                    arguments: $0.arguments
+                ) } ?? []
+            ))
             // 生命周期钩子 didReceiveLLMResponse：插件可在 LLM 响应到达后执行逻辑。
             if let lifecycleHooks {
                 await lifecycleHooks.notifyDidReceiveLLMResponse(DidReceiveLLMResponseContext(
@@ -438,11 +677,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding {
                 return .suspended("awaiting user response")
             }
 
-            // 工具结果已入历史，继续下一轮 LLM 请求。
-        }
-
-        states[conversationID] = .cancelled
-        return .cancelled
+            // 工具结果已入历史，进入下一次异步单步推进。
+            return .failed("legacy turn path disabled")
     }
 
     // MARK: - Tool Execution

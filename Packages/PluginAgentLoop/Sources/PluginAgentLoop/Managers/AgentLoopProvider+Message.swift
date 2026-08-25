@@ -5,6 +5,14 @@ import ProviderMessage
 // MARK: - Message Helpers
 
 extension AgentLoopProvider {
+    func notifyLLMResponse(conversationID: UUID, turnID: UUID, toolCalls: [MessageToolCall]) {
+        notify(.llmResponseReceived(
+            conversationID: conversationID,
+            turnID: turnID,
+            toolCalls: toolCalls
+        ))
+    }
+
     func insertToolResultMessage(
         _ result: MessageToolResult,
         toolCallID: String,

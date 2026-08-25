@@ -1,10 +1,14 @@
 import KitAgentTool
 import Combine
 import Foundation
+import KitSuperLog
+import os
 
 /// `ToolManagerProviding` 的默认实现。
 @MainActor
-public final class DefaultToolManagerProviding: ToolManagerProviding, ObservableObject {
+public final class DefaultToolManagerProviding: ToolManagerProviding, ObservableObject, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-tool-manager", category: "ToolManager")
+    public nonisolated static let emoji = "🛠️"
 
     /// 工具调用记录存储（后台异步写入，不影响主流程）。
     /// 由宿主在装配阶段设置；未设置时记录功能 no-op。
@@ -33,8 +37,26 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
     private var resultCache: [String: ToolCallResult] = [:]
     private var resultCacheConversationIDs: [String: UUID] = [:]
     private var deletedConversationIDs: Set<UUID> = []
+    private var toolManagerObservers: [UUID: (ToolManagerEvent) -> Void] = [:]
 
     public init() {}
+
+    @discardableResult
+    public func addToolManagerObserver(
+        _ callback: @escaping (ToolManagerEvent) -> Void
+    ) -> any ToolManagerObserverHandle {
+        let id = UUID()
+        toolManagerObservers[id] = callback
+        return DefaultToolManagerObserverHandle { [weak self] in
+            self?.toolManagerObservers.removeValue(forKey: id)
+        }
+    }
+
+    private func notify(_ event: ToolManagerEvent) {
+        for callback in toolManagerObservers.values {
+            callback(event)
+        }
+    }
 
     // MARK: - Registration
 
@@ -115,15 +137,28 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
         conversationID: UUID,
         turnID: UUID?
     ) async -> ToolCallResult {
+        Self.logger.debug("\(Self.t)execute tool=\(toolCall.name), conversation=\(conversationID.uuidString.prefix(8))")
+        notify(.started(conversationID: conversationID, turnID: turnID, toolCall: toolCall))
+
+        func finish(_ result: ToolCallResult) -> ToolCallResult {
+            notify(.completed(
+                conversationID: conversationID,
+                turnID: turnID,
+                toolCall: toolCall,
+                result: result
+            ))
+            return result
+        }
+
         guard !deletedConversationIDs.contains(conversationID) else {
             let result = ToolCallResult(content: "Conversation was deleted", isError: true)
             cache(result, for: toolCall.id, conversationID: conversationID)
-            return result
+            return finish(result)
         }
         guard let tool = registeredTools[toolCall.name] else {
             let result = ToolCallResult(content: "Tool not found: \(toolCall.name)", isError: true)
             cache(result, for: toolCall.id, conversationID: conversationID)
-            return result
+            return finish(result)
         }
 
         let startedAt = Date()
@@ -156,7 +191,7 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
                 resultIsError: true,
                 riskLevel: "unknown"
             )
-            return result
+            return finish(result)
         }
 
         let executionContent: String
@@ -199,7 +234,7 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
                 resultIsError: true,
                 riskLevel: tool.permissionRiskLevel(arguments: arguments).rawValue
             )
-            return result
+            return finish(result)
         }
 
         let result = ToolCallResult(
@@ -231,7 +266,36 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
             riskLevel: tool.permissionRiskLevel(arguments: arguments).rawValue
         )
 
-        return result
+        return finish(result)
+    }
+
+    public func executeBatch(
+        _ toolCalls: [ToolCall],
+        policy: ToolExecutionPolicy,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> [BatchToolResult] {
+        Self.logger.info("\(Self.t)execute batch count=\(toolCalls.count), conversation=\(conversationID.uuidString.prefix(8)), policy=\(String(describing: policy))")
+        var results: [BatchToolResult] = []
+        results.reserveCapacity(toolCalls.count)
+        for toolCall in toolCalls {
+            switch policy {
+            case .blockAll:
+                results.append(.blocked(reason: "Tool execution was blocked because this conversation is in Chat mode."))
+            case .autoExecute:
+                results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID)))
+            case .requireApprovalForHighRisk:
+                let risk = riskLevel(for: toolCall) ?? .high
+                if risk.requiresPermission {
+                    results.append(.needsApproval(riskLevel: risk))
+                } else {
+                    results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID)))
+                }
+            }
+        }
+        notify(.batchCompleted(conversationID: conversationID, turnID: turnID, toolCalls: toolCalls, results: results))
+        Self.logger.info("\(Self.t)batch completed conversation=\(conversationID.uuidString.prefix(8)), results=\(results.count)")
+        return results
     }
 
     // MARK: - Records

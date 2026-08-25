@@ -105,6 +105,20 @@ struct AgentLoopFullLoopTests {
     private final class TestToolManager: ToolManagerProviding {
         private var tools: [String: any SuperAgentTool] = [:]
         private var order: [String] = []
+        private var observers: [UUID: (ToolManagerEvent) -> Void] = [:]
+
+        private final class ObserverHandle: ToolManagerObserverHandle {
+            private var cancellation: (() -> Void)?
+            init(_ cancellation: @escaping () -> Void) { self.cancellation = cancellation }
+            func cancel() { cancellation?(); cancellation = nil }
+        }
+
+        @discardableResult
+        func addToolManagerObserver(_ callback: @escaping (ToolManagerEvent) -> Void) -> any ToolManagerObserverHandle {
+            let id = UUID()
+            observers[id] = callback
+            return ObserverHandle { [weak self] in self?.observers.removeValue(forKey: id) }
+        }
 
         func allTools() -> [any SuperAgentTool] { order.compactMap { tools[$0] } }
         func add(_ tool: any SuperAgentTool, pluginID: String) {
@@ -134,6 +148,28 @@ struct AgentLoopFullLoopTests {
             } catch {
                 return ToolCallResult(content: String(describing: error), isError: true)
             }
+        }
+        func executeBatch(_ calls: [ToolCall], policy: ToolExecutionPolicy, conversationID: UUID, turnID: UUID?) async -> [BatchToolResult] {
+            var results: [BatchToolResult] = []
+            for call in calls {
+                switch policy {
+                case .blockAll:
+                    results.append(.blocked(reason: "Tool execution was blocked because this conversation is in Chat mode."))
+                case .autoExecute:
+                    results.append(.executed(await execute(call, conversationID: conversationID, turnID: turnID)))
+                case .requireApprovalForHighRisk:
+                    let risk = riskLevel(for: call) ?? .high
+                    if risk.requiresPermission {
+                        results.append(.needsApproval(riskLevel: risk))
+                    } else {
+                        results.append(.executed(await execute(call, conversationID: conversationID, turnID: turnID)))
+                    }
+                }
+            }
+            for observer in observers.values {
+                observer(.batchCompleted(conversationID: conversationID, turnID: turnID, toolCalls: calls, results: results))
+            }
+            return results
         }
         func toolCalls(for turnID: UUID) async -> [ToolCallRecord] { [] }
         func toolCallResult(for toolCallID: String) async -> ToolCallResult? { nil }
@@ -308,7 +344,7 @@ struct AgentLoopFullLoopTests {
 
         // 第一轮：高风险工具 → 挂起
         let outcome = try await loop.runTurn(in: conversationID)
-        #expect(outcome == .suspended("awaiting user response"))
+        #expect(outcome == .suspended("approval:call-1"))
         #expect(loop.suspension(for: conversationID) != nil)
         #expect(loop.suspension(for: conversationID)?.kind == "toolApproval")
         #expect(tool.executionCount == 0, "高风险工具未批准不应执行")

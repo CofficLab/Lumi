@@ -23,6 +23,32 @@ struct DefaultToolManagerProvidingTests {
         #expect(cached?.content == "read /tmp/a.txt")
     }
 
+    @Test("execute 通过观察者发出 started 和 completed")
+    func executeNotifiesObservers() async {
+        let manager = DefaultToolManagerProviding()
+        manager.add(MockTool(name: "read"), pluginID: "p")
+        var events: [String] = []
+        let handle = manager.addToolManagerObserver { event in
+            switch event {
+            case .started:
+                events.append("started")
+            case .completed:
+                events.append("completed")
+            case .batchCompleted:
+                events.append("batchCompleted")
+            }
+        }
+
+        _ = await manager.execute(
+            makeToolCall(name: "read"),
+            conversationID: UUID(),
+            turnID: UUID()
+        )
+
+        #expect(events == ["started", "completed"])
+        handle.cancel()
+    }
+
     @Test("execute 工具不存在返回错误")
     func executeToolNotFound() async {
         let manager = DefaultToolManagerProviding()

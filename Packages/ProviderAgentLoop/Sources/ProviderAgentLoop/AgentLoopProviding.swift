@@ -14,6 +14,11 @@ import ProviderToolManager
 /// - `llmManager` / `toolManager` / `streaming` / `conversations`（构造注入）
 @MainActor
 public protocol AgentLoopProviding: AnyObject, ObservableObject {
+    /// 注册回合生命周期观察者。
+    @discardableResult
+    func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle
     func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome
     func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome
     func cancelTurn(in conversationID: UUID)

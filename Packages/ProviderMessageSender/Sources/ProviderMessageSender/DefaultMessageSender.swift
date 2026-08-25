@@ -24,6 +24,10 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     private let messages: any MessageManaging
     private let agentLoop: any AgentLoopProviding
     private var currentTasks: [UUID: Task<Void, Never>] = [:]
+    private var pendingOutcomes: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
+    private var completedOutcomes: [UUID: AgentLoopOutcome] = [:]
+    private var agentLoopObserver: (any AgentLoopObserverHandle)?
+    private var messageSenderObservers: [UUID: (MessageSenderEvent) -> Void] = [:]
 
     @Published public private(set) var isSending = false {
         didSet {
@@ -67,8 +71,28 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         self.conversations = conversations
         self.messages = messages
         self.agentLoop = agentLoop
+        self.agentLoopObserver = agentLoop.addAgentLoopObserver { [weak self] event in
+            self?.handleAgentLoopEvent(event)
+        }
         if Self.verbose {
             Self.logger.info("\(Self.t)DefaultMessageSender initialized")
+        }
+    }
+
+    @discardableResult
+    public func addMessageSenderObserver(
+        _ callback: @escaping (MessageSenderEvent) -> Void
+    ) -> any MessageSenderObserverHandle {
+        let id = UUID()
+        messageSenderObservers[id] = callback
+        return DefaultMessageSenderObserverHandle { [weak self] in
+            self?.messageSenderObservers.removeValue(forKey: id)
+        }
+    }
+
+    private func notify(_ event: MessageSenderEvent) {
+        for callback in messageSenderObservers.values {
+            callback(event)
         }
     }
 
@@ -186,6 +210,7 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
             content: trimmed,
             metadata: metadata
         )
+        completedOutcomes.removeValue(forKey: targetID)
         messages.insertMessage(userMessage, to: targetID)
         clearSentAttachments(imageAttachments, fileAttachments)
         if Self.verbose {
@@ -205,6 +230,7 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         currentTasks.removeAll()
         if let conversationID = conversations.selectedConversationID {
             agentLoop.cancelTurn(in: conversationID)
+            handleAgentLoopEvent(.cancelled(conversationID: conversationID, turnID: agentLoop.currentTurnID(for: conversationID)))
         }
         isSending = false
     }
@@ -216,17 +242,68 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         request: AgentTurnResumeRequest
     ) async throws -> AgentLoopOutcome {
         isSending = true
+        notify(.started(conversationID: conversationID))
         defer { isSending = false }
         if Self.verbose {
             Self.logger.info("\(Self.t)resume turn: conversation=\(conversationID.uuidString.prefix(8))")
         }
-        return try await agentLoop.resumeTurn(in: conversationID, request: request)
+        do {
+            let outcome = try await agentLoop.resumeTurn(in: conversationID, request: request)
+            notify(.turnCompleted(conversationID: conversationID, outcome: outcome))
+            return outcome
+        } catch {
+            notify(.turnFailed(conversationID: conversationID, reason: error.localizedDescription))
+            throw error
+        }
     }
 
     // MARK: - Private
 
     private func isSending(for conversationID: UUID) -> Bool {
         currentTasks[conversationID] != nil
+    }
+
+    /// 由 MessageSenderPlugin 注册的 AgentLoop 事件监听器调用。
+    public func handleAgentLoopEvent(_ event: AgentLoopEvent) {
+        let conversationID: UUID
+        let outcome: AgentLoopOutcome
+        switch event {
+        case .completed(let id, _):
+            conversationID = id
+            outcome = .completed
+            notify(.turnCompleted(conversationID: id, outcome: outcome))
+        case .suspended(let id, _, let suspension):
+            conversationID = id
+            outcome = .suspended(suspension.suspensionID)
+            notify(.turnCompleted(conversationID: id, outcome: outcome))
+        case .cancelled(let id, _):
+            conversationID = id
+            outcome = .cancelled
+            notify(.turnCompleted(conversationID: id, outcome: outcome))
+        case .failed(let id, _, let reason):
+            conversationID = id
+            outcome = .failed(reason)
+            notify(.turnFailed(conversationID: id, reason: reason))
+        case .started, .llmResponseReceived:
+            return
+        }
+
+        let continuations = pendingOutcomes.removeValue(forKey: conversationID) ?? []
+        if continuations.isEmpty {
+            completedOutcomes[conversationID] = outcome
+        }
+        for continuation in continuations {
+            continuation.resume(returning: outcome)
+        }
+    }
+
+    private func waitForAgentLoop(in conversationID: UUID) async -> AgentLoopOutcome {
+        if let outcome = completedOutcomes.removeValue(forKey: conversationID) {
+            return outcome
+        }
+        return await withCheckedContinuation { continuation in
+            pendingOutcomes[conversationID, default: []].append(continuation)
+        }
     }
 
     /// 清空已随消息送出的附件挂起池（仅当池未被用户在等待期间修改过）。
@@ -245,6 +322,7 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     /// 执行一个回合（发送路径与队列消费共用）。
     private func executeTurn(conversationID: UUID, userMessageID: UUID) async {
         isSending = true
+        notify(.started(conversationID: conversationID))
         if Self.verbose {
             Self.logger.info("\(Self.t)turn started: conversation=\(conversationID.uuidString.prefix(8)), userMessage=\(userMessageID.uuidString.prefix(8))")
         }
@@ -256,21 +334,9 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
                 // 队列消费：当前回合结束后发下一条。
                 self.drainPendingQueue(conversationID: conversationID)
             }
-            do {
-                _ = try await self.agentLoop.runTurn(in: conversationID)
-                if Self.verbose {
-                    Self.logger.info("\(Self.t)turn completed: conversation=\(conversationID.uuidString.prefix(8))")
-                }
-            } catch {
-                if Self.verbose {
-                    Self.logger.error("\(Self.t)turn failed: conversation=\(conversationID.uuidString.prefix(8)), error=\(error.localizedDescription)")
-                }
-                let errorMessage = Message(
-                    conversationID: conversationID,
-                    role: .error,
-                    content: error.localizedDescription
-                )
-                self.messages.insertMessage(errorMessage, to: conversationID)
+            _ = await self.waitForAgentLoop(in: conversationID)
+            if Self.verbose {
+                Self.logger.info("\(Self.t)turn completed: conversation=\(conversationID.uuidString.prefix(8))")
             }
         }
         currentTasks[conversationID] = task
@@ -299,6 +365,7 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
             content: next.content,
             metadata: metadata
         )
+        completedOutcomes.removeValue(forKey: conversationID)
         messages.insertMessage(userMessage, to: conversationID)
         if Self.verbose {
             Self.logger.info("\(Self.t)drain queue: sending next message, conversation=\(conversationID.uuidString.prefix(8)), message=\(userMessage.id.uuidString.prefix(8))")

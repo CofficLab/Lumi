@@ -58,6 +58,19 @@ struct MessageSenderPluginTests {
         let plugin = MessageSenderPlugin()
         try plugin.onBoot(kernel: kernel)
 
+        let messageObserver = messages.addMessageInsertedObserver { message, conversationID in
+            guard message.role == .user else { return }
+            Task { @MainActor in
+                let outcome = (try? await agentLoop.runTurn(in: conversationID)) ?? .cancelled
+                agentLoop.notify(.completed(
+                    conversationID: conversationID,
+                    turnID: agentLoop.currentTurnID(for: conversationID) ?? UUID()
+                ))
+                _ = outcome
+            }
+        }
+        defer { messageObserver.cancel() }
+
         let sender = try #require(kernel.resolveProvider((any MessageSendingProviding).self))
         try await sender.sendMessage("hello", conversationID: nil)
         let id = try #require(conversations.selectedConversationID)
@@ -70,10 +83,25 @@ struct MessageSenderPluginTests {
 @MainActor
 private final class StubAgentLoop: AgentLoopProviding {
     private let messages: any MessageManaging
+    private var observers: [UUID: (AgentLoopEvent) -> Void] = [:]
     var responseContent: String = "response"
 
     init(messages: any MessageManaging) {
         self.messages = messages
+    }
+
+    func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return StubAgentLoopObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
+    func notify(_ event: AgentLoopEvent) {
+        for callback in observers.values { callback(event) }
     }
 
     func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
@@ -95,4 +123,18 @@ private final class StubAgentLoop: AgentLoopProviding {
     func currentTurnID(for conversationID: UUID) -> UUID? { nil }
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
 
+}
+
+@MainActor
+private final class StubAgentLoopObserverHandle: AgentLoopObserverHandle {
+    private var cancellation: (() -> Void)?
+
+    init(cancellation: @escaping () -> Void) {
+        self.cancellation = cancellation
+    }
+
+    func cancel() {
+        cancellation?()
+        cancellation = nil
+    }
 }

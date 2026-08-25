@@ -23,6 +23,11 @@ public protocol SendingStateObserverHandle: AnyObject {
 /// - 取消 / 恢复：`cancelCurrentRequest` 取消当前回合；`resumeTurn` 恢复挂起回合。
 @MainActor
 public protocol MessageSendingProviding: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
+    /// 注册发送生命周期观察者。
+    @discardableResult
+    func addMessageSenderObserver(
+        _ callback: @escaping (MessageSenderEvent) -> Void
+    ) -> any MessageSenderObserverHandle
     var isSending: Bool { get }
 
     // MARK: - Observation
@@ -75,6 +80,21 @@ public protocol MessageSendingProviding: AnyObject, ObservableObject where Objec
         in conversationID: UUID,
         request: AgentTurnResumeRequest
     ) async throws -> AgentLoopOutcome
+}
+
+public extension MessageSendingProviding {
+    /// 默认空实现，保持自定义发送器向后兼容。
+    @discardableResult
+    func addMessageSenderObserver(
+        _ callback: @escaping (MessageSenderEvent) -> Void
+    ) -> any MessageSenderObserverHandle {
+        NoopMessageSenderObserverHandle()
+    }
+}
+
+@MainActor
+private final class NoopMessageSenderObserverHandle: MessageSenderObserverHandle {
+    func cancel() {}
 }
 
 /// 待发送消息（队列条目）。
