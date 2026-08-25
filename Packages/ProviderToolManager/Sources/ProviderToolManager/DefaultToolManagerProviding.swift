@@ -9,6 +9,7 @@ import os
 public final class DefaultToolManagerProviding: ToolManagerProviding, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-tool-manager", category: "ToolManager")
     public nonisolated static let emoji = "🛠️"
+    nonisolated static let verbose = true
 
     /// 工具调用记录存储（后台异步写入，不影响主流程）。
     /// 由宿主在装配阶段设置；未设置时记录功能 no-op。
@@ -137,7 +138,9 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
         conversationID: UUID,
         turnID: UUID?
     ) async -> ToolCallResult {
-        Self.logger.debug("\(Self.t)execute tool=\(toolCall.name), conversation=\(conversationID.uuidString.prefix(8))")
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)execute tool=\(toolCall.name), conversation=\(conversationID.uuidString.prefix(8))")
+        }
         notify(.started(conversationID: conversationID, turnID: turnID, toolCall: toolCall))
 
         func finish(_ result: ToolCallResult) -> ToolCallResult {
@@ -275,7 +278,9 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
         conversationID: UUID,
         turnID: UUID?
     ) async -> [BatchToolResult] {
-        Self.logger.info("\(Self.t)execute batch count=\(toolCalls.count), conversation=\(conversationID.uuidString.prefix(8)), policy=\(String(describing: policy))")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)execute batch count=\(toolCalls.count), conversation=\(conversationID.uuidString.prefix(8)), policy=\(String(describing: policy))")
+        }
         var results: [BatchToolResult] = []
         results.reserveCapacity(toolCalls.count)
         for toolCall in toolCalls {
@@ -294,7 +299,9 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
             }
         }
         notify(.batchCompleted(conversationID: conversationID, turnID: turnID, toolCalls: toolCalls, results: results))
-        Self.logger.info("\(Self.t)batch completed conversation=\(conversationID.uuidString.prefix(8)), results=\(results.count)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)batch completed conversation=\(conversationID.uuidString.prefix(8)), results=\(results.count)")
+        }
         return results
     }
 

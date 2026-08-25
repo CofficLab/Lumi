@@ -25,6 +25,7 @@ import ProviderLifecycleHooks
 public final class PluginAgentLoop: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-loop")
     public nonisolated static let emoji = "🔄"
+    nonisolated static let verbose = true
 
     public let id = "com.coffic.lumi.plugin.agent-loop"
     public let order = 8
@@ -108,7 +109,9 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
 
         messageObserver = messages.addMessageInsertedObserver { [weak agentLoop] message, conversationID in
             guard message.role == .user, let agentLoop else { return }
-            Self.logger.info("\(Self.t)message event starts turn conversation=\(conversationID.uuidString.prefix(8))")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)message event starts turn conversation=\(conversationID.uuidString.prefix(8))")
+            }
             Task { @MainActor in
                 guard !agentLoop.isRunning(for: conversationID) else { return }
                 do {
@@ -121,7 +124,9 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
         toolManagerObserver = toolManager.addToolManagerObserver { [weak agentLoop] event in
             guard let agentLoop else { return }
             if case .batchCompleted(let conversationID, let turnID, _, let results) = event {
-                Self.logger.info("\(Self.t)tool batch event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID?.uuidString.prefix(8) ?? "nil"), results=\(results.count)")
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)tool batch event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID?.uuidString.prefix(8) ?? "nil"), results=\(results.count)")
+                }
             }
             Task { @MainActor in
                 (agentLoop as? AgentLoopProvider)?.handleToolManagerEvent(event)
@@ -130,7 +135,9 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
         agentLoopObserver = agentLoop.addAgentLoopObserver { [weak agentLoop] event in
             guard let agentLoop else { return }
             if case .llmResponseReceived(let conversationID, let turnID, let toolCalls) = event {
-                Self.logger.info("\(Self.t)LLM event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), tools=\(toolCalls.count)")
+                if Self.verbose {
+                    Self.logger.info("\(Self.t)LLM event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), tools=\(toolCalls.count)")
+                }
             }
             Task { @MainActor in
                 (agentLoop as? AgentLoopProvider)?.handleAgentLoopEvent(event)

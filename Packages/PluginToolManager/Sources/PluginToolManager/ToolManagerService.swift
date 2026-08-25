@@ -13,6 +13,7 @@ import os
 public final class ToolManagerService: ToolManagerProviding, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "ToolManager")
     public nonisolated static let emoji = "🛠️"
+    nonisolated static let verbose = true
     /// 内部引擎（注册表 + 执行 + 记录）。
     private let engine: DefaultToolManagerProviding
     private var observers: [UUID: (ToolManagerEvent) -> Void] = [:]
@@ -101,7 +102,9 @@ public final class ToolManagerService: ToolManagerProviding, ObservableObject, S
         conversationID: UUID,
         turnID: UUID?
     ) async -> [BatchToolResult] {
-        Self.logger.info("\(Self.t)execute batch conversation=\(conversationID.uuidString.prefix(8)), count=\(toolCalls.count), policy=\(String(describing: policy))")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)execute batch conversation=\(conversationID.uuidString.prefix(8)), count=\(toolCalls.count), policy=\(String(describing: policy))")
+        }
         let results = await engine.executeBatch(toolCalls, policy: policy, conversationID: conversationID, turnID: turnID)
         notify(.batchCompleted(
             conversationID: conversationID,
@@ -109,7 +112,9 @@ public final class ToolManagerService: ToolManagerProviding, ObservableObject, S
             toolCalls: toolCalls,
             results: results
         ))
-        Self.logger.info("\(Self.t)batch completed conversation=\(conversationID.uuidString.prefix(8)), results=\(results.count)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)batch completed conversation=\(conversationID.uuidString.prefix(8)), results=\(results.count)")
+        }
         return results
     }
 

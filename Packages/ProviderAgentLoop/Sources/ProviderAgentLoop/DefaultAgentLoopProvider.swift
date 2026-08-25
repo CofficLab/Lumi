@@ -49,6 +49,7 @@ private typealias ToolCall = KitAgentTool.ToolCall
 public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-agent-loop", category: "AgentLoop")
     public nonisolated static let emoji = "🔄"
+    nonisolated static let verbose = true
     private let messages: any MessageManaging
     private let llmManager: any LLMManaging
     private let toolManager: any ToolManagerProviding
@@ -146,7 +147,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     }
 
     public func cancelTurn(in conversationID: UUID) {
-        Self.logger.info("\(Self.t)cancel turn conversation=\(conversationID.uuidString.prefix(8))")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)cancel turn conversation=\(conversationID.uuidString.prefix(8))")
+        }
         let turnID = turnIDs[conversationID]
         cancelledConversations.insert(conversationID)
         suspensions.removeValue(forKey: conversationID)
@@ -164,7 +167,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     }
 
     public func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
-        Self.logger.info("\(Self.t)start turn conversation=\(conversationID.uuidString.prefix(8))")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)start turn conversation=\(conversationID.uuidString.prefix(8))")
+        }
         guard !isRunning(for: conversationID) else {
             return .failed("turn already running")
         }
@@ -193,7 +198,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         in conversationID: UUID,
         request: AgentTurnResumeRequest
     ) async throws -> AgentLoopOutcome {
-        Self.logger.info("\(Self.t)resume turn conversation=\(conversationID.uuidString.prefix(8)), suspension=\(request.suspensionID)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)resume turn conversation=\(conversationID.uuidString.prefix(8)), suspension=\(request.suspensionID)")
+        }
         guard let suspension = pendingSuspensions[conversationID]?.values.first(where: {
             $0.suspensionID == request.suspensionID
         }) ?? suspensions[conversationID] else {
@@ -271,7 +278,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
 
     private func launchEventStep(conversationID: UUID, turnID: UUID) {
         guard eventTasks[conversationID] == nil else { return }
-        Self.logger.debug("\(Self.t)advance one step conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)advance one step conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
+        }
         eventTasks[conversationID] = Task { @MainActor [weak self] in
             await self?.advanceEventTurn(conversationID: conversationID, turnID: turnID)
         }
@@ -284,7 +293,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     }
 
     private func finishEventTurn(conversationID: UUID, turnID: UUID, outcome: AgentLoopOutcome) {
-        Self.logger.info("\(Self.t)finish turn conversation=\(conversationID.uuidString.prefix(8)), outcome=\(String(describing: outcome))")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)finish turn conversation=\(conversationID.uuidString.prefix(8)), outcome=\(String(describing: outcome))")
+        }
         eventTasks[conversationID] = nil
         if case .suspended = outcome {
             // 挂起回合需要在 resume 时沿用原 turnID。
@@ -320,7 +331,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 return
             }
             activeToolCalls[conversationID] = (response.assistantID, toolCalls)
-            Self.logger.info("\(Self.t)LLM requested tools conversation=\(conversationID.uuidString.prefix(8)), count=\(toolCalls.count)")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)LLM requested tools conversation=\(conversationID.uuidString.prefix(8)), count=\(toolCalls.count)")
+            }
             notify(.llmResponseReceived(conversationID: conversationID, turnID: turnID, toolCalls: toolCalls))
         } catch {
             states[conversationID] = .failed
@@ -335,7 +348,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     }
 
     private func requestOneLLM(conversationID: UUID, turnID: UUID) async throws -> OneLLMResponse {
-        Self.logger.debug("\(Self.t)request LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)request LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
+        }
         let history = messages.messages(for: conversationID)
         let level = conversations.automationLevel(for: conversationID)
         let language = languagePreference(for: conversationID)
@@ -372,7 +387,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             await appendError(in: conversationID, error: error, turnID: turnID)
             throw error
         }
-        Self.logger.debug("\(Self.t)LLM response received conversation=\(conversationID.uuidString.prefix(8)), hasTools=\(!(response.toolCalls ?? []).isEmpty)")
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)LLM response received conversation=\(conversationID.uuidString.prefix(8)), hasTools=\(!(response.toolCalls ?? []).isEmpty)")
+        }
         var assistant = Message(conversationID: conversationID, role: .assistant, content: response.content, turnID: turnID, providerID: nil, modelName: response.model, reasoningContent: response.reasoningContent, toolCalls: response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }, inputTokenCount: response.inputTokenCount, outputTokenCount: response.outputTokenCount)
         assistant.providerID = resolvedProviderID(for: conversationID)
         if let calls = assistant.toolCalls {
@@ -394,7 +411,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         guard case .batchCompleted(let conversationID, let eventTurnID, let calls, let results) = event,
               let turnID = turnIDs[conversationID], eventTurnID == nil || eventTurnID == turnID,
               let active = activeToolCalls[conversationID] else { return }
-        Self.logger.info("\(Self.t)tool batch completed conversation=\(conversationID.uuidString.prefix(8)), count=\(results.count)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)tool batch completed conversation=\(conversationID.uuidString.prefix(8)), count=\(results.count)")
+        }
         var firstSuspension: AgentLoopSuspension?
         let assistantMessage = messages.messages(for: conversationID).reversed().first(where: { $0.id == active.assistantID })
         for (call, batchResult) in zip(calls, results) {
