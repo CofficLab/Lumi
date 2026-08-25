@@ -279,11 +279,15 @@ private struct LumiMenuBarLabel: View {
             // 此处必须进入 label，而不是只存在于 Popover：旧版状态栏会并列
             // 显示所有 `menuBarContentItems`（例如网速、CPU/内存概览）。
             if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
-                menuBar.makeContentView()
-                    // Keep vertically stacked status-bar content intact. `MenuBarExtra`
-                    // otherwise measures its label as a single-line control and clips
-                    // the second line of the network speed view.
-                    .fixedSize(horizontal: true, vertical: true)
+                // Render each contribution at the host boundary, matching the
+                // legacy NSStatusItem implementation. Wrapping all contributions
+                // in one AnyView makes MenuBarExtra measure the group as a single
+                // line and can drop the device metrics or the second network row.
+                ForEach(menuBar.contentItems.sorted { $0.order < $1.order }) { item in
+                    item.makeView()
+                        .fixedSize(horizontal: true, vertical: true)
+                        .help(item.title)
+                }
             }
         }
         .padding(.horizontal, 2)
