@@ -11,6 +11,14 @@ import Testing
 @Suite("MessageRendererPlugin")
 @MainActor
 struct MessageRendererPluginTests {
+    @Test("工具调用参数保留真实 JSON 与历史异常内容")
+    func formatsToolCallArguments() {
+        #expect(MessageViewHelpers.formatToolCallArguments("  {}  ") == nil)
+        #expect(MessageViewHelpers.formatToolCallArguments("{\"path\":\"/tmp/a\"}")?.contains("\"path\"") == true)
+        #expect(MessageViewHelpers.formatToolCallArguments("{}{\"scope\":\"global\"}")?.contains("\"scope\"") == true)
+        #expect(MessageViewHelpers.formatToolCallArguments("{}\n{\"path\":\"/tmp/a\"}")?.contains("\"path\"") == true)
+    }
+
     private func makeKernel() throws -> KernelCoreContainer {
         let kernel = KernelCoreContainer()
         try kernel.registerProvider((any MessageRenderingProviding).self, DefaultMessageRenderingProviding())

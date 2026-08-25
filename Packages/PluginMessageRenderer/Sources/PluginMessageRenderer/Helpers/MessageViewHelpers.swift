@@ -46,20 +46,33 @@ enum MessageViewHelpers {
 
     /// Pretty-print a tool-call's JSON argument string.
     ///
-    /// Returns `nil` for empty / `"{}" / invalid JSON; otherwise a sorted,
-    /// pretty-printed representation. Centralized here (was private in a view).
+    /// Returns `nil` for empty / `"{}"`; otherwise a sorted,
+    /// pretty-printed representation. Invalid but non-empty payloads are
+    /// returned verbatim so the user can still inspect malformed/legacy calls.
     static func formatToolCallArguments(_ arguments: String) -> String? {
-        guard !arguments.isEmpty, arguments != "{}",
-              let data = arguments.data(using: .utf8),
-              let jsonObject = try? JSONSerialization.jsonObject(with: data)
-        else {
+        var trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != "{}" else {
             return nil
+        }
+
+        // 兼容旧版本流式累积产生的 `{}{...}`：前面的 `{}` 只是“尚无参数”
+        // 占位符，不能作为真实调用参数的一部分展示。
+        if trimmed.hasPrefix("{}") {
+            let remainder = String(trimmed.dropFirst(2)).trimmingCharacters(in: .whitespacesAndNewlines)
+            if remainder.first == "{" || remainder.first == "[" {
+                trimmed = remainder
+            }
+        }
+
+        guard let data = trimmed.data(using: .utf8),
+              let jsonObject = try? JSONSerialization.jsonObject(with: data) else {
+            return trimmed
         }
         if let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted, .sortedKeys]),
            let prettyString = String(data: prettyData, encoding: .utf8) {
             return prettyString
         }
-        return arguments
+        return trimmed
     }
 
     static func formatModelName(_ name: String) -> String {

@@ -425,7 +425,12 @@ private final class StreamingAccumulator: @unchecked Sendable {
 
     private func upsertArguments(index: Int, fragment: String) {
         if var existing = toolCalls[index] {
-            existing = ToolCall(id: existing.id, name: existing.name, arguments: existing.arguments + fragment)
+            // OpenAI-compatible streams commonly emit the tool name first and
+            // omit `function.arguments`; the parser represents that omission
+            // as "{}". Do not prefix the real argument fragments with that
+            // placeholder, otherwise the final JSON becomes invalid.
+            let existingArguments = existing.arguments == "{}" ? "" : existing.arguments
+            existing = ToolCall(id: existing.id, name: existing.name, arguments: existingArguments + fragment)
             toolCalls[index] = existing
         } else {
             toolCalls[index] = ToolCall(id: "", name: "", arguments: fragment)

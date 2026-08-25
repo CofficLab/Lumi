@@ -478,10 +478,14 @@ private final class StreamingAccumulator: @unchecked Sendable {
 
     private func upsertArguments(index: Int, fragment: String) {
         if var existing = toolCalls[index] {
+            // The initial tool-call chunk may contain only id/name and use
+            // "{}" as a placeholder for missing arguments. Replace that
+            // placeholder before appending subsequent JSON fragments.
+            let existingArguments = existing.arguments == "{}" ? "" : existing.arguments
             existing = ToolCall(
                 id: existing.id,
                 name: existing.name,
-                arguments: existing.arguments + fragment
+                arguments: existingArguments + fragment
             )
             toolCalls[index] = existing
         } else {
