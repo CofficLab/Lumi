@@ -68,7 +68,7 @@ public actor ToolCallRecordStore {
     // MARK: - Public API
 
     /// 记录一次工具调用（后台异步写入，不影响主流程）。
-    func record(
+    public func record(
         toolCallID: String = "",
         toolName: String,
         toolDisplayName: String,
