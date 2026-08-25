@@ -1,3 +1,4 @@
+import Combine
 import LumiUI
 import ProviderMessageSender
 import ProviderPromptSuggestion
@@ -34,6 +35,12 @@ struct MessageLoadingView: View {
 struct MessageEmptyStateView: View {
     @LumiTheme private var theme
     let services: MessageListServices
+    @StateObject private var promptObserver: PromptSuggestionsObserver
+
+    init(services: MessageListServices) {
+        self.services = services
+        _promptObserver = StateObject(wrappedValue: PromptSuggestionsObserver(services: services))
+    }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -68,6 +75,12 @@ struct MessageEmptyStateView: View {
 struct NoConversationSelectedView: View {
     @LumiTheme private var theme
     let services: MessageListServices
+    @StateObject private var promptObserver: PromptSuggestionsObserver
+
+    init(services: MessageListServices) {
+        self.services = services
+        _promptObserver = StateObject(wrappedValue: PromptSuggestionsObserver(services: services))
+    }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -101,8 +114,9 @@ private struct PromptSuggestionFlow: View {
 
     var body: some View {
         FlowLayout(spacing: 8) {
-            ForEach(suggestions.sorted(by: { $0.order < $1.order }), id: \.id) { suggestion in
+            ForEach(Array(suggestions.sorted(by: { $0.order < $1.order }).enumerated()), id: \.element.id) { index, suggestion in
                 PromptSuggestionButton(suggestion: suggestion, services: services)
+                    .landingAppear(delay: Double(index) * 0.04)
             }
         }
         .frame(maxWidth: 480)
@@ -208,5 +222,19 @@ private struct FlowLayout: Layout {
             x += size.width + spacing
             rowHeight = max(rowHeight, size.height)
         }
+    }
+}
+
+/// Bridges the prompt provider's objectWillChange into SwiftUI without exposing
+/// an ObservableObject existential from the service container.
+@MainActor
+private final class PromptSuggestionsObserver: ObservableObject {
+    private var cancellable: AnyCancellable?
+
+    init(services: MessageListServices) {
+        cancellable = services.promptSuggestionsChangesPublisher
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
     }
 }

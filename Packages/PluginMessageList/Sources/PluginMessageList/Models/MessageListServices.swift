@@ -55,4 +55,12 @@ struct MessageListServices {
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
     }
+
+    /// 提示词贡献变化（插件启停或贡献重建时刷新空态）。
+    var promptSuggestionsChangesPublisher: AnyPublisher<Void, Never> {
+        guard let promptSuggestions else { return Empty().eraseToAnyPublisher() }
+        return promptSuggestions.changes
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
 }

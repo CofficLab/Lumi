@@ -1,8 +1,15 @@
+import Combine
 import SwiftUI
 
 @MainActor
 public final class DefaultPromptSuggestionProvider: PromptSuggestionProviding {
     public private(set) var allSuggestions: [PromptSuggestion] = []
+
+    public var changes: AnyPublisher<Void, Never> {
+        objectWillChange
+            .map { _ in () }
+            .eraseToAnyPublisher()
+    }
 
     public init() {}
 
