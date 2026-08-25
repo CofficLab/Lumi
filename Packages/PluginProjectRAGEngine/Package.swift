@@ -39,6 +39,9 @@ let package = Package(
             exclude: [
                 "CSQLite",
             ],
+            resources: [
+                .copy("../Resources/vec0.dylib")
+            ]
         ),
         .testTarget(
             name: "ProjectRAGPluginTests",

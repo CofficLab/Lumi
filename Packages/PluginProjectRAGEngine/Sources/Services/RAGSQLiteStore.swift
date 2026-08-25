@@ -11,7 +11,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
     private var sqliteVecPathLoaded: String?
     private static let vecTableName = "rag_vec_chunks"
     package(set) public var runtimeInfo: RAGRuntimeInfo = RAGRuntimeInfo(
-        vectorBackend: .swiftCosine,
+        vectorBackend: .sqliteVec,
         sqliteVecPath: nil,
         note: "初始化中"
     )
@@ -363,12 +363,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
         """
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
-            runtimeInfo = RAGRuntimeInfo(
-                vectorBackend: .swiftCosine,
-                sqliteVecPath: sqliteVecPathLoaded,
-                note: "sqlite-vec ANN 查询初始化失败，已回退 Swift 余弦"
-            )
-            return nil
+            throw dbError("prepare sqlite-vec ANN query failed")
         }
         defer { sqlite3_finalize(statement) }
 
@@ -392,12 +387,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
             }
             if step == SQLITE_DONE { break }
 
-            runtimeInfo = RAGRuntimeInfo(
-                vectorBackend: .swiftCosine,
-                sqliteVecPath: sqliteVecPathLoaded,
-                note: "sqlite-vec ANN 查询失败，已回退 Swift 余弦"
-            )
-            return nil
+            throw dbError("sqlite-vec ANN query failed with SQLite status \(step)")
         }
         return rows
     }
@@ -554,27 +544,19 @@ final class RAGSQLiteStore: @unchecked Sendable {
 
     private func detectRuntimeInfo(embeddingDimension: Int) throws -> RAGRuntimeInfo {
         guard db != nil else {
-            return RAGRuntimeInfo(vectorBackend: .swiftCosine, sqliteVecPath: nil, note: "数据库未就绪")
+            throw RAGError.dbError("RAG 数据库未就绪，无法启用 sqlite-vec")
         }
 
         let existingCandidates = bundledSQLiteVecCandidates()
             .filter { FileManager.default.fileExists(atPath: $0) }
         guard !existingCandidates.isEmpty else {
-            return RAGRuntimeInfo(
-                vectorBackend: .swiftCosine,
-                sqliteVecPath: nil,
-                note: "未在 App Bundle 中找到 sqlite-vec（需随应用打包）"
-            )
+            throw RAGError.dbError("未找到 vec0.dylib；RAG 必须使用 sqlite-vec，扩展应随应用打包")
         }
 
         let runtimeVersion = sqlite3_libversion_number()
         guard runtimeVersion >= ragVec0MinimumSQLiteVersionNumber else {
             let versionStr = String(cString: sqlite3_libversion())
-            return RAGRuntimeInfo(
-                vectorBackend: .swiftCosine,
-                sqliteVecPath: existingCandidates.first,
-                note: "SQLite \(versionStr) 低于 vec0 所需 3.51.3，已回退 Swift 余弦"
-            )
+            throw RAGError.dbError("SQLite \(versionStr) 低于 vec0 所需 3.51.3；RAG 不支持 Swift 向量检索回退")
         }
 
         var failures: [String] = []
@@ -594,16 +576,18 @@ final class RAGSQLiteStore: @unchecked Sendable {
             }
         }
 
-        return RAGRuntimeInfo(
-            vectorBackend: .swiftCosine,
-            sqliteVecPath: existingCandidates.first,
-            note: "sqlite-vec 加载失败，回退 Swift 余弦: \(failures.joined(separator: " | "))"
-        )
+        throw RAGError.dbError("sqlite-vec 加载失败；RAG 不支持 Swift 向量检索回退: \(failures.joined(separator: " | "))")
     }
 
     private func bundledSQLiteVecCandidates() -> [String] {
         var candidates: [String] = []
         let libraryNames = ["vec0.dylib"]
+
+        #if SWIFT_PACKAGE
+        if let packageResource = Bundle.module.url(forResource: "vec0", withExtension: "dylib") {
+            candidates.append(packageResource.path)
+        }
+        #endif
 
         // 优先：App Frameworks 目录。Hardened Runtime 下动态库应作为代码签名后放在这里。
         let main = Bundle.main

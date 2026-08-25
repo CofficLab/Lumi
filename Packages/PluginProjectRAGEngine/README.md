@@ -2,9 +2,10 @@
 
 Retrieval-Augmented Generation
 
-## Optional sqlite-vec extension
+## Required sqlite-vec extension
 
-`vec0.dylib` accelerates vector search but is deliberately not committed to the
-repository. A build without it uses the built-in Swift cosine-similarity
-backend. To enable the extension locally, place a compatible signed library at
-`Resources/vec0.dylib`; Xcode embeds and signs it when present.
+RAG always uses the sqlite-vec ANN backend. The universal `Resources/vec0.dylib`
+is tracked in this repository, copied into the Swift package resource bundle,
+and embedded and signed by the Xcode build phase. If the extension is missing,
+incompatible, or cannot be loaded, RAG fails explicitly; it never falls back to
+the built-in Swift vector search.

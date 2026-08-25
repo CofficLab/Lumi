@@ -48,22 +48,17 @@ public struct RAGRetriever: SuperLog {
         let usedFallback: Bool
         if annCandidates.isEmpty {
             let lexicalStart = CFAbsoluteTimeGetCurrent()
-            // sqlite-vec 不可用（回退到 swiftCosine）时，余弦相似度需在内存逐个计算，
-            // 候选过多会导致 search_code 超时。此时把 fallback 上限压到 1500，避免大量计算。
-            // sqlite-vec 可用时仍放宽到 7000，保证召回质量。
-            let usingSwiftCosine = (store as? RAGSQLiteStore)?.runtimeInfo.vectorBackend != .sqliteVec
-            let fallbackLimit = usingSwiftCosine ? 1_000 : Self.fallbackCandidateLimit
             candidates = try store.loadCandidateChunks(
                 projectPath: projectPath,
                 queryTerms: queryTerms,
                 lexicalLimit: Self.lexicalCandidateLimit,
-                fallbackLimit: fallbackLimit
+                fallbackLimit: Self.fallbackCandidateLimit
             )
             let lexicalDuration = (CFAbsoluteTimeGetCurrent() - lexicalStart) * 1000
             usedFallback = true
 
             if Self.verbose {
-                Self.logger.info("\(Self.t)词法检索耗时：\(String(format: "%.2f", lexicalDuration))ms, 结果数：\(candidates.count), 向量后端: \(usingSwiftCosine ? "swiftCosine(fallback=\(fallbackLimit))" : "sqliteVec")")
+                Self.logger.info("\(Self.t)词法补充检索耗时：\(String(format: "%.2f", lexicalDuration))ms, 结果数：\(candidates.count), 向量后端: sqliteVec")
             }
         } else {
             candidates = annCandidates

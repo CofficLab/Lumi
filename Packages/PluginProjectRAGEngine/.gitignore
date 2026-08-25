@@ -1,3 +1,5 @@
 .build/
 
 Package.resolved
+!Resources/
+!Resources/vec0.dylib
