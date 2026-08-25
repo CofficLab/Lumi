@@ -4,9 +4,8 @@ import ProviderConversation
 
 /// 标题更新 Agent 工具：让 LLM 可主动更新当前会话标题。
 ///
-/// 复刻自旧版 `ConversationTitleUpdateTool`，适配新版 `SuperAgentTool` 协议。
 public struct ConversationTitleUpdateTool: SuperAgentTool, @unchecked Sendable {
-    /// 保持旧版工具名。
+    /// Agent 调用的工具名。
     public static let toolName = "update_conversation_title"
 
     public let name: String = Self.toolName

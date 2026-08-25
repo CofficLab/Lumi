@@ -21,9 +21,8 @@ import ProviderAgentLoop
 
 /// 自动标题服务：监听 `lumiMessageSaved`，为「第一条用户消息」用 LLM 生成标题。
 ///
-/// 复刻自旧版 `AutoConversationTitleService`，新版直接消费
-/// `NotificationCenter` 上的 `.lumiMessageSaved`（由 KernelFactory 桥接，
-/// 与旧版通知名完全一致），不依赖 KernelLumi。
+/// 直接消费 `NotificationCenter` 上由内核发布的 `.lumiMessageSaved`，
+/// 为第一条用户消息生成会话标题。
 @MainActor
 final class AutoConversationTitleService {
     private let kernel: KernelCoreContainer

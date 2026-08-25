@@ -10,7 +10,6 @@ import KitAgentTool
 
 /// 对话标题插件：自动生成标题 + 标题更新 Agent 工具。
 ///
-/// 复刻自旧版 `Plugins/ConversationTitlePlugin`：
 /// - 自动标题：监听回合事件总线的 `lumiMessageSaved`（新架构已桥接），
 ///   对每条新会话的第一条用户消息用 LLM 生成简短标题并写入；
 /// - Agent 工具：注册 `update_conversation_title`，让 LLM 可主动改标题。
@@ -18,7 +17,6 @@ import KitAgentTool
 public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-title", category: "ConversationTitle")
 
-    /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.conversation-title"
     public let order = 77
     public let metadata = PluginMetadata(
