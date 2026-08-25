@@ -27,7 +27,10 @@ public final class DevicePlugin: SuperPlugin {
         description: "",
         category: .system,
         stage: .stable,
-        policy: .disabledByDefault
+        // Device metrics are part of the legacy menu-bar baseline: CPU and
+        // memory usage must be contributed during the initial plugin boot.
+        // Keep the plugin configurable, but restore its default-on behavior.
+        policy: .enabledByDefault
     )
 
     public init() {}
