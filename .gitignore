@@ -36,10 +36,7 @@ playground.xcworkspace
 # hence it is not needed unless you have added a package configuration file to your project
 # .swiftpm
 
-# Per-package SPM lock files (e.g. produced by `swift build` in a single package).
-# The workspace one at Lumi.xcodeproj/.../Package.resolved IS still tracked.
-Packages/*/Package.resolved
-Plugins/*/Package.resolved
+# The workspace-level SPM lock file IS still tracked.
 !Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 .build/
