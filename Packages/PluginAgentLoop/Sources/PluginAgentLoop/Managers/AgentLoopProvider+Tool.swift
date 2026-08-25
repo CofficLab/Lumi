@@ -144,14 +144,8 @@ extension AgentLoopManager {
                 conversationID: conversationID
             )
             let result = await lifecycleHooks.runWillSendToLLM(context)
-            preparedHistory = result.messages.map { message in
-                Message(
-                    conversationID: conversationID,
-                    role: .init(rawValue: message.role.rawValue) ?? .system,
-                    content: message.content,
-                    toolCallID: message.toolCallID,
-                    reasoningContent: message.reasoningContent
-                )
+            preparedHistory = result.messages.map {
+                messageFromLLMMessage($0, conversationID: conversationID)
             }
         }
 
