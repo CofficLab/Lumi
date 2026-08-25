@@ -17,6 +17,7 @@ struct MessageViewChrome<Content: View>: View {
     let verbosity: LumiResponseVerbosity
     @State private var didCopy = false
     @State private var showThinkingPopover = false
+    @State private var showInfoPopover = false
     /// 行级悬停态:操作按钮组仅在悬停该行时物化(滚动重物化时每行
     /// 少构建 ~5 个按钮子树),popover 打开或复制反馈期间保持可见。
     @State private var isRowHovered = false
@@ -31,7 +32,7 @@ struct MessageViewChrome<Content: View>: View {
 
     /// 操作按钮的可见性:悬停、思考 popover 打开、复制反馈显示中任一为真。
     private var showsActions: Bool {
-        isRowHovered || showThinkingPopover || didCopy
+        isRowHovered || showThinkingPopover || showInfoPopover || didCopy
     }
 
     private var thinkingContent: String? {
@@ -141,7 +142,10 @@ struct MessageViewChrome<Content: View>: View {
                         }
 
                         if showsActions {
-                            MessageInfoButton(message: message)
+                            MessageInfoButton(
+                                message: message,
+                                isPresented: $showInfoPopover
+                            )
                         }
                     }
                 }
@@ -190,4 +194,3 @@ struct MessageViewChrome<Content: View>: View {
         NSPasteboard.general.setString(MessageViewHelpers.copyContent(for: message), forType: .string)
     }
 }
-

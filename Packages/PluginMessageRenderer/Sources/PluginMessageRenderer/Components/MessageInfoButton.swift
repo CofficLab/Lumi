@@ -15,7 +15,7 @@ struct MessageInfoButton: View {
     @LumiTheme private var theme
 
     let message: Message
-    @State private var isPresented = false
+    @Binding var isPresented: Bool
 
     var body: some View {
         AppIconButton(

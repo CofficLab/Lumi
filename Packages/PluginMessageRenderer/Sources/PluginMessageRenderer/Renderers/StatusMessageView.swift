@@ -16,6 +16,7 @@ struct StatusMessageView: View {
 
     let message: Message
     let verbosity: LumiResponseVerbosity
+    @State private var showInfoPopover = false
 
     var body: some View {
         CompactMessageHeaderView {
@@ -40,7 +41,10 @@ struct StatusMessageView: View {
                     titleColor: theme.textSecondary
                 )
 
-                MessageInfoButton(message: message)
+                MessageInfoButton(
+                    message: message,
+                    isPresented: $showInfoPopover
+                )
             }
         }
     }
