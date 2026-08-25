@@ -1,49 +1,44 @@
 import KitAgentTool
+import Combine
 import Foundation
 import ProviderToolManager
 import KitSuperLog
 import os
 
-/// PluginToolManager 自研的 `ToolManagerProviding` 实现。
-///
-/// 组合 `DefaultToolManagerProviding` 作为执行引擎，显式实现协议并转发，
-/// 同时提供内置文件/终端工具的注册入口与记录存储透传。
+/// PluginToolManager 自己实现的工具注册、执行、授权和调用记录管理。
 @MainActor
 public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "ToolManager")
     public nonisolated static let emoji = "🛠️"
     nonisolated static let verbose = true
-    /// 内部引擎（注册表 + 执行 + 记录）。
-    private let engine: DefaultToolManagerProviding
-    private var observers: [UUID: (ToolManagerEvent) -> Void] = [:]
 
-    /// 工具调用记录存储。由插件装配阶段注入；
-    /// 未设置时记录功能 no-op。
-    public var recordStore: ProviderToolManager.ToolCallRecordStore? {
-        get { engine.recordStore }
-        set { engine.recordStore = newValue }
-    }
-
-    public init(engine: DefaultToolManagerProviding = DefaultToolManagerProviding()) {
-        self.engine = engine
-    }
-
-    @discardableResult
-    public func addToolManagerObserver(
-        _ callback: @escaping (ToolManagerEvent) -> Void
-    ) -> any ToolManagerObserverHandle {
-        let id = UUID()
-        observers[id] = callback
-        return ToolManagerServiceObserverHandle { [weak self] in
-            self?.observers.removeValue(forKey: id)
+    private var recordStoreValue: ToolCallRecordStore? {
+        didSet {
+            guard let recordStoreValue, oldValue !== recordStoreValue else { return }
+            Task { await recordStoreValue.startFlushTask() }
         }
     }
+    private var registeredTools: [String: any SuperAgentTool] = [:]
+    private var toolOrder: [String] = []
+    private var pluginToolIndex: [String: [String]] = [:]
+    private var pluginOrder: [String] = []
+    private var resultCache: [String: ToolCallResult] = [:]
+    private var resultCacheConversationIDs: [String: UUID] = [:]
+    private var deletedConversationIDs: Set<UUID> = []
+    private let eventManager = ToolManagerEventManager()
 
-    private func notify(_ event: ToolManagerEvent) {
-        for callback in observers.values { callback(event) }
+    public var recordStore: ProviderToolManager.ToolCallRecordStore? {
+        get { recordStoreValue }
+        set { recordStoreValue = newValue }
     }
 
-    /// 注册内置文件/终端工具（归入 "ToolManager" 分组）。
+    public init() {}
+
+    @discardableResult
+    public func addToolManagerObserver(_ callback: @escaping (ToolManagerEvent) -> Void) -> any ToolManagerObserverHandle {
+        eventManager.addObserver(callback)
+    }
+
     public func registerBuiltinTools() {
         add(ListDirectoryTool(), pluginID: Self.toolManagerPluginID)
         add(GlobTool(), pluginID: Self.toolManagerPluginID)
@@ -54,80 +49,158 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
         add(ShellTool(), pluginID: Self.toolManagerPluginID)
     }
 
-    /// 内置工具分组 id（设置页分组名）。
     public static let toolManagerPluginID = "com.coffic.lumi.plugin.tool-manager"
 
-    // MARK: - ToolManagerProviding: Registration
-
-    public func allTools() -> [any SuperAgentTool] { engine.allTools() }
+    public func allTools() -> [any SuperAgentTool] { toolOrder.compactMap { registeredTools[$0] } }
 
     public func add(_ tool: any SuperAgentTool, pluginID: String) {
-        engine.add(tool, pluginID: pluginID)
+        if registeredTools[tool.name] == nil { toolOrder.append(tool.name) }
+        registeredTools[tool.name] = tool
+        for (existingPlugin, names) in pluginToolIndex where names.contains(tool.name) {
+            pluginToolIndex[existingPlugin]?.removeAll { $0 == tool.name }
+        }
+        if pluginToolIndex[pluginID] == nil, !pluginOrder.contains(pluginID) { pluginOrder.append(pluginID) }
+        pluginToolIndex[pluginID, default: []].append(tool.name)
+        objectWillChange.send()
     }
 
     public func remove(id: String) {
-        engine.remove(id: id)
+        registeredTools.removeValue(forKey: id)
+        toolOrder.removeAll { $0 == id }
+        for (pluginID, names) in pluginToolIndex where names.contains(id) {
+            pluginToolIndex[pluginID]?.removeAll { $0 == id }
+            if pluginToolIndex[pluginID]?.isEmpty == true {
+                pluginToolIndex.removeValue(forKey: pluginID)
+                pluginOrder.removeAll { $0 == pluginID }
+            }
+        }
+        objectWillChange.send()
     }
 
     public func toolsGroupedByPlugin() -> [(pluginID: String, tools: [any SuperAgentTool])] {
-        engine.toolsGroupedByPlugin()
+        pluginOrder.compactMap { pluginID in
+            let tools = (pluginToolIndex[pluginID] ?? []).compactMap { registeredTools[$0] }
+            return tools.isEmpty ? nil : (pluginID, tools)
+        }
     }
 
-    // MARK: - ToolManagerProviding: Execution
-
-    public func tool(named name: String) -> (any SuperAgentTool)? {
-        engine.tool(named: name)
-    }
+    public func tool(named name: String) -> (any SuperAgentTool)? { registeredTools[name] }
 
     public func displayDescription(for toolCall: ToolCall) -> String? {
-        engine.displayDescription(for: toolCall)
+        guard let tool = registeredTools[toolCall.name], let arguments = try? ToolArgumentCoding.decode(toolCall.arguments) else { return nil }
+        let description = tool.displayDescription(for: arguments).trimmingCharacters(in: .whitespacesAndNewlines)
+        return description.isEmpty ? nil : description
     }
 
     public func riskLevel(for toolCall: ToolCall) -> CommandRiskLevel? {
-        engine.riskLevel(for: toolCall)
+        guard let tool = registeredTools[toolCall.name], let arguments = try? ToolArgumentCoding.decode(toolCall.arguments) else { return nil }
+        return tool.permissionRiskLevel(arguments: arguments)
     }
 
-    public func execute(
-        _ toolCall: ToolCall,
-        conversationID: UUID,
-        turnID: UUID?
-    ) async -> ToolCallResult {
-        await engine.execute(toolCall, conversationID: conversationID, turnID: turnID)
+    public func execute(_ toolCall: ToolCall, conversationID: UUID, turnID: UUID?) async -> ToolCallResult {
+        if Self.verbose { Self.logger.debug("\(Self.t)execute tool=\(toolCall.name), conversation=\(conversationID.uuidString.prefix(8))") }
+        eventManager.send(.started(conversationID: conversationID, turnID: turnID, toolCall: toolCall))
+
+        func finish(_ result: ToolCallResult) -> ToolCallResult {
+            eventManager.send(.completed(conversationID: conversationID, turnID: turnID, toolCall: toolCall, result: result))
+            return result
+        }
+        guard !deletedConversationIDs.contains(conversationID) else {
+            let result = ToolCallResult(content: "Conversation was deleted", isError: true)
+            cache(result, for: toolCall.id, conversationID: conversationID)
+            return finish(result)
+        }
+        guard let tool = registeredTools[toolCall.name] else {
+            let result = ToolCallResult(content: "Tool not found: \(toolCall.name)", isError: true)
+            cache(result, for: toolCall.id, conversationID: conversationID)
+            return finish(result)
+        }
+
+        let startedAt = Date()
+        let createdAt = Date()
+        let arguments: [String: ToolArgument]
+        do {
+            arguments = try ToolArgumentCoding.decode(toolCall.arguments)
+        } catch {
+            let result = ToolCallResult(content: "Tool execution failed: \(error.localizedDescription)", isError: true, duration: Date().timeIntervalSince(startedAt))
+            cache(result, for: toolCall.id, conversationID: conversationID)
+            logToolCall(toolCallID: toolCall.id, toolName: tool.name, toolDisplayName: toolCall.name, turnID: turnID, conversationID: conversationID, createdAt: createdAt, startedAt: startedAt, completedAt: Date(), duration: Date().timeIntervalSince(startedAt), argumentsJSON: ToolArgumentCoding.sanitized(toolCall.arguments), resultContent: "Failed to decode arguments: \(error.localizedDescription)", result: result, resultIsError: true, riskLevel: "unknown")
+            return finish(result)
+        }
+
+        do {
+            let output = try await tool.executeResult(arguments: arguments)
+            let duration = Date().timeIntervalSince(startedAt)
+            let result = ToolCallResult(content: output.content, images: output.images, isError: output.isError, executedAt: Date(), duration: duration, awaitingUserResponse: output.awaitingUserResponse, interactionState: output.interactionState)
+            cache(result, for: toolCall.id, conversationID: conversationID)
+            logToolCall(toolCallID: toolCall.id, toolName: tool.name, toolDisplayName: tool.displayDescription(for: arguments), turnID: turnID, conversationID: conversationID, createdAt: createdAt, startedAt: startedAt, completedAt: Date(), duration: duration, argumentsJSON: ToolArgumentCoding.encode(arguments), resultContent: output.content, result: result, resultIsError: output.isError, riskLevel: tool.permissionRiskLevel(arguments: arguments).rawValue)
+            return finish(result)
+        } catch {
+            let result = ToolCallResult(content: "Tool execution failed: \(error.localizedDescription)", isError: true, duration: Date().timeIntervalSince(startedAt))
+            cache(result, for: toolCall.id, conversationID: conversationID)
+            logToolCall(toolCallID: toolCall.id, toolName: tool.name, toolDisplayName: tool.displayDescription(for: arguments), turnID: turnID, conversationID: conversationID, createdAt: createdAt, startedAt: startedAt, completedAt: Date(), duration: Date().timeIntervalSince(startedAt), argumentsJSON: ToolArgumentCoding.encode(arguments), resultContent: error.localizedDescription, result: result, resultIsError: true, riskLevel: tool.permissionRiskLevel(arguments: arguments).rawValue)
+            return finish(result)
+        }
     }
 
-    public func executeBatch(
-        _ toolCalls: [ToolCall],
-        policy: ToolExecutionPolicy,
-        conversationID: UUID,
-        turnID: UUID?
-    ) async -> [BatchToolResult] {
-        if Self.verbose {
-            Self.logger.info("\(Self.t)execute batch conversation=\(conversationID.uuidString.prefix(8)), count=\(toolCalls.count), policy=\(String(describing: policy))")
+    public func executeBatch(_ toolCalls: [ToolCall], policy: ToolExecutionPolicy, conversationID: UUID, turnID: UUID?) async -> [BatchToolResult] {
+        if Self.verbose { Self.logger.info("\(Self.t)execute batch count=\(toolCalls.count), conversation=\(conversationID.uuidString.prefix(8)), policy=\(String(describing: policy))") }
+        var results: [BatchToolResult] = []
+        results.reserveCapacity(toolCalls.count)
+        for toolCall in toolCalls {
+            switch policy {
+            case .blockAll:
+                results.append(.blocked(reason: "Tool execution was blocked because this conversation is in Chat mode."))
+            case .autoExecute:
+                results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID)))
+            case .requireApprovalForHighRisk:
+                let risk = riskLevel(for: toolCall) ?? .high
+                if risk.requiresPermission { results.append(.needsApproval(riskLevel: risk)) }
+                else { results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID))) }
+            }
         }
-        let results = await engine.executeBatch(toolCalls, policy: policy, conversationID: conversationID, turnID: turnID)
-        notify(.batchCompleted(
-            conversationID: conversationID,
-            turnID: turnID,
-            toolCalls: toolCalls,
-            results: results
-        ))
-        if Self.verbose {
-            Self.logger.info("\(Self.t)batch completed conversation=\(conversationID.uuidString.prefix(8)), results=\(results.count)")
-        }
+        eventManager.send(.batchCompleted(conversationID: conversationID, turnID: turnID, toolCalls: toolCalls, results: results))
+        if Self.verbose { Self.logger.info("\(Self.t)batch completed conversation=\(conversationID.uuidString.prefix(8)), results=\(results.count)") }
         return results
     }
 
-    // MARK: - ToolManagerProviding: Records
-
     public func toolCalls(for turnID: UUID) async -> [ToolCallRecord] {
-        await engine.toolCalls(for: turnID)
+        guard let recordStore else { return [] }
+        return await recordStore.fetchRecords(for: turnID)
     }
 
     public func toolCallResult(for toolCallID: String) async -> ToolCallResult? {
-        await engine.toolCallResult(for: toolCallID)
+        if let cached = resultCache[toolCallID] { return cached }
+        guard let record = await recordStore?.fetchRecord(forToolCallID: toolCallID) else { return nil }
+        if let json = record.resultJSON, let data = json.data(using: .utf8), let result = try? JSONDecoder().decode(ToolCallResult.self, from: data) { return result }
+        return ToolCallResult(content: record.resultContent, isError: record.resultIsError, duration: record.duration)
     }
 
     public func deleteToolCalls(for conversationID: UUID) async {
-        await engine.deleteToolCalls(for: conversationID)
+        deletedConversationIDs.insert(conversationID)
+        if let records = await recordStore?.fetchRecords(for: conversationID) {
+            for record in records { if let toolCallID = record.toolCallID { resultCache.removeValue(forKey: toolCallID) } }
+        }
+        resultCacheConversationIDs = resultCacheConversationIDs.filter { $0.value != conversationID }
+        resultCache = resultCache.filter { resultCacheConversationIDs[$0.key] != nil }
+        await recordStore?.deleteAll(for: conversationID)
+    }
+
+    private func cache(_ result: ToolCallResult, for toolCallID: String, conversationID: UUID) {
+        guard !deletedConversationIDs.contains(conversationID) else { return }
+        resultCache[toolCallID] = result
+        resultCacheConversationIDs[toolCallID] = conversationID
+    }
+
+    private func logToolCall(toolCallID: String, toolName: String, toolDisplayName: String, turnID: UUID?, conversationID: UUID, createdAt: Date, startedAt: Date, completedAt: Date?, duration: TimeInterval?, argumentsJSON: String, resultContent: String, result: ToolCallResult, resultIsError: Bool, riskLevel: String) {
+        guard let store = recordStore else { return }
+        Task {
+            await store.record(toolCallID: toolCallID, toolName: toolName, toolDisplayName: toolDisplayName, turnID: turnID, conversationID: conversationID, createdAt: createdAt, startedAt: startedAt, completedAt: completedAt, duration: duration, argumentsJSON: argumentsJSON, resultContent: resultContent, resultJSON: Self.encodeResult(result), resultIsError: resultIsError, riskLevel: riskLevel)
+        }
+    }
+
+    private static func encodeResult(_ result: ToolCallResult) -> String? {
+        guard let data = try? JSONEncoder().encode(result) else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 }

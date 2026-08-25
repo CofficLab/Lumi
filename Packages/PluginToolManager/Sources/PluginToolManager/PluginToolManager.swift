@@ -37,14 +37,8 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
         let service = ToolManager()
         self.service = service
 
-        // 1. 复用已注册实现的记录存储，避免两个 SwiftData 容器打开同一文件。
-        if let previous = kernel.resolveProvider((any ToolManagerProviding).self) as? DefaultToolManagerProviding,
-           let store = previous.recordStore {
-            service.recordStore = store
-            if Self.verbose {
-                Self.logger.info("\(Self.t)reusing existing record store at \(store.directory.path)")
-            }
-        } else if let storage = kernel.resolveProvider((any StorageProviding).self) {
+        // 1. 初始化插件自己的调用记录存储。
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let databaseRootURL = storage.pluginDataDirectory(for: "ToolManager")
             let store = ProviderToolManager.ToolCallRecordStore(databaseRootURL: databaseRootURL)
             service.recordStore = store

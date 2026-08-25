@@ -16,3 +16,30 @@ import Testing
     #expect(!manager.allTools().isEmpty)
     #expect(manager.tool(named: "read_file") != nil)
 }
+
+@MainActor
+@Test func toolManagerEventManagerDispatchesAndCancelsObservers() async {
+    let manager = ToolManager()
+    var eventCount = 0
+    let handle = manager.addToolManagerObserver { _ in
+        eventCount += 1
+    }
+
+    _ = await manager.executeBatch(
+        [],
+        policy: .autoExecute,
+        conversationID: UUID(),
+        turnID: nil
+    )
+    #expect(eventCount == 1)
+
+    handle.cancel()
+
+    _ = await manager.executeBatch(
+        [],
+        policy: .autoExecute,
+        conversationID: UUID(),
+        turnID: nil
+    )
+    #expect(eventCount == 1)
+}
