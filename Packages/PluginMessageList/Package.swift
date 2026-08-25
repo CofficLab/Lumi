@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginMessageList",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [.library(name: "PluginMessageList", targets: ["PluginMessageList"])],
     dependencies: [
@@ -37,7 +38,7 @@ let package = Package(
             .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
             .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             .product(name: "KitSuperLog", package: "KitSuperLog"),
-        ]),
+        ], resources: [.process("Resources/Localizable.xcstrings")]),
         .testTarget(name: "PluginMessageListTests", dependencies: [
             "PluginMessageList",
             .product(name: "ProviderMessage", package: "ProviderMessage"),
