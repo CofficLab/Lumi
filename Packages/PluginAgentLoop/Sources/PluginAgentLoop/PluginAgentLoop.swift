@@ -108,7 +108,11 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
         }
 
         messageObserver = messages.addMessageInsertedObserver { [weak agentLoop] message, conversationID in
-            guard message.role == .user, let agentLoop else { return }
+            guard message.role == .user else { return }
+            guard let agentLoop else {
+                Self.logger.error("\(Self.emoji)无法处理用户消息事件：AgentLoopProvider 已释放")
+                return
+            }
             if Self.verbose {
                 Self.logger.info("\(Self.t)message event starts turn conversation=\(conversationID.uuidString.prefix(8))")
             }
@@ -122,25 +126,39 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
             }
         }
         toolManagerObserver = toolManager.addToolManagerObserver { [weak agentLoop] event in
-            guard let agentLoop else { return }
+            guard let agentLoop else {
+                Self.logger.error("\(Self.emoji)无法处理 ToolManager 事件：AgentLoopProvider 已释放")
+                return
+            }
             if case .batchCompleted(let conversationID, let turnID, _, let results) = event {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)tool batch event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID?.uuidString.prefix(8) ?? "nil"), results=\(results.count)")
                 }
             }
-            Task { @MainActor in
-                (agentLoop as? AgentLoopManager)?.handleToolManagerEvent(event)
+            // ToolManager 事件已经在 MainActor 上分发，直接推进回合状态机，
+            // 避免批次完成后再异步调度导致下一轮请求被延迟或丢失。
+            guard let agentLoop = agentLoop as? AgentLoopManager else {
+                Self.logger.error("\(Self.emoji)无法处理 ToolManager 事件：AgentLoopProvider 不是 AgentLoopManager")
+                return
             }
+            agentLoop.handleToolManagerEvent(event)
         }
         agentLoopObserver = agentLoop.addAgentLoopObserver { [weak agentLoop] event in
-            guard let agentLoop else { return }
+            guard let agentLoop else {
+                Self.logger.error("\(Self.emoji)无法处理 AgentLoop 事件：AgentLoopProvider 已释放")
+                return
+            }
             if case .llmResponseReceived(let conversationID, let turnID, let toolCalls) = event {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)LLM event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), tools=\(toolCalls.count)")
                 }
             }
             Task { @MainActor in
-                (agentLoop as? AgentLoopManager)?.handleAgentLoopEvent(event)
+                guard let agentLoop = agentLoop as? AgentLoopManager else {
+                    Self.logger.error("\(Self.emoji)无法处理 AgentLoop 事件：AgentLoopProvider 不是 AgentLoopManager")
+                    return
+                }
+                agentLoop.handleAgentLoopEvent(event)
             }
         }
     }

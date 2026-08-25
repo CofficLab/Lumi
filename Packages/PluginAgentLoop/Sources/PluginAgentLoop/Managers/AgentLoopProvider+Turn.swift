@@ -71,9 +71,20 @@ extension AgentLoopManager {
 
 extension AgentLoopManager {
     func launchAdvance(conversationID: UUID, turnID: UUID) {
-        guard var runtime = runtimes[conversationID], runtime.task == nil else { return }
+        guard var runtime = runtimes[conversationID] else {
+            Self.logger.error("\(Self.t)无法推进 AgentLoop：找不到会话运行时 conversation=\(conversationID.uuidString.prefix(8))")
+            return
+        }
+        guard runtime.task == nil else {
+            Self.logger.error("\(Self.t)无法推进 AgentLoop：会话仍有运行中的任务 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
+            return
+        }
         runtime.task = Task { @MainActor [weak self] in
-            await self?.driveTurn(conversationID: conversationID, turnID: turnID)
+            guard let self else {
+                Self.logger.error("\(Self.t)无法推进 AgentLoop：AgentLoopManager 已释放 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
+                return
+            }
+            await self.driveTurn(conversationID: conversationID, turnID: turnID)
         }
         runtimes[conversationID] = runtime
     }
@@ -87,7 +98,10 @@ extension AgentLoopManager {
     func finishTurn(conversationID: UUID, turnID: UUID, outcome: AgentLoopOutcome) {
         runtimes[conversationID]?.task = nil
         Task { @MainActor [weak self] in
-            guard let self else { return }
+            guard let self else {
+                Self.logger.error("\(Self.t)无法完成 AgentLoop 回合：AgentLoopManager 已释放 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
+                return
+            }
             await self.notifyTurnFinished(conversationID: conversationID, turnID: turnID, outcome: outcome)
             switch outcome {
             case .completed: self.notify(.completed(conversationID: conversationID, turnID: turnID))

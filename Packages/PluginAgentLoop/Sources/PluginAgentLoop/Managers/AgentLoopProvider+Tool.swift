@@ -25,22 +25,39 @@ extension AgentLoopManager {
         }
         let inputs = toolCalls.map { AgentLoopToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }
         Task { @MainActor [weak self] in
-            guard let self else { return }
+            guard let self else {
+                Self.logger.error("\(Self.t)无法执行 LLM 返回的工具调用：AgentLoopManager 已释放 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
+                return
+            }
             _ = await self.toolManager.executeBatch(inputs, policy: policy, conversationID: conversationID, turnID: turnID)
         }
     }
 
     /// 接收 ToolManager 的批量完成事件，推进当前回合状态机。
     func handleToolManagerEvent(_ event: ToolManagerEvent) {
-        guard case .batchCompleted(let conversationID, let eventTurnID, let toolCalls, let results) = event,
-              var runtime = runtimes[conversationID],
-              case .executingTools(let turnID, _, let pending) = runtime.phase,
-              eventTurnID == nil || eventTurnID == turnID else { return }
+        guard case .batchCompleted(let conversationID, let eventTurnID, let toolCalls, let results) = event else { return }
+        guard var runtime = runtimes[conversationID] else {
+            if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：找不到会话运行时 conversation=\(conversationID.uuidString.prefix(8))") }
+            return
+        }
+        guard case .executingTools(let turnID, _, let pending) = runtime.phase else {
+            if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：当前状态不是 executingTools，conversation=\(conversationID.uuidString.prefix(8)), phase=\(String(describing: runtime.phase))") }
+            return
+        }
+        guard eventTurnID == nil || eventTurnID == turnID else {
+            if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：turnID 不匹配，conversation=\(conversationID.uuidString.prefix(8))") }
+            return
+        }
 
         let callsByID = Dictionary(uniqueKeysWithValues: toolCalls.map { ($0.id, MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)) })
         var suspension: AgentLoopSuspension?
         for (call, batchResult) in zip(toolCalls, results) {
-            guard pending.contains(where: { $0.id == call.id }) else { continue }
+            guard pending.contains(where: { $0.id == call.id }) else {
+                if Self.verbose {
+                    Self.logger.error("\(Self.t)忽略未等待的工具结果：toolCallID=\(call.id), conversation=\(conversationID.uuidString.prefix(8))")
+                }
+                continue
+            }
             let messageCall = callsByID[call.id]!
             switch batchResult {
             case .executed(let toolResult):
@@ -80,6 +97,7 @@ extension AgentLoopManager {
 
         runtimes[conversationID] = runtime
         if case .requestingLLM = runtime.phase {
+            if Self.verbose { Self.logger.info("\(Self.t)工具批次完成，继续请求 LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
             launchAdvance(conversationID: conversationID, turnID: turnID)
         }
     }
@@ -137,6 +155,17 @@ extension AgentLoopManager {
             }
         }
 
+        if Self.verbose && Self.printMessages {
+            for (index, message) in preparedHistory.enumerated() {
+                let content = message.content.count > 200
+                    ? "\(message.content.prefix(200))..."
+                    : message.content
+                Self.logger.info(
+                    "\(Self.t)发送给 LLM 的提示词[\(index)] role=\(message.role.rawValue), content=\(content)"
+                )
+            }
+        }
+
         let request = LLMRequest(
             conversationID: conversationID,
             messages: preparedHistory.map(\.llmMessage),
@@ -169,9 +198,9 @@ extension AgentLoopManager {
             if Self.verbose {
                 if let toolCalls = response.toolCalls, !toolCalls.isEmpty {
                     let toolNames = toolCalls.map { $0.name }
-                    Self.logger.info("\(Self.t)大模型返回工具调用: count=\(toolCalls.count), tools=\(toolNames), model=\(response.model ?? "unknown")")
+                    Self.logger.info("\(Self.t)👷 大模型返回工具调用: count=\(toolCalls.count), tools=\(toolNames), model=\(response.model ?? "unknown")")
                 } else {
-                    Self.logger.info("\(Self.t)大模型返回纯文本响应 (无工具调用), model=\(response.model ?? "unknown")")
+                    Self.logger.info("\(Self.t)✅ 大模型返回纯文本响应 (无工具调用), model=\(response.model ?? "unknown")")
                 }
             }
 
