@@ -5,11 +5,11 @@ import KitSuperLog
 import os
 import ProviderAgentLoop
 import ProviderConversation
+import ProviderLifecycleHooks
 import ProviderLLMManager
 import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
-import ProviderLifecycleHooks
 
 /// AgentLoop 插件
 ///
@@ -41,7 +41,6 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
     private var messageObserver: (any MessageInsertedObserverHandle)?
     private var toolManagerObserver: (any ToolManagerObserverHandle)?
     private var agentLoopObserver: (any AgentLoopObserverHandle)?
-
 
     public init() {}
 
@@ -130,9 +129,9 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
                 Self.logger.error("\(Self.emoji)无法处理 ToolManager 事件：AgentLoopProvider 已释放")
                 return
             }
-            if case .batchCompleted(let conversationID, let turnID, _, let results) = event {
+            if case let .batchCompleted(conversationID, turnID, _, results) = event {
                 if Self.verbose {
-                    Self.logger.info("\(Self.t)tool batch event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID?.uuidString.prefix(8) ?? "nil"), results=\(results.count)")
+                    Self.logger.info("\(Self.t)🍋 tool batch event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID?.uuidString.prefix(8) ?? "nil"), results=\(results.count)")
                 }
             }
             // ToolManager 事件已经在 MainActor 上分发，直接推进回合状态机，
@@ -148,7 +147,7 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
                 Self.logger.error("\(Self.emoji)无法处理 AgentLoop 事件：AgentLoopProvider 已释放")
                 return
             }
-            if case .llmResponseReceived(let conversationID, let turnID, let toolCalls) = event {
+            if case let .llmResponseReceived(conversationID, turnID, toolCalls) = event {
                 if Self.verbose {
                     Self.logger.info("\(Self.t)🍋 LLM event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), tools=\(toolCalls.count)")
                 }
