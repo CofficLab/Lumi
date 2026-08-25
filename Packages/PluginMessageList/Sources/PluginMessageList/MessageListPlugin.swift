@@ -54,4 +54,16 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ChatSectionProviding).self)?.removeItem(id: id)
     }
+
+    public func onReady(kernel: KernelCoreContainer) throws {
+        guard let provider = kernel.resolveProvider((any PromptSuggestionProviding).self) else { return }
+        provider.removeAll()
+        for plugin in kernel.allPlugins {
+            guard let contributor = plugin as? any PromptSuggestionContributing else { continue }
+            for var suggestion in contributor.promptSuggestions {
+                suggestion.order += plugin.order * 1_000
+                provider.register(suggestion)
+            }
+        }
+    }
 }

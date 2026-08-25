@@ -9,7 +9,7 @@ public final class DefaultPromptSuggestionProvider: PromptSuggestionProviding {
     public func register(_ suggestion: PromptSuggestion) {
         allSuggestions.removeAll { $0.id == suggestion.id }
         allSuggestions.append(suggestion)
-        allSuggestions.sort { $0.order > $1.order }
+        allSuggestions.sort { $0.order < $1.order }
     }
 
     public func unregister(id: String) {

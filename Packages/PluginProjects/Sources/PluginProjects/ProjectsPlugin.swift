@@ -9,6 +9,7 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderToolbar
 import ProviderToolManager
+import ProviderPromptSuggestion
 import SuperLogKit
 import SwiftUI
 
@@ -22,7 +23,7 @@ import SwiftUI
 /// - 相比旧版移除:`willSendToLLM` 项目路径注入（新版无消息钩子）与
 ///   「添加项目」动作胶囊（新版 PromptSuggestion 不支持动作）。
 @MainActor
-public final class ProjectsPlugin: SuperPlugin, SuperLog {
+public final class ProjectsPlugin: SuperPlugin, SuperLog, PromptSuggestionContributing {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.projects", category: "Projects")
 
     public let id = "com.coffic.lumi.plugin.projects"
@@ -38,6 +39,10 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
 
 
     public init() {}
+
+    public var promptSuggestions: [PromptSuggestion] { [
+        PromptSuggestion(id: "\(id).add", title: LumiPluginLocalization.string("Add Project", bundle: .module), systemImage: "folder.badge.plus", action: .pickProjectFolder, visibility: .onlyWithoutProject, style: .additive)
+    ] }
 
     /// 存储目录 key：必须与旧版 `Plugins/ProjectsPlugin` 的
     /// `storage.pluginDataDirectory(for: "Projects")` 完全一致，

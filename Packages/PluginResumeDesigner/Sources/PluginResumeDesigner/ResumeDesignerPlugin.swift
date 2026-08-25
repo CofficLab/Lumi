@@ -5,6 +5,7 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import ProviderToolManager
+import ProviderPromptSuggestion
 import SwiftUI
 
 /// KernelCore 版本的 Resume Designer 插件。
@@ -13,7 +14,7 @@ import SwiftUI
 /// 参考 `PluginAppIconDesigner` 的装配方式：onBoot 注册 Agent 工具、Rail 标签、
 /// ActivityBar 入口与 Docs 文档；onShutdown 全部撤回。
 @MainActor
-public final class ResumeDesignerPlugin: SuperPlugin {
+public final class ResumeDesignerPlugin: SuperPlugin, PromptSuggestionContributing {
     public let id = "com.coffic.lumi.plugin.resume-designer"
     public let order = 81
     public let metadata = PluginMetadata(
@@ -33,6 +34,10 @@ public final class ResumeDesignerPlugin: SuperPlugin {
     }
 
     public init() {}
+
+    public var promptSuggestions: [PromptSuggestion] { [
+        PromptSuggestion(id: "\(id).create", title: ResumeDesignerLocalization.string("Prompt.Suggestion.Create"), systemImage: "doc.badge.gearshape", action: .activateRailTab(id: Self.railTabID, viewContainerID: id))
+    ] }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         ResumeDesignerRuntime.configure(kernel: kernel, pluginID: id)

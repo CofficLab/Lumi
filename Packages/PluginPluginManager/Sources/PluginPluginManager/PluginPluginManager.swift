@@ -1,6 +1,7 @@
 import KernelCore
 import ProviderDocsView
 import ProviderSettingView
+import ProviderPromptSuggestion
 import SwiftUI
 
 /// 插件管理插件（新版本，SuperPlugin 架构）
@@ -17,7 +18,7 @@ import SwiftUI
 /// - 位置：`order = 90`，与旧版一致，内核启动早期完成设置入口注册。
 /// - 策略：`.required`（宿主必需，语义对应旧版 `.alwaysOn`），本插件自身不可被禁用。
 @MainActor
-public final class PluginPluginManager: SuperPlugin {
+public final class PluginPluginManager: SuperPlugin, PromptSuggestionContributing {
     public let id = "com.coffic.lumi.plugin.plugin-manager"
     public let order = 90
 
@@ -32,6 +33,10 @@ public final class PluginPluginManager: SuperPlugin {
     )
 
     public init() {}
+
+    public var promptSuggestions: [PromptSuggestion] { [
+        PromptSuggestion(id: "\(id).browse", title: "浏览插件", systemImage: "puzzlepiece.extension", action: .openSettingsTab(id), style: .additive)
+    ] }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {

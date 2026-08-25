@@ -19,6 +19,7 @@ let package = Package(
         .package(path: "../LumiUI"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderSettingView"),
+        .package(path: "../ProviderPromptSuggestion"),
     ],
     targets: [
         .target(
@@ -28,6 +29,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
             ],
             path: "Sources/PluginPluginManager"
         ),

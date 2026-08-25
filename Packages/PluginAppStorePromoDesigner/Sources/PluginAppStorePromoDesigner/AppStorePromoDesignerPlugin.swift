@@ -5,6 +5,7 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import ProviderToolManager
+import ProviderPromptSuggestion
 import SwiftUI
 
 /// KernelCore 版本的 App Store 促销图设计器插件。
@@ -12,7 +13,7 @@ import SwiftUI
 /// 由旧版 `Plugins/AppStorePromoDesignerPlugin`（KernelLumi / LumiPlugin）复刻而来，
 /// 形态对齐 `PluginAppIconDesigner`：SuperPlugin + SuperAgentTool + Provider 注册表。
 @MainActor
-public final class AppStorePromoDesignerPlugin: SuperPlugin {
+public final class AppStorePromoDesignerPlugin: SuperPlugin, PromptSuggestionContributing {
     public let id = "com.coffic.lumi.plugin.app-store-promo-designer"
     public let order = 80
     public let metadata = PluginMetadata(
@@ -31,6 +32,10 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
     }
 
     public init() {}
+
+    public var promptSuggestions: [PromptSuggestion] { [
+        PromptSuggestion(id: "\(id).create", title: PromoLocalization.string("Prompt.Suggestion.Create"), systemImage: "photo.artframe", action: .activateRailTab(id: Self.railTabID, viewContainerID: id))
+    ] }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         PromoDesignerRuntime.configure(kernel: kernel, pluginID: id)

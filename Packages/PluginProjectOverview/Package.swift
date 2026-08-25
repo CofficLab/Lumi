@@ -20,6 +20,7 @@ let package = Package(
         .package(path: "../ShellKit"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../ProviderPromptSuggestion"),
     ],
     targets: [
         .target(
@@ -31,6 +32,7 @@ let package = Package(
                 .product(name: "ShellKit", package: "ShellKit"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
             ],
             path: "Sources",
             resources: [

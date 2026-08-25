@@ -3,13 +3,18 @@ import Foundation
 import KernelCore
 import ProviderProject
 import ProviderToolManager
+import ProviderPromptSuggestion
 
 @MainActor
-public final class ProjectOverviewSuperPlugin: SuperPlugin {
+public final class ProjectOverviewSuperPlugin: SuperPlugin, PromptSuggestionContributing {
     public let id = "ProjectOverview"
     public let order = 14
     public let metadata = PluginMetadata(id: "ProjectOverview", name: "Project Overview", description: "Inspect a project's structure, metadata, and Git status.", category: .project, stage: .preview, policy: .alwaysOn)
     public init() {}
+
+    public var promptSuggestions: [PromptSuggestion] { [
+        PromptSuggestion(id: "\(id).overview", title: LumiPluginLocalization.string("Prompt.Suggestion.Overview", bundle: .module), systemImage: "doc.text.magnifyingglass", visibility: .onlyWithProject)
+    ] }
     public func onBoot(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ToolManagerProviding).self)?.add(ProjectOverviewV2Tool(project: kernel.resolveProvider((any ProjectProviding).self)), pluginID: id)
     }

@@ -5,11 +5,12 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import ProviderToolManager
+import ProviderPromptSuggestion
 import SwiftUI
 
 /// KernelCore 版本的 App Icon 设计器插件。
 @MainActor
-public final class AppIconDesignerPlugin: SuperPlugin {
+public final class AppIconDesignerPlugin: SuperPlugin, PromptSuggestionContributing {
     public let id = "com.coffic.lumi.plugin.app-icon-designer"
     public let order = 79
     public let metadata = PluginMetadata(
@@ -28,6 +29,10 @@ public final class AppIconDesignerPlugin: SuperPlugin {
     }
 
     public init() {}
+
+    public var promptSuggestions: [PromptSuggestion] { [
+        PromptSuggestion(id: "\(id).design", title: AppIconDesignerLocalization.string("Prompt.Suggestion.Design"), systemImage: "app.dashed", action: .activateRailTab(id: Self.railTabID, viewContainerID: id))
+    ] }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         IconDesignerRuntime.configure(kernel: kernel, pluginID: id)
