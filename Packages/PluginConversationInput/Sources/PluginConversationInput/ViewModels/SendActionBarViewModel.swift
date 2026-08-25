@@ -53,7 +53,6 @@ final class SendActionBarViewModel: SuperLog {
     init(input: any ConversationInputProviding, sender: any MessageSendingProviding) {
         self.input = input
         self.sender = sender
-        Self.logger.info("\(Self.onInit)initialized")
     }
 
     /// Subscribe to input text and sending state changes. Call in `onAppear`.
