@@ -8,15 +8,7 @@ import ProviderStorage
 import ProviderWorkspace
 import SwiftUI
 
-/// 设备信息插件
-/// - 注册设备信息视图为主内容（ContentView）；
-/// - 贡献菜单栏内容（CPU/内存柱状图）与弹窗（CPU、内存两个独立弹窗项）；
-/// - 贡献设置入口（内存监控设置页）；
-/// - 贡献「关于」与「说明书」文档；
-/// - 配置 MemoryHistoryService 的存储目录。
-///
-/// 通过 `SuperPlugin.onBoot(kernel:)` 解析内核中的各 Provider，
-/// 用追加语义注册，不覆盖其他插件的贡献。
+/// 设备信息插件。
 @MainActor
 public final class DevicePlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.device-info"
@@ -27,22 +19,19 @@ public final class DevicePlugin: SuperPlugin {
         description: "",
         category: .system,
         stage: .stable,
-        // Device metrics are part of the legacy menu-bar baseline: CPU and
-        // memory usage must be contributed during the initial plugin boot.
-        // Keep the plugin configurable, but restore its default-on behavior.
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        // 0. 配置 MemoryHistoryService 存储目录（沿用旧版语义）
+        // 0. 配置 MemoryHistoryService 存储目录
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let pluginStorageDir = storage.pluginDataDirectory(for: id)
             MemoryHistoryService.configure(storageDirectory: pluginStorageDir)
         }
 
-        // 1. 设置视图入口（内存监控设置页，沿用旧版 settingsTabItems）
+        // 1. 设置视图入口
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
             let entry = SettingEntryItem(
                 id: "\(id).memory-settings",
