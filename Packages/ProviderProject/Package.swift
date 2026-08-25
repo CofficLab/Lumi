@@ -15,10 +15,14 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "ProviderProject",
+            dependencies: [
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
+            ],
             path: "Sources/ProviderProject"
         ),
         .testTarget(
