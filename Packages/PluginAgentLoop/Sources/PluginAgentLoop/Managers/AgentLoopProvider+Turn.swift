@@ -104,7 +104,6 @@ extension AgentLoopProvider {
     }
 
     private func driveTurn(conversationID: UUID, turnID: UUID) async {
-        defer { runtimes[conversationID]?.task = nil }
         guard let runtime = runtimes[conversationID] else {
             finishTurn(conversationID: conversationID, turnID: turnID, outcome: .failed("runtime not found"))
             return
@@ -125,7 +124,22 @@ extension AgentLoopProvider {
             case .success(let response, let assistantID):
                 let (updated, outcome) = TurnReducer.reduce(current, event: .llmResponded(response: response, assistantMessageID: assistantID))
                 runtimes[conversationID] = updated
-                if let outcome { finishTurn(conversationID: conversationID, turnID: currentTurnID, outcome: outcome) }
+                if let outcome {
+                    finishTurn(conversationID: conversationID, turnID: currentTurnID, outcome: outcome)
+                } else {
+                    // 当前 LLM 单步已完成。先释放 task，再发布工具事件，
+                    // 确保 batchCompleted 到达时可以启动下一步 LLM。
+                    runtimes[conversationID]?.task = nil
+                    notifyLLMResponse(
+                        conversationID: conversationID,
+                        turnID: currentTurnID,
+                        toolCalls: response.toolCalls?.map { MessageToolCall(
+                            id: $0.id,
+                            name: $0.name,
+                            arguments: $0.arguments
+                        ) } ?? []
+                    )
+                }
             case .failure(let reason):
                 let (updated, outcome) = TurnReducer.reduce(current, event: .llmFailed(reason: reason))
                 runtimes[conversationID] = updated

@@ -202,11 +202,6 @@ extension AgentLoopProvider {
             }
             messages.insertMessage(assistant, to: conversationID)
             streaming.end(conversationID: conversationID)
-            notifyLLMResponse(
-                conversationID: conversationID,
-                turnID: turnID,
-                toolCalls: assistant.toolCalls ?? []
-            )
             if let lifecycleHooks {
                 await lifecycleHooks.notifyDidReceiveLLMResponse(
                     DidReceiveLLMResponseContext(
