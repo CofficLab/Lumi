@@ -1,19 +1,18 @@
-import os
-import KitAgentTool
 import KernelCore
+import KitAgentTool
 import KitLocalization
-import LumiUI
 import KitMarkdown
+import LumiUI
+import os
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageSender
 import ProviderToolManager
-import KitAgentTool
-import LumiUI
 import SwiftUI
 
 // MARK: - ToolCallRowsView
+
 /// V1 (brief) 模式：纯文本 inline 样式，完全融入消息正文；
 /// V2/V3 模式：带图标/背景/边框/按钮的卡片行。
 
@@ -536,4 +535,3 @@ private struct ToolCallResultLazyPopover: View {
         }
     }
 }
-

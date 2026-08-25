@@ -1,14 +1,13 @@
-import KitAgentTool
 import KernelCore
+import KitAgentTool
 import KitLocalization
-import LumiUI
 import KitMarkdown
+import LumiUI
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageSender
 import ProviderToolManager
-import LumiUI
 import SwiftUI
 
 struct ToolMessageView: View {
@@ -40,15 +39,15 @@ struct ToolMessageView: View {
     }
 
     private var detailedContent: some View {
-                VStack(alignment: .leading, spacing: 8) {
-                    if !message.userImageData.isEmpty {
-                        AppImagePreviewGrid(imageDataList: message.userImageData)
-                    }
+        VStack(alignment: .leading, spacing: 8) {
+            if !message.userImageData.isEmpty {
+                AppImagePreviewGrid(imageDataList: message.userImageData)
+            }
 
-                    Text(message.content.isEmpty ? "Tool Result" : message.content)
-                        .font(isBrief ? .appCaption : .appMonoCaption)
-                        .foregroundColor(isBrief ? theme.textSecondary : theme.textPrimary)
-                        .textSelection(.enabled)
-                }
+            Text(message.content.isEmpty ? "Tool Result" : message.content)
+                .font(isBrief ? .appCaption : .appMonoCaption)
+                .foregroundColor(isBrief ? theme.textSecondary : theme.textPrimary)
+                .textSelection(.enabled)
+        }
     }
 }

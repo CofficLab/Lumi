@@ -60,7 +60,7 @@ struct ToolTextSectionView: View {
     var body: some View {
         AppCard(
             style: .subtle,
-            padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
+            padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 0)
         ) {
             ScrollView(.vertical, showsIndicators: true) {
                 Text(content)
