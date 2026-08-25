@@ -9,7 +9,7 @@ import KitSuperLog
 @MainActor
 public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     public nonisolated static let emoji = "💬"
-    public nonisolated static let verbose = false
+    public nonisolated static let verbose = true
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.manager")
 
     /// 数据存储目录（供未来迁移/设置使用）。
@@ -365,6 +365,9 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         assistantMessageID: UUID,
         in conversationID: UUID
     ) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)updateToolCallResult begin conversation=\(conversationID.uuidString.prefix(8))…, message=\(assistantMessageID.uuidString.prefix(8))…, toolCall=\(toolCallID), contentChars=\(result.content.count), isError=\(result.isError)")
+        }
         let updatedMessage = pending.snapshot(for: conversationID)
             .first(where: { $0.id == assistantMessageID })
             ?? store?.fetchMessage(id: assistantMessageID)
@@ -373,7 +376,9 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
               let index = toolCalls.firstIndex(where: { $0.id == toolCallID })
         else {
             if Self.verbose {
-                Self.logger.warning("\(Self.t)updateToolCallResult: tool call \(toolCallID) not found")
+                let snapshot = pending.snapshot(for: conversationID)
+                let stored = store?.fetchMessage(id: assistantMessageID)
+                Self.logger.warning("\(Self.t)updateToolCallResult miss toolCall=\(toolCallID), pendingCount=\(snapshot.count), pendingHasMessage=\(snapshot.contains(where: { $0.id == assistantMessageID })), storedHasMessage=\(stored != nil), storedToolCalls=\(stored?.toolCalls?.map(\.id) ?? [])")
             }
             return
         }

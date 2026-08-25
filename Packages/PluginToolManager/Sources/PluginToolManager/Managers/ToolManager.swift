@@ -10,7 +10,7 @@ import ProviderToolManager
 public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "ToolManager")
     public nonisolated static let emoji = "🛠️"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     private var recordStoreValue: ToolCallRecordStore? {
         didSet {
@@ -151,6 +151,9 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
         var results: [BatchToolResult] = []
         results.reserveCapacity(toolCalls.count)
         for toolCall in toolCalls {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)batch tool begin id=\(toolCall.id), name=\(toolCall.name), conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID?.uuidString.prefix(8) ?? "nil")")
+            }
             switch policy {
             case .blockAll:
                 results.append(.blocked(reason: "Tool execution was blocked because this conversation is in Chat mode."))
@@ -161,6 +164,16 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
                 if risk.requiresPermission { results.append(.needsApproval(riskLevel: risk)) }
                 else { results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID))) }
             }
+        }
+        if Self.verbose {
+            let kinds = results.map { result -> String in
+                switch result {
+                case .executed: return "executed"
+                case .blocked: return "blocked"
+                case .needsApproval: return "needsApproval"
+                }
+            }
+            Self.logger.info("\(Self.t)batch results prepared count=\(results.count), kinds=\(kinds)")
         }
         eventManager.send(.batchCompleted(conversationID: conversationID, turnID: turnID, toolCalls: toolCalls, results: results))
         if Self.verbose { Self.logger.info("\(Self.t)batch completed conversation=\(conversationID.uuidString.prefix(8)), results=\(results.count)") }
