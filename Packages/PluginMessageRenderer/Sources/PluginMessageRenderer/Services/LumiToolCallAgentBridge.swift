@@ -59,8 +59,19 @@ extension MessageToolResult {
                     data: image.data.base64EncodedString(),
                     mimeType: image.mimeType
                 )
-            }
+            },
+            awaitingUserResponse: toolCallResult.awaitingUserResponse,
+            interactionState: toolCallResult.interactionState?.messageInteractionState
         )
+    }
+}
+
+extension ToolCallInteractionState {
+    var messageInteractionState: MessageToolInteractionState {
+        switch self {
+        case .waiting: return .waiting
+        case .answered(let answer): return .answered(answer)
+        }
     }
 }
 
