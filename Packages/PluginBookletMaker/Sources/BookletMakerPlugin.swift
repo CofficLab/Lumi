@@ -22,7 +22,6 @@ import SwiftUI
 /// correctly paginated A5 booklet.
 @MainActor
 public final class BookletMakerPlugin: SuperPlugin, SuperLog {
-
     public nonisolated static let emoji = "📖"
     public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(
@@ -44,7 +43,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         description: "Create booklets and split PDF documents by page range.",
         category: .editor,
         stage: .preview,
-        policy: .alwaysOn
+        policy: .disabledByDefault
     )
 
     /// 插件级唯一的 BookletMakerViewModel 实例。
@@ -147,23 +146,23 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
 
     private func presentSavePanel() {
         #if os(macOS)
-        let panel = NSSavePanel()
-        panel.allowedContentTypes = [.pdf]
-        panel.nameFieldStringValue = suggestedFileName()
-        panel.canCreateDirectories = true
-        panel.title = BookletLocalization.string("Export Booklet PDF")
-        if panel.runModal() == .OK, let url = panel.url {
-            Task { await sharedViewModel.export(to: url) }
-        }
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [.pdf]
+            panel.nameFieldStringValue = suggestedFileName()
+            panel.canCreateDirectories = true
+            panel.title = BookletLocalization.string("Export Booklet PDF")
+            if panel.runModal() == .OK, let url = panel.url {
+                Task { await sharedViewModel.export(to: url) }
+            }
         #else
-        // iOS: 生成到临时文件后弹出系统分享面板（保存到「文件」/ 分享）。
-        Task { @MainActor in
-            let url = FileManager.default.temporaryDirectory
-                .appendingPathComponent(suggestedFileName())
-            try? FileManager.default.removeItem(at: url)
-            await sharedViewModel.export(to: url)
-            SharePresenter.share(fileURL: url)
-        }
+            // iOS: 生成到临时文件后弹出系统分享面板（保存到「文件」/ 分享）。
+            Task { @MainActor in
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(suggestedFileName())
+                try? FileManager.default.removeItem(at: url)
+                await sharedViewModel.export(to: url)
+                SharePresenter.share(fileURL: url)
+            }
         #endif
     }
 
@@ -174,35 +173,35 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
 
     private func presentSplitDirectoryPanel() {
         #if os(macOS)
-        let panel = NSOpenPanel()
-        panel.title = BookletLocalization.string("Choose Split PDF Output Folder")
-        panel.message = BookletLocalization.string(
-            "Each page range will be saved as a separate PDF file."
-        )
-        panel.prompt = BookletLocalization.string("Choose Folder")
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.canCreateDirectories = true
-        panel.allowsMultipleSelection = false
+            let panel = NSOpenPanel()
+            panel.title = BookletLocalization.string("Choose Split PDF Output Folder")
+            panel.message = BookletLocalization.string(
+                "Each page range will be saved as a separate PDF file."
+            )
+            panel.prompt = BookletLocalization.string("Choose Folder")
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.canCreateDirectories = true
+            panel.allowsMultipleSelection = false
 
-        if panel.runModal() == .OK, let directoryURL = panel.url {
-            let didStartSecurityScope = directoryURL.startAccessingSecurityScopedResource()
-            Task {
-                await sharedViewModel.exportSplit(to: directoryURL)
-                if didStartSecurityScope {
-                    directoryURL.stopAccessingSecurityScopedResource()
+            if panel.runModal() == .OK, let directoryURL = panel.url {
+                let didStartSecurityScope = directoryURL.startAccessingSecurityScopedResource()
+                Task {
+                    await sharedViewModel.exportSplit(to: directoryURL)
+                    if didStartSecurityScope {
+                        directoryURL.stopAccessingSecurityScopedResource()
+                    }
                 }
             }
-        }
         #else
-        // iOS: 拆分到临时目录后用分享面板导出。
-        Task { @MainActor in
-            let dir = FileManager.default.temporaryDirectory
-                .appendingPathComponent("booklet-split-\(UUID().uuidString)", isDirectory: true)
-            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            await sharedViewModel.exportSplit(to: dir)
-            SharePresenter.share(fileURL: dir)
-        }
+            // iOS: 拆分到临时目录后用分享面板导出。
+            Task { @MainActor in
+                let dir = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("booklet-split-\(UUID().uuidString)", isDirectory: true)
+                try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                await sharedViewModel.exportSplit(to: dir)
+                SharePresenter.share(fileURL: dir)
+            }
         #endif
     }
 
@@ -215,5 +214,4 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any ProviderWorkspace.WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
         BookletMakerRuntimeBridge.directoryURL = nil
     }
-
 }
