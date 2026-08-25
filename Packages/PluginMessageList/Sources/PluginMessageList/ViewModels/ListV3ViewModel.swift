@@ -24,6 +24,7 @@ private struct MessageFingerprintV3: Equatable {
     let contentLength: Int
     let role: MessageRole
     let isToolExecutionOnly: Bool
+    let toolCallResultState: [String]
 }
 
 /// Message List V3 View Model (detailed / 详细模式)
@@ -374,7 +375,14 @@ final class ListV3ViewModel: ObservableObject {
                     id: $0.id,
                     contentLength: $0.content.count,
                     role: $0.role,
-                    isToolExecutionOnly: $0.isToolExecutionOnly
+                    isToolExecutionOnly: $0.isToolExecutionOnly,
+                    toolCallResultState: $0.toolCalls?.map {
+                        let result = $0.result
+                        let resultState = result.map {
+                            "\($0.content.count):\($0.awaitingUserResponse == true)"
+                        } ?? "nil"
+                        return "\($0.id):\(resultState)"
+                    } ?? []
                 )
             }
         )

@@ -48,6 +48,12 @@ struct CollapsibleToolStepGroup: View {
         resolvedToolCalls ?? toolCalls
     }
 
+    private var resolutionTaskID: String {
+        toolCalls
+            .map { "\($0.id):\($0.result != nil)" }
+            .joined(separator: "|")
+    }
+
     /// 组内是否存在「正在等待用户作答」的交互式工具调用(如 ask_user)。
     /// 新版 `MessageToolResult` 不携带 `AgentTurnControl`，此判断降级为 false
     /// （等待态由 `ToolCallResult.awaitingUserResponse` 经自定义行渲染器呈现）。
@@ -81,7 +87,7 @@ struct CollapsibleToolStepGroup: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: isCollapsed)
-        .task {
+        .task(id: resolutionTaskID) {
             // Suspended interactive tools force the group open; load their result
             // even though there is no header click to trigger the lazy lookup.
             if !isCollapsed {
@@ -176,17 +182,21 @@ struct CollapsibleToolStepGroup: View {
         defer { isLoadingResults = false }
 
         var resolved = toolCalls
+        var didResolveAnyResult = false
         for index in resolved.indices where resolved[index].result == nil {
             if let raw = await manager.toolCallResult(for: resolved[index].id),
                let converted = MessageToolResult(toolCallResult: raw) {
                 resolved[index].result = converted
+                didResolveAnyResult = true
             }
         }
         ToolCallResolutionCache.shared.storeIfFullyResolved(
             messageID: message.id,
             toolCalls: resolved
         )
-        resolvedToolCalls = resolved
+        if didResolveAnyResult || resolved.allSatisfy({ $0.result != nil }) {
+            resolvedToolCalls = resolved
+        }
     }
 
     // MARK: - Expanded rows

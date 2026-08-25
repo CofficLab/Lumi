@@ -24,6 +24,9 @@ private struct MessageFingerprint: Equatable {
     let contentLength: Int
     let role: MessageRole
     let isToolExecutionOnly: Bool
+    /// 工具结果写回 assistant 消息时 content 本身可能不变，必须纳入
+    /// 指纹，否则历史行会继续持有 result == nil 的旧快照。
+    let toolCallResultState: [String]
 }
 
 /// Message List View Model (V2 / standard)
@@ -413,7 +416,14 @@ final class ListV2ViewModel: ObservableObject {
                     id: $0.id,
                     contentLength: $0.content.count,
                     role: $0.role,
-                    isToolExecutionOnly: $0.isToolExecutionOnly
+                    isToolExecutionOnly: $0.isToolExecutionOnly,
+                    toolCallResultState: $0.toolCalls?.map {
+                        let result = $0.result
+                        let resultState = result.map {
+                            "\($0.content.count):\($0.awaitingUserResponse == true)"
+                        } ?? "nil"
+                        return "\($0.id):\(resultState)"
+                    } ?? []
                 )
             }
         )

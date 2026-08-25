@@ -76,6 +76,14 @@ struct ToolCallRowsView: View {
         resolvedToolCalls ?? message.toolCalls ?? []
     }
 
+    /// 结果从 nil 变为已完成时必须重新触发解析任务；否则第一次惰性
+    /// 物化留下的 nil 快照会一直遮住消息后续回写的 toolCall.result。
+    private var resolutionTaskID: String {
+        (message.toolCalls ?? [])
+            .map { "\($0.id):\($0.result != nil)" }
+            .joined(separator: "|")
+    }
+
     private var rowContext: ToolCallRowMessageContext {
         ToolCallRowMessageContext(
             conversationId: message.conversationID,
@@ -98,7 +106,7 @@ struct ToolCallRowsView: View {
                 lumiCardRows
             }
         }
-        .task {
+        .task(id: resolutionTaskID) {
             guard verbosity != .brief else { return }
             // 命中"完全解析"缓存:List 惰性行滚出视口被拆除后 @State 丢失,
             // 历史上每次滚回都重新逐个 await kernel 查询工具结果。
@@ -122,10 +130,12 @@ struct ToolCallRowsView: View {
             return
         }
         var resolved = message.toolCalls ?? []
+        var didResolveAnyResult = false
         for index in resolved.indices where resolved[index].result == nil {
             if let raw = await manager.toolCallResult(for: resolved[index].id),
                let converted = MessageToolResult(toolCallResult: raw) {
                 resolved[index].result = converted
+                didResolveAnyResult = true
             }
         }
         // 仅当全部工具调用都有结果时才写入缓存:进行中的回合结果尚未落定,
@@ -134,7 +144,10 @@ struct ToolCallRowsView: View {
             messageID: message.id,
             toolCalls: resolved
         )
-        if resolvedToolCalls != resolved {
+        // 查询结果尚未产生时不要保存 nil 快照；等待消息自身的 tool call
+        // 更新触发下一次 task，否则后续 awaitingUserResponse 会被遮蔽。
+        if didResolveAnyResult || resolved.allSatisfy({ $0.result != nil }),
+           resolvedToolCalls != resolved {
             resolvedToolCalls = resolved
         }
     }
