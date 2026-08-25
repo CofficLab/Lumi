@@ -277,11 +277,14 @@ private struct LumiMenuBarLabel: View {
             // 显示所有 `menuBarContentItems`（例如网速、CPU/内存概览）。
             if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
                 menuBar.makeContentView()
-                    .fixedSize()
+                    // Keep vertically stacked status-bar content intact. `MenuBarExtra`
+                    // otherwise measures its label as a single-line control and clips
+                    // the second line of the network speed view.
+                    .fixedSize(horizontal: true, vertical: true)
             }
         }
         .padding(.horizontal, 2)
-        .frame(height: 22)
+        .fixedSize(horizontal: true, vertical: true)
     }
 }
 
