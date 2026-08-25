@@ -132,10 +132,18 @@ public final class NetworkProvider: NetworkProviding {
                     // 解压后同样按 SSE 事件块切分（不能按 16KB 块，否则一个块内
                     // 多个 data 事件被拼成多行 JSON，上层 parseStreamChunk 解析失败）。
                     let shouldContinue = await emitSSEEvents(from: decompressed, onChunk: onChunk)
-                    if !shouldContinue { return }
+                    if !shouldContinue {
+                        // 提前停止读取仍然是一次已结束的 HTTP exchange，不能跳过收口。
+                        exchangeStore?.finishRecord(recordID, response: response, body: receivedBody)
+                        return
+                    }
                 } else {
                     // Fallback: send compressed data as-is
-                    _ = await onChunk(compressedData)
+                    let shouldContinue = await onChunk(compressedData)
+                    if !shouldContinue {
+                        exchangeStore?.finishRecord(recordID, response: response, body: receivedBody)
+                        return
+                    }
                 }
             } else {
                 // Uncompressed stream - 边接收边按 SSE 空行切分完整事件块，保证
@@ -169,13 +177,20 @@ public final class NetworkProvider: NetworkProviding {
 
                         guard !eventData.isEmpty else { continue }
                         let shouldContinue = await onChunk(Data(eventData))
-                        if !shouldContinue { return }
+                        if !shouldContinue {
+                            // 提前停止读取仍然是一次已结束的 HTTP exchange，不能跳过收口。
+                            exchangeStore?.finishRecord(recordID, response: response, body: receivedBody)
+                            return
+                        }
                     }
                 }
                 // 流结束前未以空行结尾的剩余内容也要回调，避免丢最后一个事件。
                 if !eventBuffer.isEmpty {
                     let shouldContinue = await onChunk(eventBuffer)
-                    if !shouldContinue { return }
+                    if !shouldContinue {
+                        exchangeStore?.finishRecord(recordID, response: response, body: receivedBody)
+                        return
+                    }
                 }
             }
 
