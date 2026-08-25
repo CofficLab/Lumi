@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 import KitLLM
 import ProviderConversation
@@ -25,8 +25,8 @@ extension Message {
     }
 }
 
-// 消除 KitLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
-private typealias ToolCall = AgentToolKit.ToolCall
+// 消除 KitLLMVendors.ToolCall 与 KitAgentTool.ToolCall 的歧义
+private typealias ToolCall = KitAgentTool.ToolCall
 
 /// Agent 回合执行器（KernelCore 体系，完整复刻旧版 `AgentTurnRunner`）。
 ///

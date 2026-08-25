@@ -8,7 +8,7 @@ import ProviderLLMManager
 import ProviderMessage
 import ProviderProject
 import ProviderToolManager
-import SuperLogKit
+import KitSuperLog
 
 /// Conversation Manager - real implementation using SwiftData persistence
 @MainActor

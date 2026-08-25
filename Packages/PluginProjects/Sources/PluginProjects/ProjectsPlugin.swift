@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 import KitLLM
 import KernelCore
@@ -10,7 +10,7 @@ import ProviderStorage
 import ProviderToolbar
 import ProviderToolManager
 import ProviderPromptSuggestion
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// 项目管理插件（KernelCore 版本）。

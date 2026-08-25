@@ -15,7 +15,7 @@ let package = Package(
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
         .package(path: "../ProviderNetwork"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
@@ -25,7 +25,7 @@ let package = Package(
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderNetwork", package: "ProviderNetwork"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: "Sources/PluginLLMProviderAliyun"
         ),

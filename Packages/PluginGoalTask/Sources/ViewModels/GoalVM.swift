@@ -1,6 +1,6 @@
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// GoalTaskPlugin 的唯一视图模型(已合并原 `SidebarViewModel`)。
 ///

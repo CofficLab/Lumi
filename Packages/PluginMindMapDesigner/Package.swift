@@ -9,9 +9,9 @@ let package = Package(
         .library(name: "PluginMindMapDesigner", targets: ["PluginMindMapDesigner"]),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
@@ -25,9 +25,9 @@ let package = Package(
         .target(
             name: "PluginMindMapDesigner",
             dependencies: [
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "LumiUI",
                 "ProviderActivityBar",
                 "ProviderContentView",
@@ -43,7 +43,7 @@ let package = Package(
             name: "PluginMindMapDesignerTests",
             dependencies: [
                 "PluginMindMapDesigner",
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
                 "ProviderProject",
                 "ProviderStorage",

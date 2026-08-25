@@ -19,8 +19,8 @@ let package = Package(
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../LumiUI"),
-        .package(path: "../LocalizationKit"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitLocalization"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
@@ -36,8 +36,8 @@ let package = Package(
                 "ProviderLLMManager",
                 "ProviderSettingView",
                 "LumiUI",
-                "LocalizationKit",
-                "SuperLogKit",
+                "KitLocalization",
+                "KitSuperLog",
             ]
         ),
         .testTarget(

@@ -1,5 +1,5 @@
 import Foundation
-import ShellKit
+import KitShell
 
 /// Auto Push 配置：描述「在什么条件下自动推送」。
 public struct AutoPushConfig: Codable, Equatable, Sendable {

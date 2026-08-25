@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import AgentToolKit
+import KitAgentTool
 import ProviderProject
 
 /// 在外部应用中打开路径的工具。

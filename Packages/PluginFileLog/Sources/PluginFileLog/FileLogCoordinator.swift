@@ -1,6 +1,6 @@
 import Foundation
 import OSLog
-import SuperLogKit
+import KitSuperLog
 
 /// 磁盘日志协调器
 ///

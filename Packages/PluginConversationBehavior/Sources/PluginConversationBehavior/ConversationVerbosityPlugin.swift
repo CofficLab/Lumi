@@ -5,7 +5,7 @@ import KernelCore
 import ProviderChatSection
 import ProviderConversation
 import ProviderLifecycleHooks
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// 会话详细程度控制插件（V1 简洁 / V2 标准 / V3 详细）。

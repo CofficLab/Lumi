@@ -2,7 +2,7 @@ import Combine
 import Foundation
 import IOKit
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// GPU monitoring service that reads utilization, memory, and temperature
 /// from IOKit `IOAccelerator` services on Apple Silicon / Intel Macs.

@@ -10,9 +10,9 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../LumiUI"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderConversationInput"),
@@ -21,16 +21,16 @@ let package = Package(
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderWorkspace"),
-        .package(path: "../SuperLogKit")
+        .package(path: "../KitSuperLog")
     ],
     targets: [
         .target(
             name: "StoryWriterPlugin",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
@@ -39,7 +39,7 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
-                .product(name: "SuperLogKit", package: "SuperLogKit")
+                .product(name: "KitSuperLog", package: "KitSuperLog")
             ],
             path: "Sources",
             resources: [.process("../Resources/Localizable.xcstrings")]

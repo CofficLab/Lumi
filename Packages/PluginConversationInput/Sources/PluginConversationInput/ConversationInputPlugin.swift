@@ -4,7 +4,7 @@ import os
 import ProviderChatSection
 import ProviderConversationInput
 import ProviderMessageSender
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// Conversation Input Plugin（KernelCore 版本）

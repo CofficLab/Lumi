@@ -3,7 +3,7 @@ import os
 import KernelCore
 import ProviderLLMManager
 import KitLLM
-import SuperLogKit
+import KitSuperLog
 
 /// MiniMax 供应商装配插件（KernelCore 生态）。
 ///

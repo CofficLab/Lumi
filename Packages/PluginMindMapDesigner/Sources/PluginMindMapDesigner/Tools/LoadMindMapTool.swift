@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// 按 id 加载思维导图到画布并选中。

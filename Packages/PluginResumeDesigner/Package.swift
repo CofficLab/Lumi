@@ -9,12 +9,12 @@ let package = Package(
         .library(name: "PluginResumeDesigner", targets: ["PluginResumeDesigner"]),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
-        .package(path: "../HTMLPreviewKit"),
+        .package(path: "../KitAgentTool"),
+        .package(path: "../KitHTMLPreview"),
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
-        .package(path: "../ResumeKit"),
+        .package(path: "../KitResume"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
@@ -28,12 +28,12 @@ let package = Package(
         .target(
             name: "PluginResumeDesigner",
             dependencies: [
-                "AgentToolKit",
-                "HTMLPreviewKit",
+                "KitAgentTool",
+                "KitHTMLPreview",
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "LumiUI",
-                "ResumeKit",
+                "KitResume",
                 "ProviderActivityBar",
                 "ProviderContentView",
                 "ProviderDocsView",
@@ -49,7 +49,7 @@ let package = Package(
             name: "PluginResumeDesignerTests",
             dependencies: [
                 "PluginResumeDesigner",
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
                 "ProviderActivityBar",
                 "ProviderContentView",
@@ -58,7 +58,7 @@ let package = Package(
                 "ProviderStorage",
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
-                "ResumeKit",
+                "KitResume",
             ]
         ),
     ]

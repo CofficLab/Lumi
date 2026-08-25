@@ -1,7 +1,7 @@
 import LumiUI
 import ProviderConversationInput
 import ProviderMessageSender
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 import os
 

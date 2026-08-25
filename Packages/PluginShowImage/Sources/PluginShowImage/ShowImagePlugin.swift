@@ -1,9 +1,9 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 import KernelCore
 import ProviderNetwork
 import ProviderToolManager
-import SuperLogKit
+import KitSuperLog
 import os
 
 // MARK: - Show Image SuperPlugin

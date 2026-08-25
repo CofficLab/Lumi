@@ -14,9 +14,9 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../HttpKit"),
-        .package(path: "../KeychainKit"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitHttp"),
+        .package(path: "../KitKeychain"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderNetwork"),
@@ -25,9 +25,9 @@ let package = Package(
         .target(
             name: "ProviderLLMVendors",
             dependencies: [
-                .product(name: "HttpKit", package: "HttpKit"),
-                .product(name: "KeychainKit", package: "KeychainKit"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitHttp", package: "KitHttp"),
+                .product(name: "KitKeychain", package: "KitKeychain"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderNetwork", package: "ProviderNetwork"),

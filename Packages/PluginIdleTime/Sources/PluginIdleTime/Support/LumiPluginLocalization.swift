@@ -1,5 +1,5 @@
 import Foundation
-import LocalizationKit
+import KitLocalization
 
 /// IdleTime 插件的运行时本地化。
 ///

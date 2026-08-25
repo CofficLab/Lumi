@@ -5,7 +5,7 @@ import KernelCore
 import ProviderChatSection
 import ProviderConversation
 import ProviderLifecycleHooks
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// 会话回复语言控制插件（中文 / English）。

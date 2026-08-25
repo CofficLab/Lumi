@@ -1,6 +1,6 @@
 import os
 import KernelCore
-import SuperLogKit
+import KitSuperLog
 import ProviderCommand
 import ProviderSettingView
 import ProviderTheme

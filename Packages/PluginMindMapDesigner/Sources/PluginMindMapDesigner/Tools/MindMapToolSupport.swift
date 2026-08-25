@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// 思维导图工具共享 helper（KernelCore 体系）。

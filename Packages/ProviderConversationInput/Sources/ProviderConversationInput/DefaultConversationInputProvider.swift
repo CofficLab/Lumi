@@ -1,6 +1,6 @@
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 @MainActor
 public final class DefaultConversationInputProvider: ConversationInputProviding, SuperLog {

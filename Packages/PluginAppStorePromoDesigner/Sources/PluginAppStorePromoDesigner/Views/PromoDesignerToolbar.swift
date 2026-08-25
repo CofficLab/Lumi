@@ -1,4 +1,4 @@
-import AppStorePromoKit
+import KitAppStorePromo
 import SwiftUI
 
 /// 设计师面板顶部工具栏：任务标题、Display 选择、模式切换、刷新与导出。

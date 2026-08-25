@@ -13,16 +13,16 @@ let package = Package(
         .package(path: "../ProviderTheme"),
         .package(path: "../ProviderToast"),
         .package(path: "../ProviderWebServer"),
-        .package(path: "../WebServerKit"),
+        .package(path: "../KitWebServer"),
     ],
     targets: [
         .target(
             name: "PluginWebServer",
-            dependencies: ["KernelCore", "ProviderTheme", "ProviderToast", "ProviderWebServer", "WebServerKit"]
+            dependencies: ["KernelCore", "ProviderTheme", "ProviderToast", "ProviderWebServer", "KitWebServer"]
         ),
         .testTarget(
             name: "PluginWebServerTests",
-            dependencies: ["PluginWebServer", "KernelCore", "ProviderTheme", "ProviderWebServer", "WebServerKit"]
+            dependencies: ["PluginWebServer", "KernelCore", "ProviderTheme", "ProviderWebServer", "KitWebServer"]
         ),
     ]
 )

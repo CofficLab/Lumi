@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// 工具执行策略（由调用方根据会话 automationLevel 映射后传入）。

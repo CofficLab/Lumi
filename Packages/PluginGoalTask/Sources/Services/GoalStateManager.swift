@@ -1,6 +1,6 @@
 import Foundation
 import SwiftData
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// GoalTask 插件的状态管理器

@@ -1,6 +1,6 @@
 import AppKit
 import Carbon.HIToolbox
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// 全局热键组合（Carbon 键码 + 修饰键掩码）

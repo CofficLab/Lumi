@@ -1,5 +1,5 @@
-import AgentToolKit
-import AppStorePromoKit
+import KitAgentTool
+import KitAppStorePromo
 import Foundation
 
 /// 在精确的 App Store 尺寸下渲染促销图 HTML，并把 PNG 作为工具结果附件返回。

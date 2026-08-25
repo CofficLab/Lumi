@@ -15,8 +15,8 @@
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
 		F5FL20000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = F5FL200000000000000001 /* FactoryLumi */; };
 		LF000000000000000014 /* LumiFinder.appex in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = LF000000000000000001 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		LF000000000000000015 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000016 /* SuperLogKit */; };
-		LF00000000000000001A /* LocalizationKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000019 /* LocalizationKit */; };
+		LF000000000000000015 /* KitSuperLog in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000016 /* KitSuperLog */; };
+		LF00000000000000001A /* KitLocalization in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000019 /* KitLocalization */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -205,8 +205,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				LF000000000000000015 /* SuperLogKit in Frameworks */,
-				LF00000000000000001A /* LocalizationKit in Frameworks */,
+				LF000000000000000015 /* KitSuperLog in Frameworks */,
+				LF00000000000000001A /* KitLocalization in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -389,8 +389,8 @@
 			);
 			name = LumiFinder;
 			packageProductDependencies = (
-				LF000000000000000016 /* SuperLogKit */,
-				LF000000000000000019 /* LocalizationKit */,
+				LF000000000000000016 /* KitSuperLog */,
+				LF000000000000000019 /* KitLocalization */,
 			);
 			productName = LumiFinder;
 			productReference = LF000000000000000001 /* LumiFinder.appex */;
@@ -440,8 +440,8 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */,
-				LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */,
-				LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/LocalizationKit" */,
+				LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/KitSuperLog" */,
+				LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/KitLocalization" */,
 				F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdate" */,
 				BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */,
 				AI2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryAppIconDesigner" */,
@@ -778,13 +778,13 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FactoryLumi;
 		};
-		LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */ = {
+		LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/KitSuperLog" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/SuperLogKit;
+			relativePath = Packages/KitSuperLog;
 		};
-		LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/LocalizationKit" */ = {
+		LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/KitLocalization" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LocalizationKit;
+			relativePath = Packages/KitLocalization;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -818,13 +818,13 @@
 			package = FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
 			productName = FactoryLumi;
 		};
-		LF000000000000000016 /* SuperLogKit */ = {
+		LF000000000000000016 /* KitSuperLog */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = SuperLogKit;
+			productName = KitSuperLog;
 		};
-		LF000000000000000019 /* LocalizationKit */ = {
+		LF000000000000000019 /* KitLocalization */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = LocalizationKit;
+			productName = KitLocalization;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

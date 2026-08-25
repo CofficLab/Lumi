@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 import KitLLM
 import os
@@ -9,7 +9,7 @@ import ProviderLLMManager
 import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
-import SuperLogKit
+import KitSuperLog
 
 /// Agent 回合执行器门面。
 ///

@@ -4,7 +4,7 @@ import os
 import ProviderConversation
 import ProviderLLMManager
 import ProviderMessageRendering
-import SuperLogKit
+import KitSuperLog
 
 /// LLM 供应商管理器插件。
 ///

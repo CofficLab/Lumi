@@ -2,7 +2,7 @@ import Foundation
 import os
 import ProviderConversationInput
 import ProviderMessageSender
-import SuperLogKit
+import KitSuperLog
 
 /// Manages the state and actions for the send/stop action bar.
 ///

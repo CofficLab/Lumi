@@ -1,7 +1,7 @@
 import Foundation
 import os
-import SuperLogKit
-import ShellKit
+import KitSuperLog
+import KitShell
 
 /// The primary namespace for DockerKit
 public enum DockerKit: SuperLog {

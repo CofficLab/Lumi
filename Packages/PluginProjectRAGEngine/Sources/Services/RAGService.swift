@@ -1,5 +1,5 @@
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// RAG 核心服务

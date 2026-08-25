@@ -3,7 +3,7 @@ import KernelCore
 import os
 import ProviderConversation
 import ProviderToolManager
-import SuperLogKit
+import KitSuperLog
 
 /// AskUser 插件：注册 `ask_user` 工具，让 LLM 可向用户提问并等待回答。
 /// - 注册 `AskUserTool` 到 `ToolManagerProviding`；

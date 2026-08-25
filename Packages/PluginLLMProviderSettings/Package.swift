@@ -12,7 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderLLMManager"),
@@ -23,7 +23,7 @@ let package = Package(
             name: "PluginLLMProviderSettings",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
@@ -36,7 +36,7 @@ let package = Package(
             dependencies: [
                 "PluginLLMProviderSettings",
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "KitLLM", package: "KitLLM"),
             ],

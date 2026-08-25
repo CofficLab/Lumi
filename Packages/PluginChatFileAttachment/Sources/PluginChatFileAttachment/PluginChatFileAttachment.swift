@@ -1,7 +1,7 @@
 import os
 import KernelCore
 import ProviderChatSection
-import SuperLogKit
+import KitSuperLog
 
 /// Chat File Attachment Plugin（KernelCore 版本）
 ///

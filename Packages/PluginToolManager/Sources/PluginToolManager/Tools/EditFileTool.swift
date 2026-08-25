@@ -1,5 +1,5 @@
-import AgentToolKit
-import FileSystemKit
+import KitAgentTool
+import KitFileSystem
 import Foundation
 
 /// 精确替换文件内容（复刻旧版 ToolManagerPlugin 的 EditFileTool）。

@@ -3,7 +3,7 @@ import KernelCore
 import ProviderTheme
 import ProviderToast
 import ProviderWebServer
-import WebServerKit
+import KitWebServer
 
 /// 旧版本地 HTTP 服务的 V2 迁移实现。
 ///

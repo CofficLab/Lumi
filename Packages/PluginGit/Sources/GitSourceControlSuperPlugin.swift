@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import EditorContracts
 import KernelCore
 import ProviderProject

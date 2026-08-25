@@ -5,7 +5,7 @@ import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
 import ProviderStorage
-import SuperLogKit
+import KitSuperLog
 
 /// Message Manager Plugin (v2)
 ///

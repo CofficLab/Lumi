@@ -1,5 +1,5 @@
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// LSP 配置注册表

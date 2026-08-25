@@ -20,7 +20,7 @@
 | P8 | 中 | `MarkdownBlockRenderer.swift:50-57,429-435`、`HighlightedCodeView.swift:35-49` | `.task` 继承 View 的 MainActor,"异步解析"实际仍跑主线程(注释与事实不符)——**✅ 已修复(2026-08-15)** |
 | P9 | 中 | `MessageStreamingStore.swift:56-70` | 每 token 全串 `content += piece` + 字典整体写回,O(n²)/回合;下游 `blocks(for:)` 再拷贝 |
 | P10 | 中 | `MarkdownParser.swift:11-14` + `MarkdownTableNormalizer.swift:24` | 每次 parse 前全文表格归一化(逐行正则),无表格文档纯冗余 |
-| P11 | 中 | `ShellKit/ShellExecutor.swift:262`、`GitSection.swift:26-48`、`GitHubCLIDetectService.swift:135-153`、`SubprocessTransport.swift:166-170` | 四处 semaphore.wait "同步壳包异步" 模式,落在 UI 路径即冻结 |
+| P11 | 中 | `KitShell/ShellExecutor.swift:262`、`GitSection.swift:26-48`、`GitHubCLIDetectService.swift:135-153`、`SubprocessTransport.swift:166-170` | 四处 semaphore.wait "同步壳包异步" 模式,落在 UI 路径即冻结 |
 | P12 | 中 | `XcodeBuildServerStore.swift:62-255` | 主 Actor 状态栏 VM 高频同步读 JSON(manifest 读写) |
 | P13 | 低 | `AgentTurnView.swift:53-62`、`ScrollViewBottomTracker.swift:148-157` | item 每变更新建 Task;滚动每事件分配一个 Task |
 | P14 | 低 | `TokenLineChartView.swift:270-283`、`ProviderSettingsPageBase.swift:78`、`AssistantMessageView.swift:53,94` 等 | 每次渲染新建 DateFormatter / body 内 filter+map / theme 重建 |
@@ -61,11 +61,11 @@
 
 > **📎 滚动专项第二轮:SwiftUI 路径极限优化(2026-08-15)**
 > 在不动 AppKit 插件的前提下,清除生产行 chrome 渲染路径上所有"每次 body 求值/每次重物化都重做"的工作:
-> - **纯缓存化**:`NSFullUserName()` 目录服务查询、`Color(hex:)` 解析(AvatarView 预构建)、`LumiLocalization.string` 结果级记忆化(原每次调用做 bundle 路径探测,LocalizationKit 内修复惠及全部插件)、`ErrorMessageView` 解析器双跑、`MessageViewChrome` token/thinking 双计算、`CollapsiblePlainText` 无守卫整串切分、`ToolCallRowView` 注册表二次查找 + AnyView 闭包、`AppIdentityRow` 逐条 trim。
+> - **纯缓存化**:`NSFullUserName()` 目录服务查询、`Color(hex:)` 解析(AvatarView 预构建)、`LumiLocalization.string` 结果级记忆化(原每次调用做 bundle 路径探测,KitLocalization 内修复惠及全部插件)、`ErrorMessageView` 解析器双跑、`MessageViewChrome` token/thinking 双计算、`CollapsiblePlainText` 无守卫整串切分、`ToolCallRowView` 注册表二次查找 + AnyView 闭包、`AppIdentityRow` 逐条 trim。
 > - **高影响修复**:① `ToolCallResolutionCache`——工具调用结果按消息 id 进程级缓存(仅全解析完成才缓存,进行中回合不钉死),行重物化不再逐个 await kernel;② `MessageAttachmentDecodeCache` + `AppImageDecodeCache`——用户消息附件 JSON/base64 解码与位图解码各缓存一次;③ `CopyMessageButton` 内容改惰性闭包(空消息的 metadata dump 不再进渲染路径)。
 > - **行结构精简(产品已确认 UX 变化)**:操作按钮组(复制/重发/思考/详情/info)仅在行悬停 150ms 后物化,离开即隐藏;防抖刻意防"滚动时光标下行的 hover 风暴"。时间戳/token 文本常驻。
 > - **按证据跳过**:状态行 `PulseRipple` 门控——数据模型中 status 行全部为瞬态(turn 结束即清除),不存在"终态 status 行",当前行为已等价于"仅进行中动画"意图。
-> - **测量教训**:本轮 harness 复测揭示环境噪声在 ±40% 量级主导(同一二进制在不同时间窗测得 2.3~4.5ms/趟);跨时间窗对比无效,只接受同一时间窗内的交错 A/B。chrome 层收益无法用纯 MarkdownKit harness 量化,以真机体感验收为准。
+> - **测量教训**:本轮 harness 复测揭示环境噪声在 ±40% 量级主导(同一二进制在不同时间窗测得 2.3~4.5ms/趟);跨时间窗对比无效,只接受同一时间窗内的交错 A/B。chrome 层收益无法用纯 KitMarkdown harness 量化,以真机体感验收为准。
 
 ### 阶段 1:高收益、低风险(建议先做)
 

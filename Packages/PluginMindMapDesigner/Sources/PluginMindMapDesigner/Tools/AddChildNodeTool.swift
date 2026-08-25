@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// 给指定父节点批量添加子节点（AI 扩展思维导图的核心工具）。

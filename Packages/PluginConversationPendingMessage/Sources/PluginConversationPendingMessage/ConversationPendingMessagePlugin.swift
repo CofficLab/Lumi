@@ -2,7 +2,7 @@ import os
 import Combine
 import Foundation
 import KernelCore
-import SuperLogKit
+import KitSuperLog
 import ProviderChatSection
 import ProviderConversation
 import ProviderMessageSender

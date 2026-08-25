@@ -2,7 +2,7 @@ import AppKit
 import Combine
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// Process monitoring service that reports top N CPU-consuming processes via libproc.
 @MainActor

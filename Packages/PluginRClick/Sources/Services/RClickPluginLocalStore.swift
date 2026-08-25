@@ -1,6 +1,6 @@
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// RClickPlugin 插件本地存储
 ///

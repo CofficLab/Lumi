@@ -2,7 +2,7 @@ import os
 import Foundation
 import KitLLM
 import KernelCore
-import SuperLogKit
+import KitSuperLog
 import ProviderLifecycleHooks
 import ProviderChatSection
 import ProviderProject

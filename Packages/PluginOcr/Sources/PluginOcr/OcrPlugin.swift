@@ -1,9 +1,9 @@
-import AgentToolKit
+import KitAgentTool
 import KernelCore
 import os
 import ProviderDocsView
 import ProviderToolManager
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// OCR 文字识别插件（KernelCore 版本）

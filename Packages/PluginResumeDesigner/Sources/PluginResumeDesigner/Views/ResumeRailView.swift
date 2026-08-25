@@ -1,5 +1,5 @@
 import LumiUI
-import ResumeKit
+import KitResume
 import SwiftUI
 
 private typealias L = ResumeDesignerLocalization

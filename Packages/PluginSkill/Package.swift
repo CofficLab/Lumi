@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../KitLLM"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderProject"),
@@ -34,7 +34,7 @@ let package = Package(
             dependencies: [
                 "PluginSkill",
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),

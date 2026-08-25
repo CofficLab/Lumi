@@ -9,7 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderIdleTime"),
         .package(path: "../ProviderStorage"),
@@ -25,7 +25,7 @@ let package = Package(
             name: "PluginProjectRAG",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),

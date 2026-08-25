@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import SuperLogKit
+import KitSuperLog
 
 /// 查询失败请求的 Agent 工具。
 struct GetHTTPFailedRequestsTool: SuperAgentTool, SuperLog {

@@ -3,7 +3,7 @@ import os
 import KernelCore
 import ProviderLogo
 import ProviderSettingView
-import SuperLogKit
+import KitSuperLog
 
 /// 设置视图管理器插件（KernelCore 生态）。
 ///

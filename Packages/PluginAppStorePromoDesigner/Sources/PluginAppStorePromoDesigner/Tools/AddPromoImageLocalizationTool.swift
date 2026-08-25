@@ -1,5 +1,5 @@
-import AgentToolKit
-import AppStorePromoKit
+import KitAgentTool
+import KitAppStorePromo
 import Foundation
 
 /// 通过复制现有语言版本，为一张促销图添加语言版本。

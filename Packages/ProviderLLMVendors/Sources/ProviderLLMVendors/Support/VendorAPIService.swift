@@ -1,5 +1,5 @@
 import Foundation
-import HttpKit
+import KitHttp
 import ProviderNetwork
 
 /// 新版供应商统一的 API 传输服务（精简自旧版 `LLMAPIService`）。
@@ -8,7 +8,7 @@ import ProviderNetwork
 /// - `sendChatRequest` / `sendJSON`：非流式 JSON，`.sortedKeys` 保证字节稳定（前缀缓存匹配）；
 /// - `sendStreamingChatRequest`：SSE 流式，逐事件回调原始 `Data`（含 `data:` 前缀），
 ///   由调用方（adapter 的 `parseStreamChunk`）自行解析；
-/// - 优先使用 `NetworkProviding`（支持 HTTP 交换记录），回退到 `HttpKit.HTTPClient`。
+/// - 优先使用 `NetworkProviding`（支持 HTTP 交换记录），回退到 `KitHttp.HTTPClient`。
 public final class VendorAPIService: @unchecked Sendable {
     private let client: HTTPClient
     private let networkProvider: (any NetworkProviding)?
@@ -16,7 +16,7 @@ public final class VendorAPIService: @unchecked Sendable {
     /// 初始化传输服务。
     ///
     /// - Parameters:
-    ///   - client: HttpKit 客户端（当 `networkProvider` 为 nil 时使用）
+    ///   - client: KitHttp 客户端（当 `networkProvider` 为 nil 时使用）
     ///   - networkProvider: 可选的网络提供者，优先使用以支持 HTTP 交换记录
     public init(client: HTTPClient = HTTPClient(), networkProvider: (any NetworkProviding)? = nil) {
         self.client = client

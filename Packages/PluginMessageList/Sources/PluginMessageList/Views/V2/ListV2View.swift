@@ -5,7 +5,7 @@ import os
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageSender
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// Message List V2 View (standard / 标准模式)

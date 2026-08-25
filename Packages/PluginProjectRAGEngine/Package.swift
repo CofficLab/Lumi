@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../ProviderIdleTime"),
         .package(path: "../ProviderProject"),
     ],
@@ -31,7 +31,7 @@ let package = Package(
             name: "ProjectRAGPlugin",
             dependencies: [
                 "CSQLite",
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
             ],

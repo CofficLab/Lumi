@@ -49,8 +49,8 @@ The manifest should directly depend only on:
 
 - `../KernelLumi`
 - `../LumiUI`
-- `../LumiLocalizationKit`
-- `../SuperLogKit`
+- `../LumiKitLocalization`
+- `../KitSuperLog`
 - `../EditorService`
 
 Define `FactoryConfiguration` with `plugins`, `enabledPluginIDs`, `initialContainerID`, `showsStatusBar`, and `showsActivityBar`. Add a validation method or throwing initializer for the tested invariants.

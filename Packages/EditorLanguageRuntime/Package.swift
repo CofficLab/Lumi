@@ -13,14 +13,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", from: "0.9.0"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
             name: "EditorLanguageRuntime",
             dependencies: [
                 .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
             ],
             path: "Sources",
             resources: [

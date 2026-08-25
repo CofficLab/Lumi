@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import LocalizationKit
+import KitLocalization
 
 /// 写入临时文件工具
 struct WriteTempFileTool: SuperAgentTool {

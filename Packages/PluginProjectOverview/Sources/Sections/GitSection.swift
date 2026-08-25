@@ -1,5 +1,5 @@
 import Foundation
-import ShellKit
+import KitShell
 
 /// Git 信息检测
 public enum GitSection {

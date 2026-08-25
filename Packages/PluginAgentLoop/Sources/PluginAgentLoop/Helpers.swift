@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Combine
 import Foundation
 import KitLLM
@@ -10,7 +10,7 @@ import ProviderLLMManager
 import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
-import SuperLogKit
+import KitSuperLog
 
 extension Message {
     var llmMessage: LLMMessage {
@@ -25,5 +25,5 @@ extension Message {
     }
 }
 
-// 消除 KitLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
-typealias AgentLoopToolCall = AgentToolKit.ToolCall
+// 消除 KitLLMVendors.ToolCall 与 KitAgentTool.ToolCall 的歧义
+typealias AgentLoopToolCall = KitAgentTool.ToolCall

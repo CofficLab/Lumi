@@ -6,7 +6,7 @@ Adapted for Lumi NettoPlugin
 
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 import Network
 import NetworkExtension
 

@@ -9,7 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
@@ -23,7 +23,7 @@ let package = Package(
             name: "PluginConversationStats",
             dependencies: [
                 "KernelCore",
-                "SuperLogKit",
+                "KitSuperLog",
                 "ProviderChatSection",
                 "ProviderConversation",
                 "ProviderMessage",

@@ -1,5 +1,5 @@
 import AppKit
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// 启动器应用条目

@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import KernelCore
 import os
 import ProviderDocsView
@@ -6,7 +6,7 @@ import ProviderLogo
 import ProviderMenuBar
 import ProviderStorage
 import ProviderToolManager
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// Caffeinate 插件（KernelCore 版本）

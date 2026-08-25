@@ -227,7 +227,7 @@ struct DockerImageListView: View {
 
 每个插件必须提供一个主入口文件，实现 `SuperPlugin` 协议。
 
-`SuperPlugin` 定义在 LumiApp；`SuperLog` 由 `Global.swift` 的 `@_exported import SuperLogKit` 提供，**无需**在插件文件中 `import SuperLogKit`（仅需 `import SwiftUI` 等框架）。
+`SuperPlugin` 定义在 LumiApp；`SuperLog` 由 `Global.swift` 的 `@_exported import KitSuperLog` 提供，**无需**在插件文件中 `import KitSuperLog`（仅需 `import SwiftUI` 等框架）。
 
 ```swift
 import Foundation

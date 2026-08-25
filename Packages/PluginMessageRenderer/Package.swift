@@ -10,15 +10,15 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../LumiUI"),
-        .package(path: "../LocalizationKit"),
-        .package(path: "../MarkdownKit"),
+        .package(path: "../KitLocalization"),
+        .package(path: "../KitMarkdown"),
     ],
     targets: [
         .target(
@@ -31,8 +31,8 @@ let package = Package(
                 "ProviderMessageSender",
                 "ProviderToolManager",
                 "LumiUI",
-                "LocalizationKit",
-                "MarkdownKit",
+                "KitLocalization",
+                "KitMarkdown",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),

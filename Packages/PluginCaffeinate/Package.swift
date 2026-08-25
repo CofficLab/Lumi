@@ -9,31 +9,31 @@ let package = Package(
         .library(name: "PluginCaffeinate", targets: ["PluginCaffeinate"]),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderLogo"),
         .package(path: "../ProviderMenuBar"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "PluginCaffeinate",
             dependencies: [
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "LumiUI",
                 "ProviderDocsView",
                 "ProviderLogo",
                 "ProviderMenuBar",
                 "ProviderStorage",
                 "ProviderToolManager",
-                "SuperLogKit",
+                "KitSuperLog",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
@@ -41,7 +41,7 @@ let package = Package(
             name: "PluginCaffeinateTests",
             dependencies: [
                 "PluginCaffeinate",
-                "AgentToolKit",
+                "KitAgentTool",
             ]
         ),
     ]

@@ -15,13 +15,13 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
     ],
     targets: [
         .target(
             name: "ProviderToolManager",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
             ],
             path: "Sources/ProviderToolManager"
         ),

@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// KernelCore adapters for the stable database Agent tool contract.

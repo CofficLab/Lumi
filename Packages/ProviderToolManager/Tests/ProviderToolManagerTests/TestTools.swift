@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// 测试用最小工具：返回固定内容，可配置风险等级与执行失败。

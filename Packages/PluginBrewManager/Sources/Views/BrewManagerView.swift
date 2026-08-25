@@ -1,7 +1,7 @@
 import os
 import SwiftUI
 import LumiUI
-import SuperLogKit
+import KitSuperLog
 
 struct BrewManagerView: View {
     @StateObject private var viewModel = BrewManagerViewModel()

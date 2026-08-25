@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import KernelCore
-import AgentToolKit
+import KitAgentTool
 import ProviderConversation
 import ProviderMessage
 import KitLLM

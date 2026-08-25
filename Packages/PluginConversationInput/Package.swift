@@ -10,24 +10,24 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderMessageSender"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "PluginConversationInput",
             dependencies: [
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "LumiUI",
                 "ProviderChatSection",
                 "ProviderConversationInput",
                 "ProviderMessageSender",
-                "SuperLogKit",
+                "KitSuperLog",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),

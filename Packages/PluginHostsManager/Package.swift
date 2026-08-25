@@ -10,24 +10,24 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "PluginHostsManager",
             dependencies: [
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "LumiUI",
                 "ProviderActivityBar",
                 "ProviderContentView",
                 "ProviderDocsView",
-                "SuperLogKit",
+                "KitSuperLog",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),

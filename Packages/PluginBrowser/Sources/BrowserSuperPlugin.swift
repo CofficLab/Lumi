@@ -1,8 +1,8 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 import KernelCore
 import ProviderToolManager
-import ShellKit
+import KitShell
 
 @MainActor
 public final class BrowserSuperPlugin: SuperPlugin {

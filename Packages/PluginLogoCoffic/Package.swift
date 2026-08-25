@@ -15,18 +15,18 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../ProviderLogo"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "PluginLogoCoffic",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "ProviderLogo", package: "ProviderLogo"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: ".",
             exclude: [

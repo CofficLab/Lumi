@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// 导出思维导图为 Markdown 大纲或 JSON 文本。

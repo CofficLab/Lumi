@@ -10,8 +10,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../SuperLogKit"),
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitSuperLog"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
@@ -25,7 +25,7 @@ let package = Package(
             name: "PluginAskUser",
             dependencies: [
                 "KernelCore",
-                "AgentToolKit",
+                "KitAgentTool",
                 "ProviderConversation",
                 "ProviderMessage",
                 "ProviderAgentLoop",
@@ -38,7 +38,7 @@ let package = Package(
             dependencies: [
                 "PluginAskUser",
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "KitLLM", package: "KitLLM"),
@@ -46,7 +46,7 @@ let package = Package(
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
             ],
             path: "Tests/PluginAskUserTests"
         ),

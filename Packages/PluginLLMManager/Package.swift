@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../LumiUI"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
@@ -31,7 +31,7 @@ let package = Package(
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: "Sources/PluginLLMManager"
         ),

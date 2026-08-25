@@ -3,7 +3,7 @@ import Foundation
 import LumiUI
 import os
 import ProviderConversation
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// Message List View (入口)

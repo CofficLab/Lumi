@@ -16,8 +16,8 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../LumiUI"),
-        .package(path: "../SuperLogKit"),
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitSuperLog"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../ProviderNetwork"),
         .package(path: "../ProviderToolManager"),
     ],
@@ -27,8 +27,8 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderNetwork", package: "ProviderNetwork"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ],

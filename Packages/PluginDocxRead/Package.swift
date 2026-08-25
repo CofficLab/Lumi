@@ -9,21 +9,21 @@ let package = Package(
         .library(name: "PluginDocxRead", targets: ["PluginDocxRead"]),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "PluginDocxRead",
             dependencies: [
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "ProviderToolManager",
-                "SuperLogKit",
+                "KitSuperLog",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),

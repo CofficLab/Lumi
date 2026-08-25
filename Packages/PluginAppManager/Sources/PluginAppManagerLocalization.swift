@@ -1,5 +1,5 @@
 import Foundation
-import LocalizationKit
+import KitLocalization
 
 enum PluginAppManagerLocalization {
     static let table = "Localizable"

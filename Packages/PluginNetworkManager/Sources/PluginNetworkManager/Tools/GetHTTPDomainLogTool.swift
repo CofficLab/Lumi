@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import SuperLogKit
+import KitSuperLog
 
 /// 查询特定域名或路径的 HTTP 日志的 Agent 工具。
 struct GetHTTPDomainLogTool: SuperAgentTool, SuperLog {

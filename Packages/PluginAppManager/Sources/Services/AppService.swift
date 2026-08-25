@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// 应用服务

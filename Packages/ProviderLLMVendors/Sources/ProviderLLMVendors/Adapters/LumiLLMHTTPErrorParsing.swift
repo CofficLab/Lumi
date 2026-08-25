@@ -1,5 +1,5 @@
 import Foundation
-import HttpKit
+import KitHttp
 
 /// HTTP 错误解析工具
 public enum LumiLLMHTTPErrorParsing {

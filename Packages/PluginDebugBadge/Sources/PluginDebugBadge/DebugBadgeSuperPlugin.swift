@@ -3,7 +3,7 @@ import KernelCore
 import LumiUI
 import os
 import ProviderToolbar
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 // MARK: - Debug Badge SuperPlugin

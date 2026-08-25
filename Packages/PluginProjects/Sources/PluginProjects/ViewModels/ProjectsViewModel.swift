@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// 项目视图模型，持有状态并暴露 Intent 给视图。
 ///

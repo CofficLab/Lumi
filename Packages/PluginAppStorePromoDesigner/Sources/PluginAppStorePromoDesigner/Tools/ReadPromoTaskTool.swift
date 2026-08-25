@@ -1,5 +1,5 @@
-import AgentToolKit
-import AppStorePromoKit
+import KitAgentTool
+import KitAppStorePromo
 import Foundation
 
 /// 读取任务元数据、图片顺序以及可用的精确 App Store 展示尺寸。

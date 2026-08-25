@@ -8,7 +8,7 @@ import EditorTextView
 import EditorLanguageRuntime
 import LanguageServerProtocol
 import UniformTypeIdentifiers
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// 编辑器状态管理器

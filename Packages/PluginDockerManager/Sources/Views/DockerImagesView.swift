@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import SuperLogKit
+import KitSuperLog
 
 struct DockerImagesView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme

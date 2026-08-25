@@ -10,26 +10,26 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderCommand"),
         .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderStorage"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "PluginChatScreenshot",
             dependencies: [
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "LumiUI",
                 "ProviderChatSection",
                 "ProviderCommand",
                 "ProviderConversationInput",
                 "ProviderStorage",
-                "SuperLogKit",
+                "KitSuperLog",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),

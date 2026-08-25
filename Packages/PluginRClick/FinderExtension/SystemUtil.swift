@@ -1,6 +1,6 @@
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 // MARK: - System Utilities
 

@@ -8,13 +8,13 @@ let package = Package(
         .library(name: "ProviderConversationInput", targets: ["ProviderConversationInput"]),
     ],
     dependencies: [
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "ProviderConversationInput",
             dependencies: [
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: "Sources/ProviderConversationInput"),
     ]

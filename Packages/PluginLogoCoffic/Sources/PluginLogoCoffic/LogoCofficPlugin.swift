@@ -1,7 +1,7 @@
 import KernelCore
 import os
 import ProviderLogo
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// Coffic Logo 插件

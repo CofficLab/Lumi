@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 import Testing
-import AgentToolKit
+import KitAgentTool
 import ProviderMessage
 import KitLLM
 import ProviderConversation
@@ -14,8 +14,8 @@ import ProviderMessageStreaming
 @MainActor
 struct AgentLoopFullLoopTests {
 
-    // 消除 KitLLMVendors.ToolCall 与 AgentToolKit.ToolCall 的歧义
-    private typealias ToolCall = AgentToolKit.ToolCall
+    // 消除 KitLLMVendors.ToolCall 与 KitAgentTool.ToolCall 的歧义
+    private typealias ToolCall = KitAgentTool.ToolCall
 
     // MARK: - Test Doubles
 

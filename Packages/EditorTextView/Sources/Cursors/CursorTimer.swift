@@ -7,7 +7,7 @@
 
 import Foundation
 import AppKit
-import SuperLogKit
+import KitSuperLog
 import os
 
 class CursorTimer: SuperLog {

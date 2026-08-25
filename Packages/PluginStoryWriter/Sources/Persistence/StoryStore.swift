@@ -1,6 +1,6 @@
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// Persistent storage for story writer data.
 ///

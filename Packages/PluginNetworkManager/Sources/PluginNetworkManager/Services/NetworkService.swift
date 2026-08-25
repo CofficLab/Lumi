@@ -1,10 +1,10 @@
 import Foundation
-import SuperLogKit
-import HttpKit
+import KitSuperLog
+import KitHttp
 import SystemConfiguration
 import Darwin
 import Combine
-import ShellKit
+import KitShell
 
 @MainActor
 public class NetworkService: SuperLog, ObservableObject {
@@ -243,7 +243,7 @@ public class NetworkService: SuperLog, ObservableObject {
 
         let services = domesticServices + internationalServices
 
-        // 使用 HttpKit 的 ephemeral 配置客户端
+        // 使用 KitHttp 的 ephemeral 配置客户端
         let client = HTTPClient(timeoutIntervalForRequest: 2, timeoutIntervalForResource: 2) { config in
             config.urlCache = nil
             config.requestCachePolicy = .reloadIgnoringLocalCacheData

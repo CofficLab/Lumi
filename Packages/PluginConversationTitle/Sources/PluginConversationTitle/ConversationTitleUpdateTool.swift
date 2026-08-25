@@ -1,5 +1,5 @@
 import Foundation
-import AgentToolKit
+import KitAgentTool
 import ProviderConversation
 
 /// 标题更新 Agent 工具：让 LLM 可主动更新当前会话标题。

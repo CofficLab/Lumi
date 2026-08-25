@@ -9,11 +9,11 @@ let package = Package(
         .library(name: "PluginNetworkManager", targets: ["PluginNetworkManager"]),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
-        .package(path: "../HttpKit"),
+        .package(path: "../KitAgentTool"),
+        .package(path: "../KitHttp"),
         .package(path: "../KernelCore"),
         .package(path: "../KitLLM"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
@@ -23,18 +23,18 @@ let package = Package(
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../ShellKit"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitShell"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "PluginNetworkManager",
             dependencies: [
-                "AgentToolKit",
-                "HttpKit",
+                "KitAgentTool",
+                "KitHttp",
                 "KernelCore",
                 "KitLLM",
-                "LocalizationKit",
+                "KitLocalization",
                 "LumiUI",
                 "ProviderActivityBar",
                 "ProviderContentView",
@@ -44,8 +44,8 @@ let package = Package(
                 "ProviderSettingView",
                 "ProviderStorage",
                 "ProviderToolManager",
-                "ShellKit",
-                "SuperLogKit",
+                "KitShell",
+                "KitSuperLog",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
@@ -53,7 +53,7 @@ let package = Package(
             name: "PluginNetworkManagerTests",
             dependencies: [
                 "PluginNetworkManager",
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
                 "ProviderToolManager",
             ]

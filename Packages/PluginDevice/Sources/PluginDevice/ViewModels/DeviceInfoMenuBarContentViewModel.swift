@@ -1,7 +1,7 @@
 import AppKit
 import Combine
 import os
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// 菜单栏 CPU/内存指标的共享 ViewModel。

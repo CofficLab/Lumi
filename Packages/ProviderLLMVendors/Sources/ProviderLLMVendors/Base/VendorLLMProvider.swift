@@ -2,7 +2,7 @@ import Foundation
 import os
 import ProviderMessage
 import ProviderNetwork
-import SuperLogKit
+import KitSuperLog
 
 /// 新版内建 LLM 供应商基类（KernelCore 生态，不依赖 KernelLumi）。
 ///

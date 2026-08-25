@@ -1,5 +1,5 @@
 import Foundation
-import HttpKit
+import KitHttp
 
 public struct OpenAICompatibleProviderAdapter: Sendable {
     public let configuration: OpenAICompatibleProviderConfiguration

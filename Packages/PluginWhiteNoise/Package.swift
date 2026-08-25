@@ -15,26 +15,26 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderRailView"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "PluginWhiteNoise",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: "Sources/PluginWhiteNoise",
             resources: [

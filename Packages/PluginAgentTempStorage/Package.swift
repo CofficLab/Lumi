@@ -9,27 +9,27 @@ let package = Package(
         .library(name: "PluginAgentTempStorage", targets: ["PluginAgentTempStorage"]),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .testTarget(
             name: "PluginAgentTempStorageTests",
-            dependencies: ["PluginAgentTempStorage", "AgentToolKit"]
+            dependencies: ["PluginAgentTempStorage", "KitAgentTool"]
         ),
         .target(
             name: "PluginAgentTempStorage",
             dependencies: [
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "ProviderStorage",
                 "ProviderToolManager",
-                "SuperLogKit",
+                "KitSuperLog",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),

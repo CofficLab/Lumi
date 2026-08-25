@@ -6,7 +6,7 @@ let package = Package(
     products: [.library(name: "PluginConversationList", targets: ["PluginConversationList"])],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderRailView"),
@@ -14,12 +14,12 @@ let package = Package(
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderAgentLoop"),
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../LumiUI"),
     ],
     targets: [.target(name: "PluginConversationList", dependencies: [
         .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
         .product(name: "ProviderConversation", package: "ProviderConversation"),
         .product(name: "ProviderChatSection", package: "ProviderChatSection"),
         .product(name: "ProviderRailView", package: "ProviderRailView"),
@@ -27,7 +27,7 @@ let package = Package(
         .product(name: "ProviderToolbar", package: "ProviderToolbar"),
         .product(name: "ProviderToolManager", package: "ProviderToolManager"),
         .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
-        .product(name: "AgentToolKit", package: "AgentToolKit"),
+        .product(name: "KitAgentTool", package: "KitAgentTool"),
         .product(name: "LumiUI", package: "LumiUI"),
     ])]
 )

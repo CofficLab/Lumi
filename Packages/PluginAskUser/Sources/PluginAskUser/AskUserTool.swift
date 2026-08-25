@@ -1,5 +1,5 @@
 import Foundation
-import AgentToolKit
+import KitAgentTool
 import ProviderConversation
 
 /// 询问用户工具（KernelCore 体系）。

@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 import os
 import PDFKit
-import SuperLogKit
+import KitSuperLog
 
 #if canImport(AppKit)
 import AppKit

@@ -1,4 +1,4 @@
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 public struct SidebarView: View {

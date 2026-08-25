@@ -18,9 +18,9 @@
 
 ## 一、高严重度（建议立即修复）
 
-### H1. ShellKit：readabilityHandler 未清除时调用 `readDataToEndOfFile` → ObjC 异常崩溃
+### H1. KitShell：readabilityHandler 未清除时调用 `readDataToEndOfFile` → ObjC 异常崩溃
 
-**位置**：`Packages/ShellKit/Sources/ShellExecutor.swift:430-447`
+**位置**：`Packages/KitShell/Sources/ShellExecutor.swift:430-447`
 
 ```swift
 process.terminationHandler = { [stdoutPipe, stderrPipe] _ in
@@ -67,9 +67,9 @@ catch { throw error }           // 未清理 self.process / self.stdinPipe
 
 ---
 
-### H4. WebServerKit：启动竞态导致 `start()` 永久挂起
+### H4. KitWebServer：启动竞态导致 `start()` 永久挂起
 
-**位置**：`Packages/WebServerKit/Sources/WebServerKit/LumiWebServer.swift:174-199`
+**位置**：`Packages/KitWebServer/Sources/KitWebServer/LumiWebServer.swift:174-199`
 
 ```swift
 onServerRunning: { channel in
@@ -106,9 +106,9 @@ container = (try? ModelContainer(for: AgentTurnRecordModel.self)) ?? (try! Model
 
 ---
 
-### H6. DownloadKit：任务取消时底层 URLSession 下载任务并未取消
+### H6. KitDownload：任务取消时底层 URLSession 下载任务并未取消
 
-**位置**：`Packages/DownloadKit/Sources/HTTPClient.swift:113-122`
+**位置**：`Packages/KitDownload/Sources/HTTPClient.swift:113-122`
 
 ```swift
 try await withTaskCancellationHandler {
@@ -293,9 +293,9 @@ nonisolated(unsafe) public static var databaseDirectoryProvider: @Sendable () ->
 
 ---
 
-### M7. DownloadKit：续传以磁盘文件实际末尾拼接，忽略 existingBytes → 文件损坏
+### M7. KitDownload：续传以磁盘文件实际末尾拼接，忽略 existingBytes → 文件损坏
 
-**位置**：`Packages/DownloadKit/Sources/HTTPClient.swift:119, 144-146, 199-210`
+**位置**：`Packages/KitDownload/Sources/HTTPClient.swift:119, 144-146, 199-210`
 
 **问题**：磁盘上部分文件大小与调用方传入的 `existingBytes` 不一致时（写盘失败/外部截断/路径复用），Range 请求从 `existingBytes` 开始下载，数据却追加到磁盘真实末尾——多写或跳写字节，文件损坏且无报错。另外逐字节 `for try await byte` 迭代性能极差。
 
@@ -401,9 +401,9 @@ process.arguments = ["-l", "-c", "which \(command)"]
 
 ---
 
-### M17. DownloadKit ResumeHandler：非原子"删旧再移动" + resume data key 不一致
+### M17. KitDownload ResumeHandler：非原子"删旧再移动" + resume data key 不一致
 
-**位置**：`Packages/DownloadKit/Sources/ResumeHandler.swift:82-100`（字典定义在 :6）
+**位置**：`Packages/KitDownload/Sources/ResumeHandler.swift:82-100`（字典定义在 :6）
 
 **问题**：先删最终文件再移动，移动失败（跨卷 EXDEV 等）时两头全丢；`removeResumeData(for: finalURL)` 与 `saveResumeData`（以下载 URL 为 key）key 不一致，resume data 永远清不掉，内存字典只增不减（resume data 可达数百 KB）。
 
@@ -411,9 +411,9 @@ process.arguments = ["-l", "-c", "which \(command)"]
 
 ---
 
-### M18. KeychainKit：用 Thread.sleep 做重试退避，可能阻塞主线程
+### M18. KitKeychain：用 Thread.sleep 做重试退避，可能阻塞主线程
 
-**位置**：`Packages/KeychainKit/Sources/KeychainStore.swift:22-24, 68-76`
+**位置**：`Packages/KitKeychain/Sources/KeychainStore.swift:22-24, 68-76`
 
 **问题**：`string(forKey:)` 是同步 API 常在主线程调用（读 API key），keychaind 瞬时不可用时累计阻塞主线程 350ms+。`static let shared = KeychainStore(service: "")` 依赖文档约定，误用时静默写空 service。
 
@@ -475,7 +475,7 @@ process.arguments = ["-l", "-c", "which \(command)"]
 - `ModelUsageStats.swift:225` 的 `first!...last!`：上游有 guard，实际风险极低。
 - 各 `rootPath + "/"` 路径前缀判断均处理了 `"/"` 特例，逻辑正确。
 - `EditorSource` 各通知观察者（GutterView/MinimapView/TextView 等）均在 `deinit` 中 remove，无泄漏。
-- `Config/*.xcconfig` 未发现硬编码密钥；`HttpKit/HTTPClient.swift` 的超时、SSE 解析、敏感头脱敏实现良好；`ConversationService` 落盘使用了 `.atomic`；SQL 访问普遍使用绑定参数，未发现注入。
+- `Config/*.xcconfig` 未发现硬编码密钥；`KitHttp/HTTPClient.swift` 的超时、SSE 解析、敏感头脱敏实现良好；`ConversationService` 落盘使用了 `.atomic`；SQL 访问普遍使用绑定参数，未发现注入。
 
 ---
 

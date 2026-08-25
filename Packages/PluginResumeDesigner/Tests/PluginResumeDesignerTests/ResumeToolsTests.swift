@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import ResumeKit
+import KitResume
 import Testing
 @testable import PluginResumeDesigner
 

@@ -1,5 +1,5 @@
 import Foundation
-import ShellKit
+import KitShell
 
 /// Git LFS（大文件存储）相关服务。
 ///

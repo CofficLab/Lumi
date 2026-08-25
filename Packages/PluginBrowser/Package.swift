@@ -15,22 +15,22 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../LocalizationKit"),
-        .package(path: "../ShellKit"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitLocalization"),
+        .package(path: "../KitShell"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "BrowserPlugin",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
-                .product(name: "ShellKit", package: "ShellKit"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "KitShell", package: "KitShell"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: "Sources",
             resources: [

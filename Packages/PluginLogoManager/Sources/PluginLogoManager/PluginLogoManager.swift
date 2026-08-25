@@ -2,7 +2,7 @@ import Foundation
 import KernelCore
 import os
 import ProviderLogo
-import SuperLogKit
+import KitSuperLog
 
 /// Logo 管理器插件（KernelCore 生态）。
 ///

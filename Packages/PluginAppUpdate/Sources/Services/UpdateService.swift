@@ -1,7 +1,7 @@
 import AppKit
 import ProviderNetwork
 import Sparkle
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// Core update service integrating Sparkle.

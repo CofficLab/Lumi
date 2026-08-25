@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// `ConversationManaging` 的内存默认实现。
 ///

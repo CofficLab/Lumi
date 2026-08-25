@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import ShellKit
+import KitShell
 
 /// 执行终端命令（复刻旧版 ToolManagerPlugin 的 ShellTool）。
 public struct ShellTool: SuperAgentTool, @unchecked Sendable {

@@ -1,6 +1,6 @@
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// View model for the Story Writer plugin.

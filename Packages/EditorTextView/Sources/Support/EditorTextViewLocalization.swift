@@ -1,10 +1,10 @@
 import Foundation
-import LocalizationKit
+import KitLocalization
 
 /// Runtime localization for EditorTextView bundle.
 ///
 /// Provides localization lookup scoped to EditorTextView by delegating to
-/// `LocalizationKit`. New code should prefer `LumiLocalization.string(...)`
+/// `KitLocalization`. New code should prefer `LumiLocalization.string(...)`
 /// directly; this wrapper exists for backward compatibility with existing
 /// EditorTextView call sites.
 public enum EditorTextViewLocalization {

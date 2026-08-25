@@ -3,7 +3,7 @@ import KernelCore
 import ProviderTheme
 import ProviderWebServer
 import Testing
-import WebServerKit
+import KitWebServer
 @testable import PluginWebServer
 
 @MainActor

@@ -10,8 +10,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../SuperLogKit"),
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitSuperLog"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderLLMManager"),
@@ -24,7 +24,7 @@ let package = Package(
             name: "PluginConversationTitle",
             dependencies: [
                 "KernelCore",
-                "AgentToolKit",
+                "KitAgentTool",
                 "ProviderConversation",
                 "ProviderMessage",
                 "ProviderLLMManager",

@@ -1,6 +1,6 @@
 import LumiUI
 import SwiftUI
-import LocalizationKit
+import KitLocalization
 
 /// 防休眠插件的菜单栏弹窗视图
 struct CaffeinateMenuBarPopupView: View {

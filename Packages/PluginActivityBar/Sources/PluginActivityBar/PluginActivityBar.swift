@@ -3,7 +3,7 @@ import Foundation
 import KernelCore
 import os
 import ProviderActivityBar
-import SuperLogKit
+import KitSuperLog
 
 /// ActivityBar 自定义插件（KernelCore 生态）。
 ///

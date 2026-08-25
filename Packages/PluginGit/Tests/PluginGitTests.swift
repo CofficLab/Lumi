@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 import EditorContracts
 import KernelCore
-import AgentToolKit
+import KitAgentTool
 import ProviderToolManager
 @testable import GitPlugin
 

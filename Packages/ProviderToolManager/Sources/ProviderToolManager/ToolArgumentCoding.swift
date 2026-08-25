@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// 工具参数编解码：在 `ToolCall.arguments`（JSON 字符串）与

@@ -9,23 +9,23 @@ let package = Package(
         .library(name: "PluginWebSearch", targets: ["PluginWebSearch"]),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../ProviderNetwork"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "PluginWebSearch",
             dependencies: [
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "ProviderNetwork",
                 "ProviderToolManager",
-                "SuperLogKit",
+                "KitSuperLog",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
@@ -33,7 +33,7 @@ let package = Package(
             name: "PluginWebSearchTests",
             dependencies: [
                 "PluginWebSearch",
-                "AgentToolKit",
+                "KitAgentTool",
             ]
         ),
     ]

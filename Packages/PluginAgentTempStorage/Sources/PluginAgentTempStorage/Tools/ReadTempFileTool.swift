@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import LocalizationKit
+import KitLocalization
 
 /// 读取临时文件工具
 struct ReadTempFileTool: SuperAgentTool {

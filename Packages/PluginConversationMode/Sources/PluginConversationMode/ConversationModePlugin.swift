@@ -3,7 +3,7 @@ import KernelCore
 import os
 import ProviderChatSection
 import ProviderConversation
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// 会话行为控制插件：自动化级别切换（对话 / 构建 / 自主）。

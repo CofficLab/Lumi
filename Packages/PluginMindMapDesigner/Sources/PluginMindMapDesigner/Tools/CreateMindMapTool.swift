@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// 新建一张思维导图（含根节点文本、标题、布局方向）。

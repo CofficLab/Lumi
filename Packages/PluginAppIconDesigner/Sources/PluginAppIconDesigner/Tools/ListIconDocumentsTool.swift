@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// 列出插件管理的图标文档，跨 project / app 两个作用域。

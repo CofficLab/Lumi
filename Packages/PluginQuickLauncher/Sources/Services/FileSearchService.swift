@@ -1,6 +1,6 @@
 @preconcurrency import ObjectiveC
 import AppKit
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// Spotlight 文件搜索结果条目

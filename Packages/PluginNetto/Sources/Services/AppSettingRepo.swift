@@ -1,6 +1,6 @@
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 public class AppSettingRepo: ObservableObject, SuperLog, @unchecked Sendable {
     public static let shared = AppSettingRepo()

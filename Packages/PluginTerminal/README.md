@@ -1,6 +1,6 @@
 # TerminalPlugin
 
-Native terminal plugin for Lumi. Provides a developer tool view with interactive terminal tabs powered by SwiftTerm and TerminalCoreKit.
+Native terminal plugin for Lumi. Provides a developer tool view with interactive terminal tabs powered by SwiftTerm and KitTerminalCore.
 
 ## Features
 
@@ -24,8 +24,8 @@ Native terminal plugin for Lumi. Provides a developer tool view with interactive
 |---------|-------------|
 | [LumiCoreKit](../../Packages/LumiCoreKit) | Plugin protocol and project context types |
 | [LumiUI](../../Packages/LumiUI) | Shared Lumi UI components and theming |
-| [SuperLogKit](../../Packages/SuperLogKit) | Logging framework |
-| [TerminalCoreKit](../../Packages/TerminalCoreKit) | Terminal session and tab view model logic |
+| [KitSuperLog](../../Packages/KitSuperLog) | Logging framework |
+| [KitTerminalCore](../../Packages/KitTerminalCore) | Terminal session and tab view model logic |
 | [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) | Native terminal emulator |
 
 ## Plugin Contributions

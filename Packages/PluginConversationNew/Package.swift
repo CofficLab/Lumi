@@ -6,7 +6,7 @@ let package = Package(
     products: [.library(name: "PluginConversationNew", targets: ["PluginConversationNew"])],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderWorkspace"),
@@ -14,7 +14,7 @@ let package = Package(
     ],
     targets: [.target(name: "PluginConversationNew", dependencies: [
         .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
         .product(name: "ProviderConversation", package: "ProviderConversation"),
         .product(name: "ProviderToolbar", package: "ProviderToolbar"),
         .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),

@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import SuperLogKit
+import KitSuperLog
 
 /// 查询特定 URL 的 HTTP 日志详情的 Agent 工具。
 struct GetHTTPExchangeDetailTool: SuperAgentTool, SuperLog {

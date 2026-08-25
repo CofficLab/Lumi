@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 import SwiftUI
-import SuperLogKit
+import KitSuperLog
 
 protocol BrewManagerServicing: Sendable {
     func checkInstalled() async -> Bool

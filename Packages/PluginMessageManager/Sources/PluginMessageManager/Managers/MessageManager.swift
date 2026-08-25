@@ -3,7 +3,7 @@ import os
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
-import SuperLogKit
+import KitSuperLog
 
 /// Message Manager Service
 @MainActor

@@ -1,5 +1,5 @@
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// v4 历史项目迁移服务

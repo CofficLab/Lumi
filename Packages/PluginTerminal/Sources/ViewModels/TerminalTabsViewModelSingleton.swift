@@ -1,4 +1,4 @@
-import TerminalCoreKit
+import KitTerminalCore
 
 @MainActor
 public enum TerminalPluginBridge {
@@ -7,7 +7,7 @@ public enum TerminalPluginBridge {
 
 /// TerminalPlugin 的 ViewModel 单例扩展
 ///
-/// TerminalCoreKit 的 TerminalTabsViewModel 不提供单例，
+/// KitTerminalCore 的 TerminalTabsViewModel 不提供单例，
 /// 由 TerminalPlugin 在 App 层创建自己的共享实例。
 extension TerminalTabsViewModel {
     /// TerminalPlugin 使用的全局单例

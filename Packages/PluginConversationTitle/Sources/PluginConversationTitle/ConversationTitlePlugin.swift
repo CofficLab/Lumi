@@ -1,12 +1,12 @@
 import os
 import Foundation
 import KernelCore
-import SuperLogKit
+import KitSuperLog
 import ProviderConversation
 import ProviderMessage
 import ProviderLLMManager
 import ProviderToolManager
-import AgentToolKit
+import KitAgentTool
 
 /// 对话标题插件：自动生成标题 + 标题更新 Agent 工具。
 ///

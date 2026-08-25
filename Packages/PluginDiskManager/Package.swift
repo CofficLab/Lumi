@@ -9,31 +9,31 @@ let package = Package(
         .library(name: "PluginDiskManager", targets: ["PluginDiskManager"]),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "PluginDiskManager",
             dependencies: [
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "LumiUI",
                 "ProviderActivityBar",
                 "ProviderContentView",
                 "ProviderDocsView",
                 "ProviderRailView",
                 "ProviderToolManager",
-                "SuperLogKit",
+                "KitSuperLog",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
@@ -41,7 +41,7 @@ let package = Package(
             name: "PluginDiskManagerTests",
             dependencies: [
                 "PluginDiskManager",
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
                 "ProviderToolManager",
             ]

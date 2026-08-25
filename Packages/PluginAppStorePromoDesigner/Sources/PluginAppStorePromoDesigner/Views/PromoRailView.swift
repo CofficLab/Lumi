@@ -1,4 +1,4 @@
-import AppStorePromoKit
+import KitAppStorePromo
 import LumiUI
 import SwiftUI
 

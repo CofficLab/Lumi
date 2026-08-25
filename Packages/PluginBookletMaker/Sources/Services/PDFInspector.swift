@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 // MARK: - PDF Inspector
 

@@ -1,7 +1,7 @@
 import Foundation
 import os
 import ProviderLogo
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// `LogoProviding` 的自研实现：持有 Logo 项字典与顺序，按 `order` 降序对外暴露。

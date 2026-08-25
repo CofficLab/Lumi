@@ -1,7 +1,7 @@
 import os
 import Foundation
 import KernelCore
-import SuperLogKit
+import KitSuperLog
 import ProviderStorage
 import ProviderProject
 import ProviderToolManager

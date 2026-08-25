@@ -1,7 +1,7 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 import ProviderNetwork
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// 网页搜索工具（KernelCore 体系）

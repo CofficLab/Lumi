@@ -1,5 +1,5 @@
 import Foundation
-import HttpKit
+import KitHttp
 
 /// Anthropic 兼容供应商适配器
 ///

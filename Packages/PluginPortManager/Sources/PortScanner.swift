@@ -1,8 +1,8 @@
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 import LumiUI
-import ShellKit
+import KitShell
 import os
 
 public struct PortInfo: Identifiable, Hashable, SuperLog {

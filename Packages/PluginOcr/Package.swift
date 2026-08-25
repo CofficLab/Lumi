@@ -9,9 +9,9 @@ let package = Package(
         .library(name: "PluginOcr", targets: ["PluginOcr"]),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../KernelCore"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderToolManager"),
@@ -20,7 +20,7 @@ let package = Package(
         .target(
             name: "PluginOcr",
             dependencies: [
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
                 "LumiUI",
                 "ProviderDocsView",
@@ -31,7 +31,7 @@ let package = Package(
             name: "PluginOcrTests",
             dependencies: [
                 "PluginOcr",
-                "AgentToolKit",
+                "KitAgentTool",
             ]
         ),
     ]

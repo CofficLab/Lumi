@@ -1,19 +1,19 @@
-import AgentToolKit
+import KitAgentTool
 import KernelCore
-import LocalizationKit
+import KitLocalization
 import LumiUI
-import MarkdownKit
+import KitMarkdown
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageSender
 import ProviderToolManager
-import AgentToolKit
+import KitAgentTool
 import Foundation
 import ProviderMessage
 
 extension MessageToolCall {
-    /// Bridges `MessageToolCall` to AgentToolKit's registry-facing `ToolCall` model.
+    /// Bridges `MessageToolCall` to KitAgentTool's registry-facing `ToolCall` model.
     var agentToolCall: ToolCall {
         ToolCall(
             id: id,
@@ -38,7 +38,7 @@ extension MessageToolCall {
 }
 
 extension MessageToolInteractionState {
-    /// 桥接到 AgentToolKit 的 `ToolCallInteractionState`。
+    /// 桥接到 KitAgentTool 的 `ToolCallInteractionState`。
     var agentInteractionState: ToolCallInteractionState {
         switch self {
         case .waiting: return .waiting
@@ -48,7 +48,7 @@ extension MessageToolInteractionState {
 }
 
 extension MessageToolResult {
-    /// 反向桥接：AgentToolKit 的 `ToolCallResult` → 渲染层 `MessageToolResult`。
+    /// 反向桥接：KitAgentTool 的 `ToolCallResult` → 渲染层 `MessageToolResult`。
     init?(toolCallResult: ToolCallResult) {
         self.init(
             content: toolCallResult.content,

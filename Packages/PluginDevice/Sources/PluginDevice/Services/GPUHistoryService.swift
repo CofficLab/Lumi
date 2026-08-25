@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// GPU history service with high-resolution (2s) and long-term (1m) storage.
 @MainActor

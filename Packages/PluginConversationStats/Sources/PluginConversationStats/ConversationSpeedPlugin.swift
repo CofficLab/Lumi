@@ -3,7 +3,7 @@ import KernelCore
 import ProviderChatSection
 import ProviderConversation
 import ProviderMessage
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// 会话流式速度插件

@@ -17,7 +17,7 @@ let package = Package(
     dependencies: [
         .package(path: "../LumiUI"),
         .package(path: "../ProviderWorkspace"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
@@ -25,7 +25,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: "Sources/ProviderRootView"
         ),

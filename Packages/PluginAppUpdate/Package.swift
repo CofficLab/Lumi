@@ -16,9 +16,9 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../ProviderNetwork"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.5.0"),
     ],
     targets: [
@@ -27,9 +27,9 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderNetwork", package: "ProviderNetwork"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "Sparkle", package: "Sparkle"),
             ],
             path: "Sources",

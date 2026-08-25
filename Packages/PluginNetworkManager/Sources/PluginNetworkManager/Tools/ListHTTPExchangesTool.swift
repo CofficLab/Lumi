@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import SuperLogKit
+import KitSuperLog
 
 /// 查询最近 HTTP 交换记录的 Agent 工具。
 ///

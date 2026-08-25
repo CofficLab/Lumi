@@ -1,5 +1,5 @@
 import Foundation
-import LocalizationKit
+import KitLocalization
 
 /// Runtime localization for PluginChatScreenshot bundle.
 enum LumiPluginLocalization {

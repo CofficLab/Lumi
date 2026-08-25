@@ -1,4 +1,4 @@
-import AppStorePromoKit
+import KitAppStorePromo
 import Foundation
 
 /// 旧版 `Scope` 的兼容别名：KernelCore 版本中定义在 `PromoDesignerRuntime` 中。

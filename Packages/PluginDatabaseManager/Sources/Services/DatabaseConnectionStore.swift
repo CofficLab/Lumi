@@ -1,11 +1,11 @@
 import Foundation
-import KeychainKit
+import KitKeychain
 
 /// 数据库连接配置的持久化存储。
 ///
 /// 存储策略（与同类数据库管理工具一致）：
 /// - 配置本体（**不含密码**）以 JSON 存入 `UserDefaults`；
-/// - 密码按连接 ID 单独存入系统 Keychain（KeychainKit），避免明文落盘；
+/// - 密码按连接 ID 单独存入系统 Keychain（KitKeychain），避免明文落盘；
 /// - 上次成功连接的配置 ID 存入 `UserDefaults`，下次打开时自动重连。
 enum DatabaseConnectionStore {
     private static let configsKey = "DatabaseManager.savedConfigs"

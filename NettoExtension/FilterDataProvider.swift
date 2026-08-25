@@ -1,6 +1,6 @@
 import NetworkExtension
 import os
-import SuperLogKit
+import KitSuperLog
 import NettoPlugin
 
 class FilterDataProvider: NEFilterDataProvider, SuperLog {

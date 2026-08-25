@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// 从 Markdown 大纲文本创建一张新的思维导图。

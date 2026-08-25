@@ -2,7 +2,7 @@ import Combine
 import Foundation
 import Testing
 import KernelCore
-import AgentToolKit
+import KitAgentTool
 import ProviderProject
 import ProviderToolManager
 

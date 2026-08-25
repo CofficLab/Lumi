@@ -1,4 +1,4 @@
-import DownloadKit
+import KitDownload
 
 /// Shared queue for every V2 download tool. Keeping this actor instance alive
 /// for the plugin lifetime preserves task IDs across download/progress/cancel

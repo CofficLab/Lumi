@@ -2,7 +2,7 @@ import Foundation
 import os
 import ProviderLogo
 import ProviderSettingView
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// `SettingViewProviding` 的自研实现：持有设置入口项、选中状态和侧边栏 Logo。

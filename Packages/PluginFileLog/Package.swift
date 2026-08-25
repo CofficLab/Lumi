@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../ProviderStorage"),
     ],
     targets: [
@@ -23,7 +23,7 @@ let package = Package(
             name: "PluginFileLog",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
             ],
             path: "Sources/PluginFileLog"

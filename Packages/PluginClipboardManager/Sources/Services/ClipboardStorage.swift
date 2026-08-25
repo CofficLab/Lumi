@@ -1,5 +1,5 @@
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// 剪贴板存储

@@ -2,7 +2,7 @@ import AppKit
 import CoreGraphics
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// 截图状态机 + 选区裁剪纯函数
 ///

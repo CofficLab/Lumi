@@ -43,7 +43,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -78,7 +78,7 @@
    "wave": "P4",
    "owners": [],
    "dependencies": [
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -118,7 +118,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -158,9 +158,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [
     "LifecycleHooksProviding"
@@ -198,11 +198,11 @@
    "wave": "P4",
    "owners": [],
    "dependencies": [
-    "AgentToolKit",
+    "KitAgentTool",
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -216,11 +216,11 @@
    "testFixtures": [],
    "status": "parityReview",
    "evidence": {
-    "packageTests": "swift test --package-path Packages/WebServerKit; swift test --package-path Packages/PluginWebServer",
+    "packageTests": "swift test --package-path Packages/KitWebServer; swift test --package-path Packages/PluginWebServer",
     "integrationBuild": "swift build --package-path Packages/FactoryLumi",
     "runtime": null,
     "uiDiff": null,
-    "migration": "Plugins/WebServerPlugin + Packages/WebServerKit（KernelLumi/LumiPlugin）→ Packages/PluginWebServer + ProviderWebServer/KernelCore；保留回环监听、鉴权、动态路由、自描述端点及主题 HTTP API。",
+    "migration": "Plugins/WebServerPlugin + Packages/KitWebServer（KernelLumi/LumiPlugin）→ Packages/PluginWebServer + ProviderWebServer/KernelCore；保留回环监听、鉴权、动态路由、自描述端点及主题 HTTP API。",
     "performance": null
    }
   },
@@ -236,11 +236,11 @@
    "wave": "P7",
    "owners": [],
    "dependencies": [
-    "AgentToolKit",
+    "KitAgentTool",
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -279,9 +279,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -315,12 +315,12 @@
    "wave": "P1-P3/P8",
    "owners": [],
    "dependencies": [
-    "AppStorePromoKit",
-    "HTMLPreviewKit",
+    "KitAppStorePromo",
+    "KitHTMLPreview",
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -354,10 +354,10 @@
    "wave": "P7",
    "owners": [],
    "dependencies": [
-    "AppStorePromoKit",
-    "HTMLPreviewKit",
+    "KitAppStorePromo",
+    "KitHTMLPreview",
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -397,10 +397,10 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
     "Sparkle",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -435,9 +435,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -471,10 +471,10 @@
    "wave": "P4",
    "owners": [],
    "dependencies": [
-    "AgentToolKit",
+    "KitAgentTool",
     "KernelLumi",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -509,7 +509,7 @@
    "owners": [],
    "dependencies": [
     "KernelCore",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
     "ProviderActivityBar",
     "ProviderContentView",
@@ -518,7 +518,7 @@
     "ProviderStorage",
     "ProviderToolbar",
     "ProviderWorkspace",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [
     "ActivityBarProviding",
@@ -568,10 +568,10 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "ShellKit",
-    "SuperLogKit"
+    "KitShell",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -606,9 +606,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
-    "ShellKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitShell",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -643,9 +643,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -680,9 +680,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -721,9 +721,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -758,7 +758,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -798,9 +798,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -835,9 +835,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -872,9 +872,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -909,9 +909,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -946,7 +946,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -982,7 +982,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -1018,7 +1018,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -1054,7 +1054,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -1090,7 +1090,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -1126,9 +1126,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -1167,7 +1167,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -1204,7 +1204,7 @@
    "dependencies": [
     "KernelLumi",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -1243,9 +1243,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -1280,7 +1280,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -1316,7 +1316,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -1352,7 +1352,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -1392,7 +1392,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -1428,7 +1428,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -1464,9 +1464,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -1501,9 +1501,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -1538,7 +1538,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -1574,8 +1574,8 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "KeychainKit",
-    "LocalizationKit",
+    "KitKeychain",
+    "KitLocalization",
     "Logging",
     "LumiUI",
     "MySQLNIO",
@@ -1583,7 +1583,7 @@
     "NIOPosix",
     "NIOSSL",
     "PostgresNIO",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [
     "ContentViewProviding",
@@ -1630,7 +1630,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -1666,9 +1666,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -1707,9 +1707,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -1748,9 +1748,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -1785,10 +1785,10 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "ShellKit",
-    "SuperLogKit"
+    "KitShell",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -1823,8 +1823,8 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -1862,10 +1862,10 @@
    "wave": "P7",
    "owners": [],
    "dependencies": [
-    "DownloadKit",
+    "KitDownload",
     "KernelLumi",
-    "LocalizationKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -1935,7 +1935,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -1974,9 +1974,9 @@
     "EditorSource",
     "EditorTextView",
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2078,9 +2078,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2114,15 +2114,15 @@
    "wave": "P6",
    "owners": [],
    "dependencies": [
-    "AgentToolKit",
-    "HTMLPreviewKit",
+    "KitAgentTool",
+    "KitHTMLPreview",
     "KernelLumi",
     "LumiPreviewKit",
     "LumiUI",
     "MagicAlert",
-    "MarkdownKit",
+    "KitMarkdown",
     "StringCatalogKit",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2157,7 +2157,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -2330,9 +2330,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "ShellKit",
+    "KitShell",
     "TreeSitterSwift"
    ],
    "providersConsumed": [],
@@ -2403,8 +2403,8 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2440,10 +2440,10 @@
    "dependencies": [
     "GitHubKit",
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "ShellKit",
-    "SuperLogKit"
+    "KitShell",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2480,11 +2480,11 @@
     "KernelLumi",
     "LLMKit",
     "LibGit2Swift",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
     "MagicDiffView",
-    "ShellKit",
-    "SuperLogKit"
+    "KitShell",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2518,7 +2518,7 @@
    "wave": "P4",
    "owners": [],
    "dependencies": [
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [
     "StorageProviding",
@@ -2567,9 +2567,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2608,9 +2608,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2645,9 +2645,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2682,9 +2682,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2720,7 +2720,7 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2754,10 +2754,10 @@
    "wave": "P5",
    "owners": [],
    "dependencies": [
-    "HttpKit",
+    "KitHttp",
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -2794,7 +2794,7 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2828,13 +2828,13 @@
    "wave": "P5",
    "owners": [],
    "dependencies": [
-    "AgentToolKit",
-    "HttpKit",
+    "KitAgentTool",
+    "KitHttp",
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2869,9 +2869,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "KeychainKit",
+    "KitKeychain",
     "LLMKit",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2907,7 +2907,7 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2943,7 +2943,7 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -2979,8 +2979,8 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3016,7 +3016,7 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3052,7 +3052,7 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3088,7 +3088,7 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3124,7 +3124,7 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3158,14 +3158,14 @@
    "wave": "P5",
    "owners": [],
    "dependencies": [
-    "AgentToolKit",
-    "DownloadKit",
+    "KitAgentTool",
+    "KitDownload",
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
     "MLXLLM",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3201,9 +3201,9 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3239,7 +3239,7 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3273,12 +3273,12 @@
    "wave": "P5",
    "owners": [],
    "dependencies": [
-    "HttpKit",
+    "KitHttp",
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3312,10 +3312,10 @@
    "wave": "P5",
    "owners": [],
    "dependencies": [
-    "HttpKit",
+    "KitHttp",
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3349,7 +3349,7 @@
    "wave": "P5",
    "owners": [],
    "dependencies": [
-    "HttpKit",
+    "KitHttp",
     "KernelLumi",
     "LLMKit"
    ],
@@ -3387,7 +3387,7 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3423,7 +3423,7 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -3458,10 +3458,10 @@
    "wave": "P5",
    "owners": [],
    "dependencies": [
-    "HttpKit",
+    "KitHttp",
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -3496,10 +3496,10 @@
    "wave": "P5",
    "owners": [],
    "dependencies": [
-    "HttpKit",
+    "KitHttp",
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -3536,7 +3536,7 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3570,10 +3570,10 @@
    "wave": "P5",
    "owners": [],
    "dependencies": [
-    "HttpKit",
+    "KitHttp",
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -3609,8 +3609,8 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3645,7 +3645,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3684,9 +3684,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3721,7 +3721,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit"
+    "KitLocalization"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3756,8 +3756,8 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3792,9 +3792,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3829,9 +3829,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3867,10 +3867,10 @@
    "dependencies": [
     "BeautifulMermaid",
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "MarkdownKitCore",
-    "SuperLogKit"
+    "KitMarkdownCore",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3905,10 +3905,10 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "MarkdownKit",
-    "SuperLogKit"
+    "KitMarkdown",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3947,8 +3947,8 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -3982,11 +3982,11 @@
    "wave": "P4",
    "owners": [],
    "dependencies": [
-    "AgentToolKit",
+    "KitAgentTool",
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "MarkdownKit"
+    "KitMarkdown"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -4021,8 +4021,8 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [
@@ -4059,8 +4059,8 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -4096,7 +4096,7 @@
    "dependencies": [
     "KernelLumi",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [
     "ActivityBarProviding",
@@ -4144,7 +4144,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -4184,9 +4184,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -4220,12 +4220,12 @@
    "wave": "P1-P3/P8",
    "owners": [],
    "dependencies": [
-    "HttpKit",
+    "KitHttp",
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "ShellKit",
-    "SuperLogKit"
+    "KitShell",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -4261,7 +4261,7 @@
    "dependencies": [
     "KernelLumi",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -4284,7 +4284,7 @@
    },
    "gapAudit": {
     "grade": "parityReview",
-    "summary": "纯工具型插件复刻：ocr_image 工具（macOS Vision 离线 OCR）LumiAgentTool→SuperAgentTool，移除 kernel.checkCancellation/isPathAllowed；OcrEngine/AboutView 逐字迁移；OcrLocalization 改用 AgentToolKit LanguagePreference；policy optin→disabledByDefault、stage beta→preview。"
+    "summary": "纯工具型插件复刻：ocr_image 工具（macOS Vision 离线 OCR）LumiAgentTool→SuperAgentTool，移除 kernel.checkCancellation/isPathAllowed；OcrEngine/AboutView 逐字迁移；OcrLocalization 改用 KitAgentTool LanguagePreference；policy optin→disabledByDefault、stage beta→preview。"
    }
   },
   {
@@ -4300,9 +4300,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [
     "OnboardingProviding"
@@ -4341,7 +4341,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -4377,7 +4377,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -4413,7 +4413,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -4449,7 +4449,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -4485,7 +4485,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -4521,7 +4521,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -4557,9 +4557,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -4594,10 +4594,10 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "ShellKit",
-    "SuperLogKit"
+    "KitShell",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -4632,7 +4632,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -4673,8 +4673,8 @@
    "dependencies": [
     "KernelLumi",
     "LumiUI",
-    "ShellKit",
-    "SuperLogKit"
+    "KitShell",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -4709,7 +4709,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -4744,13 +4744,13 @@
    "wave": "P6",
    "owners": [],
    "dependencies": [
-    "FileSystemKit",
+    "KitFileSystem",
     "KernelLumi",
     "LibGit2Swift",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
     "MagicAlert",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -4785,7 +4785,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -4822,9 +4822,9 @@
    "dependencies": [
     "KernelLumi",
     "LLMKit",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -4859,9 +4859,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
-    "ShellKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitShell",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -4896,7 +4896,7 @@
    "owners": [],
    "dependencies": [
     "CSQLite",
-    "SuperLogKit",
+    "KitSuperLog",
     "vec0.dylib"
    ],
    "providersConsumed": [],
@@ -4932,9 +4932,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -4969,7 +4969,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -5005,9 +5005,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -5042,9 +5042,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -5079,9 +5079,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -5116,9 +5116,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -5152,11 +5152,11 @@
    "wave": "P7",
    "owners": [],
    "dependencies": [
-    "HTMLPreviewKit",
+    "KitHTMLPreview",
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "ResumeKit"
+    "KitResume"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -5192,7 +5192,7 @@
    "dependencies": [
     "KernelLumi",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -5227,9 +5227,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -5268,9 +5268,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -5305,9 +5305,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -5376,8 +5376,8 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -5412,9 +5412,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -5481,11 +5481,11 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit",
+    "KitSuperLog",
     "SwiftTerm",
-    "TerminalCoreKit"
+    "KitTerminalCore"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -5520,9 +5520,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [
     "LLMManaging",
@@ -5565,7 +5565,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -5601,7 +5601,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -5637,7 +5637,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -5673,7 +5673,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -5709,7 +5709,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -5745,7 +5745,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -5785,7 +5785,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -5821,7 +5821,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -5857,7 +5857,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -5893,7 +5893,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -5929,7 +5929,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -5965,7 +5965,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -6001,7 +6001,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -6037,7 +6037,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -6073,7 +6073,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -6109,7 +6109,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -6145,7 +6145,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -6181,7 +6181,7 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI"
    ],
    "providersConsumed": [],
@@ -6217,8 +6217,8 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -6252,11 +6252,11 @@
    "wave": "P4",
    "owners": [],
    "dependencies": [
-    "FileSystemKit",
+    "KitFileSystem",
     "KernelLumi",
-    "LocalizationKit",
-    "ShellKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitShell",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -6323,9 +6323,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -6364,9 +6364,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -6405,9 +6405,9 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
+    "KitLocalization",
     "LumiUI",
-    "SuperLogKit"
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -6447,7 +6447,7 @@
    "dependencies": [
     "KernelLumi",
     "LumiUI",
-    "WebServerKit"
+    "KitWebServer"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -6521,8 +6521,8 @@
    "owners": [],
    "dependencies": [
     "KernelLumi",
-    "LocalizationKit",
-    "SuperLogKit"
+    "KitLocalization",
+    "KitSuperLog"
    ],
    "providersConsumed": [],
    "providersPublished": [],

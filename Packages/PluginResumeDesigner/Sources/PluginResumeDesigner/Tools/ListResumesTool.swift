@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import ResumeKit
+import KitResume
 
 public struct ListResumesTool: SuperAgentTool {
     public let name = "resume_list"

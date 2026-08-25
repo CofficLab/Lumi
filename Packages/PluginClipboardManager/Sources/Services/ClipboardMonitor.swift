@@ -1,7 +1,7 @@
 import AppKit
 import Combine
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import os
 
 @MainActor

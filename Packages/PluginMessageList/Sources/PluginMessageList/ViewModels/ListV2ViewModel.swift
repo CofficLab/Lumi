@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import MarkdownKit
+import KitMarkdown
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering
@@ -432,7 +432,7 @@ final class ListV2ViewModel: ObservableObject {
     }
 
     /// 会话加载/翻页后，把窗口内新出现的消息内容在后台线程预热进
-    /// MarkdownKit 块级缓存（utility 优先级，不与 UI 抢资源）。
+    /// KitMarkdown 块级缓存（utility 优先级，不与 UI 抢资源）。
     ///
     /// 动机：`List` 是惰性容器，滚动到未物化过的行时才首次解析该行内容；
     /// 预热后 `MarkdownBlockRenderer.init` 的同步缓存查询命中，行首帧即有

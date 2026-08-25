@@ -1,5 +1,5 @@
-import AgentToolKit
-import AppStorePromoKit
+import KitAgentTool
+import KitAppStorePromo
 import Foundation
 
 /// 共享给所有宣传图工具的辅助逻辑（KernelCore 体系）。

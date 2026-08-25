@@ -1,5 +1,5 @@
-import AgentToolKit
-import AppStorePromoKit
+import KitAgentTool
+import KitAppStorePromo
 import Foundation
 
 // MARK: - Review (sub-agent 视角审核)

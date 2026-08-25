@@ -1,9 +1,9 @@
 import Foundation
-import ResumeKit
+import KitResume
 import Testing
 
-/// ResumeKit 存储层测试：验证 ResumeDocumentStore 的 CRUD、校验与补丁语义。
-@Suite("ResumeKit ResumeDocumentStore")
+/// KitResume 存储层测试：验证 ResumeDocumentStore 的 CRUD、校验与补丁语义。
+@Suite("KitResume ResumeDocumentStore")
 struct ResumeDocumentStoreTests {
     private func makeStorage() -> (store: ResumeDocumentStore, directory: URL) {
         let directory = FileManager.default.temporaryDirectory

@@ -2,7 +2,7 @@ import os
 import KernelCore
 import ProviderChatSection
 import ProviderCommand
-import SuperLogKit
+import KitSuperLog
 
 /// Chat Screenshot Plugin（KernelCore 版本）
 ///

@@ -26,9 +26,9 @@ let package = Package(
             .upToNextMajor(from: "1.0.0")
         ),
         // Logging protocol
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         // Runtime localization
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         // The main text view target.
@@ -38,8 +38,8 @@ let package = Package(
                 "TextStory",
                 .product(name: "Collections", package: "swift-collections"),
                 "EditorTextViewObjC",
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
             ],
             path: "Sources",
             exclude: ["EditorTextViewObjC"],

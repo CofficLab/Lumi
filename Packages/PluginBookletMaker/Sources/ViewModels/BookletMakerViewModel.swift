@@ -2,7 +2,7 @@ import Combine
 import CoreGraphics
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 #if canImport(AppKit)

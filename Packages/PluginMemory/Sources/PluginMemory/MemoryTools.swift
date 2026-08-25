@@ -1,5 +1,5 @@
 import Foundation
-import AgentToolKit
+import KitAgentTool
 import ProviderProject
 
 /// 记忆工具共享：解析 scope/type/projectPath 参数。

@@ -9,10 +9,10 @@ let package = Package(
         .library(name: "PluginProjects", targets: ["PluginProjects"]),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../KernelCore"),
         .package(path: "../KitLLM"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderSettingView"),
@@ -21,16 +21,16 @@ let package = Package(
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
         .package(path: "../ProviderLifecycleHooks"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "PluginProjects",
             dependencies: [
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
                 "KitLLM",
-                "LocalizationKit",
+                "KitLocalization",
                 "LumiUI",
                 "ProviderProject",
                 "ProviderSettingView",
@@ -39,7 +39,7 @@ let package = Package(
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
                 "ProviderLifecycleHooks",
-                "SuperLogKit",
+                "KitSuperLog",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),

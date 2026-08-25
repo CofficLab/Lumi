@@ -20,10 +20,10 @@ let package = Package(
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderWorkspace"),
-        .package(path: "../LocalizationKit"),        .package(path: "../LumiUI"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitLocalization"),        .package(path: "../LumiUI"),
+        .package(path: "../KitSuperLog"),
         .package(url: "https://github.com/migueldeicaza/SwiftTerm", .upToNextMajor(from: "1.5.0")),
-        .package(path: "../TerminalCoreKit"),
+        .package(path: "../KitTerminalCore"),
     ],
     targets: [
         .target(
@@ -35,10 +35,10 @@ let package = Package(
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),                .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitLocalization", package: "KitLocalization"),                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "SwiftTerm", package: "SwiftTerm"),
-                .product(name: "TerminalCoreKit", package: "TerminalCoreKit"),
+                .product(name: "KitTerminalCore", package: "KitTerminalCore"),
             ],
             path: "Sources",
             resources: [

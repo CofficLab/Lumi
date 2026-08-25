@@ -1,6 +1,6 @@
 import AppKit
-import AppStorePromoKit
-import HTMLPreviewKit
+import KitAppStorePromo
+import KitHTMLPreview
 import LumiUI
 import SwiftUI
 

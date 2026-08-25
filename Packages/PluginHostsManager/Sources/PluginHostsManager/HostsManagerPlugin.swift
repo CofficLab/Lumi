@@ -3,7 +3,7 @@ import os
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// Hosts Manager 插件（KernelCore 版本）

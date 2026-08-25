@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// Projects Agent 工具共享的辅助逻辑。

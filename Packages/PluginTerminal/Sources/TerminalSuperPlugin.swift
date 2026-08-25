@@ -7,7 +7,7 @@ import ProviderDocsView
 import ProviderProject
 import ProviderWorkspace
 import SwiftUI
-import TerminalCoreKit
+import KitTerminalCore
 
 /// KernelCore entry point for the legacy terminal workspace.
 ///

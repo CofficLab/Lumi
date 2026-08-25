@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 import SwiftUI
 import os
-import SuperLogKit
+import KitSuperLog
 
 public struct SmartApp: Identifiable, Sendable, Equatable, Hashable, SuperLog {
     // MARK: - Properties

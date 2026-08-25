@@ -14,7 +14,7 @@ let package = Package(
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderAgentLoop"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
@@ -25,7 +25,7 @@ let package = Package(
                 "ProviderConversation",
                 "ProviderStorage",
                 "ProviderAgentLoop",
-                "SuperLogKit",
+                "KitSuperLog",
             ]
         ),
         .testTarget(

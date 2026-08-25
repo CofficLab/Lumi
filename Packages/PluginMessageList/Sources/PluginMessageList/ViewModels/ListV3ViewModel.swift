@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import MarkdownKit
+import KitMarkdown
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering

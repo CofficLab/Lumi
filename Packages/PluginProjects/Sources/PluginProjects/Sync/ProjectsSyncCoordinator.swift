@@ -3,7 +3,7 @@ import Foundation
 import KernelCore
 import os
 import ProviderProject
-import SuperLogKit
+import KitSuperLog
 
 /// 协调 `ProjectsViewModel` 与内核 `ProjectProviding` 之间的同步。
 ///

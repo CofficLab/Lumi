@@ -1,6 +1,6 @@
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 import SwiftData
 
 /// 剪贴板历史管理器

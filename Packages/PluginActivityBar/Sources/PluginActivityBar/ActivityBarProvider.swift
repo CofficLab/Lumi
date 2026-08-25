@@ -2,7 +2,7 @@ import Foundation
 import KernelCore
 import os
 import ProviderActivityBar
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 @MainActor

@@ -1,5 +1,5 @@
 import Foundation
-import LocalizationKit
+import KitLocalization
 
 enum LumiPluginLocalization {
     static func string(_ key: String, bundle: Bundle) -> String {

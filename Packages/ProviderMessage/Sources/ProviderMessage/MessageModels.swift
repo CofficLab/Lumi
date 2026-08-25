@@ -114,7 +114,7 @@ public struct MessageToolCall: Identifiable, Codable, Equatable, Sendable {
     /// 面向用户的操作描述，由对应的 Agent 工具根据参数生成。
     /// 这是持久化的展示快照，UI 不应直接展示 `name`。
     public var displayDescription: String?
-    /// 授权状态（`AgentToolKit.ToolCallAuthorizationState` 的 rawValue 字符串）：
+    /// 授权状态（`KitAgentTool.ToolCallAuthorizationState` 的 rawValue 字符串）：
     /// `noRisk` / `autoApproved` / `userApproved` / `userRejected` / `pendingAuthorization`。
     /// 缺失视为 `pendingAuthorization`（旧数据兼容）。
     public var authorizationState: String?
@@ -192,7 +192,7 @@ public struct MessageToolResult: Codable, Equatable, Sendable {
     }
 }
 
-/// 工具调用交互状态（对齐 AgentToolKit.ToolCallInteractionState）。
+/// 工具调用交互状态（对齐 KitAgentTool.ToolCallInteractionState）。
 public enum MessageToolInteractionState: Codable, Sendable, Equatable {
     case waiting
     case answered(String)

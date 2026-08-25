@@ -11,14 +11,14 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../KitLLM"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../LumiUI"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
@@ -30,7 +30,7 @@ let package = Package(
                 "ProviderLifecycleHooks",
                 "ProviderLLMManager",
                 "LumiUI",
-                "LocalizationKit",
+                "KitLocalization",
             ],
             path: "Sources/PluginConversationBehavior"
         ),

@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../LumiUI"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
@@ -26,7 +26,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
             ]
         ),
         .testTarget(

@@ -1,7 +1,7 @@
 import Foundation
 import KernelCore
 import ProviderStorage
-import SuperLogKit
+import KitSuperLog
 import os
 
 // MARK: - File Log SuperPlugin

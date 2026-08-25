@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import ResumeKit
+import KitResume
 
 public struct ReadResumeHTMLTool: SuperAgentTool {
     public let name = "resume_read_html"

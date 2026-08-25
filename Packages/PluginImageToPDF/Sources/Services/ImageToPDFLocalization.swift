@@ -1,5 +1,5 @@
 import Foundation
-import LocalizationKit
+import KitLocalization
 import SwiftUI
 
 /// Runtime localization helper for ImageToPDFPlugin bundle.

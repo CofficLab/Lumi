@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 import os
 import PDFKit
-import SuperLogKit
+import KitSuperLog
 
 /// Converts images into single-page PDF files using CoreGraphics.
 ///

@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessageSender"),
@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../LumiUI"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
@@ -30,7 +30,7 @@ let package = Package(
                 "ProviderMessageSender",
                 "ProviderMessage",
                 "LumiUI",
-                "LocalizationKit",
+                "KitLocalization",
             ],
             path: "Sources/PluginConversationPendingMessage"
         ),

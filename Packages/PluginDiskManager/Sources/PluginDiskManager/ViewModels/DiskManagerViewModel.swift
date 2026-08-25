@@ -1,5 +1,5 @@
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import Combine
 
 final class DiskManagerScanTaskHolder: @unchecked Sendable {

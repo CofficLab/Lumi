@@ -3,7 +3,7 @@ import ProviderLLMManager
 import Foundation
 import KitLLM
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// PluginLLMManager 自研的 `LLMManaging` 实现。
 ///

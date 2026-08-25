@@ -1,7 +1,7 @@
 import Foundation
 import os
 import ProviderMessage
-import SuperLogKit
+import KitSuperLog
 import SwiftData
 
 /// Message storage service using SwiftData

@@ -29,7 +29,7 @@ ProviderLogo 层 (LogoProviding / LogoItem / LogoScene)
 | **类型** | 应用插件（SwiftPM 包） |
 | **职责** | 提供 Coffic 咖啡主题 Logo（动画 / 单色两种渲染） |
 | **宿主内核** | `KernelCore`（`SuperPlugin` 生命周期） |
-| **上游依赖** | `KernelCore`、`LocalizationKit`、`ProviderLogo` |
+| **上游依赖** | `KernelCore`、`KitLocalization`、`ProviderLogo` |
 | **平台** | macOS 14+ |
 
 ## 目录结构

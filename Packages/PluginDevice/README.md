@@ -25,7 +25,7 @@ Provider* 层 (ActivityBar / ContentView / MenuBar / RailView / SettingView / Do
 | **类型** | 应用插件（SwiftPM 包） |
 | **职责** | 采集并展示设备指标：CPU、内存、GPU、电池、存储、进程、系统监控 |
 | **宿主内核** | `KernelCore`（`SuperPlugin` 生命周期） |
-| **上游依赖** | `KernelCore`、`LocalizationKit`、`LumiUI`、`ProviderActivityBar`、`ProviderContentView`、`ProviderDocsView`、`ProviderMenuBar`、`ProviderRailView`、`ProviderSettingView`、`ProviderStorage`、`SuperLogKit` |
+| **上游依赖** | `KernelCore`、`KitLocalization`、`LumiUI`、`ProviderActivityBar`、`ProviderContentView`、`ProviderDocsView`、`ProviderMenuBar`、`ProviderRailView`、`ProviderSettingView`、`ProviderStorage`、`KitSuperLog` |
 | **平台** | macOS 14+ |
 
 ## 目录结构

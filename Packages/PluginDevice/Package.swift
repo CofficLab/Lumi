@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
@@ -25,14 +25,14 @@ let package = Package(
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderWorkspace"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "PluginDevice",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
@@ -42,7 +42,7 @@ let package = Package(
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: ".",
             exclude: [

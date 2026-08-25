@@ -16,12 +16,12 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../EditorContracts"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderSettingView"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
@@ -29,12 +29,12 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "EditorContracts", package: "EditorContracts"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: "Sources",
             resources: [

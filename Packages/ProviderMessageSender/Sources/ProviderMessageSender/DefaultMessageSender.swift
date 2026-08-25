@@ -3,7 +3,7 @@ import os
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
-import SuperLogKit
+import KitSuperLog
 
 /// 默认消息发送实现（KernelCore 体系，复刻旧版 `MessageSender`）。
 ///

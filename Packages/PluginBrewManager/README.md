@@ -24,7 +24,7 @@ Homebrew package management plugin for Lumi. Provides a developer tool view for 
 | [BrewKit](../../Packages/BrewKit) | Homebrew package service and models |
 | [LumiCoreKit](../../Packages/LumiCoreKit) | Plugin protocol and localization helpers |
 | [LumiUI](../../Packages/LumiUI) | Shared Lumi UI components and theming |
-| [SuperLogKit](../../Packages/SuperLogKit) | Logging framework |
+| [KitSuperLog](../../Packages/KitSuperLog) | Logging framework |
 
 ## Plugin Contributions
 

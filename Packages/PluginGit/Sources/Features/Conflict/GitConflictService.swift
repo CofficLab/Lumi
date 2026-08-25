@@ -1,6 +1,6 @@
 import Foundation
 import LibGit2Swift
-import ShellKit
+import KitShell
 
 /// 合并冲突检测与解决服务。
 ///

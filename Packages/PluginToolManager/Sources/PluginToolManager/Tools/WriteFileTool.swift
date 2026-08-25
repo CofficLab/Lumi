@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// 写入文件（复刻旧版 ToolManagerPlugin 的 WriteFileTool）。

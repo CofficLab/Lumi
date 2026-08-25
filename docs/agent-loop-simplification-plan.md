@@ -211,11 +211,11 @@ AgentLoop.executeTurnLoop():
 
 ### 8.1 依赖方向
 
-ToolManager 当前依赖 `AgentToolKit`（工具接口定义）。新增授权逻辑需要读取会话的 `automationLevel`，因此需要依赖 `ProviderConversation`。
+ToolManager 当前依赖 `KitAgentTool`（工具接口定义）。新增授权逻辑需要读取会话的 `automationLevel`，因此需要依赖 `ProviderConversation`。
 
 ```
 当前：  AgentLoop → ToolManager, Conversation
-重构后：ToolManager → Conversation（新增），AgentToolKit
+重构后：ToolManager → Conversation（新增），KitAgentTool
         AgentLoop → ToolManager
 ```
 

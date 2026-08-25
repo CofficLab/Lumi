@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "ProviderAgentLoop", targets: ["ProviderAgentLoop"]),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../ProviderMessage"),
         .package(path: "../KitLLM"),
         .package(path: "../ProviderLLMManager"),
@@ -21,7 +21,7 @@ let package = Package(
         .target(
             name: "ProviderAgentLoop",
             dependencies: [
-                .product(name: "AgentToolKit", package: "AgentToolKit"),
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),

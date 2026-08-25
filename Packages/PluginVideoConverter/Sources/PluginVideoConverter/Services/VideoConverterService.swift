@@ -1,5 +1,5 @@
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// Service that wraps FFmpeg CLI for video conversion.

@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// Agent 工具的共享支持逻辑（KernelCore 体系）。

@@ -1,9 +1,9 @@
-import AgentToolKit
+import KitAgentTool
 import KernelCore
 import os
 import ProviderStorage
 import ProviderToolManager
-import SuperLogKit
+import KitSuperLog
 
 /// Agent Temp Storage 插件（KernelCore 版本）
 ///

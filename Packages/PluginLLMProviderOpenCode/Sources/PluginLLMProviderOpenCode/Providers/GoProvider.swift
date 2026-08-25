@@ -2,7 +2,7 @@ import Foundation
 import KitLLM
 import os
 import ProviderLLMManager
-import SuperLogKit
+import KitSuperLog
 
 /// OpenCode Go 供应商（Go 系列模型网关）。
 ///

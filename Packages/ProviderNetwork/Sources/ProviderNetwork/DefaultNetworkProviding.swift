@@ -71,7 +71,7 @@ public final class DefaultNetworkProviding: NetworkProviding, @unchecked Sendabl
         // → 流式正文全部丢失，最终 assistant 消息落库为空。尽管 wire 上（HTTP
         // 交换记录 body）能看到完整内容。
         //
-        // 现改为与 HttpKit.readServerSentEvents 一致的实现：累积字节，按空行
+        // 现改为与 KitHttp.readServerSentEvents 一致的实现：累积字节，按空行
         // （`\n\n` / `\r\r` / `\r\n\r\n`）切出完整事件块，再把整块 `Data` 回调给
         // 上层解析。TCP 分片（一个事件被多个网络包拆分）也能正确拼接。
         var eventBuffer = Data()

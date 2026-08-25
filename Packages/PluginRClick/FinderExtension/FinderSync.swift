@@ -1,7 +1,7 @@
 import Cocoa
 import FinderSync
 import os
-import SuperLogKit
+import KitSuperLog
 
 class FinderSync: FIFinderSync, SuperLog {
     static let emoji = "🧩"

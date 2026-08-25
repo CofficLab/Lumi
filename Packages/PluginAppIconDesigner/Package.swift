@@ -9,9 +9,9 @@ let package = Package(
         .library(name: "PluginAppIconDesigner", targets: ["PluginAppIconDesigner"]),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
@@ -26,9 +26,9 @@ let package = Package(
         .target(
             name: "PluginAppIconDesigner",
             dependencies: [
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "LumiUI",
                 "ProviderActivityBar",
                 "ProviderContentView",
@@ -45,7 +45,7 @@ let package = Package(
             name: "PluginAppIconDesignerTests",
             dependencies: [
                 "PluginAppIconDesigner",
-                "AgentToolKit",
+                "KitAgentTool",
                 "KernelCore",
                 "ProviderActivityBar",
                 "ProviderContentView",

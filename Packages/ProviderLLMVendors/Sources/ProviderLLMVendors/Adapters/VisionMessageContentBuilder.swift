@@ -1,6 +1,6 @@
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 public enum VisionMessageContentBuilder: SuperLog {
     public static let emoji = "🖼️"

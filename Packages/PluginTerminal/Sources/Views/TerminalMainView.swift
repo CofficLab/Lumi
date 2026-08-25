@@ -2,7 +2,7 @@ import Foundation
 import SwiftTerm
 import SwiftUI
 import LumiUI
-import TerminalCoreKit
+import KitTerminalCore
 import ProviderProject
 
 public struct TerminalMainView: View {

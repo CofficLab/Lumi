@@ -15,9 +15,9 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../ProviderCommand"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderSettingView"),
@@ -27,9 +27,9 @@ let package = Package(
             name: "QuickLauncherPlugin",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderCommand", package: "ProviderCommand"),
                 .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),

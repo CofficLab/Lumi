@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// Battery power history service with high-resolution (5s) storage.
 ///

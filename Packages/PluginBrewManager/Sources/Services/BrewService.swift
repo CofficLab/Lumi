@@ -1,5 +1,5 @@
 import Foundation
-import ShellKit
+import KitShell
 
 public enum BrewError: Error, Sendable, Equatable {
     case notInstalled

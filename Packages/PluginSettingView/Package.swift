@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../LumiUI"),
         .package(path: "../ProviderLogo"),
         .package(path: "../ProviderSettingView"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
@@ -28,7 +28,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderLogo", package: "ProviderLogo"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
             ]
         ),
         .testTarget(

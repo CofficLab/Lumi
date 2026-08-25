@@ -8,8 +8,8 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../LumiUI"),
-        .package(path: "../MarkdownKit"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitMarkdown"),
+        .package(path: "../KitLocalization"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
@@ -19,14 +19,14 @@ let package = Package(
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../ProviderPromptSuggestion"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(name: "PluginMessageList", dependencies: [
             .product(name: "KernelCore", package: "KernelCore"),
             .product(name: "LumiUI", package: "LumiUI"),
-            .product(name: "MarkdownKit", package: "MarkdownKit"),
-            .product(name: "LocalizationKit", package: "LocalizationKit"),
+            .product(name: "KitMarkdown", package: "KitMarkdown"),
+            .product(name: "KitLocalization", package: "KitLocalization"),
             .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
             .product(name: "ProviderChatSection", package: "ProviderChatSection"),
             .product(name: "ProviderConversation", package: "ProviderConversation"),
@@ -36,7 +36,7 @@ let package = Package(
             .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
             .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
             .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-            .product(name: "SuperLogKit", package: "SuperLogKit"),
+            .product(name: "KitSuperLog", package: "KitSuperLog"),
         ]),
         .testTarget(name: "PluginMessageListTests", dependencies: [
             "PluginMessageList",

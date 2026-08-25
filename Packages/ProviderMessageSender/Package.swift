@@ -12,7 +12,7 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLifecycleHooks"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
@@ -21,7 +21,7 @@ let package = Package(
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: "Sources/ProviderMessageSender"
         ),

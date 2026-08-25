@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import ShellKit
+import KitShell
 
 /// Git Commit Detail 服务
 ///

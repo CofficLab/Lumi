@@ -1,15 +1,15 @@
-import AgentToolKit
+import KitAgentTool
 import KernelCore
-import LocalizationKit
+import KitLocalization
 import LumiUI
-import MarkdownKit
+import KitMarkdown
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageSender
 import ProviderToolManager
 import Foundation
-import LocalizationKit
+import KitLocalization
 
 /// Runtime localization for MessageRendererPlugin bundle.
 ///

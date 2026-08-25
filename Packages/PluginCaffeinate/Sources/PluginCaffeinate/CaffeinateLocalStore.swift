@@ -1,7 +1,7 @@
 import Foundation
 import os
 import ProviderStorage
-import SuperLogKit
+import KitSuperLog
 
 /// Caffeinate 插件本地存储
 ///

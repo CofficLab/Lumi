@@ -1,5 +1,5 @@
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// Shared runtime state retained by the V2 App Manager plugin.

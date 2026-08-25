@@ -1,5 +1,5 @@
 import Foundation
-import SuperLogKit
+import KitSuperLog
 
 /// 应用清理助手，用于扫描和清理应用的关联文件
 class AppCleanerHelper: SuperLog {

@@ -2,7 +2,7 @@ import Foundation
 @preconcurrency import NetworkExtension
 import SystemExtensions
 import os
-import SuperLogKit
+import KitSuperLog
 import AppKit
 import SwiftUI
 

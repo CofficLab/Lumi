@@ -2,7 +2,7 @@ import Foundation
 import AppKit
 import ProviderIdleTime
 import ProviderProject
-import SuperLogKit
+import KitSuperLog
 import os
 
 /// Owns low-priority indexing of known inactive projects.

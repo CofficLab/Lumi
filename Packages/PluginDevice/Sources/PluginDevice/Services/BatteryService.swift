@@ -3,7 +3,7 @@ import Foundation
 import IOKit
 import IOKit.ps
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// Enhanced battery monitoring service.
 ///

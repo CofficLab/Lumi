@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// 按行读取文件（复刻旧版 ToolManagerPlugin 的 ReadFileTool，含 offset/limit 与截断）。

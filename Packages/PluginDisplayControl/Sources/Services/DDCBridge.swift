@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 import IOKit
 import os
-import SuperLogKit
+import KitSuperLog
 
 // MARK: - Private API Declarations
 

@@ -3,7 +3,7 @@ import os
 import KernelCore
 import ProviderChatSection
 import ProviderConversation
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// 会话推理强度控制插件（low / medium / high / xhigh / max / 关闭）。

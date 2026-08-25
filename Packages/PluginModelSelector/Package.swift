@@ -10,8 +10,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../SuperLogKit"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitSuperLog"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderLLMManager"),
@@ -22,7 +22,7 @@ let package = Package(
             name: "PluginModelSelector",
             dependencies: [
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "LumiUI",
                 "ProviderChatSection",
                 "ProviderLLMManager",

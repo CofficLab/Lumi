@@ -1,10 +1,10 @@
 import Foundation
 import IOKit.pwr_mgt
-import LocalizationKit
+import KitLocalization
 import Observation
 import ProviderLogo
 import ProviderStorage
-import SuperLogKit
+import KitSuperLog
 
 /// Caffeinate Manager: Responsible for managing system power state
 @MainActor

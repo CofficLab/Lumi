@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// Renders the selected vector document and returns the PNG as a tool-result

@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import SuperLogKit
+import KitSuperLog
 
 protocol DockerManagerServicing: Sendable {
     func listImages() async throws -> [DockerImage]

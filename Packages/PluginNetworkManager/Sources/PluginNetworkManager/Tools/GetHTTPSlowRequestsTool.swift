@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import SuperLogKit
+import KitSuperLog
 
 /// 查询慢请求的 Agent 工具。
 struct GetHTTPSlowRequestsTool: SuperAgentTool, SuperLog {

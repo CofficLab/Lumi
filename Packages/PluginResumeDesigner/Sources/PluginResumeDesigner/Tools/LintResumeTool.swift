@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import ResumeKit
+import KitResume
 
 /// 静态 lint + 运行时分页测量：页数、页面尺寸与内容溢出。
 public struct LintResumeTool: SuperAgentTool {

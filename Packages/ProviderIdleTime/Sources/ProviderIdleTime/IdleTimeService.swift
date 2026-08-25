@@ -5,7 +5,7 @@ import os
 ///
 /// 由旧版 `Plugins/IdleTimePlugin/Sources/Services/IdleTimeService.swift` 迁移而来。
 /// 差异：
-/// - 不再依赖 KernelLumi / SuperLogKit；日志改用系统 `os.Logger`，不再 conform `SuperLog`；
+/// - 不再依赖 KernelLumi / KitSuperLog；日志改用系统 `os.Logger`，不再 conform `SuperLog`；
 /// - 存储目录由注入的 `IdleActivityStore` 决定（插件 onBoot 时用 StorageProviding
 ///   目录构造 store，不再依赖 `IdleTimeRuntimeBridge` 全局桥）；
 /// - 快照刷新后经 `Notification.Name.idleTimeSnapshotDidChange` 广播（已迁入本包）。

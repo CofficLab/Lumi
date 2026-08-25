@@ -10,8 +10,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../SuperLogKit"),
-        .package(path: "../AgentToolKit"),
+        .package(path: "../KitSuperLog"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderProject"),
@@ -21,7 +21,7 @@ let package = Package(
             name: "PluginMemory",
             dependencies: [
                 "KernelCore",
-                "AgentToolKit",
+                "KitAgentTool",
                 "ProviderStorage",
                 "ProviderToolManager",
                 "ProviderProject",
@@ -33,7 +33,7 @@ let package = Package(
             dependencies: [
                 "PluginMemory",
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ],

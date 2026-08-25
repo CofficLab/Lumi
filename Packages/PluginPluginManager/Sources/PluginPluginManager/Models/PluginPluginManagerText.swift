@@ -4,7 +4,7 @@ import Foundation
 /// 插件管理页用到的文案常量集中管理。
 ///
 /// 与新版本其它插件包（PluginSettingGeneral / PluginThemePack）一致，
-/// 直接内联中文文案，不依赖 LocalizationKit / xcstrings。
+/// 直接内联中文文案，不依赖 KitLocalization / xcstrings。
 enum PluginPluginManagerText {
     static let plugins = "插件管理"
     static let pluginsHint = "管理所有已注册插件"

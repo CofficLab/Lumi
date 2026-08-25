@@ -9,11 +9,11 @@ let package = Package(
         .library(name: "PluginAppStorePromoDesigner", targets: ["PluginAppStorePromoDesigner"]),
     ],
     dependencies: [
-        .package(path: "../AgentToolKit"),
-        .package(path: "../AppStorePromoKit"),
-        .package(path: "../HTMLPreviewKit"),
+        .package(path: "../KitAgentTool"),
+        .package(path: "../KitAppStorePromo"),
+        .package(path: "../KitHTMLPreview"),
         .package(path: "../KernelCore"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
@@ -29,11 +29,11 @@ let package = Package(
         .target(
             name: "PluginAppStorePromoDesigner",
             dependencies: [
-                "AgentToolKit",
-                "AppStorePromoKit",
-                "HTMLPreviewKit",
+                "KitAgentTool",
+                "KitAppStorePromo",
+                "KitHTMLPreview",
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "LumiUI",
                 "ProviderActivityBar",
                 "ProviderContentView",
@@ -51,8 +51,8 @@ let package = Package(
             name: "PluginAppStorePromoDesignerTests",
             dependencies: [
                 "PluginAppStorePromoDesigner",
-                "AgentToolKit",
-                "AppStorePromoKit",
+                "KitAgentTool",
+                "KitAppStorePromo",
                 "KernelCore",
                 "ProviderStorage",
             ]

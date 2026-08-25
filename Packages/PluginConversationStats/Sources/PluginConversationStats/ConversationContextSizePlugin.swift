@@ -5,7 +5,7 @@ import ProviderConversation
 import ProviderLLMManager
 import ProviderLLMVendors
 import ProviderMessage
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// 上下文窗口大小插件

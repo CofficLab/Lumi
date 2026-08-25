@@ -1,6 +1,6 @@
 import CoreGraphics
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import os
 
 // MARK: - DisplayServices Bridge (built-in display)

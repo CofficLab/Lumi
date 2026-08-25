@@ -1,7 +1,7 @@
 import AppKit
-import HTMLPreviewKit
+import KitHTMLPreview
 import PDFKit
-import ResumeKit
+import KitResume
 import SwiftUI
 
 private typealias L = ResumeDesignerLocalization

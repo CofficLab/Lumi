@@ -9,7 +9,7 @@ import ProviderRailView
 import ProviderStorage
 import ProviderToolbar
 import ProviderWorkspace
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 // MARK: - Plugin Entry

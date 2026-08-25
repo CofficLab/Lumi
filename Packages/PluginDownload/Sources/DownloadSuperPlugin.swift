@@ -1,5 +1,5 @@
-import AgentToolKit
-import DownloadKit
+import KitAgentTool
+import KitDownload
 import Foundation
 import KernelCore
 import ProviderToolManager

@@ -1,6 +1,6 @@
 import os
 import KernelCore
-import SuperLogKit
+import KitSuperLog
 import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation

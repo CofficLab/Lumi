@@ -5,7 +5,7 @@ import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageSender
-import SuperLogKit
+import KitSuperLog
 
 /// 消息发送装配插件。
 @MainActor

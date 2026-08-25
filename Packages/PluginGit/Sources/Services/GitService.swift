@@ -1,5 +1,5 @@
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import LibGit2Swift
 import os
 import SwiftUI

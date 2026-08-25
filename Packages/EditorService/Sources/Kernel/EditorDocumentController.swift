@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 import LanguageServerProtocol
 import os
-import SuperLogKit
+import KitSuperLog
 import UniformTypeIdentifiers
 
 final class EditorDocumentController: SuperLog {

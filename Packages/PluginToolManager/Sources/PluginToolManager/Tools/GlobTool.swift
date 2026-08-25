@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// Glob 文件匹配（复刻旧版 ToolManagerPlugin 的 GlobTool）。

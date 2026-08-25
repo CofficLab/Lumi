@@ -1,5 +1,5 @@
 import Foundation
-import ResumeKit
+import KitResume
 
 /// 简历工作区：应用数据目录（app 存储）下的简历列表与选中状态。
 @MainActor

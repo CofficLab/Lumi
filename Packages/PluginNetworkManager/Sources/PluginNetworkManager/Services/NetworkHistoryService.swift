@@ -1,5 +1,5 @@
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import Combine
 
 public struct NetworkDataPoint: Identifiable, Codable, Sendable, SuperLog {

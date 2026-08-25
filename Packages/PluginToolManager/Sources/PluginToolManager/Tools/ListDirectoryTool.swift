@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 
 /// 列出目录内容（复刻旧版 ToolManagerPlugin 的 ListDirectoryTool）。

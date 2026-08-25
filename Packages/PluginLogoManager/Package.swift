@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../ProviderLogo"),
-        .package(path: "../SuperLogKit"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
@@ -24,7 +24,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderLogo", package: "ProviderLogo"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
             ]
         ),
         .testTarget(

@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import SuperLogKit
+import KitSuperLog
 
 /// 获取 HTTP 日志统计摘要的 Agent 工具。
 struct GetHTTPSummaryTool: SuperAgentTool, SuperLog {

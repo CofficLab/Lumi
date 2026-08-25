@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 import KitLLM
 import os
@@ -8,7 +8,7 @@ import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
 import ProviderLifecycleHooks
-import SuperLogKit
+import KitSuperLog
 
 // MARK: - LLM Request
 
@@ -376,7 +376,7 @@ extension AgentLoopProvider {
         )
     }
 
-    func convertResult(_ result: AgentToolKit.ToolCallResult) -> MessageToolResult {
+    func convertResult(_ result: KitAgentTool.ToolCallResult) -> MessageToolResult {
         MessageToolResult(
             content: result.content,
             duration: result.duration,

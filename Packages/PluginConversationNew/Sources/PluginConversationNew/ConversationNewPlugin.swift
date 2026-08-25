@@ -1,6 +1,6 @@
 import os
 import KernelCore
-import SuperLogKit
+import KitSuperLog
 import ProviderConversation
 import ProviderToolbar
 import SwiftUI

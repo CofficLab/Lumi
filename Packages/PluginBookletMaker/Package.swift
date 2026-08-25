@@ -14,7 +14,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../LumiUI"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitLocalization"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
@@ -22,7 +22,7 @@ let package = Package(
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderWorkspace"),
-        .package(path: "../SuperLogKit")
+        .package(path: "../KitSuperLog")
     ],
     targets: [
         .target(
@@ -30,7 +30,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "LumiUI", package: "LumiUI"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
@@ -38,7 +38,7 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
-                .product(name: "SuperLogKit", package: "SuperLogKit")
+                .product(name: "KitSuperLog", package: "KitSuperLog")
             ],
             path: "Sources",
             resources: [

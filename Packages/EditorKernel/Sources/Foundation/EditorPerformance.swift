@@ -1,6 +1,6 @@
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 public enum EditorPerfEvent: String, Sendable, CaseIterable {
     case fileOpen = "file.open"

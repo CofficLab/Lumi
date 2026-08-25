@@ -1,6 +1,6 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
-import LocalizationKit
+import KitLocalization
 
 /// 列出临时文件工具
 struct ListTempFilesTool: SuperAgentTool {

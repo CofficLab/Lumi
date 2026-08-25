@@ -10,8 +10,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../SuperLogKit"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitSuperLog"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversationInput"),
@@ -21,7 +21,7 @@ let package = Package(
             name: "PluginChatFileAttachment",
             dependencies: [
                 "KernelCore",
-                "LocalizationKit",
+                "KitLocalization",
                 "LumiUI",
                 "ProviderChatSection",
                 "ProviderConversationInput",

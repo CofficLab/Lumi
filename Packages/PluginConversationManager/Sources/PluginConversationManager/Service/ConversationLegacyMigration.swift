@@ -1,6 +1,6 @@
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// v4 历史会话迁移服务（后台执行）
 ///

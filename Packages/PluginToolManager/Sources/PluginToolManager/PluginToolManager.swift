@@ -4,7 +4,7 @@ import os
 import ProviderSettingView
 import ProviderStorage
 import ProviderToolManager
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 /// 工具管理插件。

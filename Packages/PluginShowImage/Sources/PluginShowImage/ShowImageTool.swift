@@ -1,8 +1,8 @@
 import AppKit
-import AgentToolKit
+import KitAgentTool
 import Foundation
 import ProviderNetwork
-import SuperLogKit
+import KitSuperLog
 import os
 
 // MARK: - Image Source

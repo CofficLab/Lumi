@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import AgentToolKit
+import KitAgentTool
 @testable import PluginDiskManager
 
 /// Pure-logic tests for the Disk Manager agent-tool support helpers.

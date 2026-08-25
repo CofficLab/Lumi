@@ -1,5 +1,5 @@
-import AgentToolKit
-import AppStorePromoKit
+import KitAgentTool
+import KitAppStorePromo
 import Foundation
 
 /// 对促销图 HTML 应用一批精确、唯一的文本替换（原子操作），然后校验完整结果。

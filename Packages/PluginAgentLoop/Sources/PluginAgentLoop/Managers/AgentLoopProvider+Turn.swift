@@ -1,4 +1,4 @@
-import AgentToolKit
+import KitAgentTool
 import Foundation
 import KitLLM
 import os
@@ -8,7 +8,7 @@ import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
 import ProviderLifecycleHooks
-import SuperLogKit
+import KitSuperLog
 
 // MARK: - Public API
 
