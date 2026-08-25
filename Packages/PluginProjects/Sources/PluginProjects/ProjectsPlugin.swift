@@ -20,7 +20,7 @@ import SwiftUI
 ///   并通过 `ProjectsSyncCoordinator` 与内核已注册的 `ProjectProviding` 双向同步;
 /// - 注册 Agent 工具（list_projects / add_project / get_current_project）;
 /// - 贡献标题栏项目控件与设置页;
-/// - 相比旧版移除:`willSendToLLM` 项目路径注入（新版无消息钩子）与
+/// - 通过 `willSendToLLM` 钩子将当前项目路径注入 LLM 上下文;
 ///   「添加项目」动作胶囊（新版 PromptSuggestion 不支持动作）。
 @MainActor
 public final class ProjectsPlugin: SuperPlugin, SuperLog, PromptSuggestionContributing {
@@ -83,7 +83,10 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog, PromptSuggestionContri
            let project = kernel.resolveProvider((any ProjectProviding).self) {
             hooks.addWillSendToLLMHook { context in
                 guard let projectPath = project.currentProject?.path,
-                      !projectPath.isEmpty else { return context }
+                      !projectPath.isEmpty else {
+                    Self.logger.error("\(Self.t)无法将当前项目路径注入 LLM 上下文：未选择项目或项目路径为空")
+                    return context
+                }
                 var ctx = context
                 let projectMessage = LLMMessage(
                     role: .system,
@@ -92,9 +95,16 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog, PromptSuggestionContri
                 ctx.messages = [projectMessage] + ctx.messages
                 return ctx
             }
+        } else {
+            if kernel.resolveProvider((any LifecycleHooksProviding).self) == nil {
+                Self.logger.error("\(Self.t)无法注册 willSendToLLM 钩子：LifecycleHooksProviding 未注册")
+            }
+            if kernel.resolveProvider((any ProjectProviding).self) == nil {
+                Self.logger.error("\(Self.t)无法注册 willSendToLLM 钩子：ProjectProviding 未注册")
+            }
         }
 
-        // 7. 贡献标题栏项目控件（center placement,与旧版 titleToolbarItems 对齐）
+        // 7. 贡献标题栏项目控件
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
             toolbar.addToolbarItems([
                 ToolbarItem(
@@ -108,7 +118,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog, PromptSuggestionContri
             ])
         }
 
-        // 7. 贡献设置入口（旧版 settingsTabItems → SettingEntryItem）
+        // 7. 贡献设置入口
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
             settings.addEntries([
                 SettingEntryItem(
