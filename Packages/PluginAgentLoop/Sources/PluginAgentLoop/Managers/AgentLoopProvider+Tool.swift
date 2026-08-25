@@ -40,7 +40,7 @@ extension AgentLoopManager {
             if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：找不到会话运行时 conversation=\(conversationID.uuidString.prefix(8))") }
             return
         }
-        guard case .executingTools(let turnID, _, let pending) = runtime.phase else {
+        guard case .executingTools(let turnID, let assistantMessageID, let pending) = runtime.phase else {
             if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：当前状态不是 executingTools，conversation=\(conversationID.uuidString.prefix(8)), phase=\(String(describing: runtime.phase))") }
             return
         }
@@ -62,6 +62,15 @@ extension AgentLoopManager {
             switch batchResult {
             case .executed(let toolResult):
                 let result = convertResult(toolResult)
+                // 工具结果必须同时回写 assistant 消息中的嵌套 toolCall。
+                // 消息渲染器从这里读取 awaitingUserResponse；只插入独立的
+                // .tool 消息会让 UI 永远看到 result == nil，退化为 loading 行。
+                messages.updateToolCallResult(
+                    result,
+                    toolCallID: call.id,
+                    assistantMessageID: assistantMessageID,
+                    in: conversationID
+                )
                 insertToolResultMessage(result, toolCallID: call.id, conversationID: conversationID, turnID: turnID)
                 if result.awaitingUserResponse {
                     suspension = AgentLoopSuspension(
@@ -75,6 +84,12 @@ extension AgentLoopManager {
                 if outcome != nil { finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome!) ; return }
             case .blocked(let reason):
                 let result = MessageToolResult(content: reason, isError: true)
+                messages.updateToolCallResult(
+                    result,
+                    toolCallID: call.id,
+                    assistantMessageID: assistantMessageID,
+                    in: conversationID
+                )
                 insertToolResultMessage(result, toolCallID: call.id, conversationID: conversationID, turnID: turnID)
                 let (updated, outcome) = TurnReducer.reduce(runtime, event: .toolCallCompleted(toolCallID: call.id, result: result))
                 runtime = updated
@@ -478,7 +493,13 @@ extension AgentLoopManager {
             imageAttachments: result.images.map {
                 MessageImageAttachment(data: $0.data.base64EncodedString(), mimeType: $0.mimeType)
             },
-            awaitingUserResponse: result.awaitingUserResponse
+            awaitingUserResponse: result.awaitingUserResponse,
+            interactionState: result.interactionState.map {
+                switch $0 {
+                case .waiting: return .waiting
+                case .answered(let answer): return .answered(answer)
+                }
+            }
         )
     }
 }

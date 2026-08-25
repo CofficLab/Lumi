@@ -131,7 +131,8 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
         return ToolCallResult(
             content: content,
             isError: false,
-            awaitingUserResponse: true
+            awaitingUserResponse: true,
+            interactionState: .waiting
         )
     }
 

@@ -662,7 +662,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                     result = MessageToolResult(
                         content: result.content,
                         isError: result.isError,
-                        awaitingUserResponse: true
+                        awaitingUserResponse: true,
+                        interactionState: result.interactionState
                     )
                 }
                 // 通用交互工具（AskUser 等）：返回 awaitingUserResponse 但未携带
@@ -792,7 +793,13 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             imageAttachments: result.images.map {
                 MessageImageAttachment(data: $0.data.base64EncodedString(), mimeType: $0.mimeType)
             },
-            awaitingUserResponse: result.awaitingUserResponse
+            awaitingUserResponse: result.awaitingUserResponse,
+            interactionState: result.interactionState.map {
+                switch $0 {
+                case .waiting: return .waiting
+                case .answered(let answer): return .answered(answer)
+                }
+            }
         )
     }
 
@@ -900,7 +907,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 result = MessageToolResult(
                     content: result.content,
                     isError: result.isError,
-                    awaitingUserResponse: true
+                    awaitingUserResponse: true,
+                    interactionState: result.interactionState
                 )
             }
             // 通用交互工具（AskUser 等）：构造用户输入挂起点。

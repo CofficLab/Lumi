@@ -12,9 +12,11 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../KitSuperLog"),
         .package(path: "../KitAgentTool"),
+        .package(path: "../LumiUI"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderMessageStreaming"),
@@ -26,9 +28,11 @@ let package = Package(
             dependencies: [
                 "KernelCore",
                 "KitAgentTool",
+                "LumiUI",
                 "ProviderConversation",
                 "ProviderMessage",
                 "ProviderAgentLoop",
+                "ProviderMessageSender",
                 "ProviderToolManager",
             ],
             path: "Sources/PluginAskUser"

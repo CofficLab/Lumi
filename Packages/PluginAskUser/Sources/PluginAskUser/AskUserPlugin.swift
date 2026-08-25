@@ -1,9 +1,12 @@
 import Foundation
 import KernelCore
+import KitSuperLog
 import os
 import ProviderConversation
 import ProviderToolManager
-import KitSuperLog
+import KitAgentTool
+import LumiUI
+import SwiftUI
 
 /// AskUser 插件：注册 `ask_user` 工具，让 LLM 可向用户提问并等待回答。
 /// - 注册 `AskUserTool` 到 `ToolManagerProviding`；
@@ -30,14 +33,15 @@ public final class AskUserPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
-
     public func onBoot(kernel: KernelCoreContainer) throws {
+        AskUserBridge.shared.start(kernel: kernel)
         guard let conversations = kernel.resolveProvider((any ConversationManaging).self),
               let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve ConversationManaging, ToolManagerProviding from kernel")
             return
         }
         toolManager.add(AskUserTool(conversations: conversations), pluginID: id)
+        ToolCallRowRendererRegistry.shared.register(AskUserRowRenderer())
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

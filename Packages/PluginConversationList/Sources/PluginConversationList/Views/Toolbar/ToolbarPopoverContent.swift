@@ -54,7 +54,8 @@ struct ToolbarPopoverContent: View {
             }
             content
         }
-        .frame(width: 300, height: 480)
+        .frame(width: 300)
+        .frame(maxHeight: 360)
         .task(id: currentProjectPath) {
             await refreshProjectScopeVisibility()
         }
