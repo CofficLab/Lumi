@@ -1,6 +1,7 @@
 import Foundation
 import IOKit.pwr_mgt
 import KitLocalization
+import KernelCore
 import Observation
 import ProviderLogo
 import ProviderStorage
@@ -48,7 +49,7 @@ final class CaffeinateManager: SuperLog {
     private var timer: Timer?
 
     private weak var storage: (any StorageProviding)?
-    private var logo: (any LogoProviding)?
+    private weak var kernel: KernelCoreContainer?
 
     // MARK: - Initialization
 
@@ -58,9 +59,9 @@ final class CaffeinateManager: SuperLog {
         }
     }
 
-    func configure(storage: (any StorageProviding)?, logo: (any LogoProviding)?) {
+    func configure(storage: (any StorageProviding)?, kernel: KernelCoreContainer) {
         self.storage = storage
-        self.logo = logo
+        self.kernel = kernel
         CaffeinateLocalStore.shared.configure(storage: storage)
         reloadPersistedDefaultMode()
         synchronizeLogoHighlight()
@@ -95,7 +96,7 @@ final class CaffeinateManager: SuperLog {
     }
 
     private func synchronizeLogoHighlight() {
-        guard let logo else {
+        guard let logo = kernel?.resolveProvider((any LogoProviding).self) else {
             CaffeinatePlugin.logger.error("[LogoHighlight] synchronize skipped: logo service is nil")
             return
         }
@@ -106,7 +107,7 @@ final class CaffeinateManager: SuperLog {
     }
 
     private func updateLogoHighlight(_ highlighted: Bool) {
-        guard let logo else {
+        guard let logo = kernel?.resolveProvider((any LogoProviding).self) else {
             CaffeinatePlugin.logger.error("[LogoHighlight] update skipped: logo service is nil target=\(highlighted)")
             return
         }

@@ -49,8 +49,7 @@ public final class CaffeinatePlugin: SuperPlugin {
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 配置 Manager：存储目录 + Logo 高亮（沿用旧版 onReady 的 configure）。
         let storage = kernel.resolveProvider((any StorageProviding).self)
-        let logo = kernel.resolveProvider((any LogoProviding).self)
-        CaffeinateManager.shared.configure(storage: storage, logo: logo)
+        CaffeinateManager.shared.configure(storage: storage, kernel: kernel)
 
         // 注册 Agent 工具。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
