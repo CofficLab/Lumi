@@ -13,7 +13,7 @@ import SwiftUI
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any MenuBarProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
-public protocol MenuBarProviding: AnyObject {
+public protocol MenuBarProviding: AnyObject, ObservableObject {
     /// 全部菜单栏内容项。
     var contentItems: [MenuBarContentItem] { get }
 

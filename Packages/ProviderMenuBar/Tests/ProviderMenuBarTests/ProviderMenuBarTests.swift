@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import Testing
 @testable import ProviderMenuBar
@@ -65,7 +66,8 @@ struct ProviderMenuBarTests {
 
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
-        final class CustomMenuBar: MenuBarProviding {
+        final class CustomMenuBar: @preconcurrency MenuBarProviding {
+            let objectWillChange = ObservableObjectPublisher()
             var contentItems: [MenuBarContentItem] = []
             var popupItems: [MenuBarPopupItem] = []
 
