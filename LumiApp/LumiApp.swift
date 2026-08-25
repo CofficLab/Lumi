@@ -21,6 +21,7 @@ struct LumiMinimalApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: LumiAppDelegate
     /// 共享内核：主窗口、设置、菜单栏共用同一实例。
     @StateObject private var kernel: KernelCoreContainer
+    @StateObject private var menuBarController: LumiMenuBarController
 
     /// 启动失败必须显式呈现，不能静默退化成一个没有 Provider 的空内核。
     private let bootstrapErrorDescription: String?
@@ -43,6 +44,7 @@ struct LumiMinimalApp: App {
             // 先在 StateObject 的非 throwing autoclosure 外完成可能失败的装配。
             let assembledKernel = try KernelFactory.makeKernel()
             _kernel = StateObject(wrappedValue: assembledKernel)
+            _menuBarController = StateObject(wrappedValue: LumiMenuBarController())
             bootstrapErrorDescription = nil
             mainView = (try? KernelFactory.makeMainView(kernel: assembledKernel))
                 ?? AnyView(BootstrapFailureView(message: "Failed to assemble main view"))
@@ -53,6 +55,7 @@ struct LumiMinimalApp: App {
             AppUpdateBootstrap.start(kernel: assembledKernel)
         } catch {
             _kernel = StateObject(wrappedValue: KernelCoreContainer())
+            _menuBarController = StateObject(wrappedValue: LumiMenuBarController())
             bootstrapErrorDescription = error.localizedDescription
             mainView = AnyView(BootstrapFailureView(message: error.localizedDescription))
             settingsView = AnyView(BootstrapFailureView(message: error.localizedDescription))
@@ -85,6 +88,7 @@ struct LumiMinimalApp: App {
                     consumePendingOpenPath(path, kernel: kernel)
                 }
                 .onAppear {
+                    menuBarController.install(kernel: kernel)
                     // Launch Services may deliver a file before WindowGroup has
                     // installed its Combine subscription. Consume the retained
                     // delegate value once the V2 window is actually ready.
@@ -113,24 +117,6 @@ struct LumiMinimalApp: App {
         // Preserve the legacy `AppBootstrap.defaultSettingsWindowSize`.
         .defaultSize(width: 780, height: 600)
 
-        // 菜单栏：复刻旧版的完整组合关系：Logo + 插件常驻内容作为状态栏
-        // 标签；插件弹窗内容之后保留应用操作区。不能只渲染 Logo，否则已
-        // 注入的 `MenuBarContentItem` 永远不可见，Popover 也会缺少宿主操作。
-        MenuBarExtra {
-            LumiMenuBarPopover(
-                items: kernel.resolveProvider((any MenuBarProviding).self)?.popupItems ?? [],
-                onShowMainWindow: showMainWindow,
-                onCheckForUpdates: { UpdateService.shared.checkForUpdates() },
-                onQuit: { NSApp.terminate(nil) }
-            )
-        } label: {
-            LumiMenuBarLabel(kernel: kernel)
-        }
-        // 默认 `.menu` 会把 SwiftUI 内容降级为原生 NSMenu 项：HStack 会被拆成
-        // 竖排文本，图表和自定义背景也会丢失（即新版截图中的粗糙样式）。旧版
-        // 使用 NSPopover，因此这里必须使用 `.window`，保留每个插件贡献的完整
-        // SwiftUI 视图树及 280pt 的弹窗尺寸。
-        .menuBarExtraStyle(.window)
     }
 
     /// 与旧版 `MenuBarManagerPlugin.showMainWindow()` 保持相同行为：从状态栏
@@ -148,6 +134,122 @@ struct LumiMinimalApp: App {
         Task { @MainActor in
             _ = await KernelFactory.openExternalPath(path, kernel: kernel)
         }
+    }
+}
+
+/// AppKit status-item host retained from the legacy menu-bar implementation.
+/// `MenuBarExtra` measures its label as a single compact menu-bar line and can
+/// clip custom plugin views. A real `NSStatusItem` preserves their intrinsic
+/// width and height, including the two-line network view and device charts.
+@MainActor
+final class LumiMenuBarController: NSObject, ObservableObject {
+    private var statusItem: NSStatusItem?
+    private var hostingView: LumiMenuBarHostingView<LumiMenuBarStatusView>?
+    private var popover: NSPopover?
+
+    func install(kernel: KernelCoreContainer) {
+        guard statusItem == nil else { return }
+
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        guard let button = item.button else { return }
+        button.title = ""
+        button.image = nil
+        button.target = self
+        button.action = #selector(togglePopover(_:))
+
+        let view = LumiMenuBarHostingView(rootView: LumiMenuBarStatusView(kernel: kernel))
+        view.translatesAutoresizingMaskIntoConstraints = false
+        button.subviews.forEach { $0.removeFromSuperview() }
+        button.addSubview(view)
+        NSLayoutConstraint.activate([
+            view.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: button.trailingAnchor),
+            view.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+            view.heightAnchor.constraint(equalToConstant: 22)
+        ])
+
+        let popup = NSPopover()
+        popup.behavior = .transient
+        popup.animates = true
+        popup.contentViewController = NSHostingController(
+            rootView: LumiMenuBarPopoverHost(kernel: kernel) {
+                self.showMainWindow()
+            } onCheckForUpdates: {
+                UpdateService.shared.checkForUpdates()
+            } onQuit: {
+                NSApp.terminate(nil)
+            }
+        )
+
+        statusItem = item
+        hostingView = view
+        popover = popup
+    }
+
+    @objc private func togglePopover(_ sender: Any?) {
+        guard let button = statusItem?.button, let popover else { return }
+        if popover.isShown {
+            popover.performClose(sender)
+        } else {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            popover.contentViewController?.view.window?.makeKey()
+        }
+    }
+
+    private func showMainWindow() {
+        NSApp.activate(ignoringOtherApps: true)
+        (NSApp.mainWindow ?? NSApp.windows.first(where: { $0.canBecomeKey }))?
+            .makeKeyAndOrderFront(nil)
+    }
+
+}
+
+/// The legacy host deliberately lets mouse hit-testing fall through to the
+/// status button, while still allowing the hosted SwiftUI view to draw freely.
+final class LumiMenuBarHostingView<Content: View>: NSHostingView<Content> {
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
+
+private struct LumiMenuBarStatusView: View {
+    @ObservedObject var kernel: KernelCoreContainer
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if let logo = kernel.resolveProvider((any LogoProviding).self),
+               let item = logo.highestPriorityLogoItem {
+                item.makeView(.general)
+                    .frame(width: 20, height: 20)
+            } else {
+                Image(systemName: "gauge.with.dots.needle.50percent")
+                    .frame(width: 20, height: 20)
+            }
+
+            if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
+                ForEach(menuBar.contentItems.sorted { $0.order < $1.order }) { item in
+                    item.makeView()
+                        .fixedSize(horizontal: true, vertical: true)
+                        .help(item.title)
+                }
+            }
+        }
+        .padding(.horizontal, 2)
+        .frame(height: 20)
+    }
+}
+
+private struct LumiMenuBarPopoverHost: View {
+    @ObservedObject var kernel: KernelCoreContainer
+    let onShowMainWindow: () -> Void
+    let onCheckForUpdates: () -> Void
+    let onQuit: () -> Void
+
+    var body: some View {
+        LumiMenuBarPopover(
+            items: kernel.resolveProvider((any MenuBarProviding).self)?.popupItems ?? [],
+            onShowMainWindow: onShowMainWindow,
+            onCheckForUpdates: onCheckForUpdates,
+            onQuit: onQuit
+        )
     }
 }
 
