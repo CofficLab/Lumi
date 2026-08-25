@@ -613,17 +613,6 @@ final class RAGSQLiteStore: @unchecked Sendable {
             }
         }
 
-        // Swift Package 资源 bundle（ProjectRAGPlugin 内部打包的 vec0.dylib）。
-        // 单元测试中可直接加载；App 中可能因资源 bundle 内的 dylib 未按嵌入代码签名而失败。
-        let moduleBundle = Bundle.module
-        for name in libraryNames {
-            if let url = moduleBundle.url(forResource: name, withExtension: nil) {
-                candidates.append(url.path)
-            } else if let resourcePath = moduleBundle.resourcePath {
-                candidates.append((resourcePath as NSString).appendingPathComponent(name))
-            }
-        }
-
         // 兜底：App bundle 内的其它可能路径。
         if let builtInPlugInsPath = main.builtInPlugInsPath {
             for name in libraryNames {
