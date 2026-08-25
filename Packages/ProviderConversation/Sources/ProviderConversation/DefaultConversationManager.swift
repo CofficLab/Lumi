@@ -61,7 +61,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
 
     public init() {
         if Self.verbose {
-            Self.logger.info("\(self.t)DefaultConversationManager initialized, dataDirectory=\(self.dataDirectory.path, privacy: .public)")
+            Self.logger.info("\(self.t)dataDirectory=\(self.dataDirectory.path, privacy: .public)")
         }
     }
 

@@ -12,7 +12,7 @@ import KitSuperLog
 @MainActor
 public final class GoProvider: VendorLLMProvider, SuperLog {
     public nonisolated static let emoji = "🚀"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     /// 包装基类 `resolveAPIKey()`，在抛出前记录 error 日志。
     private func resolvedAPIKey() throws -> String {
