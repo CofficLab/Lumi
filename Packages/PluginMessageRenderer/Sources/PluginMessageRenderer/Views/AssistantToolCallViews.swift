@@ -276,7 +276,8 @@ struct ToolCallRowView: View {
             ToolDetailPopoverView(
                 title: "调用参数",
                 systemImage: "slider.horizontal.3",
-                trailingTitle: toolCall.name
+                trailingTitle: toolCall.name,
+                minHeight: 0
             ) {
                 ToolCallArgumentsView(toolCall: toolCall)
             }
@@ -394,6 +395,7 @@ private struct ToolDetailPopoverView<Content: View>: View {
     let systemImage: String
     var trailingTitle: String?
     var isError = false
+    var minHeight: CGFloat = 200
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -422,7 +424,7 @@ private struct ToolDetailPopoverView<Content: View>: View {
         }
         .padding(12)
         .frame(width: 520)
-        .frame(minHeight: 200)
+        .frame(minHeight: minHeight)
         .appSurface(style: .popover, cornerRadius: 0, borderColor: theme.divider)
         .appThemedAppearance()
         .background {
