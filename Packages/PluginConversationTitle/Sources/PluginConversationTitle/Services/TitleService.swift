@@ -1,35 +1,25 @@
 import Foundation
 import KernelCore
-import ProviderConversation
-import ProviderMessage
-import ProviderLLMManager
 import KitLLM
-
-extension Message {
-    var llmMessage: LLMMessage {
-        LLMMessage(
-            role: KitLLM.MessageRole(rawValue: role.rawValue) ?? .unknown,
-            content: content,
-            toolCalls: toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
-            toolCallID: toolCallID,
-            reasoningContent: reasoningContent,
-            images: []
-        )
-    }
-}
+import KitSuperLog
+import os
 import ProviderAgentLoop
+import ProviderConversation
+import ProviderLLMManager
+import ProviderMessage
 
 /// 自动标题服务：监听 `lumiMessageSaved`，为「第一条用户消息」用 LLM 生成标题。
 ///
-/// 直接消费 `NotificationCenter` 上由内核发布的 `.lumiMessageSaved`，
-/// 为第一条用户消息生成会话标题。
+/// 订阅消息 Provider 的插入回调，为第一条用户消息生成会话标题。
 @MainActor
-final class AutoConversationTitleService {
+final class TitleService: SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-title", category: "AutoConversationTitleService")
+
     private let kernel: KernelCoreContainer
     private let conversations: any ConversationManaging
     private let messages: any MessageManaging
     private let llmProvider: any LLMManaging
-    private var observer: ObserverToken?
+    private var messageObserver: (any MessageInsertedObserverHandle)?
     private var runningConversationIDs: Set<UUID> = []
 
     init(
@@ -45,67 +35,69 @@ final class AutoConversationTitleService {
         installObserver()
     }
 
-    deinit {
-        // deinit 是 nonisolated 上下文；ObserverToken 是 @unchecked Sendable，
-        // 移除 observer 无需 MainActor 隔离。
-        if let observer {
-            NotificationCenter.default.removeObserver(observer.value)
-        }
-    }
-
     func stop() {
-        if let observer {
-            NotificationCenter.default.removeObserver(observer.value)
-            self.observer = nil
+        guard let messageObserver else {
+            Self.logger.error("\(Self.t)Failed to stop title service because the message observer is unavailable")
+            return
         }
+        messageObserver.cancel()
+        self.messageObserver = nil
     }
 
     private func installObserver() {
-//        let observer = NotificationCenter.default.addObserver(
-//            forName: .lumiMessageSaved,
-//            object: nil,
-//            queue: .main
-//        ) { [weak self] notification in
-//            guard let self,
-//                  let conversationID = notification.userInfo?["conversationID"] as? UUID,
-//                  let messageID = notification.userInfo?["messageID"] as? UUID,
-//                  let role = notification.userInfo?["role"] as? String,
-//                  role == ProviderMessage.MessageRole.user.rawValue else {
-//                return
-//            }
-//            Task { @MainActor [weak self] in
-//                await self?.handleMessageSaved(conversationID: conversationID, messageID: messageID)
-//            }
-//        }
-//        self.observer = ObserverToken(observer)
+        messageObserver = messages.addMessageInsertedObserver { [weak self] message, conversationID in
+            guard message.role == .user else { return }
+            Task { @MainActor [weak self] in
+                guard let self else {
+                    TitleService.logger.error("\(TitleService.t)Failed to handle inserted user message because the title service is unavailable")
+                    return
+                }
+                await self.handleMessageSaved(conversationID: conversationID, messageID: message.id)
+            }
+        }
     }
 
     private func handleMessageSaved(conversationID: UUID, messageID: UUID) async {
-        guard runningConversationIDs.insert(conversationID).inserted else { return }
+        guard runningConversationIDs.insert(conversationID).inserted else {
+            Self.logger.debug("\(Self.t)Skipped duplicate title generation request for conversation \(conversationID, privacy: .public)")
+            return
+        }
         defer { runningConversationIDs.remove(conversationID) }
 
-        guard let firstUserMessage = firstUserMessage(in: conversationID),
-              firstUserMessage.id == messageID,
-              await shouldApplyGeneratedTitle(
-                  conversationID: conversationID,
-                  firstUserMessageContent: firstUserMessage.content
-              ) else {
+        guard let firstUserMessage = firstUserMessage(in: conversationID) else {
+            Self.logger.error("\(Self.t)Failed to find the first user message for conversation \(conversationID, privacy: .public)")
+            return
+        }
+        guard firstUserMessage.id == messageID else {
+            Self.logger.error("\(Self.t)Inserted user message \(messageID, privacy: .public) is not the first user message for conversation \(conversationID, privacy: .public)")
+            return
+        }
+        guard await shouldApplyGeneratedTitle(
+            conversationID: conversationID,
+            firstUserMessageContent: firstUserMessage.content
+        ) else {
             return
         }
 
         do {
             let title = try await generateTitle(for: firstUserMessage.content, conversationID: conversationID)
-            guard !title.isEmpty,
-                  await shouldApplyGeneratedTitle(
-                      conversationID: conversationID,
-                      firstUserMessageContent: firstUserMessage.content,
-                      generatedTitle: title
-                  ) else {
+            guard !title.isEmpty else {
+                Self.logger.error("\(Self.t)LLM returned an empty generated title for conversation \(conversationID, privacy: .public)")
                 return
             }
-            _ = conversations.updateConversationTitle(title, for: conversationID)
+            guard await shouldApplyGeneratedTitle(
+                conversationID: conversationID,
+                firstUserMessageContent: firstUserMessage.content,
+                generatedTitle: title
+            ) else {
+                return
+            }
+            guard conversations.updateConversationTitle(title, for: conversationID) else {
+                Self.logger.error("\(Self.t)Failed to persist generated title for conversation \(conversationID, privacy: .public)")
+                return
+            }
         } catch {
-            // 生成失败静默：不阻塞用户消息流。
+            Self.logger.error("\(Self.t)Failed to generate conversation title for \(conversationID, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -115,6 +107,7 @@ final class AutoConversationTitleService {
         generatedTitle: String? = nil
     ) async -> Bool {
         guard let conversation = await conversations.fetchConversation(id: conversationID) else {
+            Self.logger.error("\(Self.t)Failed to fetch conversation \(conversationID, privacy: .public) while evaluating generated title")
             return false
         }
         return Self.shouldApplyGeneratedTitle(
@@ -193,10 +186,15 @@ final class AutoConversationTitleService {
     }
 
     nonisolated static func normalizeTitle(_ rawTitle: String) -> String {
-        let firstLine = rawTitle
-            .components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .first { !$0.isEmpty } ?? ""
+        guard let firstLine = (
+            rawTitle
+                .components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .first(where: { !$0.isEmpty })
+        ) else {
+            logger.error("\(Self.t)Failed to normalize generated title because the LLM response contains no non-empty line")
+            return ""
+        }
 
         let stripped = firstLine
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -210,11 +208,6 @@ final class AutoConversationTitleService {
     }
 }
 
-/// NotificationCenter observer 的 Sendable 包装（供 nonisolated deinit 访问）。
-private struct ObserverToken: @unchecked Sendable {
-    let value: NSObjectProtocol
-
-    init(_ value: NSObjectProtocol) {
-        self.value = value
-    }
-}
+// Compatibility name retained for package tests and integrations that still use
+// the pre-refactor service name.
+typealias AutoConversationTitleService = TitleService

@@ -1,12 +1,14 @@
-import os
 import Foundation
 import KernelCore
-import KitSuperLog
-import ProviderConversation
-import ProviderMessage
-import ProviderLLMManager
-import ProviderToolManager
 import KitAgentTool
+import KitSuperLog
+import os
+import ProviderChatSection
+import ProviderConversation
+import ProviderLLMManager
+import ProviderMessage
+import ProviderToolManager
+import SwiftUI
 
 /// 对话标题插件：自动生成标题 + 标题更新 Agent 工具。
 ///
@@ -28,20 +30,29 @@ public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
-    private var autoTitleService: AutoConversationTitleService?
+    private var autoTitleService: TitleService?
 
     public init() {}
 
-
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let conversations = kernel.resolveProvider((any ConversationManaging).self),
-              let messages = kernel.resolveProvider((any MessageManaging).self),
-              let llmProvider = kernel.resolveProvider((any LLMManaging).self) else {
-            Self.logger.error("\(Self.t)Failed to resolve ConversationManaging, MessageManaging, LLMManaging from kernel")
+        guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding from kernel while booting conversation title plugin")
+            return
+        }
+        guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ConversationManaging from kernel while booting conversation title plugin")
+            return
+        }
+        guard let messages = kernel.resolveProvider((any MessageManaging).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve MessageManaging from kernel while booting conversation title plugin")
+            return
+        }
+        guard let llmProvider = kernel.resolveProvider((any LLMManaging).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve LLMManaging from kernel while booting conversation title plugin")
             return
         }
 
-        autoTitleService = AutoConversationTitleService(
+        autoTitleService = TitleService(
             kernel: kernel,
             conversations: conversations,
             messages: messages,
@@ -49,16 +60,43 @@ public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
         )
 
         // 注册标题更新 Agent 工具。
-        kernel.resolveProvider((any ToolManagerProviding).self)?.add(
-            ConversationTitleUpdateTool(conversations: conversations),
-            pluginID: id
-        )
+        if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            toolManager.add(
+                TitleUpdateTool(conversations: conversations),
+                pluginID: id
+            )
+        } else {
+            Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding while registering conversation title tool")
+        }
+
+        chat.addBarItems([
+            ChatSectionBarItem(
+                id: "\(id).header",
+                order: 0,
+                placement: .header
+            ) {
+                HeaderView(conversations: conversations)
+            },
+        ])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        autoTitleService?.stop()
-        autoTitleService = nil
-        kernel.resolveProvider((any ToolManagerProviding).self)?
-            .remove(id: ConversationTitleUpdateTool.toolName)
+        if let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
+            chat.removeBarItem(id: "\(id).header")
+        } else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding while removing conversation title header")
+        }
+
+        if let autoTitleService {
+            autoTitleService.stop()
+            self.autoTitleService = nil
+        } else {
+            Self.logger.error("\(Self.t)Failed to stop conversation title service because it is unavailable")
+        }
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding while removing conversation title tool")
+            return
+        }
+        toolManager.remove(id: TitleUpdateTool.toolName)
     }
 }
