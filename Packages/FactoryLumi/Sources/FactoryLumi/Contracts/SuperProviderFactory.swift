@@ -117,6 +117,7 @@ public protocol ProviderFactory {
     func makeConversationInputProvider() -> any ConversationInputProviding
     func makeMessageStreamingProvider() -> any MessageStreamingProviding
     func makeMessageRenderingProvider() -> any MessageRenderingProviding
+    func makeToolCallRenderingProvider() -> any ToolCallRenderingProviding
     func makePromptSuggestionProvider() -> any PromptSuggestionProviding
     func makeWorkspaceProvider(storage: any StorageProviding) -> any WorkspaceProviding
     func makeOnboardingProvider() -> any OnboardingProviding

@@ -162,7 +162,8 @@ struct ToolCallRowsView: View {
 
     @ViewBuilder
     private func toolCallRow(for toolCall: MessageToolCall) -> some View {
-        if let customRenderer = ToolCallRowRendererRegistry.shared.findRenderer(for: toolCall.agentToolCall) {
+        if let rendering = kernel.resolveProvider((any ToolCallRenderingProviding).self),
+           let customRenderer = rendering.renderer(for: toolCall.agentToolCall) {
             customRenderer.render(
                 toolCall: toolCall.agentToolCall,
                 message: rowContext
@@ -224,7 +225,7 @@ struct ToolCallRowView: View {
         ToolCallResultVisualState(result: toolCall.result, isLoading: isLoadingResult)
     }
 
-    /// 注:不再在 body 内查询 `ToolCallRowRendererRegistry` —— 两个构造方
+    /// 注:不再在 body 内查询工具渲染 Provider —— 两个构造方
     /// (`ToolCallRowsView` / `CollapsibleToolStepGroup`)都已先行查找并在命中时
     /// 自行渲染自定义行;这里的二次查找每次 body 求值(含 hover 与滚动
     /// 重物化)都白跑一遍 canRender 匹配链。注册表在插件加载期填充,不存在

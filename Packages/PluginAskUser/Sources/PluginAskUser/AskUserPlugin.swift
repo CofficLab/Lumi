@@ -3,6 +3,7 @@ import KernelCore
 import KitSuperLog
 import os
 import ProviderConversation
+import ProviderMessageRendering
 import ProviderToolManager
 import KitAgentTool
 import LumiUI
@@ -41,11 +42,14 @@ public final class AskUserPlugin: SuperPlugin, SuperLog {
             return
         }
         toolManager.add(AskUserTool(conversations: conversations), pluginID: id)
-        ToolCallRowRendererRegistry.shared.register(AskUserRowRenderer())
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?
+            .register(AskUserRowRenderer())
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ToolManagerProviding).self)?
             .remove(id: AskUserTool.toolName)
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?
+            .unregister(id: AskUserRowRenderer.id)
     }
 }

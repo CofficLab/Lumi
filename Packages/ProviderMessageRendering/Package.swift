@@ -8,6 +8,7 @@ let package = Package(
         .library(name: "ProviderMessageRendering", targets: ["ProviderMessageRendering"]),
     ],
     dependencies: [
+        .package(path: "../KitAgentTool"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
     ],
@@ -15,6 +16,7 @@ let package = Package(
         .target(
             name: "ProviderMessageRendering",
             dependencies: [
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
             ],

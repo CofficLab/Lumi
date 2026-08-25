@@ -21,7 +21,7 @@ import SwiftUI
 /// 用户随时可点击表头手动展开/收起任意步骤组;手动操作存于本地 `@State`,
 /// 当本组从"进行中"变为"已完成"(`isActive` 由 true→false)时清空覆盖,回归默认收起态。
 ///
-/// 展开态复用既有 `ToolCallRowView`(经 `ToolCallRowRendererRegistry` 优先走自定义渲染器),
+/// 展开态复用既有 `ToolCallRowView`(经工具渲染 Provider 优先走自定义渲染器),
 /// 传入 `showsDetails: false` 以隐藏耗时与参数/结果按钮,保持 V1 的 inline 极简风格。
 struct CollapsibleToolStepGroup: View {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-renderer", category: "CollapsibleToolStepGroup")
@@ -203,7 +203,8 @@ struct CollapsibleToolStepGroup: View {
 
     @ViewBuilder
     private func toolCallRow(for toolCall: MessageToolCall) -> some View {
-        if let customRenderer = ToolCallRowRendererRegistry.shared.findRenderer(for: toolCall.agentToolCall) {
+        if let rendering = kernel.resolveProvider((any ToolCallRenderingProviding).self),
+           let customRenderer = rendering.renderer(for: toolCall.agentToolCall) {
             customRenderer.render(
                 toolCall: toolCall.agentToolCall,
                 message: ToolCallRowMessageContext(

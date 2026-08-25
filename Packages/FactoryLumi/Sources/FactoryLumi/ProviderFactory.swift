@@ -182,6 +182,10 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultMessageRenderingProviding()
     }
 
+    public func makeToolCallRenderingProvider() -> any ToolCallRenderingProviding {
+        DefaultToolCallRenderingProviding()
+    }
+
     public func makePromptSuggestionProvider() -> any PromptSuggestionProviding {
         DefaultPromptSuggestionProvider()
     }
@@ -318,6 +322,7 @@ public struct DefaultProviderFactory: ProviderFactory {
         // 产出逻辑，可覆盖 `makeMessageSenderProvider` 或替换插件列表。
         try kernel.registerProvider((any ConversationInputProviding).self, makeConversationInputProvider())
         try kernel.registerProvider((any MessageRenderingProviding).self, makeMessageRenderingProvider())
+        try kernel.registerProvider((any ToolCallRenderingProviding).self, makeToolCallRenderingProvider())
         try kernel.registerProvider((any PromptSuggestionProviding).self, makePromptSuggestionProvider())
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
             throw KernelCoreError.providerNotRegistered(type: (any StorageProviding).self)

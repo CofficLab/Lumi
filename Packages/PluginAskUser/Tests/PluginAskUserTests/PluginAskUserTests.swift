@@ -178,7 +178,7 @@ struct AskUserPluginTests {
 
         // 第一轮：ask_user → 挂起等待用户回答
         let outcome = try await loop.runTurn(in: conversationID)
-        #expect(outcome == .suspended("awaiting user response"))
+        #expect(outcome == .suspended("userInput:ask-1"))
         let suspension = try #require(loop.suspension(for: conversationID))
         #expect(suspension.kind == "userInput")
 

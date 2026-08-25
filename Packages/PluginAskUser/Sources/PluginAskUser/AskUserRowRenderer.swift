@@ -1,5 +1,6 @@
 import KitAgentTool
 import LumiUI
+import ProviderMessageRendering
 import SwiftUI
 
 /// ask_user 挂起调用的专用行渲染器。
