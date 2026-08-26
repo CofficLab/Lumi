@@ -57,6 +57,20 @@ public protocol ToolManagerProviding: AnyObject {
         turnID: UUID?
     ) async -> ToolCallResult
 
+    /// 用户授权后执行一个工具，并发布专用的授权完成事件。
+    func executeAuthorized(
+        _ toolCall: ToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult
+
+    /// 用户拒绝一个需要授权的工具调用，并发布专用的授权完成事件。
+    func rejectAuthorized(
+        _ toolCall: ToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult
+
     /// 将用户对工具交互的响应交回工具管理器。
     /// AgentLoop 不解析响应，也不决定是否执行工具。
     func resolveUserResponse(
@@ -121,6 +135,38 @@ public extension ToolManagerProviding {
     /// 向后兼容的执行入口：不携带 turnID。
     func execute(_ toolCall: ToolCall, conversationID: UUID) async -> ToolCallResult {
         await execute(toolCall, conversationID: conversationID, turnID: nil)
+    }
+
+    func executeAuthorized(
+        _ toolCall: ToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult {
+        guard case let .executed(result) = await executeBatch(
+            [toolCall],
+            policy: .autoExecute,
+            conversationID: conversationID,
+            turnID: turnID
+        ).first else {
+            return ToolCallResult(content: "Authorized tool execution returned no result.", isError: true)
+        }
+        return result
+    }
+
+    func rejectAuthorized(
+        _ toolCall: ToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult {
+        guard case let .blocked(reason) = await executeBatch(
+            [toolCall],
+            policy: .blockAll,
+            conversationID: conversationID,
+            turnID: turnID
+        ).first else {
+            return ToolCallResult(content: "Tool execution was rejected by the user.", isError: true)
+        }
+        return ToolCallResult(content: reason, isError: true)
     }
 
     func resolveUserResponse(
