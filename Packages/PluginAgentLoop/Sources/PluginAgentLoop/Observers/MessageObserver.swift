@@ -36,7 +36,7 @@ final class MessageObserver: SuperLog {
             return
         }
         if Self.verbose {
-            Self.logger.info("\(Self.t)message event starts turn conversation=\(conversationID.uuidString.prefix(8))")
+            Self.logger.info("\(Self.t)🍋 message event starts turn conversation=\(conversationID.uuidString.prefix(8))")
         }
 
         Task { @MainActor [weak self] in

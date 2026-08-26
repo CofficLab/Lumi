@@ -7,26 +7,7 @@ import ProviderMessageSender
 import KitSuperLog
 import SwiftUI
 
-/// Conversation Input Plugin（KernelCore 版本）
-///
-/// 由旧版 `Plugins/ConversationInputPlugin`（KernelLumi / LumiPlugin 架构）复刻而来：
-/// - `onBoot` 向 `ChatSectionProviding` 注册底部固定输入框（`ComposerView` +
-///   原生 AppKit 编辑器 `ChatInputEditorView`，含 IME / 拖放 / 粘贴折叠预览），
-///   并在 Action Bar 注册发送/停止按钮（`SendActionBarButton`）；
-/// - 输入状态使用内核已注册的 `ConversationInputProviding`，发送使用
-///   `MessageSendingProviding`，与「文件树 → 添加到对话」等消费方共享同一状态；
-/// - `onShutdown` 撤回全部贡献。
-///
-/// 与旧版的对应关系：
-/// - `registerConversationInputService(inputState)` → 内核 `ConversationInputProviding`
-///   （FactoryLumi 已装配 `DefaultConversationInputProviding`）；
-/// - `chatSectionItems(.bottomFixed)` → `ChatSectionProviding.addItems`；
-/// - `chatSectionActionBarItems(.trailing)` → `ChatSectionProviding.addBarItems(.actionTrailing)`；
-/// - `kernel.messageSender`（isSending/send/stop）→ `MessageSendingProviding`
-///   （`isSending` / `sendMessage` / `cancelCurrentRequest`）。
-///
-/// 相比旧版移除：图片拖拽经 `messageSender.addAttachment` 作为附件发送——新版
-/// `MessageSendingProviding` 无附件管道，图片文件与其他文件一样以路径文本插入输入框。
+/// Conversation Input Plugin
 @MainActor
 public final class ConversationInputPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-input", category: "ConversationInput")
@@ -41,6 +22,11 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
         stage: .stable,
         policy: .alwaysOn
     )
+
+    private var sendActionBarViewModel: SendActionBarViewModel?
+    private var missingActionBarProviders: [String] = []
+    private var actionBarInputObserver: ActionBarInputObserver?
+    private var actionBarSendingObserver: ActionBarSendingObserver?
 
     public init() {}
 
@@ -57,6 +43,18 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
 
         let input = kernel.resolveProvider((any ConversationInputProviding).self)
         let sender = kernel.resolveProvider((any MessageSendingProviding).self)
+
+        var missingProviders: [String] = []
+        if input == nil { missingProviders.append("ConversationInputProviding") }
+        if sender == nil { missingProviders.append("MessageSendingProviding") }
+        if let input, let sender {
+            sendActionBarViewModel = SendActionBarViewModel(input: input, sender: sender)
+        } else {
+            sendActionBarViewModel = nil
+        }
+        missingActionBarProviders = missingProviders
+        let actionBarViewModel = sendActionBarViewModel
+        let actionBarMissingProviders = missingActionBarProviders
 
         // 1. 底部固定输入框
         chat.addItems([
@@ -77,12 +75,33 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
                 id: "\(id).send-button",
                 placement: .actionTrailing
             ) {
-                SendActionBarButton(input: input, sender: sender)
+                SendActionBarButton(
+                    viewModel: actionBarViewModel,
+                    missingProviders: actionBarMissingProviders
+                )
             },
         ])
     }
 
+    public func onReady(kernel: KernelCoreContainer) throws {
+        guard let viewModel = sendActionBarViewModel,
+              let input = kernel.resolveProvider((any ConversationInputProviding).self),
+              let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to initialize SendActionBar observers: required providers unavailable")
+            return
+        }
+
+        actionBarInputObserver = ActionBarInputObserver(input: input, viewModel: viewModel)
+        actionBarSendingObserver = ActionBarSendingObserver(sender: sender, viewModel: viewModel)
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        actionBarInputObserver?.cancel()
+        actionBarInputObserver = nil
+        actionBarSendingObserver?.cancel()
+        actionBarSendingObserver = nil
+        sendActionBarViewModel = nil
+        missingActionBarProviders = []
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeItem(id: id)
         kernel.resolveProvider((any ChatSectionProviding).self)?

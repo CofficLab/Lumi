@@ -6,8 +6,8 @@ import Foundation
 /// `MessageSender`; the stop control is an additional action, not a replacement
 /// for the send control.
 struct SendActionBarState {
-    let isSending: Bool
-    let canSend: Bool
+    var isSending: Bool
+    var canSend: Bool
 
     var showsSendButton: Bool { true }
     var showsStopButton: Bool { isSending }

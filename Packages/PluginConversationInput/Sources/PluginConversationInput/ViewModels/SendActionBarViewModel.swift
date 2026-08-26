@@ -6,9 +6,9 @@ import KitSuperLog
 
 /// Manages the state and actions for the send/stop action bar.
 ///
-/// Encapsulates subscription-based observation of input text and sending state
-/// (the existential-type workaround), plus the send pipeline. Call `setup()`
-/// when the view appears and `teardown()` when it disappears.
+/// The plugin owns this model and its observation lifecycle. Observers update
+/// `state` when the input text or sending state changes; the view only renders
+/// the model and invokes its actions.
 ///
 /// - Precondition: Both `input` and `sender` must be non-nil. The caller
 ///   (`SendActionBarButton`) is responsible for nil-checking before instantiation.
@@ -22,61 +22,27 @@ final class SendActionBarViewModel: SuperLog {
     private let input: any ConversationInputProviding
     private let sender: any MessageSendingProviding
 
-    // MARK: - Observation tokens
-
-    private var textToken: (any TextInputObserverHandle)?
-    private var sendingToken: (any SendingStateObserverHandle)?
-
-    // MARK: - Revision counters (drive @Observable re-renders)
-
-    private var inputRevision = 0
-    private var senderRevision = 0
-
-    // MARK: - Derived state
-
-    var isSending: Bool {
-        _ = senderRevision
-        return sender.isSending
-    }
-
-    var canSend: Bool {
-        _ = inputRevision
-        return !input.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    var state: SendActionBarState {
-        SendActionBarState(isSending: isSending, canSend: canSend)
-    }
+    private(set) var state: SendActionBarState
 
     // MARK: - Lifecycle
 
     init(input: any ConversationInputProviding, sender: any MessageSendingProviding) {
         self.input = input
         self.sender = sender
+        self.state = SendActionBarState(
+            isSending: sender.isSending,
+            canSend: !input.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        )
     }
 
-    /// Subscribe to input text and sending state changes. Call in `onAppear`.
-    func setup() {
-        if Self.verbose {
-            Self.logger.debug("\(self.t)setup — subscribing to input and sending state")
-        }
-        textToken = input.addTextObserver { [weak self] _ in
-            self?.inputRevision &+= 1
-        }
-        sendingToken = sender.addSendingStateObserver { [weak self] _ in
-            self?.senderRevision &+= 1
-        }
+    // MARK: - State updates
+
+    func updateInputText(_ text: String) {
+        state.canSend = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    /// Cancel all subscriptions. Call in `onDisappear`.
-    func teardown() {
-        textToken?.cancel()
-        textToken = nil
-        sendingToken?.cancel()
-        sendingToken = nil
-        if Self.verbose {
-            Self.logger.debug("\(self.t)teardown — subscriptions released")
-        }
+    func updateSendingState(_ isSending: Bool) {
+        state.isSending = isSending
     }
 
     // MARK: - Actions

@@ -7,18 +7,10 @@ import SwiftUI
 ///
 /// 视图负责 nil 检查与错误展示；正常情况下将非 nil 的依赖交给 ViewModel 管理状态和逻辑。
 struct SendActionBarButton: View {
-    let input: (any ConversationInputProviding)?
-    let sender: (any MessageSendingProviding)?
+    let viewModel: SendActionBarViewModel?
+    let missingProviders: [String]
 
-    @State private var viewModel: SendActionBarViewModel?
     @State private var showErrorPopover = false
-
-    private var missingProviders: [String] {
-        var missing: [String] = []
-        if input == nil { missing.append("ConversationInputProviding") }
-        if sender == nil { missing.append("MessageSendingProviding") }
-        return missing
-    }
 
     var body: some View {
         HStack(spacing: 6) {
@@ -32,16 +24,6 @@ struct SendActionBarButton: View {
                     errorPopoverContent
                 }
             }
-        }
-        .onAppear {
-            guard let input, let sender else { return }
-            let vm = SendActionBarViewModel(input: input, sender: sender)
-            viewModel = vm
-            vm.setup()
-        }
-        .onDisappear {
-            viewModel?.teardown()
-            viewModel = nil
         }
     }
 
