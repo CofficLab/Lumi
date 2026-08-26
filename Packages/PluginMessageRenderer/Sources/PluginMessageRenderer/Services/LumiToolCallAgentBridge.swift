@@ -19,6 +19,7 @@ extension MessageToolCall {
             id: id,
             name: name,
             arguments: arguments,
+            authorizationState: authorizationState.flatMap(ToolCallAuthorizationState.init(rawValue:)) ?? .pendingAuthorization,
             result: result.map { lumiResult in
                 ToolCallResult(
                     content: lumiResult.content,

@@ -4,6 +4,7 @@ import KitAgentTool
 import LumiUI
 import ProviderAgentLoop
 import ProviderMessageRendering
+import ProviderToolManager
 import SwiftUI
 
 private struct ToolPermissionRequest: Codable {
@@ -24,27 +25,68 @@ final class ToolApprovalBridge {
     static let shared = ToolApprovalBridge()
 
     private weak var agentLoop: (any AgentLoopProviding)?
+    private weak var toolManager: (any ToolManagerProviding)?
 
     private init() {}
 
     func start(kernel: KernelCoreContainer) {
         agentLoop = kernel.resolveProvider((any AgentLoopProviding).self)
+        toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
     }
 
     func stop() {
         agentLoop = nil
+        toolManager = nil
     }
 
-    func resume(conversationID: UUID, toolCallID: String, answer: String) {
-        guard let agentLoop else { return }
+    fileprivate func permissionRequest(for toolCall: ToolCall) -> ToolPermissionRequest? {
+        if let content = toolCall.result?.content,
+           let request = try? JSONDecoder().decode(
+               ToolPermissionRequest.self,
+               from: Data(content.utf8)
+           ),
+           request.kind == "permission" {
+            return request
+        }
+        guard let risk = toolManager?.riskLevel(for: toolCall), risk.requiresPermission else {
+            return nil
+        }
+        return ToolPermissionRequest(
+            toolCallID: "approval:\(toolCall.id)",
+            kind: "permission",
+            question: "此操作被判定为\(risk.displayName)，是否允许执行？\n\(toolManager?.displayDescription(for: toolCall) ?? toolCall.name)",
+            options: ["允许", "拒绝"],
+            mode: "yes_no"
+        )
+    }
+
+    func resolve(conversationID: UUID, toolCall: ToolCall, answer: String) {
+        guard let toolManager else { return }
+        let turnID = agentLoop?.currentTurnID(for: conversationID)
+        let approved = Self.isApproval(answer)
         Task { @MainActor in
-            _ = try? await agentLoop.resumeTurn(
-                in: conversationID,
-                request: AgentTurnResumeRequest(
-                    suspensionID: "userInput:\(toolCallID)",
-                    answer: answer
+            if approved {
+                _ = await toolManager.executeAuthorized(
+                    toolCall,
+                    conversationID: conversationID,
+                    turnID: turnID
                 )
-            )
+            } else {
+                _ = await toolManager.rejectAuthorized(
+                    toolCall,
+                    conversationID: conversationID,
+                    turnID: turnID
+                )
+            }
+        }
+    }
+
+    private static func isApproval(_ answer: String) -> Bool {
+        switch answer.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "允许", "同意", "是", "allow", "approve", "approved", "yes":
+            return true
+        default:
+            return false
         }
     }
 }
@@ -57,22 +99,12 @@ public struct ToolApprovalRowRenderer: ToolCallRowRenderer {
     public init() {}
 
     public func canRender(toolCall: ToolCall) -> Bool {
-        guard toolCall.result?.awaitingUserResponse == true,
-              let content = toolCall.result?.content,
-              let data = content.data(using: .utf8),
-              let request = try? JSONDecoder().decode(ToolPermissionRequest.self, from: data) else {
-            return false
-        }
-        return request.kind == "permission"
+        toolCall.result == nil && toolCall.authorizationState == .pendingAuthorization
     }
 
     @MainActor
     public func render(toolCall: ToolCall, message: ToolCallRowMessageContext) -> AnyView {
-        guard let content = toolCall.result?.content,
-              let request = try? JSONDecoder().decode(
-                  ToolPermissionRequest.self,
-                  from: Data(content.utf8)
-              ) else {
+        guard let request = ToolApprovalBridge.shared.permissionRequest(for: toolCall) else {
             return AnyView(Text("无法解析工具审批请求"))
         }
 
@@ -133,9 +165,9 @@ private struct ToolApprovalPendingView: View {
     private func submit(_ answer: String) {
         guard !responded else { return }
         responded = true
-        ToolApprovalBridge.shared.resume(
+        ToolApprovalBridge.shared.resolve(
             conversationID: conversationID,
-            toolCallID: toolCall.id,
+            toolCall: toolCall,
             answer: answer
         )
     }
