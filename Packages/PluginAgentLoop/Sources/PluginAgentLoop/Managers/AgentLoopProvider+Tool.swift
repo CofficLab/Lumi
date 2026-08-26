@@ -13,26 +13,6 @@ import KitSuperLog
 // MARK: - LLM Request
 
 extension AgentLoopManager {
-    /// AgentLoop 只发布 LLM 结果；工具管理器负责消费该事件并执行批次。
-    func handleAgentLoopEvent(_ event: AgentLoopEvent) {
-        guard case .llmResponseReceived(let conversationID, let turnID, let toolCalls) = event,
-              !toolCalls.isEmpty else { return }
-        let policy: ToolExecutionPolicy
-        switch conversations.automationLevel(for: conversationID) {
-        case .chat: policy = .blockAll
-        case .autonomous: policy = .autoExecute
-        case .build: policy = .requireApprovalForHighRisk
-        }
-        let inputs = toolCalls.map { AgentLoopToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }
-        Task { @MainActor [weak self] in
-            guard let self else {
-                Self.logger.error("\(Self.t)无法执行 LLM 返回的工具调用：AgentLoopManager 已释放 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
-                return
-            }
-            _ = await self.toolManager.executeBatch(inputs, policy: policy, conversationID: conversationID, turnID: turnID)
-        }
-    }
-
     /// 接收 ToolManager 的批量完成事件，推进当前回合状态机。
     func handleToolManagerEvent(_ event: ToolManagerEvent) {
         guard case .batchCompleted(let conversationID, let eventTurnID, let toolCalls, let results) = event else { return }
@@ -55,7 +35,6 @@ extension AgentLoopManager {
             return
         }
 
-        let callsByID = Dictionary(uniqueKeysWithValues: toolCalls.map { ($0.id, MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)) })
         var suspension: AgentLoopSuspension?
         for (call, batchResult) in zip(toolCalls, results) {
             if Self.verbose {
@@ -297,112 +276,6 @@ extension AgentLoopManager {
 // MARK: - Tool Execution
 
 extension AgentLoopManager {
-    /// 工具批次执行结果。
-    enum AgentLoopBatchResult {
-        /// 所有工具执行完成，结果已落库。
-        case allCompleted(results: [(toolCallID: String, result: MessageToolResult)])
-        /// 某个工具需要用户响应（审批或输入），已挂起。
-        case suspended(suspension: AgentLoopSuspension, completedResults: [(toolCallID: String, result: MessageToolResult)])
-    }
-
-    /// 批量执行工具调用，内部处理授权判断和挂起。
-    ///
-    /// 调用 `toolManager.executeBatch`，根据策略执行或拒绝工具。
-    /// 如果遇到需要审批或用户输入的工具，立即挂起并返回。
-    func performToolBatch(
-        _ toolCalls: [MessageToolCall],
-        conversationID: UUID,
-        turnID: UUID
-    ) async -> AgentLoopBatchResult {
-        // 映射 automationLevel → ToolExecutionPolicy
-        let automationLevel = conversations.automationLevel(for: conversationID)
-        let policy: ToolExecutionPolicy
-        switch automationLevel {
-        case .chat: policy = .blockAll
-        case .autonomous: policy = .autoExecute
-        case .build: policy = .requireApprovalForHighRisk
-        }
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)批量执行工具: count=\(toolCalls.count), automationLevel=\(automationLevel.rawValue), policy=\(policy)")
-        }
-
-        // 转换为 ToolCall
-        let toolCallInputs = toolCalls.map { tc in
-            AgentLoopToolCall(id: tc.id, name: tc.name, arguments: tc.arguments)
-        }
-
-        // 调用 executeBatch
-        let batchResults = await toolManager.executeBatch(
-            toolCallInputs,
-            policy: policy,
-            conversationID: conversationID,
-            turnID: turnID
-        )
-
-        // 处理结果
-        var completedResults: [(toolCallID: String, result: MessageToolResult)] = []
-
-        for (toolCall, batchResult) in zip(toolCalls, batchResults) {
-            switch batchResult {
-            case .executed(let toolResult):
-                let result = convertResult(toolResult)
-                // 插入 status 消息
-                insertStatusMessage(
-                    conversationID: conversationID,
-                    content: String(
-                        localized: "status.executing-tool",
-                        defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
-                    )
-                )
-                // 检查是否需要挂起（ask_user 等工具）
-                if result.awaitingUserResponse {
-                    let suspension = AgentLoopSuspension(
-                        suspensionID: "userInput:\(toolCall.id)",
-                        conversationID: conversationID,
-                        toolCallID: toolCall.id,
-                        kind: "userInput",
-                        payload: result.content
-                    )
-                    return .suspended(suspension: suspension, completedResults: completedResults)
-                }
-                completedResults.append((toolCall.id, result))
-
-            case .blocked(let reason):
-                // 工具被拒绝
-                let result = MessageToolResult(content: reason, isError: true)
-                insertStatusMessage(
-                    conversationID: conversationID,
-                    content: String(
-                        localized: "status.executing-tool",
-                        defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
-                    )
-                )
-                completedResults.append((toolCall.id, result))
-
-            case .needsUserResponse(let payload):
-                // 工具需要审批
-                insertStatusMessage(
-                    conversationID: conversationID,
-                    content: String(
-                        localized: "status.executing-tool",
-                        defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
-                    )
-                )
-                let suspension = AgentLoopSuspension(
-                    suspensionID: "userInput:\(toolCall.id)",
-                    conversationID: conversationID,
-                    toolCallID: toolCall.id,
-                    kind: "userInput",
-                    payload: payload
-                )
-                return .suspended(suspension: suspension, completedResults: completedResults)
-            }
-        }
-
-        return .allCompleted(results: completedResults)
-    }
-
     func convertResult(_ result: KitAgentTool.ToolCallResult) -> MessageToolResult {
         MessageToolResult(
             content: result.content,

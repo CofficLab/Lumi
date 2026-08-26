@@ -52,7 +52,19 @@ extension AgentLoopManager {
         let (next, outcome) = TurnReducer.reduce(runtime, event: .toolCallCompleted(toolCallID: toolCallID, result: result))
         runtimes[conversationID] = next
         if let outcome { finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome); return outcome }
-        launchAdvance(conversationID: conversationID, turnID: turnID)
+        if case .executingTools(let nextTurnID, let assistantMessageID, let remaining) = next.phase,
+           !remaining.isEmpty {
+            // 用户响应只完成当前挂起调用。剩余调用重新交给 ToolManager，
+            // AgentLoop 不直接执行工具，也不重新计算授权策略。
+            notify(.toolCallsReceived(
+                conversationID: conversationID,
+                turnID: nextTurnID,
+                assistantMessageID: assistantMessageID,
+                toolCalls: remaining
+            ))
+        } else {
+            launchAdvance(conversationID: conversationID, turnID: turnID)
+        }
         return await waitForCompletion(conversationID: conversationID)
     }
 
@@ -147,6 +159,7 @@ extension AgentLoopManager {
                     notifyLLMResponse(
                         conversationID: conversationID,
                         turnID: currentTurnID,
+                        assistantMessageID: assistantID,
                         toolCalls: response.toolCalls?.map { MessageToolCall(
                             id: $0.id,
                             name: $0.name,

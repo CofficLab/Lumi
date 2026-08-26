@@ -1,10 +1,10 @@
 import KitAgentTool
 import Foundation
 
-/// 工具执行策略（由调用方根据会话 automationLevel 映射后传入）。
+/// 工具执行策略。事件驱动的 ToolManager 插件负责从会话 automationLevel 映射。
 ///
 /// 本类型不依赖 `ProviderConversation`，避免 ToolManager 包引入额外依赖。
-/// 调用方（AgentLoop）负责从 `LumiAutomationLevel` 映射：
+/// ToolManager 插件负责从 `LumiAutomationLevel` 映射：
 ///
 /// ```
 /// .chat       → .blockAll

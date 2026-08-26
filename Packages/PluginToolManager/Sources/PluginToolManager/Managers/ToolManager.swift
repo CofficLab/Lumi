@@ -5,6 +5,14 @@ import KitSuperLog
 import os
 import ProviderToolManager
 
+private struct ToolInteractionPayload: Codable {
+    let toolCallID: String
+    let kind: String
+    let question: String
+    let options: [String]
+    let mode: String
+}
+
 /// PluginToolManager 自己实现的工具注册、执行、授权和调用记录管理。
 @MainActor
 public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog {
@@ -150,7 +158,7 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
         }
         var results: [BatchToolResult] = []
         results.reserveCapacity(toolCalls.count)
-        for toolCall in toolCalls {
+        batchLoop: for toolCall in toolCalls {
             if Self.verbose {
                 Self.logger.info("\(Self.t)batch tool begin id=\(toolCall.id), name=\(toolCall.name), conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID?.uuidString.prefix(8) ?? "nil")")
             }
@@ -161,8 +169,22 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
                 results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID)))
             case .requireApprovalForHighRisk:
                 let risk = riskLevel(for: toolCall) ?? .high
-                if risk.requiresPermission { results.append(.needsApproval(riskLevel: risk)) }
-                else { results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID))) }
+                if risk.requiresPermission {
+                    let payload = ToolInteractionPayload(
+                        toolCallID: "approval:\(toolCall.id)",
+                        kind: "permission",
+                        question: "此操作被判定为\(risk.displayName)，是否允许执行？\n\(displayDescription(for: toolCall) ?? toolCall.name)",
+                        options: ["允许", "拒绝"],
+                        mode: "yes_no"
+                    )
+                    let content = (try? String(data: JSONEncoder().encode(payload), encoding: .utf8))
+                        ?? "Unable to create tool interaction request."
+                    results.append(.needsUserResponse(payload: content))
+                    // 授权是批次的暂停点；后续调用必须等用户决定后再处理。
+                    break batchLoop
+                } else {
+                    results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID)))
+                }
             }
         }
         if Self.verbose {
@@ -170,7 +192,7 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
                 switch result {
                 case .executed: return "executed"
                 case .blocked: return "blocked"
-                case .needsApproval: return "needsApproval"
+                case .needsUserResponse: return "needsUserResponse"
                 }
             }
             Self.logger.info("\(Self.t)batch results prepared count=\(results.count), kinds=\(kinds)")

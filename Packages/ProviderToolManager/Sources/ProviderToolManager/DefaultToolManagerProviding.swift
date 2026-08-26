@@ -296,7 +296,7 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
         }
         var results: [BatchToolResult] = []
         results.reserveCapacity(toolCalls.count)
-        for toolCall in toolCalls {
+        batchLoop: for toolCall in toolCalls {
             switch policy {
             case .blockAll:
                 results.append(.blocked(reason: "Tool execution was blocked because this conversation is in Chat mode."))
@@ -315,6 +315,8 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
                     let content = (try? String(data: JSONEncoder().encode(payload), encoding: .utf8))
                         ?? "Unable to create tool interaction request."
                     results.append(.needsUserResponse(payload: content))
+                    // 授权是批次的暂停点；后续调用必须等用户决定后再处理。
+                    break batchLoop
                 } else {
                     results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID)))
                 }

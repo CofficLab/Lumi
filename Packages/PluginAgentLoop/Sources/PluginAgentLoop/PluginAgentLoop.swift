@@ -14,8 +14,8 @@ import ProviderToolManager
 /// AgentLoop 插件
 ///
 /// 使用自定义的 AgentLoopProvider 替换默认的 DefaultAgentLoopProvider。
-/// AgentLoopProvider 完整实现了回合循环逻辑（LLM 调用、工具执行、
-/// 授权挂起/恢复），而非简单转发到 DefaultAgentLoopProvider。
+/// AgentLoopProvider 负责 LLM step、回合状态机和结果回写；工具调用通过事件
+/// 交给 PluginToolManager，授权 UI 通过 AgentLoop 的恢复接口继续回合。
 ///
 /// 执行顺序：order = 8
 /// - 必须在 MessageSenderPlugin (order=9) 之前执行，因为后者依赖 AgentLoopProviding
@@ -40,7 +40,6 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
 
     private var messageObserver: (any MessageInsertedObserverHandle)?
     private var toolManagerObserver: (any ToolManagerObserverHandle)?
-    private var agentLoopObserver: (any AgentLoopObserverHandle)?
 
     public init() {}
 
@@ -89,8 +88,6 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
         messageObserver = nil
         toolManagerObserver?.cancel()
         toolManagerObserver = nil
-        agentLoopObserver?.cancel()
-        agentLoopObserver = nil
         // 插件卸载时，内核会自动按归属移除 Provider
     }
 
@@ -141,24 +138,6 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
                 return
             }
             agentLoop.handleToolManagerEvent(event)
-        }
-        agentLoopObserver = agentLoop.addAgentLoopObserver { [weak agentLoop] event in
-            guard let agentLoop else {
-                Self.logger.error("\(Self.emoji)无法处理 AgentLoop 事件：AgentLoopProvider 已释放")
-                return
-            }
-            if case let .llmResponseReceived(conversationID, turnID, toolCalls) = event {
-                if Self.verbose {
-                    Self.logger.info("\(Self.t)🍋 LLM event received conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), tools=\(toolCalls.count)")
-                }
-            }
-            Task { @MainActor in
-                guard let agentLoop = agentLoop as? AgentLoopManager else {
-                    Self.logger.error("\(Self.emoji)无法处理 AgentLoop 事件：AgentLoopProvider 不是 AgentLoopManager")
-                    return
-                }
-                agentLoop.handleAgentLoopEvent(event)
-            }
         }
     }
 }

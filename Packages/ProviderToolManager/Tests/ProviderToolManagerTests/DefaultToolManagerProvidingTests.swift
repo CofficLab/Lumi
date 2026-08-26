@@ -75,6 +75,29 @@ struct DefaultToolManagerProvidingTests {
         #expect(result.content.contains("disk full"))
     }
 
+    @Test("批次遇到高风险工具后立即暂停，不执行后续调用")
+    func executeBatchStopsAtApproval() async {
+        let manager = DefaultToolManagerProviding()
+        manager.add(MockTool(name: "risky", risk: .high), pluginID: "p")
+        manager.add(MockTool(name: "safe", risk: .low), pluginID: "p")
+
+        let results = await manager.executeBatch(
+            [
+                makeToolCall(name: "risky", id: "risky-1"),
+                makeToolCall(name: "safe", id: "safe-1")
+            ],
+            policy: .requireApprovalForHighRisk,
+            conversationID: UUID(),
+            turnID: UUID()
+        )
+
+        #expect(results.count == 1)
+        guard case .needsUserResponse = results[0] else {
+            Issue.record("expected the first tool call to require user response")
+            return
+        }
+    }
+
     @Test("execute 参数非 JSON 对象返回错误")
     func executeBadArguments() async {
         let manager = DefaultToolManagerProviding()

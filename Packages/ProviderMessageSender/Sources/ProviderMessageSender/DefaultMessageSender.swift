@@ -284,7 +284,7 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
             conversationID = id
             outcome = .failed(reason)
             notify(.turnFailed(conversationID: id, reason: reason))
-        case .started, .llmResponseReceived:
+        case .started, .toolCallsReceived, .llmResponseReceived:
             return
         }
 

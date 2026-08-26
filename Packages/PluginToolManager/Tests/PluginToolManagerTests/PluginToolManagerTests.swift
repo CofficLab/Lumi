@@ -1,7 +1,48 @@
 import KernelCore
+import KitAgentTool
 import ProviderToolManager
 import Testing
 @testable import PluginToolManager
+
+private struct CountingTool: SuperAgentTool, @unchecked Sendable {
+    let name: String
+    let risk: CommandRiskLevel
+    let counter: Counter
+
+    final class Counter {
+        var value = 0
+    }
+
+    func description(for language: LanguagePreference) -> String { name }
+    func inputSchema(for language: LanguagePreference) -> [String: Any] { [:] }
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { risk }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { name }
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
+        counter.value += 1
+        return name
+    }
+}
+
+@MainActor
+@Test func toolManagerBatchStopsAtApproval() async {
+    let manager = ToolManager()
+    let laterCounter = CountingTool.Counter()
+    manager.add(CountingTool(name: "risky", risk: .high, counter: .init()), pluginID: "test")
+    manager.add(CountingTool(name: "later", risk: .low, counter: laterCounter), pluginID: "test")
+
+    let results = await manager.executeBatch(
+        [
+            ToolCall(id: "risky-1", name: "risky", arguments: "{}"),
+            ToolCall(id: "later-1", name: "later", arguments: "{}")
+        ],
+        policy: .requireApprovalForHighRisk,
+        conversationID: UUID(),
+        turnID: UUID()
+    )
+
+    #expect(results.count == 1)
+    #expect(laterCounter.value == 0)
+}
 
 @MainActor
 @Test func toolManagerPluginReplacesFallbackAndRegistersBuiltinTools() throws {

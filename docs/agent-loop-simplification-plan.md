@@ -32,13 +32,13 @@ MessageSendingProviding
             ├─ assistant 消息落库
             ├─ 检测 toolCalls
             ├─ 若无工具调用 → 完成
-            └─ 若有工具调用 → 打包交给 ToolManager，等待结果
-                 └─ ToolManagerProviding
-                      ├─ 授权判断（从 AgentLoop 移入）
+            └─ 若有工具调用 → 发布 AgentLoopEvent.toolCallsReceived
+                 └─ PluginToolManager
+                      ├─ 监听工具调用事件并选择执行策略
+                      ├─ 授权判断
                       ├─ 执行工具
-                      ├─ 工具结果落库
-                      ├─ 挂起/恢复（从 AgentLoop 移入）
-                      └─ 返回所有结果给 AgentLoop
+                      ├─ 发布 ToolManagerEvent.batchCompleted
+                      └─ 授权点停止，等待 Renderer 恢复 AgentLoop
 ```
 
 ## 2. 核心原则
@@ -55,7 +55,7 @@ MessageSendingProviding
 | LLM 请求构造 | 消息历史 → LLMMessage 转换、工具 schema 注入 |
 | 流式 LLM 调用 | 流式/非流式调用、增量渲染到 MessageStreamingProviding |
 | assistant 消息落库 | LLM 响应写入数据库 |
-| 循环控制 | 有工具调用 → 交给 ToolManager → 拿结果 → 继续循环 |
+| 循环控制 | 发布工具调用事件 → 等待 ToolManager 结果 → 继续循环 |
 | 状态机 | idle / running / completed / failed / cancelled |
 | 取消 | cancelTurn 中断当前 Task |
 | 生命周期钩子 | willSendToLLM / didReceiveLLMResponse 等 |
@@ -70,6 +70,10 @@ MessageSendingProviding
 | 未完成工具批次续跑逻辑 | → ToolManager |
 
 ### 3.2 ToolManagerProviding（增强后）
+
+在插件装配层由 `PluginToolManager` 订阅 `AgentLoopEvent.toolCallsReceived`。
+AgentLoop 不直接调用 ToolManager，也不计算 `automationLevel` 对应的执行策略。
+ToolManager 完成批次后发布 `ToolManagerEvent.batchCompleted`，由 AgentLoop 消费。
 
 新增的批量执行入口：
 
@@ -124,6 +128,17 @@ public enum AutoExecuteDecision {
 
 **不变。** 接口和实现保持现状，只是底层 AgentLoop 变简单了。
 
+### 4.1 事件驱动契约
+
+`AgentLoopEvent.toolCallsReceived` 携带 `conversationID`、`turnID`、
+`assistantMessageID` 和工具调用列表。它表示一次 LLM step 结束，不表示整个
+Agent turn 完成。AgentLoop 进入 `executingTools` 后释放当前 step task，但
+`runTurn()` 继续等待终态结果。
+
+ToolManager 在授权点停止当前批次，并通过 `batchCompleted` 返回已完成结果与
+`needsUserResponse`。用户操作仍由消息渲染器提交给 `AgentLoop.resumeTurn()`；
+AgentLoop 只回写当前结果并重新发布剩余工具调用，继续由 ToolManager 执行。
+
 ## 4. 挂起/恢复的迁移
 
 当前挂起逻辑在 AgentLoop 中，涉及两种场景：
@@ -174,13 +189,10 @@ AgentLoop.executeTurnLoop():
     response = callLLM()                          // AgentLoop
     saveAssistantMessage(response)                 // AgentLoop
     if response.toolCalls.isEmpty { return }       // AgentLoop
-    outcome = toolManager.executeBatch(            // 全部交给 ToolManager
-      response.toolCalls, conversationID, turnID
-    )
-    switch outcome {
-    case .completed: continue                      // 继续下一轮 LLM
-    case .suspended(let suspension): return .suspended
-    }
+    notify(.toolCallsReceived(                      // 交给 ToolManager 插件
+      response.toolCalls, assistantMessageID, conversationID, turnID
+    ))
+    return await nextToolManagerEvent()             // 保持逻辑 Turn 未完成
   }
 ```
 
@@ -205,7 +217,9 @@ AgentLoop.executeTurnLoop():
 | `DefaultToolManagerProviding.swift` | 新增 `executeBatch`、`resumeBatch`、`shouldAutoExecute`；迁入挂起状态管理（`suspensions` 字典）；迁入授权判断逻辑 |
 | `AgentLoopProviding.swift` | 协议不变 |
 | `ToolManagerProviding.swift` | 新增 `executeBatch`、`resumeBatch` 方法签名 |
-| `AgentLoopProvider.swift`（PluginAgentLoop） | 同步适配，委托 toolManager |
+| `AgentLoopObservation.swift` | 增加带 assistantMessageID 的工具调用事件 |
+| `PluginToolManager.swift` | 订阅 AgentLoop 工具调用事件并选择执行策略 |
+| `AgentLoopProvider.swift`（PluginAgentLoop） | 只消费 ToolManager 结果，不再转发工具调用 |
 
 ## 8. 风险与注意事项
 
@@ -233,9 +247,10 @@ ToolManager 当前依赖 `KitAgentTool`（工具接口定义）。新增授权�
 
 建议分三步：
 
-1. **Phase 1** — 在 `ToolManagerProviding` 新增 `executeBatch` 方法，内部调用现有的 `execute` + 迁入授权逻辑。AgentLoop 改为调用 `executeBatch`。验证功能正确。
-2. **Phase 2** — 将挂起/恢复逻辑（`suspensions` 字典、`resumeBatch`）从 AgentLoop 移入 ToolManager。AgentLoop 的 `suspension(for:)` 改为委托查询。
-3. **Phase 3** — 清理 AgentLoop 中不再需要的代码（`executeToolCall`、`executePendingToolCalls`、`makeToolApprovalResult` 等）。
+1. **Phase 1** — 固化 `toolCallsReceived` 与 `batchCompleted` 事件契约，AgentLoop 在工具调用后释放当前 step task，但保持逻辑 Turn 等待。
+2. **Phase 2** — 由 `PluginToolManager.onReady` 订阅 AgentLoop 事件，执行策略和工具执行从 AgentLoop 移出。
+3. **Phase 3** — 授权点立即停止批次；用户恢复后 AgentLoop 只重新发布剩余调用，最后再进入下一轮 LLM。
+4. **Phase 4** — 清理 AgentLoop 中不再使用的工具批次编排代码，并补齐批次/恢复测试。
 
 每个 Phase 独立提交、独立测试。
 

@@ -325,7 +325,12 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)LLM requested tools conversation=\(conversationID.uuidString.prefix(8)), count=\(toolCalls.count)")
             }
-            notify(.llmResponseReceived(conversationID: conversationID, turnID: turnID, toolCalls: toolCalls))
+            notify(.toolCallsReceived(
+                conversationID: conversationID,
+                turnID: turnID,
+                assistantMessageID: response.assistantID,
+                toolCalls: toolCalls
+            ))
         } catch {
             states[conversationID] = .failed
             finishEventTurn(conversationID: conversationID, turnID: turnID, outcome: .failed(String(describing: error)))
@@ -445,8 +450,23 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     }
 
     private func handleAgentLoopEvent(_ event: AgentLoopEvent) {
-        guard case .llmResponseReceived(let conversationID, let turnID, let toolCalls) = event,
-              !toolCalls.isEmpty else { return }
+        let conversationID: UUID
+        let turnID: UUID
+        let toolCalls: [MessageToolCall]
+        switch event {
+        case .toolCallsReceived(let id, let eventTurnID, _, let calls):
+            conversationID = id
+            turnID = eventTurnID
+            toolCalls = calls
+        case .llmResponseReceived(let id, let eventTurnID, let calls):
+            // 兼容外部旧 AgentLoop 实现。
+            conversationID = id
+            turnID = eventTurnID
+            toolCalls = calls
+        default:
+            return
+        }
+        guard !toolCalls.isEmpty else { return }
         let calls = toolCalls.map { ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -597,9 +617,10 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             }
             messages.insertMessage(assistant, to: conversationID)
             streaming.end(conversationID: conversationID)
-            notify(.llmResponseReceived(
+            notify(.toolCallsReceived(
                 conversationID: conversationID,
                 turnID: turnID,
+                assistantMessageID: assistant.id,
                 toolCalls: assistant.toolCalls?.map { MessageToolCall(
                     id: $0.id,
                     name: $0.name,

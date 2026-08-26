@@ -310,12 +310,20 @@ struct AgentLoopFullLoopTests {
         conversations.setAutomation(.build, for: conversationID)
 
         let loop = makeLoop(messages: messages, provider: provider, toolManager: toolManager, conversations: conversations)
+        var toolEvent: (assistantMessageID: UUID, toolCallIDs: [String])?
+        let observer = loop.addAgentLoopObserver { event in
+            guard case let .toolCallsReceived(_, _, assistantMessageID, toolCalls) = event else { return }
+            toolEvent = (assistantMessageID, toolCalls.map(\.id))
+        }
 
         let outcome = try await loop.runTurn(in: conversationID)
+        observer.cancel()
         #expect(outcome == .completed)
         #expect(messages.lastMessage(in: conversationID)?.content == "今天晴天")
         // 直接验证工具执行结果（排除 mock 层差异）
         #expect(tool.executionCount == 1)
+        #expect(toolEvent?.toolCallIDs == ["call-1"])
+        #expect(toolEvent?.assistantMessageID == messages.messages(for: conversationID).first(where: { $0.role == .assistant })?.id)
         #expect(toolManager.tool(named: "fetch_weather") != nil)
         // 工具结果消息已落库
         #expect(messages.messages(for: conversationID).contains { $0.role == MessageRole.tool && $0.content == "sunny" })
