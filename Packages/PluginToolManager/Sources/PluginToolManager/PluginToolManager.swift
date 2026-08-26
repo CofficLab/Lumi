@@ -30,7 +30,7 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
 
     /// 本插件装配的 ToolManager 实现（设置视图读取）。
     private var service: ToolManager?
-    private var agentLoopToolCallsObserver: AgentLoopToolCallsObserver?
+    private var agentLoopToolCallsObserver: ToolCallsObserver?
 
     /// 设置页入口 id（onShutdown 时撤回）。
     private let settingsEntryID = "com.coffic.lumi.plugin.tool-manager.tools"
@@ -99,15 +99,15 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
     /// ToolManager 是工具调用事件的消费者；AgentLoop 只负责发布 LLM 结果。
     public func onReady(kernel: KernelCoreContainer) throws {
         guard let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self),
-              let conversations = kernel.resolveProvider((any ConversationManaging).self),
+              let conversationManager = kernel.resolveProvider((any ConversationManaging).self),
               let service else {
             Self.logger.error("\(Self.emoji)无法建立 AgentLoop → ToolManager 事件订阅")
             return
         }
 
-        agentLoopToolCallsObserver = AgentLoopToolCallsObserver(
+        agentLoopToolCallsObserver = ToolCallsObserver(
             agentLoop: agentLoop,
-            conversations: conversations,
+            conversations: conversationManager,
             service: service
         )
     }
