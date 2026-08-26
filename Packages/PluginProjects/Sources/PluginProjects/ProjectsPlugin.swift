@@ -43,6 +43,13 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     private var promptSuggestion: PromptSuggestion {
         PromptSuggestion(id: "\(id).add", title: LumiPluginLocalization.string("Add Project", bundle: .module), order: order * 1_000, systemImage: "folder.badge.plus", action: .pickProjectFolder, visibility: .onlyWithoutProject, style: .additive)
     }
+    private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
+        var suggestion = promptSuggestion
+        suggestion.pluginID = id
+        suggestion.requiresEnable = requiresEnable
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(suggestion)
+    }
+    public func onRegister(kernel: KernelCoreContainer) throws { registerPromptSuggestion(kernel: kernel, requiresEnable: !kernel.isPluginEnabled(id: id)) }
 
     /// 存储目录 key：必须与旧版 `Plugins/ProjectsPlugin` 的
     /// `storage.pluginDataDirectory(for: "Projects")` 完全一致，
@@ -134,15 +141,14 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+        registerPromptSuggestion(kernel: kernel, requiresEnable: false)
     }
 
     public func onEnable(kernel: KernelCoreContainer) async throws {
-        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+        registerPromptSuggestion(kernel: kernel, requiresEnable: false)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
                 toolManager.remove(id: tool.name)
@@ -156,6 +162,9 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     }
 
     public func onDisable(kernel: KernelCoreContainer) async throws {
+        registerPromptSuggestion(kernel: kernel, requiresEnable: true)
+    }
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
     }
 

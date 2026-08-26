@@ -38,6 +38,17 @@ public final class PluginPluginManager: SuperPlugin {
         PromptSuggestion(id: "\(id).browse", title: "浏览插件", order: order * 1_000, systemImage: "puzzlepiece.extension", action: .openSettingsTab(id), style: .additive)
     }
 
+    private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
+        var suggestion = promptSuggestion
+        suggestion.pluginID = id
+        suggestion.requiresEnable = requiresEnable
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(suggestion)
+    }
+
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        registerPromptSuggestion(kernel: kernel, requiresEnable: !kernel.isPluginEnabled(id: id))
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
             // 设置视图未注册：优雅降级，不贡献入口。
@@ -60,21 +71,23 @@ public final class PluginPluginManager: SuperPlugin {
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+        registerPromptSuggestion(kernel: kernel, requiresEnable: false)
     }
 
     public func onEnable(kernel: KernelCoreContainer) async throws {
-        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+        registerPromptSuggestion(kernel: kernel, requiresEnable: false)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
-
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["plugin-manager"])
     }
 
     public func onDisable(kernel: KernelCoreContainer) async throws {
+        registerPromptSuggestion(kernel: kernel, requiresEnable: true)
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
     }
 }

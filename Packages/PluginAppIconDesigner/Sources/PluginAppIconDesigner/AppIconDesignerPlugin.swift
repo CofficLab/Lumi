@@ -40,6 +40,17 @@ public final class AppIconDesignerPlugin: SuperPlugin {
         )
     }
 
+    private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
+        var suggestion = promptSuggestion
+        suggestion.pluginID = id
+        suggestion.requiresEnable = requiresEnable
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(suggestion)
+    }
+
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        registerPromptSuggestion(kernel: kernel, requiresEnable: !kernel.isPluginEnabled(id: id))
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         IconDesignerRuntime.configure(kernel: kernel, pluginID: id)
 
@@ -95,16 +106,14 @@ public final class AppIconDesignerPlugin: SuperPlugin {
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+        registerPromptSuggestion(kernel: kernel, requiresEnable: false)
     }
 
     public func onEnable(kernel: KernelCoreContainer) async throws {
-        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+        registerPromptSuggestion(kernel: kernel, requiresEnable: false)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
-
         // 撤回注册的 Agent 工具。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
@@ -126,6 +135,10 @@ public final class AppIconDesignerPlugin: SuperPlugin {
     }
 
     public func onDisable(kernel: KernelCoreContainer) async throws {
+        registerPromptSuggestion(kernel: kernel, requiresEnable: true)
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
     }
 

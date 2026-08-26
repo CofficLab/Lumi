@@ -15,20 +15,29 @@ public final class ProjectOverviewSuperPlugin: SuperPlugin {
     private var promptSuggestion: PromptSuggestion {
         PromptSuggestion(id: "\(id).overview", title: LumiPluginLocalization.string("Prompt.Suggestion.Overview", bundle: .module), order: order * 1_000, systemImage: "doc.text.magnifyingglass", visibility: .onlyWithProject)
     }
+    private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
+        var suggestion = promptSuggestion
+        suggestion.pluginID = id
+        suggestion.requiresEnable = requiresEnable
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(suggestion)
+    }
+    public func onRegister(kernel: KernelCoreContainer) throws { registerPromptSuggestion(kernel: kernel, requiresEnable: !kernel.isPluginEnabled(id: id)) }
     public func onBoot(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ToolManagerProviding).self)?.add(ProjectOverviewV2Tool(project: kernel.resolveProvider((any ProjectProviding).self)), pluginID: id)
     }
     public func onReady(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+        registerPromptSuggestion(kernel: kernel, requiresEnable: false)
     }
     public func onEnable(kernel: KernelCoreContainer) async throws {
-        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+        registerPromptSuggestion(kernel: kernel, requiresEnable: false)
     }
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
         kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: ProjectOverviewV2Tool.toolName)
     }
     public func onDisable(kernel: KernelCoreContainer) async throws {
+        registerPromptSuggestion(kernel: kernel, requiresEnable: true)
+    }
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
     }
 }

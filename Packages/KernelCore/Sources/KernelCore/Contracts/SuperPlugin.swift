@@ -24,6 +24,11 @@ public protocol SuperPlugin: AnyObject {
     /// 用于插件管理、诊断和权限展示的稳定元数据。
     var metadata: PluginMetadata { get }
 
+    /// 插件注册到 Kernel 后调用，无论插件当前是否启用。
+    ///
+    /// 这里只应注册不依赖插件运行状态的目录型贡献，例如提示词和元数据。
+    func onRegister(kernel: KernelCoreContainer) throws
+
     /// 插件启动：向内核注入能力。
     ///
     /// 在此方法中调用 `kernel.registerProvider(...)`、`kernel.registerPlugin(...)`
@@ -37,6 +42,9 @@ public protocol SuperPlugin: AnyObject {
     /// 卸载时调用。插件应在这里撤回注册到共享 Provider 中的贡献。
     func onShutdown(kernel: KernelCoreContainer) throws
 
+    /// 插件从 Kernel 注销前调用，用于撤回 `onRegister` 的目录型贡献。
+    func onUnregister(kernel: KernelCoreContainer) throws
+
     /// 运行时启用。插件可在这里恢复被禁用时停止的监听器与贡献。
     func onEnable(kernel: KernelCoreContainer) async throws
 
@@ -49,11 +57,15 @@ public extension SuperPlugin {
 
     var dependencies: [String] { [] }
 
+    func onRegister(kernel: KernelCoreContainer) throws {}
+
     func onBoot(kernel: KernelCoreContainer) throws {}
 
     func onReady(kernel: KernelCoreContainer) throws {}
 
     func onShutdown(kernel: KernelCoreContainer) throws {}
+
+    func onUnregister(kernel: KernelCoreContainer) throws {}
 
     func onEnable(kernel: KernelCoreContainer) async throws {}
 

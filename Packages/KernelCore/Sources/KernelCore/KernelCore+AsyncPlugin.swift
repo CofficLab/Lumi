@@ -188,8 +188,20 @@ public extension KernelCoreContainer {
             activePluginID = nil
             cancelContributions(ownedBy: id)
             removeProviders(ownedByPlugin: id)
-            plugins.removeValue(forKey: id)
-            pluginEnabledStates.removeValue(forKey: id)
+        }
+        let registeredPlugins = allPlugins
+        for plugin in registeredPlugins.reversed() {
+            activePluginID = plugin.id
+            do {
+                try plugin.onUnregister(kernel: self)
+            } catch {
+                if firstError == nil { firstError = error }
+            }
+            activePluginID = nil
+            cancelContributions(ownedBy: plugin.id)
+            removeProviders(ownedByPlugin: plugin.id)
+            plugins.removeValue(forKey: plugin.id)
+            pluginEnabledStates.removeValue(forKey: plugin.id)
         }
         pluginStartOrder.removeAll()
         activePluginID = nil
@@ -300,14 +312,21 @@ public extension KernelCoreContainer {
         activePluginID = id
         defer { activePluginID = nil }
         var shutdownError: Error?
-        do {
-            if let plugin = plugin as? any AsyncSuperPlugin {
-                try await plugin.onShutdownAsync(kernel: self)
-            } else {
-                try plugin.onShutdown(kernel: self)
+        if pluginStartOrder.contains(id) {
+            do {
+                if let plugin = plugin as? any AsyncSuperPlugin {
+                    try await plugin.onShutdownAsync(kernel: self)
+                } else {
+                    try plugin.onShutdown(kernel: self)
+                }
+            } catch {
+                shutdownError = error
             }
+        }
+        do {
+            try plugin.onUnregister(kernel: self)
         } catch {
-            shutdownError = error
+            if shutdownError == nil { shutdownError = error }
         }
         cancelContributions(ownedBy: id)
         removeProviders(ownedByPlugin: id)
@@ -336,6 +355,11 @@ public extension KernelCoreContainer {
             activePluginID = nil
         }
         for id in attemptedIDs {
+            if let plugin = plugins[id] {
+                activePluginID = id
+                try? plugin.onUnregister(kernel: self)
+                activePluginID = nil
+            }
             cancelContributions(ownedBy: id)
             removeProviders(ownedByPlugin: id)
             plugins.removeValue(forKey: id)

@@ -48,10 +48,11 @@ public enum KernelFactory {
     ) throws -> KernelCoreContainer {
         let kernel = KernelCoreContainer()
         try DefaultProviderFactory().registerProviders(into: kernel)
-        // 从插件工厂拿到全部插件，通过 PluginManaging 过滤出用户启用的，再注册到内核。
+        // 将完整插件目录注册到内核。禁用插件不会 Boot，但仍可通过 onRegister
+        // 贡献提示词等目录型能力。
         let allPlugins = DefaultPluginFactory().makePlugins()
-        let enabledPlugins = pluginManaging.enabledPlugins(from: allPlugins)
-        try kernel.start(plugins: enabledPlugins)
+        _ = pluginManaging
+        try kernel.start(plugins: allPlugins)
         return kernel
     }
 

@@ -6,6 +6,7 @@ import ProviderContentView
 import ProviderRailView
 import ProviderStorage
 import ProviderToolManager
+import ProviderPromptSuggestion
 import Testing
 @testable import PluginAppIconDesigner
 
@@ -30,7 +31,7 @@ struct AppIconDesignerPluginTests {
     }
 
     @Test("启动后注册 ActivityBar 与分组 Rail，并在激活时联动")
-    func registersAndActivatesContributions() throws {
+    func registersAndActivatesContributions() async throws {
         let kernel = KernelCoreContainer()
         let activity = DefaultActivityBarProviding()
         let rail = DefaultRailViewProviding()
@@ -45,6 +46,7 @@ struct AppIconDesignerPluginTests {
         try kernel.registerProvider((any StorageProviding).self, storage)
 
         try kernel.start(plugins: [AppIconDesignerPlugin()])
+        try await kernel.enablePlugin(id: AppIconDesignerPlugin().id)
 
         #expect(activity.items.map(\.id) == ["com.coffic.lumi.plugin.app-icon-designer.entry"])
         #expect(rail.tabs.map(\.id) == [AppIconDesignerPlugin.railTabID])
@@ -57,6 +59,26 @@ struct AppIconDesignerPluginTests {
         #expect(activity.items.isEmpty)
         #expect(rail.tabs.isEmpty)
         try? FileManager.default.removeItem(at: storage.dataRootDirectory)
+    }
+
+    @Test("禁用时仍注册提示词，并标记为需要启用")
+    func registersPromptSuggestionWhileDisabled() async throws {
+        let kernel = KernelCoreContainer()
+        let suggestions = DefaultPromptSuggestionProvider()
+        try kernel.registerProvider((any PromptSuggestionProviding).self, suggestions)
+
+        try kernel.start(plugins: [AppIconDesignerPlugin()])
+
+        let suggestion = suggestions.allSuggestions.first
+        #expect(suggestion?.pluginID == AppIconDesignerPlugin().id)
+        #expect(suggestion?.requiresEnable == true)
+        #expect(!kernel.isPluginEnabled(id: AppIconDesignerPlugin().id))
+
+        try await kernel.enablePlugin(id: AppIconDesignerPlugin().id)
+        #expect(suggestions.allSuggestions.first?.requiresEnable == false)
+
+        try await kernel.disablePlugin(id: AppIconDesignerPlugin().id)
+        #expect(suggestions.allSuggestions.first?.requiresEnable == true)
     }
 
     @Test("图标文档在 APP 作用域创建并落盘")
@@ -85,7 +107,7 @@ struct AppIconDesignerPluginTests {
     }
 
     @Test("启动后 15 个 Agent 工具注册到 ToolManagerProviding，停止后移除")
-    func registersAndRemovesAgentTools() throws {
+    func registersAndRemovesAgentTools() async throws {
         let kernel = KernelCoreContainer()
         let toolManager = DefaultToolManagerProviding()
         let storage = TestStorage()
@@ -100,6 +122,7 @@ struct AppIconDesignerPluginTests {
         try kernel.registerProvider((any StorageProviding).self, storage)
 
         try kernel.start(plugins: [AppIconDesignerPlugin()])
+        try await kernel.enablePlugin(id: AppIconDesignerPlugin().id)
 
         // 15 个工具全部注册，且归入本插件分组。
         #expect(toolManager.allTools().count == 15)

@@ -10,7 +10,18 @@ extension KernelCoreContainer {
         }
         plugins[plugin.id] = plugin
         pluginEnabledStates[plugin.id] = plugin.metadata.policy.enabledByDefault
-        objectWillChange.send()
+        activePluginID = plugin.id
+        do {
+            try plugin.onRegister(kernel: self)
+            activePluginID = nil
+            objectWillChange.send()
+        } catch {
+            activePluginID = nil
+            cancelContributions(ownedBy: plugin.id)
+            plugins.removeValue(forKey: plugin.id)
+            pluginEnabledStates.removeValue(forKey: plugin.id)
+            throw error
+        }
     }
 
     /// 原子启动一批插件。
@@ -98,8 +109,20 @@ extension KernelCoreContainer {
             activePluginID = nil
             cancelContributions(ownedBy: id)
             removeProviders(ownedByPlugin: id)
-            plugins.removeValue(forKey: id)
-            pluginEnabledStates.removeValue(forKey: id)
+        }
+        let registeredPlugins = allPlugins
+        for plugin in registeredPlugins.reversed() {
+            activePluginID = plugin.id
+            do {
+                try plugin.onUnregister(kernel: self)
+            } catch {
+                if firstError == nil { firstError = error }
+            }
+            activePluginID = nil
+            cancelContributions(ownedBy: plugin.id)
+            removeProviders(ownedByPlugin: plugin.id)
+            plugins.removeValue(forKey: plugin.id)
+            pluginEnabledStates.removeValue(forKey: plugin.id)
         }
         pluginStartOrder.removeAll()
         activePluginID = nil
@@ -127,10 +150,17 @@ extension KernelCoreContainer {
         activePluginID = id
         defer { activePluginID = nil }
         var shutdownError: Error?
+        if pluginStartOrder.contains(id) {
+            do {
+                try plugin.onShutdown(kernel: self)
+            } catch {
+                shutdownError = error
+            }
+        }
         do {
-            try plugin.onShutdown(kernel: self)
+            try plugin.onUnregister(kernel: self)
         } catch {
-            shutdownError = error
+            if shutdownError == nil { shutdownError = error }
         }
         cancelContributions(ownedBy: id)
         removeProviders(ownedByPlugin: id)
@@ -159,6 +189,11 @@ extension KernelCoreContainer {
 
     /// 低层注册表操作，不执行 Shutdown。运行中的插件优先使用 `unloadPlugin`。
     public func unregisterPlugin(id: String) {
+        if let plugin = plugins[id] {
+            activePluginID = id
+            try? plugin.onUnregister(kernel: self)
+            activePluginID = nil
+        }
         cancelContributions(ownedBy: id)
         plugins.removeValue(forKey: id)
         pluginStartOrder.removeAll { $0 == id }
@@ -219,6 +254,11 @@ extension KernelCoreContainer {
             activePluginID = nil
         }
         for id in attemptedIDs {
+            if let plugin = plugins[id] {
+                activePluginID = id
+                try? plugin.onUnregister(kernel: self)
+                activePluginID = nil
+            }
             cancelContributions(ownedBy: id)
             removeProviders(ownedByPlugin: id)
             plugins.removeValue(forKey: id)
