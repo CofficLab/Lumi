@@ -15,7 +15,7 @@ import os
 public final class WebServerPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.web-server", category: "WebServer")
     public nonisolated static let emoji = "🌐"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.web-server"
     public let order = 150

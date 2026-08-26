@@ -9,7 +9,7 @@ import KitSuperLog
 @MainActor
 public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     public nonisolated static let emoji = "💬"
-    public nonisolated static let verbose = true
+    public nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.manager")
 
     /// 数据存储目录（供未来迁移/设置使用）。
