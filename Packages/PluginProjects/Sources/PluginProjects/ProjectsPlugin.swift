@@ -134,7 +134,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
                     systemImage: "folder",
                     order: order
                 ) {
-                    SettingsView(viewModel: viewModel)
+                    SettingsView(viewModel: viewModel, projectDetailSections: settings.projectDetailSections)
                 },
             ])
         }

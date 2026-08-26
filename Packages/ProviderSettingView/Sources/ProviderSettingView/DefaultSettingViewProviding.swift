@@ -9,6 +9,7 @@ import SwiftUI
 @MainActor
 public final class DefaultSettingViewProviding: SettingViewProviding, ObservableObject {
     @Published public private(set) var entries: [SettingEntryItem] = []
+    @Published public private(set) var projectDetailSections: [ProjectDetailSectionItem] = []
 
     /// 当前选中入口的 id。
     @Published public private(set) var selectedEntryID: String?
@@ -30,5 +31,17 @@ public final class DefaultSettingViewProviding: SettingViewProviding, Observable
 
     public func makeSettingView() -> AnyView {
         AnyView(SettingView(provider: self))
+    }
+
+    public func addProjectDetailSections(_ newSections: [ProjectDetailSectionItem]) {
+        var merged = projectDetailSections
+        for section in newSections where !merged.contains(where: { $0.id == section.id }) {
+            merged.append(section)
+        }
+        projectDetailSections = merged.sorted { $0.order < $1.order }
+    }
+
+    public func removeProjectDetailSections(ids: Set<String>) {
+        projectDetailSections.removeAll { ids.contains($0.id) }
     }
 }

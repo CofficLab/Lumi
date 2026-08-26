@@ -7,6 +7,7 @@ import ProviderIdleTime
 import ProviderStorage
 import ProviderSettingView
 import ProviderToolManager
+import SwiftUI
 
 /// Project RAG 的 KernelCore 适配器。
 ///
@@ -45,6 +46,15 @@ public final class ProjectRAGSuperPlugin: SuperPlugin {
         kernel.resolveProvider((any ToolManagerProviding).self)?
             .add(RAGCodeSearchTool(), pluginID: id)
         if let settings = kernel.resolveProvider((any SettingViewProviding).self), let project {
+            settings.addProjectDetailSections([
+                ProjectDetailSectionItem(id: "\(id).project-index", order: 100) { [weak self] path in
+                    if let service = self?.service {
+                        ProjectIndexDetailSectionView(projectPath: path, service: service)
+                    } else {
+                        EmptyView()
+                    }
+                },
+            ])
             settings.addEntries([
                 SettingEntryItem(id: "\(id).settings", title: LumiPluginLocalization.string("Code Index", bundle: .module), systemImage: "magnifyingglass", order: order) {
                     RAGIndexSettingsView(service: service, projects: project)
@@ -76,6 +86,7 @@ public final class ProjectRAGSuperPlugin: SuperPlugin {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: RAGCodeSearchTool.toolName)
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: ["\(id).settings"])
+        kernel.resolveProvider((any SettingViewProviding).self)?.removeProjectDetailSections(ids: ["\(id).project-index"])
         schedulerTask?.cancel()
         schedulerTask = nil
         if let service { Task { await service.cancelBackgroundIndexing() } }

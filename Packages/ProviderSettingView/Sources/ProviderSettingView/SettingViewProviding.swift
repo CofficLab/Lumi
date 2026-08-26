@@ -17,6 +17,7 @@ import SwiftUI
 public protocol SettingViewProviding: AnyObject {
     /// 当前已注入的全部设置入口项。
     var entries: [SettingEntryItem] { get }
+    var projectDetailSections: [ProjectDetailSectionItem] { get }
 
     /// 注入设置入口项（替换当前全部项）。
     func registerEntries(_ entries: [SettingEntryItem])
@@ -25,6 +26,8 @@ public protocol SettingViewProviding: AnyObject {
     ///
     /// 供多个插件各自贡献入口时使用，互不覆盖。
     func addEntries(_ entries: [SettingEntryItem])
+    func addProjectDetailSections(_ sections: [ProjectDetailSectionItem])
+    func removeProjectDetailSections(ids: Set<String>)
 
     /// 按 id 撤回插件贡献的入口。
     func removeEntries(ids: Set<String>)
@@ -34,6 +37,8 @@ public protocol SettingViewProviding: AnyObject {
 }
 
 public extension SettingViewProviding {
+    var projectDetailSections: [ProjectDetailSectionItem] { [] }
+
     /// 追加语义的默认实现：合入已有入口并按 `order` 排序（同 id 去重，保留先注册者）。
     func addEntries(_ newEntries: [SettingEntryItem]) {
         var merged = entries
@@ -46,6 +51,9 @@ public extension SettingViewProviding {
     func removeEntries(ids: Set<String>) {
         registerEntries(entries.filter { !ids.contains($0.id) })
     }
+
+    func addProjectDetailSections(_ newSections: [ProjectDetailSectionItem]) {}
+    func removeProjectDetailSections(ids: Set<String>) {}
 }
 
 // MARK: - Optional Selection

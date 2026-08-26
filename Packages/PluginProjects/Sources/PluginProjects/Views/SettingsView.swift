@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import LumiUI
+import ProviderSettingView
 import SwiftUI
 
 /// Projects 设置视图。
@@ -18,9 +19,11 @@ public struct SettingsView: View {
     /// 放在 `@State` 中而不是在 `body` 里同步读取磁盘，避免每次重绘都阻塞 UI。
     @State private var openedFilesByPath: [String: ProjectOpenedFiles] = [:]
     @State private var isLoadingOpenedFiles = true
+    private let projectDetailSections: [ProjectDetailSectionItem]
 
-    public init(viewModel: ProjectsViewModel) {
+    public init(viewModel: ProjectsViewModel, projectDetailSections: [ProjectDetailSectionItem] = []) {
         self._viewModel = ObservedObject(wrappedValue: viewModel)
+        self.projectDetailSections = projectDetailSections
     }
 
     private var projects: [ProjectEntry] {
@@ -193,6 +196,9 @@ public struct SettingsView: View {
                     }
 
                     openedFilesSection(for: project)
+                    ForEach(projectDetailSections) { section in
+                        section.makeView(project.path)
+                    }
                 }
                 .padding(22)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
