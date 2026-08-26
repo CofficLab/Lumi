@@ -60,10 +60,12 @@ struct PluginSettingsDetailView: View {
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(theme.textPrimary)
 
-                    AppTag(
-                        plugin.metadata.stage.displayName,
-                        style: plugin.metadata.stage == .stable ? .accent : .subtle
-                    )
+                    if plugin.metadata.stage != .stable {
+                        AppTag(
+                            plugin.metadata.stage.displayName,
+                            style: .subtle
+                        )
+                    }
                 }
 
                 if !plugin.metadata.description.isEmpty {
@@ -119,10 +121,7 @@ struct PluginSettingsDetailView: View {
             LandingHero(
                 icon: plugin.metadata.category.systemImage,
                 tagline: aboutTagline,
-                chips: [
-                    plugin.metadata.category.displayName,
-                    plugin.metadata.stage.displayName,
-                ],
+                chips: aboutChips,
                 metrics: [
                     .init(value: plugin.metadata.version, label: PluginPluginManagerText.versionLabel),
                     .init(value: policyMetricValue, label: PluginPluginManagerText.policyLabel),
@@ -137,6 +136,15 @@ struct PluginSettingsDetailView: View {
         plugin.metadata.description.isEmpty
             ? PluginPluginManagerText.noDetailsHint
             : plugin.metadata.description
+    }
+
+    /// Hero chips：始终包含分类；非 stable 时追加阶段标签。
+    private var aboutChips: [String] {
+        var chips = [plugin.metadata.category.displayName]
+        if plugin.metadata.stage != .stable {
+            chips.append(plugin.metadata.stage.displayName)
+        }
+        return chips
     }
 
     /// 策略指标的展示值（与 `policyDescription` 口径一致）。
