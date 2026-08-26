@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ProjectRAGPlugin
+@testable import ProjectRAGEngine
 
 @Suite struct RAGIndexSchedulingTests {
     @Test func selectsMissingIndexBeforeStaleIndex() {
