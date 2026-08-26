@@ -72,12 +72,10 @@ public final class DefaultConversationInputProvider: ConversationInputProviding,
 
     public func addToConversation(fileURLs: [URL]) {
         let paths = fileURLs.map(\.path).joined(separator: "\n")
-        Self.logger.info("\(self.t)addToConversation: \(fileURLs.count) file(s)")
         text += paths
     }
 
     public func clear() {
-        Self.logger.info("\(self.t)clear")
         text = ""
         errorMessage = nil
     }
