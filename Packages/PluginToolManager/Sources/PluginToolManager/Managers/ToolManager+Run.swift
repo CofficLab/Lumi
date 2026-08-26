@@ -111,6 +111,36 @@ extension ToolManager {
         return results
     }
 
+    public func executeAuthorized(
+        _ toolCall: ToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult {
+        let result = await execute(toolCall, conversationID: conversationID, turnID: turnID)
+        eventManager.send(.authorizedCompleted(
+            conversationID: conversationID,
+            turnID: turnID,
+            toolCall: toolCall,
+            result: result
+        ))
+        return result
+    }
+
+    public func rejectAuthorized(
+        _ toolCall: ToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult {
+        let result = ToolCallResult(content: "Tool execution was rejected by the user.", isError: true)
+        eventManager.send(.authorizedCompleted(
+            conversationID: conversationID,
+            turnID: turnID,
+            toolCall: toolCall,
+            result: result
+        ))
+        return result
+    }
+
     public func toolCalls(for turnID: UUID) async -> [ToolCallRecord] {
         guard let recordStore else { return [] }
         return await recordStore.fetchRecords(for: turnID)

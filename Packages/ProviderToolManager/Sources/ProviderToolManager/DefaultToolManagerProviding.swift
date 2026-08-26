@@ -285,6 +285,36 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
         return finish(result)
     }
 
+    public func executeAuthorized(
+        _ toolCall: ToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult {
+        let result = await execute(toolCall, conversationID: conversationID, turnID: turnID)
+        notify(.authorizedCompleted(
+            conversationID: conversationID,
+            turnID: turnID,
+            toolCall: toolCall,
+            result: result
+        ))
+        return result
+    }
+
+    public func rejectAuthorized(
+        _ toolCall: ToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult {
+        let result = ToolCallResult(content: "Tool execution was rejected by the user.", isError: true)
+        notify(.authorizedCompleted(
+            conversationID: conversationID,
+            turnID: turnID,
+            toolCall: toolCall,
+            result: result
+        ))
+        return result
+    }
+
     public func executeBatch(
         _ toolCalls: [ToolCall],
         policy: ToolExecutionPolicy,

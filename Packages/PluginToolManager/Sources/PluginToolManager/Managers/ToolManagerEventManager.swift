@@ -44,6 +44,7 @@ final class ToolManagerEventManager: SuperLog {
         switch event {
         case .started: return "started"
         case .completed: return "completed"
+        case .authorizedCompleted: return "authorizedCompleted"
         case .batchCompleted: return "batchCompleted"
         }
     }

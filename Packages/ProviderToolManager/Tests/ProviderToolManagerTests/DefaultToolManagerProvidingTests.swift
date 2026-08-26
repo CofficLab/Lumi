@@ -34,6 +34,8 @@ struct DefaultToolManagerProvidingTests {
                 events.append("started")
             case .completed:
                 events.append("completed")
+            case .authorizedCompleted:
+                events.append("authorizedCompleted")
             case .batchCompleted:
                 events.append("batchCompleted")
             }
