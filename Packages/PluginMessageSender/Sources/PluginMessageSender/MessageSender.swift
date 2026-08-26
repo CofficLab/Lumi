@@ -8,7 +8,7 @@ import ProviderMessageSender
 
 /// 插件自带的 `MessageSendingProviding` 实现。
 @MainActor
-public final class LumiMessageSender: MessageSendingProviding, SuperLog {
+public final class MessageSender: MessageSendingProviding, SuperLog {
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi.plugin-message-sender",
         category: "MessageSender"
@@ -74,7 +74,7 @@ public final class LumiMessageSender: MessageSendingProviding, SuperLog {
     ) -> any MessageSenderObserverHandle {
         let id = UUID()
         messageSenderObservers[id] = callback
-        return PluginMessageSenderObserverHandle { [weak self] in
+        return MessageSenderObserverHandleImpl { [weak self] in
             self?.messageSenderObservers.removeValue(forKey: id)
         }
     }
@@ -396,11 +396,11 @@ public final class LumiMessageSender: MessageSendingProviding, SuperLog {
 /// 发送状态观察者令牌：弱引用 owner，释放或 cancel 后自动停止接收。
 @MainActor
 private final class SendingStateObserverHandleImpl: SendingStateObserverHandle {
-    private weak var owner: LumiMessageSender?
+    private weak var owner: MessageSender?
     private let callback: (Bool) -> Void
     private var isCancelled = false
 
-    init(owner: LumiMessageSender, callback: @escaping (Bool) -> Void) {
+    init(owner: MessageSender, callback: @escaping (Bool) -> Void) {
         self.owner = owner
         self.callback = callback
     }

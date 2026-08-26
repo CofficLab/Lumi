@@ -35,7 +35,7 @@ public final class MessageSenderPlugin: SuperPlugin, SuperLog {
             return
         }
 
-        let sender = LumiMessageSender(
+        let sender = MessageSender(
             conversations: conversations,
             messages: messages,
             agentLoop: agentLoop

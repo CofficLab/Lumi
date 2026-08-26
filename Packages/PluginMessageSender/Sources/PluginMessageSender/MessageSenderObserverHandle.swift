@@ -2,7 +2,7 @@ import Foundation
 import ProviderMessageSender
 
 @MainActor
-final class PluginMessageSenderObserverHandle: MessageSenderObserverHandle {
+final class MessageSenderObserverHandleImpl: MessageSenderObserverHandle {
     private var cancellation: (() -> Void)?
 
     init(cancellation: @escaping () -> Void) {
