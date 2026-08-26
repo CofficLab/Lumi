@@ -74,7 +74,7 @@ final class ToolCallsObserver: SuperLog {
 
         guard !executableInputs.isEmpty else { return }
         if Self.verbose {
-            Self.logger.info("\(Self.t)收到 AgentLoop 工具调用事件 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), count=\(executableInputs.count)")
+            Self.logger.info("\(Self.t)🍋 收到 AgentLoop 工具调用事件 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), count=\(executableInputs.count)")
         }
 
         Task { @MainActor [weak self] in

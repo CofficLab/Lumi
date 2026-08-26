@@ -16,7 +16,7 @@ private struct ToolInteractionPayload: Codable {
 
 extension ToolManager {
     public func execute(_ toolCall: ToolCall, conversationID: UUID, turnID: UUID?) async -> ToolCallResult {
-        if Self.verbose { Self.logger.debug("\(Self.t)execute tool=\(toolCall.name), conversation=\(conversationID.uuidString.prefix(8))") }
+        if Self.verbose { Self.logger.debug("\(Self.t)🚛 execute tool=\(toolCall.name), conversation=\(conversationID.uuidString.prefix(8))") }
         eventManager.send(.started(conversationID: conversationID, turnID: turnID, toolCall: toolCall))
 
         func finish(_ result: ToolCallResult) -> ToolCallResult {
@@ -69,7 +69,7 @@ extension ToolManager {
         results.reserveCapacity(toolCalls.count)
         batchLoop: for toolCall in toolCalls {
             if Self.verbose {
-                Self.logger.info("\(Self.t)batch tool begin id=\(toolCall.id), name=\(toolCall.name), conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID?.uuidString.prefix(8) ?? "nil")")
+                Self.logger.info("\(Self.t)🚀 batch tool begin id=\(toolCall.id), name=\(toolCall.name), conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID?.uuidString.prefix(8) ?? "nil")")
             }
             switch policy {
             case .blockAll:
@@ -106,8 +106,10 @@ extension ToolManager {
             }
             Self.logger.info("\(Self.t)batch results prepared count=\(results.count), kinds=\(kinds)")
         }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)batch completed conversation=\(conversationID.uuidString.prefix(8)), results=\(results.count)")
+        }
         eventManager.send(.batchCompleted(conversationID: conversationID, turnID: turnID, toolCalls: toolCalls, results: results))
-        if Self.verbose { Self.logger.info("\(Self.t)batch completed conversation=\(conversationID.uuidString.prefix(8)), results=\(results.count)") }
         return results
     }
 
