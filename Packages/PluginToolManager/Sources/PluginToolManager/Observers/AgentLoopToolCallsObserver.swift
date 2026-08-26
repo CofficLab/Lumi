@@ -51,8 +51,30 @@ final class AgentLoopToolCallsObserver: SuperLog {
         }
 
         let inputs = toolCalls.map { ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }
+        let executableInputs: [ToolCall]
+        let executionPolicy: ToolExecutionPolicy
+        switch policy {
+        case .blockAll:
+            // Chat 模式需要发布 blocked 结果，让 AgentLoop 正常结束当前工具步骤。
+            executableInputs = inputs
+            executionPolicy = .blockAll
+        case .autoExecute, .requireApprovalForHighRisk:
+            executableInputs = inputs.filter { toolCall in
+                let risk = service.riskLevel(for: toolCall) ?? .high
+                guard !risk.requiresPermission else {
+                    if Self.verbose {
+                        Self.logger.info("\(Self.t)工具需要授权，Observer 放弃执行 tool=\(toolCall.name), id=\(toolCall.id), risk=\(risk.rawValue)")
+                    }
+                    return false
+                }
+                return true
+            }
+            executionPolicy = .autoExecute
+        }
+
+        guard !executableInputs.isEmpty else { return }
         if Self.verbose {
-            Self.logger.info("\(Self.t)收到 AgentLoop 工具调用事件 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), count=\(inputs.count)")
+            Self.logger.info("\(Self.t)收到 AgentLoop 工具调用事件 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), count=\(executableInputs.count)")
         }
 
         Task { @MainActor [weak self] in
@@ -61,8 +83,8 @@ final class AgentLoopToolCallsObserver: SuperLog {
                 return
             }
             _ = await self.service.executeBatch(
-                inputs,
-                policy: policy,
+                executableInputs,
+                policy: executionPolicy,
                 conversationID: conversationID,
                 turnID: turnID
             )
