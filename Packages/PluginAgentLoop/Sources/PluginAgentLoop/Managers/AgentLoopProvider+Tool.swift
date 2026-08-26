@@ -15,6 +15,15 @@ import KitSuperLog
 extension AgentLoopManager {
     /// 接收 ToolManager 的批量完成事件，推进当前回合状态机。
     func handleToolManagerEvent(_ event: ToolManagerEvent) {
+        if case let .authorizedCompleted(conversationID, eventTurnID, toolCall, result) = event {
+            handleAuthorizedToolCompletion(
+                conversationID: conversationID,
+                eventTurnID: eventTurnID,
+                toolCall: toolCall,
+                result: result
+            )
+            return
+        }
         guard case .batchCompleted(let conversationID, let eventTurnID, let toolCalls, let results) = event else { return }
         if Self.verbose {
             Self.logger.info("\(Self.t)handle batch begin conversation=\(conversationID.uuidString.prefix(8)), turn=\(eventTurnID?.uuidString.prefix(8) ?? "nil"), calls=\(toolCalls.map { $0.id }), results=\(results.count)")
@@ -125,6 +134,83 @@ extension AgentLoopManager {
         if Self.verbose { Self.logger.info("\(Self.t)handle batch end phase=\(String(describing: runtime.phase)), taskIsNil=\(runtime.task == nil)") }
         if case .requestingLLM = runtime.phase {
             if Self.verbose { Self.logger.info("\(Self.t)🚛 工具批次完成，继续请求 LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
+            launchAdvance(conversationID: conversationID, turnID: turnID)
+        }
+    }
+
+    /// 处理消息渲染器在用户授权后发起的单工具执行结果。
+    ///
+    /// 批量执行会先发送每个工具的 `completed` 事件，再发送
+    /// `batchCompleted`；授权路径使用独立事件，避免这里重复消费批量结果。
+    private func handleAuthorizedToolCompletion(
+        conversationID: UUID,
+        eventTurnID: UUID?,
+        toolCall: AgentLoopToolCall,
+        result toolResult: ToolCallResult
+    ) {
+        guard var runtime = runtimes[conversationID] else {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)忽略授权工具结果：找不到会话运行时 conversation=\(conversationID.uuidString.prefix(8))")
+            }
+            return
+        }
+        guard case .executingTools(let turnID, let assistantMessageID, let pending) = runtime.phase else {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)忽略授权工具结果：当前状态不是 executingTools，conversation=\(conversationID.uuidString.prefix(8))")
+            }
+            return
+        }
+        guard eventTurnID == nil || eventTurnID == turnID else {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)忽略授权工具结果：turnID 不匹配，conversation=\(conversationID.uuidString.prefix(8))")
+            }
+            return
+        }
+        guard pending.contains(where: { $0.id == toolCall.id }) else {
+            if Self.verbose {
+                Self.logger.error("\(Self.t)忽略未等待的授权工具结果：toolCallID=\(toolCall.id), conversation=\(conversationID.uuidString.prefix(8))")
+            }
+            return
+        }
+
+        let result = convertResult(toolResult)
+        messages.updateToolCallResult(
+            result,
+            toolCallID: toolCall.id,
+            assistantMessageID: assistantMessageID,
+            in: conversationID
+        )
+        insertToolResultMessage(result, toolCallID: toolCall.id, conversationID: conversationID, turnID: turnID)
+
+        if result.awaitingUserResponse {
+            let suspension = AgentLoopSuspension(
+                suspensionID: "userInput:\(toolCall.id)",
+                conversationID: conversationID,
+                toolCallID: toolCall.id,
+                kind: "userInput",
+                payload: result.content
+            )
+            let (updated, outcome) = TurnReducer.reduce(
+                runtime,
+                event: .toolNeedsUserInput(toolCallID: toolCall.id, suspension: suspension)
+            )
+            runtimes[conversationID] = updated
+            if let outcome { finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome) }
+            return
+        }
+
+        let (updated, outcome) = TurnReducer.reduce(
+            runtime,
+            event: .toolCallCompleted(toolCallID: toolCall.id, result: result)
+        )
+        runtime = updated
+        runtimes[conversationID] = runtime
+        if Self.verbose {
+            Self.logger.info("\(Self.t)授权工具结果已处理 id=\(toolCall.id), phase=\(String(describing: runtime.phase))")
+        }
+        if let outcome {
+            finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome)
+        } else if case .requestingLLM = runtime.phase {
             launchAdvance(conversationID: conversationID, turnID: turnID)
         }
     }
@@ -243,11 +329,16 @@ extension AgentLoopManager {
             if let toolCalls = assistant.toolCalls {
                 assistant.toolCalls = toolCalls.map { toolCall in
                     var enriched = toolCall
-                    enriched.displayDescription = toolManager.displayDescription(for: AgentLoopToolCall(
+                    let agentToolCall = AgentLoopToolCall(
                         id: toolCall.id,
                         name: toolCall.name,
                         arguments: toolCall.arguments
-                    ))
+                    )
+                    enriched.displayDescription = toolManager.displayDescription(for: agentToolCall)
+                    let risk = toolManager.riskLevel(for: agentToolCall) ?? .high
+                    enriched.authorizationState = risk.requiresPermission
+                        ? ToolCallAuthorizationState.pendingAuthorization.rawValue
+                        : ToolCallAuthorizationState.noRisk.rawValue
                     return enriched
                 }
             }
