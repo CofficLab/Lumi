@@ -1,6 +1,7 @@
 import KernelCore
 import LumiUI
 import ProviderDocsView
+import ProviderPluginManaging
 import SwiftUI
 
 /// 插件管理设置页。
@@ -8,8 +9,8 @@ import SwiftUI
 /// 两栏布局：左侧为插件列表（搜索 + 分类筛选），右侧为选中插件的详情
 /// 与启用状态。UI 与旧版 `PluginManagerPlugin.PluginManagementView` 几乎一致。
 ///
-/// 数据源：`kernel.allPlugins`（`KernelCoreContainer`，`ObservableObject`），
-/// 列表与详情直接读取内核中的有效启用状态；当前阶段仅展示，不提供启停交互。
+/// 数据源：`PluginManaging` Provider。列表与详情直接读取 Provider 的状态，
+/// 并通过其精准观察事件刷新。
 ///
 /// 该文件只保留容器/布局/状态逻辑；具体渲染拆分为：
 /// - `PluginManagementHeader`：顶部统计
@@ -17,7 +18,7 @@ import SwiftUI
 /// - `PluginSettingsDetailView`：右侧详情面板
 struct PluginManagementView: View {
     @LumiTheme private var theme
-    @ObservedObject var kernel: KernelCoreContainer
+    @StateObject private var model: PluginManagementViewModel
 
     /// 文档视图提供器：详情面板按插件 id 匹配 about 条目并展示。
     /// 为 nil 时（宿主未提供 DocsViewProviding）详情面板回退到元信息展示。
@@ -27,8 +28,8 @@ struct PluginManagementView: View {
     @State private var searchText = ""
     @State private var selectedCategory: PluginCategory?
 
-    init(kernel: KernelCoreContainer, docsProvider: (any DocsViewProviding)? = nil) {
-        self.kernel = kernel
+    init(manager: any PluginManaging, docsProvider: (any DocsViewProviding)? = nil) {
+        _model = StateObject(wrappedValue: PluginManagementViewModel(manager: manager))
         self.docsProvider = docsProvider
     }
 
@@ -78,7 +79,7 @@ struct PluginManagementView: View {
     /// 不可配置，展示在管理列表中没有可操作控件，故过滤掉，
     /// 只保留 `enabledByDefault` / `disabledByDefault`。
     private var plugins: [any SuperPlugin] {
-        kernel.allPlugins.filter { $0.metadata.policy.isConfigurable }
+        model.manager.allPlugins.filter { $0.metadata.policy.isConfigurable }
     }
 
     /// 列表上出现的分类（按 sortOrder 排序），用于筛选标签栏。
@@ -113,7 +114,7 @@ struct PluginManagementView: View {
     /// 当前列表中处于有效启用状态的可配置插件数。
     /// 基于 `plugins`（已过滤 required / alwaysOn / disabled），与列表项数口径一致。
     private var enabledCount: Int {
-        plugins.reduce(0) { $0 + (kernel.isPluginEnabled(id: $1.id) ? 1 : 0) }
+        plugins.reduce(0) { $0 + (model.manager.isEnabled(id: $1.id) ? 1 : 0) }
     }
 
     // MARK: - List Pane
@@ -150,7 +151,7 @@ struct PluginManagementView: View {
                         PluginListRow(
                             plugin: plugin,
                             isSelected: selectedPluginID == plugin.id,
-                            isEnabled: kernel.isPluginEnabled(id: plugin.id)
+                            isEnabled: model.manager.isEnabled(id: plugin.id)
                         ) {
                             selectedPluginID = plugin.id
                         }
@@ -191,13 +192,27 @@ struct PluginManagementView: View {
     @ViewBuilder
     private var pluginDetailPane: some View {
         if let selectedPlugin {
-            PluginSettingsDetailView(kernel: kernel, plugin: selectedPlugin, docsProvider: docsProvider)
+            PluginSettingsDetailView(manager: model.manager, plugin: selectedPlugin, docsProvider: docsProvider)
         } else {
             AppEmptyState(
                 icon: "puzzlepiece.extension",
                 title: PluginPluginManagerText.selectPlugin
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+}
+
+@MainActor
+private final class PluginManagementViewModel: ObservableObject {
+    let manager: any PluginManaging
+    @Published private(set) var revision = 0
+    private var observer: (any PluginManagingObserverHandle)?
+
+    init(manager: any PluginManaging) {
+        self.manager = manager
+        self.observer = manager.addPluginObserver { [weak self] _ in
+            self?.revision &+= 1
         }
     }
 }

@@ -129,7 +129,7 @@ flowchart TD
 3. 跨两个以上 Provider 的编排放进 `IntegrationX`，由 `FactoryLumi` 组装，不能让 Provider 互相形成依赖环。
 4. 新插件包统一以 `Plugin` 开头；稳定插件 ID 尽量保持旧值，避免状态、存储和自动化失效。
 5. 插件不能直接依赖 `FactoryLumi`，也不能直接解析其它具体插件类型。
-6. 高频状态由消费视图窄播观察，禁止通过 Kernel 全局 `objectWillChange` 广播 token、光标、滚动等事件。
+6. 高频状态由消费视图窄播观察，禁止通过 Kernel 全局 `objectWillChange` 广播 token、光标、滚动等事件；Kernel 本身不再转发 Provider 状态。
 7. UI 统一复用 `LumiUI`；为了像素一致允许先复用旧版纯 View/Model，但不得把 `KernelLumi` 依赖带进新版。
 
 ### 4.2 KernelCore 必须补齐的通用能力

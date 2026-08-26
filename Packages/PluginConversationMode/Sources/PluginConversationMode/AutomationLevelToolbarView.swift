@@ -7,7 +7,7 @@ struct AutomationLevelToolbarView: View {
 
     @State private var isPopoverPresented = false
 
-    private var selectedLevel: LumiAutomationLevel {
+    private var selectedLevel: AutomationLevel {
         if let id = conversations.selectedConversationID {
             return conversations.automationLevel(for: id)
         }
@@ -39,7 +39,7 @@ struct AutomationLevelToolbarView: View {
         }
     }
 
-    private func updateAutomationLevel(_ level: LumiAutomationLevel) {
+    private func updateAutomationLevel(_ level: AutomationLevel) {
         if let conversationID = conversations.selectedConversationID {
             conversations.setAutomationLevel(level, for: conversationID)
         }
@@ -64,15 +64,15 @@ struct AutomationLevelToolbarView: View {
 }
 
 private struct AutomationLevelPopover: View {
-    let selectedLevel: LumiAutomationLevel
-    let onSelect: (LumiAutomationLevel) -> Void
+    let selectedLevel: AutomationLevel
+    let onSelect: (AutomationLevel) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Automation Level")
                 .font(.system(size: 12, weight: .semibold))
 
-            ForEach(LumiAutomationLevel.allCases) { level in
+            ForEach(AutomationLevel.allCases) { level in
                 Button {
                     onSelect(level)
                 } label: {
@@ -87,7 +87,7 @@ private struct AutomationLevelPopover: View {
 }
 
 private struct AutomationLevelRow: View {
-    let level: LumiAutomationLevel
+    let level: AutomationLevel
     let isSelected: Bool
 
     var body: some View {

@@ -18,9 +18,9 @@ struct MessageSenderPluginTests {
         let conversations = DefaultConversationManager()
         try kernel.registerProvider((any ConversationManaging).self, conversations)
         let messages = DefaultMessageManager()
-        try kernel.registerProvider((any MessageManaging).self, messages, forwardsObjectWillChange: false)
+        try kernel.registerProvider((any MessageManaging).self, messages)
         let agentLoop = StubAgentLoop(messages: messages)
-        try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
+        try kernel.registerProvider((any AgentLoopProviding).self, agentLoop)
 
         // 走真实装配路径：`start(plugins:)` 会设置 activePluginID，
         // 使 `registerProvider` 记录 provider 归属（ownedByPlugin）。
@@ -51,9 +51,9 @@ struct MessageSenderPluginTests {
         let conversations = DefaultConversationManager()
         try kernel.registerProvider((any ConversationManaging).self, conversations)
         let messages = DefaultMessageManager()
-        try kernel.registerProvider((any MessageManaging).self, messages, forwardsObjectWillChange: false)
+        try kernel.registerProvider((any MessageManaging).self, messages)
         let agentLoop = StubAgentLoop(messages: messages)
-        try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
+        try kernel.registerProvider((any AgentLoopProviding).self, agentLoop)
 
         let plugin = MessageSenderPlugin()
         try plugin.onBoot(kernel: kernel)

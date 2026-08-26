@@ -78,8 +78,8 @@ public final class ProjectsSyncCoordinator: SuperLog {
 
     // MARK: - Kernel → ViewModel
 
-    /// 外部入口（例如将目录拖到 Lumi Dock 图标）会直接更新内核项目。
-    /// 监听内核 Provider 的 objectWillChange，并在本轮属性更新完成后读取最新项目，
+    /// 外部入口（例如将目录拖到 Lumi Dock 图标）会直接更新 Project Provider。
+    /// 监听具体 ProjectProviding 的 objectWillChange，并在本轮属性更新完成后读取最新项目，
     /// 通过 ViewModel 的 intent 统一完成添加、选中和磁盘持久化。
     private func observeKernelChanges() {
         guard let project = kernel?.resolveProvider((any ProjectProviding).self) else { return }

@@ -1,5 +1,6 @@
 import KernelCore
 import LumiUI
+import ProviderPluginControl
 import SwiftUI
 
 /// 展示并控制单个插件的启用状态。
@@ -7,7 +8,7 @@ import SwiftUI
 /// 完美复刻旧版 `PluginManagerPlugin` 的交互体验：关闭 / 打开开关会调用内核
 /// `disablePlugin` / `enablePlugin`，完成**运行时启停 + 贡献重建 + 持久化**
 /// （启用状态写入原插件数据目录，见 `PluginEnabledStateStore`），并随内核
-/// `objectWillChange` 自动刷新 UI。
+/// `PluginManaging` 的精准事件自动刷新所属设置页。
 ///
 /// 内核的启停会校验策略与依赖：不可配置的插件（required / alwaysOn，
 /// 对应旧版 alwaysOn）不渲染开关，只展示对应的策略标签；被其他启用插件依赖
@@ -15,7 +16,7 @@ import SwiftUI
 struct PluginEnableControl: View {
     @LumiTheme private var theme
 
-    let kernel: KernelCoreContainer
+    let manager: any PluginControlling
     let plugin: any SuperPlugin
 
     /// 切换进行中标记：避免快速连点触发并发启停的竞态。
@@ -25,7 +26,7 @@ struct PluginEnableControl: View {
         Group {
             if plugin.metadata.policy.isConfigurable {
                 Toggle(isOn: Binding(
-                    get: { kernel.isPluginEnabled(id: plugin.id) },
+                    get: { manager.isEnabled(id: plugin.id) },
                     set: { newValue in toggle(newValue) }
                 )) {
                     Text(PluginPluginManagerText.enable)
@@ -40,7 +41,7 @@ struct PluginEnableControl: View {
         }
     }
 
-    /// 触发运行时启停。内核 `enablePlugin` / `disablePlugin` 会执行
+    /// 触发运行时启停。管理 Provider 会执行
     /// `onEnable` / `onDisable`、重建/撤回贡献并持久化到原目录；
     /// 失败时状态保持原样，开关随内核刷新自动回落。
     private func toggle(_ newValue: Bool) {
@@ -50,9 +51,9 @@ struct PluginEnableControl: View {
         Task { @MainActor in
             defer { isUpdating = false }
             if newValue {
-                try? await kernel.enablePlugin(id: id)
+                _ = await manager.enablePlugin(id: id)
             } else {
-                try? await kernel.disablePlugin(id: id)
+                _ = await manager.disablePlugin(id: id)
             }
         }
     }

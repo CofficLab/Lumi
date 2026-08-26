@@ -104,7 +104,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     /// - 状态相同（均为 nil 或均为非 nil）→ 视为相同，跳过赋值；
     /// - 状态不同（nil ↔ 非 nil）→ 视为变化，正常更新。
     ///
-    /// 目的：装配流程可能重复调用注入方法（如 Kernel 转发 `objectWillChange`
+    /// 目的：装配流程可能重复调用注入方法（如宿主重建视图树时）
     /// 导致 App body 重求值后再次装配），重复赋值 `@Published` 会在视图更新期间
     /// 发布变更，触发 SwiftUI 的 "Publishing changes from within view updates
     /// is not allowed" 并可能形成循环。状态相同即跳过，避免无意义发布。

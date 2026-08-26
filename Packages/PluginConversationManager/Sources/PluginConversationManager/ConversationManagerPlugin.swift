@@ -54,7 +54,7 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
             messageManager: kernel.resolveProvider((any MessageManaging).self),
             toolManager: kernel.resolveProvider((any ToolManagerProviding).self),
             agentTurn: kernel.resolveProvider((any AgentLoopProviding).self),
-            eventBus: kernel.eventBus
+            eventBus: KernelCoreEventBus()
         )
         kernel.unregisterProvider((any ConversationManaging).self)
         try kernel.registerProvider((any ConversationManaging).self, manager)

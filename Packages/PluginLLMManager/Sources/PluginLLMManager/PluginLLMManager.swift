@@ -50,7 +50,7 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         // 1. 注销 ProviderFactory 预注册的默认实现（避免 providerAlreadyRegistered）。
         kernel.unregisterProvider((any LLMManaging).self)
 
-        // 2. 注册本插件实现（默认转发 objectWillChange，UI 经内核订阅可刷新）。
+        // 2. 注册本插件实现。消费者直接观察 LLMManaging 的精准状态接口。
         try kernel.registerProvider((any LLMManaging).self, manager)
 
         // 3. 注册 API Key 相关消息渲染器（order 350/340，优先于 core-error-message 的 300）。

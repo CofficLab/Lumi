@@ -11,7 +11,7 @@ import ProviderMessageStreaming
 /// comparison when nothing relevant changed between calls.
 private struct HistoryBuildSignature: Equatable {
     let conversationID: UUID?
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
     /// 流式行可见性翻转时 status 行显隐不同，需纳入签名以触发重算。
     let hidesStatus: Bool
     /// Per persisted message — captures additions/removals/reordering AND
@@ -127,7 +127,7 @@ final class ListV2ViewModel: ObservableObject {
     }
 
     /// 当前会话的响应详细程度；由 View 透传给渲染闭包。
-    var verbosity: LumiResponseVerbosity {
+    var verbosity: ResponseVerbosity {
         services.verbosity(for: selectedConversationID)
     }
 

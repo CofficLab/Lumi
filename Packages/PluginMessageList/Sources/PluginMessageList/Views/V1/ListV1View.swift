@@ -17,7 +17,7 @@ struct ListV1View: View {
     @LumiTheme private var theme
 
     /// 快照 + 事件刷新：init 同步读初值，之后由事件驱动更新。
-    @State private var verbosity: LumiResponseVerbosity = .defaultVerbosity
+    @State private var verbosity: ResponseVerbosity = .defaultVerbosity
 
     /// 选中对话变化观察者令牌：视图消失时释放（自动注销）。
     @State private var selectedObserverToken: (any SelectedConversationObserverHandle)?

@@ -261,17 +261,16 @@ public struct DefaultProviderFactory: ProviderFactory {
         try kernel.registerProvider((any ConversationManaging).self, conversations)
 
         let messages = makeMessageProvider()
-        try kernel.registerProvider((any MessageManaging).self, messages, forwardsObjectWillChange: false)
+        try kernel.registerProvider((any MessageManaging).self, messages)
 
         let llmProvider = makeLLMProvider()
         try kernel.registerProvider((any SuperLLMProvider).self, llmProvider)
 
-        // 流式输出 store：先于 AgentLoop 注册，供回合循环写入临时行
-        // （高频变更，不转发 objectWillChange，由消费方窄播订阅）。
+        // 流式输出 store：先于 AgentLoop 注册，供回合循环写入临时行。
+        // 消费方直接观察该 Provider，Kernel 不转发高频状态变化。
         try kernel.registerProvider(
             (any MessageStreamingProviding).self,
-            makeMessageStreamingProvider(),
-            forwardsObjectWillChange: false
+            makeMessageStreamingProvider()
         )
 
         // 生命周期钩子管理器：AgentLoop / 插件在各生命周期点挂载钩子。
@@ -314,13 +313,17 @@ public struct DefaultProviderFactory: ProviderFactory {
         if let lifecycleHooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
             agentLoop.setLifecycleHooks(lifecycleHooks)
         }
-        try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
+        try kernel.registerProvider((any AgentLoopProviding).self, agentLoop)
 
         // `MessageSendingProviding` 不再由工厂装配注册：改由 `PluginMessageSender`
         // （`MessageSenderPlugin`，order=9）在 onBoot 中解析上述 conversations /
         // messages / agentLoop 并注册，与消费方插件共享同一实例。宿主如需定制
         // 产出逻辑，可覆盖 `makeMessageSenderProvider` 或替换插件列表。
-        try kernel.registerProvider((any ConversationInputProviding).self, makeConversationInputProvider())
+        // 输入插件通过自己的窄播观察器消费文本、光标和高度等高频状态。
+        try kernel.registerProvider(
+            (any ConversationInputProviding).self,
+            makeConversationInputProvider()
+        )
         try kernel.registerProvider((any MessageRenderingProviding).self, makeMessageRenderingProvider())
         try kernel.registerProvider((any ToolCallRenderingProviding).self, makeToolCallRenderingProvider())
         try kernel.registerProvider((any PromptSuggestionProviding).self, makePromptSuggestionProvider())

@@ -1,3 +1,4 @@
+import Combine
 import LumiUI
 import ProviderConversationInput
 import ProviderMessageSender
@@ -14,17 +15,19 @@ struct ConversationInputView: View {
 
     let input: (any ConversationInputProviding)?
     let sender: (any MessageSendingProviding)?
+    @State private var errorMessage: String?
 
     init(input: (any ConversationInputProviding)?, sender: (any MessageSendingProviding)?) {
         self.input = input
         self.sender = sender
+        _errorMessage = State(initialValue: input?.errorMessage)
     }
 
     var body: some View {
         VStack(spacing: 0) {
             AppDivider()
 
-            if let errorMessage = input?.errorMessage {
+            if let errorMessage {
                 InputErrorView(message: errorMessage, onDismiss: {
                     input?.errorMessage = nil
                 })
@@ -38,6 +41,17 @@ struct ConversationInputView: View {
             )
         }
         .background(theme.background)
+        .onReceive(input?.objectWillChange ?? ObservableObjectPublisher()) { _ in
+            // ObservableObjectPublisher 在 @Published 写入前发送，延迟一拍
+            // 才能读取到新的错误值。输入文本变化也会经过这里，但只有
+            // errorMessage 实际变化时才触发本地状态更新。
+            DispatchQueue.main.async {
+                let newValue = input?.errorMessage
+                if errorMessage != newValue {
+                    errorMessage = newValue
+                }
+            }
+        }
     }
 
     /// 发送当前输入框文本

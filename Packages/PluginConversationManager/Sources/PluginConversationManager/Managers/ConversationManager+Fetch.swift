@@ -7,7 +7,7 @@ extension ConversationManager {
         limit: Int,
         beforeUpdatedAt: Date? = nil,
         beforeID: UUID? = nil
-    ) async -> [LumiConversationSummary] {
+    ) async -> [ConversationSummary] {
         await fetchConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
@@ -21,7 +21,7 @@ extension ConversationManager {
         beforeUpdatedAt: Date? = nil,
         beforeID: UUID? = nil,
         includingChildConversations: Bool
-    ) async -> [LumiConversationSummary] {
+    ) async -> [ConversationSummary] {
         await store?.fetchConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
@@ -36,7 +36,7 @@ extension ConversationManager {
         beforeID: UUID? = nil,
         includingChildConversations: Bool,
         projectPath: String
-    ) async -> [LumiConversationSummary] {
+    ) async -> [ConversationSummary] {
         await store?.fetchConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
@@ -46,7 +46,7 @@ extension ConversationManager {
         ) ?? []
     }
 
-    public func fetchConversation(id: UUID) async -> LumiConversationSummary? {
+    public func fetchConversation(id: UUID) async -> ConversationSummary? {
         if let cached = conversations.first(where: { $0.id == id }) {
             return cached
         }

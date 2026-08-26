@@ -14,7 +14,7 @@ struct MessageViewChrome<Content: View>: View {
     var showsResendButton = false
     var showsHeader = true
     var errorTransportDetails: ResolvedErrorTransportDetails?
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
     @State private var didCopy = false
     @State private var showThinkingPopover = false
     @State private var showInfoPopover = false

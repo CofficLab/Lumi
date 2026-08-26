@@ -5,20 +5,20 @@ import SwiftUI
 
 @main
 struct BookletMakerApp: App {
-    @StateObject private var kernel: KernelCoreContainer
+    private let kernel: KernelCoreContainer
     private let mainView: AnyView
     private let settingsView: AnyView
 
     init() {
         if let assembledKernel = try? FactoryBookletMaker.makeKernel() {
-            _kernel = StateObject(wrappedValue: assembledKernel)
+            kernel = assembledKernel
             mainView = (try? FactoryBookletMaker.makeMainView(kernel: assembledKernel))
                 ?? AnyView(Text("Failed to assemble main view"))
             settingsView = (try? FactoryBookletMaker.makeSettingsView(kernel: assembledKernel))
                 ?? AnyView(Text("Failed to assemble settings view"))
         } else {
             let fallbackKernel = KernelCoreContainer()
-            _kernel = StateObject(wrappedValue: fallbackKernel)
+            kernel = fallbackKernel
             mainView = AnyView(Text("Failed to assemble main view"))
             settingsView = AnyView(Text("Failed to assemble settings view"))
         }

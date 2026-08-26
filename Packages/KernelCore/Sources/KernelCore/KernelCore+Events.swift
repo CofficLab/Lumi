@@ -1,6 +1,6 @@
 import Foundation
 
-// MARK: - Typed kernel event bus + legacy Notification bridge
+// MARK: - Typed event bus + legacy Notification bridge
 
 /// 内核级事件协议。插件事件应实现 `Sendable`，避免跨任务共享可变状态。
 public protocol KernelEvent: Sendable {}
@@ -32,7 +32,7 @@ public final class KernelEventSubscription {
     }
 }
 
-/// 内核类型化事件总线。
+/// 可由 Provider 自行持有的类型化事件总线。
 ///
 /// 插件通过 `subscribe` 接收类型化事件；通过 `publish` 发布事件。
 /// `bridgeLegacyNotification` 把旧 `NotificationCenter` 通知转换为类型化事件，

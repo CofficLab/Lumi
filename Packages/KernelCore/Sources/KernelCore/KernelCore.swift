@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 public enum KernelLifecycleState: String, Sendable {
@@ -20,7 +19,7 @@ public enum KernelLifecycleState: String, Sendable {
 /// Only holds protocol types, does not depend on concrete implementations.
 /// All concrete implementations are injected via plugins.
 @MainActor
-public final class KernelCoreContainer: ObservableObject {
+public final class KernelCoreContainer {
 
     // MARK: - Provider Registry
 
@@ -28,11 +27,6 @@ public final class KernelCoreContainer: ObservableObject {
     ///
     /// internal：由 `KernelCore+Provider.swift` 中的 extension 读写。
     var providers: [ObjectIdentifier: Any] = [:]
-
-    /// Provider 变更订阅：仅当注册时选择转发 `objectWillChange` 时使用。
-    ///
-    /// internal：由 `KernelCore+Provider.swift` 中的 extension 读写。
-    var providerSubscriptions: [ObjectIdentifier: AnyCancellable] = [:]
 
     /// Provider 所属插件。不存在记录时表示由宿主注册。
     var providerOwners: [ObjectIdentifier: String] = [:]
@@ -51,10 +45,10 @@ public final class KernelCoreContainer: ObservableObject {
     /// 插件写入共享 Provider/Host 的贡献，由 Kernel 统一持有和撤回。
     var contributionTokens: [String: [PluginContributionToken]] = [:]
 
-    /// 内核类型化事件总线（typed event bridge + 旧 Notification 兼容层）。
-    public let eventBus = KernelCoreEventBus()
-
-    @Published public private(set) var lifecycleState: KernelLifecycleState = .stopped
+    /// 生命周期状态是内核内部控制状态，不是 UI 发布源。
+    /// 需要感知插件生命周期的消费者应观察对应的 Provider（例如
+    /// `PluginManaging.addPluginObserver`），而不是观察 Kernel。
+    public private(set) var lifecycleState: KernelLifecycleState = .stopped
 
     // MARK: - Initialization
 

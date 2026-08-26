@@ -100,7 +100,7 @@ public actor ConversationStore: SuperLog {
 
     /// Create a new conversation with specific ID
     @discardableResult
-    func createConversation(id: UUID, title: String?, preview: String = "", createdAt: Date = Date(), providerID: String? = nil, modelName: String? = nil, projectPath: String? = nil, parentConversationID: UUID? = nil, reasoningEffort: LumiReasoningEffort? = nil, automationLevel: LumiAutomationLevel? = nil) throws -> ConversationModel {
+    func createConversation(id: UUID, title: String?, preview: String = "", createdAt: Date = Date(), providerID: String? = nil, modelName: String? = nil, projectPath: String? = nil, parentConversationID: UUID? = nil, reasoningEffort: ReasoningEffort? = nil, automationLevel: AutomationLevel? = nil) throws -> ConversationModel {
         let context = ModelContext(container)
         let now = createdAt.timeIntervalSince1970
         let model = ConversationModel(
@@ -137,7 +137,7 @@ public actor ConversationStore: SuperLog {
     /// - Parameter summaries: 待导入的会话列表。
     /// - Returns: 实际新增的数量(跳过已存在的)。
     @discardableResult
-    func importSummaries(_ summaries: [LumiConversationSummary]) throws -> Int {
+    func importSummaries(_ summaries: [ConversationSummary]) throws -> Int {
         guard !summaries.isEmpty else { return 0 }
 
         let context = ModelContext(container)
@@ -182,7 +182,7 @@ public actor ConversationStore: SuperLog {
         beforeUpdatedAt: Date? = nil,
         beforeID: UUID? = nil,
         includingChildConversations: Bool = false
-    ) -> [LumiConversationSummary] {
+    ) -> [ConversationSummary] {
         guard limit > 0 else { return [] }
 
         let context = ModelContext(container)
@@ -260,7 +260,7 @@ public actor ConversationStore: SuperLog {
         beforeID: UUID? = nil,
         includingChildConversations: Bool = false,
         projectPath: String
-    ) -> [LumiConversationSummary] {
+    ) -> [ConversationSummary] {
         guard limit > 0 else { return [] }
 
         let context = ModelContext(container)
@@ -403,7 +403,7 @@ public actor ConversationStore: SuperLog {
     }
 
     /// Fetch a single conversation by ID
-    func fetchConversation(id: UUID) -> LumiConversationSummary? {
+    func fetchConversation(id: UUID) -> ConversationSummary? {
         let context = ModelContext(container)
         let idString = id.uuidString
 
@@ -492,10 +492,10 @@ public actor ConversationStore: SuperLog {
     /// Update conversation response preferences
     func updateConversationPreferences(
         id: UUID,
-        verbosity: LumiResponseVerbosity? = nil,
-        reasoningEffort: LumiReasoningEffort? = nil,
+        verbosity: ResponseVerbosity? = nil,
+        reasoningEffort: ReasoningEffort? = nil,
         setReasoningEffortToNil: Bool = false,
-        automationLevel: LumiAutomationLevel? = nil
+        automationLevel: AutomationLevel? = nil
     ) -> Bool {
         let context = ModelContext(container)
         let idString = id.uuidString

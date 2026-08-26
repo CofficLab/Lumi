@@ -1,7 +1,7 @@
 import Foundation
 
 /// 回复语言。
-public enum LumiConversationLanguage: CaseIterable, Codable, Identifiable, RawRepresentable, Sendable {
+public enum ConversationLanguage: CaseIterable, Codable, Identifiable, RawRepresentable, Sendable {
     case chinese
     case english
 

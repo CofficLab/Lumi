@@ -25,7 +25,7 @@ struct MessageListRowBuilder {
     func build(
         persisted: [Message],
         conversationID: UUID?,
-        verbosity: LumiResponseVerbosity
+        verbosity: ResponseVerbosity
     ) -> [Message] {
         buildHistory(
             persisted: persisted,
@@ -42,7 +42,7 @@ struct MessageListRowBuilder {
     func buildHistory(
         persisted: [Message],
         conversationID: UUID?,
-        verbosity: LumiResponseVerbosity,
+        verbosity: ResponseVerbosity,
         hidesStatus: Bool = false
     ) -> [Message] {
         guard conversationID != nil else { return persisted }

@@ -67,7 +67,7 @@ struct ReasoningActionBarButton: View {
     @State private var isPopoverPresented = false
 
     /// 是否开启思考（nil = 关闭）。
-    private var selectedEffort: LumiReasoningEffort? {
+    private var selectedEffort: ReasoningEffort? {
         if let id = conversations.selectedConversationID {
             return conversations.reasoningEffortOptional(for: id)
         }
@@ -111,11 +111,11 @@ struct ReasoningActionBarButton: View {
 
 enum ReasoningOption: Equatable {
     case off
-    case effort(LumiReasoningEffort)
+    case effort(ReasoningEffort)
 }
 
 private struct ReasoningPopover: View {
-    let selected: LumiReasoningEffort?
+    let selected: ReasoningEffort?
     let onSelect: (ReasoningOption) -> Void
 
     var body: some View {
@@ -149,7 +149,7 @@ private struct ReasoningPopover: View {
             }
             .buttonStyle(.plain)
 
-            ForEach(LumiReasoningEffort.allCases) { effort in
+            ForEach(ReasoningEffort.allCases) { effort in
                 Button {
                     onSelect(.effort(effort))
                 } label: {

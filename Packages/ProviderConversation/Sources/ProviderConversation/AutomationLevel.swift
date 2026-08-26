@@ -1,7 +1,7 @@
 import Foundation
 
 /// 自动化等级（对话模式）：决定 Agent 能否执行工具、是否需要确认。
-public enum LumiAutomationLevel: CaseIterable, Codable, Identifiable, RawRepresentable, Sendable {
+public enum AutomationLevel: CaseIterable, Codable, Identifiable, RawRepresentable, Sendable {
     case chat
     case build
     case autonomous

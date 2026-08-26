@@ -2,7 +2,7 @@
 
 > 范围:`LumiApp/`、`Packages/`、`Plugins/`(排除 build 产物)。
 > 方法:静态扫描三类风险——主线程阻塞 IO/子进程、SwiftUI 重渲染、聊天 Markdown 渲染链路。
-> 结论先行:历史消息滚动路径已经过一轮系统性治理(List 复用、三级缓存、流式增量解析、16ms 帧门禁),整体健康;剩余风险集中在 **流式输出后期掉帧**、**启动主线程同步 IO**、以及 **kernel 高频 objectWillChange 整页重渲染** 三块。
+> 结论先行:历史消息滚动路径已经过一轮系统性治理(List 复用、三级缓存、流式增量解析、16ms 帧门禁),整体健康;剩余风险集中在 **流式输出后期掉帧** 与 **启动主线程同步 IO**。Kernel 已不再转发 Provider 的 `objectWillChange`。
 
 ---
 
@@ -11,7 +11,7 @@
 | 编号 | 严重度 | 位置 | 问题 |
 |---|---|---|---|
 | P1 | 高 | `MarkdownBlockRenderer.swift:531-538` | 流式期间 `HorizontalScrollView.updateNSView` 每帧清空 fittingSize 缓存,每 16ms 重跑全内容 `NSHostingView.fittingSize` |
-| P2 | 高 | `KernelLumi+Registration.swift:34,57,62,99,109` + `ListView.swift:23` | MessageSending 等高频服务把 objectWillChange 转发到 kernel,`@ObservedObject kernel` 的视图整页重渲染 |
+| P2 | 已处理 | `KernelCore` Provider 注册与 UI 宿主 | Provider 状态改为精准观察，Kernel 不再转发 `objectWillChange`，菜单和主窗口不因无关 Provider 更新整页重渲染 |
 | P3 | 高 | `ProjectsPlugin/Sources/Hooks/OnReady.swift:20-66` | 启动阶段 @MainActor 上做迁移、示例项目整目录复制、同步 JSON 读取 |
 | P4 | 高 | `ConversationService.swift:43-73` | @MainActor init 同步读+解码整个会话列表,会话多时启动卡顿 |
 | P5 | 高 | `XcodeBuildServerLocator.swift:28-56` | 主线程同步 spawn 子进程 + `waitUntilExit`(经 `XcodeProjectStatusBarViewModel.refreshCapabilityLevel` 调用) |
@@ -31,7 +31,7 @@
 ## 二、已确认做对的关键点(勿回退)
 
 1. **列表容器**:`ListV3View` / `ListV2View` 用 `List`(NSTableView cell 复用)替代 LazyVStack,规避富文本长列表 AttributeGraph 活锁。
-2. **流式行隔离**:流式临时行用进程级常量 `LumiStreamingRowID` 单独渲染;VM 侧 16ms 帧门禁合并逐 token 广播;`MessageStreaming` 注册时 `forwardsObjectWillChange: false`。
+2. **流式行隔离**:流式临时行用进程级常量 `LumiStreamingRowID` 单独渲染;VM 侧 16ms 帧门禁合并逐 token 广播;消费者直接观察 `MessageStreaming`，Kernel 不转发 Provider 变化。
 3. **重建短路**:`HistoryBuildSignatureV3` 指纹签名跳过 O(rows×content) 数组比较。
 4. **底部判定**:`ScrollViewBottomTracker` 用 `NSClipView.boundsDidChangeNotification` 替代 GeometryReader+PreferenceKey,`AtBottomBox` 刻意非 Observable,切断布局反馈环,含迟滞防抖。
 5. **Markdown 缓存**:块级有界 LRU(384)+ 流式稳定前缀增量解析 + 行内 AttributedString 缓存(2048)+ 代码高亮缓存(512)。
@@ -84,7 +84,7 @@
 > - 局限:harness 的纯流式逐 token 场景被全量重解析(P7 领域)主导且运行方差大,不适合作为 P1 的隔离信号;真实 App 端到端确认待 P2/P9 修复后统一验收。
 
 **P2 — kernel 转发豁免**
-对 `MessageSending`、`ConversationManaging`、`MessageManaging`、`ToolManaging`、`AgentTurnManaging` 的注册加 `forwardsObjectWillChange: false`(与 `MessageStreaming` 同法),消费方改为窄播观察具体服务;`ListView` 移除对整个 kernel 的 `@ObservedObject`。
+移除 Kernel 对所有 Provider 的 `objectWillChange` 转发，消费方改为窄播观察具体服务;`ListView` 移除对整个 kernel 的 `@ObservedObject`。高频 Provider 由自身观察接口或 `objectWillChange` 驱动局部 ViewModel。
 
 **P3/P4 — 启动主线程 IO 下放**
 - `ProjectsOnReadyHook.execute` 的迁移/示例安装/loadProjects 移入 `Task.detached`,完成后回 MainActor 赋值。

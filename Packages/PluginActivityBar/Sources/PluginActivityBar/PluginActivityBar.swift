@@ -1,9 +1,9 @@
-import Combine
 import Foundation
 import KernelCore
 import os
 import ProviderActivityBar
 import KitSuperLog
+import ProviderPluginManaging
 
 /// ActivityBar 自定义插件（KernelCore 生态）。
 ///
@@ -17,8 +17,8 @@ import KitSuperLog
 /// - 必须先于"想接入 ActivityBar 入口"的业务插件（如 `PluginResumeDesigner` order=81），
 ///   业务插件在 `onBoot` 中调用 `addItems` 时期望拿到的是本插件的实现。
 ///
-/// 订阅内核 `objectWillChange` 监听插件注册表变化：当某个插件被卸载或禁用时，
-/// 自动隐藏其贡献的 ActivityBar 入口；当插件重新启用时，自动恢复其入口。
+/// 订阅 `PluginManaging` 的精准事件：当某个插件被卸载或禁用时，自动隐藏其
+/// 贡献的 ActivityBar 入口；当插件重新启用时，自动恢复其入口。
 @MainActor
 public final class PluginActivityBar: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.activity-bar", category: "Plugin")
@@ -40,8 +40,9 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
     /// 本插件注册的自定义 Provider（保存引用便于 onShutdown / 调试诊断）。
     private var provider: ActivityBarProvider?
 
-    /// 内核 objectWillChange 订阅；deinit 时自动取消。
-    private var kernelSubscription: AnyCancellable?
+    /// 插件管理 Provider 的精准观察令牌；deinit 时自动取消。
+    private var pluginManagerObserver: (any PluginManagingObserverHandle)?
+    private var pluginManager: (any PluginManaging)?
 
     /// 上一次快照：已注册且启用的插件 id 集合，用于 diff 检测变化。
     private var lastKnownEnabledPluginIDs: Set<String> = []
@@ -68,7 +69,8 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         )
         self.provider = provider
 
-        // 4. 注册本插件实现（默认转发 objectWillChange，UI 经内核订阅可刷新）。
+        // 4. 注册本插件实现。消费者直接观察 ActivityBarProvider，Kernel 不转发
+        // 其高频状态变化。
         try kernel.registerProvider((any ActivityBarProviding).self, provider)
 
         if Self.verbose {
@@ -76,8 +78,8 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         }
     }
 
-    /// 全部插件 `onBoot` 完成后执行收尾工作，
-    /// 并订阅内核变化以监听后续插件的卸载/启用。
+    /// 全部插件 `onBoot` 完成后执行收尾工作，并订阅插件管理 Provider 的精准
+    /// 事件以监听后续插件的卸载/启用。
     ///
     /// 这里不能放进 `onBoot`：业务插件（order=81+）在 `onBoot` 中也会
     /// 注册自己的入口，必须让它们先注册完毕。
@@ -95,19 +97,22 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         }
 
         // 记录当前已启用的插件集合，作为后续 diff 的基线。
-        lastKnownEnabledPluginIDs = currentEnabledPluginIDs(kernel: kernel)
-
-        // 订阅内核 objectWillChange：每次插件注册表变化时重新 diff，
-        // 对新增/消失的插件执行隐藏/恢复入口。
-        kernelSubscription = kernel.objectWillChange.sink { [weak self, weak kernel] _ in
-            guard let self, let kernel else { return }
-            self.syncPluginVisibility(kernel: kernel)
+        guard let pluginManager = kernel.resolveProvider((any PluginManaging).self) else {
+            Self.logger.error("\(Self.emoji)PluginManaging 未注册，无法监听 ActivityBar 插件可见性")
+            return
+        }
+        self.pluginManager = pluginManager
+        lastKnownEnabledPluginIDs = currentEnabledPluginIDs(pluginManager: pluginManager)
+        pluginManagerObserver = pluginManager.addPluginObserver { [weak self] _ in
+            guard let self, let pluginManager = self.pluginManager else { return }
+            self.syncPluginVisibility(pluginManager: pluginManager)
         }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernelSubscription?.cancel()
-        kernelSubscription = nil
+        pluginManagerObserver?.cancel()
+        pluginManagerObserver = nil
+        pluginManager = nil
         provider = nil
         lastKnownEnabledPluginIDs = []
         // 内核会按插件归属自动撤回 onBoot 注册的 Provider，无需手动处理。
@@ -116,9 +121,9 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
     // MARK: - Plugin Visibility Sync
 
     /// 对比当前已启用插件集合与上次快照，执行隐藏/恢复操作。
-    private func syncPluginVisibility(kernel: KernelCoreContainer) {
+    private func syncPluginVisibility(pluginManager: any PluginManaging) {
         guard let provider else { return }
-        let currentIDs = currentEnabledPluginIDs(kernel: kernel)
+        let currentIDs = currentEnabledPluginIDs(pluginManager: pluginManager)
 
         // 被卸载或禁用的插件：从快照中消失。
         let removed = lastKnownEnabledPluginIDs.subtracting(currentIDs)
@@ -136,7 +141,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
     }
 
     /// 获取当前所有已注册且启用的插件 id 集合。
-    private func currentEnabledPluginIDs(kernel: KernelCoreContainer) -> Set<String> {
-        Set(kernel.allPlugins.filter { kernel.isPluginEnabled(id: $0.id) }.map(\.id))
+    private func currentEnabledPluginIDs(pluginManager: any PluginManaging) -> Set<String> {
+        Set(pluginManager.allPlugins.filter { pluginManager.isEnabled(id: $0.id) }.map(\.id))
     }
 }

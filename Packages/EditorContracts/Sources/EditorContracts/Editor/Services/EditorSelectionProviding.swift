@@ -3,7 +3,7 @@ import Foundation
 
 /// 选择能力（契约 V2，见重构方案 §8.4）。
 ///
-/// 选择是高频状态：本服务注册进 Kernel 时不转发全局 `objectWillChange`，
+/// 选择是高频状态：本服务不转发 Kernel 全局 `objectWillChange`，
 /// 只有编辑器相关视图直接订阅 `statePublisher`。
 @MainActor
 public protocol EditorSelectionProviding: AnyObject {

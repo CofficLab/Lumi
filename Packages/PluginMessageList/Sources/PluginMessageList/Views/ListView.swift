@@ -27,7 +27,7 @@ struct ListView: View, SuperLog {
     /// 快照 + 事件刷新（同 ChatHeaderView 模式）：不订阅容器的 objectWillChange。
     /// init 同步读初值，避免首次渲染前路由错位；之后由事件驱动更新。
     @State private var selectedConversationID: UUID?
-    @State private var verbosity: LumiResponseVerbosity = .defaultVerbosity
+    @State private var verbosity: ResponseVerbosity = .defaultVerbosity
 
     /// 选中对话变化观察者令牌：视图消失时释放（自动注销）。
     @State private var selectedObserverToken: (any SelectedConversationObserverHandle)?

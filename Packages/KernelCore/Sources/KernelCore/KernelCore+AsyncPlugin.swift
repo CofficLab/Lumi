@@ -206,7 +206,6 @@ public extension KernelCoreContainer {
         pluginStartOrder.removeAll()
         activePluginID = nil
         setLifecycleState(.stopped)
-        objectWillChange.send()
 
         if let firstError { throw firstError }
     }
@@ -241,7 +240,6 @@ public extension KernelCoreContainer {
         try await plugin.onDisable(kernel: self)
         cancelContributions(ownedBy: id)
         pluginEnabledStates[id] = false
-        objectWillChange.send()
     }
 
     /// 运行时重新启用已注册插件。
@@ -291,7 +289,6 @@ public extension KernelCoreContainer {
             }
         }
         pluginEnabledStates[id] = true
-        objectWillChange.send()
     }
 
     /// 异步卸载一个插件，兼容同步与异步 Shutdown 实现。
@@ -333,7 +330,6 @@ public extension KernelCoreContainer {
         plugins.removeValue(forKey: id)
         pluginEnabledStates.removeValue(forKey: id)
         pluginStartOrder.removeAll { $0 == id }
-        objectWillChange.send()
         if let shutdownError { throw shutdownError }
     }
 
@@ -366,6 +362,5 @@ public extension KernelCoreContainer {
             pluginEnabledStates.removeValue(forKey: id)
             pluginStartOrder.removeAll { $0 == id }
         }
-        objectWillChange.send()
     }
 }

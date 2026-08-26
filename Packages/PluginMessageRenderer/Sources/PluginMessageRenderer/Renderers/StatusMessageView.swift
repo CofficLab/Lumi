@@ -15,7 +15,7 @@ struct StatusMessageView: View {
     @LumiTheme private var theme
 
     let message: Message
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
     @State private var showInfoPopover = false
 
     var body: some View {

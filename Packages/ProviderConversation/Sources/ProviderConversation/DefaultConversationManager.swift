@@ -20,7 +20,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
 
     private static let initialPageSize = 40
 
-    @Published public private(set) var conversations: [LumiConversationSummary] = []
+    @Published public private(set) var conversations: [ConversationSummary] = []
     @Published public private(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
@@ -29,13 +29,13 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
     }
     @Published public private(set) var currentTitle: String = "No conversation"
     @Published public private(set) var isLoadingConversations = false
-    @Published public private(set) var globalVerbosity: LumiResponseVerbosity = .defaultVerbosity
-    @Published public private(set) var globalReasoningEffort: LumiReasoningEffort? = .defaultEffort
-    @Published public private(set) var globalAutomationLevel: LumiAutomationLevel = .build
-    @Published public private(set) var globalLanguage: LumiConversationLanguage = .chinese
+    @Published public private(set) var globalVerbosity: ResponseVerbosity = .defaultVerbosity
+    @Published public private(set) var globalReasoningEffort: ReasoningEffort? = .defaultEffort
+    @Published public private(set) var globalAutomationLevel: AutomationLevel = .build
+    @Published public private(set) var globalLanguage: ConversationLanguage = .chinese
 
     /// 按最后消息时间倒序排序
-    public var sortedConversations: [LumiConversationSummary] {
+    public var sortedConversations: [ConversationSummary] {
         conversations.sorted { lhs, rhs in
             if lhs.lastMessageAt == rhs.lastMessageAt {
                 return lhs.createdAt > rhs.createdAt
@@ -83,7 +83,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         limit: Int,
         beforeUpdatedAt: Date?,
         beforeID: UUID?
-    ) async -> [LumiConversationSummary] {
+    ) async -> [ConversationSummary] {
         await fetchConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
@@ -97,7 +97,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         beforeUpdatedAt: Date?,
         beforeID: UUID?,
         includingChildConversations: Bool
-    ) async -> [LumiConversationSummary] {
+    ) async -> [ConversationSummary] {
         await fetchConversationPage(
             limit: limit,
             beforeUpdatedAt: beforeUpdatedAt,
@@ -113,7 +113,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         beforeID: UUID?,
         includingChildConversations: Bool,
         projectPath: String
-    ) async -> [LumiConversationSummary] {
+    ) async -> [ConversationSummary] {
         let filtered = conversations.filter { summary in
             if !includingChildConversations, summary.parentConversationID != nil { return false }
             if !projectPath.isEmpty, summary.projectPath != projectPath { return false }
@@ -131,7 +131,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         return Array(sorted.prefix(limit))
     }
 
-    public func fetchConversation(id: UUID) async -> LumiConversationSummary? {
+    public func fetchConversation(id: UUID) async -> ConversationSummary? {
         conversations.first { $0.id == id }
     }
 
@@ -185,7 +185,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         let conversationTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedTitle = conversationTitle?.isEmpty == true ? nil : conversationTitle
 
-        let conversation = LumiConversationSummary(
+        let conversation = ConversationSummary(
             id: id,
             title: normalizedTitle,
             preview: "",
@@ -333,16 +333,16 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
 
     // MARK: - Verbosity
 
-    public func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity) {
+    public func setGlobalVerbosity(_ verbosity: ResponseVerbosity) {
         globalVerbosity = verbosity
     }
 
-    public func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
+    public func verbosity(for conversationID: UUID?) -> ResponseVerbosity {
         guard let conversationID else { return globalVerbosity }
         return conversations.first { $0.id == conversationID }?.verbosity ?? globalVerbosity
     }
 
-    public func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {
+    public func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {
         guard let conversationID else {
             setGlobalVerbosity(verbosity)
             return
@@ -354,21 +354,21 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
 
     // MARK: - Reasoning Effort
 
-    public func setGlobalReasoningEffort(_ reasoningEffort: LumiReasoningEffort?) {
+    public func setGlobalReasoningEffort(_ reasoningEffort: ReasoningEffort?) {
         globalReasoningEffort = reasoningEffort
     }
 
-    public func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort {
+    public func reasoningEffort(for conversationID: UUID?) -> ReasoningEffort {
         guard let conversationID else { return globalReasoningEffort ?? .defaultEffort }
         return conversations.first { $0.id == conversationID }?.reasoningEffort ?? globalReasoningEffort ?? .defaultEffort
     }
 
-    public func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? {
+    public func reasoningEffortOptional(for conversationID: UUID?) -> ReasoningEffort? {
         guard let conversationID else { return globalReasoningEffort }
         return conversations.first { $0.id == conversationID }?.reasoningEffort ?? globalReasoningEffort
     }
 
-    public func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {
+    public func setReasoningEffort(_ reasoningEffort: ReasoningEffort, for conversationID: UUID?) {
         guard let conversationID else {
             setGlobalReasoningEffort(reasoningEffort)
             return
@@ -390,16 +390,16 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
 
     // MARK: - Automation Level
 
-    public func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel) {
+    public func setGlobalAutomationLevel(_ automationLevel: AutomationLevel) {
         globalAutomationLevel = automationLevel
     }
 
-    public func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel {
+    public func automationLevel(for conversationID: UUID?) -> AutomationLevel {
         guard let conversationID else { return globalAutomationLevel }
         return conversations.first { $0.id == conversationID }?.automationLevel ?? globalAutomationLevel
     }
 
-    public func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {
+    public func setAutomationLevel(_ automationLevel: AutomationLevel, for conversationID: UUID?) {
         guard let conversationID else {
             setGlobalAutomationLevel(automationLevel)
             return
@@ -411,16 +411,16 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
 
     // MARK: - Language
 
-    public func language(for conversationID: UUID?) -> LumiConversationLanguage {
+    public func language(for conversationID: UUID?) -> ConversationLanguage {
         guard let conversationID else { return globalLanguage }
         return conversations.first { $0.id == conversationID }?.language ?? globalLanguage
     }
 
-    public func setGlobalLanguage(_ language: LumiConversationLanguage) {
+    public func setGlobalLanguage(_ language: ConversationLanguage) {
         globalLanguage = language
     }
 
-    public func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {
+    public func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?) {
         guard let conversationID else {
             setGlobalLanguage(language)
             return
@@ -433,7 +433,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
 
     /// 把顶层对话写入有界内存缓存：存在则更新，否则追加；超过上限时截断到
     /// `initialPageSize * 2`，并保证选中对话不被淘汰。
-    private func cache(_ summary: LumiConversationSummary) {
+    private func cache(_ summary: ConversationSummary) {
         guard summary.parentConversationID == nil else { return }
         if let index = conversations.firstIndex(where: { $0.id == summary.id }) {
             conversations[index] = summary

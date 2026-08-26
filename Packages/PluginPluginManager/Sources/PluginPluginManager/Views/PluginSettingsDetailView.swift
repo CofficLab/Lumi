@@ -1,6 +1,7 @@
 import KernelCore
 import LumiUI
 import ProviderDocsView
+import ProviderPluginManaging
 import SwiftUI
 
 /// 插件管理页右侧的详情面板。
@@ -18,18 +19,18 @@ import SwiftUI
 struct PluginSettingsDetailView: View {
     @LumiTheme private var theme
 
-    let kernel: KernelCoreContainer
+    let manager: any PluginManaging
     let plugin: any SuperPlugin
 
     /// 文档视图提供器：按插件 id 匹配 about 条目。
     let docsProvider: (any DocsViewProviding)?
 
     init(
-        kernel: KernelCoreContainer,
+        manager: any PluginManaging,
         plugin: any SuperPlugin,
         docsProvider: (any DocsViewProviding)? = nil
     ) {
-        self.kernel = kernel
+        self.manager = manager
         self.plugin = plugin
         self.docsProvider = docsProvider
     }
@@ -78,7 +79,7 @@ struct PluginSettingsDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             // 启用状态控件置于右上角（可交互：运行时启停 + 持久化）
-            PluginEnableControl(kernel: kernel, plugin: plugin)
+            PluginEnableControl(manager: manager, plugin: plugin)
                 .id(plugin.id)
                 .fixedSize()
         }
@@ -155,7 +156,7 @@ struct PluginSettingsDetailView: View {
         case .disabled:
             PluginPluginManagerText.disabledPermanently
         case .enabledByDefault, .disabledByDefault:
-            kernel.isPluginEnabled(id: plugin.id)
+            manager.isEnabled(id: plugin.id)
                 ? PluginPluginManagerText.enabled
                 : PluginPluginManagerText.disabled
         }
@@ -205,7 +206,7 @@ struct PluginSettingsDetailView: View {
         case .disabled:
             PluginPluginManagerText.disabledPermanently
         case .enabledByDefault, .disabledByDefault:
-            kernel.isPluginEnabled(id: plugin.id)
+            manager.isEnabled(id: plugin.id)
                 ? PluginPluginManagerText.enabled
                 : PluginPluginManagerText.disabled
         }

@@ -12,7 +12,7 @@ struct AgentTurnView: View {
     let services: MessageListServices
     let item: AgentTurnPresentationItem
     let lastAgentTurnID: UUID?
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
 
     @StateObject private var viewModel: AgentTurnViewModel
     @State private var isProcessExpanded = false
@@ -21,7 +21,7 @@ struct AgentTurnView: View {
         services: MessageListServices,
         item: AgentTurnPresentationItem,
         lastAgentTurnID: UUID?,
-        verbosity: LumiResponseVerbosity
+        verbosity: ResponseVerbosity
     ) {
         self.services = services
         self.item = item

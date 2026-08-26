@@ -2,14 +2,14 @@ import Foundation
 
 /// 请求级「具体推理档位」，与模型能力枚举（`LumiThinkingAndReasoning`）解耦：
 /// 该类型描述用户本次请求的具体档位（low / medium / high / xhigh / max）。
-public enum LumiReasoningEffort: String, CaseIterable, Codable, Identifiable, Sendable {
+public enum ReasoningEffort: String, CaseIterable, Codable, Identifiable, Sendable {
     case low
     case medium
     case high
     case xhigh
     case max
 
-    public static let defaultEffort: LumiReasoningEffort = .high
+    public static let defaultEffort: ReasoningEffort = .high
 
     public var id: String { rawValue }
 

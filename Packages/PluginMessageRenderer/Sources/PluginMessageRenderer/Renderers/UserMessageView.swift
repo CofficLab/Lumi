@@ -14,7 +14,7 @@ import SwiftUI
 struct UserMessageView: View {
     let kernel: KernelCoreContainer
     let message: Message
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
 
     private var isBrief: Bool { verbosity == .brief }
 

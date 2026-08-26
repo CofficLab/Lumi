@@ -122,7 +122,7 @@ public struct DefaultPluginFactory: PluginFactory {
         [
             // 核心基础插件（order 10-20）：必须最先启动
             try! StorageSuperPlugin(),
-            CommandSuperPlugin(),
+            CommandPlugin(),
             ToastSuperPlugin(),
             CaffeinatePlugin(),
             SettingGeneralPlugin(),

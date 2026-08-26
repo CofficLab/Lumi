@@ -1,7 +1,7 @@
 import Foundation
 
 /// 对话摘要：对话列表 / 侧边栏等轻量 UI 使用的数据模型。
-public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendable {
+public struct ConversationSummary: Identifiable, Codable, Equatable, Sendable {
     public let id: UUID
     public var title: String?
     public var preview: String
@@ -9,10 +9,10 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
     public var updatedAt: Date
     /// Timestamp of the last message received (used for conversation list sorting)
     public var lastMessageAt: Date
-    public var verbosity: LumiResponseVerbosity?
-    public var reasoningEffort: LumiReasoningEffort?
-    public var language: LumiConversationLanguage?
-    public var automationLevel: LumiAutomationLevel?
+    public var verbosity: ResponseVerbosity?
+    public var reasoningEffort: ReasoningEffort?
+    public var language: ConversationLanguage?
+    public var automationLevel: AutomationLevel?
     public var providerID: String?
     public var modelName: String?
     public var projectPath: String?
@@ -26,10 +26,10 @@ public struct LumiConversationSummary: Identifiable, Codable, Equatable, Sendabl
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         lastMessageAt: Date? = nil,
-        verbosity: LumiResponseVerbosity? = nil,
-        reasoningEffort: LumiReasoningEffort? = nil,
-        language: LumiConversationLanguage? = nil,
-        automationLevel: LumiAutomationLevel? = nil,
+        verbosity: ResponseVerbosity? = nil,
+        reasoningEffort: ReasoningEffort? = nil,
+        language: ConversationLanguage? = nil,
+        automationLevel: AutomationLevel? = nil,
         providerID: String? = nil,
         modelName: String? = nil,
         projectPath: String? = nil,

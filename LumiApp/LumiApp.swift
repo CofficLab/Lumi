@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import AppUpdatePlugin
 import FactoryLumi
 import KernelCore
@@ -20,8 +21,11 @@ import SwiftUI
 struct LumiMinimalApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: LumiAppDelegate
     /// 共享内核：主窗口、设置、菜单栏共用同一实例。
-    @StateObject private var kernel: KernelCoreContainer
+    /// Kernel 是稳定的服务注册表，不再作为 SwiftUI 的 ObservableObject。
+    private let kernel: KernelCoreContainer
     @StateObject private var menuBarController: LumiMenuBarController
+    private let toastCenter: ToastCenter?
+    private let onboardingProvider: (any OnboardingProviding)?
 
     /// 启动失败必须显式呈现，不能静默退化成一个没有 Provider 的空内核。
     private let bootstrapErrorDescription: String?
@@ -30,8 +34,7 @@ struct LumiMinimalApp: App {
     /// `makeMainView(kernel:)`：它会向 `DefaultRootViewProviding`
     /// （ObservableObject）的 `@Published` 属性注入视图，在视图更新期间发布
     /// `objectWillChange` 会触发 SwiftUI 的 "Publishing changes from within
-    /// view updates is not allowed"，且发布经 Kernel 转发后会让 `body` 重新
-    /// 求值 → 再次装配 → 无限循环刷屏。
+    /// view updates is not allowed"，因此不能在 `body` 求值期间反复装配。
     private let mainView: AnyView
 
     /// 设置视图同样在 `init` 中装配一次（避免每个窗口重复装配内核贡献）。
@@ -41,10 +44,12 @@ struct LumiMinimalApp: App {
 
     init() {
         do {
-            // 先在 StateObject 的非 throwing autoclosure 外完成可能失败的装配。
+            // 先在属性初始化阶段完成可能失败的装配。
             let assembledKernel = try KernelFactory.makeKernel()
-            _kernel = StateObject(wrappedValue: assembledKernel)
+            kernel = assembledKernel
             _menuBarController = StateObject(wrappedValue: LumiMenuBarController())
+            toastCenter = assembledKernel.resolveProvider((any ToastProviding).self) as? ToastCenter
+            onboardingProvider = assembledKernel.resolveProvider((any OnboardingProviding).self)
             bootstrapErrorDescription = nil
             mainView = (try? KernelFactory.makeMainView(kernel: assembledKernel))
                 ?? AnyView(BootstrapFailureView(message: "Failed to assemble main view"))
@@ -54,8 +59,10 @@ struct LumiMinimalApp: App {
             // 并在启动时完成 feed URL 探测；菜单命令直接复用同一服务。
             AppUpdateBootstrap.start(kernel: assembledKernel)
         } catch {
-            _kernel = StateObject(wrappedValue: KernelCoreContainer())
+            kernel = KernelCoreContainer()
             _menuBarController = StateObject(wrappedValue: LumiMenuBarController())
+            toastCenter = nil
+            onboardingProvider = nil
             bootstrapErrorDescription = error.localizedDescription
             mainView = AnyView(BootstrapFailureView(message: error.localizedDescription))
             settingsView = AnyView(BootstrapFailureView(message: error.localizedDescription))
@@ -69,8 +76,8 @@ struct LumiMinimalApp: App {
             // 主题切换后各窗口即时同步。
             // 注意：`.onReceive` 需应用到整个 `??` 表达式（否则会误绑到 fallback 分支）。
             ToastHost(
-                content: OnboardingHost(content: mainView, kernel: kernel),
-                kernel: kernel
+                content: OnboardingHost(content: mainView, provider: onboardingProvider),
+                center: toastCenter
             )
                 // 与旧版 Lumi（WindowMain.configureForLumiMainChrome）一致：
                 // 窗口内容延伸到标题栏区域（fullSizeContentView），
@@ -157,7 +164,12 @@ final class LumiMenuBarController: NSObject, ObservableObject {
         button.target = self
         button.action = #selector(togglePopover(_:))
 
-        let view = LumiMenuBarHostingView(rootView: LumiMenuBarStatusView(kernel: kernel))
+        let view = LumiMenuBarHostingView(
+            rootView: LumiMenuBarStatusView(
+                logo: kernel.resolveProvider((any LogoProviding).self),
+                menuBar: kernel.resolveProvider((any MenuBarProviding).self)
+            )
+        )
         view.translatesAutoresizingMaskIntoConstraints = false
         button.subviews.forEach { $0.removeFromSuperview() }
         button.addSubview(view)
@@ -172,13 +184,12 @@ final class LumiMenuBarController: NSObject, ObservableObject {
         popup.behavior = .transient
         popup.animates = true
         popup.contentViewController = NSHostingController(
-            rootView: LumiMenuBarPopoverHost(kernel: kernel) {
-                self.showMainWindow()
-            } onCheckForUpdates: {
-                UpdateService.shared.checkForUpdates()
-            } onQuit: {
-                NSApp.terminate(nil)
-            }
+            rootView: LumiMenuBarPopoverHost(
+                kernel: kernel,
+                onShowMainWindow: { self.showMainWindow() },
+                onCheckForUpdates: { UpdateService.shared.checkForUpdates() },
+                onQuit: { NSApp.terminate(nil) }
+            )
         )
 
         statusItem = item
@@ -211,11 +222,20 @@ final class LumiMenuBarHostingView<Content: View>: NSHostingView<Content> {
 }
 
 private struct LumiMenuBarStatusView: View {
-    @ObservedObject var kernel: KernelCoreContainer
+    let logo: (any LogoProviding)?
+    let menuBar: (any MenuBarProviding)?
+    @StateObject private var refreshModel: ProviderRefreshModel
+
+    init(logo: (any LogoProviding)?, menuBar: (any MenuBarProviding)?) {
+        self.logo = logo
+        self.menuBar = menuBar
+        _refreshModel = StateObject(wrappedValue: ProviderRefreshModel(providers: [logo, menuBar]))
+    }
 
     var body: some View {
+        let _ = refreshModel.revision
         HStack(spacing: 4) {
-            if let logo = kernel.resolveProvider((any LogoProviding).self),
+            if let logo,
                let item = logo.highestPriorityLogoItem {
                 let scene: LogoScene = logo.isLogoHighlighted
                     ? .statusBarHighlighted
@@ -227,7 +247,7 @@ private struct LumiMenuBarStatusView: View {
                     .frame(width: 20, height: 20)
             }
 
-            if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
+            if let menuBar {
                 ForEach(menuBar.contentItems.sorted { $0.order < $1.order }) { item in
                     item.makeView()
                         .fixedSize(horizontal: true, vertical: true)
@@ -241,14 +261,30 @@ private struct LumiMenuBarStatusView: View {
 }
 
 private struct LumiMenuBarPopoverHost: View {
-    @ObservedObject var kernel: KernelCoreContainer
+    let menuBar: (any MenuBarProviding)?
     let onShowMainWindow: () -> Void
     let onCheckForUpdates: () -> Void
     let onQuit: () -> Void
+    @StateObject private var refreshModel: ProviderRefreshModel
+
+    init(
+        kernel: KernelCoreContainer,
+        onShowMainWindow: @escaping () -> Void,
+        onCheckForUpdates: @escaping () -> Void,
+        onQuit: @escaping () -> Void
+    ) {
+        let resolvedMenuBar = kernel.resolveProvider((any MenuBarProviding).self)
+        self.menuBar = resolvedMenuBar
+        self.onShowMainWindow = onShowMainWindow
+        self.onCheckForUpdates = onCheckForUpdates
+        self.onQuit = onQuit
+        _refreshModel = StateObject(wrappedValue: ProviderRefreshModel(providers: [resolvedMenuBar]))
+    }
 
     var body: some View {
+        let _ = refreshModel.revision
         LumiMenuBarPopover(
-            items: kernel.resolveProvider((any MenuBarProviding).self)?.popupItems ?? [],
+            items: menuBar?.popupItems ?? [],
             onShowMainWindow: onShowMainWindow,
             onCheckForUpdates: onCheckForUpdates,
             onQuit: onQuit
@@ -270,13 +306,51 @@ private struct BootstrapFailureView: View {
     }
 }
 
+/// 将 Provider 自己的 `objectWillChange` 收敛到单个宿主 View。Kernel 不参与
+/// 转发，因此菜单栏只会因 Logo/MenuBar Provider 的变化刷新。
+@MainActor
+private final class ProviderRefreshModel: ObservableObject {
+    @Published private(set) var revision = 0
+    private var subscriptions: [AnyCancellable] = []
+
+    init(providers: [Any?]) {
+        for provider in providers.compactMap({ $0 }) {
+            guard let observable = provider as? any ObservableObject,
+                  let publisher = observable.objectWillChange as? ObservableObjectPublisher
+            else { continue }
+            publisher.sink { [weak self] _ in
+                self?.revision &+= 1
+            }
+            .store(in: &subscriptions)
+        }
+    }
+}
+
+/// Onboarding Provider 的局部观察模型。页面注册/撤销只刷新 onboarding 宿主，
+/// 不会触发主窗口或系统菜单的重建。
+@MainActor
+private final class OnboardingPagesModel: ObservableObject {
+    let provider: (any OnboardingProviding)?
+    @Published private(set) var pages: [OnboardingPageItem]
+    private var observer: (any OnboardingObserverHandle)?
+
+    init(provider: (any OnboardingProviding)?) {
+        self.provider = provider
+        self.pages = provider?.allPages ?? []
+        self.observer = provider?.addObserver { [weak self] _ in
+            guard let self else { return }
+            self.pages = self.provider?.allPages ?? []
+        }
+    }
+}
+
 /// 挂载 V2 ToastCenter，使插件和服务发出的提示真正呈现在主窗口上。
 private struct ToastHost<Content: View>: View {
     let content: Content
-    @ObservedObject var kernel: KernelCoreContainer
+    let center: ToastCenter?
 
     var body: some View {
-        if let center = kernel.resolveProvider((any ToastProviding).self) as? ToastCenter {
+        if let center {
             ToastOverlay(content: content, center: center)
         } else {
             content
@@ -288,13 +362,20 @@ private struct ToastHost<Content: View>: View {
 /// `OnboardingProviding`; this host owns persisted completion and replay.
 private struct OnboardingHost<Content: View>: View {
     let content: Content
-    @ObservedObject var kernel: KernelCoreContainer
+    let provider: (any OnboardingProviding)?
+    @StateObject private var pagesModel: OnboardingPagesModel
     @AppStorage("com.coffic.lumi.onboarding.completed") private var completed = false
     @State private var isPresented = false
     @State private var pageIndex = 0
 
+    init(content: Content, provider: (any OnboardingProviding)?) {
+        self.content = content
+        self.provider = provider
+        _pagesModel = StateObject(wrappedValue: OnboardingPagesModel(provider: provider))
+    }
+
     private var pages: [OnboardingPageItem] {
-        kernel.resolveProvider((any OnboardingProviding).self)?.allPages ?? []
+        pagesModel.pages
     }
 
     var body: some View {
@@ -356,47 +437,6 @@ private struct OnboardingSheet: View {
             .padding(20)
         }
         .frame(width: 640, height: 550)
-    }
-}
-
-/// 菜单栏图标：优先展示最高优先级插件贡献的 Logo，回退到默认 SF Symbol。
-///
-/// 观察共享内核：LogoProvider 注册时默认转发 `objectWillChange`，
-/// 因此 Logo 项增删或高亮状态变化时图标会自动刷新。
-private struct LumiMenuBarLabel: View {
-    @ObservedObject var kernel: KernelCoreContainer
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Group {
-                if let logo = kernel.resolveProvider((any LogoProviding).self),
-                   let item = logo.highestPriorityLogoItem {
-                    let scene: LogoScene = logo.isLogoHighlighted
-                        ? .statusBarHighlighted
-                        : .statusBar
-                    item.makeView(scene)
-                } else {
-                    Image(systemName: "gauge.with.dots.needle.50percent")
-                }
-            }
-            .frame(width: 20, height: 20)
-
-            // 此处必须进入 label，而不是只存在于 Popover：旧版状态栏会并列
-            // 显示所有 `menuBarContentItems`（例如网速、CPU/内存概览）。
-            if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
-                // Render each contribution at the host boundary, matching the
-                // legacy NSStatusItem implementation. Wrapping all contributions
-                // in one AnyView makes MenuBarExtra measure the group as a single
-                // line and can drop the device metrics or the second network row.
-                ForEach(menuBar.contentItems.sorted { $0.order < $1.order }) { item in
-                    item.makeView()
-                        .fixedSize(horizontal: true, vertical: true)
-                        .help(item.title)
-                }
-            }
-        }
-        .padding(.horizontal, 2)
-        .fixedSize(horizontal: true, vertical: true)
     }
 }
 

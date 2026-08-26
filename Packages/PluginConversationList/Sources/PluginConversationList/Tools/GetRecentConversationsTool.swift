@@ -76,7 +76,7 @@ struct GetRecentConversationsTool: SuperAgentTool, @unchecked Sendable {
         let limit = min(max((arguments["limit"]?.value as? Int) ?? 5, 1), 20)
 
         // 对话 / 项目能力均约束在 MainActor，跨任务边界访问需包一层 MainActor 任务。
-        let (recent, allCount, currentProjectPath): ([LumiConversationSummary], Int, String?) =
+        let (recent, allCount, currentProjectPath): ([ConversationSummary], Int, String?) =
             await Task { @MainActor in
                 let recent = await conversations?.fetchConversationPage(
                     limit: limit,

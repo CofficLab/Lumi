@@ -12,7 +12,7 @@ enum ActiveStepGroupResolver {
     static func resolve(
         displayRows: [Message],
         isTurnActive: Bool,
-        verbosity: LumiResponseVerbosity
+        verbosity: ResponseVerbosity
     ) -> Set<UUID> {
         []
     }

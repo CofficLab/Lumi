@@ -21,7 +21,7 @@ import SwiftUI
 struct ToolStepGroupMessageView: View {
     let kernel: KernelCoreContainer
     let message: Message
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
 
     var body: some View {
         if verbosity == .brief {

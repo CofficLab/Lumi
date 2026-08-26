@@ -66,7 +66,7 @@ final class ToolCallResolutionCache: @unchecked Sendable {
 struct ToolCallRowsView: View {
     let kernel: KernelCoreContainer
     let message: Message
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
 
     @State private var parameterPopoverToolCallID: String?
     @State private var resultPopoverToolCallID: String?
@@ -192,7 +192,7 @@ struct ToolCallRowView: View {
     let kernel: KernelCoreContainer
     let message: Message
     let toolCall: MessageToolCall
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
     /// 是否显示执行时长与参数/结果按钮。
     /// - 旧路径(ToolCallRowsView):V1 false / V2·V3 true。
     /// - V1 可折叠步骤组展开态:强制 `true`,让用户在 brief 下也能查看耗时与结果。

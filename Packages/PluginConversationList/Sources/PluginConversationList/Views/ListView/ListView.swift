@@ -11,7 +11,7 @@ import SwiftUI
 struct ListView: View {
     private static let pageSize = 40
 
-    @State private var conversations: [LumiConversationSummary] = []
+    @State private var conversations: [ConversationSummary] = []
     @State private var isLoading = true
     @State private var isLoadingMore = false
     @State private var isReloading = false
@@ -140,12 +140,12 @@ struct ListView: View {
             isLoading = true
         }
 
-        var snapshot: [LumiConversationSummary] = []
+        var snapshot: [ConversationSummary] = []
         var cursor: ConversationPageCursor?
 
         // 获取至少当前已经展示的数量，避免刷新后丢掉用户已经加载的分页。
         while snapshot.count < targetCount {
-            let page: [LumiConversationSummary]
+            let page: [ConversationSummary]
             if let projectPath = effectiveProjectPath {
                 page = await context.conversations.fetchConversationPage(
                     limit: Self.pageSize,
@@ -173,7 +173,7 @@ struct ListView: View {
         if snapshot != conversations {
             // 粘性排序：用 stabilizer 重新计算排序时间，防止高频消息导致列表跳动
             let stabilized = snapshot
-                .map { conv -> (LumiConversationSummary, Date) in
+                .map { conv -> (ConversationSummary, Date) in
                     (conv, sortStabilizer.effectiveSortTime(for: conv.id, lastMessageAt: conv.lastMessageAt))
                 }
                 .sorted { $0.1 > $1.1 }
@@ -195,7 +195,7 @@ struct ListView: View {
         guard !isLoadingMore, hasMore else { return }
 
         isLoadingMore = true
-        let page: [LumiConversationSummary]
+        let page: [ConversationSummary]
         if let projectPath = effectiveProjectPath {
             page = await context.conversations.fetchConversationPage(
                 limit: Self.pageSize,

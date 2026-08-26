@@ -31,7 +31,7 @@ struct CollapsibleToolStepGroup: View {
 
     let message: Message
     let toolCalls: [MessageToolCall]
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
 
     @State private var parameterPopoverToolCallID: String?
     @State private var resultPopoverToolCallID: String?

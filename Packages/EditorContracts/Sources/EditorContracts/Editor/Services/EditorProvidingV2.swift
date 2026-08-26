@@ -10,7 +10,7 @@ import Foundation
 ///
 /// 并发与观察规则（§8.8）：
 /// - 能力协议不继承 `ObservableObject`；状态经 `statePublisher` 观察，
-///   且高频状态（选择等）不转发 Kernel 全局 `objectWillChange`。
+///   且高频状态（选择等）由对应 Provider 精准发布，不转发 Kernel 全局 `objectWillChange`。
 /// - `statePublisher` 具有 CurrentValue 语义：新订阅者先收到当前快照。
 /// - Publisher 不以 failure 结束；操作错误由 async throws 或结果对象返回。
 @MainActor

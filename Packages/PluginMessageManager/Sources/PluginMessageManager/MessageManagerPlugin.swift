@@ -61,7 +61,7 @@ public final class MessageManagerPlugin: SuperPlugin, SuperLog {
             conversations: kernel.resolveProvider((any ConversationManaging).self)
         )
         kernel.unregisterProvider((any MessageManaging).self)
-        try kernel.registerProvider((any MessageManaging).self, manager, forwardsObjectWillChange: false)
+        try kernel.registerProvider((any MessageManaging).self, manager)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 SwiftData MessageManager，数据库路径：\(databaseRootURL.path)")

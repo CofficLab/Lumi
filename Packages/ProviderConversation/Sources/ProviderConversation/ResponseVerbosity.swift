@@ -1,14 +1,14 @@
 import Foundation
 
 /// 回复详细程度。
-public enum LumiResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresentable, Sendable {
+public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresentable, Sendable {
     case brief
     case standard
     case detailed
 
     /// 未显式指定时使用的默认级别（单一事实来源）。
     /// 所有回退到默认值的位置都应引用此处，避免各处不一致。
-    public static let defaultVerbosity: LumiResponseVerbosity = .standard
+    public static let defaultVerbosity: ResponseVerbosity = .standard
 
     public var id: String { rawValue }
 

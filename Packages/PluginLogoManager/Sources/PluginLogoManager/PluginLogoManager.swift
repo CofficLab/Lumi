@@ -57,7 +57,7 @@ public final class PluginLogoManager: SuperPlugin, SuperLog {
         // 1. 注销 ProviderFactory 预注册的默认实现（避免 providerAlreadyRegistered）。
         kernel.unregisterProvider((any LogoProviding).self)
 
-        // 2. 注册本插件实现（默认转发 objectWillChange，UI 经内核订阅可刷新）。
+        // 2. 注册本插件实现。消费者直接观察 LogoProviding 的状态变化。
         try kernel.registerProvider((any LogoProviding).self, manager)
 
         if Self.verbose {

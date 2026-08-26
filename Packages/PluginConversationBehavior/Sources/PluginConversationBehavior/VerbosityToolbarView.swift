@@ -7,7 +7,7 @@ struct VerbosityToolbarView: View {
 
     @State private var isPopoverPresented = false
 
-    private var selectedVerbosity: LumiResponseVerbosity {
+    private var selectedVerbosity: ResponseVerbosity {
         if let id = conversations.selectedConversationID {
             return conversations.verbosity(for: id)
         }
@@ -44,15 +44,15 @@ struct VerbosityToolbarView: View {
 }
 
 private struct VerbosityPopover: View {
-    let selected: LumiResponseVerbosity
-    let onSelect: (LumiResponseVerbosity) -> Void
+    let selected: ResponseVerbosity
+    let onSelect: (ResponseVerbosity) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Response Detail")
                 .font(.system(size: 12, weight: .semibold))
 
-            ForEach(LumiResponseVerbosity.allCases) { level in
+            ForEach(ResponseVerbosity.allCases) { level in
                 Button {
                     onSelect(level)
                 } label: {
@@ -67,7 +67,7 @@ private struct VerbosityPopover: View {
 }
 
 private struct VerbosityRow: View {
-    let level: LumiResponseVerbosity
+    let level: ResponseVerbosity
     let isSelected: Bool
 
     var body: some View {

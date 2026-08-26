@@ -14,7 +14,6 @@ extension KernelCoreContainer {
         do {
             try plugin.onRegister(kernel: self)
             activePluginID = nil
-            objectWillChange.send()
         } catch {
             activePluginID = nil
             cancelContributions(ownedBy: plugin.id)
@@ -127,7 +126,6 @@ extension KernelCoreContainer {
         pluginStartOrder.removeAll()
         activePluginID = nil
         setLifecycleState(.stopped)
-        objectWillChange.send()
 
         if let firstError { throw firstError }
     }
@@ -167,7 +165,6 @@ extension KernelCoreContainer {
         plugins.removeValue(forKey: id)
         pluginEnabledStates.removeValue(forKey: id)
         pluginStartOrder.removeAll { $0 == id }
-        objectWillChange.send()
         if let shutdownError { throw shutdownError }
     }
 
@@ -199,7 +196,6 @@ extension KernelCoreContainer {
         pluginStartOrder.removeAll { $0 == id }
         pluginEnabledStates.removeValue(forKey: id)
         removeProviders(ownedByPlugin: id)
-        objectWillChange.send()
     }
 
     func sortedForStartup(_ incoming: [any SuperPlugin]) throws -> [any SuperPlugin] {
@@ -265,14 +261,12 @@ extension KernelCoreContainer {
             pluginEnabledStates.removeValue(forKey: id)
             pluginStartOrder.removeAll { $0 == id }
         }
-        objectWillChange.send()
     }
 
     func removeProviders(ownedByPlugin id: String) {
         let keys = providerOwners.compactMap { key, owner in owner == id ? key : nil }
         for key in keys {
             providers.removeValue(forKey: key)
-            providerSubscriptions.removeValue(forKey: key)
             providerOwners.removeValue(forKey: key)
         }
     }

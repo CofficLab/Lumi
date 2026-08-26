@@ -25,10 +25,10 @@ public protocol SelectedConversationObserverHandle: AnyObject {
 @MainActor
 public protocol ConversationManaging: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 所有对话列表
-    var conversations: [LumiConversationSummary] { get }
+    var conversations: [ConversationSummary] { get }
 
     /// 按排序规则排序后的对话列表：置顶优先，然后按更新时间倒序
-    var sortedConversations: [LumiConversationSummary] { get }
+    var sortedConversations: [ConversationSummary] { get }
 
     /// 当前选中的对话 ID
     var selectedConversationID: UUID? { get }
@@ -46,7 +46,7 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
         limit: Int,
         beforeUpdatedAt: Date?,
         beforeID: UUID?
-    ) async -> [LumiConversationSummary]
+    ) async -> [ConversationSummary]
 
     /// Fetch one page, optionally including conversations created by sub-agents.
     func fetchConversationPage(
@@ -54,7 +54,7 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
         beforeUpdatedAt: Date?,
         beforeID: UUID?,
         includingChildConversations: Bool
-    ) async -> [LumiConversationSummary]
+    ) async -> [ConversationSummary]
 
     /// Fetch one page of conversations filtered by project path.
     func fetchConversationPage(
@@ -63,10 +63,10 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
         beforeID: UUID?,
         includingChildConversations: Bool,
         projectPath: String
-    ) async -> [LumiConversationSummary]
+    ) async -> [ConversationSummary]
 
     /// Fetch one conversation summary by ID without requiring the full list.
-    func fetchConversation(id: UUID) async -> LumiConversationSummary?
+    func fetchConversation(id: UUID) async -> ConversationSummary?
 
     /// Count conversations without loading their summaries.
     func conversationCount(projectPath: String?) async -> Int
@@ -143,35 +143,35 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     // MARK: - Verbosity
 
     /// 全局详细程度（用于未绑定详细程度的对话的默认值）
-    var globalVerbosity: LumiResponseVerbosity { get }
+    var globalVerbosity: ResponseVerbosity { get }
 
     /// 设置全局详细程度
-    func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity)
+    func setGlobalVerbosity(_ verbosity: ResponseVerbosity)
 
     /// 更新指定对话的详细程度
-    func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?)
+    func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?)
 
     /// 获取指定对话的详细程度
-    func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity
+    func verbosity(for conversationID: UUID?) -> ResponseVerbosity
 
     // MARK: - Reasoning Effort
 
     /// 全局推理强度（用于新对话的默认值；nil 表示关闭思考）。
-    var globalReasoningEffort: LumiReasoningEffort? { get }
+    var globalReasoningEffort: ReasoningEffort? { get }
 
     /// 设置全局推理强度（nil 表示关闭思考）。
-    func setGlobalReasoningEffort(_ reasoningEffort: LumiReasoningEffort?)
+    func setGlobalReasoningEffort(_ reasoningEffort: ReasoningEffort?)
 
     /// 获取指定对话的推理强度
-    func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort
+    func reasoningEffort(for conversationID: UUID?) -> ReasoningEffort
 
     /// 获取指定对话的推理强度（可选版本，用于需要区分 nil 状态的场景，如 toggle 模型）。
     /// - nil 表示思考已关闭
     /// - 非 nil 表示思考已开启，并指定具体档位
-    func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort?
+    func reasoningEffortOptional(for conversationID: UUID?) -> ReasoningEffort?
 
     /// 设置指定对话的推理强度
-    func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?)
+    func setReasoningEffort(_ reasoningEffort: ReasoningEffort, for conversationID: UUID?)
 
     /// 清除/关闭指定对话的推理强度（用于 toggle 模型）。
     func clearReasoningEffort(for conversationID: UUID?)
@@ -179,51 +179,51 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     // MARK: - Automation Level
 
     /// 全局对话模式（用于新对话的默认值）
-    var globalAutomationLevel: LumiAutomationLevel { get }
+    var globalAutomationLevel: AutomationLevel { get }
 
     /// 设置全局对话模式
-    func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel)
+    func setGlobalAutomationLevel(_ automationLevel: AutomationLevel)
 
     /// 获取指定对话的自动化程度
-    func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel
+    func automationLevel(for conversationID: UUID?) -> AutomationLevel
 
     /// 设置指定对话的自动化程度
-    func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?)
+    func setAutomationLevel(_ automationLevel: AutomationLevel, for conversationID: UUID?)
 
     // MARK: - Language
 
     /// 全局回复语言（用于新对话的默认值）
-    var globalLanguage: LumiConversationLanguage { get }
+    var globalLanguage: ConversationLanguage { get }
 
     /// 设置全局回复语言
-    func setGlobalLanguage(_ language: LumiConversationLanguage)
+    func setGlobalLanguage(_ language: ConversationLanguage)
 
     /// 获取指定对话的回复语言
-    func language(for conversationID: UUID?) -> LumiConversationLanguage
+    func language(for conversationID: UUID?) -> ConversationLanguage
 
     /// 设置指定对话的回复语言
-    func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?)
+    func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?)
 }
 
 /// Lightweight compatibility defaults for providers and test doubles that do
 /// not need paginated conversation storage.
 public extension ConversationManaging {
-    var sortedConversations: [LumiConversationSummary] { conversations }
+    var sortedConversations: [ConversationSummary] { conversations }
     var isLoadingConversations: Bool { false }
 
-    func fetchConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?) async -> [LumiConversationSummary] {
+    func fetchConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?) async -> [ConversationSummary] {
         Array(conversations.prefix(limit))
     }
 
-    func fetchConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?, includingChildConversations: Bool) async -> [LumiConversationSummary] {
+    func fetchConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?, includingChildConversations: Bool) async -> [ConversationSummary] {
         await fetchConversationPage(limit: limit, beforeUpdatedAt: beforeUpdatedAt, beforeID: beforeID)
     }
 
-    func fetchConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?, includingChildConversations: Bool, projectPath: String) async -> [LumiConversationSummary] {
+    func fetchConversationPage(limit: Int, beforeUpdatedAt: Date?, beforeID: UUID?, includingChildConversations: Bool, projectPath: String) async -> [ConversationSummary] {
         await fetchConversationPage(limit: limit, beforeUpdatedAt: beforeUpdatedAt, beforeID: beforeID, includingChildConversations: includingChildConversations)
     }
 
-    func fetchConversation(id: UUID) async -> LumiConversationSummary? {
+    func fetchConversation(id: UUID) async -> ConversationSummary? {
         conversations.first(where: { $0.id == id })
     }
 

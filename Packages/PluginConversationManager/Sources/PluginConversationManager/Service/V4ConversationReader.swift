@@ -56,7 +56,7 @@ public final class V4ConversationReader: SuperLog {
     /// 读取 v4 全部历史会话（转换成与存储无关的 `LumiConversationSummary`）。
     ///
     /// - Returns: 读取失败时返回空数组（吞错，不向上抛）。
-    public func fetchLegacyConversations() -> [LumiConversationSummary] {
+    public func fetchLegacyConversations() -> [ConversationSummary] {
         guard let container = try? ensureSnapshot() else {
             Self.logger.error("\(Self.t)建立 v4 只读快照失败，跳过会话迁移")
             return []
@@ -146,17 +146,17 @@ public final class V4ConversationReader: SuperLog {
 
     /// v4 Conversation → LumiConversationSummary
     /// v4 的 model/projid 字段语义与 v5 略有差异，这里做字段映射。
-    private static func convert(_ entity: Conversation) -> LumiConversationSummary {
-        LumiConversationSummary(
+    private static func convert(_ entity: Conversation) -> ConversationSummary {
+        ConversationSummary(
             id: entity.id,
             title: entity.title,
             preview: entity.preview,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
-            verbosity: entity.verbosity.flatMap { LumiResponseVerbosity(rawValue: $0) },
-            language: entity.languagePreference.flatMap { LumiConversationLanguage(rawValue: $0) },
+            verbosity: entity.verbosity.flatMap { ResponseVerbosity(rawValue: $0) },
+            language: entity.languagePreference.flatMap { ConversationLanguage(rawValue: $0) },
             // v4 的 chatMode 即 v5 的 automationLevel（均为 a1/a2/a3 编码）
-            automationLevel: entity.chatMode.flatMap { LumiAutomationLevel(rawValue: $0) },
+            automationLevel: entity.chatMode.flatMap { AutomationLevel(rawValue: $0) },
             providerID: entity.providerId,
             modelName: entity.model,
             // v4 用 projectId（字符串），v5 用 projectPath。语义相近，原样迁移。

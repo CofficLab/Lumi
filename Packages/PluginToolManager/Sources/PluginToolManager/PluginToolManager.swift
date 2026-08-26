@@ -56,7 +56,7 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
 
         // 3. 替换默认 ToolManagerProviding 实现。
         kernel.unregisterProvider((any ToolManagerProviding).self)
-        try kernel.registerProvider((any ToolManagerProviding).self, service, forwardsObjectWillChange: false)
+        try kernel.registerProvider((any ToolManagerProviding).self, service)
 
         // 4. 设置界面注入「Tools」入口。
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {

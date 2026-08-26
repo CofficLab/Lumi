@@ -15,7 +15,7 @@ struct DefaultMessageView: View {
     @LumiTheme private var theme
 
     let message: Message
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
 
     var body: some View {
         MessageViewChrome(message: message, verbosity: verbosity) {

@@ -19,7 +19,7 @@ public struct ConversationStoreSettingsView: View {
 
     @State private var selectedConversationID: UUID?
     @State private var didSeedSelection = false
-    @State private var conversations: [LumiConversationSummary] = []
+    @State private var conversations: [ConversationSummary] = []
     @State private var totalConversationCount: Int?
     @State private var isLoadingConversations = true
     @State private var isLoadingMoreConversations = false
@@ -53,7 +53,7 @@ public struct ConversationStoreSettingsView: View {
         self.messageManager = messageManager
     }
 
-    private var selectedConversation: LumiConversationSummary? {
+    private var selectedConversation: ConversationSummary? {
         guard let selectedConversationID else { return nil }
         return conversations.first { $0.id == selectedConversationID }
     }
@@ -187,7 +187,7 @@ public struct ConversationStoreSettingsView: View {
         .appSurface(style: .panel, cornerRadius: 0)
     }
 
-    private func conversationRow(_ conversation: LumiConversationSummary) -> some View {
+    private func conversationRow(_ conversation: ConversationSummary) -> some View {
         let isSelected = selectedConversationID == conversation.id
         return AppListRow(isSelected: isSelected, action: {
             selectedConversationID = conversation.id
@@ -460,7 +460,7 @@ public struct ConversationStoreSettingsView: View {
         await loadMessageCounts(for: page)
     }
 
-    private func loadMessageCounts(for conversations: [LumiConversationSummary]) async {
+    private func loadMessageCounts(for conversations: [ConversationSummary]) async {
         guard let messageManager else { return }
 
         for conversation in conversations where messageCounts[conversation.id] == nil {
@@ -489,7 +489,7 @@ public struct ConversationStoreSettingsView: View {
 
     // MARK: - Formatting
 
-    private func displayTitle(for conversation: LumiConversationSummary) -> String {
+    private func displayTitle(for conversation: ConversationSummary) -> String {
         conversation.displayTitle
     }
 

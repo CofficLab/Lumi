@@ -47,7 +47,7 @@ extension ConversationManager {
             Self.logger.info("\(Self.t)创建对话：\(normalizedTitle ?? "nil"), 项目：\(effectiveProjectPath ?? "nil"), 供应商：\(effectiveProviderID ?? "nil"), 模型：\(effectiveModelName ?? "nil"), 详细程度：\(effectiveVerbosity.rawValue)")
         }
 
-        let conversation = LumiConversationSummary(
+        let conversation = ConversationSummary(
             id: id,
             title: normalizedTitle,
             preview: "",

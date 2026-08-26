@@ -78,7 +78,7 @@ struct LanguageToolbarView: View {
 
     @State private var isPopoverPresented = false
 
-    private var selectedLanguage: LumiConversationLanguage {
+    private var selectedLanguage: ConversationLanguage {
         if let id = conversations.selectedConversationID {
             return conversations.language(for: id)
         }
@@ -105,7 +105,7 @@ struct LanguageToolbarView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Response Language")
                     .font(.system(size: 12, weight: .semibold))
-                ForEach(LumiConversationLanguage.allCases) { language in
+                ForEach(ConversationLanguage.allCases) { language in
                     Button {
                         if let conversationID = conversations.selectedConversationID {
                             conversations.setLanguage(language, for: conversationID)

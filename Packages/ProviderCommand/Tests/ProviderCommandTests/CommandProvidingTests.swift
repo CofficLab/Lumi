@@ -35,6 +35,27 @@ struct CommandProvidingTests {
         #expect(item.state == .on)
     }
 
+    @Test("command provider emits precise group events and supports cancellation")
+    func observerLifecycle() {
+        let provider = DefaultCommandProviding()
+        var eventCount = 0
+        let handle = provider.addObserver { event in
+            if case .groupsChanged = event {
+                eventCount += 1
+            }
+        }
+
+        provider.registerCommandGroup(group(id: "first", title: "One"))
+        provider.registerCommandGroup(group(id: "first", title: "Updated"))
+        provider.unregisterCommandGroup(id: "first")
+        provider.unregisterCommandGroup(id: "missing")
+        #expect(eventCount == 3)
+
+        handle.cancel()
+        provider.registerCommandGroup(group(id: "second", title: "Two"))
+        #expect(eventCount == 3)
+    }
+
     private func group(id: String, title: String) -> CommandMenuGroup {
         CommandMenuGroup(
             id: id,

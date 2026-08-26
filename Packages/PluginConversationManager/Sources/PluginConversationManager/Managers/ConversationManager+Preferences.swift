@@ -40,7 +40,7 @@ extension ConversationManager {
 
     // MARK: - Verbosity
 
-    public func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity) {
+    public func setGlobalVerbosity(_ verbosity: ResponseVerbosity) {
         globalVerbosity = verbosity
 
         if Self.verbose {
@@ -48,14 +48,14 @@ extension ConversationManager {
         }
     }
 
-    public func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
+    public func verbosity(for conversationID: UUID?) -> ResponseVerbosity {
         guard let conversationID else {
             return .defaultVerbosity
         }
         return conversations.first { $0.id == conversationID }?.verbosity ?? .defaultVerbosity
     }
 
-    public func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {
+    public func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {
         guard let conversationID else {
             return
         }
@@ -80,7 +80,7 @@ extension ConversationManager {
 
     // MARK: - Reasoning Effort
 
-    public func setGlobalReasoningEffort(_ reasoningEffort: LumiReasoningEffort?) {
+    public func setGlobalReasoningEffort(_ reasoningEffort: ReasoningEffort?) {
         globalReasoningEffort = reasoningEffort
 
         if Self.verbose {
@@ -88,14 +88,14 @@ extension ConversationManager {
         }
     }
 
-    public func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort {
+    public func reasoningEffort(for conversationID: UUID?) -> ReasoningEffort {
         guard let conversationID else {
             return .defaultEffort
         }
         return conversations.first { $0.id == conversationID }?.reasoningEffort ?? .defaultEffort
     }
 
-    public func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {
+    public func setReasoningEffort(_ reasoningEffort: ReasoningEffort, for conversationID: UUID?) {
         guard let conversationID else {
             return
         }
@@ -115,7 +115,7 @@ extension ConversationManager {
         }
     }
 
-    public func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? {
+    public func reasoningEffortOptional(for conversationID: UUID?) -> ReasoningEffort? {
         guard let conversationID else {
             return nil
         }
@@ -144,7 +144,7 @@ extension ConversationManager {
 
     // MARK: - Automation Level
 
-    public func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel) {
+    public func setGlobalAutomationLevel(_ automationLevel: AutomationLevel) {
         globalAutomationLevel = automationLevel
 
         if Self.verbose {
@@ -152,14 +152,14 @@ extension ConversationManager {
         }
     }
 
-    public func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel {
+    public func automationLevel(for conversationID: UUID?) -> AutomationLevel {
         guard let conversationID else {
             return .build
         }
         return conversations.first { $0.id == conversationID }?.automationLevel ?? .build
     }
 
-    public func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {
+    public func setAutomationLevel(_ automationLevel: AutomationLevel, for conversationID: UUID?) {
         guard let conversationID else {
             return
         }
@@ -181,14 +181,14 @@ extension ConversationManager {
 
     // MARK: - Language
 
-    public func language(for conversationID: UUID?) -> LumiConversationLanguage {
+    public func language(for conversationID: UUID?) -> ConversationLanguage {
         guard let conversationID else {
             return globalLanguage
         }
         return conversations.first { $0.id == conversationID }?.language ?? globalLanguage
     }
 
-    public func setGlobalLanguage(_ language: LumiConversationLanguage) {
+    public func setGlobalLanguage(_ language: ConversationLanguage) {
         globalLanguage = language
 
         if Self.verbose {
@@ -196,7 +196,7 @@ extension ConversationManager {
         }
     }
 
-    public func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {
+    public func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?) {
         guard let conversationID else {
             return
         }

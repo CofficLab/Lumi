@@ -87,7 +87,7 @@ final public class ConversationModel: @unchecked Sendable {
 
 public extension ConversationModel {
     /// Convert from LumiConversationSummary to ConversationModel
-    static func from(summary: LumiConversationSummary) -> ConversationModel {
+    static func from(summary: ConversationSummary) -> ConversationModel {
         let storedTitle = summary.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return ConversationModel(
             id: summary.id.uuidString,
@@ -108,23 +108,23 @@ public extension ConversationModel {
     }
 
     /// Convert to LumiConversationSummary
-    func toLumiConversationSummary() -> LumiConversationSummary? {
+    func toLumiConversationSummary() -> ConversationSummary? {
         guard let uuid = UUID(uuidString: id) else { return nil }
 
-        let verbosity: LumiResponseVerbosity? = verbosityRaw.flatMap {
-            LumiResponseVerbosity(rawValue: $0)
+        let verbosity: ResponseVerbosity? = verbosityRaw.flatMap {
+            ResponseVerbosity(rawValue: $0)
         }
-        let language: LumiConversationLanguage? = languageRaw.flatMap {
-            LumiConversationLanguage(rawValue: $0)
+        let language: ConversationLanguage? = languageRaw.flatMap {
+            ConversationLanguage(rawValue: $0)
         }
-        let reasoningEffort: LumiReasoningEffort? = reasoningEffortRaw.flatMap {
-            LumiReasoningEffort(rawValue: $0)
+        let reasoningEffort: ReasoningEffort? = reasoningEffortRaw.flatMap {
+            ReasoningEffort(rawValue: $0)
         }
-        let automationLevel: LumiAutomationLevel? = automationLevelRaw.flatMap {
-            LumiAutomationLevel(rawValue: $0)
+        let automationLevel: AutomationLevel? = automationLevelRaw.flatMap {
+            AutomationLevel(rawValue: $0)
         }
 
-        return LumiConversationSummary(
+        return ConversationSummary(
             id: uuid,
             title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : title,
             preview: preview,

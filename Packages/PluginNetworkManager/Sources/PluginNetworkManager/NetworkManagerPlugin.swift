@@ -68,11 +68,7 @@ public final class NetworkManagerPlugin: SuperPlugin {
         let networkProvider: any NetworkProviding
         if let exchangeStore {
             let customProvider = NetworkProvider(exchangeStore: exchangeStore)
-            try kernel.registerProvider(
-                (any NetworkProviding).self,
-                customProvider,
-                forwardsObjectWillChange: false
-            )
+            try kernel.registerProvider((any NetworkProviding).self, customProvider)
             networkProvider = customProvider
         } else {
             networkProvider = DefaultNetworkProviding()
@@ -81,11 +77,7 @@ public final class NetworkManagerPlugin: SuperPlugin {
         // 2.5 注册 LLMNetworkProviding 适配器（桥接 NetworkProviding → LLMNetworkProviding）
         // 使 LLM 供应商的网络请求经过 kernel 的 NetworkProviding，获得 HTTP 交换记录等能力
         let llmNetworkAdapter = LLMNetworkProviderAdapter(networkProvider)
-        try kernel.registerProvider(
-            (any LLMNetworkProviding).self,
-            llmNetworkAdapter,
-            forwardsObjectWillChange: false
-        )
+        try kernel.registerProvider((any LLMNetworkProviding).self, llmNetworkAdapter)
 
         // 3. 注册 Agent 工具到 ToolManagerProviding
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {

@@ -1,5 +1,6 @@
 import KernelCore
 import ProviderDocsView
+import ProviderPluginManaging
 import ProviderSettingView
 import ProviderPromptSuggestion
 import SwiftUI
@@ -11,7 +12,7 @@ import SwiftUI
 /// （列表 / 搜索 / 分类筛选 / 阶段徽标 / 启用状态 / 详情），
 /// UI 与旧版几乎一致。
 ///
-/// 启用开关可交互：点击调用内核 `enablePlugin` / `disablePlugin` 完成
+/// 启用开关可交互：点击调用 `PluginManaging` 完成
 /// **运行时启停 + 贡献重建 + 持久化**，启用状态写入原插件数据目录
 /// （`PluginEnabledStateStore`，旧版同目录、零迁移）。
 ///
@@ -55,7 +56,11 @@ public final class PluginPluginManager: SuperPlugin {
             return
         }
 
-        // 捕获 docs provider 引用，供插件管理详情面板展示各插件的 about 视图。
+        guard let manager = kernel.resolveProvider((any PluginManaging).self) else {
+            return
+        }
+
+        // 捕获 docs/provider 引用，供插件管理详情面板展示各插件的 about 视图。
         let docsProvider = kernel.resolveProvider((any DocsViewProviding).self)
 
         let entry = SettingEntryItem(
@@ -63,8 +68,8 @@ public final class PluginPluginManager: SuperPlugin {
             title: "插件管理",
             systemImage: "puzzlepiece.extension",
             order: 3
-        ) { [docsProvider] in
-            PluginManagementView(kernel: kernel, docsProvider: docsProvider)
+        ) { [manager, docsProvider] in
+            PluginManagementView(manager: manager, docsProvider: docsProvider)
         }
 
         settings.addEntries([entry])

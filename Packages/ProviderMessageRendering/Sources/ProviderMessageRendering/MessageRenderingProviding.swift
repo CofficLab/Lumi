@@ -13,13 +13,13 @@ public struct MessageRendererItem: Identifiable, Sendable {
     public let id: String
     public let order: Int
     public let canRender: @Sendable (Message) -> Bool
-    public let render: @MainActor @Sendable (Message, LumiResponseVerbosity) -> AnyView
+    public let render: @MainActor @Sendable (Message, ResponseVerbosity) -> AnyView
 
     public init(
         id: String,
         order: Int = 0,
         canRender: @escaping @Sendable (Message) -> Bool = { _ in true },
-        render: @escaping @MainActor @Sendable (Message, LumiResponseVerbosity) -> AnyView
+        render: @escaping @MainActor @Sendable (Message, ResponseVerbosity) -> AnyView
     ) {
         self.id = id
         self.order = order

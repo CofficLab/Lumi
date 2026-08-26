@@ -70,7 +70,8 @@ ConversationListPlugin (order=81)
 ## 注意事项
 
 1. **不要在 `onBoot` 中注入依赖**:LLMProvider、ToolManager 等在 `onBoot` 之后才可用,依赖注入应该在 `onReady` 阶段完成
-2. **保持 forwardsObjectWillChange = false**:与默认注册保持一致,避免高频更新导致 UI 重渲染
+2. **由消费者直接观察 AgentLoop**:Kernel 不转发 Provider 变化，UI 和协作插件应使用
+   `AgentLoopProviding` 的精准观察接口，避免高频更新导致无关区域重渲染
 3. **装饰器模式**:通过包装 `DefaultAgentLoopProvider` 而不是继承,避免暴露内部状态
 
 ## 测试

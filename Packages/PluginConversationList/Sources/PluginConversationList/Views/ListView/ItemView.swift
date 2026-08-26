@@ -6,7 +6,7 @@ import SwiftUI
 struct ItemView: View {
     @LumiTheme private var theme: any LumiUITheme
 
-    let conversation: LumiConversationSummary
+    let conversation: ConversationSummary
     let isSelected: Bool
     let isActive: Bool
     let needsAttention: Bool

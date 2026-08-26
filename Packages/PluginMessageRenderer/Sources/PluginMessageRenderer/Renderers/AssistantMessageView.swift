@@ -13,7 +13,7 @@ import SwiftUI
 struct AssistantMessageView: View {
     let kernel: KernelCoreContainer
     let message: Message
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
 
     var body: some View {
         MessageViewChrome(message: message, showsHeader: verbosity != .brief, verbosity: verbosity) {
@@ -29,7 +29,7 @@ private struct AssistantMessageBody: View {
     let kernel: KernelCoreContainer
     let message: Message
     let shouldHideAssistantBody: Bool
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
 
     private var reasoningContent: String? {
         guard let reasoning = message.reasoningContent,

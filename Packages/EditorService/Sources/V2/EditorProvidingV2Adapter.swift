@@ -24,7 +24,7 @@ import SwiftUI
 //   - 文档 revision 语义只对**活动文档**成立（`state.contentRevision`）；
 //     后台 Session 的 snapshot 从磁盘读取，revision 为 0。
 //   - `split` / 跨 Group 移动抛出 `capabilityUnavailable`（Phase 7 接入）。
-// - 高频状态（文档、选择）不转发 Kernel 全局 `objectWillChange`；
+// - 高频状态（文档、选择）由对应 Provider 精准发布，不转发 Kernel 全局 `objectWillChange`；
 //   消费方订阅各子能力的 `statePublisher`（CurrentValue 语义）。
 
 /// EditorSurface 视图的注入容器。

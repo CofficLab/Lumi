@@ -79,8 +79,8 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
         // 3. 注销默认的 AgentLoopProviding
         kernel.unregisterProvider((any AgentLoopProviding).self)
 
-        // 5. 注册自定义实现（不转发 objectWillChange，与默认注册保持一致）
-        try kernel.registerProvider((any AgentLoopProviding).self, agentLoop, forwardsObjectWillChange: false)
+        // 5. 注册自定义实现；消费者直接观察 AgentLoop Provider。
+        try kernel.registerProvider((any AgentLoopProviding).self, agentLoop)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

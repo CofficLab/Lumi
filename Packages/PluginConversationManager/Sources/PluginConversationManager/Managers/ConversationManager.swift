@@ -23,7 +23,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     public nonisolated static let emoji = "💬"
     public nonisolated static let verbose = false
 
-    @Published public internal(set) var conversations: [LumiConversationSummary] = []
+    @Published public internal(set) var conversations: [ConversationSummary] = []
     @Published public internal(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
@@ -33,13 +33,13 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
     @Published public internal(set) var currentTitle: String = "No conversation"
     @Published public internal(set) var isLoadingConversations = true
-    @Published public internal(set) var globalVerbosity: LumiResponseVerbosity = .defaultVerbosity
-    @Published public internal(set) var globalReasoningEffort: LumiReasoningEffort? = .defaultEffort
-    @Published public internal(set) var globalAutomationLevel: LumiAutomationLevel = .build
-    @Published public internal(set) var globalLanguage: LumiConversationLanguage = .chinese
+    @Published public internal(set) var globalVerbosity: ResponseVerbosity = .defaultVerbosity
+    @Published public internal(set) var globalReasoningEffort: ReasoningEffort? = .defaultEffort
+    @Published public internal(set) var globalAutomationLevel: AutomationLevel = .build
+    @Published public internal(set) var globalLanguage: ConversationLanguage = .chinese
 
     /// 按最后消息时间倒序排序
-    public var sortedConversations: [LumiConversationSummary] {
+    public var sortedConversations: [ConversationSummary] {
         conversations.sorted { lhs, rhs in
             if lhs.lastMessageAt == rhs.lastMessageAt {
                 return lhs.createdAt > rhs.createdAt
@@ -184,7 +184,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
-    func cache(_ summary: LumiConversationSummary) {
+    func cache(_ summary: ConversationSummary) {
         guard summary.parentConversationID == nil else { return }
         if let index = conversations.firstIndex(where: { $0.id == summary.id }) {
             conversations[index] = summary

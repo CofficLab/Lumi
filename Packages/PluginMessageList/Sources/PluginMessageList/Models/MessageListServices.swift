@@ -32,7 +32,7 @@ struct MessageListServices {
         conversations?.selectedConversationID
     }
 
-    func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity {
+    func verbosity(for conversationID: UUID?) -> ResponseVerbosity {
         conversations?.verbosity(for: conversationID) ?? .defaultVerbosity
     }
 

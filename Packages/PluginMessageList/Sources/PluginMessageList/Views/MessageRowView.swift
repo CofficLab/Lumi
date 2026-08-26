@@ -16,7 +16,7 @@ import SwiftUI
 struct MessageRowView: View {
     let services: MessageListServices
     let message: Message
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
 
     private var renderer: MessageRendererItem? {
         services.rendering?.renderer(for: message)

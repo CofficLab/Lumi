@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import SwiftUI
 
@@ -13,7 +14,8 @@ public protocol TextInputObserverHandle: AnyObject {
 }
 
 @MainActor
-public protocol ConversationInputProviding: ObservableObject {
+public protocol ConversationInputProviding: ObservableObject
+    where ObjectWillChangePublisher == ObservableObjectPublisher {
     var text: String { get set }
     var inputHeight: CGFloat { get set }
     var isInputFocused: Bool { get set }

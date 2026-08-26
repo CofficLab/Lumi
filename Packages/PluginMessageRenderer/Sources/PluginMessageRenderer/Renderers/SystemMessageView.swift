@@ -15,7 +15,7 @@ struct SystemMessageView: View {
     @LumiTheme private var theme
 
     let message: Message
-    let verbosity: LumiResponseVerbosity
+    let verbosity: ResponseVerbosity
 
     private var isBrief: Bool { verbosity == .brief }
 

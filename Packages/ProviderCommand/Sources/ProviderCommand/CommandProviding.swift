@@ -6,6 +6,16 @@ public enum CommandMenuPlacement: String, Sendable {
     case topLevelMenu
 }
 
+@MainActor
+public enum CommandProvidingEvent {
+    case groupsChanged
+}
+
+@MainActor
+public protocol CommandProvidingObserverHandle: AnyObject {
+    func cancel()
+}
+
 public enum CommandState: Sendable {
     case off
     case on
@@ -90,5 +100,7 @@ public protocol CommandProviding: AnyObject {
     var allCommandGroups: [CommandMenuGroup] { get }
     func registerCommandGroup(_ group: CommandMenuGroup)
     func unregisterCommandGroup(id: String)
-}
 
+    @discardableResult
+    func addObserver(_ callback: @escaping (CommandProvidingEvent) -> Void) -> any CommandProvidingObserverHandle
+}

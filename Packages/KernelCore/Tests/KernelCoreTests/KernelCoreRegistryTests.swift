@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import Testing
 @testable import KernelCore
@@ -25,8 +24,8 @@ struct KernelCoreRegistryTests {
         var count: Int { get }
     }
 
-    private final class MockCounter: CountingProviding, ObservableObject {
-        @Published var count = 0
+    private final class MockCounter: CountingProviding {
+        var count = 0
     }
 
     // MARK: - 注册 / 解析
@@ -106,55 +105,18 @@ struct KernelCoreRegistryTests {
         #expect(core.registeredProviderCount == 0)
     }
 
-    // MARK: - objectWillChange 转发
+    // MARK: - 观察边界
 
-    @Test("默认转发 Provider 的 objectWillChange 到容器")
-    func forwardsObjectWillChangeByDefault() throws {
+    @Test("Provider 变化不改变 Kernel 注册表")
+    func providerChangesDoNotAffectRegistry() throws {
         let core = KernelCoreContainer()
         let counter = MockCounter()
         try core.registerProvider(CountingProviding.self, counter)
 
-        var fired = false
-        let cancellable = core.objectWillChange.sink { _ in fired = true }
-
-        counter.count = 1
-        // 转发链路经过 receive(on: RunLoop.main),需等主 RunLoop 处理排队事件
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
-
-        #expect(fired)
-        cancellable.cancel()
-    }
-
-    @Test("关闭转发时容器不收到 objectWillChange")
-    func canOptOutOfObjectWillChangeForwarding() throws {
-        let core = KernelCoreContainer()
-        let counter = MockCounter()
-        try core.registerProvider(CountingProviding.self, counter, forwardsObjectWillChange: false)
-
-        var fired = false
-        let cancellable = core.objectWillChange.sink { _ in fired = true }
-
         counter.count = 1
 
-        #expect(!fired)
-        cancellable.cancel()
-    }
-
-    @Test("注销后停止转发")
-    func unregisterStopsForwarding() throws {
-        let core = KernelCoreContainer()
-        let counter = MockCounter()
-        try core.registerProvider(CountingProviding.self, counter)
-
-        core.unregisterProvider(CountingProviding.self)
-
-        var fired = false
-        let cancellable = core.objectWillChange.sink { _ in fired = true }
-
-        counter.count = 1
-
-        #expect(!fired)
-        cancellable.cancel()
+        #expect(core.registeredProviderCount == 1)
+        #expect(core.resolveProvider(CountingProviding.self) as? MockCounter === counter)
     }
 
     // MARK: - 非 ObservableObject 的 Provider

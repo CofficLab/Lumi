@@ -8,9 +8,8 @@ import Foundation
 /// - 选中与切换：`selectTheme(id:)`（未知 id 抛错）
 /// - 持久化：`<数据根目录>/ThemeManager/theme-selection.plist`，写盘在主线程外执行
 ///
-/// 消费方（设置项、菜单）订阅 `objectWillChange` 即可感知主题列表与
-/// 选中状态变化；经 KernelCore 注册时，容器的 `objectWillChange` 会被
-/// 自动转发，因此订阅容器的视图也会一并刷新。
+/// 消费方（设置项、菜单）直接订阅本 Provider 的 `objectWillChange`，即可感知
+/// 主题列表与选中状态变化；KernelCore 不参与状态转发。
 @MainActor
 public final class DefaultThemeProviding: ThemeProviding {
     /// 数据目录名，与旧版 Lumi 的 ThemeManager 保持一致语义。
