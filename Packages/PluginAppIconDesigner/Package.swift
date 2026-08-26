@@ -14,6 +14,7 @@ let package = Package(
         .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderActivityBar"),
+        .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderProject"),
@@ -21,6 +22,7 @@ let package = Package(
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
+        .package(path: "../ProviderWorkspace"),
     ],
     targets: [
         .target(
@@ -31,6 +33,7 @@ let package = Package(
                 "KitLocalization",
                 "LumiUI",
                 "ProviderActivityBar",
+                "ProviderChatSection",
                 "ProviderContentView",
                 "ProviderDocsView",
                 "ProviderProject",
@@ -38,6 +41,7 @@ let package = Package(
                 "ProviderStorage",
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
+                "ProviderWorkspace",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
@@ -48,11 +52,13 @@ let package = Package(
                 "KitAgentTool",
                 "KernelCore",
                 "ProviderActivityBar",
+                "ProviderChatSection",
                 "ProviderContentView",
                 "ProviderProject",
                 "ProviderRailView",
                 "ProviderStorage",
                 "ProviderToolManager",
+                "ProviderWorkspace",
             ]
         ),
     ]

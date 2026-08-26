@@ -1,11 +1,13 @@
 import KitAgentTool
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import ProviderToolManager
 import ProviderPromptSuggestion
+import ProviderWorkspace
 import SwiftUI
 
 /// KernelCore 版本的 App Store 促销图设计器插件。
@@ -34,7 +36,17 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
     public init() {}
 
     private var promptSuggestion: PromptSuggestion {
-        PromptSuggestion(id: "\(id).create", title: PromoLocalization.string("Prompt.Suggestion.Create"), order: order * 1_000, systemImage: "photo.artframe", action: .activateRailTab(id: Self.railTabID, viewContainerID: id))
+        PromptSuggestion(
+            id: "\(id).create",
+            title: PromoLocalization.string("Prompt.Suggestion.Create"),
+            order: order * 1_000,
+            systemImage: "photo.artframe",
+            action: .activatePluginEntry(
+                activityBarItemID: "\(id).entry",
+                railTabID: Self.railTabID,
+                viewContainerID: id
+            )
+        )
     }
 
     private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
@@ -59,7 +71,24 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
         }
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
+
+        workspace?.registerContainer(
+            WorkspaceContainer(
+                id: id,
+                title: name,
+                systemImage: "photo.artframe",
+                order: order,
+                railVisibility: .alwaysVisible,
+                chatVisibility: .alwaysVisible,
+                panelHeaderVisibility: .unsupported,
+                panelBodyVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
+            ),
+            ownerPluginID: id
+        )
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         railView?.addTabs([
@@ -87,13 +116,19 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
                     guard activeItemID == entryID else { return }
                     WorkspaceStore.shared.reload()
                     contentView?.setContentView(AnyView(PromoDesignerView()))
+                    chat?.setVisible(true)
+                    chat?.setContextActive(true)
                     railView?.activateGroup(id: self.id)
+                    workspace?.activateContainer(id: self.id)
                 },
             ])
         } else {
             WorkspaceStore.shared.reload()
             contentView?.setContentView(AnyView(PromoDesignerView()))
+            chat?.setVisible(true)
+            chat?.setContextActive(true)
             railView?.activateGroup(id: id)
+            workspace?.activateContainer(id: id)
         }
 
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
@@ -120,6 +155,8 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
 
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
+        kernel.resolveProvider((any WorkspaceProviding).self)?
+            .unregisterContainers(ownerPluginID: id)
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         activityBar?.removeItems(ids: ["\(id).entry"])

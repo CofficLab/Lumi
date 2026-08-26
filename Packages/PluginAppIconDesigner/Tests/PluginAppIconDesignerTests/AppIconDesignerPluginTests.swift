@@ -2,12 +2,14 @@ import KitAgentTool
 import Foundation
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderRailView
 import ProviderStorage
 import ProviderToolManager
 import ProviderPromptSuggestion
 import Testing
+import ProviderWorkspace
 @testable import PluginAppIconDesigner
 
 @Suite("PluginAppIconDesigner", .serialized)
@@ -35,6 +37,11 @@ struct AppIconDesignerPluginTests {
         let kernel = KernelCoreContainer()
         let activity = DefaultActivityBarProviding()
         let rail = DefaultRailViewProviding()
+        let chat = DefaultChatSectionProviding()
+        let workspace = DefaultWorkspaceProviding(
+            pluginDirectory: FileManager.default.temporaryDirectory
+                .appendingPathComponent("PluginAppIconDesignerWorkspaceTests-\(UUID().uuidString)")
+        )
         let storage = TestStorage()
 
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
@@ -43,6 +50,8 @@ struct AppIconDesignerPluginTests {
             DefaultContentViewProviding()
         )
         try kernel.registerProvider((any RailViewProviding).self, rail)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any WorkspaceProviding).self, workspace)
         try kernel.registerProvider((any StorageProviding).self, storage)
 
         try kernel.start(plugins: [AppIconDesignerPlugin()])
@@ -53,11 +62,16 @@ struct AppIconDesignerPluginTests {
         #expect(rail.tabs.first?.groupID == "com.coffic.lumi.plugin.app-icon-designer")
         #expect(rail.activeGroupID == "com.coffic.lumi.plugin.app-icon-designer")
         #expect(rail.activeTabID == AppIconDesignerPlugin.railTabID)
+        #expect(workspace.activeContainerID == AppIconDesignerPlugin().id)
+        #expect(workspace.isChatVisible)
+        #expect(chat.isVisible)
+        #expect(chat.isContextActive)
 
         try kernel.stop()
 
         #expect(activity.items.isEmpty)
         #expect(rail.tabs.isEmpty)
+        #expect(workspace.containers.isEmpty)
         try? FileManager.default.removeItem(at: storage.dataRootDirectory)
     }
 

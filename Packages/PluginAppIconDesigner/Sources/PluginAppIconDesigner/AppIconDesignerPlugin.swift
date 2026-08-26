@@ -1,11 +1,13 @@
 import KernelCore
 import KitAgentTool
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderPromptSuggestion
 import ProviderRailView
 import ProviderToolManager
+import ProviderWorkspace
 import SwiftUI
 
 /// KernelCore 版本的 App Icon 设计器插件。
@@ -36,7 +38,11 @@ public final class AppIconDesignerPlugin: SuperPlugin {
             title: AppIconDesignerLocalization.string("Prompt.Suggestion.Design"),
             order: order * 1_000,
             systemImage: "app.dashed",
-            action: .activateRailTab(id: Self.railTabID, viewContainerID: id)
+            action: .activatePluginEntry(
+                activityBarItemID: "\(id).entry",
+                railTabID: Self.railTabID,
+                viewContainerID: id
+            )
         )
     }
 
@@ -62,7 +68,24 @@ public final class AppIconDesignerPlugin: SuperPlugin {
         }
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
+
+        workspace?.registerContainer(
+            WorkspaceContainer(
+                id: id,
+                title: name,
+                systemImage: "app.dashed",
+                order: order,
+                railVisibility: .alwaysVisible,
+                chatVisibility: .alwaysVisible,
+                panelHeaderVisibility: .unsupported,
+                panelBodyVisibility: .unsupported,
+                panelBottomVisibility: .unsupported
+            ),
+            ownerPluginID: id
+        )
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         railView?.addTabs([
@@ -90,13 +113,19 @@ public final class AppIconDesignerPlugin: SuperPlugin {
                     guard activeItemID == entryID else { return }
                     IconDocumentStore.shared.reload()
                     contentView?.setContentView(AnyView(DesignerView()))
+                    chat?.setVisible(true)
+                    chat?.setContextActive(true)
                     railView?.activateGroup(id: self.id)
+                    workspace?.activateContainer(id: self.id)
                 },
             ])
         } else {
             IconDocumentStore.shared.reload()
             contentView?.setContentView(AnyView(DesignerView()))
+            chat?.setVisible(true)
+            chat?.setContextActive(true)
             railView?.activateGroup(id: id)
+            workspace?.activateContainer(id: id)
         }
 
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
@@ -123,6 +152,8 @@ public final class AppIconDesignerPlugin: SuperPlugin {
 
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
+        kernel.resolveProvider((any WorkspaceProviding).self)?
+            .unregisterContainers(ownerPluginID: id)
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         activityBar?.removeItems(ids: ["\(id).entry"])

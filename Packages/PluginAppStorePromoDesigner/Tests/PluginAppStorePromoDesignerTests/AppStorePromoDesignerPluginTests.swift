@@ -1,5 +1,11 @@
 import KitAgentTool
 import Foundation
+import KernelCore
+import ProviderActivityBar
+import ProviderChatSection
+import ProviderContentView
+import ProviderRailView
+import ProviderWorkspace
 import Testing
 @testable import PluginAppStorePromoDesigner
 
@@ -36,6 +42,38 @@ struct AppStorePromoDesignerPluginTests {
             "app_store_promo_export_task",
             "app_store_promo_review_image",
         ])
+    }
+
+    @Test func activatingPluginEntryShowsChatAndActivatesRail() async throws {
+        let kernel = KernelCoreContainer()
+        let activity = DefaultActivityBarProviding()
+        let rail = DefaultRailViewProviding()
+        let chat = DefaultChatSectionProviding()
+        let workspace = DefaultWorkspaceProviding(
+            pluginDirectory: FileManager.default.temporaryDirectory
+                .appendingPathComponent("PluginAppStorePromoDesignerWorkspaceTests-\(UUID().uuidString)")
+        )
+
+        try kernel.registerProvider((any ActivityBarProviding).self, activity)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any ContentViewProviding).self, DefaultContentViewProviding())
+        try kernel.registerProvider((any RailViewProviding).self, rail)
+        try kernel.registerProvider((any WorkspaceProviding).self, workspace)
+
+        try kernel.start(plugins: [AppStorePromoDesignerPlugin()])
+        try await kernel.enablePlugin(id: AppStorePromoDesignerPlugin().id)
+
+        #expect(activity.activeItemID == "com.coffic.lumi.plugin.app-store-promo-designer.entry")
+        #expect(rail.activeGroupID == AppStorePromoDesignerPlugin().id)
+        #expect(rail.activeTabID == AppStorePromoDesignerPlugin.railTabID)
+        #expect(workspace.activeContainerID == AppStorePromoDesignerPlugin().id)
+        #expect(workspace.isChatVisible)
+        #expect(chat.isVisible)
+        #expect(chat.isContextActive)
+
+        try kernel.stop()
+
+        #expect(workspace.containers.isEmpty)
     }
 
     @Test func overwriteExportIsHighRisk() {
