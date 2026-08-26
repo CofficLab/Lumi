@@ -70,7 +70,7 @@ public final class SettingGeneralPlugin: SuperPlugin {
             id: "general",
             title: "通用",
             systemImage: "gearshape",
-            order: 100
+            order: 1
         ) { [versionProvider, docsProvider] in
             GeneralSettingsDetailView(
                 version: versionProvider(),

@@ -1,6 +1,6 @@
-import os
 import KernelCore
 import KitSuperLog
+import os
 import ProviderCommand
 import ProviderSettingView
 import ProviderTheme
@@ -53,10 +53,10 @@ public final class ThemePackPlugin: SuperPlugin, SuperLog {
                     id: "appearance",
                     title: "外观",
                     systemImage: "paintpalette",
-                    order: 150
+                    order: 2
                 ) {
                     ThemeSettingsDetailView(theme: theme)
-                }
+                },
             ])
         }
     }
