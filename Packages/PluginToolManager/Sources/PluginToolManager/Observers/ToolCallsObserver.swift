@@ -8,13 +8,13 @@ import ProviderToolManager
 
 /// 消费 AgentLoop 发布的工具调用事件，并将工具执行结果交给 ToolManager。
 @MainActor
-final class AgentLoopToolCallsObserver: SuperLog {
+final class ToolCallsObserver: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "AgentLoopToolCallsObserver")
     nonisolated static let emoji = "🔧"
     nonisolated static let verbose = true
 
-    private let service: ToolManager
-    private let conversations: any ConversationManaging
+    private let toolManager: ToolManager
+    private let conversationManager: any ConversationManaging
     private var agentLoopObserver: (any AgentLoopObserverHandle)?
 
     init(
@@ -22,8 +22,8 @@ final class AgentLoopToolCallsObserver: SuperLog {
         conversations: any ConversationManaging,
         service: ToolManager
     ) {
-        self.service = service
-        self.conversations = conversations
+        self.toolManager = service
+        self.conversationManager = conversations
         self.agentLoopObserver = agentLoop.addAgentLoopObserver { [weak self] event in
             self?.handle(event)
         }
@@ -41,7 +41,7 @@ final class AgentLoopToolCallsObserver: SuperLog {
         guard !toolCalls.isEmpty else { return }
 
         let policy: ToolExecutionPolicy
-        switch conversations.automationLevel(for: conversationID) {
+        switch conversationManager.automationLevel(for: conversationID) {
         case .chat:
             policy = .blockAll
         case .autonomous:
@@ -60,7 +60,7 @@ final class AgentLoopToolCallsObserver: SuperLog {
             executionPolicy = .blockAll
         case .autoExecute, .requireApprovalForHighRisk:
             executableInputs = inputs.filter { toolCall in
-                let risk = service.riskLevel(for: toolCall) ?? .high
+                let risk = toolManager.riskLevel(for: toolCall) ?? .high
                 guard !risk.requiresPermission else {
                     if Self.verbose {
                         Self.logger.info("\(Self.t)工具需要授权，Observer 放弃执行 tool=\(toolCall.name), id=\(toolCall.id), risk=\(risk.rawValue)")
@@ -82,7 +82,7 @@ final class AgentLoopToolCallsObserver: SuperLog {
                 Self.logger.error("\(Self.emoji)ToolManager 工具调用观察者已释放，无法执行工具批次")
                 return
             }
-            _ = await self.service.executeBatch(
+            _ = await self.toolManager.executeBatch(
                 executableInputs,
                 policy: executionPolicy,
                 conversationID: conversationID,
