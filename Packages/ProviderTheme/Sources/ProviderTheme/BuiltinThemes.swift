@@ -2,18 +2,45 @@ import Foundation
 
 /// 内置主题集合。
 ///
-/// 提供开箱即用的三个基础主题（跟随系统 / 固定暗色 / 固定亮色），
+/// 提供开箱即用的 Lumi 默认主题及三个基础主题（跟随系统 / 固定暗色 / 固定亮色），
 /// 配色参考旧版 Lumi 的 `LumiFallbackChromeTheme`。`DefaultThemeProviding`
 /// 初始化时默认注册全部内置主题，宿主亦可替换。
 public enum BuiltinThemes {
     /// 内置主题列表（按展示顺序）。
     public static let all: [LumiTheme] = [
+        lumi,
         system,
         dark,
         light,
     ]
 
-    /// 跟随系统明暗（默认选中）。
+    /// Lumi 默认主题。
+    ///
+    /// 主题包插件加载后会以完整的 Lumi 配色覆盖同一 id 的内置项；
+    /// 内置版本用于保证插件尚未加载时应用也使用 Lumi 主题。
+    public static let lumi = LumiTheme(
+        id: "lumi",
+        sortOrder: 50,
+        displayName: "Lumi",
+        compactName: "Lumi",
+        description: "The default Lumi theme.",
+        iconName: "circle.hexagonpath.fill",
+        iconColor: ThemeHexPair(light: "059669", dark: "34D399"),
+        appearanceKind: .system,
+        palette: LumiThemePalette(
+            accentPrimary: ThemeHexPair(light: "059669", dark: "34D399"),
+            accentSecondary: ThemeHexPair(light: "D97706", dark: "F59E0B"),
+            accentTertiary: ThemeHexPair(light: "0EA5E9", dark: "38BDF8"),
+            backgroundDeep: ThemeHexPair(light: "FAFAF9", dark: "1C1C1A"),
+            backgroundMedium: ThemeHexPair(light: "FFFFFF", dark: "262624"),
+            backgroundLight: ThemeHexPair(light: "E7E5E4", dark: "30302E"),
+            textPrimary: ThemeHexPair(light: "1C1917", dark: "FAFAF9"),
+            textSecondary: ThemeHexPair(light: "57534E", dark: "D6D3D1"),
+            textTertiary: ThemeHexPair(light: "A8A29E", dark: "A8A29E")
+        )
+    )
+
+    /// 跟随系统明暗。
     public static let system = LumiTheme(
         id: "lumi-system",
         sortOrder: 100,

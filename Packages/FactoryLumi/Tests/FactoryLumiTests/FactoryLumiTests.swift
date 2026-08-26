@@ -367,7 +367,7 @@ struct FactoryLumiTests {
         let theme = kernel.resolveProvider((any ThemeProviding).self)
         #expect(theme != nil)
 
-        // 内置 3 个（System/Dark/Light）+ 复刻 19 个 = 22 个。
+        // 内置 4 个（Lumi/System/Dark/Light）+ 复刻 19 个（Lumi 同 id 覆盖）= 22 个。
         #expect(theme?.themes.count == 22)
 
         // 复刻主题 id 与旧版主题插件一致。

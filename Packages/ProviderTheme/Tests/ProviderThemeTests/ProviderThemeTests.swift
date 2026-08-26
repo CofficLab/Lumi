@@ -37,13 +37,13 @@ struct ProviderThemeTests {
 
     // MARK: - Builtin Themes
 
-    @Test("内置主题全部注册，默认选中第一个（System）")
+    @Test("内置主题全部注册，默认选中 Lumi")
     func builtinThemesRegisteredAndDefaultSelection() throws {
         let provider = try makeProvider()
 
-        #expect(provider.themes.map(\.id) == ["lumi-system", "lumi-dark", "lumi-light"])
-        #expect(provider.selectedThemeId == "lumi-system")
-        #expect(provider.selectedTheme?.id == "lumi-system")
+        #expect(provider.themes.map(\.id) == ["lumi", "lumi-system", "lumi-dark", "lumi-light"])
+        #expect(provider.selectedThemeId == "lumi")
+        #expect(provider.selectedTheme?.id == "lumi")
     }
 
     @Test("默认选中主题跟随系统外观")
@@ -73,7 +73,7 @@ struct ProviderThemeTests {
             try provider.selectTheme(id: "nope")
         }
         // 选中状态保持不变
-        #expect(provider.selectedThemeId == "lumi-system")
+        #expect(provider.selectedThemeId == "lumi")
     }
 
     // MARK: - Registration
@@ -107,7 +107,7 @@ struct ProviderThemeTests {
         provider.unregisterTheme(id: "lumi-dark")
 
         #expect(!provider.themes.contains { $0.id == "lumi-dark" })
-        #expect(provider.selectedThemeId == "lumi-system")
+        #expect(provider.selectedThemeId == "lumi")
     }
 
     @Test("注销未注册主题为 no-op")
@@ -118,7 +118,7 @@ struct ProviderThemeTests {
         provider.unregisterTheme(id: "missing")
 
         #expect(provider.themes.count == count)
-        #expect(provider.selectedThemeId == "lumi-system")
+        #expect(provider.selectedThemeId == "lumi")
     }
 
     // MARK: - Replace All
@@ -197,7 +197,7 @@ struct ProviderThemeTests {
         try first.selectTheme(id: "lumi-light")
         try await Task.sleep(for: .milliseconds(300))
 
-        // 重建后 lumi-light（sortOrder 300）仍应被选中，而非默认的 lumi-system。
+        // 重建后 lumi-light（sortOrder 300）仍应被选中，而非默认的 lumi。
         let second = DefaultThemeProviding(storageDirectory: directory)
         #expect(second.selectedThemeId == "lumi-light")
     }
