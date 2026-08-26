@@ -13,9 +13,11 @@ import SwiftUI
 /// （`mystiqueBackground` 等）都能读到正确颜色，视觉与旧版设置窗口一致。
 struct PaletteChromeTheme: LumiAppChromeTheme {
     private let theme: ProviderTheme.LumiTheme
+    private let colorScheme: ColorScheme
 
-    init(theme: ProviderTheme.LumiTheme) {
+    init(theme: ProviderTheme.LumiTheme, colorScheme: ColorScheme) {
         self.theme = theme
+        self.colorScheme = colorScheme
     }
 
     var identifier: String { theme.id }
@@ -23,7 +25,7 @@ struct PaletteChromeTheme: LumiAppChromeTheme {
     var compactName: String { theme.compactName }
     var description: String { theme.description }
     var iconName: String { theme.iconName }
-    var iconColor: Color { theme.resolvedIconColor }
+    var iconColor: Color { theme.iconColor.color(colorScheme: colorScheme) }
 
     var appearanceKind: LumiUI.ThemeAppearanceKind {
         switch theme.appearanceKind {
@@ -34,34 +36,47 @@ struct PaletteChromeTheme: LumiAppChromeTheme {
     }
 
     func accentColors() -> (primary: Color, secondary: Color, tertiary: Color) {
-        theme.palette.accent
-    }
-
-    func atmosphereColors() -> (deep: Color, medium: Color, light: Color) {
-        theme.palette.atmosphere
-    }
-
-    func glowColors() -> (subtle: Color, medium: Color, intense: Color) {
-        let accent = theme.palette.accent
-        return (
-            subtle: accent.primary.opacity(0.3),
-            medium: accent.secondary.opacity(0.5),
-            intense: accent.tertiary.opacity(0.7)
+        (
+            primary: theme.palette.accentPrimary.color(colorScheme: colorScheme),
+            secondary: theme.palette.accentSecondary.color(colorScheme: colorScheme),
+            tertiary: theme.palette.accentTertiary.color(colorScheme: colorScheme)
         )
     }
 
-    func workspaceTextColor() -> Color { theme.palette.text.primary }
-    func workspaceSecondaryTextColor() -> Color { theme.palette.text.secondary }
-    func workspaceTertiaryTextColor() -> Color { theme.palette.text.tertiary }
-    func sidebarBackgroundColor() -> Color { theme.palette.atmosphere.deep }
-    func sidebarSelectionColor() -> Color { theme.palette.accent.primary.opacity(0.22) }
-    func sidebarSelectionTextColor() -> Color { theme.palette.text.primary }
-    func statusBarForegroundColor() -> Color { theme.palette.text.primary }
-    func statusBarDividerColor() -> Color { theme.palette.text.tertiary.opacity(0.18) }
+    func atmosphereColors() -> (deep: Color, medium: Color, light: Color) {
+        (
+            deep: theme.palette.backgroundDeep.color(colorScheme: colorScheme),
+            medium: theme.palette.backgroundMedium.color(colorScheme: colorScheme),
+            light: theme.palette.backgroundLight.color(colorScheme: colorScheme)
+        )
+    }
+
+    func glowColors() -> (subtle: Color, medium: Color, intense: Color) {
+        return (
+            subtle: theme.palette.accentPrimary.color(colorScheme: colorScheme).opacity(0.3),
+            medium: theme.palette.accentSecondary.color(colorScheme: colorScheme).opacity(0.5),
+            intense: theme.palette.accentTertiary.color(colorScheme: colorScheme).opacity(0.7)
+        )
+    }
+
+    func workspaceTextColor() -> Color { theme.palette.textPrimary.color(colorScheme: colorScheme) }
+    func workspaceSecondaryTextColor() -> Color { theme.palette.textSecondary.color(colorScheme: colorScheme) }
+    func workspaceTertiaryTextColor() -> Color { theme.palette.textTertiary.color(colorScheme: colorScheme) }
+    func sidebarBackgroundColor() -> Color { theme.palette.backgroundDeep.color(colorScheme: colorScheme) }
+    func sidebarSelectionColor() -> Color {
+        theme.palette.accentPrimary.color(colorScheme: colorScheme).opacity(0.22)
+    }
+    func sidebarSelectionTextColor() -> Color { theme.palette.textPrimary.color(colorScheme: colorScheme) }
+    func statusBarForegroundColor() -> Color { theme.palette.textPrimary.color(colorScheme: colorScheme) }
+    func statusBarDividerColor() -> Color {
+        theme.palette.textTertiary.color(colorScheme: colorScheme).opacity(0.18)
+    }
     func statusBarItemBackgroundColor(isPresented: Bool) -> Color {
         isPresented
-            ? theme.palette.accent.primary.opacity(0.14)
-            : theme.palette.text.primary.opacity(0.08)
+            ? theme.palette.accentPrimary.color(colorScheme: colorScheme).opacity(0.14)
+            : theme.palette.textPrimary.color(colorScheme: colorScheme).opacity(0.08)
     }
-    func statusBarItemForegroundColor() -> Color { theme.palette.text.primary }
+    func statusBarItemForegroundColor() -> Color {
+        theme.palette.textPrimary.color(colorScheme: colorScheme)
+    }
 }

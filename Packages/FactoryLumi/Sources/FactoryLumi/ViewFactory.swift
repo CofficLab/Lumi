@@ -32,6 +32,14 @@ public struct DefaultViewFactory: ViewFactory {
             return AnyView(Text("RootViewProviding not registered"))
         }
 
+        // ProviderTheme and LumiUI are separate layers. Resolve the selected
+        // theme before constructing injected views so SwiftUI semantic colors
+        // (.primary/.secondary) and AppKit controls see the same appearance
+        // on their first render.
+        if let theme = kernel.resolveProvider((any ThemeProviding).self) {
+            Self.syncLumiTheme(theme)
+        }
+
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
             rootView.setToolbarView(toolbar.makeToolbarView())
         }
@@ -87,7 +95,23 @@ public struct DefaultViewFactory: ViewFactory {
     /// （侧边栏、详情氛围渐变、窗口背景）拿到与旧版一致的配色。
     static func syncLumiTheme(_ provider: any ThemeProviding) {
         guard let selected = provider.selectedTheme else { return }
-        let chrome = PaletteChromeTheme(theme: selected)
+        let colorScheme: ColorScheme
+        switch selected.appearanceKind {
+        case .dark:
+            colorScheme = .dark
+        case .light:
+            colorScheme = .light
+        case .system:
+            colorScheme = SystemAppearanceResolver.effectiveColorScheme
+        }
+
+        // `LumiUITheme.preferredColorScheme` is consumed by the root view and
+        // by AppKit appearance bridges. Keep its system value in sync with the
+        // ProviderTheme selection instead of leaving the bootstrap `.light`
+        // value in place.
+        ResolvedSystemColorScheme.current = colorScheme
+
+        let chrome = PaletteChromeTheme(theme: selected, colorScheme: colorScheme)
         ActiveChromeTheme.current = chrome
         LumiUIThemeStore.shared.setTheme(ChromeToUIThemeAdapter(chrome: chrome))
     }
@@ -129,17 +153,30 @@ private struct ThemeHostingView<Content: View>: View {
             }
     }
 
-    /// 按主题外观类型解析窗口明暗；跟随系统时返回 `nil`（不强制）。
+    /// 按主题外观类型解析窗口明暗；跟随系统时使用已同步的系统明暗。
     private var preferredColorScheme: ColorScheme? {
         switch theme.selectedTheme?.appearanceKind ?? .system {
         case .dark: return .dark
         case .light: return .light
-        case .system: return nil
+        case .system: return ResolvedSystemColorScheme.current
         }
     }
 
     /// 窗口背景色：主题的氛围中色（medium），无主题时回退系统窗口背景。
     private var backgroundColor: Color {
-        theme.selectedTheme?.palette.atmosphere.medium ?? Color(nsColor: .windowBackgroundColor)
+        guard let selected = theme.selectedTheme else {
+            return Color(nsColor: .windowBackgroundColor)
+        }
+
+        let colorScheme: ColorScheme
+        switch selected.appearanceKind {
+        case .dark:
+            colorScheme = .dark
+        case .light:
+            colorScheme = .light
+        case .system:
+            colorScheme = ResolvedSystemColorScheme.current
+        }
+        return selected.palette.backgroundMedium.color(colorScheme: colorScheme)
     }
 }
