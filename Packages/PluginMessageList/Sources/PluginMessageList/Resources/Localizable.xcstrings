@@ -5,13 +5,31 @@
 
     },
     "Add Project…" : {
-
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add Project…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "添加项目…" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "新增專案…" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "新增專案…" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "新增專案…" } }
+      }
     },
     "Failed to Open Project" : {
-
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Failed to Open Project" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开项目失败" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "開啟專案失敗" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "開啟專案失敗" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "開啟專案失敗" } }
+      }
     },
     "How can I help with " : {
-
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "How can I help with " } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "我可以帮你处理 " } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "我可以幫你處理 " } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "我可以幫你處理 " } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "我可以幫你處理 " } }
+      }
     },
     "How can I help you today?" : {
       "localizations" : {
@@ -119,7 +137,13 @@
 
     },
     "OK" : {
-
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "OK" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "确定" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "確定" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "確定" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "確定" } }
+      }
     },
     "Pick an example, or type your question below." : {
       "localizations" : {
