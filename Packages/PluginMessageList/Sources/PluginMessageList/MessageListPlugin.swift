@@ -11,10 +11,6 @@ import ProviderMessageSender
 import ProviderMessageStreaming
 import ProviderPromptSuggestion
 import ProviderProject
-import ProviderWorkspace
-import ProviderPluginControl
-import ProviderPluginManaging
-import ProviderToast
 import ProviderToolManager
 import SwiftUI
 
@@ -50,11 +46,8 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
             toolManager: kernel.resolveProvider((any ToolManagerProviding).self),
             agentTurn: kernel.resolveProvider((any AgentLoopProviding).self),
             promptSuggestions: kernel.resolveProvider((any PromptSuggestionProviding).self),
+            promptSuggestionExecutor: kernel.resolveProvider((any PromptSuggestionExecuting).self),
             project: kernel.resolveProvider((any ProjectProviding).self),
-            workspace: kernel.resolveProvider((any WorkspaceProviding).self),
-            pluginControl: kernel.resolveProvider((any PluginControlling).self),
-            pluginManager: kernel.resolveProvider((any PluginManaging).self),
-            toast: kernel.resolveProvider((any ToastProviding).self)
         )
         chat.addItems([ChatSectionItem(id: id, order: 100, fillsRemainingHeight: true) {
             ListView(services: services)

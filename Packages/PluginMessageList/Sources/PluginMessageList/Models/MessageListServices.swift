@@ -8,10 +8,6 @@ import ProviderMessageSender
 import ProviderMessageStreaming
 import ProviderPromptSuggestion
 import ProviderProject
-import ProviderWorkspace
-import ProviderPluginControl
-import ProviderPluginManaging
-import ProviderToast
 import ProviderToolManager
 
 /// 新版 PluginMessageList 的服务容器。
@@ -29,11 +25,8 @@ struct MessageListServices {
     let toolManager: (any ToolManagerProviding)?
     let agentTurn: (any AgentLoopProviding)?
     let promptSuggestions: (any PromptSuggestionProviding)?
+    let promptSuggestionExecutor: (any PromptSuggestionExecuting)?
     let project: (any ProjectProviding)?
-    let workspace: (any WorkspaceProviding)?
-    let pluginControl: (any PluginControlling)?
-    let pluginManager: (any PluginManaging)?
-    let toast: (any ToastProviding)?
 
     var selectedConversationID: UUID? {
         conversations?.selectedConversationID

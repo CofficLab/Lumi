@@ -324,6 +324,10 @@ public struct DefaultProviderFactory: ProviderFactory {
         try kernel.registerProvider((any MessageRenderingProviding).self, makeMessageRenderingProvider())
         try kernel.registerProvider((any ToolCallRenderingProviding).self, makeToolCallRenderingProvider())
         try kernel.registerProvider((any PromptSuggestionProviding).self, makePromptSuggestionProvider())
+        try kernel.registerProvider(
+            (any PromptSuggestionExecuting).self,
+            DefaultPromptSuggestionExecutor(kernel: kernel)
+        )
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
             throw KernelCoreError.providerNotRegistered(type: (any StorageProviding).self)
         }

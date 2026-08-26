@@ -1,38 +1,15 @@
 import LumiUI
-import ProviderMessageSender
-import ProviderPluginControl
-import ProviderPluginManaging
 import ProviderPromptSuggestion
-import ProviderToast
-import ProviderWorkspace
 import SwiftUI
 
 @MainActor
 private func handlePromptTap(_ suggestion: PromptSuggestion, services: MessageListServices,
                              pickFolder: (() -> Void)? = nil) {
-    switch suggestion.action {
-    case .pickProjectFolder:
-        pickFolder?(); return
-    case .openSettingsTab:
-        NotificationCenter.default.post(name: Notification.Name("lumi.openSettings"), object: nil); return
-    case nil, .activateViewContainer, .activateRailTab:
-        break
-    }
-
     Task { @MainActor in
-        if suggestion.requiresEnable, let pluginID = suggestion.pluginID,
-           let control = services.pluginControl, await control.enablePlugin(id: pluginID) {
-            let name = services.pluginManager?.plugin(id: pluginID)?.metadata.name ?? pluginID
-            services.toast?.show("Plugin Enabled", detail: "\(name) is now enabled.", style: .success)
-        }
-        switch suggestion.action {
-        case .activateViewContainer(let id): services.workspace?.activateContainer(id: id)
-        case .activateRailTab(let id, let containerID):
-            services.workspace?.activateContainer(id: containerID)
-            services.workspace?.presentRailTab(id: id, for: containerID)
-        default: break
-        }
-        try? await services.sender?.sendMessage(suggestion.prompt, conversationID: nil)
+        await services.promptSuggestionExecutor?.execute(
+            suggestion,
+            pickProjectFolder: pickFolder
+        )
     }
 }
 
