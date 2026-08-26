@@ -30,7 +30,7 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
 
     /// 本插件装配的 ToolManager 实现（设置视图读取）。
     private var service: ToolManager?
-    private var agentLoopObserver: (any AgentLoopObserverHandle)?
+    private var agentLoopToolCallsObserver: AgentLoopToolCallsObserver?
 
     /// 设置页入口 id（onShutdown 时撤回）。
     private let settingsEntryID = "com.coffic.lumi.plugin.tool-manager.tools"
@@ -87,8 +87,8 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        agentLoopObserver?.cancel()
-        agentLoopObserver = nil
+        agentLoopToolCallsObserver?.cancel()
+        agentLoopToolCallsObserver = nil
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
             settings.removeEntries(ids: [settingsEntryID])
         }
@@ -105,33 +105,10 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
             return
         }
 
-        agentLoopObserver = agentLoop.addAgentLoopObserver { [weak self] event in
-            guard case let .toolCallsReceived(conversationID, turnID, _, toolCalls) = event else {
-                return
-            }
-            guard !toolCalls.isEmpty else { return }
-            let policy: ToolExecutionPolicy
-            switch conversations.automationLevel(for: conversationID) {
-            case .chat: policy = .blockAll
-            case .autonomous: policy = .autoExecute
-            case .build: policy = .requireApprovalForHighRisk
-            }
-            let inputs = toolCalls.map { ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }
-            if Self.verbose {
-                Self.logger.info("\(Self.t)收到 AgentLoop 工具调用事件 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), count=\(inputs.count)")
-            }
-            Task { @MainActor [weak self] in
-                guard self != nil else {
-                    Self.logger.error("\(Self.emoji)ToolManager 插件已释放，无法执行工具批次")
-                    return
-                }
-                _ = await service.executeBatch(
-                    inputs,
-                    policy: policy,
-                    conversationID: conversationID,
-                    turnID: turnID
-                )
-            }
-        }
+        agentLoopToolCallsObserver = AgentLoopToolCallsObserver(
+            agentLoop: agentLoop,
+            conversations: conversations,
+            service: service
+        )
     }
 }
