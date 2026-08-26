@@ -1,4 +1,5 @@
 import Foundation
+import KitLocalization
 import KernelCore
 import ProviderActivityBar
 import ProviderRailView
@@ -9,6 +10,24 @@ import Testing
 @Suite("PromptSuggestionExecutor")
 @MainActor
 struct PromptSuggestionExecutorTests {
+    @Test("插件启用 Toast 支持中文本地化")
+    func localizesPluginEnabledToastStrings() {
+        #expect(
+            LumiLocalization.string(
+                "Plugin Enabled",
+                bundle: .module,
+                locale: Locale(identifier: "zh-Hans")
+            ) == "插件已启用"
+        )
+        #expect(
+            LumiLocalization.string(
+                "is now enabled.",
+                bundle: .module,
+                locale: Locale(identifier: "zh-Hans")
+            ) == "已启用。"
+        )
+    }
+
     @Test("文件夹选择动作委托给 UI 回调")
     func forwardsProjectFolderSelection() async {
         let kernel = KernelCoreContainer()

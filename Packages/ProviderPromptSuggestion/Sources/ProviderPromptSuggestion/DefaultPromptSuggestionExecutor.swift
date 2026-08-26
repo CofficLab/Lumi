@@ -1,4 +1,5 @@
 import Foundation
+import KitLocalization
 import KernelCore
 import ProviderActivityBar
 import ProviderMessageSender
@@ -51,9 +52,17 @@ public final class DefaultPromptSuggestionExecutor: PromptSuggestionExecuting {
                 .resolveProvider((any PluginManaging).self)?
                 .plugin(id: pluginID)?
                 .metadata.name ?? pluginID
-            kernel.resolveProvider((any ToastProviding).self)?.show(
+            let enabledTitle = LumiLocalization.string(
                 "Plugin Enabled",
-                detail: "\(name) is now enabled.",
+                bundle: .module
+            )
+            let enabledDetail = LumiLocalization.string(
+                "is now enabled.",
+                bundle: .module
+            )
+            kernel.resolveProvider((any ToastProviding).self)?.show(
+                enabledTitle,
+                detail: "\(name) \(enabledDetail)",
                 style: .success
             )
         }

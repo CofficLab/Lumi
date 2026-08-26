@@ -3,12 +3,14 @@ import PackageDescription
 
 let package = Package(
     name: "ProviderPromptSuggestion",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "ProviderPromptSuggestion", targets: ["ProviderPromptSuggestion"]),
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../KitLocalization"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderPluginControl"),
@@ -20,6 +22,7 @@ let package = Package(
     targets: [
         .target(name: "ProviderPromptSuggestion", dependencies: [
             .product(name: "KernelCore", package: "KernelCore"),
+            .product(name: "KitLocalization", package: "KitLocalization"),
             .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
             .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
             .product(name: "ProviderPluginControl", package: "ProviderPluginControl"),
@@ -27,11 +30,15 @@ let package = Package(
             .product(name: "ProviderRailView", package: "ProviderRailView"),
             .product(name: "ProviderToast", package: "ProviderToast"),
             .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
-        ], path: "Sources/ProviderPromptSuggestion"),
+        ],
+            path: "Sources/ProviderPromptSuggestion",
+            resources: [.process("Resources/Localizable.xcstrings")]
+        ),
         .testTarget(
             name: "ProviderPromptSuggestionTests",
             dependencies: [
                 "ProviderPromptSuggestion",
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
             ]
