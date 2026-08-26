@@ -26,7 +26,7 @@ import KitSuperLog
 public final class MessageManagerPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-manager")
     public nonisolated static let emoji = "💬"
-    public static let verbose = true
+    public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.message-store"
     public let order = 8
