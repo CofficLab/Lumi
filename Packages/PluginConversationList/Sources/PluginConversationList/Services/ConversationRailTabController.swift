@@ -1,6 +1,7 @@
 import Combine
 import KernelCore
 import ProviderRailView
+import ProviderRootView
 import SwiftUI
 
 /// 对话列表侧栏标签（`chats` / `project-chats`）的动态可见性控制器。
@@ -33,6 +34,7 @@ final class ConversationRailTabController {
     private var conversationsObserver: NSObjectProtocol?
     private var projectCancellable: AnyCancellable?
     private var pendingRefresh: Task<Void, Never>?
+    private var railVisibilityHandler: (@MainActor (AnyView?) -> Void)?
 
     init(
         context: ConversationListContext,
@@ -52,8 +54,16 @@ final class ConversationRailTabController {
     }
 
     /// 启动观察并执行首次评估。重复调用会刷新订阅（覆盖旧 token）。
-    func start(rail: (any RailViewProviding)?) {
+    func start(rail: (any RailViewProviding)?, root: (any RootViewProviding)?) {
         self.rail = rail
+        railVisibilityHandler = { [weak root] view in
+            root?.setRailView(view)
+        }
+
+        // Rail provider 本身会一直存在于新版内核中，但新用户不应看到一个
+        // 没有任何内容的 Rail pane。先撤掉根布局中的 Rail，首次评估有数据
+        // 后再注入；后续由对话变化驱动同样的切换。
+        root?.setRailView(nil)
 
         conversationsObserver = NotificationCenter.default.addObserver(
             forName: .lumiConversationsDidChange,
@@ -73,9 +83,8 @@ final class ConversationRailTabController {
                 }
         }
 
-        // 初始形态：先注册 `chats`（数据查询前先给用户一个入口，避免首帧空窗），
-        // `project-chats` 由首次评估按条件注册；随后按数据收敛（无对话时移除）。
-        rail?.addTabs([makeChatsItem()])
+        // 初始不注册对话 Rail，避免新用户先看到空侧栏；首次评估负责按数据
+        // 注册 `chats` / `project-chats` 并把 Rail 注入根布局。
         scheduleRefresh()
     }
 
@@ -89,6 +98,7 @@ final class ConversationRailTabController {
         conversationsObserver = nil
         projectCancellable?.cancel()
         projectCancellable = nil
+        railVisibilityHandler = nil
     }
 
     /// 去抖调度：取消上一个待执行任务，延迟刷新。
@@ -111,6 +121,7 @@ final class ConversationRailTabController {
             desiredVisible: appCount > 0,
             item: makeChatsItem()
         )
+        syncRootRailVisibility(hasConversations: appCount > 0)
 
         // `project-chats`：全库无对话时必然隐藏（短路，省去项目多样性查询）；
         // 否则沿用既有判定——全库 ≥2 个项目且当前项目确有对话。
@@ -142,6 +153,15 @@ final class ConversationRailTabController {
         } else if !desiredVisible && registered {
             rail.removeTabs(ids: [tabID])
         }
+    }
+
+    /// Rail provider 是常驻依赖，根布局中的 Rail pane 则随对话数据按需存在。
+    private func syncRootRailVisibility(hasConversations: Bool) {
+        guard let rail else { return }
+        // RootViewProviding 只持有已构建的 AnyView，因此这里在隐藏后重新构建
+        // Rail view，确保下一次从 nil 恢复时仍绑定同一个 provider。
+        // 通过闭包保留根布局引用会让控制器不承担新的所有权关系。
+        railVisibilityHandler?(hasConversations ? rail.makeRailView() : nil)
     }
 
     // MARK: - Item Builders

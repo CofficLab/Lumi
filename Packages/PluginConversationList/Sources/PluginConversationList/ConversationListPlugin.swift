@@ -6,6 +6,7 @@ import ProviderChatSection
 import ProviderConversation
 import ProviderProject
 import ProviderRailView
+import ProviderRootView
 import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
@@ -61,6 +62,7 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
             return
         }
         let rail = kernel.resolveProvider((any RailViewProviding).self)
+        let root = kernel.resolveProvider((any RootViewProviding).self)
         let project = kernel.resolveProvider((any ProjectProviding).self)
         let agentTurn = kernel.resolveProvider((any AgentLoopProviding).self)
 
@@ -88,7 +90,7 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
             groupID: railGroupID,
             pluginID: id
         )
-        controller.start(rail: rail)
+        controller.start(rail: rail, root: root)
         railTabController = controller
 
         // 2. 全局标题栏按钮 + popover（复刻旧版 titleToolbarItems / .trailing）。
