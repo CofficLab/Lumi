@@ -33,9 +33,9 @@ public enum ToolExecutionPolicy: Sendable, Equatable, CustomStringConvertible {
 /// `executeBatch` 的返回元素。区分三种情况：
 /// - `.executed` — 工具已执行（成功或失败），结果可直接落库
 /// - `.blocked` — 工具被策略拒绝（chat 模式）
-/// - `.needsApproval` — 工具需要用户审批（build 模式高风险）
+/// - `.needsUserResponse` — 工具需要用户响应；具体交互语义由交互请求内容决定
 ///
-/// AgentLoop 根据此枚举构造 `MessageToolResult` 和 `AgentLoopSuspension`。
+/// AgentLoop 只负责把需要用户响应的结果转换为通用挂起点。
 public enum BatchToolResult: Sendable {
     /// 工具已执行。
     case executed(ToolCallResult)
@@ -43,9 +43,6 @@ public enum BatchToolResult: Sendable {
     /// 工具被策略拒绝。
     case blocked(reason: String)
 
-    /// 工具需要用户审批。
-    ///
-    /// AgentLoop 应据此构造 `AgentLoopSuspension(kind: "toolApproval")`
-    /// 并返回 `awaitingUserResponse: true` 的结果给 LLM。
-    case needsApproval(riskLevel: CommandRiskLevel)
+    /// 工具需要用户响应。payload 由工具管理器提供，AgentLoop 不解释其语义。
+    case needsUserResponse(payload: String)
 }

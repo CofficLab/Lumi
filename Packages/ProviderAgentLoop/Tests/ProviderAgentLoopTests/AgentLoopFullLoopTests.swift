@@ -160,7 +160,8 @@ struct AgentLoopFullLoopTests {
                 case .requireApprovalForHighRisk:
                     let risk = riskLevel(for: call) ?? .high
                     if risk.requiresPermission {
-                        results.append(.needsApproval(riskLevel: risk))
+                        let payload = "{\"toolCallId\":\"approval:\(call.id)\",\"kind\":\"permission\",\"question\":\"需要确认\",\"options\":[\"允许\",\"拒绝\"],\"mode\":\"yes_no\"}"
+                        results.append(.needsUserResponse(payload: payload))
                     } else {
                         results.append(.executed(await execute(call, conversationID: conversationID, turnID: turnID)))
                     }
@@ -323,7 +324,7 @@ struct AgentLoopFullLoopTests {
         #expect(provider.receivedRequests[1].messages.contains { $0.role == MessageRole.tool })
     }
 
-    @Test("build 模式高风险工具挂起等待批准，批准后执行并完成")
+    @Test("build 模式高风险工具挂起等待用户响应，响应后执行并完成")
     func highRiskSuspensionAndResume() async throws {
         let tool = ScriptedTool(name: "delete_file", risk: .high, result: ToolCallResult(content: "deleted"))
         let toolManager = TestToolManager()
@@ -344,9 +345,9 @@ struct AgentLoopFullLoopTests {
 
         // 第一轮：高风险工具 → 挂起
         let outcome = try await loop.runTurn(in: conversationID)
-        #expect(outcome == .suspended("approval:call-1"))
+        #expect(outcome == .suspended("userInput:call-1"))
         #expect(loop.suspension(for: conversationID) != nil)
-        #expect(loop.suspension(for: conversationID)?.kind == "toolApproval")
+        #expect(loop.suspension(for: conversationID)?.kind == "userInput")
         #expect(tool.executionCount == 0, "高风险工具未批准不应执行")
 
         // 批准 → 恢复 → 工具执行 → 最终回复

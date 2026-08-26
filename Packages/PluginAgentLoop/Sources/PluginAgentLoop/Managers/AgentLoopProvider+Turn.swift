@@ -31,14 +31,12 @@ extension AgentLoopManager {
               let toolCall = assistantMessage.toolCalls?.first(where: { $0.id == toolCallID }) else {
             throw AgentLoopError.invalidResumeRequest
         }
-        let result: MessageToolResult
-        if suspension.kind == Self.toolApprovalSuspensionKind, isToolApprovalGranted(request.answer) {
-            result = await executeApprovedToolCall(toolCall, conversationID: conversationID)
-        } else if suspension.kind == Self.toolApprovalSuspensionKind {
-            result = MessageToolResult(content: "User rejected the tool execution request.", isError: true)
-        } else {
-            result = MessageToolResult(content: request.answer)
-        }
+        let result = convertResult(await toolManager.resolveUserResponse(
+            request.answer,
+            for: AgentLoopToolCall(id: toolCall.id, name: toolCall.name, arguments: toolCall.arguments),
+            conversationID: conversationID,
+            turnID: turnID
+        ))
         messages.updateToolCallResult(result, toolCallID: toolCallID, assistantMessageID: assistantMessage.id, in: conversationID)
         if let pending = messages.messages(for: conversationID).last(where: { $0.role == .tool && $0.toolCallID == toolCallID }) {
             messages.updateMessage(id: pending.id, in: conversationID, content: result.content)

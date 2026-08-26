@@ -216,21 +216,12 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             throw AgentLoopError.invalidResumeRequest
         }
 
-        // 授权类挂起：批准才执行；拒绝写入拒绝结果。其余（ask_user 等）直接
-        // 把用户回答作为工具结果回传。恢复动作本身仍通过 ToolManager 执行。
-        let result: MessageToolResult
-        if suspension.kind == Self.toolApprovalSuspensionKind {
-            if isToolApprovalGranted(request.answer) {
-                result = await executeApprovedToolCall(toolCall, conversationID: conversationID)
-            } else {
-                result = MessageToolResult(
-                    content: "User rejected the tool execution request.",
-                    isError: true
-                )
-            }
-        } else {
-            result = MessageToolResult(content: request.answer)
-        }
+        let result = convertResult(await toolManager.resolveUserResponse(
+            request.answer,
+            for: ToolCall(id: toolCall.id, name: toolCall.name, arguments: toolCall.arguments),
+            conversationID: conversationID,
+            turnID: turnIDs[conversationID]
+        ))
 
         // 更新 assistant 消息内的展示快照。
         messages.updateToolCallResult(result, toolCallID: toolCallID, assistantMessageID: assistantMessage.id, in: conversationID)
@@ -240,7 +231,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             messages.updateMessage(
                 id: pendingToolMessage.id,
                 in: conversationID,
-                content: suspension.kind == Self.toolApprovalSuspensionKind ? result.content : request.answer
+                content: result.content
             )
         }
 
@@ -421,8 +412,14 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             switch batchResult {
             case .executed(let value): result = convertResult(value)
             case .blocked(let reason): result = MessageToolResult(content: reason, isError: true)
-            case .needsApproval(let risk):
-                firstSuspension = makeApprovalSuspension(for: call, riskLevel: risk, conversationID: conversationID)
+            case .needsUserResponse(let payload):
+                firstSuspension = AgentLoopSuspension(
+                    suspensionID: "userInput:\(call.id)",
+                    conversationID: conversationID,
+                    toolCallID: call.id,
+                    kind: "userInput",
+                    payload: payload
+                )
                 result = MessageToolResult(content: firstSuspension?.payload ?? "", awaitingUserResponse: true)
             }
             if let assistantMessage {
@@ -468,13 +465,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         case .autonomous: return .autoExecute
         case .build: return .requireApprovalForHighRisk
         }
-    }
-
-    private func makeApprovalSuspension(for call: ToolCall, riskLevel: CommandRiskLevel, conversationID: UUID) -> AgentLoopSuspension {
-        let id = "approval:\(call.id)"
-        let payload = ToolApprovalPayload(toolCallId: id, question: "此操作被判定为\(riskLevel.displayName)，是否允许执行？", options: ["允许", "拒绝"], mode: "yes_no", conversationId: conversationID.uuidString, verbosity: "standard")
-        let content = (try? String(data: JSONEncoder().encode(payload), encoding: .utf8)) ?? "Unable to create approval request."
-        return AgentLoopSuspension(suspensionID: id, conversationID: conversationID, toolCallID: call.id, kind: Self.toolApprovalSuspensionKind, payload: content)
     }
 
     // Kept only as a compatibility reference for old recovery data; active
@@ -703,7 +693,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
 
     // MARK: - Tool Execution
 
-    /// 授权边界：`chat` 拒绝工具、`autonomous` 直接执行、`build` 高风险需确认。
+    /// 工具执行委托给 ToolManager；AgentLoop 只处理通用结果和挂起。
     private func executeToolCall(
         _ toolCall: MessageToolCall,
         conversationID: UUID,
@@ -714,74 +704,26 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             name: toolCall.name,
             arguments: toolCall.arguments
         )
-        let automationLevel = conversations.automationLevel(for: conversationID)
-        switch automationLevel {
-        case .chat:
-            return MessageToolResult(
-                content: "Tool execution was blocked because this conversation is in Chat mode.",
-                isError: true
-            )
-        case .autonomous:
-            return await convertResult(
-                await toolManager.execute(tool, conversationID: conversationID, turnID: turnID)
-            )
-        case .build:
-            let riskLevel = toolManager.riskLevel(for: tool) ?? .high
-            guard riskLevel.requiresPermission else {
-                return await convertResult(
-                    await toolManager.execute(tool, conversationID: conversationID, turnID: turnID)
-                )
-            }
-            return makeToolApprovalResult(for: toolCall, riskLevel: riskLevel, conversationID: conversationID)
+        let policy: ToolExecutionPolicy
+        switch conversations.automationLevel(for: conversationID) {
+        case .chat: policy = .blockAll
+        case .autonomous: policy = .autoExecute
+        case .build: policy = .requireApprovalForHighRisk
         }
-    }
-
-    private func executeApprovedToolCall(_ toolCall: MessageToolCall, conversationID: UUID) async -> MessageToolResult {
-        let tool = ToolCall(
-            id: toolCall.id,
-            name: toolCall.name,
-            arguments: toolCall.arguments
-        )
-        return await convertResult(
-            await toolManager.execute(tool, conversationID: conversationID, turnID: turnIDs[conversationID])
-        )
-    }
-
-    private func isToolApprovalGranted(_ answer: String) -> Bool {
-        switch answer.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
-        case "允许", "同意", "是", "allow", "approve", "approved", "yes":
-            return true
-        default:
-            return false
+        guard let batchResult = await toolManager.executeBatch(
+            [tool], policy: policy, conversationID: conversationID, turnID: turnID
+        ).first else { return MessageToolResult(content: "Tool execution returned no result.", isError: true) }
+        switch batchResult {
+        case .executed(let result): return convertResult(result)
+        case .blocked(let reason): return MessageToolResult(content: reason, isError: true)
+        case .needsUserResponse(let payload):
+            let suspension = AgentLoopSuspension(
+                suspensionID: "userInput:\(toolCall.id)", conversationID: conversationID,
+                toolCallID: toolCall.id, kind: "userInput", payload: payload
+            )
+            suspensions[conversationID] = suspension
+            return MessageToolResult(content: payload, awaitingUserResponse: true)
         }
-    }
-
-    private func makeToolApprovalResult(
-        for toolCall: MessageToolCall,
-        riskLevel: CommandRiskLevel,
-        conversationID: UUID
-    ) -> MessageToolResult {
-        let suspensionID = "approval:\(toolCall.id)"
-        let operation = toolCall.displayDescription ?? toolCall.name
-        let payload = ToolApprovalPayload(
-            toolCallId: suspensionID,
-            question: "此操作被判定为\(riskLevel.displayName)，是否允许执行？\n\(operation)",
-            options: ["允许", "拒绝"],
-            mode: "yes_no",
-            conversationId: conversationID.uuidString,
-            verbosity: "standard"
-        )
-        let content = (try? String(data: JSONEncoder().encode(payload), encoding: .utf8))
-            ?? "Unable to create tool approval request."
-        let suspension = AgentLoopSuspension(
-            suspensionID: suspensionID,
-            conversationID: conversationID,
-            toolCallID: toolCall.id,
-            kind: Self.toolApprovalSuspensionKind,
-            payload: content
-        )
-        suspensions[conversationID] = suspension
-        return MessageToolResult(content: content, isError: false, awaitingUserResponse: true)
     }
 
     /// 把 `ToolCallResult` 转换为渲染层 `MessageToolResult`。
@@ -986,18 +928,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         conversations.providerID(for: conversationID)
     }
 
-    private static let toolApprovalSuspensionKind = "toolApproval"
-}
-
-// MARK: - Tool Approval Payload（复刻旧版 ToolApprovalPayload）
-
-private struct ToolApprovalPayload: Codable {
-    let toolCallId: String
-    let question: String
-    let options: [String]
-    let mode: String
-    let conversationId: String
-    let verbosity: String
 }
 
 public extension Array where Element == MessageToolCall {

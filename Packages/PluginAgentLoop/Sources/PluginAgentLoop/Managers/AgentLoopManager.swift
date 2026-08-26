@@ -38,7 +38,6 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
     var completionWaiters: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
     private var agentLoopObservers: [UUID: (AgentLoopEvent) -> Void] = [:]
 
-    static let toolApprovalSuspensionKind = "toolApproval"
 
     // MARK: - Init
 

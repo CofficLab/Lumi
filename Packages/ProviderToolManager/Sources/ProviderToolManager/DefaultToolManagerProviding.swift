@@ -4,6 +4,19 @@ import Foundation
 import KitSuperLog
 import os
 
+private struct DefaultToolInteractionPayload: Codable {
+    let toolCallID: String
+    let kind: String
+    let question: String
+    let options: [String]
+    let mode: String
+
+    enum CodingKeys: String, CodingKey {
+        case toolCallID = "toolCallId"
+        case kind, question, options, mode
+    }
+}
+
 /// `ToolManagerProviding` 的默认实现。
 @MainActor
 public final class DefaultToolManagerProviding: ToolManagerProviding, ObservableObject, SuperLog {
@@ -292,7 +305,16 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
             case .requireApprovalForHighRisk:
                 let risk = riskLevel(for: toolCall) ?? .high
                 if risk.requiresPermission {
-                    results.append(.needsApproval(riskLevel: risk))
+                    let payload = DefaultToolInteractionPayload(
+                        toolCallID: "approval:\(toolCall.id)",
+                        kind: "permission",
+                        question: "此操作被判定为\(risk.displayName)，是否允许执行？\n\(displayDescription(for: toolCall) ?? toolCall.name)",
+                        options: ["允许", "拒绝"],
+                        mode: "yes_no"
+                    )
+                    let content = (try? String(data: JSONEncoder().encode(payload), encoding: .utf8))
+                        ?? "Unable to create tool interaction request."
+                    results.append(.needsUserResponse(payload: content))
                 } else {
                     results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID)))
                 }

@@ -112,7 +112,6 @@ public enum TurnEvent {
     case llmResponded(response: LLMResponse, assistantMessageID: UUID)
     case llmFailed(reason: String)
     case toolCallCompleted(toolCallID: String, result: MessageToolResult)
-    case toolNeedsApproval(toolCallID: String, suspension: AgentLoopSuspension)
     case toolNeedsUserInput(toolCallID: String, suspension: AgentLoopSuspension)
 }
 
@@ -193,8 +192,7 @@ public enum TurnReducer {
             }
             return (rt, nil)
 
-        case .toolNeedsApproval(let toolCallID, let suspension),
-             .toolNeedsUserInput(let toolCallID, let suspension):
+        case .toolNeedsUserInput(let toolCallID, let suspension):
             guard case .executingTools(let turnID, let assistantID, var pending) = rt.phase else {
                 return (rt, nil)
             }

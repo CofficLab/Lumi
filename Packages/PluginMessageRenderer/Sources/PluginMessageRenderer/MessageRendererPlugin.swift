@@ -51,6 +51,9 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve MessageRenderingProviding from kernel")
             return
         }
+        ToolApprovalBridge.shared.start(kernel: kernel)
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?
+            .register(ToolApprovalRowRenderer())
         let base = Self.baseOrder
 
         // 优先级最高：turn-completed / status 特殊渲染
@@ -163,6 +166,9 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?
+            .unregister(id: ToolApprovalRowRenderer.id)
+        ToolApprovalBridge.shared.stop()
         let manager = kernel.resolveProvider((any MessageRenderingProviding).self)
         for id in rendererIDs {
             manager?.unregister(id: id)

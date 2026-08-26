@@ -1,6 +1,19 @@
 import KitAgentTool
 import Foundation
 
+private struct ToolInteractionPayload: Codable {
+    let toolCallID: String
+    let kind: String
+    let question: String
+    let options: [String]
+    let mode: String
+
+    enum CodingKeys: String, CodingKey {
+        case toolCallID = "toolCallId"
+        case kind, question, options, mode
+    }
+}
+
 /// Agent 工具管理与执行能力。
 @MainActor
 public protocol ToolManagerProviding: AnyObject {
@@ -40,6 +53,15 @@ public protocol ToolManagerProviding: AnyObject {
     /// 执行一次工具调用并返回结果。
     func execute(
         _ toolCall: ToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult
+
+    /// 将用户对工具交互的响应交回工具管理器。
+    /// AgentLoop 不解析响应，也不决定是否执行工具。
+    func resolveUserResponse(
+        _ answer: String,
+        for toolCall: ToolCall,
         conversationID: UUID,
         turnID: UUID?
     ) async -> ToolCallResult
@@ -101,6 +123,23 @@ public extension ToolManagerProviding {
         await execute(toolCall, conversationID: conversationID, turnID: nil)
     }
 
+    func resolveUserResponse(
+        _ answer: String,
+        for toolCall: ToolCall,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult {
+        if riskLevel(for: toolCall)?.requiresPermission == true {
+            switch answer.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+            case "允许", "同意", "是", "allow", "approve", "approved", "yes":
+                return await execute(toolCall, conversationID: conversationID, turnID: turnID)
+            default:
+                return ToolCallResult(content: "User rejected the tool execution request.", isError: true)
+            }
+        }
+        return ToolCallResult(content: answer)
+    }
+
     /// 批量执行的默认实现：逐个调用 `execute`，根据 policy 做授权判断。
     func executeBatch(
         _ toolCalls: [ToolCall],
@@ -123,7 +162,17 @@ public extension ToolManagerProviding {
             case .requireApprovalForHighRisk:
                 let riskLevel = self.riskLevel(for: toolCall) ?? .high
                 if riskLevel.requiresPermission {
-                    results.append(.needsApproval(riskLevel: riskLevel))
+                    let operation = displayDescription(for: toolCall) ?? toolCall.name
+                    let payload = ToolInteractionPayload(
+                        toolCallID: "approval:\(toolCall.id)",
+                        kind: "permission",
+                        question: "此操作被判定为\(riskLevel.displayName)，是否允许执行？\n\(operation)",
+                        options: ["允许", "拒绝"],
+                        mode: "yes_no"
+                    )
+                    let content = (try? String(data: JSONEncoder().encode(payload), encoding: .utf8))
+                        ?? "Unable to create tool interaction request."
+                    results.append(.needsUserResponse(payload: content))
                 } else {
                     let result = await execute(toolCall, conversationID: conversationID, turnID: turnID)
                     results.append(.executed(result))

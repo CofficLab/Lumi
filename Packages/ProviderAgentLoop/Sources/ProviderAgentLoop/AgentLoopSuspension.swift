@@ -8,7 +8,7 @@ import ProviderToolManager
 
 /// 一次工具/交互导致的回合暂停点。
 ///
-/// `kind` 区分暂停原因（`toolApproval` / `askUser` 等），`payload` 是 JSON
+/// `kind` 是由交互提供方定义的不透明分类，`payload` 是交互提供方的 JSON
 /// 字符串（选项、问题等）。用户回答后经 `resumeTurn(in:request:)` 恢复。
 public struct AgentLoopSuspension: Sendable, Equatable {
     public let suspensionID: String
