@@ -1,6 +1,18 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "?" : {
+
+    },
+    "Add Project…" : {
+
+    },
+    "Failed to Open Project" : {
+
+    },
+    "How can I help with " : {
+
+    },
     "How can I help you today?" : {
       "localizations" : {
         "en" : {
@@ -104,6 +116,9 @@
       }
     },
     "No renderer for message: %@" : {
+
+    },
+    "OK" : {
 
     },
     "Pick an example, or type your question below." : {

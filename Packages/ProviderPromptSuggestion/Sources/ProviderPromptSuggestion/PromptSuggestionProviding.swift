@@ -28,6 +28,10 @@ public struct PromptSuggestion: Identifiable, Sendable, Equatable {
     public let action: PromptSuggestionAction?
     public let visibility: PromptSuggestionVisibility
     public let style: PromptSuggestionStyle
+    /// Filled by the composition root when the suggestion is collected.
+    public var pluginID: String?
+    /// True when the source plugin is registered but currently disabled.
+    public var requiresEnable: Bool
 
     public init(id: String, title: String, prompt: String? = nil, order: Int = 0,
                 systemImage: String? = nil, action: PromptSuggestionAction? = nil,
@@ -36,6 +40,7 @@ public struct PromptSuggestion: Identifiable, Sendable, Equatable {
         self.id = id; self.title = title; self.prompt = prompt ?? title; self.order = order
         self.systemImage = systemImage; self.action = action
         self.visibility = visibility; self.style = style
+        self.pluginID = nil; self.requiresEnable = false
     }
 }
 

@@ -10,6 +10,11 @@ import ProviderMessageRendering
 import ProviderMessageSender
 import ProviderMessageStreaming
 import ProviderPromptSuggestion
+import ProviderProject
+import ProviderWorkspace
+import ProviderPluginControl
+import ProviderPluginManaging
+import ProviderToast
 import ProviderToolManager
 import SwiftUI
 
@@ -44,7 +49,12 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
             streaming: kernel.resolveProvider((any MessageStreamingProviding).self),
             toolManager: kernel.resolveProvider((any ToolManagerProviding).self),
             agentTurn: kernel.resolveProvider((any AgentLoopProviding).self),
-            promptSuggestions: kernel.resolveProvider((any PromptSuggestionProviding).self)
+            promptSuggestions: kernel.resolveProvider((any PromptSuggestionProviding).self),
+            project: kernel.resolveProvider((any ProjectProviding).self),
+            workspace: kernel.resolveProvider((any WorkspaceProviding).self),
+            pluginControl: kernel.resolveProvider((any PluginControlling).self),
+            pluginManager: kernel.resolveProvider((any PluginManaging).self),
+            toast: kernel.resolveProvider((any ToastProviding).self)
         )
         chat.addItems([ChatSectionItem(id: id, order: 100, fillsRemainingHeight: true) {
             ListView(services: services)
@@ -62,6 +72,8 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
             guard let contributor = plugin as? any PromptSuggestionContributing else { continue }
             for var suggestion in contributor.promptSuggestions {
                 suggestion.order += plugin.order * 1_000
+                suggestion.pluginID = plugin.id
+                suggestion.requiresEnable = !kernel.isPluginEnabled(id: plugin.id)
                 provider.register(suggestion)
             }
         }

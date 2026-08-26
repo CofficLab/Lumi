@@ -1,240 +1,193 @@
 import Combine
 import LumiUI
 import ProviderMessageSender
+import ProviderPluginControl
+import ProviderPluginManaging
 import ProviderPromptSuggestion
+import ProviderProject
+import ProviderToast
+import ProviderWorkspace
 import SwiftUI
+import UniformTypeIdentifiers
 
-/// Loading state view shown while the message list is fetching data.
-///
-/// Renders a single SF Symbol with a gentle breathing (opacity) animation
-/// so the user perceives the app as "alive" without visual noise.
 struct MessageLoadingView: View {
     @LumiTheme private var theme
-
-    /// Drives the breathing opacity animation.
-    @State private var isBreathing = false
-
+    @State private var breathing = false
     var body: some View {
-        Image(systemName: "bubble.left.and.bubble.right")
-            .font(.largeTitle)
-            .foregroundStyle(theme.textSecondary)
-            .opacity(isBreathing ? 0.3 : 1.0)
-            .animation(
-                .easeInOut(duration: 0.5).repeatForever(autoreverses: true),
-                value: isBreathing
-            )
-            .onAppear { isBreathing = true }
+        Image(systemName: "bubble.left.and.bubble.right").font(.largeTitle)
+            .foregroundStyle(theme.textSecondary).opacity(breathing ? 0.3 : 1)
+            .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: breathing)
+            .onAppear { breathing = true }
             .accessibilityLabel(Text(LumiPluginLocalization.string("Loading messages…")))
     }
 }
 
-/// Empty state view when the conversation has no messages.
-///
-/// 显示图标 + 标题 + 副标题 + 推荐提示词芯片。
-/// 点击提示词会直接发送对应消息。
-struct MessageEmptyStateView: View {
-    @LumiTheme private var theme
-    let services: MessageListServices
-    @StateObject private var promptObserver: PromptSuggestionsObserver
-
-    init(services: MessageListServices) {
-        self.services = services
-        _promptObserver = StateObject(wrappedValue: PromptSuggestionsObserver(services: services))
+@MainActor
+private func handlePromptTap(_ suggestion: PromptSuggestion, services: MessageListServices,
+                             pickFolder: (() -> Void)? = nil) {
+    switch suggestion.action {
+    case .pickProjectFolder:
+        pickFolder?(); return
+    case .openSettingsTab:
+        NotificationCenter.default.post(name: Notification.Name("lumi.openSettings"), object: nil); return
+    case nil, .activateViewContainer, .activateRailTab:
+        break
     }
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 48, weight: .light))
-                .foregroundColor(theme.primary.opacity(0.75))
-
-            Text(LumiPluginLocalization.string("Start chatting with Lumi"))
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-
-            Text(LumiPluginLocalization.string("Pick an example, or type your question below."))
-                .font(.body)
-                .foregroundColor(theme.textSecondary)
-                .multilineTextAlignment(.center)
-
-            // 推荐提示词芯片
-            if let promptSuggestions = services.promptSuggestions,
-               !promptSuggestions.allSuggestions.isEmpty {
-                PromptSuggestionFlow(suggestions: promptSuggestions.allSuggestions, services: services)
-                    .padding(.top, 8)
-            }
+    Task { @MainActor in
+        if suggestion.requiresEnable, let pluginID = suggestion.pluginID,
+           let control = services.pluginControl, await control.enablePlugin(id: pluginID) {
+            let name = services.pluginManager?.plugin(id: pluginID)?.metadata.name ?? pluginID
+            services.toast?.show("Plugin Enabled", detail: "\(name) is now enabled.", style: .success)
         }
-        .padding(32)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        switch suggestion.action {
+        case .activateViewContainer(let id): services.workspace?.activateContainer(id: id)
+        case .activateRailTab(let id, let containerID):
+            services.workspace?.activateContainer(id: containerID)
+            services.workspace?.presentRailTab(id: id, for: containerID)
+        default: break
+        }
+        try? await services.sender?.sendMessage(suggestion.prompt, conversationID: nil)
     }
 }
 
-/// 未选择对话时的占位视图。
-///
-/// 显示图标 + 通用问候语 + 推荐提示词芯片。
+private struct PromptSuggestionChip: View {
+    @LumiTheme private var theme
+    @LumiMotionPreferenceReader private var motionPreference
+    let suggestion: PromptSuggestion
+    @State private var hovered = false
+    var body: some View {
+        HStack(spacing: 6) {
+            if let image = suggestion.systemImage { Image(systemName: image).font(.system(size: 12, weight: .medium)) }
+            Text(suggestion.title).font(.appCaption).lineLimit(1)
+        }
+        .foregroundStyle(suggestion.style == .additive ? theme.textSecondary : theme.textPrimary)
+        .padding(.horizontal, 12).padding(.vertical, 7)
+        .background(Capsule().fill(suggestion.style == .additive ? .clear : theme.primary.opacity(hovered ? 0.22 : 0.12)))
+        .overlay { Capsule().strokeBorder(hovered ? theme.primary.opacity(0.4) : theme.primary.opacity(suggestion.style == .additive ? 0.35 : 0.22), style: StrokeStyle(lineWidth: 1, dash: suggestion.style == .additive ? [4, 3] : [])) }
+        .scaleEffect(hovered && motionPreference.allowsMotion ? LumiMotion.hoverScale : 1)
+        .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: hovered)
+        .onHover { value in LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) { hovered = value } }
+    }
+}
+
+private struct PromptSuggestionFlow: View {
+    let suggestions: [PromptSuggestion]
+    let services: MessageListServices
+    let pickFolder: (() -> Void)?
+    var body: some View {
+        FlowLayout(spacing: 8) {
+            ForEach(Array(suggestions.enumerated()), id: \.element.id) { index, suggestion in
+                Button { handlePromptTap(suggestion, services: services, pickFolder: pickFolder) } label: { PromptSuggestionChip(suggestion: suggestion) }
+                    .buttonStyle(.plain).landingAppear(delay: Double(index) * 0.04)
+            }
+        }.frame(maxWidth: 520)
+    }
+}
+
+@MainActor
+private func visibleSuggestions(_ all: [PromptSuggestion], hasProject: Bool) -> [PromptSuggestion] {
+    all.filter {
+        switch $0.visibility { case .always: true; case .onlyWithProject: hasProject; case .onlyWithoutProject: !hasProject }
+    }
+}
+
 struct NoConversationSelectedView: View {
     @LumiTheme private var theme
     let services: MessageListServices
     @StateObject private var promptObserver: PromptSuggestionsObserver
+    @StateObject private var projectObserver: ProjectObserver
+    @State private var importingFolder = false
+    @State private var projectError: String?
 
     init(services: MessageListServices) {
         self.services = services
         _promptObserver = StateObject(wrappedValue: PromptSuggestionsObserver(services: services))
+        _projectObserver = StateObject(wrappedValue: ProjectObserver(project: services.project))
     }
-
+    private var project: ProjectInfo? { projectObserver.project?.currentProject }
+    private var suggestions: [PromptSuggestion] { visibleSuggestions(services.promptSuggestions?.allSuggestions ?? [], hasProject: project != nil) }
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: "square.and.pencil")
-                .font(.system(size: 48, weight: .light))
-                .foregroundColor(theme.textSecondary.opacity(0.5))
-
-            Text(LumiPluginLocalization.string("How can I help you today?"))
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(theme.textPrimary)
-                .multilineTextAlignment(.center)
-
-            // 推荐提示词芯片
-            if let promptSuggestions = services.promptSuggestions,
-               !promptSuggestions.allSuggestions.isEmpty {
-                PromptSuggestionFlow(suggestions: promptSuggestions.allSuggestions, services: services)
-                    .padding(.top, 8)
-            }
+            Image(systemName: "square.and.pencil").font(.system(size: 48, weight: .light)).foregroundColor(theme.textSecondary.opacity(0.5))
+            if let project { projectTitle(project) } else { Text("How can I help you today?").font(.system(size: 18, weight: .semibold)).foregroundStyle(theme.textPrimary) }
+            if !suggestions.isEmpty { PromptSuggestionFlow(suggestions: suggestions, services: services) { importingFolder = true } }
         }
-        .padding(32)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-// MARK: - Prompt Suggestion Components
-
-/// 提示词芯片流式布局容器。
-private struct PromptSuggestionFlow: View {
-    let suggestions: [PromptSuggestion]
-    let services: MessageListServices
-
-    var body: some View {
-        FlowLayout(spacing: 8) {
-            ForEach(Array(suggestions.sorted(by: { $0.order < $1.order }).enumerated()), id: \.element.id) { index, suggestion in
-                PromptSuggestionButton(suggestion: suggestion, services: services)
-                    .landingAppear(delay: Double(index) * 0.04)
-            }
+        .padding(32).frame(maxWidth: .infinity, maxHeight: .infinity)
+        .fileImporter(isPresented: $importingFolder, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
+            guard case .success(let urls) = result, let url = urls.first else { return }
+            Task { @MainActor in do { try await services.project?.openProject(at: url.path) } catch { projectError = error.localizedDescription } }
         }
-        .frame(maxWidth: 480)
+        .alert("Failed to Open Project", isPresented: Binding(get: { projectError != nil }, set: { if !$0 { projectError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(projectError ?? "") }
+    }
+    @ViewBuilder private func projectTitle(_ project: ProjectInfo) -> some View {
+        HStack(spacing: 0) {
+            Text("How can I help with ").foregroundStyle(theme.textPrimary)
+            Menu {
+                ForEach(projectObserver.project?.projects ?? [], id: \.path) { item in
+                    Button(item.name) { Task { @MainActor in do { try await services.project?.openProject(at: item.path) } catch { projectError = error.localizedDescription } } }
+                }
+                Divider(); Button("Add Project…") { importingFolder = true }
+            } label: { Text(project.name).foregroundStyle(theme.primary) }.menuStyle(.borderlessButton)
+            Text("?").foregroundStyle(theme.textPrimary)
+        }.font(.system(size: 18, weight: .semibold))
     }
 }
 
-/// 提示词胶囊按钮：点击发送该提示词。
-private struct PromptSuggestionButton: View {
-    let suggestion: PromptSuggestion
-    let services: MessageListServices
-
-    var body: some View {
-        Button {
-            handlePromptSuggestionTap(suggestion, services: services)
-        } label: {
-            PromptSuggestionChip(title: suggestion.title)
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-/// 处理提示词点击：发送消息。
-@MainActor
-private func handlePromptSuggestionTap(_ suggestion: PromptSuggestion, services: MessageListServices) {
-    guard let sender = services.sender else { return }
-    Task {
-        try? await sender.sendMessage(suggestion.prompt, conversationID: nil)
-    }
-}
-
-/// 提示词胶囊芯片样式。
-///
-/// 镜像 `LumiUI.AppTag` 的强调风格（主题色玻璃底 + 悬停放大/高亮）。
-private struct PromptSuggestionChip: View {
+struct MessageEmptyStateView: View {
     @LumiTheme private var theme
-    @LumiMotionPreferenceReader private var motionPreference
-
-    private let title: String
-
-    @State private var isHovered = false
-
-    init(title: String) {
-        self.title = title
-    }
-
+    let services: MessageListServices
+    @StateObject private var promptObserver: PromptSuggestionsObserver
+    @State private var importingFolder = false
+    @State private var projectError: String?
+    init(services: MessageListServices) { self.services = services; _promptObserver = StateObject(wrappedValue: PromptSuggestionsObserver(services: services)) }
     var body: some View {
-        HStack(spacing: 6) {
-            Text(title)
-                .font(.appCaption)
-                .lineLimit(1)
-        }
-        .foregroundStyle(theme.textPrimary)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 7)
-        .background(
-            Capsule(style: .continuous)
-                .fill(isHovered ? theme.primary.opacity(0.22) : theme.primary.opacity(0.12))
-        )
-        .overlay(
-            Capsule(style: .continuous)
-                .strokeBorder(
-                    isHovered ? theme.primary.opacity(0.40) : theme.primary.opacity(0.22),
-                    lineWidth: 1
-                )
-        )
-        .scaleEffect(isHovered && motionPreference.allowsMotion ? LumiMotion.hoverScale : 1.0)
-        .shadow(color: theme.primary.opacity(isHovered ? 0.20 : 0), radius: isHovered ? 8 : 0, y: isHovered ? 3 : 0)
-        .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: isHovered)
-        .onHover { hovering in
-            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
-                isHovered = hovering
+        VStack(spacing: 16) {
+            Image(systemName: "bubble.left.and.bubble.right").font(.system(size: 48, weight: .light)).foregroundColor(theme.primary.opacity(0.75))
+            Text("Start chatting with Lumi").font(.system(size: 18, weight: .semibold)).foregroundStyle(theme.textPrimary)
+            Text("Pick an example, or type your question below.").foregroundStyle(theme.textSecondary).multilineTextAlignment(.center)
+            let suggestions = visibleSuggestions(
+                services.promptSuggestions?.allSuggestions ?? [],
+                hasProject: services.project?.currentProject != nil
+            )
+            if !suggestions.isEmpty {
+                PromptSuggestionFlow(suggestions: suggestions, services: services) { importingFolder = true }.padding(.top, 8)
             }
         }
+        .padding(32).frame(maxWidth: .infinity, maxHeight: .infinity)
+        .fileImporter(isPresented: $importingFolder, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
+            guard case .success(let urls) = result, let url = urls.first else { return }
+            Task { @MainActor in
+                do { try await services.project?.openProject(at: url.path) }
+                catch { projectError = error.localizedDescription }
+            }
+        }
+        .alert("Failed to Open Project", isPresented: Binding(get: { projectError != nil }, set: { if !$0 { projectError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(projectError ?? "") }
     }
 }
 
-/// 流式布局：自动换行的子视图排列。
+@MainActor private final class PromptSuggestionsObserver: ObservableObject {
+    private var cancellable: AnyCancellable?
+    init(services: MessageListServices) { cancellable = services.promptSuggestionsChangesPublisher.sink { [weak self] _ in self?.objectWillChange.send() } }
+}
+@MainActor private final class ProjectObserver: ObservableObject {
+    let project: (any ProjectProviding)?
+    private var cancellable: AnyCancellable?
+    init(project: (any ProjectProviding)?) { self.project = project; cancellable = project?.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() } }
+}
+
 private struct FlowLayout: Layout {
     let spacing: CGFloat
-
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let maxWidth = proposal.width ?? .greatestFiniteMagnitude
-        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x > 0, x + spacing + size.width > maxWidth {
-                y += rowHeight + spacing; x = 0; rowHeight = 0
-            }
-            x += (x == 0 ? 0 : spacing) + size.width
-            rowHeight = max(rowHeight, size.height)
-        }
-        return CGSize(width: min(x, maxWidth), height: y + rowHeight)
+        let width = proposal.width ?? .greatestFiniteMagnitude; var x: CGFloat = 0; var y: CGFloat = 0; var row: CGFloat = 0
+        for view in subviews { let size = view.sizeThatFits(.unspecified); if x > 0 && x + spacing + size.width > width { y += row + spacing; x = 0; row = 0 }; x += (x == 0 ? 0 : spacing) + size.width; row = max(row, size.height) }
+        return CGSize(width: min(x, width), height: y + row)
     }
-
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX, y = bounds.minY, rowHeight: CGFloat = 0
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x > bounds.minX, x + size.width > bounds.maxX {
-                x = bounds.minX; y += rowHeight + spacing; rowHeight = 0
-            }
-            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
-        }
-    }
-}
-
-/// Bridges the prompt provider's objectWillChange into SwiftUI without exposing
-/// an ObservableObject existential from the service container.
-@MainActor
-private final class PromptSuggestionsObserver: ObservableObject {
-    private var cancellable: AnyCancellable?
-
-    init(services: MessageListServices) {
-        cancellable = services.promptSuggestionsChangesPublisher
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
+        var x = bounds.minX; var y = bounds.minY; var row: CGFloat = 0
+        for view in subviews { let size = view.sizeThatFits(.unspecified); if x > bounds.minX && x + size.width > bounds.maxX { x = bounds.minX; y += row + spacing; row = 0 }; view.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size)); x += size.width + spacing; row = max(row, size.height) }
     }
 }
