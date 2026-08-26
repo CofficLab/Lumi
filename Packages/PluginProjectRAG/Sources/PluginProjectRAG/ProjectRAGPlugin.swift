@@ -6,6 +6,7 @@ import ProviderProject
 import ProviderIdleTime
 import ProviderStorage
 import ProviderToolManager
+import ProviderProjectRAG
 
 /// Project RAG 的 KernelCore 适配器。
 ///
@@ -40,7 +41,9 @@ public final class ProjectRAGSuperPlugin: SuperPlugin {
 
         let project = kernel.resolveProvider((any ProjectProviding).self)
         let idleTime = kernel.resolveProvider((any IdleTimeProviding).self)
-        ProjectRAGRuntime.configure(service: service, project: project)
+        let provider = ProjectRAGProvider(service: service, project: project)
+        ProjectRAGRuntime.configure(provider: provider)
+        try kernel.registerProvider((any ProjectRAGProviding).self, provider)
         kernel.resolveProvider((any ToolManagerProviding).self)?
             .add(RAGCodeSearchTool(), pluginID: id)
 
@@ -67,6 +70,7 @@ public final class ProjectRAGSuperPlugin: SuperPlugin {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: RAGCodeSearchTool.toolName)
+        kernel.unregisterProvider((any ProjectRAGProviding).self)
         schedulerTask?.cancel()
         schedulerTask = nil
         if let service { Task { await service.cancelBackgroundIndexing() } }
@@ -77,20 +81,75 @@ public final class ProjectRAGSuperPlugin: SuperPlugin {
 
 @MainActor
 enum ProjectRAGRuntime {
-    private(set) static var service: RAGService?
-    private weak static var project: (any ProjectProviding)?
+    private(set) static var provider: (any ProjectRAGProviding)?
 
-    static func configure(service: RAGService, project: (any ProjectProviding)?) {
+    static func configure(provider: any ProjectRAGProviding) {
+        self.provider = provider
+    }
+
+    static func reset() {
+        provider = nil
+    }
+
+}
+
+/// `RAGService` 的 Kernel Provider 适配器。
+@MainActor
+public final class ProjectRAGProvider: ProjectRAGProviding {
+    private let service: RAGService
+    private weak var project: (any ProjectProviding)?
+
+    public init(service: RAGService, project: (any ProjectProviding)?) {
         self.service = service
         self.project = project
     }
 
-    static func reset() {
-        service = nil
-        project = nil
+    public var isInitialized: Bool { service.isInitialized }
+    public var currentProjectPath: String? { project?.currentProject?.path }
+
+    public func search(
+        query: String,
+        projectPath: String?,
+        topK: Int
+    ) async throws -> ProjectRAGResponse {
+        let path = normalizedProjectPath(projectPath)
+        try await service.initialize()
+        let response = try await service.retrieve(query: query, projectPath: path, topK: topK)
+        return ProjectRAGResponse(
+            query: response.query,
+            results: response.results.map {
+                ProjectRAGSearchResult(content: $0.content, source: $0.source, score: $0.score)
+            }
+        )
     }
 
-    static var currentProjectPath: String? { project?.currentProject?.path }
+    public func ensureIndexed(projectPath: String, force: Bool, background: Bool) async throws {
+        try await service.initialize()
+        if background {
+            await service.ensureIndexedBackground(projectPath: projectPath, force: force)
+            return
+        }
+        try await service.ensureIndexed(projectPath: projectPath, force: force)
+    }
+
+    public func indexStatus(projectPath: String) async throws -> ProjectRAGIndexStatus? {
+        try await service.initialize()
+        guard let status = try await service.getIndexStatus(projectPath: projectPath) else { return nil }
+        return ProjectRAGIndexStatus(
+            projectPath: status.projectPath,
+            lastIndexedAt: status.lastIndexedAt,
+            fileCount: status.fileCount,
+            chunkCount: status.chunkCount,
+            isStale: status.isStale
+        )
+    }
+
+    private func normalizedProjectPath(_ path: String?) -> String? {
+        if let path, !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return path
+        }
+        return currentProjectPath
+    }
 }
 
 /// 新旧版本均使用 `search_code` 作为稳定的工具名，避免历史会话、提示词和
@@ -130,21 +189,22 @@ public struct RAGCodeSearchTool: SuperAgentTool {
             return "## Code Search\n\nMissing required `query` parameter."
         }
         let explicitPath = (arguments["project_path"]?.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let projectPath = explicitPath?.isEmpty == false ? explicitPath : await MainActor.run { ProjectRAGRuntime.currentProjectPath }
+        let projectPath = explicitPath?.isEmpty == false
+            ? explicitPath
+            : await MainActor.run { ProjectRAGRuntime.provider?.currentProjectPath }
         guard let projectPath, !projectPath.isEmpty else {
             return "## Code Search\n\nOpen a project or provide `project_path`."
         }
         guard FileManager.default.fileExists(atPath: projectPath) else {
             return "## Code Search\n\nProject path does not exist: `\(projectPath)`"
         }
-        guard let service = await MainActor.run(body: { ProjectRAGRuntime.service }) else {
+        guard let provider = await MainActor.run(body: { ProjectRAGRuntime.provider }) else {
             return "## Code Search\n\nProject RAG is not available."
         }
 
-        if !service.isInitialized { try await service.initialize() }
-        await service.ensureIndexedBackground(projectPath: projectPath)
         let topK = min(max((arguments["top_k"]?.value as? Int) ?? 8, 1), 20)
-        let response = try await service.retrieve(query: query, projectPath: projectPath, topK: topK)
+        try await provider.ensureIndexed(projectPath: projectPath, force: false, background: true)
+        let response = try await provider.search(query: query, projectPath: projectPath, topK: topK)
         guard !response.results.isEmpty else {
             return "## Code Search\n\nNo indexed code matched `\(query)`. Indexing may still be in progress."
         }

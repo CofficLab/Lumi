@@ -16,6 +16,7 @@ let package = Package(
         .package(path: "../ProviderIdleTime"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../ProviderProjectRAG"),
     ],
     targets: [
         .target(
@@ -49,6 +50,7 @@ let package = Package(
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderProjectRAG", package: "ProviderProjectRAG"),
                 "ProjectRAGEngine",
             ],
         ),
