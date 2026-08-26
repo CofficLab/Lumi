@@ -2,6 +2,7 @@ import KernelCore
 import LumiUI
 import os
 import ProviderChatSection
+import ProviderConversation
 import ProviderConversationInput
 import ProviderMessageSender
 import KitSuperLog
@@ -27,6 +28,7 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
     private var missingActionBarProviders: [String] = []
     private var actionBarInputObserver: ActionBarInputObserver?
     private var actionBarSendingObserver: ActionBarSendingObserver?
+    private var actionBarConversationObserver: ActionBarConversationObserver?
 
     public init() {}
 
@@ -93,6 +95,14 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
 
         actionBarInputObserver = ActionBarInputObserver(input: input, viewModel: viewModel)
         actionBarSendingObserver = ActionBarSendingObserver(sender: sender, viewModel: viewModel)
+
+        // 3. 对话切换时清空输入框
+        if let conversations = kernel.resolveProvider((any ConversationManaging).self) {
+            actionBarConversationObserver = ActionBarConversationObserver(
+                conversations: conversations,
+                input: input
+            )
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -100,6 +110,8 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
         actionBarInputObserver = nil
         actionBarSendingObserver?.cancel()
         actionBarSendingObserver = nil
+        actionBarConversationObserver?.cancel()
+        actionBarConversationObserver = nil
         sendActionBarViewModel = nil
         missingActionBarProviders = []
         kernel.resolveProvider((any ChatSectionProviding).self)?
