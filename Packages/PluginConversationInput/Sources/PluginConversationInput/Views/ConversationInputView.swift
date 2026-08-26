@@ -16,6 +16,10 @@ struct ConversationInputView: View {
     let input: (any ConversationInputProviding)?
     let sender: (any MessageSendingProviding)?
     @State private var errorMessage: String?
+    /// 输入 Provider 的 `objectWillChange` 不会自动让这个 View 重建，
+    /// 而 `ComposerView` 依赖的是普通 Binding；用 revision 让文本变化触发
+    /// `ChatInputEditorView.updateNSView`，及时把 NSTextView 同步到 Provider。
+    @State private var inputRevision = 0
 
     init(input: (any ConversationInputProviding)?, sender: (any MessageSendingProviding)?) {
         self.input = input
@@ -24,6 +28,8 @@ struct ConversationInputView: View {
     }
 
     var body: some View {
+        let _ = inputRevision
+
         VStack(spacing: 0) {
             AppDivider()
 
@@ -43,9 +49,10 @@ struct ConversationInputView: View {
         .background(theme.background)
         .onReceive(input?.objectWillChange ?? ObservableObjectPublisher()) { _ in
             // ObservableObjectPublisher 在 @Published 写入前发送，延迟一拍
-            // 才能读取到新的错误值。输入文本变化也会经过这里，但只有
-            // errorMessage 实际变化时才触发本地状态更新。
+            // 才能读取到新的错误值；同时递增 revision，确保输入文本变化
+            // 也会触发 ComposerView 的 NSView 同步。
             DispatchQueue.main.async {
+                inputRevision &+= 1
                 let newValue = input?.errorMessage
                 if errorMessage != newValue {
                     errorMessage = newValue
