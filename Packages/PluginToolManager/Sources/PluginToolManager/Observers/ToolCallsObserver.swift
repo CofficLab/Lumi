@@ -63,7 +63,7 @@ final class ToolCallsObserver: SuperLog {
                 let risk = toolManager.riskLevel(for: toolCall) ?? .high
                 guard !risk.requiresPermission else {
                     if Self.verbose {
-                        Self.logger.info("\(Self.t)工具需要授权，Observer 放弃执行 tool=\(toolCall.name), id=\(toolCall.id), risk=\(risk.rawValue)")
+                        Self.logger.info("\(Self.t)🌚 工具需要授权，放弃执行 tool=\(toolCall.name), id=\(toolCall.id), risk=\(risk.rawValue)")
                     }
                     return false
                 }

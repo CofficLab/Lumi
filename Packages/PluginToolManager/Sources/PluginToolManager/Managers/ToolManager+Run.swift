@@ -63,7 +63,7 @@ extension ToolManager {
 
     public func executeBatch(_ toolCalls: [ToolCall], policy: ToolExecutionPolicy, conversationID: UUID, turnID: UUID?) async -> [BatchToolResult] {
         if Self.verbose {
-            Self.logger.info("\(Self.t)execute batch count=\(toolCalls.count), conversation=\(conversationID.uuidString.prefix(8)), policy=\(String(describing: policy))")
+            Self.logger.info("\(Self.t)🚛 execute batch count=\(toolCalls.count), conversation=\(conversationID.uuidString.prefix(8)), policy=\(String(describing: policy))")
         }
         var results: [BatchToolResult] = []
         results.reserveCapacity(toolCalls.count)
@@ -104,10 +104,10 @@ extension ToolManager {
                 case .needsUserResponse: return "needsUserResponse"
                 }
             }
-            Self.logger.info("\(Self.t)batch results prepared count=\(results.count), kinds=\(kinds)")
+            Self.logger.info("\(Self.t)✅ batch results prepared count=\(results.count), kinds=\(kinds)")
         }
         if Self.verbose {
-            Self.logger.info("\(Self.t)batch completed conversation=\(conversationID.uuidString.prefix(8)), results=\(results.count)")
+            Self.logger.info("\(Self.t)✅ batch completed conversation=\(conversationID.uuidString.prefix(8)), results=\(results.count)")
         }
         eventManager.send(.batchCompleted(conversationID: conversationID, turnID: turnID, toolCalls: toolCalls, results: results))
         return results
