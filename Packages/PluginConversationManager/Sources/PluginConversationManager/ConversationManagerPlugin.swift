@@ -12,20 +12,7 @@ import ProviderToolManager
 import KitSuperLog
 import SwiftUI
 
-/// Conversation Manager Plugin (v2)
-///
-/// 复刻自旧版 `ConversationManagerPlugin`：以 SwiftData 持久化的 `ConversationManager`
-/// 替代 FactoryLumi 默认的内存版 `DefaultConversationManaging`。
-///
-/// 装配方式（区别于旧版 onReady + `registerConversations`）：
-/// - `onBoot` 中创建 `ConversationStore` + `ConversationManager`，先
-///   `unregisterProvider` 再 `registerProvider((any ConversationManaging).self)`
-///   替换默认实现 —— 必须早于消费方插件（`ConversationListPlugin` order=81）的
-///   `onBoot`，本插件 order=7。
-/// - 后台启动 v4→v5 历史会话迁移（不阻塞 onBoot 串行链），完成后装载会话列表。
-/// - 注册「Conversations」设置入口（`SettingViewProviding.addEntries`）。
-///
-/// 容错：数据库初始化失败时不替换默认实现（保留内存版），仅记日志，不阻塞内核启动。
+/// Conversation Manager Plugin
 @MainActor
 public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager")
