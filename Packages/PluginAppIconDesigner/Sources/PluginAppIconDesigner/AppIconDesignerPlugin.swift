@@ -10,7 +10,7 @@ import SwiftUI
 
 /// KernelCore 版本的 App Icon 设计器插件。
 @MainActor
-public final class AppIconDesignerPlugin: SuperPlugin, PromptSuggestionContributing {
+public final class AppIconDesignerPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.app-icon-designer"
     public let order = 79
     public let metadata = PluginMetadata(
@@ -30,14 +30,15 @@ public final class AppIconDesignerPlugin: SuperPlugin, PromptSuggestionContribut
 
     public init() {}
 
-    public var promptSuggestions: [PromptSuggestion] { [
+    private var promptSuggestion: PromptSuggestion {
         PromptSuggestion(
             id: "\(id).design",
             title: AppIconDesignerLocalization.string("Prompt.Suggestion.Design"),
+            order: order * 1_000,
             systemImage: "app.dashed",
             action: .activateRailTab(id: Self.railTabID, viewContainerID: id)
-        ),
-    ] }
+        )
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         IconDesignerRuntime.configure(kernel: kernel, pluginID: id)
@@ -93,7 +94,17 @@ public final class AppIconDesignerPlugin: SuperPlugin, PromptSuggestionContribut
         }
     }
 
+    public func onReady(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+    }
+
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
+
         // 撤回注册的 Agent 工具。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
@@ -112,6 +123,10 @@ public final class AppIconDesignerPlugin: SuperPlugin, PromptSuggestionContribut
 
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         IconDesignerRuntime.reset()
+    }
+
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
     }
 
     // MARK: - Agent Tools

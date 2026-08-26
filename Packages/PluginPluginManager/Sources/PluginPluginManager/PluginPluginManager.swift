@@ -18,7 +18,7 @@ import SwiftUI
 /// - 位置：`order = 90`，与旧版一致，内核启动早期完成设置入口注册。
 /// - 策略：`.required`（宿主必需，语义对应旧版 `.alwaysOn`），本插件自身不可被禁用。
 @MainActor
-public final class PluginPluginManager: SuperPlugin, PromptSuggestionContributing {
+public final class PluginPluginManager: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.plugin-manager"
     public let order = 90
 
@@ -34,9 +34,9 @@ public final class PluginPluginManager: SuperPlugin, PromptSuggestionContributin
 
     public init() {}
 
-    public var promptSuggestions: [PromptSuggestion] { [
-        PromptSuggestion(id: "\(id).browse", title: "浏览插件", systemImage: "puzzlepiece.extension", action: .openSettingsTab(id), style: .additive)
-    ] }
+    private var promptSuggestion: PromptSuggestion {
+        PromptSuggestion(id: "\(id).browse", title: "浏览插件", order: order * 1_000, systemImage: "puzzlepiece.extension", action: .openSettingsTab(id), style: .additive)
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
@@ -59,8 +59,22 @@ public final class PluginPluginManager: SuperPlugin, PromptSuggestionContributin
         settings.addEntries([entry])
     }
 
+    public func onReady(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+    }
+
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
+
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["plugin-manager"])
+    }
+
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
     }
 }

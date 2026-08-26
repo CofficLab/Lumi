@@ -23,7 +23,7 @@ import SwiftUI
 /// - 通过 `willSendToLLM` 钩子将当前项目路径注入 LLM 上下文;
 ///   「添加项目」动作胶囊（新版 PromptSuggestion 不支持动作）。
 @MainActor
-public final class ProjectsPlugin: SuperPlugin, SuperLog, PromptSuggestionContributing {
+public final class ProjectsPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.projects", category: "Projects")
 
     public let id = "com.coffic.lumi.plugin.projects"
@@ -40,9 +40,9 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog, PromptSuggestionContri
 
     public init() {}
 
-    public var promptSuggestions: [PromptSuggestion] { [
-        PromptSuggestion(id: "\(id).add", title: LumiPluginLocalization.string("Add Project", bundle: .module), systemImage: "folder.badge.plus", action: .pickProjectFolder, visibility: .onlyWithoutProject, style: .additive)
-    ] }
+    private var promptSuggestion: PromptSuggestion {
+        PromptSuggestion(id: "\(id).add", title: LumiPluginLocalization.string("Add Project", bundle: .module), order: order * 1_000, systemImage: "folder.badge.plus", action: .pickProjectFolder, visibility: .onlyWithoutProject, style: .additive)
+    }
 
     /// 存储目录 key：必须与旧版 `Plugins/ProjectsPlugin` 的
     /// `storage.pluginDataDirectory(for: "Projects")` 完全一致，
@@ -133,7 +133,16 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog, PromptSuggestionContri
         }
     }
 
+    public func onReady(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+    }
+
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
                 toolManager.remove(id: tool.name)
@@ -144,6 +153,10 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog, PromptSuggestionContri
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
         ProjectsRuntime.reset()
+    }
+
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
     }
 
     // MARK: - Agent Tools

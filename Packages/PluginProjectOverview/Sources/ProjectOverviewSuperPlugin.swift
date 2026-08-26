@@ -6,19 +6,31 @@ import ProviderToolManager
 import ProviderPromptSuggestion
 
 @MainActor
-public final class ProjectOverviewSuperPlugin: SuperPlugin, PromptSuggestionContributing {
+public final class ProjectOverviewSuperPlugin: SuperPlugin {
     public let id = "ProjectOverview"
     public let order = 14
     public let metadata = PluginMetadata(id: "ProjectOverview", name: "Project Overview", description: "Inspect a project's structure, metadata, and Git status.", category: .project, stage: .preview, policy: .alwaysOn)
     public init() {}
 
-    public var promptSuggestions: [PromptSuggestion] { [
-        PromptSuggestion(id: "\(id).overview", title: LumiPluginLocalization.string("Prompt.Suggestion.Overview", bundle: .module), systemImage: "doc.text.magnifyingglass", visibility: .onlyWithProject)
-    ] }
+    private var promptSuggestion: PromptSuggestion {
+        PromptSuggestion(id: "\(id).overview", title: LumiPluginLocalization.string("Prompt.Suggestion.Overview", bundle: .module), order: order * 1_000, systemImage: "doc.text.magnifyingglass", visibility: .onlyWithProject)
+    }
     public func onBoot(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ToolManagerProviding).self)?.add(ProjectOverviewV2Tool(project: kernel.resolveProvider((any ProjectProviding).self)), pluginID: id)
     }
-    public func onShutdown(kernel: KernelCoreContainer) throws { kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: ProjectOverviewV2Tool.toolName) }
+    public func onReady(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+    }
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+    }
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
+        kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: ProjectOverviewV2Tool.toolName)
+    }
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
+    }
 }
 
 public struct ProjectOverviewV2Tool: SuperAgentTool, @unchecked Sendable {

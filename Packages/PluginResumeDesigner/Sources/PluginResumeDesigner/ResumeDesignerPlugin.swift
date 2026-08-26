@@ -14,7 +14,7 @@ import SwiftUI
 /// 参考 `PluginAppIconDesigner` 的装配方式：onBoot 注册 Agent 工具、Rail 标签、
 /// ActivityBar 入口与 Docs 文档；onShutdown 全部撤回。
 @MainActor
-public final class ResumeDesignerPlugin: SuperPlugin, PromptSuggestionContributing {
+public final class ResumeDesignerPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.resume-designer"
     public let order = 81
     public let metadata = PluginMetadata(
@@ -35,9 +35,9 @@ public final class ResumeDesignerPlugin: SuperPlugin, PromptSuggestionContributi
 
     public init() {}
 
-    public var promptSuggestions: [PromptSuggestion] { [
-        PromptSuggestion(id: "\(id).create", title: ResumeDesignerLocalization.string("Prompt.Suggestion.Create"), systemImage: "doc.badge.gearshape", action: .activateRailTab(id: Self.railTabID, viewContainerID: id))
-    ] }
+    private var promptSuggestion: PromptSuggestion {
+        PromptSuggestion(id: "\(id).create", title: ResumeDesignerLocalization.string("Prompt.Suggestion.Create"), order: order * 1_000, systemImage: "doc.badge.gearshape", action: .activateRailTab(id: Self.railTabID, viewContainerID: id))
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         ResumeDesignerRuntime.configure(kernel: kernel, pluginID: id)
@@ -93,7 +93,17 @@ public final class ResumeDesignerPlugin: SuperPlugin, PromptSuggestionContributi
         }
     }
 
+    public func onReady(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+    }
+
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
+
         // 撤回注册的 Agent 工具。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
@@ -112,6 +122,10 @@ public final class ResumeDesignerPlugin: SuperPlugin, PromptSuggestionContributi
 
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         ResumeDesignerRuntime.reset()
+    }
+
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
     }
 
     // MARK: - Agent Tools

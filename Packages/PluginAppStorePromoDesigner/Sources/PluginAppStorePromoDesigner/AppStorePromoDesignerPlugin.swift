@@ -13,7 +13,7 @@ import SwiftUI
 /// 由旧版 `Plugins/AppStorePromoDesignerPlugin`（KernelLumi / LumiPlugin）复刻而来，
 /// 形态对齐 `PluginAppIconDesigner`：SuperPlugin + SuperAgentTool + Provider 注册表。
 @MainActor
-public final class AppStorePromoDesignerPlugin: SuperPlugin, PromptSuggestionContributing {
+public final class AppStorePromoDesignerPlugin: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.app-store-promo-designer"
     public let order = 80
     public let metadata = PluginMetadata(
@@ -33,9 +33,9 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, PromptSuggestionCon
 
     public init() {}
 
-    public var promptSuggestions: [PromptSuggestion] { [
-        PromptSuggestion(id: "\(id).create", title: PromoLocalization.string("Prompt.Suggestion.Create"), systemImage: "photo.artframe", action: .activateRailTab(id: Self.railTabID, viewContainerID: id))
-    ] }
+    private var promptSuggestion: PromptSuggestion {
+        PromptSuggestion(id: "\(id).create", title: PromoLocalization.string("Prompt.Suggestion.Create"), order: order * 1_000, systemImage: "photo.artframe", action: .activateRailTab(id: Self.railTabID, viewContainerID: id))
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         PromoDesignerRuntime.configure(kernel: kernel, pluginID: id)
@@ -91,7 +91,17 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, PromptSuggestionCon
         }
     }
 
+    public func onReady(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+    }
+
+    public func onEnable(kernel: KernelCoreContainer) async throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.register(promptSuggestion)
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
+
         // 撤回注册的 Agent 工具。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
@@ -110,6 +120,10 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, PromptSuggestionCon
 
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         PromoDesignerRuntime.reset()
+    }
+
+    public func onDisable(kernel: KernelCoreContainer) async throws {
+        kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
     }
 
     // MARK: - Agent Tools
