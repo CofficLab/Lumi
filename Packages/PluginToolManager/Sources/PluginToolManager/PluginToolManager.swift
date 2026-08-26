@@ -15,7 +15,7 @@ import SwiftUI
 public final class PluginToolManager: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "Plugin")
     public nonisolated static let emoji = "🔧"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     public let id = "com.coffic.lumi.plugin.tool-manager"
     public let order = 6
@@ -121,7 +121,7 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
                 Self.logger.info("\(Self.t)收到 AgentLoop 工具调用事件 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), count=\(inputs.count)")
             }
             Task { @MainActor [weak self] in
-                guard let self else {
+                guard self != nil else {
                     Self.logger.error("\(Self.emoji)ToolManager 插件已释放，无法执行工具批次")
                     return
                 }
