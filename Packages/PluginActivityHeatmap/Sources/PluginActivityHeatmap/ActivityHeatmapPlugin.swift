@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import KitLocalization
 import ProviderMessage
 import ProviderSettingView
 import ProviderIdleTime
@@ -43,7 +44,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin {
         settings.addEntries([
             SettingEntryItem(
                 id: id,
-                title: "Activity Heatmap",
+                title: LumiPluginLocalization.string("Activity Heatmap", bundle: .module),
                 systemImage: "chart.bar.xaxis",
                 order: order
             ) {
@@ -56,7 +57,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin {
             },
         ])
         kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
-            DocsEntry(id: id, name: "Activity Heatmap") { ActivityHeatmapAboutView() }
+            DocsEntry(id: id, name: LumiPluginLocalization.string("Activity Heatmap", bundle: .module)) { ActivityHeatmapAboutView() }
         )
     }
 
@@ -76,9 +77,9 @@ public enum ActivityHeatmapPeriod: Int, CaseIterable, Identifiable, Sendable {
     public var id: Int { rawValue }
     var title: String {
         switch self {
-        case .days30: "Last 30 days"
-        case .days90: "Last 90 days"
-        case .year: "Last year"
+        case .days30: LumiPluginLocalization.string("Last 30 days", bundle: .module)
+        case .days90: LumiPluginLocalization.string("Last 90 days", bundle: .module)
+        case .year: LumiPluginLocalization.string("Last year", bundle: .module)
         }
     }
 }
@@ -173,6 +174,10 @@ public struct ActivityHeatmapSettingsView: View {
 
     private let cacheDirectory: URL?
 
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
+    }
+
     public init(
         messages: (any MessageManaging)?,
         idleTime: (any IdleTimeProviding)? = nil,
@@ -189,11 +194,11 @@ public struct ActivityHeatmapSettingsView: View {
             VStack(alignment: .leading, spacing: 20) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Activity Heatmap").font(.title2.weight(.semibold))
-                        Text("Conversation activity and token consumption over time.").foregroundStyle(.secondary)
+                        Text(L("Activity Heatmap")).font(.title2.weight(.semibold))
+                        Text(L("Conversation activity and token consumption over time.")).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Picker("Period", selection: $model.period) {
+                    Picker(L("Period"), selection: $model.period) {
                         ForEach(ActivityHeatmapPeriod.allCases) { period in
                             Text(period.title).tag(period)
                         }
@@ -203,7 +208,7 @@ public struct ActivityHeatmapSettingsView: View {
                     Button { Task { await model.reload() } } label: {
                         Image(systemName: "arrow.clockwise")
                     }
-                    .help("Refresh activity")
+                    .help(L("Refresh activity"))
                 }
 
                 summary
@@ -225,9 +230,9 @@ public struct ActivityHeatmapSettingsView: View {
         let totalTokens = model.days.reduce(0) { $0 + $1.tokens }
         let activeDays = model.days.filter { $0.messages > 0 }.count
         return HStack(spacing: 12) {
-            metric("Messages", value: "\(totalMessages)", symbol: "bubble.left.and.bubble.right")
-            metric("Active days", value: "\(activeDays)", symbol: "calendar")
-            metric("Tokens", value: formatted(totalTokens), symbol: "number")
+            metric(L("Messages"), value: "\(totalMessages)", symbol: "bubble.left.and.bubble.right")
+            metric(L("Active days"), value: "\(activeDays)", symbol: "calendar")
+            metric(L("Tokens"), value: formatted(totalTokens), symbol: "number")
         }
     }
 
@@ -243,22 +248,22 @@ public struct ActivityHeatmapSettingsView: View {
 
     private var heatmap: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Daily activity").font(.headline)
+            Text(L("Daily activity")).font(.headline)
             let maximum = max(model.days.map(\.messages).max() ?? 0, 1)
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(14), spacing: 4), count: 14), spacing: 4) {
                 ForEach(model.days) { day in
                     RoundedRectangle(cornerRadius: 3, style: .continuous)
                         .fill(levelColor(day.messages, maximum: maximum))
                         .frame(width: 14, height: 14)
-                        .help("\(Self.dayFormatter.string(from: day.date)): \(day.messages) messages")
+                        .help("\(Self.dayFormatter.string(from: day.date)): \(day.messages) \(L("Messages").lowercased())")
                 }
             }
             HStack(spacing: 6) {
-                Text("Less").font(.caption2).foregroundStyle(.secondary)
+                Text(L("Less")).font(.caption2).foregroundStyle(.secondary)
                 ForEach(0...4, id: \.self) { level in
                     RoundedRectangle(cornerRadius: 2).fill(levelColor(level, maximum: 4)).frame(width: 12, height: 12)
                 }
-                Text("More").font(.caption2).foregroundStyle(.secondary)
+                Text(L("More")).font(.caption2).foregroundStyle(.secondary)
             }
         }
         .padding(16)
@@ -267,7 +272,7 @@ public struct ActivityHeatmapSettingsView: View {
 
     private var tokenTrend: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Token trend").font(.headline)
+            Text(L("Token trend")).font(.headline)
             GeometryReader { proxy in
                 let maxTokens = max(model.days.map(\.tokens).max() ?? 0, 1)
                 let width = max(proxy.size.width, 1)
@@ -282,7 +287,7 @@ public struct ActivityHeatmapSettingsView: View {
                 .stroke(.orange, style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
             }
             .frame(height: 120)
-            Text("Total: \(formatted(model.days.reduce(0) { $0 + $1.tokens })) tokens")
+            Text(String(format: L("Total: %lld tokens"), model.days.reduce(0) { $0 + $1.tokens }))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -303,7 +308,7 @@ public struct ActivityHeatmapSettingsView: View {
     @ViewBuilder
     private func dataDirectoryButton(_ directory: URL) -> some View {
         #if canImport(AppKit)
-        Button("Open Data Directory", systemImage: "folder") {
+        Button(L("Open Data Directory"), systemImage: "folder") {
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             NSWorkspace.shared.open(directory)
         }
@@ -372,19 +377,23 @@ private struct IdleTimeSummaryCard: View {
     let provider: any IdleTimeProviding
     @State private var snapshot: IdleInferenceSnapshot?
 
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label("Idle time", systemImage: "moon.zzz").font(.headline)
+                Label(L("Idle time"), systemImage: "moon.zzz").font(.headline)
                 Spacer()
-                Text("Activity patterns and rest windows").font(.caption).foregroundStyle(.secondary)
+                Text(L("Activity patterns and rest windows")).font(.caption).foregroundStyle(.secondary)
             }
             if let snapshot {
                 HStack(spacing: 12) {
-                    metric("Rest window", value: restWindow(snapshot))
-                    metric("Confidence", value: snapshot.restWindow.map { "\(Int(($0.confidence * 100).rounded()))%" } ?? "Learning")
-                    metric("Events", value: "\(snapshot.eventCount)")
-                    metric("Active days", value: "\(snapshot.observedDayCount)")
+                    metric(L("Rest window"), value: restWindow(snapshot))
+                    metric(L("Confidence"), value: snapshot.restWindow.map { "\(Int(($0.confidence * 100).rounded()))%" } ?? L("Learning"))
+                    metric(L("Events"), value: "\(snapshot.eventCount)")
+                    metric(L("Active days"), value: "\(snapshot.observedDayCount)")
                 }
                 if !snapshot.bucketScores.isEmpty {
                     HStack(alignment: .bottom, spacing: 2) {
@@ -418,23 +427,27 @@ private struct IdleTimeSummaryCard: View {
     }
 
     private func restWindow(_ snapshot: IdleInferenceSnapshot) -> String {
-        guard let window = snapshot.restWindow else { return "Learning" }
+        guard let window = snapshot.restWindow else { return L("Learning") }
         func time(_ minute: Int) -> String { String(format: "%02d:%02d", minute / 60, minute % 60) }
         return "\(time(window.startMinuteOfDay)) – \(time(window.endMinuteOfDay))"
     }
 }
 
 private struct ActivityHeatmapAboutView: View {
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Label("Activity Heatmap", systemImage: "chart.bar.xaxis")
+                Label(L("Activity Heatmap"), systemImage: "chart.bar.xaxis")
                     .font(.title2.weight(.semibold))
-                Text("See your conversation rhythm over the last 30 days, 90 days, or year. The heatmap shows daily message activity while the trend chart summarizes token consumption.")
+                Text(L("See your conversation rhythm over the last 30 days, 90 days, or year. The heatmap shows daily message activity while the trend chart summarizes token consumption."))
                     .foregroundStyle(.secondary)
-                feature("Privacy-first", "All statistics are calculated from your local message database.", symbol: "lock")
-                feature("Always current", "The dashboard refreshes as new messages arrive.", symbol: "arrow.clockwise")
-                feature("Activity context", "Idle-time patterns and inferred rest windows help interpret your activity.", symbol: "moon.zzz")
+                feature(L("Privacy-first"), L("All statistics are calculated from your local message database."), symbol: "lock")
+                feature(L("Always current"), L("The dashboard refreshes as new messages arrive."), symbol: "arrow.clockwise")
+                feature(L("Activity context"), L("Idle-time patterns and inferred rest windows help interpret your activity."), symbol: "moon.zzz")
             }
             .padding(24)
         }

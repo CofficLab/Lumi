@@ -23,7 +23,7 @@ public final class QuickFileSearchSuperPlugin: SuperPlugin {
         kernel.resolveProvider((any RootViewProviding).self)?.addOverlays([RootOverlayItem(id: id, order: order) { content in
             FileSearchOverlay(content: content, projectPathProvider: { project?.currentProject?.path ?? "" }, windowIdProvider: { nil })
         }])
-        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([SettingEntryItem(id: id, title: metadata.name, systemImage: "magnifyingglass", order: order) { QuickFileSearchSettingsView(projectPath: project?.currentProject?.path ?? "") }])
+        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([SettingEntryItem(id: id, title: LumiPluginLocalization.string("Quick File Search", bundle: .module), systemImage: "magnifyingglass", order: order) { QuickFileSearchSettingsView(projectPath: project?.currentProject?.path ?? "") }])
     }
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any RootViewProviding).self)?.removeOverlays(ids: [id])

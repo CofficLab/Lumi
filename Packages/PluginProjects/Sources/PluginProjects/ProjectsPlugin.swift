@@ -116,7 +116,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
             toolbar.addToolbarItems([
                 ToolbarItem(
                     id: "\(id).toolbar",
-                    title: "Projects",
+                    title: LumiPluginLocalization.string("Projects", bundle: .module),
                     placement: .center,
                     order: 0
                 ) {
@@ -130,7 +130,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
             settings.addEntries([
                 SettingEntryItem(
                     id: "\(id).settings",
-                    title: "Projects",
+                    title: LumiPluginLocalization.string("Projects", bundle: .module),
                     systemImage: "folder",
                     order: order
                 ) {

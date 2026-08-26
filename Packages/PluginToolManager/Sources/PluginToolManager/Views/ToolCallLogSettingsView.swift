@@ -18,9 +18,9 @@ struct ToolCallLogSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                Label("\(records.count) records loaded", systemImage: "list.bullet.rectangle.portrait")
+                Label(String(format: L("%lld records loaded"), records.count), systemImage: "list.bullet.rectangle.portrait")
                 Spacer()
-                AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
+                AppButton(L("Refresh"), systemImage: "arrow.clockwise", size: .small) {
                     Task { await refresh() }
                 }
             }
@@ -44,8 +44,8 @@ struct ToolCallLogSettingsView: View {
                     if records.isEmpty && !isLoading {
                         AppEmptyState(
                             icon: "list.bullet.rectangle.portrait",
-                            title: "No tool calls recorded",
-                            description: "Tool executions will appear here once recorded."
+                            title: L("No tool calls recorded"),
+                            description: L("Tool executions will appear here once recorded.")
                         )
                         .frame(maxWidth: .infinity, minHeight: 200)
                     }
@@ -65,6 +65,10 @@ struct ToolCallLogSettingsView: View {
         records = await store.fetchPage(limit: pageSize)
         updateCursor(records)
         isLoading = false
+    }
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
     }
 
     @MainActor

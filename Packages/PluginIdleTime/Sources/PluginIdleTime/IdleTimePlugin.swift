@@ -45,7 +45,7 @@ public final class IdleTimePlugin: SuperPlugin {
 
         // 3. 菜单栏弹窗：休息窗口快照 + 24 小时活动热条。
         if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
-            menuBar.addPopup(MenuBarPopupItem(id: "\(id).popover", title: "Idle Time", order: order) {
+            menuBar.addPopup(MenuBarPopupItem(id: "\(id).popover", title: LumiPluginLocalization.string("Idle Time", bundle: .module), order: order) {
                 IdleTimeStatusBarPopover(provider: provider)
             })
         }
@@ -56,7 +56,7 @@ public final class IdleTimePlugin: SuperPlugin {
             let dataDirectory = storage.pluginDataDirectory(for: "IdleTime")
             let entry = SettingEntryItem(
                 id: "\(id).settings",
-                title: "Idle Time",
+                title: LumiPluginLocalization.string("Idle Time", bundle: .module),
                 systemImage: "moon.zzz",
                 order: order
             ) {
@@ -67,7 +67,7 @@ public final class IdleTimePlugin: SuperPlugin {
 
         // 5. 关于文档。
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: "Idle Time") { IdleTimeAboutView() })
+            docs.addAbout(DocsEntry(id: id, name: LumiPluginLocalization.string("Idle Time", bundle: .module)) { IdleTimeAboutView() })
         }
     }
 

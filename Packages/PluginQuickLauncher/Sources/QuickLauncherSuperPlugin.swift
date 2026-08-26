@@ -3,6 +3,7 @@ import KernelCore
 import ProviderCommand
 import ProviderMessageSender
 import ProviderSettingView
+import SwiftUI
 import os
 
 struct QuickLauncherPlugin {
@@ -32,7 +33,7 @@ public final class QuickLauncherSuperPlugin: SuperPlugin {
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
                 id: id,
-                title: metadata.name,
+                title: LumiPluginLocalization.string("Quick Launcher", bundle: .module),
                 systemImage: "bolt.fill",
                 order: order
             ) {

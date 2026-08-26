@@ -31,6 +31,10 @@ public struct ConversationStoreSettingsView: View {
     private let conversationPageSize = 40
     private let messageDisplayLimit = 40
 
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
+    }
+
     /// - Parameters:
     ///   - manager: SwiftData 实现的 ConversationManager；nil 时显示不可用占位。
     ///   - messageManager: 消息存储，用于展示会话的消息数/最近消息。
@@ -60,8 +64,8 @@ public struct ConversationStoreSettingsView: View {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: "Conversation Manager",
-            subtitle: "Browse and inspect stored conversations",
+            title: L("Conversation Manager"),
+            subtitle: L("Browse and inspect stored conversations"),
             showHeader: false,
             scrollsContent: false
         ) {
@@ -75,7 +79,7 @@ public struct ConversationStoreSettingsView: View {
                         ProgressView()
                             .controlSize(.small)
                     }
-                    AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+                    AppButton(L("Open Data Directory"), systemImage: "folder", size: .small) {
                         openDataDirectory()
                     }
                 }
@@ -117,17 +121,17 @@ public struct ConversationStoreSettingsView: View {
 
     private var conversationActivity: some View {
         AppSettingsSection(
-            title: "Conversation Activity",
-            subtitle: "Conversations created per day over the last 14 days",
+            title: L("Conversation Activity"),
+            subtitle: L("Conversations created per day over the last 14 days"),
             spacing: 12
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline) {
-                    Label("Daily conversations", systemImage: "chart.xyaxis.line")
+                    Label(L("Daily conversations"), systemImage: "chart.xyaxis.line")
                         .font(.appCaptionEmphasized)
                         .foregroundStyle(theme.textPrimary)
                     Spacer(minLength: 0)
-                    Text("Peak (\(dailyCountSeries.peakCount))")
+                    Text(String(format: L("Peak (%lld)"), dailyCountSeries.peakCount))
                         .font(.appMicro)
                         .monospacedDigit()
                         .foregroundStyle(theme.textSecondary)
@@ -154,7 +158,7 @@ public struct ConversationStoreSettingsView: View {
             } else if conversations.isEmpty {
                 AppEmptyState(
                     icon: "bubble.left.and.bubble.right",
-                    title: "No conversations"
+                    title: L("No conversations")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -219,7 +223,7 @@ public struct ConversationStoreSettingsView: View {
         if let conversation = selectedConversation {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    AppSettingsSection(title: "Overview", subtitle: "Read-only summary of the selected conversation") {
+                    AppSettingsSection(title: L("Overview"), subtitle: L("Read-only summary of the selected conversation")) {
                         VStack(alignment: .leading, spacing: 10) {
                             Text(displayTitle(for: conversation))
                                 .font(.title3.weight(.semibold))
@@ -232,38 +236,38 @@ public struct ConversationStoreSettingsView: View {
                                     .foregroundStyle(theme.textSecondary)
                                     .lineLimit(4)
                             } else {
-                                Text("No preview available")
+                                Text(L("No preview available"))
                                     .font(.callout)
                                     .foregroundStyle(theme.textSecondary)
                             }
                         }
                     }
 
-                    AppSettingsSection(title: "Basic Info", subtitle: "Core fields stored for this conversation") {
+                    AppSettingsSection(title: L("Basic Info"), subtitle: L("Core fields stored for this conversation")) {
                         VStack(spacing: 0) {
-                            detailRow(title: "Conversation ID", icon: "number", value: conversation.id.uuidString, monospace: true)
+                            detailRow(title: L("Conversation ID"), icon: "number", value: conversation.id.uuidString, monospace: true)
                             Divider().padding(.vertical, 8)
-                            detailRow(title: "Title", icon: "text.cursor", value: displayTitle(for: conversation))
+                            detailRow(title: L("Title"), icon: "text.cursor", value: displayTitle(for: conversation))
                             Divider().padding(.vertical, 8)
-                            detailRow(title: "Created At", icon: "calendar.badge.plus", value: formattedDate(conversation.createdAt))
+                            detailRow(title: L("Created At"), icon: "calendar.badge.plus", value: formattedDate(conversation.createdAt))
                             Divider().padding(.vertical, 8)
-                            detailRow(title: "Updated At", icon: "calendar.badge.clock", value: formattedDate(conversation.updatedAt))
+                            detailRow(title: L("Updated At"), icon: "calendar.badge.clock", value: formattedDate(conversation.updatedAt))
                         }
                     }
 
-                    AppSettingsSection(title: "Routing", subtitle: "Conversation preferences and context binding") {
+                    AppSettingsSection(title: L("Routing"), subtitle: L("Conversation preferences and context binding")) {
                         VStack(spacing: 0) {
-                            detailRow(title: "Verbosity", icon: "text.quote", value: conversation.verbosity?.displayName ?? "Default")
+                            detailRow(title: L("Verbosity"), icon: "text.quote", value: conversation.verbosity?.displayName ?? L("Default"))
                             Divider().padding(.vertical, 8)
-                            detailRow(title: "Language", icon: "character.book.closed", value: conversation.language?.displayName ?? "Default")
+                            detailRow(title: L("Language"), icon: "character.book.closed", value: conversation.language?.displayName ?? L("Default"))
                             Divider().padding(.vertical, 8)
-                            detailRow(title: "Automation Level", icon: conversation.automationLevel?.iconName ?? "gearshape.2", value: conversation.automationLevel?.displayName ?? "Default")
+                            detailRow(title: L("Automation Level"), icon: conversation.automationLevel?.iconName ?? "gearshape.2", value: conversation.automationLevel?.displayName ?? L("Default"))
                             Divider().padding(.vertical, 8)
-                            detailRow(title: "Provider", icon: "cloud", value: conversation.providerID?.isEmpty == false ? conversation.providerID! : "Unassigned", monospace: true)
+                            detailRow(title: L("Provider"), icon: "cloud", value: conversation.providerID?.isEmpty == false ? conversation.providerID! : L("Unassigned"), monospace: true)
                             Divider().padding(.vertical, 8)
-                            detailRow(title: "Model", icon: "cpu", value: conversation.modelName?.isEmpty == false ? conversation.modelName! : "Unassigned", monospace: true)
+                            detailRow(title: L("Model"), icon: "cpu", value: conversation.modelName?.isEmpty == false ? conversation.modelName! : L("Unassigned"), monospace: true)
                             Divider().padding(.vertical, 8)
-                            detailRow(title: "Project Path", icon: "folder", value: conversation.projectPath?.isEmpty == false ? conversation.projectPath! : "Unassigned", monospace: true)
+                            detailRow(title: L("Project Path"), icon: "folder", value: conversation.projectPath?.isEmpty == false ? conversation.projectPath! : L("Unassigned"), monospace: true)
                         }
                     }
 
@@ -277,7 +281,7 @@ public struct ConversationStoreSettingsView: View {
         } else {
             AppEmptyState(
                 icon: "bubble.left.and.bubble.right",
-                title: isLoadingConversations ? "Loading…" : (conversations.isEmpty ? "No conversations" : "Select a conversation")
+                title: isLoadingConversations ? L("Loading…") : (conversations.isEmpty ? L("No conversations") : L("Select a conversation"))
             )
             .overlay {
                 if isLoadingConversations {
@@ -304,9 +308,9 @@ public struct ConversationStoreSettingsView: View {
     @ViewBuilder
     private var messagesSection: some View {
         let messages = messagesForSelected
-        AppSettingsSection(title: "Messages", subtitle: "Showing \(messages.count) of the most recent messages (read-only)") {
+        AppSettingsSection(title: L("Messages"), subtitle: String(format: L("Showing %lld of the most recent messages (read-only)"), messages.count)) {
             if messages.isEmpty {
-                Text("No messages in this conversation")
+                Text(L("No messages in this conversation"))
                     .font(.callout)
                     .foregroundStyle(theme.textSecondary)
             } else {
@@ -329,7 +333,7 @@ public struct ConversationStoreSettingsView: View {
                     .foregroundStyle(theme.textSecondary)
             }
 
-            Text(message.content.isEmpty ? "(empty)" : message.content)
+            Text(message.content.isEmpty ? L("(empty)") : message.content)
                 .font(.callout)
                 .foregroundStyle(message.isError ? Color.red : theme.textSecondary)
                 .textSelection(.enabled)
@@ -408,9 +412,9 @@ public struct ConversationStoreSettingsView: View {
 
     private var conversationCountLabel: String {
         if let totalConversationCount {
-            return "\(totalConversationCount) conversations"
+            return String(format: L("%lld conversations"), totalConversationCount)
         }
-        return "Loading conversations…"
+        return L("Loading conversations…")
     }
 
     private func loadInitialConversations() async {
@@ -467,9 +471,9 @@ public struct ConversationStoreSettingsView: View {
 
     private func messageCountLabel(for conversationID: UUID) -> String {
         guard let count = messageCounts[conversationID] else {
-            return "Loading…"
+            return L("Loading…")
         }
-        return count == 1 ? "1 message" : "\(count) messages"
+        return count == 1 ? L("1 message") : String(format: L("%lld messages"), count)
     }
 
     private func formattedListDate(_ date: Date) -> String {

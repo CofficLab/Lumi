@@ -1,922 +1,998 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Applications" : {
+    "%@: %lld %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Applications"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用程序"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "應用程式"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "應用程式"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "應用程式"
+            "state" : "new",
+            "value" : "%1$@: %2$lld %3$@"
           }
         }
       }
     },
-    "Ask AI" : {
+    "Active days" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ask AI"
+            "value" : "Active days"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "询问 AI"
+            "value" : "活跃天数"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "詢問 AI"
+            "value" : "活躍天數"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "詢問 AI"
+            "value" : "活躍天數"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "詢問 AI"
+            "value" : "活躍天數"
           }
         }
       }
     },
-    "Cancel" : {
+    "Activity context" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cancel"
+            "value" : "Activity context"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "取消"
+            "value" : "活动上下文"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "取消"
+            "value" : "活動上下文"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "取消"
+            "value" : "活動上下文"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "取消"
+            "value" : "活動上下文"
           }
         }
       }
     },
-    "Close" : {
+    "Activity Heatmap" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close"
+            "value" : "Activity Heatmap"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "关闭"
+            "value" : "活动热力图"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "關閉"
+            "value" : "活動熱力圖"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "關閉"
+            "value" : "活動熱力圖"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "關閉"
+            "value" : "活動熱力圖"
           }
         }
       }
     },
-    "Close the launcher" : {
+    "Activity patterns and rest windows" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Close the launcher"
+            "value" : "Activity patterns and rest windows"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "关闭启动器"
+            "value" : "活动模式与休息窗口"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "關閉啟動器"
+            "value" : "活動模式與休息視窗"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "關閉啟動器"
+            "value" : "活動模式與休息視窗"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "關閉啟動器"
+            "value" : "活動模式與休息視窗"
           }
         }
       }
     },
-    "Commands" : {
+    "All statistics are calculated from your local message database." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Commands"
+            "value" : "All statistics are calculated from your local message database."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "命令"
+            "value" : "所有统计数据均来自本地消息数据库计算。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "命令"
+            "value" : "所有統計數據均來自本地訊息資料庫計算。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "命令"
+            "value" : "所有統計數據均來自本地訊息資料庫計算。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "命令"
+            "value" : "所有統計數據均來自本地訊息資料庫計算。"
           }
         }
       }
     },
-    "Files" : {
+    "Always current" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Files"
+            "value" : "Always current"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "文件"
+            "value" : "始终最新"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "檔案"
+            "value" : "始終最新"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "檔案"
+            "value" : "始終最新"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "檔案"
+            "value" : "始終最新"
           }
         }
       }
     },
-    "Files (Spotlight)" : {
+    "Confidence" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Files (Spotlight)"
+            "value" : "Confidence"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "文件（Spotlight）"
+            "value" : "置信度"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "檔案（Spotlight）"
+            "value" : "信賴度"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "檔案（Spotlight）"
+            "value" : "信賴度"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "檔案（Spotlight）"
+            "value" : "信賴度"
           }
         }
       }
     },
-    "Global Hotkey" : {
+    "Conversation activity and token consumption over time." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Global Hotkey"
+            "value" : "Conversation activity and token consumption over time."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "全局热键"
+            "value" : "随时间变化的会话活动与 Token 消耗。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "全域快捷鍵"
+            "value" : "隨時間變化的對話活動與 Token 消耗。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "全域快捷鍵"
+            "value" : "隨時間變化的對話活動與 Token 消耗。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "全域快捷鍵"
+            "value" : "隨時間變化的對話活動與 Token 消耗。"
           }
         }
       }
     },
-    "How to Use" : {
+    "Daily activity" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "How to Use"
+            "value" : "Daily activity"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "使用方法"
+            "value" : "每日活动"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "使用方法"
+            "value" : "每日活動"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "使用方法"
+            "value" : "每日活動"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "使用方法"
+            "value" : "每日活動"
           }
         }
       }
     },
-    "Navigate results" : {
+    "Events" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Navigate results"
+            "value" : "Events"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "切换结果"
+            "value" : "事件"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "切換結果"
+            "value" : "事件"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "切換結果"
+            "value" : "事件"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "切換結果"
+            "value" : "事件"
           }
         }
       }
     },
-    "No matching results" : {
+    "Idle time" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No matching results"
+            "value" : "Idle time"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未找到匹配结果"
+            "value" : "空闲时间"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未找到符合結果"
+            "value" : "空閒時間"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未找到符合結果"
+            "value" : "空閒時間"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未找到符合結果"
+            "value" : "空閒時間"
           }
         }
       }
     },
-    "Open / execute selected result" : {
+    "Idle-time patterns and inferred rest windows help interpret your activity." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open / execute selected result"
+            "value" : "Idle-time patterns and inferred rest windows help interpret your activity."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "打开 / 执行所选结果"
+            "value" : "空闲时间模式与推断出的休息窗口有助于理解你的活动规律。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "開啟 / 執行所選結果"
+            "value" : "空閒時間模式與推斷出的休息視窗有助於理解你的活動規律。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "開啟 / 執行所選結果"
+            "value" : "空閒時間模式與推斷出的休息視窗有助於理解你的活動規律。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "開啟 / 執行所選結果"
+            "value" : "空閒時間模式與推斷出的休息視窗有助於理解你的活動規律。"
           }
         }
       }
     },
-    "Open the launcher anywhere" : {
+    "Last 30 days" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open the launcher anywhere"
+            "value" : "Last 30 days"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在任意位置打开启动器"
+            "value" : "最近 30 天"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在任何位置開啟啟動器"
+            "value" : "最近 30 天"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在任何位置開啟啟動器"
+            "value" : "最近 30 天"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在任何位置開啟啟動器"
+            "value" : "最近 30 天"
           }
         }
       }
     },
-    "Prefix with ? to ask Lumi directly" : {
+    "Last 90 days" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prefix with ? to ask Lumi directly"
+            "value" : "Last 90 days"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "以 ? 开头可直接询问 Lumi"
+            "value" : "最近 90 天"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "以 ? 開頭可直接詢問 Lumi"
+            "value" : "最近 90 天"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "以 ? 開頭可直接詢問 Lumi"
+            "value" : "最近 90 天"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "以 ? 開頭可直接詢問 Lumi"
+            "value" : "最近 90 天"
           }
         }
       }
     },
-    "Press Return to ask Lumi" : {
+    "Last year" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Press Return to ask Lumi"
+            "value" : "Last year"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "按回车询问 Lumi"
+            "value" : "最近一年"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "按 Return 詢問 Lumi"
+            "value" : "最近一年"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "按 Return 詢問 Lumi"
+            "value" : "最近一年"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "按 Return 詢問 Lumi"
+            "value" : "最近一年"
           }
         }
       }
     },
-    "Press the hotkey anywhere to open the launcher. Click Record, then press a key combination with ⌘/⌥/⌃." : {
+    "Learning" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Press the hotkey anywhere to open the launcher. Click Record, then press a key combination with ⌘/⌥/⌃."
+            "value" : "Learning"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在任意界面按热键即可打开启动器。点击「录制」后按下包含 ⌘/⌥/⌃ 的组合键。"
+            "value" : "学习中"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在任何畫面按快捷鍵即可開啟啟動器。點擊「錄製」後按下包含 ⌘/⌥/⌃ 的組合鍵。"
+            "value" : "學習中"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在任何畫面按快捷鍵即可開啟啟動器。點擊「錄製」後按下包含 ⌘/⌥/⌃ 的組合鍵。"
+            "value" : "學習中"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在任何畫面按快捷鍵即可開啟啟動器。點擊「錄製」後按下包含 ⌘/⌥/⌃ 的組合鍵。"
+            "value" : "學習中"
           }
         }
       }
     },
-    "Quick Launcher" : {
+    "Less" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quick Launcher"
+            "value" : "Less"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "快速启动器"
+            "value" : "少"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "快速啟動器"
+            "value" : "少"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "快速啟動器"
+            "value" : "少"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "快速啟動器"
+            "value" : "少"
           }
         }
       }
     },
-    "Raycast-style global launcher" : {
+    "Messages" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raycast-style global launcher"
+            "value" : "Messages"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raycast 式全局启动器"
+            "value" : "消息"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raycast 式全域啟動器"
+            "value" : "訊息"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raycast 式全域啟動器"
+            "value" : "訊息"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raycast 式全域啟動器"
+            "value" : "訊息"
           }
         }
       }
     },
-    "Record" : {
+    "More" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Record"
+            "value" : "More"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "录制"
+            "value" : "多"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "錄製"
+            "value" : "多"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "錄製"
+            "value" : "多"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "錄製"
+            "value" : "多"
           }
         }
       }
     },
-    "Reset" : {
+    "Open Data Directory" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reset"
+            "value" : "Open Data Directory"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "重置"
+            "value" : "打开数据目录"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "重設"
+            "value" : "開啟資料目錄"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "重設"
+            "value" : "開啟資料目錄"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "重設"
+            "value" : "開啟資料目錄"
           }
         }
       }
     },
-    "Search apps, files, commands, or type ? to ask AI..." : {
+    "Period" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search apps, files, commands, or type ? to ask AI..."
+            "value" : "Period"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "搜索应用、文件、命令，或输入 ? 询问 AI..."
+            "value" : "周期"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "搜尋應用程式、檔案、命令，或輸入 ? 詢問 AI..."
+            "value" : "週期"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "搜尋應用程式、檔案、命令，或輸入 ? 詢問 AI..."
+            "value" : "週期"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "搜尋應用程式、檔案、命令，或輸入 ? 詢問 AI..."
+            "value" : "週期"
           }
         }
       }
     },
-    "Search Sources" : {
+    "Privacy-first" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search Sources"
+            "value" : "Privacy-first"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "搜索内容源"
+            "value" : "隐私优先"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "搜尋內容來源"
+            "value" : "隱私優先"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "搜尋內容來源"
+            "value" : "隱私優先"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "搜尋內容來源"
+            "value" : "隱私優先"
           }
         }
       }
     },
-    "Toggle Launcher" : {
+    "Refresh activity" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toggle Launcher"
+            "value" : "Refresh activity"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "启动器开关"
+            "value" : "刷新活动"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "啟動器開關"
+            "value" : "重新整理活動"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "啟動器開關"
+            "value" : "重新整理活動"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "啟動器開關"
+            "value" : "重新整理活動"
           }
         }
       }
     },
-    "Type ? followed by your question in the launcher to send it to the current Lumi conversation." : {
-      "extractionState" : "stale",
+    "Rest window" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Type ? followed by your question in the launcher to send it to the current Lumi conversation."
+            "value" : "Rest window"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在启动器中输入 ? 加问题，即可发送到当前 Lumi 会话。"
+            "value" : "休息窗口"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在啟動器中輸入 ? 加問題，即可傳送到目前 Lumi 會話。"
+            "value" : "休息視窗"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在啟動器中輸入 ? 加問題，即可傳送到目前 Lumi 會話。"
+            "value" : "休息視窗"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在啟動器中輸入 ? 加問題，即可傳送到目前 Lumi 會話。"
+            "value" : "休息視窗"
           }
         }
       }
     },
-    "Type to search apps, files and commands" : {
+    "See your conversation rhythm over the last 30 days, 90 days, or year. The heatmap shows daily message activity while the trend chart summarizes token consumption." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Type to search apps, files and commands"
+            "value" : "See your conversation rhythm over the last 30 days, 90 days, or year. The heatmap shows daily message activity while the trend chart summarizes token consumption."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "输入以搜索应用、文件和命令"
+            "value" : "查看最近 30 天、90 天或一年的会话节奏。热力图展示每日消息活动，趋势图汇总 Token 消耗。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "輸入以搜尋應用程式、檔案和命令"
+            "value" : "查看最近 30 天、90 天或一年的對話節奏。熱力圖展示每日訊息活動，趨勢圖匯總 Token 消耗。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "輸入以搜尋應用程式、檔案和命令"
+            "value" : "查看最近 30 天、90 天或一年的對話節奏。熱力圖展示每日訊息活動，趨勢圖匯總 Token 消耗。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "輸入以搜尋應用程式、檔案和命令"
+            "value" : "查看最近 30 天、90 天或一年的對話節奏。熱力圖展示每日訊息活動，趨勢圖匯總 Token 消耗。"
           }
         }
       }
     },
-    "your question" : {
-      "extractionState" : "stale",
+    "The dashboard refreshes as new messages arrive." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "your question"
+            "value" : "The dashboard refreshes as new messages arrive."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你的问题"
+            "value" : "新消息到达时仪表板会自动刷新。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你的問題"
+            "value" : "新訊息到達時儀表板會自動重新整理。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你的問題"
+            "value" : "新訊息到達時儀表板會自動重新整理。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你的問題"
+            "value" : "新訊息到達時儀表板會自動重新整理。"
+          }
+        }
+      }
+    },
+    "Token trend" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token trend"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token 趋势"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token 趨勢"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token 趨勢"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token 趨勢"
+          }
+        }
+      }
+    },
+    "Tokens" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        }
+      }
+    },
+    "Total: %lld tokens" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total: %lld tokens"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "总计：%lld 个 Token"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "總計：%lld 個 Token"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "總計：%lld 個 Token"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "總計：%lld 個 Token"
           }
         }
       }

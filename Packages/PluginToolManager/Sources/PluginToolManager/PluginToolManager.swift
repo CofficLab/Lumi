@@ -59,7 +59,7 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
             settings.addEntries([
                 SettingEntryItem(
                     id: settingsEntryID,
-                    title: "Tools",
+                    title: LumiPluginLocalization.string("Tools", bundle: .module),
                     systemImage: "wrench.and.screwdriver",
                     order: 6
                 ) { [weak service] in

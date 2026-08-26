@@ -17,6 +17,10 @@ struct ToolManagerSettingsView: View {
     @State private var selectedTabID: Tab = .tools
     @State private var groups: [(pluginID: String, tools: [any SuperAgentTool])] = []
 
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
+    }
+
     enum Tab: String, Identifiable {
         case tools
         case executionLog
@@ -26,9 +30,9 @@ struct ToolManagerSettingsView: View {
 
         var title: String {
             switch self {
-            case .tools: "Tools"
-            case .executionLog: "Execution Log"
-            case .toolStats: "Usage Statistics"
+            case .tools: LumiPluginLocalization.string("Tools", bundle: .module)
+            case .executionLog: LumiPluginLocalization.string("Execution Log", bundle: .module)
+            case .toolStats: LumiPluginLocalization.string("Usage Statistics", bundle: .module)
             }
         }
 
@@ -63,7 +67,7 @@ struct ToolManagerSettingsView: View {
             }
             Spacer()
             AppButton(
-                "Open Data Directory",
+                L("Open Data Directory"),
                 systemImage: "folder",
                 size: .small
             ) {
@@ -98,8 +102,8 @@ struct ToolManagerSettingsView: View {
             } else {
                 AppEmptyState(
                     icon: "list.bullet.rectangle.portrait",
-                    title: "Execution Log unavailable",
-                    description: "Lumi storage is not configured, so tool call records cannot be persisted."
+                    title: L("Execution Log unavailable"),
+                    description: L("Lumi storage is not configured, so tool call records cannot be persisted.")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -109,8 +113,8 @@ struct ToolManagerSettingsView: View {
             } else {
                 AppEmptyState(
                     icon: "chart.bar.xaxis",
-                    title: "Usage Statistics unavailable",
-                    description: "Lumi storage is not configured."
+                    title: L("Usage Statistics unavailable"),
+                    description: L("Lumi storage is not configured.")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -122,7 +126,7 @@ struct ToolManagerSettingsView: View {
     private var toolsContent: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
-                Label("\(totalToolCount) tools", systemImage: "wrench.and.screwdriver")
+                Label(String(format: L("%lld tools"), totalToolCount), systemImage: "wrench.and.screwdriver")
                 Spacer()
             }
             .font(.appCaption)
@@ -133,8 +137,8 @@ struct ToolManagerSettingsView: View {
                     if groups.isEmpty {
                         AppEmptyState(
                             icon: "wrench.and.screwdriver",
-                            title: "No Tools Registered",
-                            description: "No tools are currently registered in the kernel."
+                            title: L("No Tools Registered"),
+                            description: L("No tools are currently registered in the kernel.")
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {

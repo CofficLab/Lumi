@@ -46,7 +46,7 @@ public final class ProjectRAGSuperPlugin: SuperPlugin {
             .add(RAGCodeSearchTool(), pluginID: id)
         if let settings = kernel.resolveProvider((any SettingViewProviding).self), let project {
             settings.addEntries([
-                SettingEntryItem(id: "\(id).settings", title: "Code Index", systemImage: "magnifyingglass", order: order) {
+                SettingEntryItem(id: "\(id).settings", title: LumiPluginLocalization.string("Code Index", bundle: .module), systemImage: "magnifyingglass", order: order) {
                     RAGIndexSettingsView(service: service, projects: project)
                 },
             ])

@@ -13,19 +13,19 @@ struct RAGIndexSettingsView: View {
 
     var body: some View {
         Form {
-            Section("Code Index") {
-                Toggle("Pause background indexing", isOn: $paused)
+            Section(L("Code Index")) {
+                Toggle(L("Pause background indexing"), isOn: $paused)
                     .onChange(of: paused) { _, value in
                         Task { await service.setIndexingPaused(value) }
                     }
-                Text("Semantic code search keeps the existing RAG database and indexes projects while you are idle.")
+                Text(L("Semantic code search keeps the existing RAG database and indexes projects while you are idle."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            Section("Projects") {
+            Section(L("Projects")) {
                 if projects.projects.isEmpty {
-                    Text("No projects available.").foregroundStyle(.secondary)
+                    Text(L("No projects available.")).foregroundStyle(.secondary)
                 }
                 ForEach(projects.projects, id: \.path) { project in
                     HStack {
@@ -35,7 +35,7 @@ struct RAGIndexSettingsView: View {
                         }
                         Spacer()
                         Text(statusText(for: project.path)).font(.caption).foregroundStyle(.secondary)
-                        Button("Rebuild") { Task { await service.ensureIndexedBackground(projectPath: project.path, force: true); await refresh() } }
+                        Button(L("Rebuild")) { Task { await service.ensureIndexedBackground(projectPath: project.path, force: true); await refresh() } }
                     }
                 }
             }
@@ -43,9 +43,13 @@ struct RAGIndexSettingsView: View {
         .task { await refresh() }
     }
 
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
+    }
+
     private func statusText(for path: String) -> String {
-        guard let status = statuses[path] else { return "Not indexed" }
-        return status.isStale ? "Outdated" : "Up to date"
+        guard let status = statuses[path] else { return L("Not indexed") }
+        return status.isStale ? L("Outdated") : L("Up to date")
     }
 
     private func refresh() async {

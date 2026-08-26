@@ -3,12 +3,14 @@ import PackageDescription
 
 let package = Package(
     name: "PluginProjectRAG",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "PluginProjectRAG", targets: ["PluginProjectRAG"]),
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../KitLocalization"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderIdleTime"),
@@ -25,6 +27,7 @@ let package = Package(
             name: "PluginProjectRAG",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
@@ -32,7 +35,8 @@ let package = Package(
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "PluginProjectRAGEngine", package: "PluginProjectRAGEngine"),
-            ]
+            ],
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginProjectRAGTests",

@@ -80,7 +80,7 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
                 id: "\(id).settings",
-                title: "Conversations",
+                title: LumiPluginLocalization.string("Conversations", bundle: .module),
                 systemImage: "bubble.left.and.bubble.right",
                 order: 7
             ) { [weak manager] in

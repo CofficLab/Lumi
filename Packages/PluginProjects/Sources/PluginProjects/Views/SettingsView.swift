@@ -71,13 +71,13 @@ public struct SettingsView: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            Label("\(projects.count) projects", systemImage: "folder")
+            Label(String(format: LumiPluginLocalization.string("%lld projects", bundle: .module), projects.count), systemImage: "folder")
             if let selected = selectedProject {
-                Text("·")
+                Text(LumiPluginLocalization.string("·", bundle: .module))
                 Text(selected.name)
             }
             Spacer()
-            AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+            AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", size: .small) {
                 openDataDirectory()
             }
         }
@@ -180,14 +180,14 @@ public struct SettingsView: View {
                             Divider().padding(.vertical, 8)
                             detailRow(title: LumiPluginLocalization.string("Path", bundle: .module), icon: "folder", value: project.path, monospace: true)
                             Divider().padding(.vertical, 8)
-                            detailRow(title: LumiPluginLocalization.string("Language", bundle: .module), icon: "character.book.closed", value: project.language?.capitalized ?? "Unknown")
+                            detailRow(title: LumiPluginLocalization.string("Language", bundle: .module), icon: "character.book.closed", value: project.language?.capitalized ?? LumiPluginLocalization.string("Unknown", bundle: .module))
                             Divider().padding(.vertical, 8)
                             detailRow(title: LumiPluginLocalization.string("Last Used", bundle: .module), icon: "calendar", value: formattedDate(project.lastUsed))
                             Divider().padding(.vertical, 8)
                             detailRow(
                                 title: LumiPluginLocalization.string("Status", bundle: .module),
                                 icon: "star",
-                                value: viewModel.currentProject?.path == project.path ? "Current Project" : "Not Selected"
+                                value: viewModel.currentProject?.path == project.path ? LumiPluginLocalization.string("Current Project", bundle: .module) : LumiPluginLocalization.string("Not Selected", bundle: .module)
                             )
                         }
                     }
@@ -258,7 +258,7 @@ public struct SettingsView: View {
                         }
                     }
                     if urls.count > 20 {
-                        Text("+\(urls.count - 20) more")
+                        Text(String(format: LumiPluginLocalization.string("+%lld more", bundle: .module), urls.count - 20))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }

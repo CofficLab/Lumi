@@ -16,9 +16,9 @@ struct ToolCallStatsSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                Label("\(totalCount) total calls", systemImage: "chart.bar.xaxis")
+                Label(String(format: L("%lld total calls"), totalCount), systemImage: "chart.bar.xaxis")
                 Spacer()
-                AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
+                AppButton(L("Refresh"), systemImage: "arrow.clockwise", size: .small) {
                     Task { await reload() }
                 }
             }
@@ -34,16 +34,16 @@ struct ToolCallStatsSettingsView: View {
                                     .font(.appBody)
                                     .fontWeight(.medium)
                                     .foregroundStyle(theme.textPrimary)
-                                Text("\(stat.errorCount) errors")
+                                Text(String(format: L("%lld errors"), stat.errorCount))
                                     .font(.appMicro)
                                     .foregroundStyle(theme.error)
                             }
                             Spacer()
-                            Text("\(stat.totalCount) calls")
+                            Text(String(format: L("%lld calls"), stat.totalCount))
                                 .font(.appBody)
                                 .foregroundStyle(theme.textSecondary)
                             if stat.averageDuration > 0 {
-                                Text(String(format: "avg %.2fs", stat.averageDuration))
+                                Text(String(format: L("avg %.2fs"), stat.averageDuration))
                                     .font(.appMicro)
                                     .foregroundStyle(theme.textSecondary)
                             }
@@ -60,8 +60,8 @@ struct ToolCallStatsSettingsView: View {
                     if stats.isEmpty {
                         AppEmptyState(
                             icon: "chart.bar.xaxis",
-                            title: "No statistics yet",
-                            description: "Tool usage statistics will appear here once tools are called."
+                            title: L("No statistics yet"),
+                            description: L("Tool usage statistics will appear here once tools are called.")
                         )
                         .frame(maxWidth: .infinity, minHeight: 200)
                     }
@@ -114,6 +114,10 @@ struct ToolCallStatsSettingsView: View {
             )
         }
         .sorted { $0.totalCount > $1.totalCount }
+    }
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
     }
 }
 

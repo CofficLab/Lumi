@@ -19,7 +19,7 @@ public struct LauncherSettingsView: View {
 
     public var body: some View {
         PluginSettingsScaffold(
-            title: "Quick Launcher",
+            title: LumiPluginLocalization.string("Quick Launcher", bundle: .module),
             subtitle: LumiPluginLocalization.string("Raycast-style global launcher", bundle: .module),
             showHeader: false
         ) {

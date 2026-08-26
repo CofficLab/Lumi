@@ -40,7 +40,7 @@ public struct IdleTimeSettingsView: View {
     private var header: some View {
         HStack(spacing: 10) {
             Spacer()
-            AppButton("Open Data Directory", systemImage: "folder", size: .small) {
+            AppButton(L("Open Data Directory"), systemImage: "folder", size: .small) {
                 openDataDirectory()
             }
         }
