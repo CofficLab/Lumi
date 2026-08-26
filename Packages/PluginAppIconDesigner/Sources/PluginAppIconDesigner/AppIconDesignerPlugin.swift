@@ -1,11 +1,11 @@
-import KitAgentTool
 import KernelCore
+import KitAgentTool
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
+import ProviderPromptSuggestion
 import ProviderRailView
 import ProviderToolManager
-import ProviderPromptSuggestion
 import SwiftUI
 
 /// KernelCore 版本的 App Icon 设计器插件。
@@ -31,7 +31,12 @@ public final class AppIconDesignerPlugin: SuperPlugin, PromptSuggestionContribut
     public init() {}
 
     public var promptSuggestions: [PromptSuggestion] { [
-        PromptSuggestion(id: "\(id).design", title: AppIconDesignerLocalization.string("Prompt.Suggestion.Design"), systemImage: "app.dashed", action: .activateRailTab(id: Self.railTabID, viewContainerID: id))
+        PromptSuggestion(
+            id: "\(id).design",
+            title: AppIconDesignerLocalization.string("Prompt.Suggestion.Design"),
+            systemImage: "app.dashed",
+            action: .activateRailTab(id: Self.railTabID, viewContainerID: id)
+        ),
     ] }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
