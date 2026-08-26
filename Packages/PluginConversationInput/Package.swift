@@ -29,7 +29,8 @@ let package = Package(
                 "ProviderMessageSender",
                 "KitSuperLog",
             ],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            path: "Sources/PluginConversationInput",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginConversationInputTests",
