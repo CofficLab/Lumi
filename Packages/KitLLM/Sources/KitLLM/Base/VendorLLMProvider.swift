@@ -327,12 +327,11 @@ private struct AdapterToolSchema: LLMToolSchemaProviding, @unchecked Sendable {
 
 // MARK: - Streaming accumulator
 
-private final class StreamingAccumulator: @unchecked Sendable {
+final class StreamingAccumulator: @unchecked Sendable {
     private var content = ""
     private var reasoningContent = ""
     private var toolCalls: [Int: ToolCall] = [:]
     private var toolCallOrder: [Int] = []
-    private var pendingPartialIndex: Int?
     private var inputTokens: Int?
     private var outputTokens: Int?
     private var cachedInputTokens: Int?
@@ -375,8 +374,10 @@ private final class StreamingAccumulator: @unchecked Sendable {
                 upsertToolCall(index: index, call: call)
             }
         } else if let partial = chunk.partialJson, !partial.isEmpty {
-            let index = chunk.toolCallIndex ?? pendingPartialIndex ?? toolCallOrder.last ?? 0
-            pendingPartialIndex = index
+            // Anthropic provides the content-block index on every tool delta.
+            // Keep the fallback for gateways that omit it, but never retain a
+            // stale index from a previous partial-json event.
+            let index = chunk.toolCallIndex ?? toolCallOrder.last ?? 0
             upsertArguments(index: index, fragment: partial)
         }
 

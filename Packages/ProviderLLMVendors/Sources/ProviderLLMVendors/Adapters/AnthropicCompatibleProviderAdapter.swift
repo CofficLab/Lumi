@@ -296,6 +296,7 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
 
             // 处理内容块开始
             if effectiveEventType == "content_block_start" {
+                let blockIndex = json["index"] as? Int
                 if let contentBlock = json["content_block"] as? [String: Any],
                    let blockType = contentBlock["type"] as? String {
 
@@ -307,7 +308,12 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                         if let id = contentBlock["id"] as? String,
                            let name = contentBlock["name"] as? String {
                             let toolCall = ToolCall(id: id, name: name, arguments: "{}")
-                            return StreamChunk(toolCalls: [toolCall], eventType: .contentBlockStart, rawEvent: text)
+                            return StreamChunk(
+                                toolCalls: [toolCall],
+                                toolCallIndex: blockIndex,
+                                eventType: .contentBlockStart,
+                                rawEvent: text
+                            )
                         }
                     }
 
@@ -323,6 +329,7 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
 
             // 处理内容块增量
             if effectiveEventType == "content_block_delta" {
+                let blockIndex = json["index"] as? Int
                 if let delta = json["delta"] as? [String: Any] {
                     if let thinkingDelta = delta["thinking_delta"] as? String {
                         return StreamChunk(content: thinkingDelta, eventType: .thinkingDelta, rawEvent: text)
@@ -337,7 +344,12 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                         return StreamChunk(content: textDelta, eventType: .textDelta, rawEvent: text)
                     }
                     if let partialJson = delta["partial_json"] as? String {
-                        return StreamChunk(partialJson: partialJson, eventType: .inputJsonDelta, rawEvent: text)
+                        return StreamChunk(
+                            partialJson: partialJson,
+                            toolCallIndex: blockIndex,
+                            eventType: .inputJsonDelta,
+                            rawEvent: text
+                        )
                     }
                     if delta["signature"] != nil {
                         return StreamChunk(eventType: .signatureDelta, rawEvent: text)
