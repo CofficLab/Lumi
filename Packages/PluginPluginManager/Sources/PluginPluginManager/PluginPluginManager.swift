@@ -1,23 +1,11 @@
 import KernelCore
 import ProviderDocsView
 import ProviderPluginManaging
-import ProviderSettingView
 import ProviderPromptSuggestion
+import ProviderSettingView
 import SwiftUI
 
-/// 插件管理插件（新版本，SuperPlugin 架构）
-///
-/// 复刻旧版 `PluginManagerPlugin`（KernelLumi/LumiPlugin）：
-/// 在设置界面注册「插件管理」入口，枚举并展示所有已注册插件
-/// （列表 / 搜索 / 分类筛选 / 阶段徽标 / 启用状态 / 详情），
-/// UI 与旧版几乎一致。
-///
-/// 启用开关可交互：点击调用 `PluginManaging` 完成
-/// **运行时启停 + 贡献重建 + 持久化**，启用状态写入原插件数据目录
-/// （`PluginEnabledStateStore`，旧版同目录、零迁移）。
-///
-/// - 位置：`order = 90`，与旧版一致，内核启动早期完成设置入口注册。
-/// - 策略：`.required`（宿主必需，语义对应旧版 `.alwaysOn`），本插件自身不可被禁用。
+/// 插件管理插件
 @MainActor
 public final class PluginPluginManager: SuperPlugin {
     public let id = "com.coffic.lumi.plugin.plugin-manager"
@@ -36,7 +24,14 @@ public final class PluginPluginManager: SuperPlugin {
     public init() {}
 
     private var promptSuggestion: PromptSuggestion {
-        PromptSuggestion(id: "\(id).browse", title: "浏览插件", order: order * 1_000, systemImage: "puzzlepiece.extension", action: .openSettingsTab(id), style: .additive)
+        PromptSuggestion(
+            id: "\(id).browse",
+            title: "浏览插件",
+            order: order * 1000,
+            systemImage: "puzzlepiece.extension",
+            action: .openSettingsTab(id),
+            style: .additive
+        )
     }
 
     private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
