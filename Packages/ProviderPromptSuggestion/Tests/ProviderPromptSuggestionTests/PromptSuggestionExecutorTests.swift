@@ -1,5 +1,8 @@
 import Foundation
 import KernelCore
+import ProviderActivityBar
+import ProviderRailView
+import SwiftUI
 import Testing
 @testable import ProviderPromptSuggestion
 
@@ -45,5 +48,52 @@ struct PromptSuggestionExecutorTests {
         await executor.execute(suggestion)
 
         #expect(didOpenSettings)
+    }
+
+    @Test("插件入口动作同时激活 ActivityBar 和 Rail tab")
+    func activatesPluginEntryAndRailTab() async throws {
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        let railView = DefaultRailViewProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any RailViewProviding).self, railView)
+
+        let activityBarItemID = "plugin.entry"
+        let railTabID = "plugin.documents"
+        let containerID = "plugin"
+        activityBar.registerItems([
+            ActivityBarItem(
+                id: activityBarItemID,
+                title: "Plugin",
+                systemImage: "square"
+            ),
+        ])
+        railView.registerTabs([
+            RailTabItem(
+                id: railTabID,
+                groupID: containerID,
+                title: "Documents",
+                systemImage: "doc"
+            ) {
+                EmptyView()
+            },
+        ])
+
+        let executor = DefaultPromptSuggestionExecutor(kernel: kernel)
+        let suggestion = PromptSuggestion(
+            id: "plugin.open",
+            title: "打开插件",
+            action: .activatePluginEntry(
+                activityBarItemID: activityBarItemID,
+                railTabID: railTabID,
+                viewContainerID: containerID
+            )
+        )
+
+        await executor.execute(suggestion)
+
+        #expect(activityBar.activeItemID == activityBarItemID)
+        #expect(railView.activeGroupID == containerID)
+        #expect(railView.activeTabID == railTabID)
     }
 }
