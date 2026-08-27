@@ -250,8 +250,8 @@ private struct ThemePreviewPane: View {
         AppSettingsSection(title: "组件预览", subtitle: "查看常用组件在此主题下的效果", spacing: 12) {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Primary Text").font(.appBody).foregroundStyle(textPrimary)
-                    Text("Secondary Text").font(.appCaption).foregroundStyle(textSecondary)
+                    Text(LumiPluginLocalization.string("Primary Text", bundle: .module)).font(.appBody).foregroundStyle(textPrimary)
+                    Text(LumiPluginLocalization.string("Secondary Text", bundle: .module)).font(.appCaption).foregroundStyle(textSecondary)
                     Text("主题颜色与层级预览").font(.appMicro).foregroundStyle(textSecondary.opacity(0.75))
                 }
                 HStack(spacing: 8) {

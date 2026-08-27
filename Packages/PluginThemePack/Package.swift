@@ -21,6 +21,7 @@ let package = Package(
         .package(path: "../ProviderCommand"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderTheme"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
@@ -32,8 +33,10 @@ let package = Package(
                 .product(name: "ProviderCommand", package: "ProviderCommand"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderTheme", package: "ProviderTheme"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
             ],
-            path: "Sources/PluginThemePack"
+            path: "Sources/PluginThemePack",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginThemePackTests",
