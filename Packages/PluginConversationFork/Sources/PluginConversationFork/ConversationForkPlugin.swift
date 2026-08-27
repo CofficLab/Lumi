@@ -28,7 +28,7 @@ public final class ConversationForkPlugin: SuperPlugin, SuperLog {
         description: "",
         category: .chat,
         stage: .stable,
-        policy: .alwaysOn
+        policy: .disabled
     )
 
     public init() {}
