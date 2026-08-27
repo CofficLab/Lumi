@@ -137,8 +137,13 @@ private struct ToolApprovalPendingView: View {
                     .foregroundColor(theme.textPrimary)
             }
 
-            HStack(spacing: 24) {
-                ForEach(request.options, id: \.self) { option in
+            HStack {
+                ForEach(request.options.indices, id: \.self) { index in
+                    if index > request.options.startIndex {
+                        Spacer(minLength: 0)
+                    }
+
+                    let option = request.options[index]
                     Button(option) {
                         submit(option)
                     }
