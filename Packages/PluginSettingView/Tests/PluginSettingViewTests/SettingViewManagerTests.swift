@@ -62,6 +62,21 @@ struct SettingViewManagerTests {
         #expect(manager.entries.first?.id == "b")
     }
 
+    @Test("项目详情区块追加、排序并按 id 移除")
+    func projectDetailSections() {
+        let manager = SettingViewManager()
+        let first = ProjectDetailSectionItem(id: "first", order: 200) { _ in Text("First") }
+        let second = ProjectDetailSectionItem(id: "second", order: 100) { _ in Text("Second") }
+
+        manager.addProjectDetailSections([first, second, first])
+
+        #expect(manager.projectDetailSections.map(\.id) == ["second", "first"])
+
+        manager.removeProjectDetailSections(ids: ["second"])
+
+        #expect(manager.projectDetailSections.map(\.id) == ["first"])
+    }
+
     @Test("选中入口切换")
     func selectEntry() {
         let manager = SettingViewManager()

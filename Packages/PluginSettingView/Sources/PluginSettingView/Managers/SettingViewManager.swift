@@ -20,6 +20,7 @@ public final class SettingViewManager: SettingViewProviding, ObservableObject, S
     nonisolated static let verbose = false
 
     @Published public private(set) var entries: [SettingEntryItem] = []
+    @Published public private(set) var projectDetailSections: [ProjectDetailSectionItem] = []
     @Published public private(set) var selectedEntryID: String?
 
     /// 侧边栏 Header 需要的 Logo 服务来源。
@@ -52,6 +53,18 @@ public final class SettingViewManager: SettingViewProviding, ObservableObject, S
             Self.logger.info("\(Self.t)selectEntry: \(id ?? "nil", privacy: .public)")
         }
         selectedEntryID = id
+    }
+
+    public func addProjectDetailSections(_ newSections: [ProjectDetailSectionItem]) {
+        var merged = projectDetailSections
+        for section in newSections where !merged.contains(where: { $0.id == section.id }) {
+            merged.append(section)
+        }
+        projectDetailSections = merged.sorted { $0.order < $1.order }
+    }
+
+    public func removeProjectDetailSections(ids: Set<String>) {
+        projectDetailSections.removeAll { ids.contains($0.id) }
     }
 
     public func makeSettingView() -> AnyView {
