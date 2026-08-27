@@ -1,5 +1,6 @@
 import SwiftUI
 import LumiUI
+import KitLocalization
 
 /// 公开工厂函数：为任意 `SettingViewProviding & ObservableObject` 实现渲染设置界面。
 ///
@@ -39,6 +40,7 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
             .frame(minWidth: 720, minHeight: 520)
             .background(theme.background)
             .appThemedAppearance()
+            .onAppear(perform: selectFirstEntryIfNeeded)
         #if canImport(AppKit)
             .background {
                 ThemeWindowAppearanceBridge()
@@ -82,11 +84,18 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
                 } else {
                     AppEmptyState(
                         icon: "gearshape",
-                        title: "Select a tab"
+                        title: LumiLocalization.string("Select a tab", bundle: .module)
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
         }
+    }
+
+    private func selectFirstEntryIfNeeded() {
+        guard provider.selectedEntryID == nil,
+              let firstEntry = provider.entries.first else { return }
+        selectedID = firstEntry.id
+        provider.selectEntry(id: firstEntry.id)
     }
 }
