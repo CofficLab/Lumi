@@ -7,11 +7,9 @@ import SwiftUI
 
 /// 设置 - 通用 插件
 ///
-/// 在设置视图中注册「通用」入口，详情 UI 与旧版 LumiApp 工具栏右上角
-/// 设置按钮 → 设置窗口 → 「通用」标签页（SettingsPlugin.GeneralSettingsView）
-/// **完全一致**：`AppSettingsContentScaffold` 包裹的四个分组卡片
-/// （新手引导 / Lumi / 网站 / 更新），每行均为 `AppSettingRow`
-/// （图标 + 标题 + 描述 + 右侧 `AppButton`）。
+/// 在设置视图中注册「通用」入口，包含 `AppSettingsContentScaffold`
+/// 包裹的四个分组卡片（新手引导 / Lumi / 网站 / 更新），每行均为
+/// `AppSettingRow`（图标 + 标题 + 描述 + 右侧 `AppButton`）。
 ///
 /// 通过 `SuperPlugin.onBoot(kernel:)` 解析内核中的 `SettingViewProviding`
 /// 与 `DocsViewProviding`，用 `addEntries(_:)`（追加语义）注册入口，

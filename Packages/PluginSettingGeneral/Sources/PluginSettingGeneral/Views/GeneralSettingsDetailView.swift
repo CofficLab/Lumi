@@ -2,8 +2,7 @@ import LumiUI
 import ProviderDocsView
 import SwiftUI
 
-/// 通用设置详情视图 —— 复刻旧版 LumiApp（SettingsPlugin.GeneralSettingsView）
-/// 设置窗口「通用」标签页：四个分组卡片，逐行、逐文案一致。
+/// 通用设置详情视图 —— 设置窗口「通用」标签页：四个分组卡片。
 struct GeneralSettingsDetailView: View {
     let version: String?
     let docsProvider: (any DocsViewProviding)?
@@ -55,7 +54,7 @@ struct GeneralSettingsDetailView: View {
                         style: .secondary,
                         size: .small
                     ) {
-                        // 与旧版一致：广播重放引导请求，由宿主监听并展示。
+                        // 广播重放引导请求，由宿主监听并展示。
                         NotificationCenter.default.post(
                             name: .lumiShowOnboarding,
                             object: nil,
@@ -165,7 +164,7 @@ struct GeneralSettingsDetailView: View {
 
     // MARK: - 更新
 
-    /// 与旧版一致：`allowsAppUpdates` 的宿主（Lumi 直营）展示「检查更新」行，
+    /// `allowsAppUpdates` 的宿主（Lumi 直营）展示「检查更新」行，
     /// 点击广播 `checkForUpdates` 通知，由宿主（如 Sparkle 更新插件）消费。
     private var updatesSection: some View {
         AppSettingSection(
@@ -195,7 +194,7 @@ struct GeneralSettingsDetailView: View {
 
 // MARK: - Onboarding 通知
 
-/// 与旧版 KernelLumi.KernelEvents 一致的通知名与重置 key。
+/// 通知名与重置 key。
 enum LumiOnboardingNotification {
     /// 重放新手引导时置 true，宿主据此强制重置引导进度。
     static let resetKey = "reset"

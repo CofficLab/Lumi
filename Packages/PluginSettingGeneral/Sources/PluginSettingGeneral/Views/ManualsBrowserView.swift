@@ -4,9 +4,6 @@ import SwiftUI
 
 /// 说明书浏览器 —— 主从式布局：左侧为提供了说明书的插件名列表，
 /// 右侧为选中插件的说明书内容。
-///
-/// 复刻自旧版 Lumi SettingsPlugin 的 ManualsBrowserView（布局、尺寸、
-/// 选中态、关闭按钮逐项一致）。
 struct ManualsBrowserView: View {
     let manuals: [DocsEntry]
 
