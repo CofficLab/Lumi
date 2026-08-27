@@ -53,11 +53,8 @@ private struct MessageFingerprint: Equatable {
 /// 流式 token、`toolManager` 工具活动。
 @MainActor
 final class ListV2ViewModel: ObservableObject {
-    /// 流式逐字显示的运行时开关。默认开启；若出现活锁回归，可改为 false 回退到
-    /// 静态"正在思考…"行为。通过 `defaults write com.coffic.lumi lumiStreamingDisplayEnabled -bool false` 关闭。
-    nonisolated static var streamingDisplayEnabled: Bool {
-        UserDefaults.standard.object(forKey: "lumiStreamingDisplayEnabled") as? Bool ?? true
-    }
+    /// 流式逐字显示开关。
+    static var streamingDisplayEnabled = false
 
     // MARK: - Published State (供 View 展示)
 

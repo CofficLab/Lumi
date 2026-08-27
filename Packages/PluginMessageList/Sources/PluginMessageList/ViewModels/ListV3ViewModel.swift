@@ -40,10 +40,8 @@ private struct MessageFingerprintV3: Equatable {
 ///   并透传 `verbosity`，本 viewmodel 不参与渲染。
 @MainActor
 final class ListV3ViewModel: ObservableObject {
-    /// 流式逐字显示的运行时开关。默认开启；与 V2 共用同一 UserDefaults 键。
-    nonisolated static var streamingDisplayEnabled: Bool {
-        UserDefaults.standard.object(forKey: "lumiStreamingDisplayEnabled") as? Bool ?? true
-    }
+    /// 流式逐字显示开关。
+    static var streamingDisplayEnabled = false
 
     // MARK: - Published State (供 View 展示)
 
