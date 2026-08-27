@@ -52,7 +52,7 @@ public final class BrewManagerSuperPlugin: SuperPlugin {
                             AppIconButton(systemImage: "arrow.clockwise") {
                                 NotificationCenter.default.post(name: .brewManagerRefreshRequested, object: nil)
                             }
-                            .help("Refresh")
+                            .help(LumiPluginLocalization.string("Refresh", bundle: .module))
                         },
                     ])
                 } else {

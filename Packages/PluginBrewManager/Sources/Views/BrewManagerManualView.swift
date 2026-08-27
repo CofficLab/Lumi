@@ -118,7 +118,7 @@ struct BrewManagerManualView: View {
                 lineMock(width: 28)
             }
             if tagged {
-                Text("cask")
+                Text(LumiPluginLocalization.string("cask", bundle: .module))
                     .font(.system(size: 7, weight: .semibold, design: .monospaced))
                     .foregroundColor(theme.textSecondary)
                     .padding(.horizontal, 4)
