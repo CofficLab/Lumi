@@ -356,7 +356,7 @@ struct DockerImageDetailView: View {
                                 .foregroundColor(theme.textPrimary)
 
                             if let cmds = config.Cmd {
-                                Text("CMD: " + cmds.joined(separator: " "))
+                                Text(LumiPluginLocalization.string("CMD: ", bundle: .module) + cmds.joined(separator: " "))
                                     .font(.monospaced(.caption)())
                             }
 
