@@ -36,10 +36,16 @@ private enum ThemeAppearanceFilter: String, CaseIterable, Identifiable {
 struct ThemeSettingsDetailView: View {
     let theme: any ThemeProviding
 
+    @StateObject private var themeObservation: ThemeSettingsObservationModel
     @LumiUI.LumiTheme private var uiTheme: any LumiUI.LumiUITheme
     @State private var selectedID: String?
     @State private var searchText = ""
     @State private var appearanceFilter: ThemeAppearanceFilter = .all
+
+    init(theme: any ThemeProviding) {
+        self.theme = theme
+        _themeObservation = StateObject(wrappedValue: ThemeSettingsObservationModel(theme: theme))
+    }
 
     private var filteredThemes: [AppThemeValue] {
         let keyword = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -80,7 +86,7 @@ struct ThemeSettingsDetailView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .onAppear { selectedID = theme.selectedThemeId ?? selectedTheme?.id }
-        .onReceive(theme.objectWillChange) { _ in selectedID = theme.selectedThemeId }
+        .onReceive(themeObservation.$revision) { _ in selectedID = theme.selectedThemeId }
         .onChange(of: filteredThemes.map(\.id)) { _, ids in
             guard let selectedID, ids.contains(selectedID) else {
                 self.selectedID = ids.first
@@ -196,6 +202,19 @@ struct ThemeSettingsDetailView: View {
         NSWorkspace.shared.open(url)
     }
     #endif
+}
+
+@MainActor
+private final class ThemeSettingsObservationModel: ObservableObject {
+    @Published private(set) var revision = 0
+    private var handle: (any ThemeProvidingObserverHandle)?
+
+    init(theme: any ThemeProviding) {
+        handle = theme.addObserver { [weak self] _ in
+            self?.revision += 1
+        }
+    }
+
 }
 
 private struct ThemePreviewPane: View {
