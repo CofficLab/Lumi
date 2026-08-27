@@ -207,6 +207,8 @@ public final class MLXDownloadManager: ObservableObject {
                     destination: destination,
                     expectedSize: file.size
                 )
+                let completedBytesBeforeCurrentFile = completedBytes
+                let completedFilesBeforeCurrentFile = completedFiles
 
                 do {
                     _ = try await downloadManager.download(task) { [weak self] fileProgress in
@@ -215,9 +217,9 @@ public final class MLXDownloadManager: ObservableObject {
                             self.currentFileDownloadedBytes = fileProgress.downloadedBytes
                             self.publishProgress(
                                 operationID: operationID,
-                                completedBytes: completedBytes,
+                                completedBytes: completedBytesBeforeCurrentFile,
                                 currentBytes: fileProgress.downloadedBytes,
-                                completedFiles: completedFiles,
+                                completedFiles: completedFilesBeforeCurrentFile,
                                 totalFiles: files.count,
                                 totalBytes: totalBytes,
                                 speed: fileProgress.bytesPerSecond
