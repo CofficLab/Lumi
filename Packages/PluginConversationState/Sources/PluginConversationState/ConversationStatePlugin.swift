@@ -24,7 +24,7 @@ public final class ConversationStatePlugin: SuperPlugin {
 
     public init() {}
 
-    public func onReady(kernel: KernelCoreContainer) throws {
+    public func onBoot(kernel: KernelCoreContainer) throws {
         guard let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self),
               let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
             return
