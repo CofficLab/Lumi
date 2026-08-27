@@ -120,4 +120,26 @@ struct KitLLMTests {
         )
         #expect(!unauthorized.shouldRetry)
     }
+
+    @Test("流式计时器记录首个输出和流式时长")
+    func streamTimingRecorder() {
+        let recorder = LLMStreamTimingRecorder()
+        recorder.markFirstOutput()
+
+        let timing = recorder.finish()
+
+        #expect(timing.latencyMs >= 0)
+        #expect(timing.timeToFirstTokenMs != nil)
+        #expect(timing.streamingDurationMs != nil)
+        #expect((timing.streamingDurationMs ?? 0) <= timing.latencyMs)
+    }
+
+    @Test("没有输出时不伪造流式时长")
+    func streamTimingWithoutOutput() {
+        let timing = LLMStreamTimingRecorder().finish()
+
+        #expect(timing.latencyMs >= 0)
+        #expect(timing.timeToFirstTokenMs == nil)
+        #expect(timing.streamingDurationMs == nil)
+    }
 }

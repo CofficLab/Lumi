@@ -29,16 +29,21 @@ public final class ConversationSpeedPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
+    private var viewModel: ConversationSpeedViewModel?
+    private var conversationObserver: SpeedConversationObserver?
+    private var messageObserver: SpeedMessageObserver?
+
     public init() {}
 
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
-              let conversations = kernel.resolveProvider((any ConversationManaging).self),
-              let messages = kernel.resolveProvider((any MessageManaging).self) else {
+        guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve required providers")
             return
         }
+
+        let viewModel = ConversationSpeedViewModel()
+        self.viewModel = viewModel
 
         chat.addBarItems([
             ChatSectionBarItem(
@@ -46,15 +51,36 @@ public final class ConversationSpeedPlugin: SuperPlugin, SuperLog {
                 order: 86,
                 placement: .toolbarLeading
             ) {
-                SpeedToolbarView(
-                    conversations: conversations,
-                    messages: messages
-                )
+                SpeedToolbarView(viewModel: viewModel)
             },
         ])
     }
 
+    public func onReady(kernel: KernelCoreContainer) throws {
+        guard let viewModel,
+              let conversations = kernel.resolveProvider((any ConversationManaging).self),
+              let messages = kernel.resolveProvider((any MessageManaging).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve providers for observers")
+            return
+        }
+
+        conversationObserver?.cancel()
+        messageObserver?.cancel()
+        conversationObserver = SpeedConversationObserver(
+            conversations: conversations,
+            messages: messages,
+            viewModel: viewModel
+        )
+        messageObserver = SpeedMessageObserver(messages: messages, viewModel: viewModel)
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        conversationObserver?.cancel()
+        messageObserver?.cancel()
+        conversationObserver = nil
+        messageObserver = nil
+        viewModel = nil
+
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar-button")
     }
