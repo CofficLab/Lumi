@@ -28,6 +28,7 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
         .frame(minWidth: 720, minHeight: 520)
         .background(theme.background)
         .appThemedAppearance()
+        .onAppear(perform: selectFirstEntryIfNeeded)
         #if canImport(AppKit)
             .background {
                 ThemeWindowAppearanceBridge()
@@ -65,7 +66,7 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
         }
     }
 
-    /// 右侧：详情视图（氛围渐变背景），无选中时显示与旧版一致的空状态。
+    /// 右侧：详情视图（氛围渐变背景），无选中时显示空状态。
     private var detail: some View {
         AppSettingsDetailPane {
             Group {
@@ -81,5 +82,12 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
                 }
             }
         }
+    }
+
+    private func selectFirstEntryIfNeeded() {
+        guard provider.selectedEntryID == nil,
+              let firstEntry = provider.entries.first else { return }
+        selectedID = firstEntry.id
+        provider.selectEntry(id: firstEntry.id)
     }
 }

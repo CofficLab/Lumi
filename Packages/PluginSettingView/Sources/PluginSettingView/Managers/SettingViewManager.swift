@@ -7,7 +7,7 @@ import SwiftUI
 
 /// `SettingViewProviding` 的自研实现：持有设置入口项、选中状态和侧边栏 Logo。
 ///
-/// 复刻旧版 `SettingsManager`（KernelLumi 体系），迁移至 KernelCore 生态：
+/// 参照 `SettingsManager`（KernelLumi 体系）设计，迁移至 KernelCore 生态：
 /// - 插件通过 `addEntries(_:)` 追加自己的设置入口（同 id 去重）；
 /// - 消费方订阅 `objectWillChange` 即可感知入口集合变化；
 /// - **侧边栏 Logo 是插件内部行为**：以「惰性闭包」延迟到 `makeSettingView()`

@@ -4,7 +4,7 @@ import SwiftUI
 
 /// 设置窗口侧边栏顶部的 Header：应用 Logo（64×64）+ 名称 + 版本。
 ///
-/// 复刻旧版 Lumi（`FactoryCore.SettingsSidebarHeaderView`）的视觉：
+/// 参照 Lumi 经典视觉（`FactoryCore.SettingsSidebarHeaderView`）设计：
 /// 使用 `AppSettingsSidebarHeader` 统一排版，顶部 Logo 由 `PluginSettingView`
 /// 从共享内核解析的 `LogoProviding` 提供（`about` 场景，彩色/动画），
 /// 未注册 Logo 时回退到主题色 `app.fill` 图标。
