@@ -4,6 +4,7 @@ import KitLLM
 import KernelCore
 import os
 import ProviderProject
+import ProviderProjectRAG
 import ProviderLifecycleHooks
 import ProviderSettingView
 import ProviderStorage
@@ -127,6 +128,16 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
 
         // 7. 贡献设置入口
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
+            settings.addProjectDetailSections([
+                ProjectDetailSectionItem(
+                    id: "\(id).rag-status",
+                    order: 150
+                ) { projectPath in
+                    ProjectRAGStatusSection(projectPath: projectPath) {
+                        kernel.resolveProvider((any ProjectRAGProviding).self)
+                    }
+                }
+            ])
             settings.addEntries([
                 SettingEntryItem(
                     id: "\(id).settings",
@@ -158,6 +169,8 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
             .removeToolbarItems(ids: ["\(id).toolbar"])
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeProjectDetailSections(ids: ["\(id).rag-status"])
         ProjectsRuntime.reset()
     }
 
