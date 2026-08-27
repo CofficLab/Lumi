@@ -113,6 +113,13 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
         for toolCall: ToolCall,
         conversationID: UUID
     ) -> ToolAuthorizationDecision {
+        // Unknown tools must reach the execution layer so the resulting
+        // "Tool not found" message can be returned to the LLM. Treating an
+        // unknown tool as high risk here leaves the call stuck in the
+        // approval UI, which cannot build a request without a registered tool.
+        guard registeredTools[toolCall.name] != nil else {
+            return .autoApproved
+        }
         guard let level = conversationManager?.automationLevel(for: conversationID) else {
             let risk = riskLevel(for: toolCall) ?? .high
             return risk.requiresPermission ? .requiresUserApproval : .autoApproved

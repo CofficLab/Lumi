@@ -45,6 +45,28 @@ private struct CountingTool: SuperAgentTool, @unchecked Sendable {
 }
 
 @MainActor
+@Test func unknownToolSkipsAuthorizationAndReturnsNotFoundResult() async {
+    let manager = ToolManager()
+    let call = ToolCall(id: "unknown-1", name: "git_reset", arguments: "{}")
+
+    #expect(manager.authorizationDecision(for: call, conversationID: UUID()) == .autoApproved)
+
+    let result = await manager.executeBatch(
+        [call],
+        policy: .requireApprovalForHighRisk,
+        conversationID: UUID(),
+        turnID: nil
+    )
+
+    guard case let .executed(executionResult) = result.first else {
+        Issue.record("Unknown tools should be sent to execution instead of awaiting approval")
+        return
+    }
+    #expect(executionResult.isError)
+    #expect(executionResult.content == "Tool not found: git_reset")
+}
+
+@MainActor
 @Test func toolManagerPluginReplacesFallbackAndRegistersBuiltinTools() throws {
     let kernel = KernelCoreContainer()
     try kernel.registerProvider((any ToolManagerProviding).self, DefaultToolManagerProviding())
