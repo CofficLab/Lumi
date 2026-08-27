@@ -39,7 +39,7 @@ struct ConversationStoreTests {
         let (store, dir) = try makeStore()
         defer { try? FileManager.default.removeItem(at: dir) }
 
-        let summary = LumiConversationSummary(
+        let summary = ConversationSummary(
             id: UUID(),
             title: "历史会话",
             preview: "v4 迁移",

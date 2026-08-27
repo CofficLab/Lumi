@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import KernelCore
 import os
@@ -49,11 +48,6 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
-    /// 项目变更订阅，用于在切换当前项目时把空对话迁移到新项目。
-    var projectChangeCancellable: AnyCancellable?
-    /// 上一次观察到的当前项目路径，用于在 `objectWillChange` 触发后判断是否真正发生切换。
-    var previousProjectPath: String?
-
     // MARK: - Injected Dependencies (v2: resolved from KernelCore)
 
     let store: ConversationStore?
@@ -85,7 +79,6 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         self.toolManager = toolManager
         self.agentTurn = agentTurn
         self.eventBus = eventBus
-        observeProjectChanges()
     }
 
     // MARK: - Load
