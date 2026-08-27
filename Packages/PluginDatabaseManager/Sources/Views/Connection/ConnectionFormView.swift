@@ -79,8 +79,8 @@ struct ConnectionFormView: View {
             }
 
             HStack {
-                AppButton("Cancel", style: .ghost, fillsWidth: true, action: { isPresented = false })
-                AppButton("Test Connection", style: .secondary, fillsWidth: true, action: testConnection)
+                AppButton(LumiPluginLocalization.string("Cancel", bundle: .module), style: .ghost, fillsWidth: true, action: { isPresented = false })
+                AppButton(LumiPluginLocalization.string("Test Connection", bundle: .module), style: .secondary, fillsWidth: true, action: testConnection)
                     .disabled(!canTestConnection())
                 AppButton(saveLabel, style: .primary, fillsWidth: true, action: save)
                     .disabled(!isValid())
@@ -110,7 +110,7 @@ struct ConnectionFormView: View {
     private var sslPicker: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("SSL / TLS")
+                Text(LumiPluginLocalization.string("SSL / TLS", bundle: .module))
                     .font(.appCaption)
                     .foregroundColor(theme.textSecondary)
                 Text(sslOption.helpText)

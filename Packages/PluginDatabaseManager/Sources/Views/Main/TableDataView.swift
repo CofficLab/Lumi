@@ -131,7 +131,7 @@ struct TableDataView: View {
                 action: { Task { await viewModel.loadTablePage() } }
             )
             AppButton(
-                "Structure",
+                LumiPluginLocalization.string("Structure", bundle: .module),
                 systemImage: "list.bullet.rectangle",
                 style: .secondary,
                 size: .small,

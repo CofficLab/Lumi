@@ -80,7 +80,7 @@ public struct MainView: View {
                     ProgressView()
                         .scaleEffect(0.5)
                 }
-                AppButton("Run", systemImage: "play.fill", style: .primary, size: .small, action: { Task { await viewModel.executeQuery() } })
+                AppButton(LumiPluginLocalization.string("Run", bundle: .module), systemImage: "play.fill", style: .primary, size: .small, action: { Task { await viewModel.executeQuery() } })
                     .keyboardShortcut(.return, modifiers: .command)
                 if statementCount > 1 {
                     AppButton(

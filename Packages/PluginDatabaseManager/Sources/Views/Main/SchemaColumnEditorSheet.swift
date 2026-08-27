@@ -13,12 +13,12 @@ struct AddSchemaColumnSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Add Column").font(.title3.weight(.semibold))
+            Text(LumiPluginLocalization.string("Add Column", bundle: .module)).font(.title3.weight(.semibold))
             Form {
-                TextField("Name", text: $name)
-                TextField("Data Type", text: $dataType)
-                Toggle("Allow NULL", isOn: $isNullable)
-                TextField("Default SQL Expression", text: $defaultValue)
+                TextField(LumiPluginLocalization.string("Name", bundle: .module), text: $name)
+                TextField(LumiPluginLocalization.string("Data Type", bundle: .module), text: $dataType)
+                Toggle(LumiPluginLocalization.string("Allow NULL", bundle: .module), isOn: $isNullable)
+                TextField(LumiPluginLocalization.string("Default SQL Expression", bundle: .module), text: $defaultValue)
             }
             .formStyle(.grouped)
             if let errorMessage {
@@ -26,8 +26,8 @@ struct AddSchemaColumnSheet: View {
             }
             HStack {
                 Spacer()
-                AppButton("Cancel", style: .secondary, size: .small) { isPresented = false }
-                AppButton("Stage Column", systemImage: "plus", style: .primary, size: .small) {
+                AppButton(LumiPluginLocalization.string("Cancel", bundle: .module), style: .secondary, size: .small) { isPresented = false }
+                AppButton(LumiPluginLocalization.string("Stage Column", bundle: .module), systemImage: "plus", style: .primary, size: .small) {
                     do {
                         try onAdd(NewTableColumnDraft(
                             name: name,
@@ -62,15 +62,15 @@ struct RenameSchemaColumnSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Rename Column").font(.title3.weight(.semibold))
+            Text(LumiPluginLocalization.string("Rename Column", bundle: .module)).font(.title3.weight(.semibold))
             TextField("Name", text: $name)
             if let errorMessage {
                 Text(errorMessage).font(.appCaption).foregroundStyle(.red)
             }
             HStack {
                 Spacer()
-                AppButton("Cancel", style: .secondary, size: .small) { dismiss() }
-                AppButton("Stage Rename", style: .primary, size: .small) {
+                AppButton(LumiPluginLocalization.string("Cancel", bundle: .module), style: .secondary, size: .small) { dismiss() }
+                AppButton(LumiPluginLocalization.string("Stage Rename", bundle: .module), style: .primary, size: .small) {
                     do {
                         try onRename(name)
                         dismiss()
@@ -97,10 +97,10 @@ struct AddSchemaIndexSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Add Index").font(.title3.weight(.semibold))
-            TextField("Index Name", text: $name)
-            Toggle("Unique Index", isOn: $isUnique)
-            Text("Columns").font(.appCaption).foregroundStyle(.secondary)
+            Text(LumiPluginLocalization.string("Add Index", bundle: .module)).font(.title3.weight(.semibold))
+            TextField(LumiPluginLocalization.string("Index Name", bundle: .module), text: $name)
+            Toggle(LumiPluginLocalization.string("Unique Index", bundle: .module), isOn: $isUnique)
+            Text(LumiPluginLocalization.string("Columns", bundle: .module)).font(.appCaption).foregroundStyle(.secondary)
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(availableColumns, id: \.self) { column in
@@ -118,8 +118,8 @@ struct AddSchemaIndexSheet: View {
             if let errorMessage { Text(errorMessage).font(.appCaption).foregroundStyle(.red) }
             HStack {
                 Spacer()
-                AppButton("Cancel", style: .secondary, size: .small) { isPresented = false }
-                AppButton("Stage Index", systemImage: "plus", style: .primary, size: .small) {
+                AppButton(LumiPluginLocalization.string("Cancel", bundle: .module), style: .secondary, size: .small) { isPresented = false }
+                AppButton(LumiPluginLocalization.string("Stage Index", bundle: .module), systemImage: "plus", style: .primary, size: .small) {
                     do {
                         let ordered = availableColumns.filter(selectedColumns.contains)
                         try onAdd(NewTableIndexDraft(name: name, columns: ordered, isUnique: isUnique))

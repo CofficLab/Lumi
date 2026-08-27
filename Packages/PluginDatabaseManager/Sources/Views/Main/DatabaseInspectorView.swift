@@ -61,8 +61,8 @@ public struct DatabaseInspectorView: View {
         .sheet(isPresented: $viewModel.showSchemaChangePreview) {
             SchemaChangePreviewSheet(viewModel: viewModel, isPresented: $viewModel.showSchemaChangePreview)
         }
-        .alert("Structure Change Error", isPresented: schemaEditErrorBinding) {
-            Button("OK", role: .cancel) {}
+        .alert(LumiPluginLocalization.string("Structure Change Error", bundle: .module), isPresented: schemaEditErrorBinding) {
+            Button(LumiPluginLocalization.string("OK", bundle: .module), role: .cancel) {}
         } message: {
             Text(schemaEditError ?? "Unknown error")
         }
@@ -98,7 +98,7 @@ public struct DatabaseInspectorView: View {
         if viewModel.isLoadingTableSchema, viewModel.selectedTableSchema == nil {
             VStack(spacing: 10) {
                 ProgressView()
-                Text("Loading structure…")
+                Text(LumiPluginLocalization.string("Loading structure…", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }
@@ -145,7 +145,7 @@ public struct DatabaseInspectorView: View {
 
     private func sectionPicker(for schema: TableSchema) -> some View {
         HStack(spacing: 8) {
-            Picker("Structure Section", selection: $section) {
+            Picker(LumiPluginLocalization.string("Structure Section", bundle: .module), selection: $section) {
                 ForEach(availableSections(for: schema)) { item in
                     Label(item.title, systemImage: item.systemImage).tag(item)
                 }
@@ -265,10 +265,10 @@ public struct DatabaseInspectorView: View {
             Text("\(viewModel.schemaChangeManager?.changes.count ?? 0) structure changes")
                 .font(.appMicroEmphasized)
             Spacer()
-            AppButton("Discard", systemImage: "trash", style: .ghost, size: .small) {
+            AppButton(LumiPluginLocalization.string("Discard", bundle: .module), systemImage: "trash", style: .ghost, size: .small) {
                 viewModel.discardSchemaChanges()
             }
-            AppButton("Preview DDL", systemImage: "doc.text.magnifyingglass", style: .primary, size: .small) {
+            AppButton(LumiPluginLocalization.string("Preview DDL", bundle: .module), systemImage: "doc.text.magnifyingglass", style: .primary, size: .small) {
                 viewModel.showSchemaChangePreview = true
             }
         }
@@ -283,7 +283,7 @@ public struct DatabaseInspectorView: View {
         @ViewBuilder content: @escaping (Item) -> Content
     ) -> some View {
         if items.isEmpty {
-            Text("No items")
+            Text(LumiPluginLocalization.string("No items", bundle: .module))
                 .font(.appCaption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, minHeight: 80)
@@ -300,7 +300,7 @@ public struct DatabaseInspectorView: View {
     private func ddlContent(_ ddl: String?) -> some View {
         if let ddl, !ddl.isEmpty {
             VStack(alignment: .trailing, spacing: 8) {
-                AppButton("Copy DDL", systemImage: "doc.on.doc", style: .ghost, size: .small) {
+                AppButton(LumiPluginLocalization.string("Copy DDL", bundle: .module), systemImage: "doc.on.doc", style: .ghost, size: .small) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(ddl, forType: .string)
                 }
@@ -318,7 +318,7 @@ public struct DatabaseInspectorView: View {
             }
             .onAppear { ddlText = ddl }
         } else {
-            Text("DDL is not available for this object.")
+            Text(LumiPluginLocalization.string("DDL is not available for this object.", bundle: .module))
                 .font(.appCaption)
                 .foregroundStyle(.secondary)
         }
@@ -338,7 +338,7 @@ public struct DatabaseInspectorView: View {
                             ("SSL", config.type.capabilities.supportsSSL ? "Supported" : "N/A"),
                         ]
                     )
-                    Text("Open a table or view to inspect its structure.")
+                    Text(LumiPluginLocalization.string("Open a table or view to inspect its structure.", bundle: .module))
                         .font(.appCaption)
                         .foregroundStyle(.secondary)
                 } else {
@@ -484,8 +484,8 @@ private struct SchemaColumnCard: View {
                     ForEach(badges, id: \.self) { AppTag($0, systemImage: nil, style: .subtle) }
                     if canEdit {
                         Menu {
-                            Button("Rename…", action: onRename)
-                            Button("Drop Column…", role: .destructive, action: onDrop)
+                            Button(LumiPluginLocalization.string("Rename…", bundle: .module), action: onRename)
+                            Button(LumiPluginLocalization.string("Drop Column…", bundle: .module), role: .destructive, action: onDrop)
                                 .disabled(column.isPrimaryKey)
                         } label: {
                             Image(systemName: "ellipsis")
@@ -537,7 +537,7 @@ private struct SchemaIndexCard: View {
                     AppTag(index.isUnique ? "UNIQUE" : "INDEX", systemImage: nil, style: .subtle)
                     if canEdit {
                         Menu {
-                            Button("Drop Index…", role: .destructive, action: onDrop)
+                            Button(LumiPluginLocalization.string("Drop Index…", bundle: .module), role: .destructive, action: onDrop)
                         } label: {
                             Image(systemName: "ellipsis")
                         }
