@@ -217,7 +217,7 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
                 systemPrompt: "",
                 config: LLMConfig(model: model, providerId: providerInfo.id)
             )
-            nonisolated(unsafe) var content = ""
+            let accumulator = GoStreamingAccumulator()
             try await apiService.sendStreamingChatRequest(
                 request: adapter.buildRequest(url: try endpointURL("\(Self.base)/messages"), apiKey: apiKey),
                 body: body
@@ -230,19 +230,12 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
                         )
                     }
                     guard let chunk else { return true }
-                    if chunk.eventType == .thinkingDelta, let piece = chunk.content {
-                        await onChunk(LLMStreamChunk(reasoningContent: piece))
-                    } else if let piece = chunk.content, !piece.isEmpty {
-                        content += piece
-                        await onChunk(LLMStreamChunk(content: piece))
-                    }
-                    if chunk.isDone { return false }
-                    return true
+                    return await accumulator.consume(chunk, onChunk: onChunk)
                 } catch {
                     return false
                 }
             }
-            return LLMResponse(content: content, model: model)
+            return accumulator.finish(model: model)
         }
 
         let adapter = OpenAICompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
@@ -253,7 +246,7 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
             systemPrompt: "",
             config: LLMConfig(model: model, providerId: providerInfo.id)
         )
-        nonisolated(unsafe) var content = ""
+        let accumulator = GoStreamingAccumulator()
         try await apiService.sendStreamingChatRequest(
             request: adapter.buildRequest(url: try endpointURL("\(Self.base)/chat/completions"), apiKey: apiKey),
             body: body
@@ -266,19 +259,12 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
                     )
                 }
                 guard let chunk else { return true }
-                if chunk.eventType == .thinkingDelta, let piece = chunk.content {
-                    await onChunk(LLMStreamChunk(reasoningContent: piece))
-                } else if let piece = chunk.content, !piece.isEmpty {
-                    content += piece
-                    await onChunk(LLMStreamChunk(content: piece))
-                }
-                if chunk.isDone { return false }
-                return true
+                return await accumulator.consume(chunk, onChunk: onChunk)
             } catch {
                 return false
             }
         }
-        return LLMResponse(content: content, model: model)
+        return accumulator.finish(model: model)
     }
 
     // MARK: - Responses
@@ -393,5 +379,88 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
             ))
         }
         return calls.isEmpty ? nil : calls
+    }
+}
+
+/// 累积 OpenCode 流式响应中的正文、推理内容和工具调用分片。
+///
+/// OpenAI-compatible 网关通常会把工具名称、调用 ID 和 arguments 分成多个
+/// SSE chunk 返回；如果只处理 content，最终响应会被误判成空的纯文本响应。
+private final class GoStreamingAccumulator: @unchecked Sendable {
+    private var content = ""
+    private var reasoningContent = ""
+    private var toolCalls: [Int: ToolCall] = [:]
+    private var toolCallOrder: [Int] = []
+
+    func consume(
+        _ chunk: StreamChunk,
+        onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
+    ) async -> Bool {
+        if chunk.eventType == .thinkingDelta, let piece = chunk.content, !piece.isEmpty {
+            reasoningContent += piece
+            await onChunk(LLMStreamChunk(reasoningContent: piece))
+        } else if let piece = chunk.content, !piece.isEmpty {
+            content += piece
+            await onChunk(LLMStreamChunk(content: piece))
+        }
+
+        if let calls = chunk.toolCalls, !calls.isEmpty {
+            for call in calls {
+                let index = chunk.toolCallIndex ?? nextIndex()
+                upsertToolCall(index: index, call: call)
+            }
+        } else if let partialJson = chunk.partialJson, !partialJson.isEmpty {
+            let index = chunk.toolCallIndex ?? toolCallOrder.last ?? 0
+            upsertArguments(index: index, fragment: partialJson)
+        }
+
+        return !chunk.isDone
+    }
+
+    func finish(model: String) -> LLMResponse {
+        let calls = toolCallOrder.compactMap { toolCalls[$0] }
+        return LLMResponse(
+            content: content,
+            model: model,
+            toolCalls: calls.isEmpty ? nil : calls.map {
+                LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
+            },
+            reasoningContent: reasoningContent.isEmpty ? nil : reasoningContent
+        )
+    }
+
+    private func nextIndex() -> Int {
+        toolCallOrder.last.map { $0 + 1 } ?? 0
+    }
+
+    private func upsertToolCall(index: Int, call: ToolCall) {
+        if let existing = toolCalls[index] {
+            toolCalls[index] = ToolCall(
+                id: existing.id.isEmpty ? call.id : existing.id,
+                name: existing.name.isEmpty ? call.name : existing.name,
+                arguments: existing.arguments == "{}" ? call.arguments : existing.arguments + call.arguments
+            )
+        } else {
+            toolCalls[index] = call
+            if !toolCallOrder.contains(index) {
+                toolCallOrder.append(index)
+            }
+        }
+    }
+
+    private func upsertArguments(index: Int, fragment: String) {
+        if let existing = toolCalls[index] {
+            let existingArguments = existing.arguments == "{}" ? "" : existing.arguments
+            toolCalls[index] = ToolCall(
+                id: existing.id,
+                name: existing.name,
+                arguments: existingArguments + fragment
+            )
+        } else {
+            toolCalls[index] = ToolCall(id: "", name: "", arguments: fragment)
+            if !toolCallOrder.contains(index) {
+                toolCallOrder.append(index)
+            }
+        }
     }
 }

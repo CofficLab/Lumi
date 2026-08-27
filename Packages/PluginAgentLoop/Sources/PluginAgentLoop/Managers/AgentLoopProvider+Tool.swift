@@ -47,7 +47,7 @@ extension AgentLoopManager {
         var suspension: AgentLoopSuspension?
         for (call, batchResult) in zip(toolCalls, results) {
             if Self.verbose {
-                Self.logger.info("\(Self.t)handle batch result begin id=\(call.id), name=\(call.name), result=\(String(describing: batchResult))")
+                Self.logger.info("\(Self.t)handle batch result begin id=\(call.id), name=\(call.name)")
             }
             guard pending.contains(where: { $0.id == call.id }) else {
                 if Self.verbose {
