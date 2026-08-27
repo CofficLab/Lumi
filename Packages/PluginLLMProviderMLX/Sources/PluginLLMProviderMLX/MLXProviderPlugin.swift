@@ -1,8 +1,6 @@
 import KernelCore
-import ProviderSettingView
 import ProviderLLMManager
 import ProviderStorage
-import SwiftUI
 
 /// MLX 本地模型供应商注册插件。
 @MainActor
@@ -30,17 +28,6 @@ public final class MLXProviderPlugin: SuperPlugin {
             MLXRuntime.shared.configure(rootDirectory: rootDirectory)
         }
 
-        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
-            SettingEntryItem(
-                id: "\(id).settings",
-                title: "MLX 本地模型",
-                systemImage: "cpu",
-                order: 102
-            ) {
-                MLXSettingsView()
-            }
-        ])
-
         guard let manager = kernel.resolveProvider((any LLMManaging).self) else {
             return
         }
@@ -55,8 +42,6 @@ public final class MLXProviderPlugin: SuperPlugin {
         for registration in MLXProviderCatalog.registrations {
             manager.unregister(id: registration.providerID)
         }
-        kernel.resolveProvider((any SettingViewProviding).self)?
-            .removeEntries(ids: ["\(id).settings"])
         MLXDownloadManager.shared.shutdown()
         MLXRuntime.shared.unload()
     }

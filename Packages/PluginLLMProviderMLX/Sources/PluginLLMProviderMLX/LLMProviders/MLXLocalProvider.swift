@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import KitLLM
 
 @MainActor
@@ -44,5 +45,47 @@ final class MLXLocalProvider: SuperLLMProvider, LLMStreamingProviding {
             throw MLXProviderError.modelNotAvailable(modelID)
         }
         return try await MLXRuntime.shared.generate(request: request, modelID: modelID, onChunk: onChunk)
+    }
+}
+
+extension MLXLocalProvider: LLMModelDownloadProviding {
+    var downloadState: LLMModelDownloadState {
+        MLXDownloadManager.shared.downloadState
+    }
+
+    var downloadStatePublisher: AnyPublisher<LLMModelDownloadState, Never> {
+        MLXDownloadManager.shared.downloadStatePublisher
+    }
+
+    var modelCacheDirectoryURL: URL {
+        MLXDownloadManager.shared.modelCacheDirectoryURL
+    }
+
+    func download(modelID: String) async {
+        await MLXDownloadManager.shared.download(modelID: modelID)
+    }
+
+    func pauseDownload() {
+        MLXDownloadManager.shared.pause()
+    }
+
+    func resumeDownload() async {
+        await MLXDownloadManager.shared.resume()
+    }
+
+    func cancelDownload() {
+        MLXDownloadManager.shared.cancel()
+    }
+
+    func deleteDownloadedModel(modelID: String) throws {
+        try MLXDownloadManager.shared.deleteDownloadedModel(modelID: modelID)
+    }
+
+    func setDownloadSpeedLimit(bytesPerSecond: Int?) {
+        MLXDownloadManager.shared.updateDownloadSpeed(bytesPerSecond: bytesPerSecond)
+    }
+
+    func refreshDownloadState() {
+        MLXDownloadManager.shared.refreshDownloadState()
     }
 }

@@ -5,7 +5,13 @@ import KitLLM
 @MainActor
 public enum MLXProviderCatalog {
     public static let registrations: [MLXModelRegistration] = [
-        .init(id: "mlx-community/Qwen3-0.6B-4bit", displayName: "Qwen3 0.6B", series: "Qwen", providerID: "mlx-qwen", minimumRAMGB: 8),
+        .init(
+            id: "mlx-community/Qwen3-0.6B-4bit",
+            displayName: "Qwen3 0.6B",
+            series: "Qwen",
+            providerID: "mlx-qwen",
+            minimumRAMGB: 8
+        ),
         .init(id: "mlx-community/Qwen3-1.7B-4bit", displayName: "Qwen3 1.7B", series: "Qwen", providerID: "mlx-qwen", minimumRAMGB: 8),
         .init(id: "mlx-community/Qwen3-4B-Instruct-2507-4bit", displayName: "Qwen3 4B Instruct", series: "Qwen", providerID: "mlx-qwen", minimumRAMGB: 8),
         .init(id: "mlx-community/Qwen3-8B-4bit", displayName: "Qwen3 8B", series: "Qwen", providerID: "mlx-qwen", minimumRAMGB: 16),

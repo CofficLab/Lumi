@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import KitDownload
+import KitLLM
 
 @MainActor
 public final class MLXDownloadManager: ObservableObject {
@@ -16,6 +17,7 @@ public final class MLXDownloadManager: ObservableObject {
     @Published public private(set) var downloadSpeedLimit: Int?
 
     private let downloadManager: KitDownload.DownloadManager
+    private var stateSubject: CurrentValueSubject<LLMModelDownloadState, Never>?
     private var downloadTask: Task<Void, Never>?
     private var downloadKitCancellation: Task<Void, Never>?
     private var activeOperationID: UUID?
@@ -36,6 +38,32 @@ public final class MLXDownloadManager: ObservableObject {
         ))
     }
 
+    public var downloadState: LLMModelDownloadState {
+        makeDownloadState()
+    }
+
+    public var downloadStatePublisher: AnyPublisher<LLMModelDownloadState, Never> {
+        if stateSubject == nil {
+            stateSubject = CurrentValueSubject(downloadState)
+        }
+        return stateSubject!.eraseToAnyPublisher()
+    }
+
+    public var modelCacheDirectoryURL: URL {
+        MLXModelPaths.modelsDirectory
+    }
+
+    public func deleteDownloadedModel(modelID: String) throws {
+        let directory = MLXModelPaths.modelDirectory(for: modelID)
+        guard FileManager.default.fileExists(atPath: directory.path) else { return }
+        try FileManager.default.removeItem(at: directory)
+        refreshDownloadState()
+    }
+
+    public func refreshDownloadState() {
+        stateSubject?.send(downloadState)
+    }
+
     public func configure(rootDirectory: URL) {
         isShutdown = false
         MLXModelPaths.configure(rootDirectory: rootDirectory)
@@ -45,6 +73,7 @@ public final class MLXDownloadManager: ObservableObject {
         guard !isShutdown else { return }
         guard MLXProviderCatalog.registrations.contains(where: { $0.id == modelID }) else {
             status = .failed(MLXDownloadError.invalidModelID(modelID).localizedDescription)
+            refreshDownloadState()
             return
         }
         if downloadingModelID == modelID, status == .downloading {
@@ -65,6 +94,7 @@ public final class MLXDownloadManager: ObservableObject {
         downloadingModelID = modelID
         status = .downloading
         progress = MLXDownloadProgress()
+        refreshDownloadState()
 
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
@@ -84,6 +114,7 @@ public final class MLXDownloadManager: ObservableObject {
         downloadTask?.cancel()
         downloadTask = nil
         cancelDownloadKit()
+        refreshDownloadState()
     }
 
     public func resume() async {
@@ -93,6 +124,7 @@ public final class MLXDownloadManager: ObservableObject {
         isPauseRequested = false
         downloadingModelID = modelID
         status = .downloading
+        refreshDownloadState()
         await awaitDownloadKitCancellation()
 
         let task = Task { @MainActor [weak self] in
@@ -118,6 +150,7 @@ public final class MLXDownloadManager: ObservableObject {
         UserDefaults.standard.set(bytesPerSecond ?? 0, forKey: Self.downloadSpeedLimitKey)
         let manager = downloadManager
         Task { await manager.setMaxBytesPerSecond(bytesPerSecond) }
+        refreshDownloadState()
     }
 
     nonisolated public func currentSpeedLimitBytes() -> Int {
@@ -226,6 +259,7 @@ public final class MLXDownloadManager: ObservableObject {
             currentFileName = nil
             currentFileSize = 0
             currentFileDownloadedBytes = 0
+            refreshDownloadState()
         } catch {
             guard activeOperationID == operationID else { return }
             if isPauseRequested {
@@ -241,6 +275,7 @@ public final class MLXDownloadManager: ObservableObject {
             currentFileSize = 0
             currentFileDownloadedBytes = 0
             resumeFloorFraction = nil
+            refreshDownloadState()
         }
     }
 
@@ -307,6 +342,57 @@ public final class MLXDownloadManager: ObservableObject {
             ? min(0.95, Double(progress.downloadedBytes) / Double(totalBytes) * 0.95)
             : (totalFiles > 0 ? Double(completedFiles) / Double(totalFiles) : 0)
         progress.fractionCompleted = max(resumeFloorFraction ?? 0, calculated)
+        refreshDownloadState()
+    }
+
+    private func makeDownloadState() -> LLMModelDownloadState {
+        LLMModelDownloadState(
+            status: mapStatus(status),
+            modelID: downloadingModelID,
+            progress: LLMModelDownloadProgress(
+                fractionCompleted: progress.fractionCompleted,
+                completedFiles: progress.completedFiles,
+                totalFiles: progress.totalFiles,
+                downloadedBytes: progress.downloadedBytes,
+                totalBytes: progress.totalBytes,
+                speedBytesPerSecond: progress.speed
+            ),
+            currentFileName: currentFileName,
+            downloadedModelIDs: downloadedModelIDs,
+            cacheSizeBytes: cacheSizeBytes,
+            speedLimitBytesPerSecond: downloadSpeedLimit
+        )
+    }
+
+    private func mapStatus(_ status: MLXDownloadStatus) -> LLMModelDownloadStatus {
+        switch status {
+        case .idle: return .idle
+        case .downloading: return .downloading
+        case .paused: return .paused
+        case .completed: return .completed
+        case .failed(let message): return .failed(message)
+        }
+    }
+
+    private var downloadedModelIDs: Set<String> {
+        Set(MLXProviderCatalog.availableRegistrations.compactMap { model in
+            MLXModelDownloader.isComplete(directory: MLXModelPaths.modelDirectory(for: model.id)) ? model.id : nil
+        })
+    }
+
+    private var cacheSizeBytes: Int64 {
+        guard let enumerator = FileManager.default.enumerator(
+            at: modelCacheDirectoryURL,
+            includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey],
+            options: [.skipsHiddenFiles]
+        ) else { return 0 }
+
+        return enumerator.reduce(into: Int64(0)) { total, item in
+            guard let url = item as? URL,
+                  let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey]),
+                  values.isDirectory != true else { return }
+            total += Int64(values.fileSize ?? 0)
+        }
     }
 
     private func fileSize(at url: URL) -> Int64 {
@@ -330,6 +416,7 @@ public final class MLXDownloadManager: ObservableObject {
             currentFileDownloadedBytes = 0
             progress = MLXDownloadProgress()
             resumeFloorFraction = nil
+            refreshDownloadState()
         }
     }
 
