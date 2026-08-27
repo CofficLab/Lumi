@@ -7,11 +7,15 @@ let package = Package(
     products: [
         .library(name: "ProviderConversationState", targets: ["ProviderConversationState"]),
     ],
-    dependencies: [],
+    dependencies: [
+        .package(path: "../ProviderAgentLoop"),
+    ],
     targets: [
         .target(
             name: "ProviderConversationState",
-            dependencies: [],
+            dependencies: [
+                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+            ],
             path: "Sources/ProviderConversationState"
         ),
     ]
