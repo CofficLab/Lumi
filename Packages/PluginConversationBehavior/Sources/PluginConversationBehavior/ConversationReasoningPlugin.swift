@@ -4,6 +4,7 @@ import KernelCore
 import LumiUI
 import ProviderChatSection
 import ProviderConversation
+import ProviderToast
 import KitSuperLog
 import SwiftUI
 
@@ -50,7 +51,10 @@ public final class ConversationReasoningPlugin: SuperPlugin, SuperLog {
                 order: 81,
                 placement: .actionLeading
             ) {
-                ReasoningActionBarButton(conversations: conversations)
+                ReasoningActionBarButton(
+                    conversations: conversations,
+                    toast: kernel.resolveProvider((any ToastProviding).self)
+                )
             },
         ])
     }
@@ -65,8 +69,14 @@ public final class ConversationReasoningPlugin: SuperPlugin, SuperLog {
 struct ReasoningActionBarButton: View {
     @LumiTheme private var theme
     let conversations: any ConversationManaging
+    let toast: (any ToastProviding)?
 
     @State private var isPopoverPresented = false
+
+    init(conversations: any ConversationManaging, toast: (any ToastProviding)? = nil) {
+        self.conversations = conversations
+        self.toast = toast
+    }
 
     /// 是否开启思考（nil = 关闭）。
     private var selectedEffort: ReasoningEffort? {
@@ -117,11 +127,21 @@ struct ReasoningActionBarButton: View {
                 conversations.clearReasoningEffort(for: id)
             }
             conversations.setGlobalReasoningEffort(nil)
+            ConversationBehaviorToast.show(
+                toast,
+                title: LumiPluginLocalization.string("Reasoning Effort", bundle: .module),
+                detail: LumiPluginLocalization.string("Off", bundle: .module),
+            )
         case let .effort(effort):
             if let id = conversations.selectedConversationID {
                 conversations.setReasoningEffort(effort, for: id)
             }
             conversations.setGlobalReasoningEffort(effort)
+            ConversationBehaviorToast.show(
+                toast,
+                title: LumiPluginLocalization.string("Reasoning Effort", bundle: .module),
+                detail: effort.levelCode,
+            )
         }
     }
 }

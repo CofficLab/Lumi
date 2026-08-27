@@ -5,6 +5,7 @@ import KernelCore
 import ProviderChatSection
 import ProviderConversation
 import ProviderLifecycleHooks
+import ProviderToast
 import KitSuperLog
 import SwiftUI
 
@@ -67,7 +68,10 @@ public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
                 order: 85,
                 placement: .toolbarTrailing
             ) {
-                VerbosityToolbarView(conversations: conversations)
+                VerbosityToolbarView(
+                    conversations: conversations,
+                    toast: kernel.resolveProvider((any ToastProviding).self)
+                )
             },
         ])
     }

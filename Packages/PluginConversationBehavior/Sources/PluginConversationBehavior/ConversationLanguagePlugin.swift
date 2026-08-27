@@ -5,6 +5,7 @@ import KernelCore
 import ProviderChatSection
 import ProviderConversation
 import ProviderLifecycleHooks
+import ProviderToast
 import KitSuperLog
 import SwiftUI
 
@@ -61,7 +62,10 @@ public final class ConversationLanguagePlugin: SuperPlugin, SuperLog {
                 order: 83,
                 placement: .toolbarTrailing
             ) {
-                LanguageToolbarView(conversations: conversations)
+                LanguageToolbarView(
+                    conversations: conversations,
+                    toast: kernel.resolveProvider((any ToastProviding).self)
+                )
             },
         ])
     }
@@ -75,8 +79,14 @@ public final class ConversationLanguagePlugin: SuperPlugin, SuperLog {
 /// 语言 chip：显示当前会话语言，点击切换。
 struct LanguageToolbarView: View {
     let conversations: any ConversationManaging
+    let toast: (any ToastProviding)?
 
     @State private var isPopoverPresented = false
+
+    init(conversations: any ConversationManaging, toast: (any ToastProviding)? = nil) {
+        self.conversations = conversations
+        self.toast = toast
+    }
 
     private var selectedLanguage: ConversationLanguage {
         if let id = conversations.selectedConversationID {
@@ -111,6 +121,11 @@ struct LanguageToolbarView: View {
                             conversations.setLanguage(language, for: conversationID)
                         }
                         conversations.setGlobalLanguage(language)
+                        ConversationBehaviorToast.show(
+                            toast,
+                            title: LumiPluginLocalization.string("Response Language", bundle: .module),
+                            detail: language.shortCode,
+                        )
                         isPopoverPresented = false
                     } label: {
                         HStack(spacing: 10) {
