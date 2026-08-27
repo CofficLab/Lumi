@@ -38,7 +38,7 @@ struct WhiteNoiseView: View {
                         .foregroundStyle(.tint)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("White Noise")
+                        Text(LumiPluginLocalization.string("White Noise", bundle: .module))
                             .font(.system(size: 18, weight: .semibold))
                         Text(viewModel.isPlaying ? "Playing" : "Paused")
                             .font(.caption)
@@ -63,7 +63,7 @@ struct WhiteNoiseView: View {
                         Image(systemName: "speaker.wave.1.fill")
                             .font(.caption)
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                        Text("Master Volume")
+                        Text(LumiPluginLocalization.string("Master Volume", bundle: .module))
                             .font(.caption)
                             .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         Spacer()
@@ -99,7 +99,7 @@ struct WhiteNoiseView: View {
                     Image(systemName: "moon.zzz.fill")
                         .font(.system(size: 16))
                         .foregroundStyle(.tint)
-                    Text("Sleep Timer")
+                    Text(LumiPluginLocalization.string("Sleep Timer", bundle: .module))
                         .font(.system(size: 15, weight: .medium))
                     Spacer()
                     if let remaining = viewModel.remainingSeconds {
@@ -109,7 +109,7 @@ struct WhiteNoiseView: View {
                     }
                 }
 
-                Picker("Sleep Timer", selection: $viewModel.sleepDuration) {
+                Picker(LumiPluginLocalization.string("Sleep Timer", bundle: .module), selection: $viewModel.sleepDuration) {
                     ForEach(WhiteNoiseViewModel.SleepDuration.allCases) { duration in
                         Text(duration.title).tag(duration)
                     }

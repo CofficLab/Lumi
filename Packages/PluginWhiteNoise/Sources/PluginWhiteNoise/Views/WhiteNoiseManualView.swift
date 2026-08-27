@@ -18,7 +18,7 @@ struct WhiteNoiseManualView: View {
             )
 
             ManualSectionHeader(number: 1, title: "Overview")
-            Text("This manual covers the interface and basic operations of White Noise: playing noise tracks, adjusting volumes, and setting the sleep timer.")
+            Text(LumiPluginLocalization.string("This manual covers the interface and basic operations of White Noise: playing noise tracks, adjusting volumes, and setting the sleep timer.", bundle: .module))
                 .font(.appBody)
                 .foregroundColor(theme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
