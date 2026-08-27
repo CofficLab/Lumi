@@ -1,5 +1,8 @@
+import Combine
 import Foundation
 import os
+import ProviderConversation
+import ProviderConversationState
 import ProviderConversationInput
 import ProviderMessageSender
 import KitSuperLog
@@ -21,18 +24,35 @@ final class SendActionBarViewModel: SuperLog {
 
     private let input: any ConversationInputProviding
     private let sender: any MessageSendingProviding
+    private let conversations: any ConversationManaging
+    private let conversationState: any ConversationStateProviding
+    private var conversationStateCancellable: AnyCancellable?
+    private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
 
     private(set) var state: SendActionBarState
 
     // MARK: - Lifecycle
 
-    init(input: any ConversationInputProviding, sender: any MessageSendingProviding) {
+    init(
+        input: any ConversationInputProviding,
+        sender: any MessageSendingProviding,
+        conversations: any ConversationManaging,
+        conversationState: any ConversationStateProviding
+    ) {
         self.input = input
         self.sender = sender
+        self.conversations = conversations
+        self.conversationState = conversationState
         self.state = SendActionBarState(
-            isSending: sender.isSending,
+            isSending: conversationState.state(for: conversations.selectedConversationID ?? UUID()).isSending,
             canSend: !input.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         )
+        conversationStateCancellable = conversationState.objectWillChange.sink { [weak self] _ in
+            self?.refreshConversationState()
+        }
+        selectedConversationObserver = conversations.addSelectedConversationObserver { [weak self] _ in
+            self?.refreshConversationState()
+        }
     }
 
     // MARK: - State updates
@@ -41,8 +61,19 @@ final class SendActionBarViewModel: SuperLog {
         state.canSend = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    func updateSendingState(_ isSending: Bool) {
-        state.isSending = isSending
+    private func refreshConversationState() {
+        guard let conversationID = conversations.selectedConversationID else {
+            state.isSending = false
+            return
+        }
+        state.isSending = conversationState.state(for: conversationID).isSending
+    }
+
+    func stopObservingConversationState() {
+        conversationStateCancellable?.cancel()
+        conversationStateCancellable = nil
+        selectedConversationObserver?.cancel()
+        selectedConversationObserver = nil
     }
 
     // MARK: - Actions

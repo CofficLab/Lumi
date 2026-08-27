@@ -3,6 +3,7 @@ import LumiUI
 import os
 import ProviderChatSection
 import ProviderConversation
+import ProviderConversationState
 import ProviderConversationInput
 import ProviderMessageSender
 import KitSuperLog
@@ -27,7 +28,6 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
     private var sendActionBarViewModel: SendActionBarViewModel?
     private var missingActionBarProviders: [String] = []
     private var actionBarInputObserver: ActionBarInputObserver?
-    private var actionBarSendingObserver: ActionBarSendingObserver?
     private var actionBarConversationObserver: ActionBarConversationObserver?
 
     public init() {}
@@ -45,12 +45,21 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
 
         let input = kernel.resolveProvider((any ConversationInputProviding).self)
         let sender = kernel.resolveProvider((any MessageSendingProviding).self)
+        let conversations = kernel.resolveProvider((any ConversationManaging).self)
+        let conversationState = kernel.resolveProvider((any ConversationStateProviding).self)
 
         var missingProviders: [String] = []
         if input == nil { missingProviders.append("ConversationInputProviding") }
         if sender == nil { missingProviders.append("MessageSendingProviding") }
-        if let input, let sender {
-            sendActionBarViewModel = SendActionBarViewModel(input: input, sender: sender)
+        if conversations == nil { missingProviders.append("ConversationManaging") }
+        if conversationState == nil { missingProviders.append("ConversationStateProviding") }
+        if let input, let sender, let conversations, let conversationState {
+            sendActionBarViewModel = SendActionBarViewModel(
+                input: input,
+                sender: sender,
+                conversations: conversations,
+                conversationState: conversationState
+            )
         } else {
             sendActionBarViewModel = nil
         }
@@ -87,14 +96,12 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
 
     public func onReady(kernel: KernelCoreContainer) throws {
         guard let viewModel = sendActionBarViewModel,
-              let input = kernel.resolveProvider((any ConversationInputProviding).self),
-              let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
+              let input = kernel.resolveProvider((any ConversationInputProviding).self) else {
             Self.logger.error("\(Self.t)Failed to initialize SendActionBar observers: required providers unavailable")
             return
         }
 
         actionBarInputObserver = ActionBarInputObserver(input: input, viewModel: viewModel)
-        actionBarSendingObserver = ActionBarSendingObserver(sender: sender, viewModel: viewModel)
 
         // 3. 对话切换时清空输入框
         if let conversations = kernel.resolveProvider((any ConversationManaging).self) {
@@ -108,8 +115,7 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         actionBarInputObserver?.cancel()
         actionBarInputObserver = nil
-        actionBarSendingObserver?.cancel()
-        actionBarSendingObserver = nil
+        sendActionBarViewModel?.stopObservingConversationState()
         actionBarConversationObserver?.cancel()
         actionBarConversationObserver = nil
         sendActionBarViewModel = nil

@@ -18,6 +18,11 @@ public struct ConversationStateSnapshot: Equatable, Sendable {
     public let toolState: ConversationToolState
     public let lastError: String?
 
+    /// 当前会话是否正在执行 Agent 回合。
+    public var isSending: Bool {
+        agentLoopState == .running
+    }
+
     public init(
         conversationID: UUID,
         turnID: UUID? = nil,
