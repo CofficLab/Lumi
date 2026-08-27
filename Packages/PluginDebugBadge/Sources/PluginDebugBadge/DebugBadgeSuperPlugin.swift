@@ -72,7 +72,7 @@ public final class DebugBadgeSuperPlugin: SuperPlugin, SuperLog {
         @LumiTheme private var theme: any LumiUITheme
 
         var body: some View {
-            Text("DEBUG")
+            Text(LumiPluginLocalization.string("DEBUG", bundle: .module))
                 .font(.appMicroEmphasized)
                 .tracking(0.3)
                 .foregroundStyle(.white)

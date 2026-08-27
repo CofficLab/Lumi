@@ -18,6 +18,7 @@ let package = Package(
         .package(path: "../KitSuperLog"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderToolbar"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
@@ -27,8 +28,10 @@ let package = Package(
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
             ],
-            path: "Sources/PluginDebugBadge"
+            path: "Sources/PluginDebugBadge",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginDebugBadgeTests",
