@@ -193,7 +193,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
-    fileprivate func removeConversationObserver(_ handle: ConversationObserverHandleImpl) {
+    func removeConversationObserver(_ handle: ConversationObserverHandleImpl) {
         conversationObservers.removeAll { $0.handle === handle }
     }
 

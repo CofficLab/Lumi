@@ -18,7 +18,7 @@ final class ConversationObserverHandleImpl: ConversationObserverHandle {
         owner?.removeConversationObserver(self)
     }
 
-    fileprivate func invoke(_ event: ConversationEvent) {
+    func invoke(_ event: ConversationEvent) {
         guard !isCancelled else { return }
         callback(event)
     }
