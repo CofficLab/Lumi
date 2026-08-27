@@ -14,6 +14,10 @@ public protocol MessageInsertedObserverHandle: AnyObject {
 @MainActor
 public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     func messages(for conversationID: UUID) -> [Message]
+    /// Returns messages for presentation, including the current transient status message.
+    /// The regular `messages(for:)` path intentionally excludes transient status from
+    /// LLM history and other durable message consumers.
+    func messagesForDisplay(for conversationID: UUID) -> [Message]
     func message(id: UUID, in conversationID: UUID) -> Message?
     func lastMessage(in conversationID: UUID) -> Message?
     func messageCount(for conversationID: UUID) -> Int
@@ -63,6 +67,10 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
 }
 
 public extension MessageManaging {
+    func messagesForDisplay(for conversationID: UUID) -> [Message] {
+        messages(for: conversationID)
+    }
+
     func dailyMessageCounts(since: Date) -> [Date: Int] { [:] }
 
     func dailyTokenCounts(since: Date) -> [Date: Int] { [:] }

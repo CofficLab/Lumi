@@ -213,6 +213,10 @@ struct MessageManagerStatusMessageTests {
         let page = manager.messagePage(for: conversationID, limit: 10, beforeMessageID: nil, includesToolMessages: false)
         #expect(page.count == 1)
         #expect(page.first?.role == .status)
+
+        // 展示读取路径也必须包含瞬时 status；普通 messages(for:) 仍不包含它。
+        #expect(manager.messages(for: conversationID).isEmpty)
+        #expect(manager.messagesForDisplay(for: conversationID).first?.role == .status)
     }
 
     @Test("回合过程消息不清 status")

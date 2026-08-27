@@ -80,6 +80,12 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         // 不参与 pending 的 createdAt 排序。
         let status = statusBuffer.snapshot(for: conversationID)
 
+        if Self.verbose {
+            let statusState = status == nil ? "none" : "present"
+            let cursorState = beforeMessageID == nil ? "nil" : "set"
+            Self.logger.info("\(Self.t)mergedPage conversation=\(conversationID.uuidString.prefix(8)) disk=\(disk.count) pending=\(pending.count) status=\(statusState) before=\(cursorState)")
+        }
+
         if pending.isEmpty && status == nil { return disk }
 
         let diskIDs = Set(disk.map(\.id))
@@ -117,9 +123,26 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         }
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)messages(for:) conversation=\(conversationID.uuidString.prefix(8)) messages=\(all.count)")
+            let status = statusBuffer.snapshot(for: conversationID)
+            let statusState = status == nil ? "excluded/none" : "excluded/present"
+            Self.logger.info("\(Self.t)messages(for:) conversation=\(conversationID.uuidString.prefix(8)) messages=\(all.count) status=\(statusState)")
         }
 
+        return all
+    }
+
+    /// 展示读取路径：在普通消息之外追加当前会话的瞬时 status。
+    /// 普通 `messages(for:)` 保持不包含 status，避免污染 AgentLoop 的 LLM 历史。
+    public func messagesForDisplay(for conversationID: UUID) -> [Message] {
+        var all = messages(for: conversationID)
+        let status = statusBuffer.snapshot(for: conversationID)
+        if let status {
+            all.append(status)
+        }
+        if Self.verbose {
+            let statusState = status == nil ? "none" : "included"
+            Self.logger.info("\(Self.t)messagesForDisplay conversation=\(conversationID.uuidString.prefix(8)) messages=\(all.count) status=\(statusState)")
+        }
         return all
     }
 
@@ -243,7 +266,13 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
 
         // status 消息:纯内存瞬时态,不落盘。每会话最多一条(insert 即替换)。
         if messageToInsert.role == .status || messageToInsert.metadata["isTransientStatus"] == "true" {
+            let previous = statusBuffer.snapshot(for: conversationID)
             statusBuffer.set(messageToInsert, conversationID: conversationID)
+            if Self.verbose {
+                let content = messageToInsert.content.replacingOccurrences(of: "\n", with: "\\n")
+                let replacedID = previous.map { String($0.id.uuidString.prefix(8)) } ?? "none"
+                Self.logger.info("\(Self.t)status buffered conversation=\(conversationID.uuidString.prefix(8)) id=\(messageToInsert.id.uuidString.prefix(8)) content=\(content) replaced=\(replacedID) persisted=false")
+            }
             notifyMessagesDidChange(conversationID: conversationID)
             return
         }
@@ -353,7 +382,17 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     }
 
     public func clearStatusMessages(in conversationID: UUID) {
-        guard statusBuffer.clear(conversationID: conversationID) else { return }
+        let previous = statusBuffer.snapshot(for: conversationID)
+        guard statusBuffer.clear(conversationID: conversationID) else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)clearStatusMessages conversation=\(conversationID.uuidString.prefix(8)) status=none")
+            }
+            return
+        }
+        if Self.verbose {
+            let statusID = previous.map { String($0.id.uuidString.prefix(8)) } ?? "unknown"
+            Self.logger.info("\(Self.t)clearStatusMessages conversation=\(conversationID.uuidString.prefix(8)) id=\(statusID) cleared=true")
+        }
         notifyMessagesDidChange(conversationID: conversationID)
     }
 
