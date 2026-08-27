@@ -8,7 +8,7 @@ struct ContentPlaceholderView: View {
             Image(systemName: "macwindow")
                 .font(.system(size: 32))
                 .foregroundStyle(.secondary)
-            Text("Root View")
+            Text(LumiPluginLocalization.string("Root View", bundle: .module))
                 .font(.headline)
                 .foregroundStyle(.secondary)
         }

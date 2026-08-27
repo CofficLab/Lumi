@@ -16,6 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../LumiUI"),
+        .package(path: "../KitLocalization"),
         .package(path: "../ProviderWorkspace"),
         .package(path: "../KitSuperLog"),
     ],
@@ -24,10 +25,12 @@ let package = Package(
             name: "ProviderRootView",
             dependencies: [
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
-            path: "Sources/ProviderRootView"
+            path: "Sources/ProviderRootView",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "ProviderRootViewTests",

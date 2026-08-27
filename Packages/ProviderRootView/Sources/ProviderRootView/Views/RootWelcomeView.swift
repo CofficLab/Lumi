@@ -22,11 +22,11 @@ struct RootWelcomeView: View {
                     .frame(maxHeight: 80)
 
                 VStack(spacing: DesignTokens.Spacing.md) {
-                    Text("Welcome to Lumi")
+                    Text(LumiPluginLocalization.string("Welcome to Lumi", bundle: .module))
                         .font(.appTitle)
                         .foregroundStyle(theme.textPrimary)
 
-                    Text("Select an item from the ActivityBar to get started")
+                    Text(LumiPluginLocalization.string("Select an item from the ActivityBar to get started", bundle: .module))
                         .font(.appBody)
                         .foregroundStyle(theme.textSecondary)
                         .multilineTextAlignment(.center)
