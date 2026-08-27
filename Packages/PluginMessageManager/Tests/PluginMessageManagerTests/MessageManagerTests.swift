@@ -64,6 +64,38 @@ struct MessageManagerWriteBehindTests {
         #expect(store.fetchMessages(conversationId: conversationID).count == 1)
     }
 
+    @Test("响应元数据字段可完整往返数据库")
+    func responseMetadataRoundTrips() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let conversationID = UUID()
+        let message = Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "ok",
+            cachedInputTokenCount: 11,
+            cacheWriteInputTokenCount: 3,
+            cacheTotalInputTokenCount: 14,
+            responseID: "resp-1",
+            requestID: "req-1",
+            rawResponseJSON: "{\"id\":\"resp-1\"}",
+            rawStreamEventsJSON: "[\"message_start\"]",
+            stopReason: "end_turn"
+        )
+
+        try store.insertMessage(message)
+        let restored = try #require(store.fetchMessages(conversationId: conversationID).first)
+
+        #expect(restored.cachedInputTokenCount == 11)
+        #expect(restored.cacheWriteInputTokenCount == 3)
+        #expect(restored.cacheTotalInputTokenCount == 14)
+        #expect(restored.responseID == "resp-1")
+        #expect(restored.requestID == "req-1")
+        #expect(restored.rawResponseJSON == "{\"id\":\"resp-1\"}")
+        #expect(restored.rawStreamEventsJSON == "[\"message_start\"]")
+        #expect(restored.stopReason == "end_turn")
+    }
+
     @Test("user 消息落盘成功后发 saved 通知")
     func userMessagePostsSavedNotificationAfterPersistence() async throws {
         let (store, directory) = try makeStore()

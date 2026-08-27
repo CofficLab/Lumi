@@ -45,6 +45,14 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
     public var inputTokenCount: Int?
     /// 输出 token 数。
     public var outputTokenCount: Int?
+    public var cachedInputTokenCount: Int?
+    public var cacheWriteInputTokenCount: Int?
+    public var cacheTotalInputTokenCount: Int?
+    public var responseID: String?
+    public var requestID: String?
+    public var rawResponseJSON: String?
+    public var rawStreamEventsJSON: String?
+    public var stopReason: String?
     /// 端到端延迟（毫秒）。
     public var latencyMs: Double?
     /// 首 token 时间（毫秒）。
@@ -73,6 +81,14 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
         toolCalls: [MessageToolCall]? = nil,
         inputTokenCount: Int? = nil,
         outputTokenCount: Int? = nil,
+        cachedInputTokenCount: Int? = nil,
+        cacheWriteInputTokenCount: Int? = nil,
+        cacheTotalInputTokenCount: Int? = nil,
+        responseID: String? = nil,
+        requestID: String? = nil,
+        rawResponseJSON: String? = nil,
+        rawStreamEventsJSON: String? = nil,
+        stopReason: String? = nil,
         latencyMs: Double? = nil,
         timeToFirstTokenMs: Double? = nil,
         streamingDurationMs: Double? = nil
@@ -97,6 +113,14 @@ public struct Message: Identifiable, Codable, Equatable, Sendable {
         self.toolCalls = toolCalls
         self.inputTokenCount = inputTokenCount
         self.outputTokenCount = outputTokenCount
+        self.cachedInputTokenCount = cachedInputTokenCount
+        self.cacheWriteInputTokenCount = cacheWriteInputTokenCount
+        self.cacheTotalInputTokenCount = cacheTotalInputTokenCount
+        self.responseID = responseID
+        self.requestID = requestID
+        self.rawResponseJSON = rawResponseJSON
+        self.rawStreamEventsJSON = rawStreamEventsJSON
+        self.stopReason = stopReason
         self.latencyMs = latencyMs
         self.timeToFirstTokenMs = timeToFirstTokenMs
         self.streamingDurationMs = streamingDurationMs

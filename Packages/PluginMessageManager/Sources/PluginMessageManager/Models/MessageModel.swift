@@ -3,11 +3,6 @@ import ProviderMessage
 import SwiftData
 
 /// SwiftData model for chat messages
-///
-/// Stored in plugin专属 SQLite database, managed by `MessageStore`.
-/// 字段对齐新版 `ProviderMessage.Message`；toolCalls 以 JSON 字符串存储，
-/// 插入时轻量化（result 置 nil，由 `updateToolCallResult` 事后写入展示快照），
-/// 与旧版 MessageManagerPlugin 策略一致。
 @Model
 public final class MessageModel {
     /// Unique identifier (UUID 字符串)。
@@ -69,6 +64,14 @@ public final class MessageModel {
 
     /// Output token count。
     public var outputTokenCount: Int?
+    public var cachedInputTokenCount: Int?
+    public var cacheWriteInputTokenCount: Int?
+    public var cacheTotalInputTokenCount: Int?
+    public var responseId: String?
+    public var requestId: String?
+    public var rawResponseJson: String?
+    public var rawStreamEventsJson: String?
+    public var stopReason: String?
 
     /// Latency in milliseconds。
     public var latencyMs: Double?
@@ -100,6 +103,14 @@ public final class MessageModel {
         toolCallsJson: String? = nil,
         inputTokenCount: Int? = nil,
         outputTokenCount: Int? = nil,
+        cachedInputTokenCount: Int? = nil,
+        cacheWriteInputTokenCount: Int? = nil,
+        cacheTotalInputTokenCount: Int? = nil,
+        responseId: String? = nil,
+        requestId: String? = nil,
+        rawResponseJson: String? = nil,
+        rawStreamEventsJson: String? = nil,
+        stopReason: String? = nil,
         latencyMs: Double? = nil,
         timeToFirstTokenMs: Double? = nil,
         streamingDurationMs: Double? = nil
@@ -124,6 +135,14 @@ public final class MessageModel {
         self.toolCallsJson = toolCallsJson
         self.inputTokenCount = inputTokenCount
         self.outputTokenCount = outputTokenCount
+        self.cachedInputTokenCount = cachedInputTokenCount
+        self.cacheWriteInputTokenCount = cacheWriteInputTokenCount
+        self.cacheTotalInputTokenCount = cacheTotalInputTokenCount
+        self.responseId = responseId
+        self.requestId = requestId
+        self.rawResponseJson = rawResponseJson
+        self.rawStreamEventsJson = rawStreamEventsJson
+        self.stopReason = stopReason
         self.latencyMs = latencyMs
         self.timeToFirstTokenMs = timeToFirstTokenMs
         self.streamingDurationMs = streamingDurationMs
@@ -172,6 +191,14 @@ public extension MessageModel {
             toolCallsJson: toolCallsJson,
             inputTokenCount: message.inputTokenCount,
             outputTokenCount: message.outputTokenCount,
+            cachedInputTokenCount: message.cachedInputTokenCount,
+            cacheWriteInputTokenCount: message.cacheWriteInputTokenCount,
+            cacheTotalInputTokenCount: message.cacheTotalInputTokenCount,
+            responseId: message.responseID,
+            requestId: message.requestID,
+            rawResponseJson: message.rawResponseJSON,
+            rawStreamEventsJson: message.rawStreamEventsJSON,
+            stopReason: message.stopReason,
             latencyMs: message.latencyMs,
             timeToFirstTokenMs: message.timeToFirstTokenMs,
             streamingDurationMs: message.streamingDurationMs
@@ -215,6 +242,14 @@ public extension MessageModel {
             toolCalls: toolCalls,
             inputTokenCount: inputTokenCount,
             outputTokenCount: outputTokenCount,
+            cachedInputTokenCount: cachedInputTokenCount,
+            cacheWriteInputTokenCount: cacheWriteInputTokenCount,
+            cacheTotalInputTokenCount: cacheTotalInputTokenCount,
+            responseID: responseId,
+            requestID: requestId,
+            rawResponseJSON: rawResponseJson,
+            rawStreamEventsJSON: rawStreamEventsJson,
+            stopReason: stopReason,
             latencyMs: latencyMs,
             timeToFirstTokenMs: timeToFirstTokenMs,
             streamingDurationMs: streamingDurationMs
