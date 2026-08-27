@@ -964,6 +964,41 @@
         }
       }
     },
+    "Describe what you need in the chat, and the AI will draw and revise the icon, e.g. \\\"a blue gradient background with a coffee cup symbol\\\"." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe what you need in the chat, and the AI will draw and revise the icon, e.g. \\\"a blue gradient background with a coffee cup symbol\\\"."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在对话框中描述你的需求，AI 会绘制并修改图标，例如「带咖啡杯图案的蓝色渐变背景」。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在对话框中描述你的需求，AI 会绘制并修改图标，例如「带咖啡杯图案的蓝色渐变背景」。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在对话框中描述你的需求，AI 会绘制并修改图标，例如「带咖啡杯图案的蓝色渐变背景」。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在对话框中描述你的需求，AI 会绘制并修改图标，例如「带咖啡杯图案的蓝色渐变背景」。"
+          }
+        }
+      }
+    },
     "Design app icons with shapes, layers, and export capabilities." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1954,6 +1989,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "線條"
+          }
+        }
+      }
+    },
+    "Lint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lint"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规范检查"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规范检查"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规范检查"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "规范检查"
           }
         }
       }
@@ -3430,6 +3499,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "需要修改時,直接在對話中說明,例如「把背景改成綠色」。"
+          }
+        }
+      }
+    },
+    "To make changes, state them in the conversation, e.g. \\\"change the background to green\\\"." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To make changes, state them in the conversation, e.g. \\\"change the background to green\\\"."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要修改，请在对话中说明，例如「将背景改为绿色」。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要修改，请在对话中说明，例如「将背景改为绿色」。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要修改，请在对话中说明，例如「将背景改为绿色」。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要修改，请在对话中说明，例如「将背景改为绿色」。"
           }
         }
       }

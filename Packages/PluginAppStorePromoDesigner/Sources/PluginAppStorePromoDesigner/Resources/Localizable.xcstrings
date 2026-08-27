@@ -8,11 +8,60 @@
             "state" : "new",
             "value" : "%1$@ · %2$lld×%3$lld"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld×%lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld×%lld"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld×%lld"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld×%lld"
+          }
         }
       }
     },
     "%lld" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        }
+      }
     },
     "%lld %@ · %@" : {
       "localizations" : {
@@ -20,6 +69,30 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld %2$@ · %3$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld %@ · %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld %@ · %@"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld %@ · %@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld %@ · %@"
           }
         }
       }
@@ -82,7 +155,32 @@
       }
     },
     "APP" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用"
+          }
+        }
+      }
     },
     "App Store Promo Designer" : {
       "localizations" : {
@@ -202,6 +300,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "可選尺寸:iPhone 6.7 吋(1290×2796)、iPhone 6.5 吋(1284×2778)、iPhone 6.1 / 5.8 吋(1170×2532)、iPad Pro 12.9 吋(2048×2732)、iPad Pro 11 吋(1668×2388)、桌面(1280×800)。"
+          }
+        }
+      }
+    },
+    "Available sizes: iPhone 6.7\\\" (1290×2796), iPhone 6.5\\\" (1284×2778), iPhone 6.1\\\" / 5.8\\\" (1170×2532), iPad Pro 12.9\\\" (2048×2732), iPad Pro 11\\\" (1668×2388), and Desktop (1280×800)." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Available sizes: iPhone 6.7\\\" (1290×2796), iPhone 6.5\\\" (1284×2778), iPhone 6.1\\\" / 5.8\\\" (1170×2532), iPad Pro 12.9\\\" (2048×2732), iPad Pro 11\\\" (1668×2388), and Desktop (1280×800)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用尺寸：iPhone 6.7\" (1290×2796)、iPhone 6.5\" (1284×2778)、iPhone 6.1\" / 5.8\" (1170×2532)、iPad Pro 12.9\" (2048×2732)、iPad Pro 11\" (1668×2388)，以及桌面 (1280×800)。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用尺寸：iPhone 6.7\" (1290×2796)、iPhone 6.5\" (1284×2778)、iPhone 6.1\" / 5.8\" (1170×2532)、iPad Pro 12.9\" (2048×2732)、iPad Pro 11\" (1668×2388)，以及桌面 (1280×800)。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用尺寸：iPhone 6.7\" (1290×2796)、iPhone 6.5\" (1284×2778)、iPhone 6.1\" / 5.8\" (1170×2532)、iPad Pro 12.9\" (2048×2732)、iPad Pro 11\" (1668×2388)，以及桌面 (1280×800)。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用尺寸：iPhone 6.7\" (1290×2796)、iPhone 6.5\" (1284×2778)、iPhone 6.1\" / 5.8\" (1170×2532)、iPad Pro 12.9\" (2048×2732)、iPad Pro 11\" (1668×2388)，以及桌面 (1280×800)。"
           }
         }
       }
@@ -464,8 +597,103 @@
         }
       }
     },
+    "Describe your app and what to highlight in the chat, e.g. \\\"a promo image for a coffee tracker, highlight the brew timer\\\"." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe your app and what to highlight in the chat, e.g. \\\"a promo image for a coffee tracker, highlight the brew timer\\\"."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在对话框中描述你的 App 及要突出的重点，例如「一款咖啡追踪器的宣传图，突出冲泡计时器」。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在对话框中描述你的 App 及要突出的重点，例如「一款咖啡追踪器的宣传图，突出冲泡计时器」。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在对话框中描述你的 App 及要突出的重点，例如「一款咖啡追踪器的宣传图，突出冲泡计时器」。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在对话框中描述你的 App 及要突出的重点，例如「一款咖啡追踪器的宣传图，突出冲泡计时器」。"
+          }
+        }
+      }
+    },
+    "Detail" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detail"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "详情"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "详情"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "详情"
+          }
+        }
+      }
+    },
     "Display" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示"
+          }
+        }
+      }
     },
     "Editing Content" : {
       "localizations" : {
@@ -497,6 +725,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "修改內容"
+          }
+        }
+      }
+    },
+    "Exact Export Sizes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exact Export Sizes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精确导出尺寸"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精确导出尺寸"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精确导出尺寸"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精确导出尺寸"
           }
         }
       }
@@ -687,6 +949,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "圖 3 按語言分組的匯出結果"
+          }
+        }
+      }
+    },
+    "Hero" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hero"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主视觉"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主视觉"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主视觉"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主视觉"
           }
         }
       }
@@ -971,8 +1268,68 @@
         }
       }
     },
+    "Launch Campaign" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Launch Campaign"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发起推广"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发起推广"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发起推广"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发起推广"
+          }
+        }
+      }
+    },
     "Mode" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模式"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模式"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模式"
+          }
+        }
+      }
     },
     "Multi-language" : {
       "localizations" : {
@@ -1053,7 +1410,32 @@
       }
     },
     "OK" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定"
+          }
+        }
+      }
     },
     "Open a project to enable project-local storage." : {
       "localizations" : {

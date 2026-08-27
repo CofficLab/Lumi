@@ -5,7 +5,32 @@
 
     },
     "%lld nodes" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个节点"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个节点"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个节点"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个节点"
+          }
+        }
+      }
     },
     "A native SwiftUI mind map editor. Grow trees with agent tools in chat or edit directly on the canvas." : {
       "localizations" : {
@@ -227,6 +252,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "点击「新建」创建空白导图，或在聊天中让 Agent 创建，例如“创建一个关于 Swift 并发的思维导图”。"
+          }
+        }
+      }
+    },
+    "Click New to create an empty mind map, or ask the agent in chat, e.g. \\\"create a mind map about Swift concurrency\\\"." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click New to create an empty mind map, or ask the agent in chat, e.g. \\\"create a mind map about Swift concurrency\\\"."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击「新建」创建空白思维导图，或在对话中让智能体生成，例如「创建一张关于 Swift 并发的思维导图」。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击「新建」创建空白思维导图，或在对话中让智能体生成，例如「创建一张关于 Swift 并发的思维导图」。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击「新建」创建空白思维导图，或在对话中让智能体生成，例如「创建一张关于 Swift 并发的思维导图」。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击「新建」创建空白思维导图，或在对话中让智能体生成，例如「创建一张关于 Swift 并发的思维导图」。"
           }
         }
       }
@@ -776,7 +836,32 @@
       }
     },
     "Node text" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "节点文本"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "节点文本"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "节点文本"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "节点文本"
+          }
+        }
+      }
     },
     "Notes" : {
       "localizations" : {

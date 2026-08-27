@@ -1,75 +1,109 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Web Search" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Web Search"
+  "sourceLanguage": "en",
+  "strings": {
+    "Search the web for real-time information. Use this tool to find current information, news, or specific data from the internet. Note: This tool is often required to be used alongside web_fetch or web_extractor by certain AI models (e.g., Qwen).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search the web for real-time information. Use this tool to find current information, news, or specific data from the internet. Note: This tool is often required to be used alongside web_fetch or web_extractor by certain AI models (e.g., Qwen)."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "网页搜索"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索网络获取实时信息。使用该工具查找最新资讯、新闻或特定数据。注意：某些 AI 模型（如 Qwen）通常要求配合 web_fetch 或 web_extractor 一起使用。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "網頁搜索"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索网络获取实时信息。使用该工具查找最新资讯、新闻或特定数据。注意：某些 AI 模型（如 Qwen）通常要求配合 web_fetch 或 web_extractor 一起使用。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "網頁搜索"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索网络获取实时信息。使用该工具查找最新资讯、新闻或特定数据。注意：某些 AI 模型（如 Qwen）通常要求配合 web_fetch 或 web_extractor 一起使用。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "網頁搜索"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索网络获取实时信息。使用该工具查找最新资讯、新闻或特定数据。注意：某些 AI 模型（如 Qwen）通常要求配合 web_fetch 或 web_extractor 一起使用。"
           }
         }
       }
     },
-    "WebSearch" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "WebSearch"
+    "Web Search": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web Search"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "网页搜索"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网页搜索"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "网页搜索"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "網頁搜索"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "网页搜索"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "網頁搜索"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "网页搜索"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "網頁搜索"
+          }
+        }
+      }
+    },
+    "WebSearch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WebSearch"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网页搜索"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网页搜索"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网页搜索"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网页搜索"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

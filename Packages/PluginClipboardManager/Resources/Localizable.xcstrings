@@ -1,2029 +1,2097 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "%lld" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+  "sourceLanguage": "en",
+  "strings": {
+    "%lld": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        }
-      }
-    },
-    "%lld items" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld items"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld items"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld items"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld items"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld items"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         }
       }
     },
-    "100" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "100"
+    "%lld items": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "100"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "100"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "100"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "100"
-          }
-        }
-      }
-    },
-    "500" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "500"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "500"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "500"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "500"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "500"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items"
           }
         }
       }
     },
-    "1000" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1000"
+    "100": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "100"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1000"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "100"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1000"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "100"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1000"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "100"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1000"
-          }
-        }
-      }
-    },
-    "All data is stored locally in SwiftData database and will not be uploaded to any server." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All data is stored locally in SwiftData database and will not be uploaded to any server."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有数据存储在本地 SwiftData 数据库中，不会上传到任何服务器。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有資料儲存在本地 SwiftData 資料庫中，不會上傳到任何伺服器。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有資料儲存在本地 SwiftData 資料庫中，不會上傳到任何伺服器。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有資料儲存在本地 SwiftData 資料庫中，不會上傳到任何伺服器。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "100"
           }
         }
       }
     },
-    "Auto Cleanup" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Auto Cleanup"
+    "500": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "500"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动清理"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "500"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動清理"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "500"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動清理"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "500"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動清理"
-          }
-        }
-      }
-    },
-    "Automatically clean old clipboard items to save memory" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatically clean old clipboard items to save memory"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动清理旧剪贴板项以节省内存"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動清理舊剪貼簿項目以節省記憶體"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動清理舊剪貼簿項目以節省記憶體"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動清理舊剪貼簿項目以節省記憶體"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "500"
           }
         }
       }
     },
-    "Basic Operations" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Basic Operations"
+    "1000": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1000"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1000"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1000"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1000"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作"
-          }
-        }
-      }
-    },
-    "Clear All History" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear All History"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除所有历史"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除所有歷史"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除所有歷史"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除所有歷史"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1000"
           }
         }
       }
     },
-    "Clear All History: removes all stored records." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear All History: removes all stored records."
+    "All data is stored locally in SwiftData database and will not be uploaded to any server.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All data is stored locally in SwiftData database and will not be uploaded to any server."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「清除所有历史」:删除全部已保存的记录。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所有数据存储在本地 SwiftData 数据库中，不会上传到任何服务器。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「清除所有歷史」:刪除全部已保存的記錄。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所有資料儲存在本地 SwiftData 資料庫中，不會上傳到任何伺服器。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「清除所有歷史」:刪除全部已保存的記錄。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所有資料儲存在本地 SwiftData 資料庫中，不會上傳到任何伺服器。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「清除所有歷史」:刪除全部已保存的記錄。"
-          }
-        }
-      }
-    },
-    "Clear History" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear History"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除历史"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除歷史"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除歷史"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除歷史"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所有資料儲存在本地 SwiftData 資料庫中，不會上傳到任何伺服器。"
           }
         }
       }
     },
-    "Click Delete to remove a single record, or Clear History in the toolbar to clear everything." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Click Delete to remove a single record, or Clear History in the toolbar to clear everything."
+    "Auto Cleanup": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto Cleanup"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "点击「删除」移除单条记录,或使用工具栏的「清除历史」清空全部记录。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动清理"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊「刪除」移除單條記錄,或使用工具列的「清除歷史」清空全部記錄。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動清理"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊「刪除」移除單條記錄,或使用工具列的「清除歷史」清空全部記錄。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動清理"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊「刪除」移除單條記錄,或使用工具列的「清除歷史」清空全部記錄。"
-          }
-        }
-      }
-    },
-    "Clipboard" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clipboard"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪贴板"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪貼簿"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪貼簿"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪貼簿"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動清理"
           }
         }
       }
     },
-    "Clipboard History" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clipboard History"
+    "Automatically clean old clipboard items to save memory": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically clean old clipboard items to save memory"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪贴板历史"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动清理旧剪贴板项以节省内存"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪貼簿歷史"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動清理舊剪貼簿項目以節省記憶體"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪貼簿歷史"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動清理舊剪貼簿項目以節省記憶體"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪貼簿歷史"
-          }
-        }
-      }
-    },
-    "Clipboard Manager" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clipboard Manager"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪贴板管理器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪貼簿管理器"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪貼簿管理器"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪貼簿管理器"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動清理舊剪貼簿項目以節省記憶體"
           }
         }
       }
     },
-    "Clipboard Manager Plugin" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clipboard Manager Plugin"
+    "Basic Operations": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basic Operations"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪贴板管理器"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪贴板管理器"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪贴板管理器"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剪贴板管理器"
-          }
-        }
-      }
-    },
-    "Configure auto-cleanup to manage storage" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Configure auto-cleanup to manage storage"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "配置自动清理以管理存储"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定自動清理以管理儲存空間"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定自動清理以管理儲存空間"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定自動清理以管理儲存空間"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         }
       }
     },
-    "Copy" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copy"
+    "Clear": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "复制"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "複製"
-          }
-        }
-      }
-    },
-    "Copy anything on your Mac; while monitoring is enabled, it is recorded in the list automatically." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copy anything on your Mac; while monitoring is enabled, it is recorded in the list automatically."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 Mac 上复制任意内容;监控开启时会自动记录到列表中。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 Mac 上複製任意內容;監控開啟時會自動記錄到列表中。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 Mac 上複製任意內容;監控開啟時會自動記錄到列表中。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 Mac 上複製任意內容;監控開啟時會自動記錄到列表中。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
           }
         }
       }
     },
-    "Data" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Data"
+    "Clear All": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear All"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "数据"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空全部"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空全部"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空全部"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "資料"
-          }
-        }
-      }
-    },
-    "Delete" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "删除"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刪除"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刪除"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刪除"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空全部"
           }
         }
       }
     },
-    "Enable Clipboard Monitoring" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enable Clipboard Monitoring"
+    "Clear All History": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear All History"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用剪贴板监控"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除所有历史"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用剪贴板监控"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除所有歷史"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用剪贴板监控"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除所有歷史"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用剪贴板监控"
-          }
-        }
-      }
-    },
-    "Enable Clipboard Monitoring: turns automatic recording on or off." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enable Clipboard Monitoring: turns automatic recording on or off."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「启用剪贴板监控」:开启或关闭自动记录。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「啟用剪貼簿監控」:開啟或關閉自動記錄。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「啟用剪貼簿監控」:開啟或關閉自動記錄。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「啟用剪貼簿監控」:開啟或關閉自動記錄。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除所有歷史"
           }
         }
       }
     },
-    "Figure 1: Interface layout" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Figure 1: Interface layout"
+    "Clear All History: removes all stored records.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear All History: removes all stored records."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "图 1 界面布局"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「清除所有历史」:删除全部已保存的记录。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖 1 介面說明"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「清除所有歷史」:刪除全部已保存的記錄。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖 1 介面說明"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「清除所有歷史」:刪除全部已保存的記錄。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖 1 介面說明"
-          }
-        }
-      }
-    },
-    "Find the item you need and click Copy to put it back on the clipboard, then paste it where you want." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Find the item you need and click Copy to put it back on the clipboard, then paste it where you want."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在列表中找到需要的内容,点击「复制」将其重新放入剪贴板,再到目标位置粘贴。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在列表中找到需要的內容,點擊「複製」將其重新放入剪貼簿,再到目標位置貼上。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在列表中找到需要的內容,點擊「複製」將其重新放入剪貼簿,再到目標位置貼上。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在列表中找到需要的內容,點擊「複製」將其重新放入剪貼簿,再到目標位置貼上。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「清除所有歷史」:刪除全部已保存的記錄。"
           }
         }
       }
     },
-    "General" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "General"
+    "Clear History": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear History"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除历史"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一般"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除歷史"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一般"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除歷史"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一般"
-          }
-        }
-      }
-    },
-    "History is stored only on this device and is never uploaded." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "History is stored only on this device and is never uploaded."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "历史数据仅保存在本机,不会上传到任何服务器。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歷史資料僅保存在本機,不會上傳到任何伺服器。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歷史資料僅保存在本機,不會上傳到任何伺服器。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歷史資料僅保存在本機,不會上傳到任何伺服器。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除歷史"
           }
         }
       }
     },
-    "History list" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "History list"
+    "Click Delete to remove a single record, or Clear History in the toolbar to clear everything.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click Delete to remove a single record, or Clear History in the toolbar to clear everything."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "历史列表"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击「删除」移除单条记录,或使用工具栏的「清除历史」清空全部记录。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歷史列表"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊「刪除」移除單條記錄,或使用工具列的「清除歷史」清空全部記錄。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歷史列表"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊「刪除」移除單條記錄,或使用工具列的「清除歷史」清空全部記錄。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歷史列表"
-          }
-        }
-      }
-    },
-    "History list: shows copied items, newest first. When there are no records, it shows No clipboard records." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "History list: shows copied items, newest first. When there are no records, it shows No clipboard records."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "历史列表:按时间倒序显示复制过的内容;没有记录时显示「暂无剪贴板记录」。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歷史列表:按時間倒序顯示複製過的內容;沒有記錄時顯示「暫無剪貼簿記錄」。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歷史列表:按時間倒序顯示複製過的內容;沒有記錄時顯示「暫無剪貼簿記錄」。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歷史列表:按時間倒序顯示複製過的內容;沒有記錄時顯示「暫無剪貼簿記錄」。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊「刪除」移除單條記錄,或使用工具列的「清除歷史」清空全部記錄。"
           }
         }
       }
     },
-    "History Size" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "History Size"
+    "Clipboard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipboard"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "历史大小"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "历史大小"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "历史大小"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "历史大小"
-          }
-        }
-      }
-    },
-    "History Size: limits how many items are kept — 100, 500, 1000, or Unlimited." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "History Size: limits how many items are kept — 100, 500, 1000, or Unlimited."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「历史大小」:限制保留的记录数量,可选 100、500、1000 或无限制。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「歷史大小」:限制保留的記錄數量,可選 100、500、1000 或無限制。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「歷史大小」:限制保留的記錄數量,可選 100、500、1000 或無限制。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「歷史大小」:限制保留的記錄數量,可選 100、500、1000 或無限制。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿"
           }
         }
       }
     },
-    "Interface" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Interface"
+    "Clipboard History": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipboard History"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "界面说明"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板历史"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "介面說明"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿歷史"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "介面說明"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿歷史"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "介面說明"
-          }
-        }
-      }
-    },
-    "Item actions" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Item actions"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "条目操作"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "條目操作"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "條目操作"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "條目操作"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿歷史"
           }
         }
       }
     },
-    "Item actions: each item provides Copy and Delete buttons." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Item actions: each item provides Copy and Delete buttons."
+    "Clipboard Manager": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipboard Manager"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "条目操作:每条记录提供「复制」和「删除」按钮。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板管理器"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "條目操作:每條記錄提供「複製」和「刪除」按鈕。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿管理器"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "條目操作:每條記錄提供「複製」和「刪除」按鈕。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿管理器"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "條目操作:每條記錄提供「複製」和「刪除」按鈕。"
-          }
-        }
-      }
-    },
-    "Keep track of your clipboard history and access previous copies" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keep track of your clipboard history and access previous copies"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "跟踪剪贴板历史并访问之前的复制内容"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "追蹤剪貼簿歷史並存取之前的複製內容"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "追蹤剪貼簿歷史並存取之前的複製內容"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "追蹤剪貼簿歷史並存取之前的複製內容"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪貼簿管理器"
           }
         }
       }
     },
-    "Monitor clipboard history locally on this device." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Monitor clipboard history locally on this device."
+    "Clipboard Manager Plugin": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipboard Manager Plugin"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在此设备上本地监控剪贴板历史。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板管理器"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在此设备上本地监控剪贴板历史。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板管理器"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在此设备上本地监控剪贴板历史。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板管理器"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在此设备上本地监控剪贴板历史。"
-          }
-        }
-      }
-    },
-    "Monitors clipboard changes automatically" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Monitors clipboard changes automatically"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动监控剪贴板变化"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動監控剪貼簿變化"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動監控剪貼簿變化"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自動監控剪貼簿變化"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板管理器"
           }
         }
       }
     },
-    "No clipboard records" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No clipboard records"
+    "Configure auto-cleanup to manage storage": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure auto-cleanup to manage storage"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂无剪贴板记录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置自动清理以管理存储"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫無剪貼簿記錄"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定自動清理以管理儲存空間"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫無剪貼簿記錄"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定自動清理以管理儲存空間"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫無剪貼簿記錄"
-          }
-        }
-      }
-    },
-    "Notes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notes"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意事项"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意事項"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意事項"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意事項"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定自動清理以管理儲存空間"
           }
         }
       }
     },
-    "Open the Clipboard tab in the sidebar." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open the Clipboard tab in the sidebar."
+    "Copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在侧边栏中打开「剪贴板」。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在側邊欄中開啟「剪貼簿」。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在側邊欄中開啟「剪貼簿」。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在側邊欄中開啟「剪貼簿」。"
-          }
-        }
-      }
-    },
-    "Overview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Overview"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概述"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概述"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概述"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概述"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製"
           }
         }
       }
     },
-    "Pin" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pin"
+    "Copy anything on your Mac; while monitoring is enabled, it is recorded in the list automatically.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy anything on your Mac; while monitoring is enabled, it is recorded in the list automatically."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "固定"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Mac 上复制任意内容;监控开启时会自动记录到列表中。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "固定"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Mac 上複製任意內容;監控開啟時會自動記錄到列表中。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "固定"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Mac 上複製任意內容;監控開啟時會自動記錄到列表中。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "固定"
-          }
-        }
-      }
-    },
-    "Pin important items to keep them accessible" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pin important items to keep them accessible"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "固定重要项目以保持可访问"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "釘選重要項目以保持可存取"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "釘選重要項目以保持可存取"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "釘選重要項目以保持可存取"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Mac 上複製任意內容;監控開啟時會自動記錄到列表中。"
           }
         }
       }
     },
-    "Provides search and filter capabilities" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Provides search and filter capabilities"
+    "Data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供搜索和筛选功能"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数据"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供搜尋和篩選功能"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供搜尋和篩選功能"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供搜尋和篩選功能"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料"
           }
         }
       }
     },
-    "Quick Search" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quick Search"
+    "Delete": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快速搜索"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快速搜尋"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快速搜尋"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快速搜尋"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除"
           }
         }
       }
     },
-    "Save frequently used text snippets for quick access" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save frequently used text snippets for quick access"
+    "Enable Clipboard Monitoring": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable Clipboard Monitoring"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保存常用文本片段以便快速访问"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用剪贴板监控"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "儲存常用文字片段以便快速存取"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用剪贴板监控"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "儲存常用文字片段以便快速存取"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用剪贴板监控"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "儲存常用文字片段以便快速存取"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用剪贴板监控"
           }
         }
       }
     },
-    "Search through clipboard history to find what you need" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search through clipboard history to find what you need"
+    "Enable Clipboard Monitoring: turns automatic recording on or off.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable Clipboard Monitoring: turns automatic recording on or off."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索剪贴板历史以找到所需内容"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「启用剪贴板监控」:开启或关闭自动记录。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋剪貼簿歷史以找到所需內容"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「啟用剪貼簿監控」:開啟或關閉自動記錄。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋剪貼簿歷史以找到所需內容"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「啟用剪貼簿監控」:開啟或關閉自動記錄。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋剪貼簿歷史以找到所需內容"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「啟用剪貼簿監控」:開啟或關閉自動記錄。"
           }
         }
       }
     },
-    "Settings" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings"
+    "Figure 1: Interface layout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Figure 1: Interface layout"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置说明"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图 1 界面布局"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定說明"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖 1 介面說明"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定說明"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖 1 介面說明"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定說明"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖 1 介面說明"
           }
         }
       }
     },
-    "Snippet Management" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snippet Management"
+    "Find the item you need and click Copy to put it back on the clipboard, then paste it where you want.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find the item you need and click Copy to put it back on the clipboard, then paste it where you want."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "片段管理"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在列表中找到需要的内容,点击「复制」将其重新放入剪贴板,再到目标位置粘贴。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "片段管理"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在列表中找到需要的內容,點擊「複製」將其重新放入剪貼簿,再到目標位置貼上。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "片段管理"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在列表中找到需要的內容,點擊「複製」將其重新放入剪貼簿,再到目標位置貼上。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "片段管理"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在列表中找到需要的內容,點擊「複製」將其重新放入剪貼簿,再到目標位置貼上。"
           }
         }
       }
     },
-    "Stores history in local database" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stores history in local database"
+    "General": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将历史记录存储在本地数据库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將歷史記錄儲存在本機資料庫"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一般"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將歷史記錄儲存在本機資料庫"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一般"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將歷史記錄儲存在本機資料庫"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一般"
           }
         }
       }
     },
-    "Supports text, images, and rich content" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Supports text, images, and rich content"
+    "History is stored only on this device and is never uploaded.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History is stored only on this device and is never uploaded."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持文本、图片和富文本内容"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "历史数据仅保存在本机,不会上传到任何服务器。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援文字、圖片和豐富內容"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歷史資料僅保存在本機,不會上傳到任何伺服器。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援文字、圖片和豐富內容"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歷史資料僅保存在本機,不會上傳到任何伺服器。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援文字、圖片和豐富內容"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歷史資料僅保存在本機,不會上傳到任何伺服器。"
           }
         }
       }
     },
-    "This manual covers the interface and basic operations of the Clipboard Manager: it records what you copy and lets you browse and reuse previous clipboard content." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This manual covers the interface and basic operations of the Clipboard Manager: it records what you copy and lets you browse and reuse previous clipboard content."
+    "History list": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History list"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本手册介绍「剪贴板」的界面与基本操作。它会记录你复制的内容,方便浏览和再次使用之前的剪贴板内容。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "历史列表"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本手冊介紹「剪貼簿」的介面與基本操作。它會記錄你複製的內容,方便瀏覽和再次使用之前的剪貼簿內容。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歷史列表"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本手冊介紹「剪貼簿」的介面與基本操作。它會記錄你複製的內容,方便瀏覽和再次使用之前的剪貼簿內容。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歷史列表"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本手冊介紹「剪貼簿」的介面與基本操作。它會記錄你複製的內容,方便瀏覽和再次使用之前的剪貼簿內容。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歷史列表"
           }
         }
       }
     },
-    "Toolbar" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toolbar"
+    "History list: shows copied items, newest first. When there are no records, it shows No clipboard records.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History list: shows copied items, newest first. When there are no records, it shows No clipboard records."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具栏"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "历史列表:按时间倒序显示复制过的内容;没有记录时显示「暂无剪贴板记录」。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具列"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歷史列表:按時間倒序顯示複製過的內容;沒有記錄時顯示「暫無剪貼簿記錄」。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具列"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歷史列表:按時間倒序顯示複製過的內容;沒有記錄時顯示「暫無剪貼簿記錄」。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具列"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歷史列表:按時間倒序顯示複製過的內容;沒有記錄時顯示「暫無剪貼簿記錄」。"
           }
         }
       }
     },
-    "Toolbar: the Clear History button removes all records at once." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toolbar: the Clear History button removes all records at once."
+    "History Size": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History Size"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具栏:「清除历史」按钮可一次性清除全部记录。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "历史大小"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具列:「清除歷史」按鈕可一次清除全部記錄。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "历史大小"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具列:「清除歷史」按鈕可一次清除全部記錄。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "历史大小"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具列:「清除歷史」按鈕可一次清除全部記錄。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "历史大小"
           }
         }
       }
     },
-    "Unlimited" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unlimited"
+    "History Size: limits how many items are kept — 100, 500, 1000, or Unlimited.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History Size: limits how many items are kept — 100, 500, 1000, or Unlimited."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无限制"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「历史大小」:限制保留的记录数量,可选 100、500、1000 或无限制。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無限制"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「歷史大小」:限制保留的記錄數量,可選 100、500、1000 或無限制。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無限制"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「歷史大小」:限制保留的記錄數量,可選 100、500、1000 或無限制。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無限制"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「歷史大小」:限制保留的記錄數量,可選 100、500、1000 或無限制。"
           }
         }
       }
     },
-    "Unpin" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unpin"
+    "Interface": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interface"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消固定"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "界面说明"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消固定"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "介面說明"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消固定"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "介面說明"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消固定"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "介面說明"
           }
         }
       }
     },
-    "Use keyboard shortcuts for quick access" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use keyboard shortcuts for quick access"
+    "Item actions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Item actions"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用键盘快捷键快速访问"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "条目操作"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用鍵盤快捷鍵快速存取"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "條目操作"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用鍵盤快捷鍵快速存取"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "條目操作"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用鍵盤快捷鍵快速存取"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "條目操作"
           }
         }
       }
     },
-    "User Manual" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "User Manual"
+    "Item actions: each item provides Copy and Delete buttons.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Item actions: each item provides Copy and Delete buttons."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用手册"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "条目操作:每条记录提供「复制」和「删除」按钮。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用手冊"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "條目操作:每條記錄提供「複製」和「刪除」按鈕。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用手冊"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "條目操作:每條記錄提供「複製」和「刪除」按鈕。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用手冊"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "條目操作:每條記錄提供「複製」和「刪除」按鈕。"
+          }
+        }
+      }
+    },
+    "Keep track of your clipboard history and access previous copies": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep track of your clipboard history and access previous copies"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟踪剪贴板历史并访问之前的复制内容"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "追蹤剪貼簿歷史並存取之前的複製內容"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "追蹤剪貼簿歷史並存取之前的複製內容"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "追蹤剪貼簿歷史並存取之前的複製內容"
+          }
+        }
+      }
+    },
+    "Monitor clipboard history locally on this device.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monitor clipboard history locally on this device."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此设备上本地监控剪贴板历史。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此设备上本地监控剪贴板历史。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此设备上本地监控剪贴板历史。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此设备上本地监控剪贴板历史。"
+          }
+        }
+      }
+    },
+    "Monitors clipboard changes automatically": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monitors clipboard changes automatically"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动监控剪贴板变化"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動監控剪貼簿變化"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動監控剪貼簿變化"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動監控剪貼簿變化"
+          }
+        }
+      }
+    },
+    "No clipboard records": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No clipboard records"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无剪贴板记录"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無剪貼簿記錄"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無剪貼簿記錄"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫無剪貼簿記錄"
+          }
+        }
+      }
+    },
+    "Notes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事项"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事項"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事項"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事項"
+          }
+        }
+      }
+    },
+    "Open the Clipboard tab in the sidebar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the Clipboard tab in the sidebar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在侧边栏中打开「剪贴板」。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在側邊欄中開啟「剪貼簿」。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在側邊欄中開啟「剪貼簿」。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在側邊欄中開啟「剪貼簿」。"
+          }
+        }
+      }
+    },
+    "Overview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overview"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概述"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概述"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概述"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概述"
+          }
+        }
+      }
+    },
+    "Pin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "固定"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "固定"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "固定"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "固定"
+          }
+        }
+      }
+    },
+    "Pin important items to keep them accessible": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin important items to keep them accessible"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "固定重要项目以保持可访问"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "釘選重要項目以保持可存取"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "釘選重要項目以保持可存取"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "釘選重要項目以保持可存取"
+          }
+        }
+      }
+    },
+    "Provides search and filter capabilities": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provides search and filter capabilities"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供搜索和筛选功能"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供搜尋和篩選功能"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供搜尋和篩選功能"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供搜尋和篩選功能"
+          }
+        }
+      }
+    },
+    "Quick Search": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick Search"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速搜索"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速搜尋"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速搜尋"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速搜尋"
+          }
+        }
+      }
+    },
+    "Save frequently used text snippets for quick access": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save frequently used text snippets for quick access"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存常用文本片段以便快速访问"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存常用文字片段以便快速存取"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存常用文字片段以便快速存取"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存常用文字片段以便快速存取"
+          }
+        }
+      }
+    },
+    "Search through clipboard history to find what you need": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search through clipboard history to find what you need"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索剪贴板历史以找到所需内容"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋剪貼簿歷史以找到所需內容"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋剪貼簿歷史以找到所需內容"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋剪貼簿歷史以找到所需內容"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置说明"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定說明"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定說明"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定說明"
+          }
+        }
+      }
+    },
+    "Snippet Management": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snippet Management"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "片段管理"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "片段管理"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "片段管理"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "片段管理"
+          }
+        }
+      }
+    },
+    "Stores history in local database": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stores history in local database"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将历史记录存储在本地数据库"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將歷史記錄儲存在本機資料庫"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將歷史記錄儲存在本機資料庫"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將歷史記錄儲存在本機資料庫"
+          }
+        }
+      }
+    },
+    "Supports text, images, and rich content": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supports text, images, and rich content"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持文本、图片和富文本内容"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支援文字、圖片和豐富內容"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支援文字、圖片和豐富內容"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支援文字、圖片和豐富內容"
+          }
+        }
+      }
+    },
+    "This manual covers the interface and basic operations of the Clipboard Manager: it records what you copy and lets you browse and reuse previous clipboard content.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This manual covers the interface and basic operations of the Clipboard Manager: it records what you copy and lets you browse and reuse previous clipboard content."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手册介绍「剪贴板」的界面与基本操作。它会记录你复制的内容,方便浏览和再次使用之前的剪贴板内容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手冊介紹「剪貼簿」的介面與基本操作。它會記錄你複製的內容,方便瀏覽和再次使用之前的剪貼簿內容。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手冊介紹「剪貼簿」的介面與基本操作。它會記錄你複製的內容,方便瀏覽和再次使用之前的剪貼簿內容。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手冊介紹「剪貼簿」的介面與基本操作。它會記錄你複製的內容,方便瀏覽和再次使用之前的剪貼簿內容。"
+          }
+        }
+      }
+    },
+    "Toolbar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toolbar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具栏"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具列"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具列"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具列"
+          }
+        }
+      }
+    },
+    "Toolbar: the Clear History button removes all records at once.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toolbar: the Clear History button removes all records at once."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具栏:「清除历史」按钮可一次性清除全部记录。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具列:「清除歷史」按鈕可一次清除全部記錄。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具列:「清除歷史」按鈕可一次清除全部記錄。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具列:「清除歷史」按鈕可一次清除全部記錄。"
+          }
+        }
+      }
+    },
+    "Unlimited": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlimited"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无限制"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無限制"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無限制"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無限制"
+          }
+        }
+      }
+    },
+    "Unpin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unpin"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消固定"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消固定"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消固定"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消固定"
+          }
+        }
+      }
+    },
+    "Use keyboard shortcuts for quick access": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use keyboard shortcuts for quick access"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用键盘快捷键快速访问"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用鍵盤快捷鍵快速存取"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用鍵盤快捷鍵快速存取"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用鍵盤快捷鍵快速存取"
+          }
+        }
+      }
+    },
+    "User Manual": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User Manual"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用手册"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用手冊"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用手冊"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用手冊"
           }
         }
       }
     }
   },
-  "version" : "1.1"
+  "version": "1.1"
 }

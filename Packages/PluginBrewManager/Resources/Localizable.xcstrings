@@ -1,3070 +1,3613 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "All packages are up to date" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All packages are up to date"
+  "sourceLanguage": "en",
+  "strings": {
+    "All packages are up to date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All packages are up to date"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有包都是最新的"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所有包都是最新的"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有套件都是最新的"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所有套件都是最新的"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有套件都是最新的"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所有套件都是最新的"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有套件都是最新的"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所有套件都是最新的"
           }
         }
       }
     },
-    "Automatically detects Homebrew installation status. Shows clear guidance when Homebrew is not installed." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatically detects Homebrew installation status. Shows clear guidance when Homebrew is not installed."
+    "Automatically detects Homebrew installation status. Shows clear guidance when Homebrew is not installed.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically detects Homebrew installation status. Shows clear guidance when Homebrew is not installed."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动检测 Homebrew 安装状态。当未安装 Homebrew 时显示清晰指引。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动检测 Homebrew 安装状态。当未安装 Homebrew 时显示清晰指引。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动检测 Homebrew 安装状态。当未安装 Homebrew 时显示清晰指引。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动检测 Homebrew 安装状态。当未安装 Homebrew 时显示清晰指引。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动检测 Homebrew 安装状态。当未安装 Homebrew 时显示清晰指引。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动检测 Homebrew 安装状态。当未安装 Homebrew 时显示清晰指引。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自动检测 Homebrew 安装状态。当未安装 Homebrew 时显示清晰指引。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动检测 Homebrew 安装状态。当未安装 Homebrew 时显示清晰指引。"
           }
         }
       }
     },
-    "Background services" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Background services"
+    "Background services": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background services"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "后台服务"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "后台服务"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "后台服务"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "后台服务"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "后台服务"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "后台服务"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "后台服务"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "后台服务"
           }
         }
       }
     },
-    "Basic Operations" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Basic Operations"
+    "Basic Operations": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basic Operations"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         }
       }
     },
-    "Batch update failed: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Batch update failed: %@"
+    "Batch update failed: \\(error.localizedDescription)": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batch update failed: \\(error.localizedDescription)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "批量更新失败：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量更新失败：\\(error.localizedDescription)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "批量更新失敗：%@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量更新失败：\\(error.localizedDescription)"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "批量更新失敗：%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量更新失败：\\(error.localizedDescription)"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "批量更新失敗：%@"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量更新失败：\\(error.localizedDescription)"
           }
         }
       }
     },
-    "Batch Upgrade" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Batch Upgrade"
+    "Batch update failed: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batch update failed: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "批量升级"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量更新失败：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "批量升级"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量更新失敗：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "批量升级"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量更新失敗：%@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "批量升级"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量更新失敗：%@"
           }
         }
       }
     },
-    "Browse all installed Homebrew formulae and casks. View package details including version, installation date, and dependencies." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Browse all installed Homebrew formulae and casks. View package details including version, installation date, and dependencies."
+    "Batch Upgrade": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batch Upgrade"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浏览所有已安装的 Homebrew formula 和 cask。查看包详情，包括版本、安装日期和依赖关系。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量升级"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浏览所有已安装的 Homebrew formula 和 cask。查看包详情，包括版本、安装日期和依赖关系。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量升级"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浏览所有已安装的 Homebrew formula 和 cask。查看包详情，包括版本、安装日期和依赖关系。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量升级"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浏览所有已安装的 Homebrew formula 和 cask。查看包详情，包括版本、安装日期和依赖关系。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "批量升级"
           }
         }
       }
     },
-    "Browse Packages" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Browse Packages"
+    "brew info": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew info"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浏览包"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew info"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浏览包"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew info"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浏览包"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew info"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "浏览包"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew info"
           }
         }
       }
     },
-    "cask" : {
-
+    "brew install": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew install"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew install"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew install"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew install"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew install"
+          }
+        }
+      }
+    },
+    "brew list": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew list"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew list"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew list"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew list"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew list"
+          }
+        }
+      }
+    },
+    "brew search": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew search"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew search"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew search"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew search"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew search"
+          }
+        }
+      }
+    },
+    "brew uninstall": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew uninstall"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew uninstall"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew uninstall"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew uninstall"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew uninstall"
+          }
+        }
+      }
+    },
+    "brew upgrade": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew upgrade"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew upgrade"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew upgrade"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew upgrade"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew upgrade"
+          }
+        }
+      }
+    },
+    "Browse all installed Homebrew formulae and casks. View package details including version, installation date, and dependencies.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse all installed Homebrew formulae and casks. View package details including version, installation date, and dependencies."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览所有已安装的 Homebrew formula 和 cask。查看包详情，包括版本、安装日期和依赖关系。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览所有已安装的 Homebrew formula 和 cask。查看包详情，包括版本、安装日期和依赖关系。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览所有已安装的 Homebrew formula 和 cask。查看包详情，包括版本、安装日期和依赖关系。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览所有已安装的 Homebrew formula 和 cask。查看包详情，包括版本、安装日期和依赖关系。"
+          }
+        }
+      }
+    },
+    "Browse Packages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse Packages"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览包"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览包"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览包"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览包"
+          }
+        }
+      }
+    },
+    "cask": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask"
+          }
+        }
+      }
+    },
+    "Cask": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask"
+          }
+        }
+      }
+    },
+    "Casks": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Casks"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask（GUI 应用）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask（GUI 应用）"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask（GUI 应用）"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cask（GUI 应用）"
+          }
+        }
+      }
+    },
+    "Click Refresh if a list looks out of date.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click Refresh if a list looks out of date."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当列表内容过期时,点击「刷新」。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當清單內容過期時,點擊「重新整理」。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當清單內容過期時,點擊「重新整理」。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當清單內容過期時,點擊「重新整理」。"
+          }
+        }
+      }
+    },
+    "Command-line tools and libraries": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Command-line tools and libraries"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "命令行工具和库"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "命令行工具和库"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "命令行工具和库"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "命令行工具和库"
+          }
+        }
+      }
+    },
+    "Dismiss": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭"
+          }
+        }
+      }
+    },
+    "Download and install a package": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download and install a package"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载并安装包"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载并安装包"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载并安装包"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载并安装包"
+          }
+        }
+      }
+    },
+    "Enter keywords to start searching": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter keywords to start searching"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入关键词开始搜索"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入關鍵字開始搜尋"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入關鍵字開始搜尋"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入關鍵字開始搜尋"
+          }
+        }
+      }
+    },
+    "Environment Check": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Environment Check"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "环境检测"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "环境检测"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "环境检测"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "环境检测"
+          }
+        }
+      }
     },
-    "Cask" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cask"
+    "Figure 1: Interface layout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Figure 1: Interface layout"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cask"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图 1 界面布局"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cask"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖 1 介面佈局"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cask"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖 1 介面佈局"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cask"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖 1 介面佈局"
           }
         }
       }
     },
-    "Casks" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Casks"
+    "Find packages in Homebrew": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find packages in Homebrew"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cask（GUI 应用）"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Homebrew 中查找包"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cask（GUI 应用）"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Homebrew 中查找包"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cask（GUI 应用）"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Homebrew 中查找包"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cask（GUI 应用）"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Homebrew 中查找包"
           }
         }
       }
     },
-    "Click Refresh if a list looks out of date." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Click Refresh if a list looks out of date."
+    "Fonts": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fonts"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当列表内容过期时,点击「刷新」。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字体"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "當清單內容過期時,點擊「重新整理」。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字体"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "當清單內容過期時,點擊「重新整理」。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字体"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "當清單內容過期時,點擊「重新整理」。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字体"
           }
         }
       }
     },
-    "Command-line tools and libraries" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Command-line tools and libraries"
+    "Formula": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formula"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "命令行工具和库"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配方"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "命令行工具和库"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配方"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "命令行工具和库"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配方"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "命令行工具和库"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配方"
           }
         }
       }
     },
-    "Dismiss" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dismiss"
+    "Formulae": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formulae"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formula（命令行工具）"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formula（命令行工具）"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formula（命令行工具）"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formula（命令行工具）"
           }
         }
       }
     },
-    "Download and install a package" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Download and install a package"
+    "Homebrew installed (/opt/homebrew)": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew installed (/opt/homebrew)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "下载并安装包"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装 Homebrew（/opt/homebrew）"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "下载并安装包"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装 Homebrew（/opt/homebrew）"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "下载并安装包"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装 Homebrew（/opt/homebrew）"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "下载并安装包"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装 Homebrew（/opt/homebrew）"
           }
         }
       }
     },
-    "Enter keywords to start searching" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter keywords to start searching"
+    "Homebrew not detected, please install Homebrew first.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew not detected, please install Homebrew first."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "输入关键词开始搜索"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未检测到 Homebrew，请先安装 Homebrew。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入關鍵字開始搜尋"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未檢測到 Homebrew，請先安裝 Homebrew。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入關鍵字開始搜尋"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未檢測到 Homebrew，請先安裝 Homebrew。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入關鍵字開始搜尋"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未檢測到 Homebrew，請先安裝 Homebrew。"
           }
         }
       }
     },
-    "Environment Check" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Environment Check"
+    "Identify packages with available updates. See current vs. latest version at a glance to plan your upgrade strategy.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Identify packages with available updates. See current vs. latest version at a glance to plan your upgrade strategy."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "环境检测"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "识别有可用更新的包。一目了然地查看当前版本与最新版本，规划升级策略。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "环境检测"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "识别有可用更新的包。一目了然地查看当前版本与最新版本，规划升级策略。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "环境检测"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "识别有可用更新的包。一目了然地查看当前版本与最新版本，规划升级策略。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "环境检测"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "识别有可用更新的包。一目了然地查看当前版本与最新版本，规划升级策略。"
           }
         }
       }
     },
-    "Figure 1: Interface layout" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Figure 1: Interface layout"
+    "Info": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Info"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "图 1 界面布局"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "详情"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖 1 介面佈局"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "详情"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖 1 介面佈局"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "详情"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖 1 介面佈局"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "详情"
           }
         }
       }
     },
-    "Find packages in Homebrew" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Find packages in Homebrew"
+    "Install": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 Homebrew 中查找包"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 Homebrew 中查找包"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安裝"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 Homebrew 中查找包"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安裝"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在 Homebrew 中查找包"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安裝"
           }
         }
       }
     },
-    "Fonts" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fonts"
+    "Install & Uninstall": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install & Uninstall"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "字体"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装与卸载"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "字体"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装与卸载"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "字体"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装与卸载"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "字体"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装与卸载"
           }
         }
       }
     },
-    "Formulae" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Formulae"
+    "Install new packages or uninstall existing ones. Monitor installation progress and handle errors gracefully.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install new packages or uninstall existing ones. Monitor installation progress and handle errors gracefully."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Formula（命令行工具）"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装新包或卸载已有包。监控安装进度并优雅处理错误。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Formula（命令行工具）"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装新包或卸载已有包。监控安装进度并优雅处理错误。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Formula（命令行工具）"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装新包或卸载已有包。监控安装进度并优雅处理错误。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Formula（命令行工具）"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装新包或卸载已有包。监控安装进度并优雅处理错误。"
           }
         }
       }
     },
-    "Homebrew installed (/opt/homebrew)" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Homebrew installed (/opt/homebrew)"
+    "Installation failed: \\(error.localizedDescription)": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installation failed: \\(error.localizedDescription)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安装 Homebrew（/opt/homebrew）"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装失败：\\(error.localizedDescription)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安装 Homebrew（/opt/homebrew）"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装失败：\\(error.localizedDescription)"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安装 Homebrew（/opt/homebrew）"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装失败：\\(error.localizedDescription)"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安装 Homebrew（/opt/homebrew）"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装失败：\\(error.localizedDescription)"
           }
         }
       }
     },
-    "Homebrew not detected, please install Homebrew first." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Homebrew not detected, please install Homebrew first."
+    "Installation failed: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installation failed: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未检测到 Homebrew，请先安装 Homebrew。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装失败：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未檢測到 Homebrew，請先安裝 Homebrew。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安裝失敗：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未檢測到 Homebrew，請先安裝 Homebrew。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安裝失敗：%@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未檢測到 Homebrew，請先安裝 Homebrew。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安裝失敗：%@"
           }
         }
       }
     },
-    "Identify packages with available updates. See current vs. latest version at a glance to plan your upgrade strategy." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Identify packages with available updates. See current vs. latest version at a glance to plan your upgrade strategy."
+    "Installed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "识别有可用更新的包。一目了然地查看当前版本与最新版本，规划升级策略。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "识别有可用更新的包。一目了然地查看当前版本与最新版本，规划升级策略。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安裝"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "识别有可用更新的包。一目了然地查看当前版本与最新版本，规划升级策略。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安裝"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "识别有可用更新的包。一目了然地查看当前版本与最新版本，规划升级策略。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安裝"
           }
         }
       }
     },
-    "Info" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Info"
+    "Installed Packages": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed Packages"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "详情"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装的包"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "详情"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装的包"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "详情"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装的包"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "详情"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装的包"
           }
         }
       }
     },
-    "Install" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Install"
+    "Installed tab: lists installed packages with their versions; casks are tagged, and each row provides Uninstall.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed tab: lists installed packages with their versions; casks are tagged, and each row provides Uninstall."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安装"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「已安装」标签页:列出已安装的软件包及其版本;cask 类软件包带有标记,每行提供「卸载」按钮。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安裝"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「已安裝」標籤頁:列出已安裝的套件及其版本;cask 類套件帶有標記,每列提供「解除安裝」按鈕。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安裝"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「已安裝」標籤頁:列出已安裝的套件及其版本;cask 類套件帶有標記,每列提供「解除安裝」按鈕。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安裝"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「已安裝」分頁:列出已安裝的套件及其版本;cask 類套件帶有標記,每列提供「解除安裝」按鈕。"
           }
         }
       }
     },
-    "Install & Uninstall" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Install & Uninstall"
+    "Installed: \\(installedVer)": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed: \\(installedVer)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安装与卸载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装：\\(installedVer)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安装与卸载"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装：\\(installedVer)"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安装与卸载"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装：\\(installedVer)"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安装与卸载"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装：\\(installedVer)"
           }
         }
       }
     },
-    "Install new packages or uninstall existing ones. Monitor installation progress and handle errors gracefully." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Install new packages or uninstall existing ones. Monitor installation progress and handle errors gracefully."
+    "Installed: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installed: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安装新包或卸载已有包。监控安装进度并优雅处理错误。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安装新包或卸载已有包。监控安装进度并优雅处理错误。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安裝：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安装新包或卸载已有包。监控安装进度并优雅处理错误。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安裝：%@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安装新包或卸载已有包。监控安装进度并优雅处理错误。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安裝：%@"
           }
         }
       }
     },
-    "Installation failed: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Installation failed: %@"
+    "Interface": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interface"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安装失败：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "界面说明"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安裝失敗：%@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "介面說明"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安裝失敗：%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "介面說明"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "安裝失敗：%@"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "介面說明"
           }
         }
       }
     },
-    "Installed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Installed"
+    "Learn More": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Learn More"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安装"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "了解更多"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安裝"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "了解更多"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安裝"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "了解更多"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安裝"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "了解更多"
           }
         }
       }
     },
-    "Installed Packages" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Installed Packages"
+    "macOS 14.0 or later": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14.0 or later"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安装的包"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14.0 或更高版本"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安装的包"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14.0 或更高版本"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安装的包"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14.0 或更高版本"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安装的包"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14.0 或更高版本"
           }
         }
       }
     },
-    "Installed tab: lists installed packages with their versions; casks are tagged, and each row provides Uninstall." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Installed tab: lists installed packages with their versions; casks are tagged, and each row provides Uninstall."
+    "macOS GUI applications": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS GUI applications"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「已安装」标签页:列出已安装的软件包及其版本;cask 类软件包带有标记,每行提供「卸载」按钮。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 图形界面应用"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「已安裝」標籤頁:列出已安裝的套件及其版本;cask 類套件帶有標記,每列提供「解除安裝」按鈕。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 图形界面应用"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「已安裝」標籤頁:列出已安裝的套件及其版本;cask 類套件帶有標記,每列提供「解除安裝」按鈕。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 图形界面应用"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「已安裝」分頁:列出已安裝的套件及其版本;cask 類套件帶有標記,每列提供「解除安裝」按鈕。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 图形界面应用"
           }
         }
       }
     },
-    "Installed: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Installed: %@"
+    "No packages installed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No packages installed"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安装：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未安装任何包"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安裝：%@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未安裝任何套件"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安裝：%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未安裝任何套件"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已安裝：%@"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未安裝任何套件"
           }
         }
       }
     },
-    "Interface" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Interface"
+    "No related packages found": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No related packages found"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "界面说明"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到相关包"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "介面說明"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到相關套件"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "介面說明"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到相關套件"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "介面說明"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到相關套件"
           }
         }
       }
     },
-    "Learn More" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Learn More"
+    "Notes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "了解更多"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事项"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "了解更多"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事項"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "了解更多"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事項"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "了解更多"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事項"
           }
         }
       }
     },
-    "macOS 14.0 or later" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 or later"
+    "Open the Installed tab to view installed packages and their versions.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the Installed tab to view installed packages and their versions."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或更高版本"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开「已安装」标签页,查看已安装的软件包及其版本。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或更高版本"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟「已安裝」標籤頁,查看已安裝的套件及其版本。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或更高版本"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟「已安裝」標籤頁,查看已安裝的套件及其版本。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或更高版本"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟「已安裝」分頁,查看已安裝的套件及其版本。"
           }
         }
       }
     },
-    "macOS GUI applications" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS GUI applications"
+    "Open the Search tab, type a name, and click Install on a result.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the Search tab, type a name, and click Install on a result."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 图形界面应用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开「搜索」标签页,输入名称,并在某条结果上点击「安装」。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 图形界面应用"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟「搜尋」標籤頁,輸入名稱,並在某條結果上點擊「安裝」。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 图形界面应用"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟「搜尋」標籤頁,輸入名稱,並在某條結果上點擊「安裝」。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 图形界面应用"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟「搜尋」分頁,輸入名稱,並在某條結果上點擊「安裝」。"
           }
         }
       }
     },
-    "No packages installed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No packages installed"
+    "Open the Updates tab and click Update All, or update a single package with Update.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the Updates tab and click Update All, or update a single package with Update."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未安装任何包"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开「更新」标签页,点击「更新全部」,或使用单行的「更新」按钮更新单个软件包。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未安裝任何套件"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟「更新」標籤頁,點擊「更新全部」,或使用單列的「更新」按鈕更新單一套件。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未安裝任何套件"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟「更新」標籤頁,點擊「更新全部」,或使用單列的「更新」按鈕更新單一套件。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未安裝任何套件"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟「更新」分頁,點擊「更新全部」,或使用單列的「更新」按鈕更新單一套件。"
           }
         }
       }
     },
-    "No related packages found" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No related packages found"
+    "Overview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overview"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到相关包"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概述"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到相關套件"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概述"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到相關套件"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概述"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到相關套件"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概述"
           }
         }
       }
     },
-    "Notes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notes"
+    "Package List": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Package List"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意事项"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "软件包列表"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意事項"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "套件清單"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意事項"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "套件清單"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意事項"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "套件清單"
           }
         }
       }
     },
-    "Open the Installed tab to view installed packages and their versions." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open the Installed tab to view installed packages and their versions."
+    "Package Management": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Package Management"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开「已安装」标签页,查看已安装的软件包及其版本。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包管理"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開啟「已安裝」標籤頁,查看已安裝的套件及其版本。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "套件管理"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開啟「已安裝」標籤頁,查看已安裝的套件及其版本。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "套件管理"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開啟「已安裝」分頁,查看已安裝的套件及其版本。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "套件管理"
           }
         }
       }
     },
-    "Open the Search tab, type a name, and click Install on a result." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open the Search tab, type a name, and click Install on a result."
+    "Package Search": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Package Search"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开「搜索」标签页,输入名称,并在某条结果上点击「安装」。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包搜索"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開啟「搜尋」標籤頁,輸入名稱,並在某條結果上點擊「安裝」。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包搜索"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開啟「搜尋」標籤頁,輸入名稱,並在某條結果上點擊「安裝」。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包搜索"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開啟「搜尋」分頁,輸入名稱,並在某條結果上點擊「安裝」。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包搜索"
           }
         }
       }
     },
-    "Open the Updates tab and click Update All, or update a single package with Update." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open the Updates tab and click Update All, or update a single package with Update."
+    "Processing...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Processing..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开「更新」标签页,点击「更新全部」,或使用单行的「更新」按钮更新单个软件包。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "处理中..."
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開啟「更新」標籤頁,點擊「更新全部」,或使用單列的「更新」按鈕更新單一套件。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "處理中..."
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開啟「更新」標籤頁,點擊「更新全部」,或使用單列的「更新」按鈕更新單一套件。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "處理中..."
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開啟「更新」分頁,點擊「更新全部」,或使用單列的「更新」按鈕更新單一套件。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "處理中..."
           }
         }
       }
     },
-    "Overview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Overview"
+    "Quick Actions": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick Actions"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概述"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快捷操作"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概述"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快捷操作"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概述"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快捷操作"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概述"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快捷操作"
           }
         }
       }
     },
-    "Package List" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Package List"
+    "Refresh": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "软件包列表"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "套件清單"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "套件清單"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "套件清單"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理"
           }
         }
       }
     },
-    "Package Management" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Package Management"
+    "Refresh failed: \\(error.localizedDescription)": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh failed: \\(error.localizedDescription)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "包管理"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新失败：\\(error.localizedDescription)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "套件管理"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新失败：\\(error.localizedDescription)"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "套件管理"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新失败：\\(error.localizedDescription)"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "套件管理"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新失败：\\(error.localizedDescription)"
           }
         }
       }
     },
-    "Package Search" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Package Search"
+    "Refresh failed: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh failed: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "包搜索"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新失败：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "包搜索"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理失敗：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "包搜索"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理失敗：%@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "包搜索"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新整理失敗：%@"
           }
         }
       }
     },
-    "Processing..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Processing..."
+    "Remove a package from your system": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove a package from your system"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "处理中..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从系统中移除包"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "處理中..."
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从系统中移除包"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "處理中..."
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从系统中移除包"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "處理中..."
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从系统中移除包"
           }
         }
       }
     },
-    "Quick Actions" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quick Actions"
+    "Requirements": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requirements"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快捷操作"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统要求"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快捷操作"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统要求"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快捷操作"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统要求"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "快捷操作"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统要求"
           }
         }
       }
     },
-    "Refresh" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh"
+    "Retry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试"
           }
         }
       }
     },
-    "Refresh failed: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh failed: %@"
+    "Search": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新失败：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理失敗：%@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理失敗：%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新整理失敗：%@"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋"
           }
         }
       }
     },
-    "Remove a package from your system" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove a package from your system"
+    "Search failed: \\(error.localizedDescription)": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search failed: \\(error.localizedDescription)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从系统中移除包"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索失败：\\(error.localizedDescription)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从系统中移除包"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索失败：\\(error.localizedDescription)"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从系统中移除包"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索失败：\\(error.localizedDescription)"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从系统中移除包"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索失败：\\(error.localizedDescription)"
           }
         }
       }
     },
-    "Requirements" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Requirements"
+    "Search failed: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search failed: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统要求"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索失败：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统要求"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋失敗：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统要求"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋失敗：%@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统要求"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋失敗：%@"
           }
         }
       }
     },
-    "Retry" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retry"
+    "Search Homebrew packages...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Homebrew packages..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重试"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索 Homebrew 包..."
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重试"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索 Homebrew 包..."
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重试"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索 Homebrew 包..."
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重试"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索 Homebrew 包..."
           }
         }
       }
     },
-    "Search" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search"
+    "Search Homebrew repository for new packages. Browse descriptions, homepages, and installation instructions.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Homebrew repository for new packages. Browse descriptions, homepages, and installation instructions."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索 Homebrew 仓库查找新包。浏览描述、主页和安装说明。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索 Homebrew 仓库查找新包。浏览描述、主页和安装说明。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索 Homebrew 仓库查找新包。浏览描述、主页和安装说明。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索 Homebrew 仓库查找新包。浏览描述、主页和安装说明。"
           }
         }
       }
     },
-    "Search failed: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search failed: %@"
+    "Search tab: search field and results; each result provides Install.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search tab: search field and results; each result provides Install."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索失败：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「搜索」标签页:提供搜索框与结果列表,每条结果提供「安装」按钮。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋失敗：%@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「搜尋」標籤頁:提供搜尋欄與結果清單,每條結果提供「安裝」按鈕。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋失敗：%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「搜尋」標籤頁:提供搜尋欄與結果清單,每條結果提供「安裝」按鈕。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜尋失敗：%@"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「搜尋」分頁:提供搜尋欄與結果清單,每條結果提供「安裝」按鈕。"
           }
         }
       }
     },
-    "Search Homebrew packages..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search Homebrew packages..."
+    "Search the Homebrew repository to install your first formula or cask, then come back here to manage updates and uninstalls.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search the Homebrew repository to install your first formula or cask, then come back here to manage updates and uninstalls."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索 Homebrew 包..."
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索 Homebrew 仓库安装你的第一个 formula 或 cask，然后回到这里管理更新和卸载。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索 Homebrew 包..."
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索 Homebrew 仓库安装你的第一个 formula 或 cask，然后回到这里管理更新和卸载。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索 Homebrew 包..."
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索 Homebrew 仓库安装你的第一个 formula 或 cask，然后回到这里管理更新和卸载。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索 Homebrew 包..."
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索 Homebrew 仓库安装你的第一个 formula 或 cask，然后回到这里管理更新和卸载。"
           }
         }
       }
     },
-    "Search Homebrew repository for new packages. Browse descriptions, homepages, and installation instructions." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search Homebrew repository for new packages. Browse descriptions, homepages, and installation instructions."
+    "Services": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Services"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索 Homebrew 仓库查找新包。浏览描述、主页和安装说明。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索 Homebrew 仓库查找新包。浏览描述、主页和安装说明。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索 Homebrew 仓库查找新包。浏览描述、主页和安装说明。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索 Homebrew 仓库查找新包。浏览描述、主页和安装说明。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务"
           }
         }
       }
     },
-    "Search tab: search field and results; each result provides Install." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search tab: search field and results; each result provides Install."
+    "Something went wrong": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Something went wrong"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「搜索」标签页:提供搜索框与结果列表,每条结果提供「安装」按钮。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "出错了"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「搜尋」標籤頁:提供搜尋欄與結果清單,每條結果提供「安裝」按鈕。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "出错了"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「搜尋」標籤頁:提供搜尋欄與結果清單,每條結果提供「安裝」按鈕。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "出错了"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「搜尋」分頁:提供搜尋欄與結果清單,每條結果提供「安裝」按鈕。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "出错了"
           }
         }
       }
     },
-    "Search the Homebrew repository to install your first formula or cask, then come back here to manage updates and uninstalls." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search the Homebrew repository to install your first formula or cask, then come back here to manage updates and uninstalls."
+    "Supported Package Types": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supported Package Types"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索 Homebrew 仓库安装你的第一个 formula 或 cask，然后回到这里管理更新和卸载。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持的包类型"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索 Homebrew 仓库安装你的第一个 formula 或 cask，然后回到这里管理更新和卸载。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持的包类型"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索 Homebrew 仓库安装你的第一个 formula 或 cask，然后回到这里管理更新和卸载。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持的包类型"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "搜索 Homebrew 仓库安装你的第一个 formula 或 cask，然后回到这里管理更新和卸载。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持的包类型"
           }
         }
       }
     },
-    "Services" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Services"
+    "Swift 6.0 or later": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 6.0 or later"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "服务"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 6.0 或更高版本"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "服务"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 6.0 或更高版本"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "服务"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 6.0 或更高版本"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "服务"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift 6.0 或更高版本"
           }
         }
       }
     },
-    "Something went wrong" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Something went wrong"
+    "System fonts": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System fonts"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "出错了"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统字体"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "出错了"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统字体"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "出错了"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统字体"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "出错了"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统字体"
           }
         }
       }
     },
-    "Supported Package Types" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Supported Package Types"
+    "This manual covers the interface and basic operations of the Package Management tool: viewing installed packages, updating packages, and searching for and installing packages.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This manual covers the interface and basic operations of the Package Management tool: viewing installed packages, updating packages, and searching for and installing packages."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持的包类型"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手册介绍包管理的界面与基本操作:查看已安装的软件包、更新软件包以及搜索并安装软件包。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持的包类型"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手冊介紹套件管理的介面與基本操作:查看已安裝的套件、更新套件以及搜尋並安裝套件。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持的包类型"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手冊介紹套件管理的介面與基本操作:查看已安裝的套件、更新套件以及搜尋並安裝套件。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持的包类型"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手冊介紹套件管理的介面與基本操作:查看已安裝的套件、更新套件以及搜尋並安裝套件。"
           }
         }
       }
     },
-    "Swift 6.0 or later" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 or later"
+    "To remove a package, click Uninstall on its row in the Installed tab and confirm.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To remove a package, click Uninstall on its row in the Installed tab and confirm."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 或更高版本"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如需移除软件包,在「已安装」标签页中点击该行的「卸载」按钮并确认。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 或更高版本"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如需移除套件,在「已安裝」標籤頁中點擊該列的「解除安裝」按鈕並確認。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 或更高版本"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如需移除套件,在「已安裝」標籤頁中點擊該列的「解除安裝」按鈕並確認。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 或更高版本"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如需移除套件,在「已安裝」分頁中點擊該列的「解除安裝」按鈕並確認。"
           }
         }
       }
     },
-    "System fonts" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System fonts"
+    "Toolbar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toolbar"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统字体"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具栏"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统字体"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具列"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统字体"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具列"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统字体"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具列"
           }
         }
       }
     },
-    "This manual covers the interface and basic operations of the Package Management tool: viewing installed packages, updating packages, and searching for and installing packages." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This manual covers the interface and basic operations of the Package Management tool: viewing installed packages, updating packages, and searching for and installing packages."
+    "Toolbar: the Refresh button reloads the package list.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toolbar: the Refresh button reloads the package list."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本手册介绍包管理的界面与基本操作:查看已安装的软件包、更新软件包以及搜索并安装软件包。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「工具栏」:「刷新」按钮用于重新加载软件包列表。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本手冊介紹套件管理的介面與基本操作:查看已安裝的套件、更新套件以及搜尋並安裝套件。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「工具列」:「重新整理」按鈕用於重新載入套件清單。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本手冊介紹套件管理的介面與基本操作:查看已安裝的套件、更新套件以及搜尋並安裝套件。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「工具列」:「重新整理」按鈕用於重新載入套件清單。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本手冊介紹套件管理的介面與基本操作:查看已安裝的套件、更新套件以及搜尋並安裝套件。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「工具列」:「重新整理」按鈕用於重新載入套件清單。"
           }
         }
       }
     },
-    "To remove a package, click Uninstall on its row in the Installed tab and confirm." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "To remove a package, click Uninstall on its row in the Installed tab and confirm."
+    "Uninstall": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uninstall"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如需移除软件包,在「已安装」标签页中点击该行的「卸载」按钮并确认。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如需移除套件,在「已安裝」標籤頁中點擊該列的「解除安裝」按鈕並確認。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解除安裝"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如需移除套件,在「已安裝」標籤頁中點擊該列的「解除安裝」按鈕並確認。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解除安裝"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "如需移除套件,在「已安裝」分頁中點擊該列的「解除安裝」按鈕並確認。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解除安裝"
           }
         }
       }
     },
-    "Toolbar" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toolbar"
+    "Uninstallation failed: \\(error.localizedDescription)": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uninstallation failed: \\(error.localizedDescription)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具栏"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载失败：\\(error.localizedDescription)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具列"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载失败：\\(error.localizedDescription)"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具列"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载失败：\\(error.localizedDescription)"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具列"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载失败：\\(error.localizedDescription)"
           }
         }
       }
     },
-    "Toolbar: the Refresh button reloads the package list." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toolbar: the Refresh button reloads the package list."
+    "Uninstallation failed: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uninstallation failed: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「工具栏」:「刷新」按钮用于重新加载软件包列表。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载失败：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「工具列」:「重新整理」按鈕用於重新載入套件清單。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解除安裝失敗：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「工具列」:「重新整理」按鈕用於重新載入套件清單。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解除安裝失敗：%@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「工具列」:「重新整理」按鈕用於重新載入套件清單。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解除安裝失敗：%@"
           }
         }
       }
     },
-    "Uninstall" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uninstall"
+    "Uninstalling a package may affect other packages that depend on it; review before proceeding.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uninstalling a package may affect other packages that depend on it; review before proceeding."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卸载"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载软件包可能影响依赖它的其他软件包,操作前请先确认。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解除安裝"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解除安裝套件可能影響依賴它的其他套件,操作前請先確認。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解除安裝"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解除安裝套件可能影響依賴它的其他套件,操作前請先確認。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解除安裝"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解除安裝套件可能影響依賴它的其他套件,操作前請先確認。"
           }
         }
       }
     },
-    "Uninstallation failed: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uninstallation failed: %@"
+    "Update": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卸载失败：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解除安裝失敗：%@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解除安裝失敗：%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解除安裝失敗：%@"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
           }
         }
       }
     },
-    "Uninstalling a package may affect other packages that depend on it; review before proceeding." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uninstalling a package may affect other packages that depend on it; review before proceeding."
+    "Update All": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update All"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "卸载软件包可能影响依赖它的其他软件包,操作前请先确认。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新全部"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解除安裝套件可能影響依賴它的其他套件,操作前請先確認。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新全部"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解除安裝套件可能影響依賴它的其他套件,操作前請先確認。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新全部"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "解除安裝套件可能影響依賴它的其他套件,操作前請先確認。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新全部"
           }
         }
       }
     },
-    "Update" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update"
+    "Update all outdated packages": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update all outdated packages"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新所有过期的包"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新所有过期的包"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新所有过期的包"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新所有过期的包"
           }
         }
       }
     },
-    "Update All" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update All"
+    "Update Checker": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update Checker"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新全部"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新检查器"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新全部"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新检查器"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新全部"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新检查器"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新全部"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新检查器"
           }
         }
       }
     },
-    "Update all outdated packages" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update all outdated packages"
+    "Update failed: \\(error.localizedDescription)": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update failed: \\(error.localizedDescription)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新所有过期的包"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新失败：\\(error.localizedDescription)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新所有过期的包"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新失败：\\(error.localizedDescription)"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新所有过期的包"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新失败：\\(error.localizedDescription)"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新所有过期的包"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新失败：\\(error.localizedDescription)"
           }
         }
       }
     },
-    "Update Checker" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update Checker"
+    "Update failed: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update failed: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新检查器"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新失败：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新检查器"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新失敗：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新检查器"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新失敗：%@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新检查器"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新失敗：%@"
           }
         }
       }
     },
-    "Update failed: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update failed: %@"
+    "Update packages before reporting issues; many problems are fixed in newer versions.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update packages before reporting issues; many problems are fixed in newer versions."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新失败：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "反馈问题前请先将软件包更新到新版本;许多问题在新版本中已修复。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新失敗：%@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回報問題前請先將套件更新到新版本;許多問題在新版本中已修復。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新失敗：%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回報問題前請先將套件更新到新版本;許多問題在新版本中已修復。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新失敗：%@"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回報問題前請先將套件更新到新版本;許多問題在新版本中已修復。"
           }
         }
       }
     },
-    "Update packages before reporting issues; many problems are fixed in newer versions." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update packages before reporting issues; many problems are fixed in newer versions."
+    "Update to the latest version": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update to the latest version"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反馈问题前请先将软件包更新到新版本;许多问题在新版本中已修复。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新到最新版本"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "回報問題前請先將套件更新到新版本;許多問題在新版本中已修復。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新到最新版本"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "回報問題前請先將套件更新到新版本;許多問題在新版本中已修復。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新到最新版本"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "回報問題前請先將套件更新到新版本;許多問題在新版本中已修復。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新到最新版本"
           }
         }
       }
     },
-    "Update to the latest version" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Update to the latest version"
+    "Updates": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新到最新版本"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新到最新版本"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新到最新版本"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新到最新版本"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
           }
         }
       }
     },
-    "Updates" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Updates"
+    "Updates tab: lists available updates, with Update All on top and Update on each row.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates tab: lists available updates, with Update All on top and Update on each row."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「更新」标签页:列出可用更新,顶部为「更新全部」,每行提供「更新」按钮。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「更新」標籤頁:列出可用更新,頂部為「更新全部」,每列提供「更新」按鈕。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「更新」標籤頁:列出可用更新,頂部為「更新全部」,每列提供「更新」按鈕。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「更新」分頁:列出可用更新,頂部為「更新全部」,每列提供「更新」按鈕。"
           }
         }
       }
     },
-    "Updates tab: lists available updates, with Update All on top and Update on each row." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Updates tab: lists available updates, with Update All on top and Update on each row."
+    "Upgrade": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upgrade"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「更新」标签页:列出可用更新,顶部为「更新全部」,每行提供「更新」按钮。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "升级"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「更新」標籤頁:列出可用更新,頂部為「更新全部」,每列提供「更新」按鈕。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "升级"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「更新」標籤頁:列出可用更新,頂部為「更新全部」,每列提供「更新」按鈕。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "升级"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「更新」分頁:列出可用更新,頂部為「更新全部」,每列提供「更新」按鈕。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "升级"
           }
         }
       }
     },
-    "Upgrade" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upgrade"
+    "Upgrade All": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upgrade All"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "升级"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部升级"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "升级"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部升级"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "升级"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部升级"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "升级"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部升级"
           }
         }
       }
     },
-    "Upgrade All" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upgrade All"
+    "Upgrade all outdated packages at once, or selectively upgrade individual packages. Keep your system fresh.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upgrade all outdated packages at once, or selectively upgrade individual packages. Keep your system fresh."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部升级"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次性升级所有过期的包，或选择性升级单个包。保持系统最新。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部升级"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次性升级所有过期的包，或选择性升级单个包。保持系统最新。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部升级"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次性升级所有过期的包，或选择性升级单个包。保持系统最新。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部升级"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次性升级所有过期的包，或选择性升级单个包。保持系统最新。"
           }
         }
       }
     },
-    "Upgrade all outdated packages at once, or selectively upgrade individual packages. Keep your system fresh." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upgrade all outdated packages at once, or selectively upgrade individual packages. Keep your system fresh."
+    "User Manual": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User Manual"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一次性升级所有过期的包，或选择性升级单个包。保持系统最新。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用手册"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一次性升级所有过期的包，或选择性升级单个包。保持系统最新。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用手冊"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一次性升级所有过期的包，或选择性升级单个包。保持系统最新。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用手冊"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一次性升级所有过期的包，或选择性升级单个包。保持系统最新。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用手冊"
           }
         }
       }
     },
-    "User Manual" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "User Manual"
+    "Version: \\(package.version)": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version: \\(package.version)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用手册"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本：\\(package.version)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用手冊"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本：\\(package.version)"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用手冊"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本：\\(package.version)"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用手冊"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本：\\(package.version)"
           }
         }
       }
     },
-    "Version: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Version: %@"
+    "Version: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本：%@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本：%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本：%@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本：%@"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本：%@"
           }
         }
       }
     },
-    "View" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "View"
+    "View": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "视图"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "视图"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢視"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢視"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢視"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視"
           }
         }
       }
     },
-    "View package details and dependencies" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "View package details and dependencies"
+    "View package details and dependencies": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View package details and dependencies"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看包详情和依赖关系"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看包详情和依赖关系"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看包详情和依赖关系"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看包详情和依赖关系"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看包详情和依赖关系"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看包详情和依赖关系"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看包详情和依赖关系"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看包详情和依赖关系"
           }
         }
       }
     },
-    "View Picker" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "View Picker"
+    "View Picker": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View Picker"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "视图切换"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "视图切换"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢視切換"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視切換"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢視切換"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視切換"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢視切換"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視切換"
           }
         }
       }
     },
-    "View picker: switches between the Installed, Updates, and Search tabs." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "View picker: switches between the Installed, Updates, and Search tabs."
+    "View picker: switches between the Installed, Updates, and Search tabs.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View picker: switches between the Installed, Updates, and Search tabs."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「视图切换」:在「已安装」「更新」「搜索」三个标签页之间切换。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「视图切换」:在「已安装」「更新」「搜索」三个标签页之间切换。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「檢視切換」:在「已安裝」「更新」「搜尋」三個標籤頁之間切換。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「檢視切換」:在「已安裝」「更新」「搜尋」三個標籤頁之間切換。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「檢視切換」:在「已安裝」「更新」「搜尋」三個標籤頁之間切換。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「檢視切換」:在「已安裝」「更新」「搜尋」三個標籤頁之間切換。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「檢視切換」:在「已安裝」「更新」「搜尋」三個分頁之間切換。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「檢視切換」:在「已安裝」「更新」「搜尋」三個分頁之間切換。"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

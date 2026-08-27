@@ -1,552 +1,811 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "" : {
-
-    },
-    "%lld%%" : {
-
-    },
-    "Auto-stop after 15 / 30 / 60 minutes with a countdown." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Auto-stop after 15 / 30 / 60 minutes with a countdown."
+  "sourceLanguage": "en",
+  "strings": {
+    "": {},
+    "%lld%%": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "15 / 30 / 60 分钟后自动停止,带倒计时。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "15 / 30 / 60 分鐘後自動停止,帶倒計時。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         }
       }
     },
-    "Brown Noise" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Brown Noise"
+    "Auto-stop after 15 / 30 / 60 minutes with a countdown.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-stop after 15 / 30 / 60 minutes with a countdown."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "棕噪音"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "15 / 30 / 60 分钟后自动停止,带倒计时。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "棕噪音"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "15 / 30 / 60 分鐘後自動停止,帶倒計時。"
           }
         }
       }
     },
-    "Core Capabilities" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Core Capabilities"
+    "Basic Operations": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basic Operations"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "核心能力"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "核心能力"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         }
       }
     },
-    "Enable the plugin" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enable the plugin"
+    "Brown Noise": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brown Noise"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用插件"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "棕噪音"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用外掛"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "棕噪音"
           }
         }
       }
     },
-    "Frame-by-frame generation via AVAudioEngine, no audio files, truly seamless." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Frame-by-frame generation via AVAudioEngine, no audio files, truly seamless."
+    "Core Capabilities": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Core Capabilities"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基于 AVAudioEngine 逐帧生成,无音频文件、真正无缝循环。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "核心能力"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基於 AVAudioEngine 逐幀生成,無音訊檔案、真正無縫循環。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "核心能力"
           }
         }
       }
     },
-    "How It Works" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "How It Works"
+    "Enable the plugin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable the plugin"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作原理"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用插件"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "運作原理"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用外掛"
           }
         }
       }
     },
-    "independent volumes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "independent volumes"
+    "Frame-by-frame generation via AVAudioEngine, no audio files, truly seamless.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frame-by-frame generation via AVAudioEngine, no audio files, truly seamless."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "独立音量"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基于 AVAudioEngine 逐帧生成,无音频文件、真正无缝循环。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "獨立音量"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基於 AVAudioEngine 逐幀生成,無音訊檔案、真正無縫循環。"
           }
         }
       }
     },
-    "Master Volume" : {
-
-    },
-    "Mix" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mix"
+    "How It Works": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How It Works"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "混音"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工作原理"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "混音"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "運作原理"
           }
         }
       }
     },
-    "Mix your noise" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mix your noise"
+    "independent volumes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "independent volumes"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "混合噪声"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "独立音量"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "混合噪聲"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "獨立音量"
           }
         }
       }
     },
-    "Mixes with other apps' audio without interrupting your music." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mixes with other apps' audio without interrupting your music."
+    "Interface": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interface"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以混音模式运行,不打断你正在听的音乐。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "界面"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以混音模式運行,不打斷你正在聽的音樂。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "界面"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "界面"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "界面"
           }
         }
       }
     },
-    "noise tracks" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "noise tracks"
+    "Master Volume": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主音量"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "噪声音轨"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主音量"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "噪聲音軌"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主音量"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主音量"
           }
         }
       }
     },
-    "Open the sidebar view" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open the sidebar view"
+    "Mix": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mix"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开侧边栏视图"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "混音"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開側邊欄視圖"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "混音"
           }
         }
       }
     },
-    "Paused" : {
-
-    },
-    "Pink Noise" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pink Noise"
+    "Mix your noise": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mix your noise"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "粉噪音"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "混合噪声"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "粉噪音"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "混合噪聲"
           }
         }
       }
     },
-    "Playing" : {
-
-    },
-    "Plays Along Your Music" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plays Along Your Music"
+    "Mixes with other apps' audio without interrupting your music.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mixes with other apps' audio without interrupting your music."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "与其它音频共存"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以混音模式运行,不打断你正在听的音乐。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "與其它音訊共存"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以混音模式運行,不打斷你正在聽的音樂。"
           }
         }
       }
     },
-    "Real-time generated white, pink and brown noise for focus and sleep — no audio files, seamless loops, mixable tracks." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Real-time generated white, pink and brown noise for focus and sleep — no audio files, seamless loops, mixable tracks."
+    "noise tracks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "noise tracks"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "实时生成白噪音、粉噪音、棕噪音,助力专注与助眠:无音频文件、真正无缝循环、多轨自由混合。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "噪声音轨"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "即時生成白噪音、粉噪音、棕噪音,助力專注與助眠:無音訊檔案、真正無縫循環、多軌自由混音。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "噪聲音軌"
           }
         }
       }
     },
-    "Real-time Synthesis" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Real-time Synthesis"
+    "Notes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "实时算法生成"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "说明"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "即時演算法生成"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "说明"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "说明"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "说明"
           }
         }
       }
     },
-    "sleep timer" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sleep timer"
+    "Open the sidebar view": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the sidebar view"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "睡眠定时"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开侧边栏视图"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "睡眠定時"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開側邊欄視圖"
           }
         }
       }
     },
-    "Sleep Timer" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sleep Timer"
+    "Overview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overview"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "睡眠定时"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概览"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "睡眠定時"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概览"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概览"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概览"
           }
         }
       }
     },
-    "The White Noise container appears in the ActivityBar." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The White Noise container appears in the ActivityBar."
+    "Paused": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已暂停"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "侧边栏 ActivityBar 出现白噪音容器。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已暂停"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "側邊欄 ActivityBar 出現白噪音容器。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已暂停"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已暂停"
           }
         }
       }
     },
-    "This manual covers the interface and basic operations of White Noise: playing noise tracks, adjusting volumes, and setting the sleep timer." : {
-
-    },
-    "Three-track Mixer" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Three-track Mixer"
+    "Pink Noise": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pink Noise"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "三轨混合"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粉噪音"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "三軌混音"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粉噪音"
           }
         }
       }
     },
-    "Toggle tracks, tweak volumes and set a sleep timer." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toggle tracks, tweak volumes and set a sleep timer."
+    "Playing": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "播放中"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "开关音轨、调节音量、按需设置睡眠定时。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "播放中"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開關音軌、調節音量、按需設定睡眠定時。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "播放中"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "播放中"
           }
         }
       }
     },
-    "Toggle white, pink and brown noise independently and blend with per-track volume." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toggle white, pink and brown noise independently and blend with per-track volume."
+    "Plays Along Your Music": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plays Along Your Music"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "白 / 粉 / 棕噪声独立开关、各自调节音量,混合输出。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "与其它音频共存"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "白 / 粉 / 棕噪聲獨立開關、各自調節音量,混合輸出。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "與其它音訊共存"
           }
         }
       }
     },
-    "Turn it on in Plugin Manager (off by default)." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Turn it on in Plugin Manager (off by default)."
+    "Real-time generated white, pink and brown noise for focus and sleep — no audio files, seamless loops, mixable tracks.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-time generated white, pink and brown noise for focus and sleep — no audio files, seamless loops, mixable tracks."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "默认关闭,在插件管理中启用。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实时生成白噪音、粉噪音、棕噪音,助力专注与助眠:无音频文件、真正无缝循环、多轨自由混合。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "預設關閉,在外掛管理中啟用。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即時生成白噪音、粉噪音、棕噪音,助力專注與助眠:無音訊檔案、真正無縫循環、多軌自由混音。"
           }
         }
       }
     },
-    "White Noise" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "White Noise"
+    "Real-time Synthesis": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real-time Synthesis"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "白噪音"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实时算法生成"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "白噪音"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即時演算法生成"
+          }
+        }
+      }
+    },
+    "sleep timer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sleep timer"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "睡眠定时"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "睡眠定時"
+          }
+        }
+      }
+    },
+    "Sleep Timer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep Timer"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "睡眠定时"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "睡眠定時"
+          }
+        }
+      }
+    },
+    "The White Noise container appears in the ActivityBar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The White Noise container appears in the ActivityBar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "侧边栏 ActivityBar 出现白噪音容器。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "側邊欄 ActivityBar 出現白噪音容器。"
+          }
+        }
+      }
+    },
+    "This manual covers the interface and basic operations of White Noise: playing noise tracks, adjusting volumes, and setting the sleep timer.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手册介绍白噪声的界面与基本操作：播放噪声音轨、调节音量以及设置睡眠定时器。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手册介绍白噪声的界面与基本操作：播放噪声音轨、调节音量以及设置睡眠定时器。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手册介绍白噪声的界面与基本操作：播放噪声音轨、调节音量以及设置睡眠定时器。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手册介绍白噪声的界面与基本操作：播放噪声音轨、调节音量以及设置睡眠定时器。"
+          }
+        }
+      }
+    },
+    "Three-track Mixer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three-track Mixer"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "三轨混合"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "三軌混音"
+          }
+        }
+      }
+    },
+    "Toggle tracks, tweak volumes and set a sleep timer.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toggle tracks, tweak volumes and set a sleep timer."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开关音轨、调节音量、按需设置睡眠定时。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開關音軌、調節音量、按需設定睡眠定時。"
+          }
+        }
+      }
+    },
+    "Toggle white, pink and brown noise independently and blend with per-track volume.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toggle white, pink and brown noise independently and blend with per-track volume."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "白 / 粉 / 棕噪声独立开关、各自调节音量,混合输出。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "白 / 粉 / 棕噪聲獨立開關、各自調節音量,混合輸出。"
+          }
+        }
+      }
+    },
+    "Turn it on in Plugin Manager (off by default).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn it on in Plugin Manager (off by default)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "默认关闭,在插件管理中启用。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預設關閉,在外掛管理中啟用。"
+          }
+        }
+      }
+    },
+    "White Noise": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "White Noise"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "白噪音"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "白噪音"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
