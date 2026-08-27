@@ -118,7 +118,7 @@ public struct AppSidebarRow<Trailing: View>: View {
             isSelected: false,
             action: {}
         ) {
-            Text("Ready")
+            Text(LumiUILocalization.string("Ready"))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }

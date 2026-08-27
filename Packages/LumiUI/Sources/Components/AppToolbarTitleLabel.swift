@@ -53,7 +53,7 @@ public struct AppToolbarTitleLabel<Trailing: View>: View {
         AppToolbarTitleLabel(icon: "brain.head.profile", title: "Mind Map") {
             Text("·")
                 .foregroundStyle(.tertiary)
-            Text("untitled")
+            Text(LumiUILocalization.string("untitled"))
                 .lineLimit(1)
                 .foregroundStyle(.secondary)
             Text("(3)")

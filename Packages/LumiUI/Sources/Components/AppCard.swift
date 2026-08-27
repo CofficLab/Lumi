@@ -231,19 +231,19 @@ private struct CardShadowModifier: ViewModifier {
 #Preview {
     VStack(spacing: 12) {
         AppCard {
-            Text("Glass Card (default)")
+            Text(LumiUILocalization.string("Glass Card (default)"))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         AppCard(style: .elevated) {
-            Text("Elevated Card (hover me)")
+            Text(LumiUILocalization.string("Elevated Card (hover me)"))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         AppCard(style: .subtle) {
-            Text("Subtle Card")
+            Text(LumiUILocalization.string("Subtle Card"))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         AppCard(showShadow: false, glowColor: .purple) {
-            Text("Glass Card with Glow")
+            Text(LumiUILocalization.string("Glass Card with Glow"))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }

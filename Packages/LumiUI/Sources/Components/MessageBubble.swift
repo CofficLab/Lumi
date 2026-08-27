@@ -121,13 +121,13 @@ public extension View {
 
 #Preview {
     VStack(alignment: .leading, spacing: 12) {
-        Text("Hello, how can I help you today?")
+        Text(LumiUILocalization.string("Hello, how can I help you today?"))
             .appMessageBubble(role: .user, isError: false)
             .frame(maxWidth: 250, alignment: .trailing)
-        Text("I can assist with coding, writing, and more!")
+        Text(LumiUILocalization.string("I can assist with coding, writing, and more!"))
             .appMessageBubble(role: .assistant, isError: false)
             .frame(maxWidth: 250, alignment: .leading)
-        Text("An unexpected error occurred.")
+        Text(LumiUILocalization.string("An unexpected error occurred."))
             .appMessageBubble(role: .error, isError: true)
             .frame(maxWidth: 250, alignment: .leading)
     }

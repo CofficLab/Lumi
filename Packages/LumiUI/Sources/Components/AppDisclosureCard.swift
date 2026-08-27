@@ -61,12 +61,12 @@ public struct AppDisclosureCard<Content: View>: View {
     VStack(spacing: 12) {
         AppDisclosureCard(title: "Advanced Settings") {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Setting 1")
-                Text("Setting 2")
+                Text(LumiUILocalization.string("Setting 1"))
+                Text(LumiUILocalization.string("Setting 2"))
             }
         }
         AppDisclosureCard(title: "Account Info", icon: "person.circle") {
-            Text("User details go here")
+            Text(LumiUILocalization.string("User details go here"))
         }
     }
     .padding()

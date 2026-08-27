@@ -278,17 +278,17 @@ public struct AppButton: View {
         Spacer()
         VStack(spacing: 12) {
             HStack(spacing: 8) {
-                AppButton("Primary", style: .primary) {}
-                AppButton("Secondary", style: .secondary) {}
+                AppButton(LumiUILocalization.string("Primary"), style: .primary) {}
+                AppButton(LumiUILocalization.string("Secondary"), style: .secondary) {}
             }
             HStack(spacing: 8) {
-                AppButton("Ghost", style: .ghost) {}
-                AppButton("Tonal", style: .tonal) {}
-                AppButton("Destructive", style: .destructive) {}
+                AppButton(LumiUILocalization.string("Ghost"), style: .ghost) {}
+                AppButton(LumiUILocalization.string("Tonal"), style: .tonal) {}
+                AppButton(LumiUILocalization.string("Destructive"), style: .destructive) {}
             }
             HStack(spacing: 8) {
-                AppButton("Small", systemImage: "star", style: .primary, size: .small) {}
-                AppButton("With Icon", systemImage: "gearshape", style: .secondary) {}
+                AppButton(LumiUILocalization.string("Small"), systemImage: "star", style: .primary, size: .small) {}
+                AppButton(LumiUILocalization.string("With Icon"), systemImage: "gearshape", style: .secondary) {}
             }
         }
         Spacer()

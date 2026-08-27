@@ -69,7 +69,7 @@ public struct AppImagePreviewGrid: View {
                             )
                     }
                     .buttonStyle(.plain)
-                    .help("Click to preview image")
+                    .help(LumiUILocalization.string("Click to preview image"))
                 }
             }
         }
@@ -98,7 +98,7 @@ private struct AppImagePreviewSheet: View {
         VStack(spacing: 0) {
             HStack {
                 Spacer()
-                Button("Close") {
+                Button(LumiUILocalization.string("Close")) {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)

@@ -516,7 +516,7 @@ public struct AppSettingsSecureFieldRow: View {
         var body: some View {
             AppSettingsSection(title: "Settings", subtitle: "Shared section styling") {
                 AppSettingsRow(isSelected: true) {
-                    Text("Selected row")
+                    Text(LumiUILocalization.string("Selected row"))
                         .font(.appBody)
                 }
                 AppSettingsToggleRow("Enable feature", description: "Uses LumiUI theme tokens", systemImage: "switch.2", isOn: $enabled)

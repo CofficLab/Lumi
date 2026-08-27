@@ -44,13 +44,13 @@ public struct GlassRow<Content: View>: View {
 #Preview {
     VStack(spacing: 8) {
         GlassRow {
-            Text("Hover over me")
+            Text(LumiUILocalization.string("Hover over me"))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         GlassRow {
             HStack {
                 Image(systemName: "gearshape")
-                Text("Settings Row")
+                Text(LumiUILocalization.string("Settings Row"))
                 Spacer()
             }
         }

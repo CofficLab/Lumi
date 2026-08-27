@@ -100,13 +100,13 @@ public extension GlassSelectionCard {
 #Preview {
     VStack(spacing: 12) {
         GlassSelectionCard(isSelected: true) {
-            Label("Selected Option", systemImage: "star.fill")
+            Label(LumiUILocalization.string("Selected Option"), systemImage: "star.fill")
         }
         GlassSelectionCard(isSelected: false) {
-            Label("Unselected Option", systemImage: "circle")
+            Label(LumiUILocalization.string("Unselected Option"), systemImage: "circle")
         }
         GlassSelectionCard(isSelected: true, checkmarkColor: .green, selectedBackgroundColor: .green.opacity(0.15), selectedBorderColor: .green) {
-            Label("Custom Theme", systemImage: "paintbrush.fill")
+            Label(LumiUILocalization.string("Custom Theme"), systemImage: "paintbrush.fill")
         }
     }
     .padding()
