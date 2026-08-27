@@ -178,7 +178,7 @@ struct GeneralSettingsDetailView: View {
                 icon: "arrow.down.circle"
             ) {
                 AppButton(
-                    "Check...",
+                    LumiPluginLocalization.string("Check...", bundle: .module),
                     systemImage: "arrow.triangle.2.circlepath",
                     style: .secondary,
                     size: .small

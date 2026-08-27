@@ -20,6 +20,7 @@ let package = Package(
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderCommand"),
         .package(path: "../ProviderSettingView"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
@@ -30,8 +31,10 @@ let package = Package(
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderCommand", package: "ProviderCommand"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
             ],
-            path: "Sources/PluginSettingGeneral"
+            path: "Sources/PluginSettingGeneral",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginSettingGeneralTests",
