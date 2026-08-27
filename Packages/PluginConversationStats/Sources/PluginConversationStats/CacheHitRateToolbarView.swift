@@ -92,7 +92,7 @@ private struct CacheHitRatePopover: View {
                 Image(systemName: "memorychip")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
-                Text("Cache Hit Rate")
+                Text(LumiPluginLocalization.string("Cache Hit Rate", bundle: .module))
                     .font(.subheadline)
                     .fontWeight(.semibold)
             }

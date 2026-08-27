@@ -44,7 +44,7 @@ struct SpeedToolbarView: View {
             )
         }
         .buttonStyle(.plain)
-        .help("Streaming output speed")
+        .help(LumiPluginLocalization.string("Streaming output speed", bundle: .module))
         .popover(isPresented: $popoverShown, arrowEdge: .bottom) {
             SpeedPopover(
                 tps: cachedTPS,

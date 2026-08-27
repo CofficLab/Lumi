@@ -1,0 +1,489 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ tokens used" : {
+
+    },
+    "%@/%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@/%2$@"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
+    "%lld messages" : {
+
+    },
+    "%lld requests in this conversation" : {
+
+    },
+    "Average cache hit rate: %@ (%lld requests)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Average cache hit rate: %1$@ (%2$lld requests)"
+          }
+        }
+      }
+    },
+    "Average speed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average speed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均速度"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均速度"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均速度"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均速度"
+          }
+        }
+      }
+    },
+    "Cache Hit Rate" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cache Hit Rate"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缓存命中率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缓存命中率"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缓存命中率"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缓存命中率"
+          }
+        }
+      }
+    },
+    "Context Window" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Context Window"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下文窗口"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下文窗口"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下文窗口"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下文窗口"
+          }
+        }
+      }
+    },
+    "Conversation speed trend" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversation speed trend"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话速度趋势"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话速度趋势"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话速度趋势"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对话速度趋势"
+          }
+        }
+      }
+    },
+    "Current:" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前："
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前："
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前："
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前："
+          }
+        }
+      }
+    },
+    "Message Count" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message Count"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "消息数"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "消息数"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "消息数"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "消息数"
+          }
+        }
+      }
+    },
+    "Messages in current conversation: %lld" : {
+
+    },
+    "No token usage data yet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No token usage data yet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无令牌使用数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无令牌使用数据"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无令牌使用数据"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无令牌使用数据"
+          }
+        }
+      }
+    },
+    "Running" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "运行中"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "运行中"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "运行中"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "运行中"
+          }
+        }
+      }
+    },
+    "Speed unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speed unavailable"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "速度不可用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "速度不可用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "速度不可用"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "速度不可用"
+          }
+        }
+      }
+    },
+    "Streaming output speed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Streaming output speed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流式输出速度"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流式输出速度"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流式输出速度"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流式输出速度"
+          }
+        }
+      }
+    },
+    "Streaming Speed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Streaming Speed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流式速度"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流式速度"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流式速度"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流式速度"
+          }
+        }
+      }
+    },
+    "Streaming speed measures how fast the model generates output tokens. Higher is better." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Streaming speed measures how fast the model generates output tokens. Higher is better."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流式速度衡量模型生成输出令牌的快慢，数值越高越好。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流式速度衡量模型生成输出令牌的快慢，数值越高越好。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流式速度衡量模型生成输出令牌的快慢，数值越高越好。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "流式速度衡量模型生成输出令牌的快慢，数值越高越好。"
+          }
+        }
+      }
+    },
+    "tokens / second" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tokens / second"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "令牌/秒"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "令牌/秒"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "令牌/秒"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "令牌/秒"
+          }
+        }
+      }
+    },
+    "上下文窗口 = 模型单次请求能处理的最大 token 数。输入 + 输出共享此上限。接近上限时可能导致截断或错误。" : {
+
+    },
+    "命中率 = 每条请求从缓存读取的 tokens ÷ 总输入 tokens 的算术平均。缓存命中越高，重复上下文计费越低、响应越快。" : {
+
+    }
+  },
+  "version" : "1.0"
+}

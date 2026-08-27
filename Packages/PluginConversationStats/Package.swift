@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginConversationStats",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "PluginConversationStats", targets: ["PluginConversationStats"]),
@@ -17,6 +18,7 @@ let package = Package(
         .package(path: "../ProviderLLMVendors"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../LumiUI"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
@@ -31,8 +33,10 @@ let package = Package(
                 "ProviderLLMVendors",
                 "ProviderAgentLoop",
                 "LumiUI",
+                .product(name: "KitLocalization", package: "KitLocalization"),
             ],
-            path: "Sources/PluginConversationStats"
+            path: "Sources/PluginConversationStats",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginConversationStatsTests",

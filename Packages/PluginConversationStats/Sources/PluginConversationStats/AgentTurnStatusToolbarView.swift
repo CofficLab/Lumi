@@ -29,7 +29,7 @@ struct AgentTurnStatusToolbarView: View {
                         )
                     Image(systemName: "person.2.wave.2")
                         .font(.system(size: 10, weight: .medium))
-                    Text("Running")
+                    Text(LumiPluginLocalization.string("Running", bundle: .module))
                         .font(.system(size: 10, weight: .medium))
                         .contentTransition(.opacity)
                 }

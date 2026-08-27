@@ -145,7 +145,7 @@ private struct ContextSizePopover: View {
                 Image(systemName: "text.viewfinder")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
-                Text("Context Window")
+                Text(LumiPluginLocalization.string("Context Window", bundle: .module))
                     .font(.subheadline)
                     .fontWeight(.semibold)
             }
@@ -171,7 +171,7 @@ private struct ContextSizePopover: View {
                 }
                 .frame(height: 6)
             } else {
-                Text("No token usage data yet")
+                Text(LumiPluginLocalization.string("No token usage data yet", bundle: .module))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

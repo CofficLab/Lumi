@@ -17,7 +17,7 @@ struct SpeedPopover: View {
                 Image(systemName: "gauge.with.dots.needle.bottom.50percent")
                     .font(.system(size: 18))
                     .foregroundStyle(.orange)
-                Text("Streaming Speed")
+                Text(LumiPluginLocalization.string("Streaming Speed", bundle: .module))
                     .font(.headline)
                 Spacer()
             }
@@ -26,14 +26,14 @@ struct SpeedPopover: View {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(String(format: "%.1f", tps))
                         .font(.system(size: 34, weight: .semibold, design: .rounded))
-                    Text("tokens / second")
+                    Text(LumiPluginLocalization.string("tokens / second", bundle: .module))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
                 averageSpeedBlock
 
-                Text("Streaming speed measures how fast the model generates output tokens. Higher is better.")
+                Text(LumiPluginLocalization.string("Streaming speed measures how fast the model generates output tokens. Higher is better.", bundle: .module))
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -76,7 +76,7 @@ struct SpeedPopover: View {
                 .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Speed unavailable")
+                Text(LumiPluginLocalization.string("Speed unavailable", bundle: .module))
                     .font(.subheadline.weight(.semibold))
                 Text(unavailabilityReason.localizedExplanation)
                     .font(.callout)
@@ -121,13 +121,13 @@ extension SpeedPopover {
                     .frame(width: 22)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Average speed")
+                    Text(LumiPluginLocalization.string("Average speed", bundle: .module))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text(String(format: "%.1f", averageTPS))
                             .font(.system(size: 20, weight: .semibold, design: .rounded))
-                        Text("tokens / second")
+                        Text(LumiPluginLocalization.string("tokens / second", bundle: .module))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -152,7 +152,7 @@ extension SpeedPopover {
 
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Text("Conversation speed trend")
+                    Text(LumiPluginLocalization.string("Conversation speed trend", bundle: .module))
                         .font(.subheadline.weight(.semibold))
                     Spacer()
                     Text("\(speedHistory.count) messages")

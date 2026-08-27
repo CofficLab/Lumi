@@ -77,7 +77,7 @@ private struct MessageCountPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Message Count")
+            Text(LumiPluginLocalization.string("Message Count", bundle: .module))
                 .font(.system(size: 12, weight: .semibold))
 
             VStack(alignment: .leading, spacing: 6) {
@@ -102,7 +102,7 @@ private struct MessageCountPopover: View {
             Divider()
 
             HStack {
-                Text("Current:")
+                Text(LumiPluginLocalization.string("Current:", bundle: .module))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
                 Text("\(count) messages")
