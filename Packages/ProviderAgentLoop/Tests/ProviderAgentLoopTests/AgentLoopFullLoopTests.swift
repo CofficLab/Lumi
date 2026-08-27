@@ -283,6 +283,9 @@ struct AgentLoopFullLoopTests {
         #expect(outcome == .completed)
         #expect(provider.streamed)
         #expect(messages.lastMessage(in: conversationID)?.content == "你好")
+        #expect(messages.lastMessage(in: conversationID)?.latencyMs != nil)
+        #expect(messages.lastMessage(in: conversationID)?.timeToFirstTokenMs != nil)
+        #expect(messages.lastMessage(in: conversationID)?.streamingDurationMs != nil)
         // 临时行已清理
         #expect(DefaultMessageStreamingProviding().streamingMessage(for: conversationID) == nil)
     }

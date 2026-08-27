@@ -171,10 +171,16 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
                 body: body
             )
             let parsed = try adapter.parseResponse(data: data, reverseMap: reverseMap)
+            let tokenCounts = Self.tokenCounts(from: data, anthropic: true)
             if Self.verbose {
                 Self.logger.debug("\(Self.t)sendChat anthropic response received, content length=\(parsed.content.count)")
             }
-            return LLMResponse(content: parsed.content, model: model)
+            return LLMResponse(
+                content: parsed.content,
+                model: model,
+                inputTokenCount: tokenCounts.input,
+                outputTokenCount: tokenCounts.output
+            )
         }
 
         let adapter = OpenAICompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
@@ -189,10 +195,16 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
             body: body
         )
         let parsed = try adapter.parseResponse(data: data, reverseMap: reverseMap)
+        let tokenCounts = Self.tokenCounts(from: data, anthropic: false)
         if Self.verbose {
             Self.logger.debug("\(Self.t)sendChat openAI response received, content length=\(parsed.content.count)")
         }
-        return LLMResponse(content: parsed.content, model: model)
+        return LLMResponse(
+            content: parsed.content,
+            model: model,
+            inputTokenCount: tokenCounts.input,
+            outputTokenCount: tokenCounts.output
+        )
     }
 
     // MARK: - OpenAI / Anthropic (streaming)
@@ -238,7 +250,9 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
             return accumulator.finish(model: model)
         }
 
-        let adapter = OpenAICompatibleProviderAdapter(configuration: .init(baseURL: Self.base))
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: .init(baseURL: Self.base, includeUsageInStreamOptions: true)
+        )
         nonisolated(unsafe) let body = try adapter.buildStreamingRequestBody(
             messages: request.messages,
             model: model,
@@ -301,12 +315,34 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
         let data = try await apiService.sendJSON(request: httpRequest, body: finalBody)
         let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
         let result = Self.responsesResult(from: object, reverseMap: reverseMap)
+        let tokenCounts = Self.tokenCounts(from: data, anthropic: false)
         return LLMResponse(
             content: result.content,
             model: model,
             toolCalls: result.toolCalls?.map {
                 LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
-            }
+            },
+            inputTokenCount: tokenCounts.input,
+            outputTokenCount: tokenCounts.output
+        )
+    }
+
+    /// OpenCode 网关的不同协议使用不同的 usage 字段名，统一转换到 Lumi 的
+    /// token 统计字段。
+    private static func tokenCounts(from data: Data, anthropic: Bool) -> (input: Int?, output: Int?) {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let usage = object["usage"] as? [String: Any] else {
+            return (nil, nil)
+        }
+        if anthropic {
+            return (
+                usage["input_tokens"] as? Int,
+                usage["output_tokens"] as? Int
+            )
+        }
+        return (
+            usage["input_tokens"] as? Int ?? usage["prompt_tokens"] as? Int,
+            usage["output_tokens"] as? Int ?? usage["completion_tokens"] as? Int
         )
     }
 
@@ -391,11 +427,20 @@ private final class GoStreamingAccumulator: @unchecked Sendable {
     private var reasoningContent = ""
     private var toolCalls: [Int: ToolCall] = [:]
     private var toolCallOrder: [Int] = []
+    private var inputTokens: Int?
+    private var outputTokens: Int?
 
     func consume(
         _ chunk: StreamChunk,
         onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
     ) async -> Bool {
+        if let inputTokens = chunk.inputTokens {
+            self.inputTokens = inputTokens
+        }
+        if let outputTokens = chunk.outputTokens {
+            self.outputTokens = outputTokens
+        }
+
         if chunk.eventType == .thinkingDelta, let piece = chunk.content, !piece.isEmpty {
             reasoningContent += piece
             await onChunk(LLMStreamChunk(reasoningContent: piece))
@@ -425,7 +470,9 @@ private final class GoStreamingAccumulator: @unchecked Sendable {
             toolCalls: calls.isEmpty ? nil : calls.map {
                 LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments)
             },
-            reasoningContent: reasoningContent.isEmpty ? nil : reasoningContent
+            reasoningContent: reasoningContent.isEmpty ? nil : reasoningContent,
+            inputTokenCount: inputTokens,
+            outputTokenCount: outputTokens
         )
     }
 

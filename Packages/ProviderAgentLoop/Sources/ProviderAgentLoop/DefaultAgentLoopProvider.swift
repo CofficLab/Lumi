@@ -362,11 +362,17 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         }
         let request = LLMRequest(conversationID: conversationID, messages: preparedHistory.map(\.llmMessage), model: conversations.modelName(for: conversationID), tools: schemas.isEmpty ? nil : schemas, reasoningEffort: conversations.reasoningEffortOptional(for: conversationID).flatMap { $0.rawValue })
         streaming.start(conversationID: conversationID)
+        let timingRecorder = LLMStreamTimingRecorder()
         let response: LLMResponse
         do {
             if let streamingManager = llmManager as? any LLMStreamingProviding {
                 let bridge = StreamingBridge(streaming: streaming)
-                response = try await streamingManager.streamComplete(request) { [weak bridge] chunk in
+                response = try await streamingManager.streamComplete(request) { [weak bridge, timingRecorder] chunk in
+                    if chunk.content?.isEmpty == false
+                        || chunk.reasoningContent?.isEmpty == false
+                        || !(chunk.toolCalls?.isEmpty ?? true) {
+                        timingRecorder.markFirstOutput()
+                    }
                     guard let bridge else { return }
                     if let reasoning = chunk.reasoningContent, !reasoning.isEmpty {
                         await bridge.appendThinking(reasoning, conversationID: conversationID)
@@ -382,10 +388,11 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             await appendError(in: conversationID, error: error, turnID: turnID)
             throw error
         }
+        let timing = timingRecorder.finish()
         if Self.verbose {
             Self.logger.debug("\(Self.t)LLM response received conversation=\(conversationID.uuidString.prefix(8)), hasTools=\(!(response.toolCalls ?? []).isEmpty)")
         }
-        var assistant = Message(conversationID: conversationID, role: .assistant, content: response.content, turnID: turnID, providerID: nil, modelName: response.model, reasoningContent: response.reasoningContent, toolCalls: response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }, inputTokenCount: response.inputTokenCount, outputTokenCount: response.outputTokenCount)
+        var assistant = Message(conversationID: conversationID, role: .assistant, content: response.content, turnID: turnID, providerID: nil, modelName: response.model, reasoningContent: response.reasoningContent, toolCalls: response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }, inputTokenCount: response.inputTokenCount, outputTokenCount: response.outputTokenCount, latencyMs: timing.latencyMs, timeToFirstTokenMs: timing.timeToFirstTokenMs, streamingDurationMs: timing.streamingDurationMs)
         assistant.providerID = resolvedProviderID(for: conversationID)
         if let calls = assistant.toolCalls {
             assistant.toolCalls = calls.map { call in

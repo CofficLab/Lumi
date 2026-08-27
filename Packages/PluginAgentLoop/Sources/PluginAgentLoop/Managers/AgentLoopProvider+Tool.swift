@@ -286,9 +286,15 @@ extension AgentLoopManager {
             return .failure(reason: "unsupported streaming: \(error.localizedDescription)")
         }
 
+        let timingRecorder = LLMStreamTimingRecorder()
         let bridge = StreamingBridge(streaming: streaming)
         do {
-            let response = try await streamingManager.streamComplete(request) { [weak bridge] chunk in
+            let response = try await streamingManager.streamComplete(request) { [weak bridge, timingRecorder] chunk in
+                if chunk.content?.isEmpty == false
+                    || chunk.reasoningContent?.isEmpty == false
+                    || !(chunk.toolCalls?.isEmpty ?? true) {
+                    timingRecorder.markFirstOutput()
+                }
                 guard let bridge else { return }
                 let piece = chunk.content ?? ""
                 if let rc = chunk.reasoningContent, !rc.isEmpty {
@@ -297,6 +303,8 @@ extension AgentLoopManager {
                     await bridge.appendContent(piece, conversationID: conversationID)
                 }
             }
+
+            let timing = timingRecorder.finish()
 
             if Self.verbose {
                 if let toolCalls = response.toolCalls, !toolCalls.isEmpty {
@@ -332,7 +340,10 @@ extension AgentLoopManager {
                 responseID: response.responseID,
                 rawResponseJSON: response.rawResponseJSON,
                 rawStreamEventsJSON: response.rawStreamEventsJSON,
-                stopReason: response.stopReason
+                stopReason: response.stopReason,
+                latencyMs: timing.latencyMs,
+                timeToFirstTokenMs: timing.timeToFirstTokenMs,
+                streamingDurationMs: timing.streamingDurationMs
             )
             assistant.providerID = resolvedProviderID
             if let toolCalls = assistant.toolCalls {
