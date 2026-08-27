@@ -16,7 +16,7 @@ public final class ConversationStateProvider: ConversationStateProviding, SuperL
         category: "Provider"
     )
     nonisolated public static let emoji = "📋"
-    nonisolated public static let verbose = true
+    nonisolated public static let verbose = false
 
     @Published public private(set) var states: [UUID: ConversationStateSnapshot] = [:]
     private var observers: [UUID: Observer] = [:]
@@ -47,6 +47,8 @@ public final class ConversationStateProvider: ConversationStateProviding, SuperL
         agentLoopState: AgentLoopState? = nil,
         toolState: ConversationToolState? = nil,
         authorizationState: ConversationAuthorizationState? = nil,
+        activity: ConversationActivity? = nil,
+        clearActivity: Bool = false,
         lastError: String? = nil,
         clearError: Bool = false
     ) {
@@ -58,6 +60,7 @@ public final class ConversationStateProvider: ConversationStateProviding, SuperL
                 agentLoopState: agentLoopState ?? current.agentLoopState,
                 toolState: toolState ?? current.toolState,
                 authorizationState: authorizationState ?? current.authorizationState,
+                activity: clearActivity ? nil : (activity ?? current.activity),
                 lastError: clearError ? nil : (lastError ?? current.lastError)
             )
         )
@@ -76,6 +79,7 @@ public final class ConversationStateProvider: ConversationStateProviding, SuperL
                 "agentLoop=\(snapshot.agentLoopState.rawValue)",
                 "tool=\(snapshot.toolState.rawValue)",
                 "authorization=\(snapshot.authorizationState.rawValue)",
+                "activity=\(snapshot.activity?.rawValue ?? "none")",
                 "isSending=\(snapshot.isSending)",
                 "error=\(error)",
             ].joined(separator: ", ")
