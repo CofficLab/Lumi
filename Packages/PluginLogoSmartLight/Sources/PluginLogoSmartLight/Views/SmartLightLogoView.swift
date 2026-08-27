@@ -34,25 +34,25 @@ struct SmartLightLogoView: View {
         VStack {
             SmartLightLogoView(scene: .general)
                 .frame(width: 48, height: 48)
-            Text("General")
+            Text(LumiPluginLocalization.string("General", bundle: .module))
                 .font(.caption2)
         }
         VStack {
             SmartLightLogoView(scene: .about)
                 .frame(width: 48, height: 48)
-            Text("About")
+            Text(LumiPluginLocalization.string("About", bundle: .module))
                 .font(.caption2)
         }
         VStack {
             SmartLightLogoView(scene: .statusBar)
                 .frame(width: 48, height: 48)
-            Text("Status Bar")
+            Text(LumiPluginLocalization.string("Status Bar", bundle: .module))
                 .font(.caption2)
         }
         VStack {
             SmartLightLogoView(scene: .statusBarHighlighted)
                 .frame(width: 48, height: 48)
-            Text("Highlighted")
+            Text(LumiPluginLocalization.string("Highlighted", bundle: .module))
                 .font(.caption2)
         }
     }
