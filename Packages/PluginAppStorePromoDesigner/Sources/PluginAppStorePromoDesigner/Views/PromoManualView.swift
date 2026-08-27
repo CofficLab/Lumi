@@ -137,7 +137,7 @@ struct PromoManualView: View {
             HStack(spacing: 22) {
                 // 预览示意:标题区块高亮
                 VStack(spacing: 8) {
-                    Text("APP")
+                    Text(PromoLocalization.string("APP"))
                         .font(.system(size: 7, weight: .bold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 6)

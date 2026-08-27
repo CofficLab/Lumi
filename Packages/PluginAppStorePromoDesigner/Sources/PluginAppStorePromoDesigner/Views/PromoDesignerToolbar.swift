@@ -99,7 +99,7 @@ struct PromoDesignerToolbar: View {
 
     @ViewBuilder
     private var displayPicker: some View {
-        Picker("Display", selection: $workspace.selectedDisplayType) {
+        Picker(PromoLocalization.string("Display"), selection: $workspace.selectedDisplayType) {
             ForEach(AppStorePromoDisplaySpec.presets(for: task.deviceFamily)) { preset in
                 Text("\(preset.displayType) · \(preset.width)×\(preset.height)").tag(preset.displayType)
             }
@@ -110,7 +110,7 @@ struct PromoDesignerToolbar: View {
 
     @ViewBuilder
     private var modePicker: some View {
-        Picker("Mode", selection: mode) {
+        Picker(PromoLocalization.string("Mode"), selection: mode) {
             Text(PromoLocalization.string("Preview")).tag(PromoDesignerView.Mode.preview)
             Text(PromoLocalization.string("HTML Source")).tag(PromoDesignerView.Mode.source)
         }

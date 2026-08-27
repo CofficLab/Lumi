@@ -34,7 +34,7 @@ public struct PromoDesignerView: View {
             PromoLocalization.string("Export Failed"),
             isPresented: errorBinding
         ) {
-            Button("OK", role: .cancel) { workspace.lastError = nil }
+            Button(PromoLocalization.string("OK"), role: .cancel) { workspace.lastError = nil }
         } message: {
             Text(workspace.lastError ?? "")
         }
