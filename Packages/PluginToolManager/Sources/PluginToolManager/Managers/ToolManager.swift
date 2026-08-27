@@ -4,6 +4,7 @@ import KitAgentTool
 import KitSuperLog
 import os
 import ProviderToolManager
+import ProviderConversation
 
 private struct ToolInteractionPayload: Codable {
     let toolCallID: String
@@ -36,6 +37,7 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
     var resultCacheConversationIDs: [String: UUID] = [:]
     var deletedConversationIDs: Set<UUID> = []
     let eventManager = ToolManagerEventManager()
+    weak var conversationManager: (any ConversationManaging)?
 
     public var recordStore: ProviderToolManager.ToolCallRecordStore? {
         get { recordStoreValue }
@@ -105,5 +107,24 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
     public func riskLevel(for toolCall: ToolCall) -> CommandRiskLevel? {
         guard let tool = registeredTools[toolCall.name], let arguments = try? ToolArgumentCoding.decode(toolCall.arguments) else { return nil }
         return tool.permissionRiskLevel(arguments: arguments)
+    }
+
+    public func authorizationDecision(
+        for toolCall: ToolCall,
+        conversationID: UUID
+    ) -> ToolAuthorizationDecision {
+        guard let level = conversationManager?.automationLevel(for: conversationID) else {
+            let risk = riskLevel(for: toolCall) ?? .high
+            return risk.requiresPermission ? .requiresUserApproval : .autoApproved
+        }
+        switch level {
+        case .chat:
+            return .blocked(reason: "Tool execution was blocked because this conversation is in Chat mode.")
+        case .autonomous:
+            return .autoApproved
+        case .build:
+            let risk = riskLevel(for: toolCall) ?? .high
+            return risk.requiresPermission ? .requiresUserApproval : .autoApproved
+        }
     }
 }

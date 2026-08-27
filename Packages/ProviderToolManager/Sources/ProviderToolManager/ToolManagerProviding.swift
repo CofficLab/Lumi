@@ -50,6 +50,13 @@ public protocol ToolManagerProviding: AnyObject {
     /// 工具或参数无法解析时返回 `nil`，调用方应视为高风险处理。
     func riskLevel(for toolCall: ToolCall) -> CommandRiskLevel?
 
+    /// 综合当前会话策略与工具风险，决定工具是否可以执行。
+    /// 这是授权判断的唯一入口；UI 不应自行推断自动化级别或风险。
+    func authorizationDecision(
+        for toolCall: ToolCall,
+        conversationID: UUID
+    ) -> ToolAuthorizationDecision
+
     /// 执行一次工具调用并返回结果。
     func execute(
         _ toolCall: ToolCall,
@@ -119,6 +126,15 @@ public protocol ToolManagerProviding: AnyObject {
 public extension ToolManagerProviding {
     /// 未指定插件归属的工具使用的默认分组。
     static var builtInPluginID: String { "Built-in" }
+
+    func authorizationDecision(
+        for toolCall: ToolCall,
+        conversationID: UUID
+    ) -> ToolAuthorizationDecision {
+        _ = conversationID
+        let risk = riskLevel(for: toolCall) ?? .high
+        return risk.requiresPermission ? .requiresUserApproval : .autoApproved
+    }
 
     /// 注册一个工具，不指定插件归属（归入 `"Built-in"` 分组）。
     func add(_ tool: any SuperAgentTool) {

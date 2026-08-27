@@ -337,10 +337,18 @@ extension AgentLoopManager {
                         arguments: toolCall.arguments
                     )
                     enriched.displayDescription = toolManager.displayDescription(for: agentToolCall)
-                    let risk = toolManager.riskLevel(for: agentToolCall) ?? .high
-                    enriched.authorizationState = risk.requiresPermission
-                        ? ToolCallAuthorizationState.pendingAuthorization.rawValue
-                        : ToolCallAuthorizationState.noRisk.rawValue
+                    let decision = toolManager.authorizationDecision(
+                        for: agentToolCall,
+                        conversationID: conversationID
+                    )
+                    enriched.authorizationState = switch decision {
+                    case .requiresUserApproval:
+                        ToolCallAuthorizationState.pendingAuthorization.rawValue
+                    case .autoApproved:
+                        ToolCallAuthorizationState.autoApproved.rawValue
+                    case .blocked:
+                        ToolCallAuthorizationState.userRejected.rawValue
+                    }
                     return enriched
                 }
             }

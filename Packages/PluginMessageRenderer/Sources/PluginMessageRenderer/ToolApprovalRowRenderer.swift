@@ -136,9 +136,8 @@ public struct ToolApprovalRowRenderer: ToolCallRowRenderer, SuperLog {
     public init() {}
 
     public func canRender(toolCall: ToolCall) -> Bool {
-        let hasNoResult = toolCall.result == nil
         let isPending = toolCall.authorizationState == .pendingAuthorization
-        let shouldRender = hasNoResult && isPending
+        let shouldRender = isPending
         if shouldRender {
             Self.logger.info(
                 "\(Self.t)命中授权界面渲染条件 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) authorization=\(toolCall.authorizationState.rawValue, privacy: .public) hasResult=\(toolCall.result != nil, privacy: .public)"

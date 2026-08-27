@@ -104,6 +104,7 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.emoji)无法建立 AgentLoop → ToolManager 事件订阅")
             return
         }
+        service.conversationManager = conversationManager
 
         agentLoopToolCallsObserver = ToolCallsObserver(
             agentLoop: agentLoop,

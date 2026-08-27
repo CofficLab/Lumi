@@ -146,6 +146,15 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
         return tool.permissionRiskLevel(arguments: arguments)
     }
 
+    public func authorizationDecision(
+        for toolCall: ToolCall,
+        conversationID: UUID
+    ) -> ToolAuthorizationDecision {
+        _ = conversationID
+        let risk = riskLevel(for: toolCall) ?? .high
+        return risk.requiresPermission ? .requiresUserApproval : .autoApproved
+    }
+
     public func execute(
         _ toolCall: ToolCall,
         conversationID: UUID,

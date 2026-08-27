@@ -58,12 +58,17 @@ final class ToolCallsObserver: SuperLog {
             // Chat 模式需要发布 blocked 结果，让 AgentLoop 正常结束当前工具步骤。
             executableInputs = inputs
             executionPolicy = .blockAll
-        case .autoExecute, .requireApprovalForHighRisk:
+        case .autoExecute:
+            executableInputs = inputs
+            executionPolicy = .autoExecute
+        case .requireApprovalForHighRisk:
             executableInputs = inputs.filter { toolCall in
-                let risk = toolManager.riskLevel(for: toolCall) ?? .high
-                guard !risk.requiresPermission else {
+                guard case .autoApproved = toolManager.authorizationDecision(
+                    for: toolCall,
+                    conversationID: conversationID
+                ) else {
                     if Self.verbose {
-                        Self.logger.info("\(Self.t)🌚 工具需要授权，放弃执行 tool=\(toolCall.name), id=\(toolCall.id), risk=\(risk.rawValue)")
+                        Self.logger.info("\(Self.t)🌚 工具需要授权，放弃执行 tool=\(toolCall.name), id=\(toolCall.id)")
                     }
                     return false
                 }

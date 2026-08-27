@@ -77,8 +77,11 @@ extension ToolManager {
             case .autoExecute:
                 results.append(.executed(await execute(toolCall, conversationID: conversationID, turnID: turnID)))
             case .requireApprovalForHighRisk:
-                let risk = riskLevel(for: toolCall) ?? .high
-                if risk.requiresPermission {
+                if case .requiresUserApproval = authorizationDecision(
+                    for: toolCall,
+                    conversationID: conversationID
+                ) {
+                    let risk = riskLevel(for: toolCall) ?? .high
                     eventManager.send(.authorizationRequired(
                         conversationID: conversationID,
                         turnID: turnID,
