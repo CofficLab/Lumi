@@ -325,7 +325,14 @@ extension AgentLoopManager {
                 reasoningContent: response.reasoningContent,
                 toolCalls: response.toolCalls?.map { MessageToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
                 inputTokenCount: response.inputTokenCount,
-                outputTokenCount: response.outputTokenCount
+                outputTokenCount: response.outputTokenCount,
+                cachedInputTokenCount: response.cachedInputTokenCount,
+                cacheWriteInputTokenCount: response.cacheWriteInputTokenCount,
+                cacheTotalInputTokenCount: response.cacheTotalInputTokenCount,
+                responseID: response.responseID,
+                rawResponseJSON: response.rawResponseJSON,
+                rawStreamEventsJSON: response.rawStreamEventsJSON,
+                stopReason: response.stopReason
             )
             assistant.providerID = resolvedProviderID
             if let toolCalls = assistant.toolCalls {

@@ -107,6 +107,11 @@ public struct LLMResponse: Sendable, Equatable {
     public let inputTokenCount: Int?
     public let outputTokenCount: Int?
     public let cachedInputTokenCount: Int?
+    public let cacheWriteInputTokenCount: Int?
+    public let cacheTotalInputTokenCount: Int?
+    public let responseID: String?
+    public let rawResponseJSON: String?
+    public let rawStreamEventsJSON: String?
     public let stopReason: String?
 
     public init(
@@ -117,6 +122,11 @@ public struct LLMResponse: Sendable, Equatable {
         inputTokenCount: Int? = nil,
         outputTokenCount: Int? = nil,
         cachedInputTokenCount: Int? = nil,
+        cacheWriteInputTokenCount: Int? = nil,
+        cacheTotalInputTokenCount: Int? = nil,
+        responseID: String? = nil,
+        rawResponseJSON: String? = nil,
+        rawStreamEventsJSON: String? = nil,
         stopReason: String? = nil
     ) {
         self.content = content
@@ -126,6 +136,11 @@ public struct LLMResponse: Sendable, Equatable {
         self.inputTokenCount = inputTokenCount
         self.outputTokenCount = outputTokenCount
         self.cachedInputTokenCount = cachedInputTokenCount
+        self.cacheWriteInputTokenCount = cacheWriteInputTokenCount
+        self.cacheTotalInputTokenCount = cacheTotalInputTokenCount
+        self.responseID = responseID
+        self.rawResponseJSON = rawResponseJSON
+        self.rawStreamEventsJSON = rawStreamEventsJSON
         self.stopReason = stopReason
     }
 }

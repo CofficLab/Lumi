@@ -335,6 +335,10 @@ final class StreamingAccumulator: @unchecked Sendable {
     private var inputTokens: Int?
     private var outputTokens: Int?
     private var cachedInputTokens: Int?
+    private var cacheWriteInputTokens: Int?
+    private var cacheTotalInputTokens: Int?
+    private var responseID: String?
+    private var rawStreamEvents: [String] = []
     private var stopReason: String?
     private var finished = false
     private var failure: Error?
@@ -353,7 +357,11 @@ final class StreamingAccumulator: @unchecked Sendable {
         if let v = chunk.inputTokens { self.inputTokens = v }
         if let v = chunk.outputTokens { self.outputTokens = v }
         if let v = chunk.cachedInputTokens { self.cachedInputTokens = v }
+        if let v = chunk.cacheWriteInputTokens { self.cacheWriteInputTokens = v }
+        if let v = chunk.cacheTotalInputTokens { self.cacheTotalInputTokens = v }
+        if let v = chunk.responseID { self.responseID = v }
         if let v = chunk.stopReason { self.stopReason = v }
+        if let rawEvent = chunk.rawEvent { rawStreamEvents.append(rawEvent) }
 
         // 思考增量
         if chunk.eventType == .thinkingDelta, let piece = chunk.content {
@@ -391,6 +399,10 @@ final class StreamingAccumulator: @unchecked Sendable {
     func finish(model: String) async throws -> LLMResponse {
         if let failure { throw failure }
         let finalCalls = toolCallOrder.compactMap { toolCalls[$0] }
+        let rawStreamEventsJSON = try? String(
+            data: JSONSerialization.data(withJSONObject: rawStreamEvents),
+            encoding: .utf8
+        )
         return LLMResponse(
             content: content,
             model: model,
@@ -401,6 +413,10 @@ final class StreamingAccumulator: @unchecked Sendable {
             inputTokenCount: inputTokens,
             outputTokenCount: outputTokens,
             cachedInputTokenCount: cachedInputTokens,
+            cacheWriteInputTokenCount: cacheWriteInputTokens,
+            cacheTotalInputTokenCount: cacheTotalInputTokens,
+            responseID: responseID,
+            rawStreamEventsJSON: rawStreamEventsJSON,
             stopReason: stopReason
         )
     }

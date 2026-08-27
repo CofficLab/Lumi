@@ -254,7 +254,8 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                         inputTokens: inputTokens,
                         cachedInputTokens: cachedInputTokens,
                         cacheWriteInputTokens: cacheWriteInputTokens
-                    )
+                    ),
+                    responseID: (json["message"] as? [String: Any])?["id"] as? String
                 )
             }
 
