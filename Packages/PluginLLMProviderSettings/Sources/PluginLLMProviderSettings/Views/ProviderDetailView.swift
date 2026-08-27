@@ -102,7 +102,7 @@ public struct ProviderDetailView: View {
             .id(info.id)
 
             HStack(spacing: 8) {
-                AppButton("保存 API Key", systemImage: "checkmark", style: .primary, size: .small) {
+                AppButton(LumiPluginLocalization.string("Save API Key", bundle: .module), systemImage: "checkmark", style: .primary, size: .small) {
                     saveAPIKey()
                 }
                 .disabled(
@@ -111,7 +111,7 @@ public struct ProviderDetailView: View {
                 )
 
                 if !savedAPIKey.isEmpty {
-                    AppButton("删除 API Key", systemImage: "trash", style: .destructive, size: .small) {
+                    AppButton(LumiPluginLocalization.string("Delete API Key", bundle: .module), systemImage: "trash", style: .destructive, size: .small) {
                         removeAPIKey()
                     }
                 }
