@@ -51,7 +51,7 @@ struct SendActionBarButton: View {
             HStack(spacing: 4) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.red)
-                Text("Provider Error")
+                Text(LumiPluginLocalization.string("Provider Error", bundle: .module))
                     .font(.headline)
             }
             Text("Missing provider(s): \(missingProviders.joined(separator: ", "))")
@@ -76,6 +76,6 @@ private struct ErrorButton: View {
                 .font(.system(size: 16))
         }
         .buttonStyle(.plain)
-        .help("Provider configuration error — click for details")
+        .help(LumiPluginLocalization.string("Provider configuration error — click for details", bundle: .module))
     }
 }
