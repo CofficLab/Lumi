@@ -97,15 +97,19 @@ struct ItemView: View {
 
     @ViewBuilder
     private var statusIndicator: some View {
-        switch conversationState?.agentLoopState {
-        case .running:
-            pulsingAttentionDot
-        case .suspended:
-            stateIcon("pause.circle.fill", color: .orange)
-        case .failed:
-            stateIcon("exclamationmark.triangle.fill", color: .red)
-        case .completed, .cancelled, .idle, nil:
-            if needsAttention { attentionDot }
+        if conversationState?.authorizationState == .required {
+            stateIcon("exclamationmark.shield.fill", color: .orange)
+        } else {
+            switch conversationState?.agentLoopState {
+            case .running:
+                pulsingAttentionDot
+            case .suspended:
+                stateIcon("pause.circle.fill", color: .orange)
+            case .failed:
+                stateIcon("exclamationmark.triangle.fill", color: .red)
+            case .completed, .cancelled, .idle, nil:
+                if needsAttention { attentionDot }
+            }
         }
     }
 

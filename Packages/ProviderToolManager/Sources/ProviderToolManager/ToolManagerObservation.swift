@@ -5,6 +5,8 @@ import KitAgentTool
 @MainActor
 public enum ToolManagerEvent {
     case started(conversationID: UUID, turnID: UUID?, toolCall: ToolCall)
+    /// 工具需要用户授权后才能继续执行。
+    case authorizationRequired(conversationID: UUID, turnID: UUID?, toolCall: ToolCall)
     case completed(conversationID: UUID, turnID: UUID?, toolCall: ToolCall, result: ToolCallResult)
     /// 用户授权后执行（或拒绝）单个工具的完成事件。
     ///

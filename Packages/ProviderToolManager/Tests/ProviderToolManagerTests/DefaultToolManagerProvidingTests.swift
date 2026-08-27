@@ -32,6 +32,8 @@ struct DefaultToolManagerProvidingTests {
             switch event {
             case .started:
                 events.append("started")
+            case .authorizationRequired:
+                events.append("authorizationRequired")
             case .completed:
                 events.append("completed")
             case .authorizedCompleted:
@@ -82,6 +84,12 @@ struct DefaultToolManagerProvidingTests {
         let manager = DefaultToolManagerProviding()
         manager.add(MockTool(name: "risky", risk: .high), pluginID: "p")
         manager.add(MockTool(name: "safe", risk: .low), pluginID: "p")
+        var authorizationEventReceived = false
+        let observer = manager.addToolManagerObserver { event in
+            if case .authorizationRequired = event {
+                authorizationEventReceived = true
+            }
+        }
 
         let results = await manager.executeBatch(
             [
@@ -96,8 +104,11 @@ struct DefaultToolManagerProvidingTests {
         #expect(results.count == 1)
         guard case .needsUserResponse = results[0] else {
             Issue.record("expected the first tool call to require user response")
+            observer.cancel()
             return
         }
+        #expect(authorizationEventReceived)
+        observer.cancel()
     }
 
     @Test("execute 参数非 JSON 对象返回错误")

@@ -10,12 +10,19 @@ public enum ConversationToolState: String, Codable, Sendable {
     case completed
 }
 
+/// 当前会话是否有等待用户处理的授权请求。
+public enum ConversationAuthorizationState: String, Codable, Sendable {
+    case none
+    case required
+}
+
 /// 一个会话的当前状态快照。
 public struct ConversationStateSnapshot: Equatable, Sendable {
     public let conversationID: UUID
     public let turnID: UUID?
     public let agentLoopState: AgentLoopState
     public let toolState: ConversationToolState
+    public let authorizationState: ConversationAuthorizationState
     public let lastError: String?
 
     /// 当前会话是否正在执行 Agent 回合。
@@ -28,12 +35,14 @@ public struct ConversationStateSnapshot: Equatable, Sendable {
         turnID: UUID? = nil,
         agentLoopState: AgentLoopState = .idle,
         toolState: ConversationToolState = .idle,
+        authorizationState: ConversationAuthorizationState = .none,
         lastError: String? = nil
     ) {
         self.conversationID = conversationID
         self.turnID = turnID
         self.agentLoopState = agentLoopState
         self.toolState = toolState
+        self.authorizationState = authorizationState
         self.lastError = lastError
     }
 }

@@ -56,30 +56,33 @@ public final class DefaultConversationStateProvider: ConversationStateProviding 
 
     private func consume(_ event: AgentLoopEvent) {
         switch event {
-        case .started(let id, let turn): update(id, turnID: turn, agentLoopState: .running, toolState: .idle, clearError: true)
+        case .started(let id, let turn): update(id, turnID: turn, agentLoopState: .running, toolState: .idle, authorizationState: ConversationAuthorizationState.none, clearError: true)
         case .toolCallsReceived(let id, let turn, _, _), .llmResponseReceived(let id, let turn, _): update(id, turnID: turn, agentLoopState: .running, toolState: .executing)
         case .suspended(let id, let turn, _): update(id, turnID: turn, agentLoopState: .suspended, toolState: .suspended)
-        case .completed(let id, let turn): update(id, turnID: turn, agentLoopState: .completed, toolState: .completed)
-        case .failed(let id, let turn, let reason): update(id, turnID: turn, agentLoopState: .failed, toolState: .completed, lastError: reason)
-        case .cancelled(let id, let turn): update(id, turnID: turn, agentLoopState: .cancelled, toolState: .completed)
+        case .completed(let id, let turn): update(id, turnID: turn, agentLoopState: .completed, toolState: .completed, authorizationState: ConversationAuthorizationState.none)
+        case .failed(let id, let turn, let reason): update(id, turnID: turn, agentLoopState: .failed, toolState: .completed, authorizationState: ConversationAuthorizationState.none, lastError: reason)
+        case .cancelled(let id, let turn): update(id, turnID: turn, agentLoopState: .cancelled, toolState: .completed, authorizationState: ConversationAuthorizationState.none)
         }
     }
 
     private func consume(_ event: ToolManagerEvent) {
         switch event {
         case .started(let id, let turn, _): update(id, turnID: turn, toolState: .executing)
-        case .completed(let id, let turn, _, _), .authorizedCompleted(let id, let turn, _, _): update(id, turnID: turn, toolState: .completed)
+        case .authorizationRequired(let id, let turn, _): update(id, turnID: turn, authorizationState: .required)
+        case .completed(let id, let turn, _, _): update(id, turnID: turn, toolState: .completed)
+        case .authorizedCompleted(let id, let turn, _, _): update(id, turnID: turn, toolState: .completed, authorizationState: ConversationAuthorizationState.none)
         case .batchCompleted(let id, let turn, _, _): update(id, turnID: turn, toolState: .completed)
         }
     }
 
-    private func update(_ id: UUID, turnID: UUID? = nil, agentLoopState: AgentLoopState? = nil, toolState: ConversationToolState? = nil, lastError: String? = nil, clearError: Bool = false) {
+    private func update(_ id: UUID, turnID: UUID? = nil, agentLoopState: AgentLoopState? = nil, toolState: ConversationToolState? = nil, authorizationState: ConversationAuthorizationState? = nil, lastError: String? = nil, clearError: Bool = false) {
         let current = state(for: id)
         states[id] = ConversationStateSnapshot(
             conversationID: id,
             turnID: turnID ?? current.turnID,
             agentLoopState: agentLoopState ?? current.agentLoopState,
             toolState: toolState ?? current.toolState,
+            authorizationState: authorizationState ?? current.authorizationState,
             lastError: clearError ? nil : (lastError ?? current.lastError)
         )
     }

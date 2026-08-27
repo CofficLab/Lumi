@@ -335,6 +335,11 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
             case .requireApprovalForHighRisk:
                 let risk = riskLevel(for: toolCall) ?? .high
                 if risk.requiresPermission {
+                    notify(.authorizationRequired(
+                        conversationID: conversationID,
+                        turnID: turnID,
+                        toolCall: toolCall
+                    ))
                     let payload = DefaultToolInteractionPayload(
                         toolCallID: "approval:\(toolCall.id)",
                         kind: "permission",

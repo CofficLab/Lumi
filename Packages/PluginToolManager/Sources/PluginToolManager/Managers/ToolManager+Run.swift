@@ -79,6 +79,11 @@ extension ToolManager {
             case .requireApprovalForHighRisk:
                 let risk = riskLevel(for: toolCall) ?? .high
                 if risk.requiresPermission {
+                    eventManager.send(.authorizationRequired(
+                        conversationID: conversationID,
+                        turnID: turnID,
+                        toolCall: toolCall
+                    ))
                     let payload = ToolInteractionPayload(
                         toolCallID: "approval:\(toolCall.id)",
                         kind: "permission",
