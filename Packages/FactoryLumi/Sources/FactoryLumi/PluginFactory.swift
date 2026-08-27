@@ -81,6 +81,7 @@ import PluginLLMProviderSublyx
 import PluginLLMProviderXiaomi
 import PluginLLMProviderXybbz
 import PluginLLMProviderZhipu
+import PluginLLMProviderCodex
 import PluginLogoCoffic
 import PluginLogoManager
 import PluginLogoSmartLight
@@ -251,6 +252,7 @@ public struct DefaultPluginFactory: PluginFactory {
             XiaomiProviderPlugin(),
             XybbzProviderPlugin(),
             ZhipuProviderPlugin(),
+            CodexLumiPlugin(),
             LLMProviderSettingsPlugin(),
         ]
     }

@@ -430,8 +430,8 @@ struct FactoryLumiTests {
 
         let manager: (any LLMManaging)? = kernel.resolveProvider((any LLMManaging).self)
         #expect(manager != nil)
-        // 20 个 PluginLLMProviderXXX 插件在启动时注册全部 27 个内建供应商。
-        #expect(manager?.providerCount == 27)
+        // 默认 LLM Provider 插件在启动时注册全部内建供应商，包含 Codex 本地供应商。
+        #expect(manager?.providerCount == 28)
         #expect(manager?.providerID == "llm-provider-manager")
     }
 
