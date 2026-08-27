@@ -105,10 +105,10 @@ public struct AgentRulesSettingsView: View {
                 Label(selectedProject.name, systemImage: "folder")
             }
             Spacer()
-            AppButton("Refresh", systemImage: "arrow.clockwise", size: .small) {
+            AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), systemImage: "arrow.clockwise", size: .small) {
                 Task { await reload() }
             }
-            AppButton("Open Rules Directory", systemImage: "folder", size: .small) {
+            AppButton(LumiPluginLocalization.string("Open Rules Directory", bundle: .module), systemImage: "folder", size: .small) {
                 openRulesDirectory()
             }
         }
