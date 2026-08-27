@@ -19,7 +19,7 @@ import KitSuperLog
 public final class AgentLoopManager: AgentLoopProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.agent-loop")
     public nonisolated static let emoji = "🔄"
-    public static let verbose = false
+    public static let verbose = true
     public static let printMessages = false
 
     // MARK: - Dependencies

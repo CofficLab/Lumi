@@ -308,7 +308,14 @@ extension AgentLoopManager {
                     let toolNames = toolCalls.map { $0.name }
                     Self.logger.info("\(Self.t)👷 大模型返回工具调用: count=\(toolCalls.count), tools=\(toolNames), model=\(response.model ?? "unknown")")
                 } else {
-                    Self.logger.info("\(Self.t)✅ 大模型返回纯文本响应 (无工具调用), model=\(response.model ?? "unknown")")
+                    let responsePreview = String(
+                        response.content
+                            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                            .prefix(50)
+                    )
+                    Self.logger.info(
+                        "\(Self.t)✅ 大模型返回纯文本响应 (无工具调用), model=\(response.model ?? "unknown"), content=\(responsePreview)"
+                    )
                 }
             }
 
