@@ -11,10 +11,14 @@ import ProviderStorage
 enum DebugCommands {
     static let commandGroupID = "com.coffic.lumi.plugin.command.debug"
 
+    static func localizedMenuName(locale: Locale = .current) -> String {
+        LumiPluginLocalization.string("Debug", bundle: .module, locale: locale)
+    }
+
     static func makeCommandGroup(kernel: KernelCoreContainer) -> CommandMenuGroup {
         CommandMenuGroup(
             id: commandGroupID,
-            name: "DEBUG",
+            name: localizedMenuName(),
             items: [
                 CommandItem(
                     id: "debug.openAppSupport",
