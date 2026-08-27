@@ -3,12 +3,14 @@ import PackageDescription
 
 let package = Package(
     name: "FactoryBookletMaker",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "FactoryBookletMaker", targets: ["FactoryBookletMaker"]),
     ],
     dependencies: [
         .package(path: "../FactoryLumi"),
+        .package(path: "../KitLocalization"),
         .package(path: "../KernelCore"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
@@ -30,6 +32,7 @@ let package = Package(
             name: "FactoryBookletMaker",
             dependencies: [
                 .product(name: "FactoryLumi", package: "FactoryLumi"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
@@ -46,7 +49,8 @@ let package = Package(
                 .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
                 .product(name: "PluginBookletMaker", package: "PluginBookletMaker"),
             ],
-            path: "Sources/FactoryBookletMaker"
+            path: "Sources/FactoryBookletMaker",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "FactoryBookletMakerTests",

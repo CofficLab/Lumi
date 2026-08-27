@@ -74,7 +74,7 @@ public enum KernelFactory {
     public static func makeMainView(kernel: KernelCoreContainer) throws -> AnyView {
 
         guard let rootView = kernel.resolveProvider((any RootViewProviding).self) else {
-            return AnyView(Text("RootViewProviding not registered"))
+            return AnyView(Text(LumiPluginLocalization.string("RootViewProviding not registered", bundle: .module)))
         }
 
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
@@ -114,7 +114,7 @@ public enum KernelFactory {
     public static func makeSettingsView(kernel: KernelCoreContainer) throws -> AnyView {
 
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
-            return AnyView(Text("SettingViewProviding not registered"))
+            return AnyView(Text(LumiPluginLocalization.string("SettingViewProviding not registered", bundle: .module)))
         }
 
         return settings.makeSettingView()
