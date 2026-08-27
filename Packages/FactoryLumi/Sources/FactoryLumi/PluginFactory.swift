@@ -48,6 +48,7 @@ import PluginConversationList
 import PluginConversationManager
 import PluginConversationMode
 import PluginConversationStats
+import PluginConversationSpeed
 import PluginConversationNew
 import PluginConversationPendingMessage
 import PluginConversationTitle
