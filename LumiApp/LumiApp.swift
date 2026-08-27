@@ -18,7 +18,7 @@ import SwiftUI
 /// `KernelFactory.makeSettingsView()` 提供；工具栏设置按钮通过通知
 /// （`lumiOpenSettings`）请求打开设置窗口；菜单栏由 `MenuBarProviding` 贡献。
 @main
-struct LumiMinimalApp: App {
+struct LumiApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: LumiAppDelegate
     /// 共享内核：主窗口、设置、菜单栏共用同一实例。
     /// Kernel 是稳定的服务注册表，不再作为 SwiftUI 的 ObservableObject。
