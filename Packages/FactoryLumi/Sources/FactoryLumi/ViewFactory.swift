@@ -132,20 +132,27 @@ public struct DefaultViewFactory: ViewFactory {
 /// 主题感知的视图包装：根据 `ThemeProviding` 的选中主题应用
 /// 明暗外观与窗口背景色。
 ///
-/// 通过 `onReceive(objectWillChange)` 感知主题切换（含其他窗口触发）。
+/// 通过 `ThemeProviding` 主题事件感知主题切换（含其他窗口触发）。
 @MainActor
 private struct ThemeHostingView<Content: View>: View {
     let theme: any ThemeProviding
     let content: Content
 
+    @StateObject private var themeObservation: ThemeObservationModel
     @State private var refreshTick = false
+
+    init(theme: any ThemeProviding, content: Content) {
+        self.theme = theme
+        self.content = content
+        _themeObservation = StateObject(wrappedValue: ThemeObservationModel(theme: theme))
+    }
 
     var body: some View {
         content
             .preferredColorScheme(preferredColorScheme)
             .background(backgroundColor)
             .onAppear { DefaultViewFactory.syncLumiTheme(theme) }
-            .onReceive(theme.objectWillChange) { _ in
+            .onReceive(themeObservation.$revision) { _ in
                 // 主题切换后强制 body 重算，应用新的明暗与背景，
                 // 并把新主题桥接到 LumiUI 主题体系（@LumiTheme / ChromeThemes）。
                 refreshTick.toggle()
@@ -179,4 +186,17 @@ private struct ThemeHostingView<Content: View>: View {
         }
         return selected.palette.backgroundMedium.color(colorScheme: colorScheme)
     }
+}
+
+@MainActor
+private final class ThemeObservationModel: ObservableObject {
+    @Published private(set) var revision = 0
+    private var handle: (any ThemeProvidingObserverHandle)?
+
+    init(theme: any ThemeProviding) {
+        handle = theme.addObserver { [weak self] _ in
+            self?.revision += 1
+        }
+    }
+
 }

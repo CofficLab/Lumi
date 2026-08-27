@@ -1,6 +1,3 @@
-import Combine
-import SwiftUI
-
 @MainActor
 public enum ThemeProvidingEvent {
     /// 主题注册表发生变化（注册、注销或全量替换）。
@@ -16,10 +13,7 @@ public protocol ThemeProvidingObserverHandle: AnyObject {
 
 /// 主题管理能力协议。
 @MainActor
-public protocol ThemeProviding: AnyObject, ObservableObject {
-    /// 变更事件发布器（固定为 `ObservableObjectPublisher`，@Published 合成类型）。
-    var objectWillChange: ObservableObjectPublisher { get }
-
+public protocol ThemeProviding: AnyObject {
     /// 全部已注册主题（按 `sortOrder` 升序）。
     var themes: [LumiTheme] { get }
 
@@ -29,8 +23,7 @@ public protocol ThemeProviding: AnyObject, ObservableObject {
     /// 当前选中主题。
     var selectedTheme: LumiTheme? { get }
 
-    /// 监听主题列表或当前选中主题变化。回调在状态更新完成后执行，
-    /// 不应再通过 `objectWillChange` 读取“新”状态。
+    /// 监听主题列表或当前选中主题变化。回调在状态更新完成后执行。
     @discardableResult
     func addObserver(_ callback: @escaping (ThemeProvidingEvent) -> Void) -> any ThemeProvidingObserverHandle
 

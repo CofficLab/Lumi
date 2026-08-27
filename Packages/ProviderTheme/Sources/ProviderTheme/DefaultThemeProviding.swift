@@ -8,15 +8,15 @@ import Foundation
 /// - 选中与切换：`selectTheme(id:)`（未知 id 抛错）
 /// - 持久化：`<数据根目录>/ThemeManager/theme-selection.plist`，写盘在主线程外执行
 ///
-/// 消费方（设置项、菜单）直接订阅本 Provider 的 `objectWillChange`，即可感知
-/// 主题列表与选中状态变化；KernelCore 不参与状态转发。
+/// 消费方（设置项、菜单）直接订阅本 Provider 的主题事件，即可感知主题列表
+/// 与选中状态变化；KernelCore 不参与状态转发。
 @MainActor
 public final class DefaultThemeProviding: ThemeProviding {
     /// 数据目录名，与旧版 Lumi 的 ThemeManager 保持一致语义。
     public static let pluginName = "ThemeManager"
 
-    @Published public private(set) var themes: [LumiTheme] = []
-    @Published public private(set) var selectedThemeId: String?
+    public private(set) var themes: [LumiTheme] = []
+    public private(set) var selectedThemeId: String?
 
     /// 当前选中主题。
     public var selectedTheme: LumiTheme? {
@@ -119,8 +119,12 @@ public final class DefaultThemeProviding: ThemeProviding {
     /// 用于遵循 `StorageProviding.pluginDataDirectory(for: "ThemeManager")`
     /// 约定：宿主先以默认目录构造，再注入 Storage 提供的目录并恢复已存偏好。
     public func setStorageDirectory(_ directory: URL) {
+        let previousSelected = selectedThemeId
         storageURL = directory.appendingPathComponent("theme-selection.plist", isDirectory: false)
         restorePersistedSelection()
+        if previousSelected != selectedThemeId {
+            notify(.selectionChanged(themeID: selectedThemeId))
+        }
     }
 
     // MARK: - Private

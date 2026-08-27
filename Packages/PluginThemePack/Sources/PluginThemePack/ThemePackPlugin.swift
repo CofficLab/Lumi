@@ -15,7 +15,7 @@ import SwiftUI
 /// - 注册「外观」设置入口，详情视图列出全部主题供切换。
 ///
 /// 消费方（设置项、主窗口）通过 `ThemeProviding.themes` 读取全部主题
-/// （内置 3 个 + 本插件 19 个），订阅 `objectWillChange` 感知切换。
+/// （内置 3 个 + 本插件 19 个），订阅主题事件感知切换。
 @MainActor
 public final class ThemePackPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.theme-pack", category: "ThemePack")
