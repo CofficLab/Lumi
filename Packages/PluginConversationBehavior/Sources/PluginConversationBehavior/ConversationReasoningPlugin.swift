@@ -78,10 +78,21 @@ struct ReasoningActionBarButton: View {
         Button {
             isPopoverPresented.toggle()
         } label: {
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(selectedEffort == nil ? .secondary : .accentColor)
-                .padding(4)
+            HStack(spacing: 10) {
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 17, weight: .medium))
+
+                Text(selectedEffort?.levelCode ?? "OFF")
+                    .font(.system(size: 15, weight: .medium))
+
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 9)
+            .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
         .help("Reasoning Effort")
