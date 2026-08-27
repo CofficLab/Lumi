@@ -3,6 +3,7 @@ import Foundation
 import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
+import ProviderConversationState
 import ProviderProject
 
 /// 新版插件上下文：聚合复刻旧版 ConversationListPlugin 所需的所有内核能力。
@@ -18,7 +19,9 @@ final class ConversationListContext: ObservableObject {
     let conversations: any ConversationManaging
     let project: (any ProjectProviding)?
     let agentTurn: (any AgentLoopProviding)?
+    let conversationState: (any ConversationStateProviding)?
     let chat: (any ChatSectionProviding)?
+    private var conversationStateCancellable: AnyCancellable?
 
     /// 当前选中的对话 ID，由 `addSelectedConversationObserver` 回调同步更新。
     ///
@@ -30,13 +33,18 @@ final class ConversationListContext: ObservableObject {
         conversations: any ConversationManaging,
         project: (any ProjectProviding)?,
         agentTurn: (any AgentLoopProviding)?,
+        conversationState: (any ConversationStateProviding)?,
         chat: (any ChatSectionProviding)?
     ) {
         self.conversations = conversations
         self.project = project
         self.agentTurn = agentTurn
+        self.conversationState = conversationState
         self.chat = chat
         self.selectedConversationID = conversations.selectedConversationID
+        conversationStateCancellable = conversationState?.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
     }
 
     /// 当前项目路径；`nil` 表示未选中项目。

@@ -1,5 +1,6 @@
 import LumiUI
 import ProviderConversation
+import ProviderConversationState
 import SwiftUI
 
 /// 会话项视图
@@ -7,8 +8,8 @@ struct ItemView: View {
     @LumiTheme private var theme: any LumiUITheme
 
     let conversation: ConversationSummary
+    let conversationState: ConversationStateSnapshot?
     let isSelected: Bool
-    let isActive: Bool
     let needsAttention: Bool
     let onSelect: () -> Void
     let onDelete: () -> Void
@@ -90,12 +91,31 @@ struct ItemView: View {
             Spacer()
         }
         .overlay(alignment: .topTrailing) {
-            if isActive {
-                pulsingAttentionDot
-            } else if needsAttention {
-                attentionDot
-            }
+            statusIndicator
         }
+    }
+
+    @ViewBuilder
+    private var statusIndicator: some View {
+        switch conversationState?.agentLoopState {
+        case .running:
+            pulsingAttentionDot
+        case .suspended:
+            stateIcon("pause.circle.fill", color: .orange)
+        case .failed:
+            stateIcon("exclamationmark.triangle.fill", color: .red)
+        case .completed, .cancelled, .idle, nil:
+            if needsAttention { attentionDot }
+        }
+    }
+
+    private func stateIcon(_ systemName: String, color: Color) -> some View {
+        Image(systemName: systemName)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(color)
+            .padding(.top, 3)
+            .padding(.trailing, 2)
+            .allowsHitTesting(false)
     }
 
     private var attentionDot: some View {

@@ -4,6 +4,7 @@ import KitSuperLog
 import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
+import ProviderConversationState
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
@@ -65,11 +66,13 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
         let root = kernel.resolveProvider((any RootViewProviding).self)
         let project = kernel.resolveProvider((any ProjectProviding).self)
         let agentTurn = kernel.resolveProvider((any AgentLoopProviding).self)
+        let conversationState = kernel.resolveProvider((any ConversationStateProviding).self)
 
         let context = ConversationListContext(
             conversations: conversations,
             project: project,
             agentTurn: agentTurn,
+            conversationState: conversationState,
             chat: chat
         )
         self.context = context

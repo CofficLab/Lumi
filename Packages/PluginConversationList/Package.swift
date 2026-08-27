@@ -15,6 +15,7 @@ let package = Package(
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderConversationState"),
         .package(path: "../KitAgentTool"),
         .package(path: "../LumiUI"),
     ],
@@ -29,6 +30,7 @@ let package = Package(
         .product(name: "ProviderToolbar", package: "ProviderToolbar"),
         .product(name: "ProviderToolManager", package: "ProviderToolManager"),
         .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+        .product(name: "ProviderConversationState", package: "ProviderConversationState"),
         .product(name: "KitAgentTool", package: "KitAgentTool"),
         .product(name: "LumiUI", package: "LumiUI"),
     ])]

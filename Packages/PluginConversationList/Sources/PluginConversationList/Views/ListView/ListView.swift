@@ -1,5 +1,6 @@
 import Combine
 import ProviderConversation
+import ProviderConversationState
 import SwiftUI
 
 /// 对话列表视图：
@@ -83,8 +84,8 @@ struct ListView: View {
                     ForEach(conversations, id: \.id) { conversation in
                         ItemView(
                             conversation: conversation,
+                            conversationState: context.conversationState?.state(for: conversation.id),
                             isSelected: (immediateSelectionID ?? context.selectedConversationID) == conversation.id,
-                            isActive: context.agentTurn?.isRunning(for: conversation.id) == true,
                             needsAttention: attentionStore.needsAttention(for: conversation.id),
                             onSelect: {
                                 // 先同步写入乐观选中，立刻高亮，不等管理器链路
