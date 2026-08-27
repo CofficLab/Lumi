@@ -9,14 +9,8 @@ import SwiftUI
 
 /// LLM 供应商设置插件（KernelCore 生态）。
 ///
-/// 在设置界面把 `LLMProviderManagerProviding` 中注册的全部供应商展示出来，
-/// 复刻旧版 `LLMProviderManagerPlugin` 的 Cloud / Local 两个设置入口：
-/// - 「云端供应商」：远程（非本地）供应商列表 + API Key 管理 + 模型选择；
-/// - 「本地供应商」：本地（`isLocal`）供应商列表 + 模型选择（无需 API Key）。
-///
-/// 页面数据来自管理器（`allProviders()` / `selectedProviderID` /
-/// `selectedModel` / `select(providerID:model:)`），并通过 ObservableObject
-/// 订阅管理器变化即时刷新。
+/// 在设置界面把 `LLMManaging` 中注册的全部供应商展示出来，
+/// 按 `isLocal` 区分云端和本地供应商入口。
 @MainActor
 public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-provider-settings", category: "LLMProviderSettings")
@@ -47,7 +41,7 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
                 systemImage: "cloud",
                 order: 100
             ) {
-                ProviderSettingsPage(manager: manager, isLocal: false)
+                CloudProviderSettingsPage(manager: manager)
             },
             SettingEntryItem(
                 id: "\(id).local-providers",
@@ -55,7 +49,7 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
                 systemImage: "cpu",
                 order: 101
             ) {
-                ProviderSettingsPage(manager: manager, isLocal: true)
+                LocalProviderSettingsPage(manager: manager)
             },
         ])
     }

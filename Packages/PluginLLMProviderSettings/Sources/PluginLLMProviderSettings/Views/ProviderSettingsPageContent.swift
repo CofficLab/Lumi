@@ -4,15 +4,9 @@ import ProviderLLMManager
 import KitLLM
 import SwiftUI
 
-/// 供应商设置页面（主从布局，复刻旧版 `ProviderSettingsPageBase`）。
-///
-/// - 左侧：搜索 + 供应商列表（按 `isLocal` 过滤，云端/本地两个入口各自使用）；
-/// - 右侧：选中供应商详情（API Key 管理 + 模型列表与选中切换）。
-///
-/// 数据源是 `LLMProviderManagerProviding`，通过 `@ObservedObject` 订阅
-/// 管理器变化（注册/选中切换即时刷新）。
+/// 本地和云端供应商页面共用的主从布局内容。
 @MainActor
-public struct ProviderSettingsPage: View {
+struct ProviderSettingsPageContent: View {
     @LumiTheme private var theme
 
     private let manager: any LLMManaging
@@ -21,12 +15,10 @@ public struct ProviderSettingsPage: View {
     @State private var selectedProviderID: String?
     @State private var searchText: String = ""
 
-    public init(manager: any LLMManaging, isLocal: Bool) {
+    init(manager: any LLMManaging, isLocal: Bool) {
         self.manager = manager
         self.isLocal = isLocal
     }
-
-    // MARK: - Derived
 
     private var allProviders: [any SuperLLMProvider] {
         manager.allProviders()
@@ -52,9 +44,7 @@ public struct ProviderSettingsPage: View {
         selectedProvider?.providerInfo.models.count ?? 0
     }
 
-    // MARK: - Body
-
-    public var body: some View {
+    var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             header
             HStack(spacing: 0) {
@@ -83,8 +73,6 @@ public struct ProviderSettingsPage: View {
         }
     }
 
-    // MARK: - Header
-
     private var header: some View {
         HStack(spacing: 10) {
             Label(
@@ -98,15 +86,10 @@ public struct ProviderSettingsPage: View {
         .foregroundStyle(theme.textSecondary)
     }
 
-    // MARK: - Sidebar
-
     private var sidebar: some View {
         VStack(spacing: 0) {
-            AppSearchBar(
-                text: $searchText,
-                placeholder: "搜索供应商"
-            )
-            .padding(12)
+            AppSearchBar(text: $searchText, placeholder: "搜索供应商")
+                .padding(12)
 
             AppDivider()
 
@@ -155,8 +138,6 @@ public struct ProviderSettingsPage: View {
             }
         }
     }
-
-    // MARK: - Detail Pane
 
     @ViewBuilder
     private var detailPane: some View {
