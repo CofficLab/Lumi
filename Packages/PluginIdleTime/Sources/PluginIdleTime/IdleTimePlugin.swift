@@ -1,7 +1,6 @@
 import AppKit
 import KernelCore
 import ProviderDocsView
-import ProviderMenuBar
 import ProviderSettingView
 import ProviderStorage
 import ProviderIdleTime
@@ -12,7 +11,7 @@ import SwiftUI
 /// 由旧版 `Plugins/IdleTimePlugin`（KernelLumi / LumiPlugin 架构）复刻而来：
 /// - onBoot 解析内核注册的 `IdleTimeProviding`（FactoryLumi 已装配完整服务），
 ///   注册活动事件监听（应用激活 / 编辑器保存），把事件喂给服务做休息窗口推断；
-/// - 贡献菜单栏弹窗（休息窗口快照与 24 小时活动热条）、设置页、关于文档；
+/// - 贡献设置页、关于文档；
 /// - onShutdown 全部撤回。
 @MainActor
 public final class IdleTimePlugin: SuperPlugin {
@@ -43,14 +42,7 @@ public final class IdleTimePlugin: SuperPlugin {
             registerEventObservers(provider: provider)
         }
 
-        // 3. 菜单栏弹窗：休息窗口快照 + 24 小时活动热条。
-        if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
-            menuBar.addPopup(MenuBarPopupItem(id: "\(id).popover", title: LumiPluginLocalization.string("Idle Time", bundle: .module), order: order) {
-                IdleTimeStatusBarPopover(provider: provider)
-            })
-        }
-
-        // 4. 设置页：休息窗口详情 + 打开数据目录。
+        // 3. 设置页：休息窗口详情 + 打开数据目录。
         if let settings = kernel.resolveProvider((any SettingViewProviding).self),
            let storage = kernel.resolveProvider((any StorageProviding).self) {
             let dataDirectory = storage.pluginDataDirectory(for: "IdleTime")
@@ -65,7 +57,7 @@ public final class IdleTimePlugin: SuperPlugin {
             settings.addEntries([entry])
         }
 
-        // 5. 关于文档。
+        // 4. 关于文档。
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
             docs.addAbout(DocsEntry(id: id, name: LumiPluginLocalization.string("Idle Time", bundle: .module)) { IdleTimeAboutView() })
         }
@@ -80,8 +72,6 @@ public final class IdleTimePlugin: SuperPlugin {
         observers.removeAll()
         provider = nil
 
-        kernel.resolveProvider((any MenuBarProviding).self)?
-            .removeItems(ids: ["\(id).popover"])
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
         kernel.resolveProvider((any DocsViewProviding).self)?
