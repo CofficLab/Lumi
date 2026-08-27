@@ -91,7 +91,7 @@ struct ModelListView: View {
                 }
             } else {
                 Spacer()
-                Text("Select a provider")
+                Text(LumiPluginLocalization.string("Select a provider", bundle: .module))
                     .font(.appCallout)
                     .foregroundColor(theme.textTertiary)
                 Spacer()

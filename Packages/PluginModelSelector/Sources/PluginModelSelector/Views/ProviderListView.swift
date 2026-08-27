@@ -32,7 +32,7 @@ struct ProviderListView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("Providers")
+                Text(LumiPluginLocalization.string("Providers", bundle: .module))
                     .font(.appCallout)
                 Spacer()
                 if let onClose {
@@ -97,7 +97,7 @@ struct ProviderListView: View {
                 }
             } else {
                 Spacer()
-                Text("No providers available")
+                Text(LumiPluginLocalization.string("No providers available", bundle: .module))
                     .font(.appCallout)
                     .foregroundColor(theme.textTertiary)
                 Spacer()
