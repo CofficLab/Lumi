@@ -16,6 +16,8 @@ struct OpenInPluginTests {
     private final class StubProject: ProjectProviding {
         var currentProject: ProjectInfo?
         var projects: [ProjectInfo] = []
+        var openFileURLs: [URL] = []
+        var currentFileURL: URL?
         @Published var tick = false
         init(path: String?) {
             currentProject = path.map { ProjectInfo(name: "test", path: $0) }
@@ -23,6 +25,10 @@ struct OpenInPluginTests {
         func openProject(at path: String) async throws {}
         func closeProject() async {}
         func refreshProjects() async throws {}
+        func updateCurrentFile(_ fileURL: URL?) {}
+        func updateOpenFiles(_ fileURLs: [URL]) {}
+        func closeFile(_ fileURL: URL) {}
+        func synchronizeProjects(_ projects: [ProjectInfo]) {}
     }
 
     @Test("工具名与描述正确")

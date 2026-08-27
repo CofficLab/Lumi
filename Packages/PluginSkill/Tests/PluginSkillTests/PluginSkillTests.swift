@@ -18,6 +18,8 @@ struct SkillPluginTests {
     private final class StubProject: ProjectProviding {
         var currentProject: ProjectInfo?
         var projects: [ProjectInfo] = []
+        var openFileURLs: [URL] = []
+        var currentFileURL: URL?
         @Published var tick = false
         init(path: String?) {
             currentProject = path.map { ProjectInfo(name: "test", path: $0) }
@@ -25,6 +27,10 @@ struct SkillPluginTests {
         func openProject(at path: String) async throws {}
         func closeProject() async {}
         func refreshProjects() async throws {}
+        func updateCurrentFile(_ fileURL: URL?) {}
+        func updateOpenFiles(_ fileURLs: [URL]) {}
+        func closeFile(_ fileURL: URL) {}
+        func synchronizeProjects(_ projects: [ProjectInfo]) {}
     }
 
     /// Mock scanner：返回固定技能列表。

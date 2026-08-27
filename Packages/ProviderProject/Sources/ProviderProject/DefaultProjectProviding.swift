@@ -15,6 +15,8 @@ public final class DefaultProjectProviding: ProjectProviding, SuperLog {
 
     @Published public var currentProject: ProjectInfo?
     @Published public var projects: [ProjectInfo] = []
+    @Published public var openFileURLs: [URL] = []
+    @Published public var currentFileURL: URL?
 
     public init() {
         Self.logger.warning("\(Self.t)DefaultProjectProviding is an incomplete default implementation")
