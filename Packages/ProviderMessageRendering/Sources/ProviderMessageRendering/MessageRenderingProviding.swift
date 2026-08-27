@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import ProviderConversation
 import ProviderMessage
 import SwiftUI
@@ -29,7 +30,8 @@ public struct MessageRendererItem: Identifiable, Sendable {
 }
 
 @MainActor
-public protocol MessageRenderingProviding: AnyObject {
+public protocol MessageRenderingProviding: AnyObject, ObservableObject
+    where ObjectWillChangePublisher == ObservableObjectPublisher {
     var allRenderers: [MessageRendererItem] { get }
     func register(_ renderer: MessageRendererItem)
     func unregister(id: String)
@@ -37,8 +39,8 @@ public protocol MessageRenderingProviding: AnyObject {
 }
 
 @MainActor
-public final class DefaultMessageRenderingProviding: MessageRenderingProviding {
-    public private(set) var allRenderers: [MessageRendererItem] = []
+public final class DefaultMessageRenderingProviding: MessageRenderingProviding, ObservableObject {
+    @Published public private(set) var allRenderers: [MessageRendererItem] = []
     public init() {}
     public func register(_ renderer: MessageRendererItem) {
         allRenderers.removeAll { $0.id == renderer.id }

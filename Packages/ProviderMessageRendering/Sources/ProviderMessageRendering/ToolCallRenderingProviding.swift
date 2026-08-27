@@ -1,4 +1,5 @@
 import KitAgentTool
+import Combine
 import SwiftUI
 
 /// 工具调用行渲染所需的助手消息上下文。
@@ -36,7 +37,8 @@ extension ToolCallRowRenderer {
 /// 与 `MessageRenderingProviding` 平级：消息级渲染器负责选择整条消息，
 /// 工具调用渲染器负责替换 assistant 消息内部的单个 ToolCall 行。
 @MainActor
-public protocol ToolCallRenderingProviding: AnyObject {
+public protocol ToolCallRenderingProviding: AnyObject, ObservableObject
+    where ObjectWillChangePublisher == ObservableObjectPublisher {
     var allRenderers: [any ToolCallRowRenderer] { get }
     func register(_ renderer: any ToolCallRowRenderer)
     func unregister(id: String)
@@ -44,8 +46,8 @@ public protocol ToolCallRenderingProviding: AnyObject {
 }
 
 @MainActor
-public final class DefaultToolCallRenderingProviding: ToolCallRenderingProviding {
-    public private(set) var allRenderers: [any ToolCallRowRenderer] = []
+public final class DefaultToolCallRenderingProviding: ToolCallRenderingProviding, ObservableObject {
+    @Published public private(set) var allRenderers: [any ToolCallRowRenderer] = []
 
     public init() {}
 

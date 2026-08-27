@@ -22,5 +22,10 @@ let package = Package(
             ],
             path: "Sources/ProviderMessageRendering"
         ),
+        .testTarget(
+            name: "ProviderMessageRenderingTests",
+            dependencies: ["ProviderMessageRendering"],
+            path: "Tests/ProviderMessageRenderingTests"
+        ),
     ]
 )

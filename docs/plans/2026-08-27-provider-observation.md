@@ -42,3 +42,11 @@ Run focused tests/builds for `ProviderConversation` and all changed Provider pac
 - Test: `Packages/ProviderWebServer/Tests/ProviderWebServerTests/DefaultWebServerProvidingTests.swift`
 
 Expose cancellable typed events for server lifecycle/routes and RAG initialization/project/indexing lifecycle while preserving thread isolation.
+
+### Task 5: Observe runtime renderer registration
+
+**Files:**
+- Modify: `Packages/ProviderMessageRendering/Sources/ProviderMessageRendering/MessageRenderingProviding.swift`
+- Modify: `Packages/ProviderMessageRendering/Sources/ProviderMessageRendering/ToolCallRenderingProviding.swift`
+
+Make message-level and ToolCall-level renderer registration observable so late plugin registration and removal can refresh consumers.
