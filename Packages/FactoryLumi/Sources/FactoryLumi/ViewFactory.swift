@@ -29,7 +29,7 @@ public struct DefaultViewFactory: ViewFactory {
     /// （明暗外观 + 背景色）。
     public func makeMainView(kernel: KernelCoreContainer) throws -> AnyView {
         guard let rootView = kernel.resolveProvider((any RootViewProviding).self) else {
-            return AnyView(Text("RootViewProviding not registered"))
+            return AnyView(Text(LumiPluginLocalization.string("RootViewProviding not registered", bundle: .main)))
         }
 
         // ProviderTheme and LumiUI are separate layers. Resolve the selected
@@ -71,7 +71,7 @@ public struct DefaultViewFactory: ViewFactory {
     /// 此处不再注入。仅负责把选中主题桥接到 LumiUI 主题体系后返回设置视图。
     public func makeSettingsView(kernel: KernelCoreContainer) throws -> AnyView {
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
-            return AnyView(Text("SettingViewProviding not registered"))
+            return AnyView(Text(LumiPluginLocalization.string("SettingViewProviding not registered", bundle: .main)))
         }
 
         // 先把选中主题桥接到 LumiUI 主题体系，避免首帧渲染时 LumiUI 组件

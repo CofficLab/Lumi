@@ -3,12 +3,14 @@ import PackageDescription
 
 let package = Package(
     name: "FactoryLumi",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "FactoryLumi", targets: ["FactoryLumi"]),
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../PluginAppIconDesigner"),
         .package(path: "../PluginAppStorePromoDesigner"),
@@ -165,6 +167,7 @@ let package = Package(
             name: "FactoryLumi",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "PluginAppIconDesigner", package: "PluginAppIconDesigner"),
                 .product(name: "PluginAppStorePromoDesigner", package: "PluginAppStorePromoDesigner"),
@@ -316,7 +319,8 @@ let package = Package(
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
                 .product(name: "ProviderExternalFile", package: "ProviderExternalFile"),
             ],
-            path: "Sources/FactoryLumi"
+            path: "Sources/FactoryLumi",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "FactoryLumiTests",
