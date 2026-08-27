@@ -36,11 +36,13 @@ final class AgentLoopStateObserver: SuperLog {
                 agentLoopState: .running,
                 toolState: .idle,
                 authorizationState: ConversationAuthorizationState.none,
+                activity: .thinking,
                 clearError: true
             )
-        case .toolCallsReceived(let id, let turn, _, _),
-             .llmResponseReceived(let id, let turn, _):
-            provider.update(conversationID: id, turnID: turn, agentLoopState: .running, toolState: .executing)
+        case .toolCallsReceived(let id, let turn, _, _):
+            provider.update(conversationID: id, turnID: turn, agentLoopState: .running, toolState: .executing, activity: .executingTool)
+        case .llmResponseReceived(let id, let turn, _):
+            provider.update(conversationID: id, turnID: turn, agentLoopState: .running, activity: .thinking)
         case .suspended(let id, let turn, _):
             provider.update(conversationID: id, turnID: turn, agentLoopState: .suspended, toolState: .suspended)
         case .completed(let id, let turn):
@@ -49,7 +51,8 @@ final class AgentLoopStateObserver: SuperLog {
                 turnID: turn,
                 agentLoopState: .completed,
                 toolState: .completed,
-                authorizationState: ConversationAuthorizationState.none
+                authorizationState: ConversationAuthorizationState.none,
+                clearActivity: true
             )
         case .failed(let id, let turn, let reason):
             Self.logger.error("\(Self.t)AgentLoop failed conversation=\(id.uuidString, privacy: .public): \(reason, privacy: .public)")
@@ -59,6 +62,7 @@ final class AgentLoopStateObserver: SuperLog {
                 agentLoopState: .failed,
                 toolState: .completed,
                 authorizationState: ConversationAuthorizationState.none,
+                clearActivity: true,
                 lastError: reason
             )
         case .cancelled(let id, let turn):
@@ -67,7 +71,8 @@ final class AgentLoopStateObserver: SuperLog {
                 turnID: turn,
                 agentLoopState: .cancelled,
                 toolState: .completed,
-                authorizationState: ConversationAuthorizationState.none
+                authorizationState: ConversationAuthorizationState.none,
+                clearActivity: true
             )
         }
     }

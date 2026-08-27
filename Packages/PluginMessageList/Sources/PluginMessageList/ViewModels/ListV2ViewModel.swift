@@ -63,6 +63,7 @@ final class ListV2ViewModel: ObservableObject {
 
     /// 流式临时行（独立于历史行）。仅在 thinking/generating 阶段非 nil。
     @Published private(set) var streamingRow: Message?
+    @Published private(set) var activityMessage: Message?
 
     /// 内存中的真实落库消息（分页窗口），按时间升序；`hasPersistedMessages` 由它派生。
     @Published private(set) var persistedMessages: [Message] = [] {
@@ -153,6 +154,7 @@ final class ListV2ViewModel: ObservableObject {
         activeConversationID = conversationID
         // 切换会话：清掉上一会话的流式行残留，并重置可见性记忆。
         streamingRow = nil
+        activityMessage = services.activityMessage(for: conversationID)
         streamingRowWasVisible = false
         isLoading = true
         loadFirstPage(conversationID: conversationID)
@@ -319,6 +321,15 @@ final class ListV2ViewModel: ObservableObject {
                 }
                 .store(in: &cancellables)
         }
+        if let state = services.conversationState {
+            state.objectWillChange
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    guard let self else { return }
+                    self.activityMessage = self.services.activityMessage(for: self.selectedConversationID)
+                }
+                .store(in: &cancellables)
+        }
         if let sender = services.sender {
             // Sending churns at high frequency during a turn（status/queue 更新）。
             // 路由 sender 变化走同一个合并的 tail-refresh 路径。
@@ -382,6 +393,9 @@ final class ListV2ViewModel: ObservableObject {
         } else {
             updateStreamingRow(nil)
         }
+        activityMessage = streamingRow == nil
+            ? services.activityMessage(for: conversationID)
+            : nil
     }
 
     /// 更新流式行，并在可见性切换（nil↔非 nil）时重算历史行（隐藏/恢复 status 行）。

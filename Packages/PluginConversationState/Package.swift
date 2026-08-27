@@ -13,6 +13,7 @@ let package = Package(
         .package(path: "../ProviderConversationState"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../ProviderMessageSender"),
     ],
     targets: [
         .target(
@@ -23,6 +24,7 @@ let package = Package(
                 .product(name: "ProviderConversationState", package: "ProviderConversationState"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
             ],
             path: "Sources/PluginConversationState"
         ),

@@ -12,7 +12,7 @@ import Testing
 @MainActor
 struct MessageSenderPluginTests {
 
-    @Test("onBoot 解析基础 Provider 并注册自带 LumiMessageSender 实现")
+    @Test("onBoot 解析基础 Provider 并注册自带 MessageSender 实现")
     func pluginRegistersMessageSendingProvider() throws {
         let kernel = KernelCoreContainer()
         let conversations = DefaultConversationManager()
@@ -30,7 +30,7 @@ struct MessageSenderPluginTests {
         let sender = kernel.resolveProvider((any MessageSendingProviding).self)
         #expect(sender != nil)
         // 注册的是插件自带的实现，而不是 ProviderMessageSender 的 DefaultMessageSender。
-        #expect(sender is LumiMessageSender)
+        #expect(sender is MessageSender)
         // 注册的实例归属于本插件，可被插件管理卸载/撤回
         #expect(kernel.isProvider((any MessageSendingProviding).self, ownedByPlugin: plugin.id))
     }

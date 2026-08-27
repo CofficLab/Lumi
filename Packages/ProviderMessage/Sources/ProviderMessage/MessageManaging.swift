@@ -14,10 +14,6 @@ public protocol MessageInsertedObserverHandle: AnyObject {
 @MainActor
 public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     func messages(for conversationID: UUID) -> [Message]
-    /// Returns messages for presentation, including the current transient status message.
-    /// The regular `messages(for:)` path intentionally excludes transient status from
-    /// LLM history and other durable message consumers.
-    func messagesForDisplay(for conversationID: UUID) -> [Message]
     func message(id: UUID, in conversationID: UUID) -> Message?
     func lastMessage(in conversationID: UUID) -> Message?
     func messageCount(for conversationID: UUID) -> Int
@@ -45,12 +41,6 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
         in conversationID: UUID
     )
 
-    /// 清掉指定会话的瞬时 status 消息（"正在发送…"/"正在思考…"等）。
-    ///
-    /// 回合结束（含取消、失败）时调用，避免状态行残留在时间线上；
-    /// 实现可依赖 `Message.metadata["isTransientStatus"] == "true"` 识别。
-    func clearStatusMessages(in conversationID: UUID)
-
     // MARK: - Observation
 
     /// 注册一个观察者：当 `insertMessage` 被调用后通过 callback 收到插入的消息和会话 ID。
@@ -67,10 +57,6 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
 }
 
 public extension MessageManaging {
-    func messagesForDisplay(for conversationID: UUID) -> [Message] {
-        messages(for: conversationID)
-    }
-
     func dailyMessageCounts(since: Date) -> [Date: Int] { [:] }
 
     func dailyTokenCounts(since: Date) -> [Date: Int] { [:] }
@@ -82,7 +68,6 @@ public extension MessageManaging {
         in conversationID: UUID
     ) {}
 
-    func clearStatusMessages(in conversationID: UUID) {}
 
     func addMessageInsertedObserver(
         _ callback: @escaping (Message, UUID) -> Void

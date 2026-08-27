@@ -360,7 +360,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 Message(conversationID: conversationID, role: .init(rawValue: message.role.rawValue) ?? .system, content: message.content, toolCallID: message.toolCallID, reasoningContent: message.reasoningContent)
             }
         }
-        insertStatusMessage(conversationID: conversationID, content: String(localized: "status.thinking", defaultValue: "正在思考…"))
         let request = LLMRequest(conversationID: conversationID, messages: preparedHistory.map(\.llmMessage), model: conversations.modelName(for: conversationID), tools: schemas.isEmpty ? nil : schemas, reasoningEffort: conversations.reasoningEffortOptional(for: conversationID).flatMap { $0.rawValue })
         streaming.start(conversationID: conversationID)
         let response: LLMResponse
@@ -549,11 +548,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 }
             }
 
-            insertStatusMessage(
-                conversationID: conversationID,
-                content: String(localized: "status.thinking", defaultValue: "正在思考…")
-            )
-
             let request = LLMRequest(
                 conversationID: conversationID,
                 messages: preparedHistory.map(\.llmMessage),
@@ -649,14 +643,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 if cancelledConversations.contains(conversationID) {
                     return .cancelled
                 }
-
-                insertStatusMessage(
-                    conversationID: conversationID,
-                    content: String(
-                        localized: "status.executing-tool",
-                        defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
-                    )
-                )
 
                 var result = await executeToolCall(toolCall, conversationID: conversationID, turnID: turnID)
                 // 工具实现拿不到外层 tool-call id：此处绑定后再持久化挂起点。
@@ -848,14 +834,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 return false
             }
 
-            insertStatusMessage(
-                conversationID: conversationID,
-                content: String(
-                    localized: "status.executing-tool",
-                    defaultValue: "正在\(toolCall.displayDescription ?? "执行工具")…"
-                )
-            )
-
             var result = await executeToolCall(toolCall, conversationID: conversationID, turnID: turnIDs[conversationID])
             if result.awaitingUserResponse, let suspension = suspensions[conversationID],
                suspension.toolCallID == nil {
@@ -899,16 +877,6 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     }
 
     // MARK: - Helpers
-
-    private func insertStatusMessage(conversationID: UUID, content: String) {
-        let status = Message(
-            conversationID: conversationID,
-            role: .status,
-            content: content,
-            metadata: ["isTransientStatus": "true"]
-        )
-        messages.insertMessage(status, to: conversationID)
-    }
 
     private func appendError(in conversationID: UUID, content: String, turnID: UUID? = nil) async {
         let errorMessage = Message(

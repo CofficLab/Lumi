@@ -34,18 +34,10 @@ struct MessageListPaginationService {
         for conversationID: UUID,
         messageManager: any MessageManaging
     ) -> [Message] {
-        let messages = messageManager.messagesForDisplay(for: conversationID)
-        let statusMessages = messages
-            .filter { $0.role == .status }
+        let regularMessages = messageManager.messages(for: conversationID)
+            .filter { $0.role != .tool }
             .sorted(by: messageOrdering)
-        let regularMessages = messages
-            .filter { $0.role != .tool && $0.role != .status }
-            .sorted(by: messageOrdering)
-
-        // status is a live activity indicator, not a historical event. It must
-        // remain the final display row even after newer assistant/tool messages
-        // have been inserted with later createdAt values.
-        return regularMessages + statusMessages.suffix(1)
+        return regularMessages
     }
 
     /// 加载首屏（最近一页）+ 是否还有更早消息。

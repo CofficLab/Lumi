@@ -312,15 +312,6 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     private func executeTurn(conversationID: UUID, userMessageID: UUID) async {
         isSending = true
         notify(.started(conversationID: conversationID))
-        // 插入一条瞬时 status 消息（"正在发送…"），由 MessageManager 仅存内存、不落盘。
-        // 后续 agentLoop 开始 LLM 请求时会覆盖为"正在思考…"，回合结束时兜底清除。
-        let statusMessage = Message(
-            conversationID: conversationID,
-            role: .status,
-            content: String(localized: "status.sending", defaultValue: "正在发送消息…"),
-            metadata: ["isTransientStatus": "true"]
-        )
-        messages.insertMessage(statusMessage, to: conversationID)
         if Self.verbose {
             Self.logger.info("\(self.t)turn started: conversation=\(conversationID.uuidString.prefix(8)), userMessage=\(userMessageID.uuidString.prefix(8))")
         }
@@ -329,9 +320,6 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
             defer {
                 self.isSending = false
                 self.currentTasks.removeValue(forKey: conversationID)
-                // 兜底清除瞬时 status 消息（流式行出现后 UI 已自动剔除，
-                // 这里是取消等"不落新消息就结束 sending"场景的保险）。
-                self.messages.clearStatusMessages(in: conversationID)
                 // 队列消费：当前回合结束后发下一条。
                 self.drainPendingQueue(conversationID: conversationID)
             }

@@ -16,6 +16,14 @@ public enum ConversationAuthorizationState: String, Codable, Sendable {
     case required
 }
 
+/// 当前会话面向用户的瞬时活动，不属于消息时间线。
+public enum ConversationActivity: String, Codable, Sendable, Equatable {
+    case sending
+    case thinking
+    case executingTool
+    case waitingForUser
+}
+
 /// 一个会话的当前状态快照。
 public struct ConversationStateSnapshot: Equatable, Sendable {
     public let conversationID: UUID
@@ -23,6 +31,7 @@ public struct ConversationStateSnapshot: Equatable, Sendable {
     public let agentLoopState: AgentLoopState
     public let toolState: ConversationToolState
     public let authorizationState: ConversationAuthorizationState
+    public let activity: ConversationActivity?
     public let lastError: String?
 
     /// 当前会话是否正在执行 Agent 回合。
@@ -36,6 +45,7 @@ public struct ConversationStateSnapshot: Equatable, Sendable {
         agentLoopState: AgentLoopState = .idle,
         toolState: ConversationToolState = .idle,
         authorizationState: ConversationAuthorizationState = .none,
+        activity: ConversationActivity? = nil,
         lastError: String? = nil
     ) {
         self.conversationID = conversationID
@@ -43,6 +53,7 @@ public struct ConversationStateSnapshot: Equatable, Sendable {
         self.agentLoopState = agentLoopState
         self.toolState = toolState
         self.authorizationState = authorizationState
+        self.activity = activity
         self.lastError = lastError
     }
 }

@@ -30,9 +30,9 @@ final class ToolManagerStateObserver: SuperLog {
     private func consume(_ event: ToolManagerEvent) {
         switch event {
         case .started(let id, let turn, _):
-            provider.update(conversationID: id, turnID: turn, toolState: .executing)
+            provider.update(conversationID: id, turnID: turn, toolState: .executing, activity: .executingTool)
         case .authorizationRequired(let id, let turn, _):
-            provider.update(conversationID: id, turnID: turn, authorizationState: .required)
+            provider.update(conversationID: id, turnID: turn, authorizationState: .required, activity: .waitingForUser)
         case .completed(let id, let turn, _, _),
              .batchCompleted(let id, let turn, _, _):
             provider.update(conversationID: id, turnID: turn, toolState: .completed)

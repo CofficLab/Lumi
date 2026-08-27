@@ -5,6 +5,7 @@ import os
 import ProviderAgentLoop
 import ProviderConversationState
 import ProviderToolManager
+import ProviderMessageSender
 
 /// 将会话状态维护能力接入内核。
 ///
@@ -20,6 +21,7 @@ public final class ConversationStatePlugin: SuperPlugin, SuperLog {
 
     private var agentLoopObserver: AgentLoopStateObserver?
     private var toolManagerObserver: ToolManagerStateObserver?
+    private var senderObserver: MessageSenderStateObserver?
 
     public let id = "com.coffic.lumi.plugin.conversation-state"
     public let order = 10
@@ -43,11 +45,16 @@ public final class ConversationStatePlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)ToolManagerProviding not registered; cannot create ConversationStateProvider")
             return
         }
+        guard let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
+            Self.logger.error("\(Self.t)MessageSendingProviding not registered; cannot observe sending state")
+            return
+        }
         let provider = ConversationStateProvider()
         kernel.unregisterProvider((any ConversationStateProviding).self)
         try kernel.registerProvider((any ConversationStateProviding).self, provider)
         agentLoopObserver = AgentLoopStateObserver(agentLoop: agentLoop, provider: provider)
         toolManagerObserver = ToolManagerStateObserver(toolManager: toolManager, provider: provider)
+        senderObserver = MessageSenderStateObserver(sender: sender, provider: provider)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -55,5 +62,7 @@ public final class ConversationStatePlugin: SuperPlugin, SuperLog {
         agentLoopObserver = nil
         toolManagerObserver?.cancel()
         toolManagerObserver = nil
+        senderObserver?.cancel()
+        senderObserver = nil
     }
 }

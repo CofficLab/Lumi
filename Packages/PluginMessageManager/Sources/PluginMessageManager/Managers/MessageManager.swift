@@ -21,9 +21,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     /// 内存中的"已通知 UI、尚未落盘"消息缓冲(write-behind 的脏数据)。
     private nonisolated let pending = PendingMessageBuffer()
 
-    /// 瞬时 status 消息缓冲(每会话最多一条,永不落盘)。
-    private nonisolated let statusBuffer = StatusMessageBuffer()
-
     /// 后台落盘串行队列,保证同一会话内消息落盘顺序与插入顺序一致。
     private nonisolated let persistQueue = DispatchQueue(label: "com.coffic.lumi.message.persist")
 
@@ -76,17 +73,12 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         let pending = pending.snapshot(for: conversationID).filter {
             includesToolMessages || $0.role != .tool
         }
-        // status 是"当前进行中"的瞬时态,语义上永远显示在列表最末(最新位置),
-        // 不参与 pending 的 createdAt 排序。
-        let status = statusBuffer.snapshot(for: conversationID)
-
         if Self.verbose {
-            let statusState = status == nil ? "none" : "present"
             let cursorState = beforeMessageID == nil ? "nil" : "set"
-            Self.logger.info("\(Self.t)mergedPage conversation=\(conversationID.uuidString.prefix(8)) disk=\(disk.count) pending=\(pending.count) status=\(statusState) before=\(cursorState)")
+            Self.logger.info("\(Self.t)mergedPage conversation=\(conversationID.uuidString.prefix(8)) disk=\(disk.count) pending=\(pending.count) before=\(cursorState)")
         }
 
-        if pending.isEmpty && status == nil { return disk }
+        if pending.isEmpty { return disk }
 
         let diskIDs = Set(disk.map(\.id))
         var merged = disk
@@ -97,8 +89,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             if lhs.createdAt == rhs.createdAt { return lhs.id < rhs.id }
             return lhs.createdAt < rhs.createdAt
         }
-        // status 追加在最末。
-        if let status { merged.append(status) }
         return Array(merged.suffix(limit))
     }
 
@@ -123,26 +113,9 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         }
 
         if Self.verbose {
-            let status = statusBuffer.snapshot(for: conversationID)
-            let statusState = status == nil ? "excluded/none" : "excluded/present"
-            Self.logger.info("\(Self.t)messages(for:) conversation=\(conversationID.uuidString.prefix(8)) messages=\(all.count) status=\(statusState)")
+            Self.logger.info("\(Self.t)messages(for:) conversation=\(conversationID.uuidString.prefix(8)) messages=\(all.count)")
         }
 
-        return all
-    }
-
-    /// 展示读取路径：在普通消息之外追加当前会话的瞬时 status。
-    /// 普通 `messages(for:)` 保持不包含 status，避免污染 AgentLoop 的 LLM 历史。
-    public func messagesForDisplay(for conversationID: UUID) -> [Message] {
-        var all = messages(for: conversationID)
-        let status = statusBuffer.snapshot(for: conversationID)
-        if let status {
-            all.append(status)
-        }
-        if Self.verbose {
-            let statusState = status == nil ? "none" : "included"
-            Self.logger.info("\(Self.t)messagesForDisplay conversation=\(conversationID.uuidString.prefix(8)) messages=\(all.count) status=\(statusState)")
-        }
         return all
     }
 
@@ -264,16 +237,9 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             )
         }
 
-        // status 消息:纯内存瞬时态,不落盘。每会话最多一条(insert 即替换)。
+        // 瞬时 activity 属于 ConversationStateProvider，不属于消息时间线。
         if messageToInsert.role == .status || messageToInsert.metadata["isTransientStatus"] == "true" {
-            let previous = statusBuffer.snapshot(for: conversationID)
-            statusBuffer.set(messageToInsert, conversationID: conversationID)
-            if Self.verbose {
-                let content = messageToInsert.content.replacingOccurrences(of: "\n", with: "\\n")
-                let replacedID = previous.map { String($0.id.uuidString.prefix(8)) } ?? "none"
-                Self.logger.info("\(Self.t)status buffered conversation=\(conversationID.uuidString.prefix(8)) id=\(messageToInsert.id.uuidString.prefix(8)) content=\(content) replaced=\(replacedID) persisted=false")
-            }
-            notifyMessagesDidChange(conversationID: conversationID)
+            Self.logger.error("\(Self.t)reject transient message conversation=\(conversationID.uuidString.prefix(8)) role=\(messageToInsert.role.rawValue); use ConversationStateProvider")
             return
         }
 
@@ -376,22 +342,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         persistQueue.sync {
             _ = store?.deleteAllMessages(conversationId: conversationID)
             pending.clear(conversationID: conversationID)
-        }
-        _ = statusBuffer.clear(conversationID: conversationID)
-        notifyMessagesDidChange(conversationID: conversationID)
-    }
-
-    public func clearStatusMessages(in conversationID: UUID) {
-        let previous = statusBuffer.snapshot(for: conversationID)
-        guard statusBuffer.clear(conversationID: conversationID) else {
-            if Self.verbose {
-                Self.logger.info("\(Self.t)clearStatusMessages conversation=\(conversationID.uuidString.prefix(8)) status=none")
-            }
-            return
-        }
-        if Self.verbose {
-            let statusID = previous.map { String($0.id.uuidString.prefix(8)) } ?? "unknown"
-            Self.logger.info("\(Self.t)clearStatusMessages conversation=\(conversationID.uuidString.prefix(8)) id=\(statusID) cleared=true")
         }
         notifyMessagesDidChange(conversationID: conversationID)
     }

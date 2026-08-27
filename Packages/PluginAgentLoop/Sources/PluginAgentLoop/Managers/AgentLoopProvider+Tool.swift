@@ -246,11 +246,6 @@ extension AgentLoopManager {
         let modelName = conversations.modelName(for: conversationID)
         let resolvedProviderID = resolvedProviderID(for: conversationID)
 
-        insertStatusMessage(
-            conversationID: conversationID,
-            content: String(localized: "status.thinking", defaultValue: "正在思考…")
-        )
-
         var preparedHistory = history
         if let lifecycleHooks {
             let context = WillSendToLLMContext(

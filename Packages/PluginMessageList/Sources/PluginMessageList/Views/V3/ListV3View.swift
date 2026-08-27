@@ -91,6 +91,7 @@ struct ListV3View: View {
             List {
                 historyRows(proxy: proxy)
                 streamingRowView
+                activityRowView
 
                 // 底部锚点行：纯占位 + 稳定 id（供 scrollTo 用），不报偏好。
                 // 是否在底部由 `ScrollViewBottomTracker` 观察 NSScrollView 判定。
@@ -234,6 +235,15 @@ struct ListV3View: View {
             )
             .id(LumiStreamingRowID)
             .plainMessageListRow()
+        }
+    }
+
+    @ViewBuilder
+    private var activityRowView: some View {
+        if let activity = viewModel.activityMessage, viewModel.streamingRow == nil {
+            MessageRowView(services: services, message: activity, verbosity: viewModel.verbosity)
+                .id("conversation-activity")
+                .plainMessageListRow()
         }
     }
 

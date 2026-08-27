@@ -36,16 +36,6 @@ extension AgentLoopManager {
         messages.insertMessage(toolMessage, to: conversationID)
     }
 
-    func insertStatusMessage(conversationID: UUID, content: String) {
-        let status = Message(
-            conversationID: conversationID,
-            role: .status,
-            content: content,
-            metadata: ["isTransientStatus": "true"]
-        )
-        messages.insertMessage(status, to: conversationID)
-    }
-
     func appendError(in conversationID: UUID, content: String, turnID: UUID? = nil) async {
         let errorMessage = Message(
             conversationID: conversationID,

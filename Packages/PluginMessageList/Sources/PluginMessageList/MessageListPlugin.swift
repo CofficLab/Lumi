@@ -5,6 +5,7 @@ import LumiUI
 import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
+import ProviderConversationState
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageSender
@@ -39,6 +40,7 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
         }
         let services = MessageListServices(
             conversations: kernel.resolveProvider((any ConversationManaging).self),
+            conversationState: kernel.resolveProvider((any ConversationStateProviding).self),
             messages: kernel.resolveProvider((any MessageManaging).self),
             rendering: kernel.resolveProvider((any MessageRenderingProviding).self),
             sender: kernel.resolveProvider((any MessageSendingProviding).self),

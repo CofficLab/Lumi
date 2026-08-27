@@ -50,6 +50,7 @@ final class ListV3ViewModel: ObservableObject {
 
     /// 流式临时行（独立于历史行）。语义同 V2；详见 `ListV2ViewModel.streamingRow`。
     @Published private(set) var streamingRow: Message?
+    @Published private(set) var activityMessage: Message?
 
     /// 内存中的真实落库消息（分页窗口），按时间升序；`hasPersistedMessages` 由它派生。
     @Published private(set) var persistedMessages: [Message] = [] {
@@ -135,6 +136,7 @@ final class ListV3ViewModel: ObservableObject {
         activeConversationID = conversationID
         // 切换会话：清掉上一会话的流式行残留。
         streamingRow = nil
+        activityMessage = services.activityMessage(for: conversationID)
         streamingRowWasVisible = false
         isLoading = true
         loadFirstPage(conversationID: conversationID)
@@ -289,6 +291,15 @@ final class ListV3ViewModel: ObservableObject {
                 }
                 .store(in: &cancellables)
         }
+        if let state = services.conversationState {
+            state.objectWillChange
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    guard let self else { return }
+                    self.activityMessage = self.services.activityMessage(for: self.selectedConversationID)
+                }
+                .store(in: &cancellables)
+        }
         if let sender = services.sender {
             sender.objectWillChange
                 .map { _ in () }
@@ -346,6 +357,9 @@ final class ListV3ViewModel: ObservableObject {
         } else {
             updateStreamingRow(nil)
         }
+        activityMessage = streamingRow == nil
+            ? services.activityMessage(for: conversationID)
+            : nil
     }
 
     /// 更新流式行，并在可见性切换（nil↔非 nil）时重算历史行（隐藏/恢复 status 行）。

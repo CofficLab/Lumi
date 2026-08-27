@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import ProviderAgentLoop
 import ProviderConversation
+import ProviderConversationState
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageSender
@@ -18,6 +19,7 @@ import ProviderToolManager
 @MainActor
 struct MessageListServices {
     let conversations: (any ConversationManaging)?
+    let conversationState: (any ConversationStateProviding)?
     let messages: (any MessageManaging)?
     let rendering: (any MessageRenderingProviding)?
     let sender: (any MessageSendingProviding)?
@@ -34,6 +36,19 @@ struct MessageListServices {
 
     func verbosity(for conversationID: UUID?) -> ResponseVerbosity {
         conversations?.verbosity(for: conversationID) ?? .defaultVerbosity
+    }
+
+    func activityMessage(for conversationID: UUID?) -> Message? {
+        guard let conversationID,
+              let activity = conversationState?.state(for: conversationID).activity else { return nil }
+        let content: String
+        switch activity {
+        case .sending: content = String(localized: "status.sending", defaultValue: "正在发送消息…")
+        case .thinking: content = String(localized: "status.thinking", defaultValue: "正在思考…")
+        case .executingTool: content = String(localized: "status.executing-tool", defaultValue: "正在执行工具…")
+        case .waitingForUser: content = String(localized: "status.waiting-for-user", defaultValue: "等待你的输入…")
+        }
+        return Message(conversationID: conversationID, role: .status, content: content)
     }
 
     /// 注册选中对话变化观察者（替代旧版 `.lumiSelectedConversationDidChange` 通知）。

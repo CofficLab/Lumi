@@ -86,13 +86,6 @@ public final class DefaultMessageManager: MessageManaging {
         storage[conversationID] = []
     }
 
-    public func clearStatusMessages(in conversationID: UUID) {
-        guard var rows = storage[conversationID] else { return }
-        let filtered = rows.filter { $0.metadata["isTransientStatus"] != "true" }
-        guard filtered.count != rows.count else { return }
-        rows = filtered
-        storage[conversationID] = rows
-    }
 }
 
 @MainActor
