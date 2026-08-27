@@ -102,4 +102,22 @@ struct KitLLMTests {
         VendorAPIKeyTools.remove(storageKey: "test-key")
         #expect(!VendorAPIKeyTools.has(storageKey: "test-key"))
     }
+
+    @Test("网络中断可重试但认证失败不可重试")
+    func retryPolicyClassifiesTransientErrors() {
+        let network = ProviderRetryPolicy.decision(
+            forNetworkError: NSError(domain: NSURLErrorDomain, code: NSURLErrorNetworkConnectionLost),
+            attempt: 1,
+            maxAttempts: 3
+        )
+        #expect(network.shouldRetry)
+
+        let unauthorized = ProviderRetryPolicy.decision(
+            statusCode: 401,
+            retryAfter: nil,
+            attempt: 1,
+            maxAttempts: 3
+        )
+        #expect(!unauthorized.shouldRetry)
+    }
 }

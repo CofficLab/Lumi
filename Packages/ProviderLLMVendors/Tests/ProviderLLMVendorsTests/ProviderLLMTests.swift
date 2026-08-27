@@ -59,6 +59,23 @@ final class ProviderLLMTests: XCTestCase {
         ])
     }
 
+    func testRetryPolicyClassifiesTransientErrors() {
+        let network = ProviderRetryPolicy.decision(
+            forNetworkError: NSError(domain: NSURLErrorDomain, code: NSURLErrorNetworkConnectionLost),
+            attempt: 1,
+            maxAttempts: 3
+        )
+        XCTAssertTrue(network.shouldRetry)
+
+        let unauthorized = ProviderRetryPolicy.decision(
+            statusCode: 401,
+            retryAfter: nil,
+            attempt: 1,
+            maxAttempts: 3
+        )
+        XCTAssertFalse(unauthorized.shouldRetry)
+    }
+
     private func anthropicEvent(type: String, payload: [String: Any]) -> Data {
         let json = try! JSONSerialization.data(withJSONObject: payload)
         return Data("event: \(type)\ndata: \(String(decoding: json, as: UTF8.self))\n\n".utf8)

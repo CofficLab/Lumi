@@ -210,10 +210,12 @@ public final class NetworkProvider: NetworkProviding {
             exchangeStore?.finishRecord(recordID, response: response, body: receivedBody, error: error)
             throw error
         } catch {
+            let nsError = error as NSError
             let networkError = HTTPNetworkError(
                 url: request.url,
                 body: receivedBody,
-                underlyingDescription: error.localizedDescription
+                underlyingDescription: error.localizedDescription,
+                underlyingCode: nsError.domain == NSURLErrorDomain ? nsError.code : nil
             )
             exchangeStore?.finishRecord(recordID, response: response, body: receivedBody, error: networkError)
             throw networkError

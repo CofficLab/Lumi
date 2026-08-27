@@ -11,30 +11,39 @@ import Foundation
 public final class VendorAPIService: @unchecked Sendable {
     private let session: URLSession
     private let networkProvider: (any LLMNetworkProviding)?
+    private let maxAttempts: Int
+    private let baseRetryDelay: Double
 
-    public init(session: URLSession = .shared, networkProvider: (any LLMNetworkProviding)? = nil) {
+    public init(
+        session: URLSession = .shared,
+        networkProvider: (any LLMNetworkProviding)? = nil,
+        maxAttempts: Int = 3,
+        baseRetryDelay: Double = 1.0
+    ) {
         self.session = session
         self.networkProvider = networkProvider
+        self.maxAttempts = max(1, maxAttempts)
+        self.baseRetryDelay = max(0, baseRetryDelay)
     }
 
-    /// 发送聊天完成请求（单次，不含重试）。
+    /// 发送聊天完成请求；只对瞬态网络错误和可恢复 HTTP 状态重试。
     public func sendChatRequest(
         request: URLRequest,
         body: [String: Any]
     ) async throws -> Data {
-        let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
-
-        if let networkProvider {
-            let (data, response) = try await networkProvider.send(request: request, body: bodyData)
+        try await withRetry {
+            let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
+            if let networkProvider {
+                let (data, response) = try await networkProvider.send(request: request, body: bodyData)
+                try validateResponse(response, data: data)
+                return data
+            }
+            var mutableRequest = request
+            mutableRequest.httpBody = bodyData
+            let (data, response) = try await session.data(for: mutableRequest)
             try validateResponse(response, data: data)
             return data
         }
-
-        var mutableRequest = request
-        mutableRequest.httpBody = bodyData
-        let (data, response) = try await session.data(for: mutableRequest)
-        try validateResponse(response, data: data)
-        return data
     }
 
     /// 发送任意 JSON 请求（Responses 协议等）。
@@ -56,46 +65,50 @@ public final class VendorAPIService: @unchecked Sendable {
         body: [String: Any],
         onEvent: @escaping @Sendable (Data) async -> Bool
     ) async throws {
-        let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
-
-        if let networkProvider {
-            try await networkProvider.stream(request: request, body: bodyData, onEvent: onEvent)
-            return
-        }
-
-        var mutableRequest = request
-        mutableRequest.httpBody = bodyData
-
-        let (bytes, response) = try await session.bytes(for: mutableRequest)
-        try validateResponse(response, data: nil)
-
-        var lineBuffer = ""
-        var eventBuffer = ""
-
-        for try await char in bytes.characters {
-            if char == "\n" {
-                if lineBuffer.isEmpty {
-                    // 空行 = SSE 事件分隔符
-                    if !eventBuffer.isEmpty {
-                        let eventData = Data(eventBuffer.utf8)
-                        eventBuffer = ""
-                        let shouldContinue = await onEvent(eventData)
-                        if !shouldContinue { return }
-                    }
-                } else {
-                    // 累积到事件缓冲
-                    if !eventBuffer.isEmpty { eventBuffer += "\n" }
-                    eventBuffer += lineBuffer
-                }
-                lineBuffer = ""
-            } else if char != "\r" {
-                lineBuffer.append(char)
+        let receipt = EventReceipt()
+        try await withRetry {
+            receipt.reset()
+            let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
+            let forward: @Sendable (Data) async -> Bool = { event in
+                receipt.markReceived()
+                return await onEvent(event)
             }
-        }
+            if let networkProvider {
+                try await networkProvider.stream(request: request, body: bodyData, onEvent: forward)
+                return
+            }
 
-        // 处理最后一个事件（无尾部空行）
-        if !eventBuffer.isEmpty {
-            _ = await onEvent(Data(eventBuffer.utf8))
+            var mutableRequest = request
+            mutableRequest.httpBody = bodyData
+            let (bytes, response) = try await session.bytes(for: mutableRequest)
+            try validateResponse(response, data: nil)
+            var lineBuffer = ""
+            var eventBuffer = ""
+            for try await char in bytes.characters {
+                if char == "\n" {
+                    if lineBuffer.isEmpty {
+                        if !eventBuffer.isEmpty {
+                            let eventData = Data(eventBuffer.utf8)
+                            eventBuffer = ""
+                            receipt.markReceived()
+                            if !(await onEvent(eventData)) { return }
+                        }
+                    } else {
+                        if !eventBuffer.isEmpty { eventBuffer += "\n" }
+                        eventBuffer += lineBuffer
+                    }
+                    lineBuffer = ""
+                } else if char != "\r" {
+                    lineBuffer.append(char)
+                }
+            }
+            if !eventBuffer.isEmpty {
+                receipt.markReceived()
+                _ = await onEvent(Data(eventBuffer.utf8))
+            }
+        } shouldRetry: { error, attempt in
+            // 重放部分 SSE 会重复 token；只有首个事件前断线才安全重试。
+            !receipt.hasReceived && self.retryDecision(for: error, attempt: attempt).shouldRetry
         }
     }
 
@@ -108,5 +121,59 @@ public final class VendorAPIService: @unchecked Sendable {
             let trimmed = summary.prefix(200)
             throw VendorAPIError.httpStatus(httpResponse.statusCode, String(trimmed))
         }
+    }
+
+    private func retryDecision(for error: Error, attempt: Int) -> ProviderRetryDecision {
+        if case let .httpStatus(statusCode, _) = error as? VendorAPIError {
+            return ProviderRetryPolicy.decision(statusCode: statusCode, retryAfter: nil, attempt: attempt, maxAttempts: maxAttempts)
+        }
+        if let httpError = error as? LLMHTTPErrorProviding, let statusCode = httpError.httpStatusCode {
+            return ProviderRetryPolicy.decision(statusCode: statusCode, retryAfter: nil, attempt: attempt, maxAttempts: maxAttempts)
+        }
+        return ProviderRetryPolicy.decision(forNetworkError: error, attempt: attempt, maxAttempts: maxAttempts)
+    }
+
+    private func withRetry<T>(
+        _ operation: () async throws -> T,
+        shouldRetry: ((Error, Int) -> Bool)? = nil
+    ) async throws -> T {
+        var attempt = 1
+        while true {
+            do {
+                try Task.checkCancellation()
+                return try await operation()
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                let decision = retryDecision(for: error, attempt: attempt)
+                let allowed = shouldRetry?(error, attempt) ?? decision.shouldRetry
+                guard allowed else { throw error }
+                let delay = decision.delaySeconds ?? baseRetryDelay * pow(2.0, Double(attempt - 1))
+                if delay > 0 {
+                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                }
+                attempt += 1
+            }
+        }
+    }
+}
+
+private final class EventReceipt: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = false
+
+    var hasReceived: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return value
+    }
+
+    func reset() {
+        lock.lock(); defer { lock.unlock() }
+        value = false
+    }
+
+    func markReceived() {
+        lock.lock(); defer { lock.unlock() }
+        value = true
     }
 }

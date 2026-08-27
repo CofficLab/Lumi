@@ -31,7 +31,16 @@ public final class LLMNetworkProviderAdapter: LLMNetworkProviding {
             timeout: request.timeoutInterval
         )
 
-        let httpResponse = try await networkProvider.request(httpRequest)
+        let httpResponse: HTTPResponse
+        do {
+            httpResponse = try await networkProvider.request(httpRequest)
+        } catch let error as HTTPNetworkError where error.statusCode == nil && error.underlyingCode != nil {
+            throw NSError(
+                domain: NSURLErrorDomain,
+                code: error.underlyingCode!,
+                userInfo: [NSLocalizedDescriptionKey: error.underlyingDescription ?? error.localizedDescription]
+            )
+        }
 
         // 构造一个 HTTPURLResponse 用于 VendorAPIService 的 validateResponse
         let urlResponse = HTTPURLResponse(
@@ -64,12 +73,20 @@ public final class LLMNetworkProviderAdapter: LLMNetworkProviding {
             timeout: request.timeoutInterval
         )
 
-        try await networkProvider.stream(
-            httpRequest,
-            onResponse: { _ in },
-            onChunk: { chunk in
-                await onEvent(chunk)
-            }
-        )
+        do {
+            try await networkProvider.stream(
+                httpRequest,
+                onResponse: { _ in },
+                onChunk: { chunk in
+                    await onEvent(chunk)
+                }
+            )
+        } catch let error as HTTPNetworkError where error.statusCode == nil && error.underlyingCode != nil {
+            throw NSError(
+                domain: NSURLErrorDomain,
+                code: error.underlyingCode!,
+                userInfo: [NSLocalizedDescriptionKey: error.underlyingDescription ?? error.localizedDescription]
+            )
+        }
     }
 }
