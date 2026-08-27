@@ -1,5 +1,15 @@
 import Foundation
 
+public enum WebServerEvent: Sendable, Equatable {
+    case started(port: Int)
+    case stopped
+    case routesChanged(pluginID: String)
+}
+
+public protocol WebServerObserverHandle: AnyObject, Sendable {
+    func cancel()
+}
+
 // MARK: - Web Server Capability Protocol
 
 /// 本地 Web 服务能力协议
@@ -20,6 +30,9 @@ public protocol WebServerProviding: AnyObject, Sendable {
     /// 是否正在监听。
     var isRunning: Bool { get }
 
+    @discardableResult
+    func addWebServerObserver(_ callback: @escaping @Sendable (WebServerEvent) -> Void) -> any WebServerObserverHandle
+
     /// 注册(替换)指定插件贡献的一组路由。
     ///
     /// 同一 `pluginID` 再次调用会整体替换其旧路由(幂等替换)。传入空数组等效于
@@ -38,4 +51,16 @@ public protocol WebServerProviding: AnyObject, Sendable {
 
     /// 停止监听并释放连接。可重复调用。
     func stop() async
+}
+
+public extension WebServerProviding {
+    @discardableResult
+    func addWebServerObserver(_ callback: @escaping @Sendable (WebServerEvent) -> Void) -> any WebServerObserverHandle {
+        NoopWebServerObserverHandle()
+    }
+}
+
+public final class NoopWebServerObserverHandle: WebServerObserverHandle, @unchecked Sendable {
+    public init() {}
+    public func cancel() {}
 }

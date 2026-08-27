@@ -31,3 +31,14 @@ Require `ObjectWillChangePublisher == ObservableObjectPublisher` consistently so
 ### Task 3: Verify package compatibility
 
 Run focused tests/builds for `ProviderConversation` and all changed Provider packages, then run the repository-required `npm run build:mp-weixin` command and report its result.
+
+### Task 4: Add runtime status observation
+
+**Files:**
+- Modify: `Packages/ProviderWebServer/Sources/ProviderWebServer/WebServerProviding.swift`
+- Modify: `Packages/ProviderWebServer/Sources/ProviderWebServer/DefaultWebServerProviding.swift`
+- Modify: `Packages/ProviderProjectRAG/Sources/ProviderProjectRAG/ProjectRAGProviding.swift`
+- Modify: `Packages/PluginProjectRAG/Sources/PluginProjectRAG/ProjectRAGProvider.swift`
+- Test: `Packages/ProviderWebServer/Tests/ProviderWebServerTests/DefaultWebServerProvidingTests.swift`
+
+Expose cancellable typed events for server lifecycle/routes and RAG initialization/project/indexing lifecycle while preserving thread isolation.

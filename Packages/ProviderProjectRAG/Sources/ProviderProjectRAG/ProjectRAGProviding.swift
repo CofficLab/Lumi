@@ -1,5 +1,18 @@
 import Foundation
 
+@MainActor
+public enum ProjectRAGEvent: Sendable, Equatable {
+    case initialized
+    case projectChanged(String?)
+    case indexingStarted(String)
+    case indexingFinished(String)
+}
+
+@MainActor
+public protocol ProjectRAGObserverHandle: AnyObject {
+    func cancel()
+}
+
 /// Project RAG 的中立检索能力。
 ///
 /// 内核和其他插件只依赖这个协议；索引实现、数据库和 embedding provider
@@ -8,6 +21,9 @@ import Foundation
 public protocol ProjectRAGProviding: AnyObject, Sendable {
     var isInitialized: Bool { get }
     var currentProjectPath: String? { get }
+
+    @discardableResult
+    func addProjectRAGObserver(_ callback: @escaping (ProjectRAGEvent) -> Void) -> any ProjectRAGObserverHandle
 
     func search(
         query: String,
@@ -18,6 +34,19 @@ public protocol ProjectRAGProviding: AnyObject, Sendable {
     func ensureIndexed(projectPath: String, force: Bool, background: Bool) async throws
 
     func indexStatus(projectPath: String) async throws -> ProjectRAGIndexStatus?
+}
+
+public extension ProjectRAGProviding {
+    @discardableResult
+    func addProjectRAGObserver(_ callback: @escaping (ProjectRAGEvent) -> Void) -> any ProjectRAGObserverHandle {
+        NoopProjectRAGObserverHandle()
+    }
+}
+
+@MainActor
+public final class NoopProjectRAGObserverHandle: ProjectRAGObserverHandle {
+    public init() {}
+    public func cancel() {}
 }
 
 public extension ProjectRAGProviding {

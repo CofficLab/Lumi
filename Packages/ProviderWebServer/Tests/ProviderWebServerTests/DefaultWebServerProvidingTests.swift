@@ -7,6 +7,39 @@ import Testing
 @MainActor
 struct DefaultWebServerProvidingTests {
 
+    @Test("运行状态和路由变化会发出语义事件")
+    func emitsServerEvents() async throws {
+        final class EventBox: @unchecked Sendable {
+            private let lock = NSLock()
+            private var events: [WebServerEvent] = []
+
+            func append(_ event: WebServerEvent) {
+                lock.lock()
+                events.append(event)
+                lock.unlock()
+            }
+
+            func contains(_ event: WebServerEvent) -> Bool {
+                lock.lock()
+                defer { lock.unlock() }
+                return events.contains(event)
+            }
+        }
+
+        let eventBox = EventBox()
+        let server = DefaultWebServerProviding(port: 9999)
+        let token = server.addWebServerObserver { eventBox.append($0) }
+
+        server.register([], forPlugin: "theme")
+        try await server.start()
+        await server.stop()
+
+        #expect(eventBox.contains(.routesChanged(pluginID: "theme")))
+        #expect(eventBox.contains(.started(port: 9999)))
+        #expect(eventBox.contains(.stopped))
+        token.cancel()
+    }
+
     @Test("命中路由后发出包含归属插件的活动事件")
     func emitsActivityAfterHandlingRoute() async throws {
         final class ActivityBox: @unchecked Sendable {

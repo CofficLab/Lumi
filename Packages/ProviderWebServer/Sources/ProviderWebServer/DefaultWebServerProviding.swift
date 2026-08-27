@@ -10,6 +10,7 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
     private let lock = NSLock()
     private var routesByPlugin: [String: [WebRoute]] = [:]
     private var _isRunning = false
+    private var observers: [UUID: @Sendable (WebServerEvent) -> Void] = [:]
 
     /// 配置端口。骨架实现不真实绑定端口,启动后仍返回此值。
     public let port: Int
@@ -32,18 +33,20 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
 
     public func register(_ routes: [WebRoute], forPlugin pluginID: String) {
         lock.lock()
-        defer { lock.unlock() }
         if routes.isEmpty {
             routesByPlugin[pluginID] = nil
         } else {
             routesByPlugin[pluginID] = routes
         }
+        lock.unlock()
+        notify(.routesChanged(pluginID: pluginID))
     }
 
     public func unregister(pluginID: String) {
         lock.lock()
-        defer { lock.unlock() }
         routesByPlugin[pluginID] = nil
+        lock.unlock()
+        notify(.routesChanged(pluginID: pluginID))
     }
 
     public func start() async throws {
@@ -58,8 +61,35 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
     /// 同步更新运行状态（async 方法体内不可直接调用 NSLock，故提取为同步函数）。
     private func setRunning(_ running: Bool) {
         lock.lock()
+        guard _isRunning != running else {
+            lock.unlock()
+            return
+        }
         _isRunning = running
         lock.unlock()
+        notify(running ? .started(port: port) : .stopped)
+    }
+
+    @discardableResult
+    public func addWebServerObserver(_ callback: @escaping @Sendable (WebServerEvent) -> Void) -> any WebServerObserverHandle {
+        let id = UUID()
+        lock.lock()
+        observers[id] = callback
+        lock.unlock()
+        return DefaultWebServerObserverHandle { [weak self] in
+            self?.lock.lock()
+            self?.observers.removeValue(forKey: id)
+            self?.lock.unlock()
+        }
+    }
+
+    private func notify(_ event: WebServerEvent) {
+        lock.lock()
+        let callbacks = Array(observers.values)
+        lock.unlock()
+        for callback in callbacks {
+            callback(event)
+        }
     }
 
     // MARK: - Request Handling
@@ -136,5 +166,26 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
             }
         }
         return parameters
+    }
+}
+
+private final class DefaultWebServerObserverHandle: WebServerObserverHandle, @unchecked Sendable {
+    private let cancellation: @Sendable () -> Void
+    private let lock = NSLock()
+    private var isCancelled = false
+
+    init(cancellation: @escaping @Sendable () -> Void) {
+        self.cancellation = cancellation
+    }
+
+    func cancel() {
+        lock.lock()
+        guard !isCancelled else {
+            lock.unlock()
+            return
+        }
+        isCancelled = true
+        lock.unlock()
+        cancellation()
     }
 }
