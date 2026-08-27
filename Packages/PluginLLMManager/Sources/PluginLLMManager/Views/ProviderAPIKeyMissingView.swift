@@ -54,13 +54,13 @@ struct ProviderAPIKeyMissingView: View {
                 Spacer(minLength: 8)
             }
 
-            Text("Enter an API Key here, then resend your message.")
+            Text(LumiPluginLocalization.string("Enter an API Key here, then resend your message.", bundle: .module))
                 .font(.appCaption)
                 .foregroundStyle(theme.textSecondary)
 
             if let providerWebsiteURL {
                 Link(destination: providerWebsiteURL) {
-                    Label("Open provider website", systemImage: "arrow.up.right.square")
+                    Label(LumiPluginLocalization.string("Open provider website", bundle: .module), systemImage: "arrow.up.right.square")
                         .font(.appCaption)
                 }
                 .buttonStyle(.plain)
@@ -95,7 +95,7 @@ struct ProviderAPIKeyMissingView: View {
             if provider != nil {
                 HStack(spacing: 8) {
                     AppButton(
-                        "Save API Key",
+                        LumiPluginLocalization.string("Save API Key", bundle: .module),
                         systemImage: "checkmark",
                         style: .primary,
                         size: .small
@@ -105,7 +105,7 @@ struct ProviderAPIKeyMissingView: View {
                     .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                     if didSaveAPIKey {
-                        Label("Saved", systemImage: "checkmark.circle.fill")
+                        Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
                             .font(.appCaption)
                             .foregroundStyle(theme.success)
                     }
@@ -120,7 +120,7 @@ struct ProviderAPIKeyMissingView: View {
             }
 
             if provider == nil {
-                Text("Provider is not registered yet. Open Settings to configure this key.")
+                Text(LumiPluginLocalization.string("Provider is not registered yet. Open Settings to configure this key.", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
             }
@@ -134,7 +134,7 @@ struct ProviderAPIKeyMissingView: View {
                         .padding(.top, 4)
                 }
             } label: {
-                Text("Details")
+                Text(LumiPluginLocalization.string("Details", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
             }

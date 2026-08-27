@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginLLMManager",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v14),
         .iOS(.v17)
@@ -19,6 +20,7 @@ let package = Package(
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../LumiUI"),
         .package(path: "../KitSuperLog"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
@@ -32,8 +34,10 @@ let package = Package(
                 .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
             ],
-            path: "Sources/PluginLLMManager"
+            path: "Sources/PluginLLMManager",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginLLMManagerTests",
