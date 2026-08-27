@@ -39,7 +39,7 @@ struct ReplaceSearchField: View {
                                 .foregroundStyle(.secondary)
                                 .padding(.leading, 8)
                                 .padding(.trailing, 5)
-                            Text("With")
+                            Text(EditorSourceLocalization.string("With", bundle: .module))
                         }
                         .frame(width: findModePickerWidth, alignment: .leading)
                         Divider()

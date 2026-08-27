@@ -40,7 +40,7 @@ struct ReplaceControls: View {
                         if condensed {
                             Image(systemName: "arrow.turn.up.right")
                         } else {
-                            Text("Replace")
+                            Text(EditorSourceLocalization.string("Replace", bundle: .module))
                         }
                     }
                     .opacity(shouldDisableSingle ? 0.33 : 1)
@@ -58,7 +58,7 @@ struct ReplaceControls: View {
                         if condensed {
                             Image(systemName: "text.insert")
                         } else {
-                            Text("All")
+                            Text(EditorSourceLocalization.string("All", bundle: .module))
                         }
                     }
                     .opacity(shouldDisableAll ? 0.33 : 1)
