@@ -41,7 +41,7 @@ struct LLMProviderSettingsPluginTests {
         let settings = DefaultSettingViewProviding()
         let manager = DefaultLLMProviderManagerProviding()
         try kernel.registerProvider((any SettingViewProviding).self, settings)
-        try kernel.registerProvider((any LLMProviderManagerProviding).self, manager)
+        try kernel.registerProvider((any LLMManaging).self, manager)
 
         let plugin = LLMProviderSettingsPlugin()
         try plugin.onBoot(kernel: kernel)
@@ -62,7 +62,7 @@ struct LLMProviderSettingsPluginTests {
         let settings = DefaultSettingViewProviding()
         let manager = DefaultLLMProviderManagerProviding()
         try kernel.registerProvider((any SettingViewProviding).self, settings)
-        try kernel.registerProvider((any LLMProviderManagerProviding).self, manager)
+        try kernel.registerProvider((any LLMManaging).self, manager)
 
         let plugin = LLMProviderSettingsPlugin()
         try plugin.onBoot(kernel: kernel)

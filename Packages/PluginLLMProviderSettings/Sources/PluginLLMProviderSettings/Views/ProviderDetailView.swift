@@ -4,8 +4,7 @@ import ProviderLLMManager
 import KitLLM
 import SwiftUI
 
-/// 单个供应商的详情视图（复刻旧版 RemoteProviderSettingsPage 的
-/// API Key 段 + 模型段）。
+/// 单个供应商的详情视图（API Key 段 + 模型段）。
 ///
 /// - 云端供应商：API Key 读写/删除 + 模型列表（点击切换选中模型）；
 /// - 本地供应商：仅模型列表（无需 API Key）。
@@ -38,7 +37,20 @@ public struct ProviderDetailView: View {
             if !isLocal {
                 apiKeySection
             }
-            modelSection
+            if let downloader = provider as? any LLMModelDownloadProviding {
+                ProviderModelDownloadView(
+                    models: info.models,
+                    downloader: downloader,
+                    onSelectModel: { modelID in
+                        manager.select(providerID: info.id, model: modelID)
+                    },
+                    isModelSelected: { modelID in
+                        manager.selectedProviderID == info.id && manager.selectedModel == modelID
+                    }
+                )
+            } else {
+                modelSection
+            }
         }
         .onAppear {
             loadAPIKey()

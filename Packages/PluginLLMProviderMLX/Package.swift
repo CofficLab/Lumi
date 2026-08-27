@@ -11,7 +11,6 @@ let package = Package(
         .package(path: "../ProviderStorage"),
         .package(path: "../KitLLM"),
         .package(path: "../KitDownload"),
-        .package(path: "../LumiUI"),
         .package(
             url: "https://github.com/ml-explore/mlx-swift-lm.git",
             revision: "bc3c20ef4644c86f2b347debcfe1efe4308712a6"
@@ -26,7 +25,6 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "KitDownload", package: "KitDownload"),
-                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "MLXLLM", package: "mlx-swift-lm"),
                 .product(name: "MLXLMCommon", package: "mlx-swift-lm"),
             ],

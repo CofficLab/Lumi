@@ -1,15 +1,20 @@
+#if os(macOS)
 import AppKit
-import LumiUI
+#endif
+import Foundation
 import KitLLM
+import LumiUI
 import SwiftUI
 
-/// MLX 供应商在通用「本地供应商」详情页中的下载控制。
+/// 支持模型下载的供应商通用下载视图。
+///
+/// 该视图只依赖 KitLLM 的下载能力协议，不感知具体供应商实现。
 @MainActor
-public struct MLXProviderDownloadView: View {
+struct ProviderModelDownloadView: View {
     @LumiTheme private var theme
 
-    private let providerID: String
     private let downloader: any LLMModelDownloadProviding
+    private let models: [LLMModelInfo]
     private let onSelectModel: (String) -> Void
     private let isModelSelected: (String) -> Bool
     @State private var downloadState: LLMModelDownloadState
@@ -17,13 +22,13 @@ public struct MLXProviderDownloadView: View {
     @State private var errorModelID: String?
     @State private var errorMessage: String?
 
-    public init(
-        providerID: String,
+    init(
+        models: [LLMModelInfo],
         downloader: any LLMModelDownloadProviding,
         onSelectModel: @escaping (String) -> Void,
         isModelSelected: @escaping (String) -> Bool
     ) {
-        self.providerID = providerID
+        self.models = models
         self.downloader = downloader
         self.onSelectModel = onSelectModel
         self.isModelSelected = isModelSelected
@@ -31,21 +36,15 @@ public struct MLXProviderDownloadView: View {
         _speedLimitBytes = State(initialValue: downloader.downloadState.speedLimitBytesPerSecond ?? 0)
     }
 
-    private var models: [MLXModelRegistration] {
-        MLXProviderCatalog.models(for: providerID)
-    }
-
-    public var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            AppSettingsSection(title: "模型下载", subtitle: "下载后即可选择并使用本地 MLX 模型") {
-                cacheRow
-                downloadSpeedRow
-                VStack(spacing: 0) {
-                    ForEach(Array(models.enumerated()), id: \.element.id) { index, model in
-                        modelRow(model)
-                        if index < models.count - 1 {
-                            AppDivider()
-                        }
+    var body: some View {
+        AppSettingsSection(title: "模型下载", subtitle: "下载后即可选择并使用本地模型") {
+            cacheRow
+            downloadSpeedRow
+            VStack(spacing: 0) {
+                ForEach(Array(models.enumerated()), id: \.element.id) { index, model in
+                    modelRow(model)
+                    if index < models.count - 1 {
+                        AppDivider()
                     }
                 }
             }
@@ -65,6 +64,7 @@ public struct MLXProviderDownloadView: View {
             Text(ByteCountFormatter.string(fromByteCount: downloadState.cacheSizeBytes, countStyle: .file))
                 .font(.appCaption)
                 .foregroundStyle(theme.textPrimary)
+            #if os(macOS)
             Button {
                 NSWorkspace.shared.open(downloader.modelCacheDirectoryURL)
             } label: {
@@ -72,6 +72,7 @@ public struct MLXProviderDownloadView: View {
             }
             .buttonStyle(.borderless)
             .help("在访达中打开模型缓存目录")
+            #endif
         }
     }
 
@@ -98,7 +99,7 @@ public struct MLXProviderDownloadView: View {
     }
 
     @ViewBuilder
-    private func modelRow(_ model: MLXModelRegistration) -> some View {
+    private func modelRow(_ model: LLMModelInfo) -> some View {
         let isDownloading = downloadState.modelID == model.id && downloadState.status == .downloading
         let isPaused = downloadState.modelID == model.id && downloadState.status == .paused
         let isCached = !isDownloading && !isPaused && downloadState.downloadedModelIDs.contains(model.id)
@@ -120,13 +121,15 @@ public struct MLXProviderDownloadView: View {
                     Text(model.displayName)
                         .font(.appBody)
                         .foregroundStyle(theme.textPrimary)
-                    Text("内存至少 \(model.minimumRAMGB) GB")
+                    Text(model.id)
                         .font(.appMicro)
                         .foregroundStyle(theme.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                actionButtons(model: model, isDownloading: isDownloading, isPaused: isPaused, isCached: isCached)
+                actionButtons(modelID: model.id, isDownloading: isDownloading, isPaused: isPaused, isCached: isCached)
             }
 
             if isDownloading || isPaused {
@@ -162,13 +165,13 @@ public struct MLXProviderDownloadView: View {
 
     @ViewBuilder
     private func actionButtons(
-        model: MLXModelRegistration,
+        modelID: String,
         isDownloading: Bool,
         isPaused: Bool,
         isCached: Bool
     ) -> some View {
         if isCached {
-            Button("删除") { delete(model.id) }
+            Button("删除") { delete(modelID) }
                 .buttonStyle(.bordered)
         } else if isDownloading {
             Button { downloader.pauseDownload() } label: {
@@ -188,7 +191,7 @@ public struct MLXProviderDownloadView: View {
             .buttonStyle(.borderless)
             .help("取消下载")
         } else {
-            Button("下载") { startDownload(model.id) }
+            Button("下载") { startDownload(modelID) }
                 .buttonStyle(.borderedProminent)
         }
     }
