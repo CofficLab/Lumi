@@ -26,6 +26,7 @@ public final class DefaultThemeProviding: ThemeProviding {
 
     /// 主题注册表：id → 主题。
     private var themeItems: [String: LumiTheme] = [:]
+    private var observers: [WeakObserver] = []
 
     /// 选中主题持久化文件。
     private var storageURL: URL
@@ -58,10 +59,12 @@ public final class DefaultThemeProviding: ThemeProviding {
         guard selectedThemeId != id else { return }
         selectedThemeId = id
         saveSelection()
+        notify(.selectionChanged(themeID: id))
     }
 
     public func registerTheme(_ theme: LumiTheme) {
         registerThemeInternal(theme)
+        notify(.themesChanged)
     }
 
     public func unregisterTheme(id: String) {
@@ -71,6 +74,10 @@ public final class DefaultThemeProviding: ThemeProviding {
             // 注销的是当前选中：回退到剩余第一个，并持久化新选中。
             selectedThemeId = themes.first?.id
             saveSelection()
+            notify(.themesChanged)
+            notify(.selectionChanged(themeID: selectedThemeId))
+        } else {
+            notify(.themesChanged)
         }
     }
 
@@ -93,14 +100,16 @@ public final class DefaultThemeProviding: ThemeProviding {
         // 尽量保持选中：原选中 → 持久化偏好 → 第一个主题。
         if let previousSelected, themeItems[previousSelected] != nil {
             selectedThemeId = previousSelected
-            return
-        }
-        if let persisted = Self.loadSelectedThemeID(from: storageURL),
+        } else if let persisted = Self.loadSelectedThemeID(from: storageURL),
            themeItems[persisted] != nil {
             selectedThemeId = persisted
-            return
+        } else {
+            selectedThemeId = self.themes.first?.id
         }
-        selectedThemeId = self.themes.first?.id
+        notify(.themesChanged)
+        if previousSelected != selectedThemeId {
+            notify(.selectionChanged(themeID: selectedThemeId))
+        }
     }
 
     // MARK: - Storage Injection
@@ -123,6 +132,24 @@ public final class DefaultThemeProviding: ThemeProviding {
 
     private func updateSortedThemes() {
         themes = themeItems.values.sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    @discardableResult
+    public func addObserver(_ callback: @escaping (ThemeProvidingEvent) -> Void) -> any ThemeProvidingObserverHandle {
+        let observer = Observer(owner: self, callback: callback)
+        observers.append(WeakObserver(observer))
+        return observer
+    }
+
+    private func remove(_ observer: Observer) {
+        observers.removeAll { $0.observer === observer }
+    }
+
+    private func notify(_ event: ThemeProvidingEvent) {
+        observers.removeAll { $0.observer == nil }
+        for observer in observers {
+            observer.observer?.invoke(event)
+        }
     }
 
     /// 恢复持久化的选中主题（存在且已注册时），否则选中列表第一个。
@@ -178,5 +205,35 @@ public final class DefaultThemeProviding: ThemeProviding {
             return nil
         }
         return dict["selectedThemeID"]
+    }
+
+    private final class Observer: ThemeProvidingObserverHandle {
+        private weak var owner: DefaultThemeProviding?
+        private let callback: (ThemeProvidingEvent) -> Void
+        private var cancelled = false
+
+        init(owner: DefaultThemeProviding, callback: @escaping (ThemeProvidingEvent) -> Void) {
+            self.owner = owner
+            self.callback = callback
+        }
+
+        func cancel() {
+            guard !cancelled else { return }
+            cancelled = true
+            owner?.remove(self)
+        }
+
+        func invoke(_ event: ThemeProvidingEvent) {
+            guard !cancelled else { return }
+            callback(event)
+        }
+    }
+
+    private final class WeakObserver {
+        weak var observer: Observer?
+
+        init(_ observer: Observer) {
+            self.observer = observer
+        }
     }
 }

@@ -65,6 +65,35 @@ struct ProviderThemeTests {
         #expect(provider.followsSystemAppearance == false)
     }
 
+    @Test("主题监听在选中状态更新后回调")
+    func selectionObserverRunsAfterStateUpdate() throws {
+        let provider = try makeProvider()
+        var observedID: String?
+        let handle = provider.addObserver { event in
+            if case let .selectionChanged(themeID) = event {
+                observedID = themeID
+                #expect(provider.selectedThemeId == themeID)
+            }
+        }
+        defer { handle.cancel() }
+
+        try provider.selectTheme(id: "lumi-dark")
+
+        #expect(observedID == "lumi-dark")
+    }
+
+    @Test("取消主题监听后不再回调")
+    func cancellingObserverStopsCallbacks() throws {
+        let provider = try makeProvider()
+        var callbackCount = 0
+        let handle = provider.addObserver { _ in callbackCount += 1 }
+
+        handle.cancel()
+        try provider.selectTheme(id: "lumi-dark")
+
+        #expect(callbackCount == 0)
+    }
+
     @Test("切换到未知主题抛错")
     func selectUnknownThemeThrows() throws {
         let provider = try makeProvider()
