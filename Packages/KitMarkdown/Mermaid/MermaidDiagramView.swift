@@ -75,7 +75,7 @@ public struct MermaidDiagramView: View {
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        .help("Expand diagram")
+        .help(KitMarkdownLocalization.string("Expand diagram", bundle: .module))
         .popover(isPresented: $showExpandedPopover) {
             expandedDiagramView
         }
@@ -88,7 +88,7 @@ public struct MermaidDiagramView: View {
         VStack(spacing: 0) {
             // 顶部标题栏
             HStack {
-                Text("Mermaid Diagram")
+                Text(KitMarkdownLocalization.string("Mermaid Diagram", bundle: .module))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.primary)
                 Spacer()
@@ -134,7 +134,7 @@ public struct MermaidDiagramView: View {
             Image(systemName: "chart.xyaxis.line")
                 .font(.system(size: 24))
                 .foregroundColor(.orange)
-            Text("Mermaid render failed")
+            Text(KitMarkdownLocalization.string("Mermaid render failed", bundle: .module))
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(.secondary)
             Text(error)
