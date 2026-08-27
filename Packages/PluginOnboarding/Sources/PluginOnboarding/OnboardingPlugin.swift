@@ -48,8 +48,8 @@ private struct WelcomePage: View {
                 .font(.system(size: 56, weight: .semibold))
                 .foregroundStyle(.tint)
             VStack(spacing: 8) {
-                Text("Welcome to Lumi").font(.largeTitle.weight(.bold))
-                Text("Your local workspace for focused AI conversations, projects, and tools.")
+                Text(LumiPluginLocalization.string("Welcome to Lumi", bundle: .module)).font(.largeTitle.weight(.bold))
+                Text(LumiPluginLocalization.string("Your local workspace for focused AI conversations, projects, and tools.", bundle: .module))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
             }
@@ -94,8 +94,8 @@ private struct AISetupPage: View {
                 .font(.system(size: 54))
                 .foregroundStyle(.tint)
                 .frame(maxWidth: .infinity)
-            Text("Set up your AI provider").font(.title.weight(.bold))
-            Text("Add a provider and choose a model in Settings. You can return here at any time from General Settings.")
+            Text(LumiPluginLocalization.string("Set up your AI provider", bundle: .module)).font(.title.weight(.bold))
+            Text(LumiPluginLocalization.string("Add a provider and choose a model in Settings. You can return here at any time from General Settings.", bundle: .module))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
 
@@ -103,10 +103,10 @@ private struct AISetupPage: View {
                 ContentUnavailableView(
                     "No providers available",
                     systemImage: "network.slash",
-                    description: Text("You can configure a provider later in Settings.")
+                    description: Text(LumiPluginLocalization.string("You can configure a provider later in Settings.", bundle: .module))
                 )
             } else {
-                Picker("Provider", selection: $selectedProviderID) {
+                Picker(LumiPluginLocalization.string("Provider", bundle: .module), selection: $selectedProviderID) {
                     ForEach(providers, id: \.providerID) { provider in
                         Text(provider.providerInfo.displayName).tag(provider.providerID)
                     }
@@ -118,10 +118,10 @@ private struct AISetupPage: View {
                         .foregroundStyle(.secondary)
 
                     if provider.providerInfo.isLocal {
-                        Label("This local provider does not require an API key.", systemImage: "checkmark.circle")
+                        Label(LumiPluginLocalization.string("This local provider does not require an API key.", bundle: .module), systemImage: "checkmark.circle")
                             .foregroundStyle(.secondary)
                     } else {
-                        SecureField("API Key", text: $apiKey)
+                        SecureField(LumiPluginLocalization.string("API Key", bundle: .module), text: $apiKey)
                             .textFieldStyle(.roundedBorder)
                         if let website = provider.providerInfo.websiteURL {
                             Link("Get a key", destination: website)
@@ -138,7 +138,7 @@ private struct AISetupPage: View {
                     .disabled(!provider.providerInfo.isLocal && apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                     if didSave {
-                        Label("Saved", systemImage: "checkmark.circle.fill")
+                        Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
                             .font(.subheadline)
                             .foregroundStyle(.green)
                     }
