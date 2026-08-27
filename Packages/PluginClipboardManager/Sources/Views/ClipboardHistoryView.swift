@@ -19,7 +19,7 @@ public struct ClipboardHistoryView: View {
                 }
                 
                 if !viewModel.searchText.isEmpty {
-                    AppButton("Clear", style: .ghost, fillsWidth: true, action: { viewModel.searchText = "" })
+                    AppButton(LumiPluginLocalization.string("Clear", bundle: .module), style: .ghost, fillsWidth: true, action: { viewModel.searchText = "" })
                 }
             }
             .padding(10)
@@ -68,7 +68,7 @@ public struct ClipboardHistoryView: View {
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Spacer()
-                AppButton("Clear All", style: .destructive, fillsWidth: true, action: { viewModel.clearAll() })
+                AppButton(LumiPluginLocalization.string("Clear All", bundle: .module), style: .destructive, fillsWidth: true, action: { viewModel.clearAll() })
                 .help(LumiPluginLocalization.string("Clear History", bundle: .module))
             }
             .padding(8)
