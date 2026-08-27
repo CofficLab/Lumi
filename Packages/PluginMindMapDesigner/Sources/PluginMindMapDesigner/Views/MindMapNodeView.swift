@@ -71,7 +71,7 @@ struct MindMapNodeView: View {
     var body: some View {
         Group {
             if isEditing {
-                TextField("Node text", text: $draft, onCommit: { onCommit(draft) })
+                TextField(MindMapLocalization.string("Node text"), text: $draft, onCommit: { onCommit(draft) })
                     .font(.system(size: 14, weight: .medium))
                     .multilineTextAlignment(.center)
                     .textFieldStyle(.plain)
