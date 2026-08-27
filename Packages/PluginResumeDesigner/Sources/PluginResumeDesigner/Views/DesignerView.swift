@@ -33,7 +33,7 @@ public struct DesignerView: View {
             L.string("Export Failed"),
             isPresented: errorBinding
         ) {
-            Button("OK", role: .cancel) { workspace.lastError = nil }
+            Button(L.string("OK"), role: .cancel) { workspace.lastError = nil }
         } message: {
             Text(workspace.lastError ?? "")
         }
