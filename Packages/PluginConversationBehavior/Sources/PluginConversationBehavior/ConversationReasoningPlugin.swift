@@ -1,6 +1,7 @@
 import Foundation
 import os
 import KernelCore
+import LumiUI
 import ProviderChatSection
 import ProviderConversation
 import KitSuperLog
@@ -62,6 +63,7 @@ public final class ConversationReasoningPlugin: SuperPlugin, SuperLog {
 
 /// 推理档位按钮：点击弹出档位/开关选择。
 struct ReasoningActionBarButton: View {
+    @LumiTheme private var theme
     let conversations: any ConversationManaging
 
     @State private var isPopoverPresented = false
@@ -78,24 +80,28 @@ struct ReasoningActionBarButton: View {
         Button {
             isPopoverPresented.toggle()
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: 6) {
                 Image(systemName: "brain.head.profile")
-                    .font(.system(size: 17, weight: .medium))
+                    .font(.appCallout)
 
                 Text(selectedEffort?.levelCode ?? "OFF")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.appCaptionEmphasized)
 
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                Image(systemName: isPopoverPresented ? "chevron.up" : "chevron.down")
+                    .font(.appMicroEmphasized)
+                    .foregroundColor(theme.textTertiary)
             }
-            .foregroundStyle(.primary)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 9)
-            .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .foregroundColor(theme.textSecondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .fill(theme.appStatusMutedFill)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous))
         }
         .buttonStyle(.plain)
-        .help("Reasoning Effort")
+        .help(LumiPluginLocalization.string("Reasoning Effort", bundle: .module))
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             ReasoningPopover(selected: selectedEffort) { option in
                 apply(option)
@@ -131,7 +137,7 @@ private struct ReasoningPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Reasoning Effort")
+            Text(LumiPluginLocalization.string("Reasoning Effort", bundle: .module))
                 .font(.system(size: 12, weight: .semibold))
 
             // 关闭思考
@@ -143,7 +149,7 @@ private struct ReasoningPopover: View {
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(selected == nil ? .accentColor : .secondary)
                         .frame(width: 18)
-                    Text("Off")
+                    Text(LumiPluginLocalization.string("Off", bundle: .module))
                         .font(.system(size: 12))
                         .foregroundColor(.primary)
                     Spacer()

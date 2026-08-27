@@ -49,7 +49,7 @@ private struct VerbosityPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Response Detail")
+            Text(LumiPluginLocalization.string("Response Detail", bundle: .module))
                 .font(.system(size: 12, weight: .semibold))
 
             ForEach(ResponseVerbosity.allCases) { level in

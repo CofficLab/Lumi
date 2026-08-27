@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginConversationBehavior",
-    defaultLocalization: "zh-Hans",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "PluginConversationBehavior", targets: ["PluginConversationBehavior"]),
@@ -32,7 +32,8 @@ let package = Package(
                 "LumiUI",
                 "KitLocalization",
             ],
-            path: "Sources/PluginConversationBehavior"
+            path: "Sources/PluginConversationBehavior",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginConversationBehaviorTests",

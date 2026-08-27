@@ -103,7 +103,7 @@ struct LanguageToolbarView: View {
         .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Response Language")
+                Text(LumiPluginLocalization.string("Response Language", bundle: .module))
                     .font(.system(size: 12, weight: .semibold))
                 ForEach(ConversationLanguage.allCases) { language in
                     Button {
