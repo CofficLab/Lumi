@@ -133,7 +133,7 @@ struct PDFSplitMobileView: View {
                     )
                 )
                 .textFieldStyle(.roundedBorder)
-                Text(".pdf").foregroundStyle(.secondary)
+                Text(LumiPluginLocalization.string(".pdf", bundle: .module)).foregroundStyle(.secondary)
             }
 
             if let message = viewModel.splitFileNameValidationMessage(for: segment) {

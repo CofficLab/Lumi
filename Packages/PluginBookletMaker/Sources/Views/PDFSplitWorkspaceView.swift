@@ -163,7 +163,7 @@ struct PDFSplitWorkspaceView: View {
                         "Rename output PDF %lld",
                         Int64(segment.index)
                     ))
-                    Text(".pdf")
+                    Text(BookletLocalization.string(".pdf"))
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                 }
