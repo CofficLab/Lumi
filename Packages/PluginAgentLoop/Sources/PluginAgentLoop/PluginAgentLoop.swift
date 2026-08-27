@@ -5,7 +5,6 @@ import KitSuperLog
 import os
 import ProviderAgentLoop
 import ProviderConversation
-import ProviderConversationState
 import ProviderLifecycleHooks
 import ProviderLLMManager
 import ProviderMessage
@@ -83,14 +82,6 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
         // 5. 注册自定义实现；消费者直接观察 AgentLoop Provider。
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop)
 
-        // AgentLoop 可被本插件替换；状态 Provider 必须重新绑定到最终实例。
-        if kernel.resolveProvider((any ConversationStateProviding).self) != nil {
-            kernel.unregisterProvider((any ConversationStateProviding).self)
-            try kernel.registerProvider(
-                (any ConversationStateProviding).self,
-                DefaultConversationStateProvider(agentLoop: agentLoop, toolManager: toolManager)
-            )
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

@@ -17,7 +17,6 @@ let package = Package(
         .package(name: "ProviderToolManager", path: "../ProviderToolManager"),
         .package(name: "ProviderMessageStreaming", path: "../ProviderMessageStreaming"),
         .package(name: "ProviderConversation", path: "../ProviderConversation"),
-        .package(name: "ProviderConversationState", path: "../ProviderConversationState"),
         .package(name: "ProviderLifecycleHooks", path: "../ProviderLifecycleHooks"),
         .package(name: "KitAgentTool", path: "../KitAgentTool"),
     ],
@@ -34,7 +33,6 @@ let package = Package(
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
-                .product(name: "ProviderConversationState", package: "ProviderConversationState"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
             ]
