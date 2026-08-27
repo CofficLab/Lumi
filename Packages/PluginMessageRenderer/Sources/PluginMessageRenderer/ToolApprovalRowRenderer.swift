@@ -137,7 +137,7 @@ private struct ToolApprovalPendingView: View {
                     .foregroundColor(theme.textPrimary)
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: 24) {
                 ForEach(request.options, id: \.self) { option in
                     Button(option) {
                         submit(option)
