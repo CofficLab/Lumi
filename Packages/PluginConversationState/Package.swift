@@ -11,6 +11,7 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversationState"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../ProviderToolManager"),
     ],
     targets: [
@@ -20,6 +21,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderConversationState", package: "ProviderConversationState"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ],
             path: "Sources/PluginConversationState"
