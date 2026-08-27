@@ -75,10 +75,14 @@ public final class ThemePackPlugin: SuperPlugin, SuperLog {
 
     private static let commandGroupID = "com.coffic.lumi.theme.menu"
 
+    static func localizedMenuName(locale: Locale = .current) -> String {
+        LumiPluginLocalization.string("Theme", bundle: .module, locale: locale)
+    }
+
     private static func makeCommandGroup(theme: any ThemeProviding) -> CommandMenuGroup {
         CommandMenuGroup(
             id: commandGroupID,
-            name: "Theme",
+            name: localizedMenuName(),
             items: theme.themes.map { item in
                 CommandItem(
                     id: "\(commandGroupID).select.\(item.id)",

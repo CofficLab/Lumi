@@ -54,4 +54,9 @@ struct ThemePackPluginTests {
         let ids = provider.themes.map(\.id)
         #expect(Set(ids).count == ids.count)
     }
+
+    @Test("Theme 菜单标题支持中文本地化")
+    func themeMenuTitleIsLocalizedInChinese() {
+        #expect(ThemePackPlugin.localizedMenuName(locale: Locale(identifier: "zh-Hans")) == "主题")
+    }
 }
