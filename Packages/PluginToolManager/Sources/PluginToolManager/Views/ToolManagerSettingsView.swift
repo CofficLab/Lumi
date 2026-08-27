@@ -66,13 +66,16 @@ struct ToolManagerSettingsView: View {
                 tabButton(.toolStats)
             }
             Spacer()
+#if DEBUG
             AppButton(
                 L("Open Data Directory"),
                 systemImage: "folder",
+                style: .warning,
                 size: .small
             ) {
                 openDataDirectory()
             }
+#endif
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .zIndex(1)
