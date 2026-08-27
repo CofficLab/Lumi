@@ -14,6 +14,7 @@ import ProviderToolManager
 public final class DefaultConversationStateProvider: ConversationStateProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-state", category: "Provider")
     public nonisolated static let emoji = "📋"
+    public static let verbose = false
 
     @Published public private(set) var states: [UUID: ConversationStateSnapshot] = [:]
 
@@ -38,13 +39,13 @@ public final class DefaultConversationStateProvider: ConversationStateProviding,
             Self.logger.info("\(Self.t)AgentLoop started conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(turn.uuidString.prefix(8), privacy: .public)")
             update(id, turnID: turn, agentLoopState: .running, toolState: .idle, authorizationState: ConversationAuthorizationState.none, clearError: true)
         case .toolCallsReceived(let id, let turn, _, _):
-            Self.logger.info("\(Self.t)AgentLoop toolCallsReceived conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(turn.uuidString.prefix(8), privacy: .public)")
+            if Self.verbose { Self.logger.info("\(Self.t)AgentLoop toolCallsReceived conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(turn.uuidString.prefix(8), privacy: .public)") }
             update(id, turnID: turn, agentLoopState: .running, toolState: .executing)
         case .llmResponseReceived(let id, let turn, _):
-            Self.logger.info("\(Self.t)AgentLoop llmResponseReceived conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(turn.uuidString.prefix(8), privacy: .public)")
+            if Self.verbose { Self.logger.info("\(Self.t)AgentLoop llmResponseReceived conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(turn.uuidString.prefix(8), privacy: .public)") }
             update(id, turnID: turn, agentLoopState: .running, toolState: .executing)
         case .suspended(let id, let turn, _):
-            Self.logger.info("\(Self.t)AgentLoop suspended conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(turn.uuidString.prefix(8), privacy: .public)")
+            if Self.verbose { Self.logger.info("\(Self.t)AgentLoop suspended conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(turn.uuidString.prefix(8), privacy: .public)") }
             update(id, turnID: turn, agentLoopState: .suspended, toolState: .suspended)
         case .completed(let id, let turn):
             Self.logger.info("\(Self.t)AgentLoop completed conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(turn.uuidString.prefix(8), privacy: .public)")
@@ -63,19 +64,19 @@ public final class DefaultConversationStateProvider: ConversationStateProviding,
     private func consume(_ event: ToolManagerEvent) {
         switch event {
         case .started(let id, let turn, _):
-            Self.logger.info("\(Self.t)ToolManager started conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(String(describing: turn).prefix(8), privacy: .public)")
+            if Self.verbose { Self.logger.info("\(Self.t)ToolManager started conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(String(describing: turn).prefix(8), privacy: .public)") }
             update(id, turnID: turn, toolState: .executing)
         case .authorizationRequired(let id, let turn, _):
-            Self.logger.info("\(Self.t)ToolManager authorizationRequired conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(String(describing: turn).prefix(8), privacy: .public)")
+            if Self.verbose { Self.logger.info("\(Self.t)ToolManager authorizationRequired conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(String(describing: turn).prefix(8), privacy: .public)") }
             update(id, turnID: turn, authorizationState: .required)
         case .completed(let id, let turn, _, _):
-            Self.logger.info("\(Self.t)ToolManager completed conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(String(describing: turn).prefix(8), privacy: .public)")
+            if Self.verbose { Self.logger.info("\(Self.t)ToolManager completed conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(String(describing: turn).prefix(8), privacy: .public)") }
             update(id, turnID: turn, toolState: .completed)
         case .authorizedCompleted(let id, let turn, _, _):
-            Self.logger.info("\(Self.t)ToolManager authorizedCompleted conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(String(describing: turn).prefix(8), privacy: .public)")
+            if Self.verbose { Self.logger.info("\(Self.t)ToolManager authorizedCompleted conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(String(describing: turn).prefix(8), privacy: .public)") }
             update(id, turnID: turn, toolState: .completed, authorizationState: ConversationAuthorizationState.none)
         case .batchCompleted(let id, let turn, _, _):
-            Self.logger.info("\(Self.t)ToolManager batchCompleted conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(String(describing: turn).prefix(8), privacy: .public)")
+            if Self.verbose { Self.logger.info("\(Self.t)ToolManager batchCompleted conversation=\(id.uuidString.prefix(8), privacy: .public) turn=\(String(describing: turn).prefix(8), privacy: .public)") }
             update(id, turnID: turn, toolState: .completed)
         }
     }
