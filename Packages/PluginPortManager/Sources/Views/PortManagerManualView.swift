@@ -136,7 +136,7 @@ struct PortManagerManualView: View {
 
     /// PID 徽章示意。
     private func pidBadgeMock() -> some View {
-        Text("PID 4013")
+        Text(LumiPluginLocalization.string("PID 4013", bundle: .module))
             .font(.system(size: 7, design: .monospaced))
             .foregroundColor(theme.textSecondary)
             .padding(.horizontal, 5)
