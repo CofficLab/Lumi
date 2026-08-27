@@ -83,7 +83,7 @@ public struct HTMLPreviewView: View {
             Image(systemName: "globe")
                 .font(.system(size: 28))
                 .foregroundStyle(.secondary)
-            Text("No HTML content to preview.", comment: "Empty state when there is no HTML to render")
+            Text(verbatim: KitHTMLPreviewLocalization.string("No HTML content to preview.", bundle: .module))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
