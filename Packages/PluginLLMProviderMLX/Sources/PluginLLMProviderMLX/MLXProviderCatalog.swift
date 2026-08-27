@@ -65,13 +65,6 @@ public enum MLXProviderCatalog {
         availableRegistrations.filter { $0.series == series }
     }
 
-    public static func makeProviders() -> [any SuperLLMProvider] {
-        ["mlx-qwen", "mlx-llama", "mlx-mistral", "mlx-gemma4", "mlx-deepseek", "mlx-coder", "mlx-microsoft"].compactMap { id in
-            guard let first = registrations.first(where: { $0.providerID == id }) else { return nil }
-            return MLXLocalProvider(providerID: id, name: first.series)
-        }
-    }
-
     private static var systemRAMGB: Int {
         Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824)
     }

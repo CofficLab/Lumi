@@ -1,4 +1,5 @@
 import KernelCore
+import KitLLM
 import ProviderLLMManager
 import ProviderStorage
 
@@ -32,7 +33,16 @@ public final class MLXProviderPlugin: SuperPlugin {
             return
         }
 
-        for provider in MLXProviderCatalog.makeProviders() {
+        let providers: [any SuperLLMProvider] = [
+            QwenMLXProvider(),
+            LlamaMLXProvider(),
+            MistralMLXProvider(),
+            GemmaMLXProvider(),
+            DeepSeekMLXProvider(),
+            CoderMLXProvider(),
+            MicrosoftMLXProvider(),
+        ]
+        for provider in providers {
             try manager.register(provider)
         }
     }

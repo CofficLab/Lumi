@@ -1,17 +1,18 @@
-import Foundation
 import Combine
+import Foundation
 import KitLLM
 
+/// MLX 供应商的共用实现；具体供应商分别位于同目录的独立文件中。
 @MainActor
-final class MLXLocalProvider: SuperLLMProvider, LLMStreamingProviding {
+class MLXProviderBase: SuperLLMProvider, LLMStreamingProviding {
     let providerInfo: LLMProviderInfo
     var providerID: String { providerInfo.id }
 
-    init(providerID: String, name: String) {
+    init(providerID: String, displayName: String) {
         let models = MLXProviderCatalog.models(for: providerID)
         providerInfo = LLMProviderInfo(
             id: providerID,
-            displayName: name,
+            displayName: displayName,
             description: "Apple Silicon 上的 MLX 本地模型",
             defaultModel: models.first?.id ?? "",
             models: models.map {
@@ -48,7 +49,7 @@ final class MLXLocalProvider: SuperLLMProvider, LLMStreamingProviding {
     }
 }
 
-extension MLXLocalProvider: LLMModelDownloadProviding {
+extension MLXProviderBase: LLMModelDownloadProviding {
     var downloadState: LLMModelDownloadState {
         MLXDownloadManager.shared.downloadState
     }
