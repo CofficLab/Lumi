@@ -1,0 +1,41 @@
+import Combine
+import Foundation
+import ProviderAgentLoop
+
+/// 工具阶段。它只描述观察到的工具生命周期，不负责执行或授权。
+public enum ConversationToolState: String, Codable, Sendable {
+    case idle
+    case executing
+    case suspended
+    case completed
+}
+
+/// 一个会话的当前状态快照。
+public struct ConversationStateSnapshot: Equatable, Sendable {
+    public let conversationID: UUID
+    public let turnID: UUID?
+    public let agentLoopState: AgentLoopState
+    public let toolState: ConversationToolState
+    public let lastError: String?
+
+    public init(
+        conversationID: UUID,
+        turnID: UUID? = nil,
+        agentLoopState: AgentLoopState = .idle,
+        toolState: ConversationToolState = .idle,
+        lastError: String? = nil
+    ) {
+        self.conversationID = conversationID
+        self.turnID = turnID
+        self.agentLoopState = agentLoopState
+        self.toolState = toolState
+        self.lastError = lastError
+    }
+}
+
+@MainActor
+public protocol ConversationStateProviding: AnyObject, ObservableObject
+where ObjectWillChangePublisher == ObservableObjectPublisher {
+    func state(for conversationID: UUID) -> ConversationStateSnapshot
+    var states: [UUID: ConversationStateSnapshot] { get }
+}

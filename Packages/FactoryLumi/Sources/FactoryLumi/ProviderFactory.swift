@@ -7,6 +7,7 @@ import ProviderAgentLoop
 import KitLLM
 import ProviderMessageSender
 import ProviderConversation
+import ProviderConversationState
 import ProviderDocsView
 import ProviderLogo
 import ProviderMenuBar
@@ -83,6 +84,13 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     public func makeLLMProvider() -> any SuperLLMProvider {
         DefaultLLMProviding()
+    }
+
+    public func makeConversationStateProvider(
+        agentLoop: any AgentLoopProviding,
+        toolManager: any ToolManagerProviding
+    ) -> any ConversationStateProviding {
+        DefaultConversationStateProvider(agentLoop: agentLoop, toolManager: toolManager)
     }
 
     public func makeLLMProviderManagerProvider() -> any LLMManaging {
@@ -314,6 +322,10 @@ public struct DefaultProviderFactory: ProviderFactory {
             agentLoop.setLifecycleHooks(lifecycleHooks)
         }
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop)
+        try kernel.registerProvider(
+            (any ConversationStateProviding).self,
+            makeConversationStateProvider(agentLoop: agentLoop, toolManager: toolManager)
+        )
 
         // `MessageSendingProviding` 不再由工厂装配注册：改由 `PluginMessageSender`
         // （`MessageSenderPlugin`，order=9）在 onBoot 中解析上述 conversations /
