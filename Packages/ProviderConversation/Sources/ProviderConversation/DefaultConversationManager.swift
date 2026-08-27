@@ -16,7 +16,7 @@ import KitSuperLog
 public final class DefaultConversationManager: ConversationManaging, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-conversation", category: "ProviderConversation")
     nonisolated public static let emoji = "💬"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private static let initialPageSize = 40
 

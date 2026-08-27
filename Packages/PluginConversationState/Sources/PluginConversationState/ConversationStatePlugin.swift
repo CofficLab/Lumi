@@ -1,5 +1,7 @@
 import Foundation
 import KernelCore
+import KitSuperLog
+import os
 import ProviderAgentLoop
 import ProviderConversationState
 import ProviderToolManager
@@ -9,7 +11,16 @@ import ProviderToolManager
 /// 状态逻辑由 `DefaultConversationStateProvider` 负责；插件只负责在所有
 /// AgentLoop/ToolManager 替换完成后完成依赖解析、监听建立和 Provider 注册。
 @MainActor
-public final class ConversationStatePlugin: SuperPlugin {
+public final class ConversationStatePlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi.plugin.conversation-state",
+        category: "ConversationStatePlugin"
+    )
+    nonisolated public static let emoji = "🔄"
+
+    private var agentLoopObserver: AgentLoopStateObserver?
+    private var toolManagerObserver: ToolManagerStateObserver?
+
     public let id = "com.coffic.lumi.plugin.conversation-state"
     public let order = 10
     public let metadata = PluginMetadata(
@@ -24,12 +35,25 @@ public final class ConversationStatePlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self),
-              let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+        guard let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self) else {
+            Self.logger.error("\(Self.t)AgentLoopProviding not registered; cannot create ConversationStateProvider")
             return
         }
-        let provider = DefaultConversationStateProvider(agentLoop: agentLoop, toolManager: toolManager)
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            Self.logger.error("\(Self.t)ToolManagerProviding not registered; cannot create ConversationStateProvider")
+            return
+        }
+        let provider = ConversationStateProvider()
         kernel.unregisterProvider((any ConversationStateProviding).self)
         try kernel.registerProvider((any ConversationStateProviding).self, provider)
+        agentLoopObserver = AgentLoopStateObserver(agentLoop: agentLoop, provider: provider)
+        toolManagerObserver = ToolManagerStateObserver(toolManager: toolManager, provider: provider)
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        agentLoopObserver?.cancel()
+        agentLoopObserver = nil
+        toolManagerObserver?.cancel()
+        toolManagerObserver = nil
     }
 }
