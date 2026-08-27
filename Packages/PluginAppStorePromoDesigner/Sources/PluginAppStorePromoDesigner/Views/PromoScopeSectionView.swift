@@ -88,7 +88,7 @@ struct PromoScopeSectionView<EmptyContent: View>: View {
             isExpanded: binding,
             icon: "folder",
             iconColor: .accentColor,
-            title: "In Project",
+            title: PromoLocalization.string("In Project"),
             subtitle: "· MyApp",
             count: 0,
             isUnavailable: false,
@@ -96,7 +96,7 @@ struct PromoScopeSectionView<EmptyContent: View>: View {
             emptyMessage: "Ask the Agent to create a promotional artwork task."
         ) {
             PromoScopeEmptyView(
-                message: "Ask the Agent to create a promotional artwork task."
+                message: PromoLocalization.string("Ask the Agent to create a promotional artwork task.")
             )
         }
     }

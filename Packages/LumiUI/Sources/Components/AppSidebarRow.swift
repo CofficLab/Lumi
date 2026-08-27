@@ -100,13 +100,13 @@ public struct AppSidebarRow<Trailing: View>: View {
 #Preview {
     VStack(spacing: 4) {
         AppSidebarRow(
-            title: "Account",
+            title: LumiUILocalization.string("Account"),
             systemImage: "person.crop.circle",
             isSelected: true,
             action: {}
         )
         AppSidebarRow(
-            title: "Apps",
+            title: LumiUILocalization.string("Apps"),
             systemImage: "square.grid.2x2",
             isSelected: false,
             action: {}

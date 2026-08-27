@@ -18,37 +18,37 @@ enum DebugCommands {
             items: [
                 CommandItem(
                     id: "debug.openAppSupport",
-                    title: "Open App Support Directory"
+                    title: LumiPluginLocalization.string("Open App Support Directory", bundle: .module)
                 ) {
                     openDirectory(
                         url: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
-                        missingMessage: "App Support directory does not exist"
+                        missingMessage: LumiPluginLocalization.string("App Support directory does not exist", bundle: .module)
                     )
                 },
                 CommandItem(
                     id: "debug.openContainer",
-                    title: "Open Container Directory"
+                    title: LumiPluginLocalization.string("Open Container Directory", bundle: .module)
                 ) {
                     let url = FileManager.default.containerURL(
                         forSecurityApplicationGroupIdentifier: Bundle.main.bundleIdentifier ?? ""
                     )
-                    openDirectory(url: url, missingMessage: "Container directory does not exist")
+                    openDirectory(url: url, missingMessage: LumiPluginLocalization.string("Container directory does not exist", bundle: .module))
                 },
                 CommandItem(
                     id: "debug.openDocuments",
-                    title: "Open Documents Directory"
+                    title: LumiPluginLocalization.string("Open Documents Directory", bundle: .module)
                 ) {
                     openDirectory(
                         url: FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first,
-                        missingMessage: "Documents directory does not exist"
+                        missingMessage: LumiPluginLocalization.string("Documents directory does not exist", bundle: .module)
                     )
                 },
                 CommandItem(
                     id: "debug.openDatabase",
-                    title: "Open Database Directory"
+                    title: LumiPluginLocalization.string("Open Database Directory", bundle: .module)
                 ) {
                     let url = kernel.resolveProvider((any StorageProviding).self)?.dataRootDirectory
-                    openDirectory(url: url, missingMessage: "Storage service not available")
+                    openDirectory(url: url, missingMessage: LumiPluginLocalization.string("Storage service not available", bundle: .module))
                 },
             ],
             placement: .topLevelMenu
@@ -57,7 +57,7 @@ enum DebugCommands {
 
     private static func openDirectory(url: URL?, missingMessage: String) {
         guard let url else {
-            showMissingDirectoryAlert(title: "Error Opening Directory", message: missingMessage)
+            showMissingDirectoryAlert(title: LumiPluginLocalization.string("Error Opening Directory", bundle: .module), message: missingMessage)
             return
         }
         NSWorkspace.shared.activateFileViewerSelecting([url])

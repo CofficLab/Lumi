@@ -142,7 +142,7 @@ struct DockerImagesView: View, SuperLog {
                     .font(.appTitle)
                     .foregroundColor(theme.textPrimary)
                 GlassTextField(
-                    title: "Image",
+                    title: LumiPluginLocalization.string("Image", bundle: .module),
                     text: $pullImageName,
                     placeholder: "nginx:latest"
                 )
@@ -178,7 +178,7 @@ struct DockerImagesView: View, SuperLog {
                         .foregroundColor(theme.textSecondary)
                 }
                 GlassTextField(
-                    title: "New Tag",
+                    title: LumiPluginLocalization.string("New Tag", bundle: .module),
                     text: $newTag,
                     placeholder: "myrepo:v1"
                 )
@@ -340,9 +340,9 @@ struct DockerImageDetailView: View {
                 if let detail = detail {
                     AppCard(style: .subtle, cornerRadius: 8) {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                        InfoRow(title: "Architecture", value: detail.Architecture)
+                        InfoRow(title: LumiPluginLocalization.string("Architecture", bundle: .module), value: detail.Architecture)
                         InfoRow(title: "OS", value: detail.Os)
-                        InfoRow(title: "Author", value: detail.Author ?? "-")
+                        InfoRow(title: LumiPluginLocalization.string("Author", bundle: .module), value: detail.Author ?? "-")
                         InfoRow(title: "Virtual Size", value: ByteCountFormatter.string(fromByteCount: detail.VirtualSize ?? 0, countStyle: .file))
                     }
                     }

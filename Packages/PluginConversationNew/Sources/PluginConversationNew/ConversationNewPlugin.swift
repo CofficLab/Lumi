@@ -34,7 +34,7 @@ public final class ConversationNewPlugin: SuperPlugin, SuperLog {
         }
 
         toolbar.addToolbarItems([
-            ToolbarItem(id: "\(id).new-chat", title: "New Chat", placement: .trailing, order: 30) {
+            ToolbarItem(id: "\(id).new-chat", title: LumiPluginLocalization.string("New Chat", bundle: .module), placement: .trailing, order: 30) {
                 NewChatButton(kernel: kernel)
             },
         ])

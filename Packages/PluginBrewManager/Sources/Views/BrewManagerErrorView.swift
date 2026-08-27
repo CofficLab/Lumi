@@ -131,7 +131,7 @@ struct BrewManagerErrorView: View {
 
 #Preview("Error · Dismiss Only") {
     BrewManagerErrorView(
-        message: "Homebrew not detected, please install Homebrew first.",
+        message: LumiPluginLocalization.string("Homebrew not detected, please install Homebrew first.", bundle: .module),
         onDismiss: {}
     )
     .frame(width: 480, height: 480)

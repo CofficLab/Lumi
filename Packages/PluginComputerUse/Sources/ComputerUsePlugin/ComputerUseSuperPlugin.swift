@@ -32,7 +32,7 @@ public final class ComputerUseSuperPlugin: SuperPlugin {
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
                 id: "\(id).settings",
-                title: "Computer Use",
+                title: LumiPluginLocalization.string("Computer Use", bundle: .module),
                 systemImage: "cursorarrow.motionlines",
                 order: order
             ) {

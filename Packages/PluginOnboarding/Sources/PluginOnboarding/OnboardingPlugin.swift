@@ -124,7 +124,7 @@ private struct AISetupPage: View {
                         SecureField(LumiPluginLocalization.string("API Key", bundle: .module), text: $apiKey)
                             .textFieldStyle(.roundedBorder)
                         if let website = provider.providerInfo.websiteURL {
-                            Link("Get a key", destination: website)
+                            Link(LumiPluginLocalization.string("Get a key", bundle: .module), destination: website)
                         }
                     }
 

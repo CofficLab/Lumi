@@ -42,7 +42,7 @@ public final class SettingGeneralPlugin: SuperPlugin {
                 items: [
                     CommandItem(
                         id: "\(id).openSettings",
-                        title: "Settings...",
+                        title: LumiPluginLocalization.string("Settings...", bundle: .module),
                         shortcut: ",",
                         modifiers: .command
                     ) {

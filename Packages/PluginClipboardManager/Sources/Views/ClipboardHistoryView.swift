@@ -12,7 +12,7 @@ public struct ClipboardHistoryView: View {
                 GlassTextField(
                     title: "搜索",
                     text: $viewModel.searchText,
-                    placeholder: "Search clipboard history..."
+                    placeholder: LumiPluginLocalization.string("Search clipboard history...", bundle: .module)
                 )
                 .onChange(of: viewModel.searchText) { _, _ in
                     viewModel.filterItems()

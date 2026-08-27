@@ -28,7 +28,7 @@ struct PromoDesignerEmptyState: View {
 
 #Preview {
     PromoDesignerEmptyState(
-        message: "Ask the Agent to create a promotional artwork task."
+        message: PromoLocalization.string("Ask the Agent to create a promotional artwork task.")
     )
     .frame(width: 600, height: 400)
 }

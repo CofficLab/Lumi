@@ -29,7 +29,7 @@ public final class ChatPanelPlugin: SuperPlugin {
         let entryID = "\(id).entry"
         workspace?.registerContainer(.init(
             id: id,
-            title: "Chat",
+            title: LumiPluginLocalization.string("Chat", bundle: .module),
             systemImage: "bubble.left.and.bubble.right.fill",
             order: order,
             supportsProject: true,
@@ -41,7 +41,7 @@ public final class ChatPanelPlugin: SuperPlugin {
         ), ownerPluginID: id)
         activityBar?.addItems([ActivityBarItem(
             id: entryID,
-            title: "Chat",
+            title: LumiPluginLocalization.string("Chat", bundle: .module),
             systemImage: "bubble.left.and.bubble.right.fill",
             order: order,
             ownerPluginID: id

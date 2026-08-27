@@ -102,12 +102,12 @@ struct PromoTaskTreeView: View {
 #Preview {
     let task = AppStorePromoTask(
         id: "preview",
-        title: "Launch Campaign",
+        title: PromoLocalization.string("Launch Campaign"),
         appName: "Demo",
         deviceFamily: .iphone,
         images: [
-            AppStorePromoImage(id: "01", title: "Hero", order: 0),
-            AppStorePromoImage(id: "02", title: "Detail", order: 1),
+            AppStorePromoImage(id: "01", title: PromoLocalization.string("Hero"), order: 0),
+            AppStorePromoImage(id: "02", title: PromoLocalization.string("Detail"), order: 1),
         ]
     )
     StatefulPreviewWrapper(true) { binding in

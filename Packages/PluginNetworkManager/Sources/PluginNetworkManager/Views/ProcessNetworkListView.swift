@@ -22,7 +22,7 @@ public struct ProcessNetworkListView: View {
                 GlassTextField(
                     title: "搜索",
                     text: $viewModel.processSearchText,
-                    placeholder: "Search..."
+                    placeholder: LumiPluginLocalization.string("Search...", bundle: .module)
                 )
                 .frame(width: 160)
             }

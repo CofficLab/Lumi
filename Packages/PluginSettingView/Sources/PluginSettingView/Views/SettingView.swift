@@ -76,7 +76,7 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
                 } else {
                     AppEmptyState(
                         icon: "gearshape",
-                        title: "Select a tab"
+                        title: LumiPluginLocalization.string("Select a tab", bundle: .module)
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }

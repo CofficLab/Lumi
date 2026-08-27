@@ -35,7 +35,7 @@ public final class DevicePlugin: SuperPlugin {
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
             let entry = SettingEntryItem(
                 id: "\(id).memory-settings",
-                title: "Memory Monitor",
+                title: LumiPluginLocalization.string("Memory Monitor", bundle: .module),
                 systemImage: "memorychip",
                 order: order
             ) {

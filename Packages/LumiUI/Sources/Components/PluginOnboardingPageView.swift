@@ -190,8 +190,8 @@ private enum AppUISpacing {
         displayName: "Terminal",
         description: "Native interactive terminal powered by SwiftTerm",
         features: [
-            .init(icon: "rectangle.3.group", title: "Multiple tabs", description: "Open several sessions side by side"),
-            .init(icon: "keyboard", title: "Full keyboard", description: "Complete VT escapes and shell integration"),
+            .init(icon: "rectangle.3.group", title: LumiUILocalization.string("Multiple tabs"), description: "Open several sessions side by side"),
+            .init(icon: "keyboard", title: LumiUILocalization.string("Full keyboard"), description: "Complete VT escapes and shell integration"),
         ],
         tip: "Open it from the sidebar at any time."
     )

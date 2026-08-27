@@ -30,6 +30,6 @@ struct PromoRailEmptyView: View {
 // MARK: - 预览
 
 #Preview {
-    PromoRailEmptyView(message: "Plugin storage is unavailable.")
+    PromoRailEmptyView(message: PromoLocalization.string("Plugin storage is unavailable."))
         .frame(width: 240, height: 200)
 }

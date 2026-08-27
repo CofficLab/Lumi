@@ -82,7 +82,7 @@ public struct DatabaseInspectorView: View {
             }
             Spacer()
             if viewModel.openTableObject != nil {
-                AppIconButton(systemImage: "arrow.clockwise", label: "Refresh Structure", size: .compact) {
+                AppIconButton(systemImage: "arrow.clockwise", label: LumiPluginLocalization.string("Refresh Structure", bundle: .module), size: .compact) {
                     Task { await viewModel.loadSelectedTableSchema(refresh: true) }
                 }
                 .disabled(viewModel.isLoadingTableSchema)
@@ -106,7 +106,7 @@ public struct DatabaseInspectorView: View {
         } else if let error = viewModel.tableSchemaError, viewModel.selectedTableSchema == nil {
             AppEmptyState(
                 icon: "exclamationmark.triangle",
-                title: "Unable to Load Structure",
+                title: LumiPluginLocalization.string("Unable to Load Structure", bundle: .module),
                 description: error
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -136,7 +136,7 @@ public struct DatabaseInspectorView: View {
         } else {
             AppEmptyState(
                 icon: object.kind.systemImage,
-                title: "No Structure Available",
+                title: LumiPluginLocalization.string("No Structure Available", bundle: .module),
                 description: "Refresh to load metadata for this object."
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -154,11 +154,11 @@ public struct DatabaseInspectorView: View {
             .labelsHidden()
             Spacer()
             if section == .columns, canEditStructure {
-                AppIconButton(systemImage: "plus", label: "Add Column", size: .compact) {
+                AppIconButton(systemImage: "plus", label: LumiPluginLocalization.string("Add Column", bundle: .module), size: .compact) {
                     showAddColumn = true
                 }
             } else if section == .indexes, canEditStructure {
-                AppIconButton(systemImage: "plus", label: "Add Index", size: .compact) {
+                AppIconButton(systemImage: "plus", label: LumiPluginLocalization.string("Add Index", bundle: .module), size: .compact) {
                     showAddIndex = true
                 }
             }
@@ -344,7 +344,7 @@ public struct DatabaseInspectorView: View {
                 } else {
                     AppEmptyState(
                         icon: "cylinder.split.1x2",
-                        title: "No Database Connected",
+                        title: LumiPluginLocalization.string("No Database Connected", bundle: .module),
                         description: "Connect from the sidebar."
                     )
                 }
@@ -495,8 +495,8 @@ private struct SchemaColumnCard: View {
                     }
                 }
                 Text(column.dataType).font(.appMicro).foregroundStyle(.secondary)
-                SchemaDetailRow(label: "Default", value: column.defaultValue ?? "None")
-                SchemaDetailRow(label: "Position", value: String(column.position + 1))
+                SchemaDetailRow(label: LumiPluginLocalization.string("Default", bundle: .module), value: column.defaultValue ?? "None")
+                SchemaDetailRow(label: LumiPluginLocalization.string("Position", bundle: .module), value: String(column.position + 1))
             }
         }
     }
@@ -517,7 +517,7 @@ private struct PendingSchemaChangeCard: View {
                 }
                 Spacer()
                 AppTag(status, systemImage: nil, style: .subtle)
-                AppIconButton(systemImage: "xmark", label: "Remove Change", size: .compact, action: onRemove)
+                AppIconButton(systemImage: "xmark", label: LumiPluginLocalization.string("Remove Change", bundle: .module), size: .compact, action: onRemove)
             }
         }
     }
@@ -546,7 +546,7 @@ private struct SchemaIndexCard: View {
                     }
                 }
                 Text(index.columns.joined(separator: ", ")).font(.appMicro).foregroundStyle(.secondary)
-                SchemaDetailRow(label: "Type", value: index.indexType ?? "Default")
+                SchemaDetailRow(label: LumiPluginLocalization.string("Index Type", bundle: .module), value: index.indexType ?? "Default")
             }
         }
     }

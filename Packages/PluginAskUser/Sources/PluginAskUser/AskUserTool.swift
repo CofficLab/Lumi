@@ -87,7 +87,7 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         guard let question = Self.string(arguments, "question"),
               !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return Self.errorResult(message: "question is required and cannot be empty")
+            return Self.errorResult(message: LumiPluginLocalization.string("question is required and cannot be empty", bundle: .module))
         }
 
         // mode 是必填的强制函数：LLM 必须先声明意图。

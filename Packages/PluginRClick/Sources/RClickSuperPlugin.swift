@@ -35,7 +35,7 @@ public final class RClickSuperPlugin: SuperPlugin {
             RailTabItem(
                 id: railTabID,
                 groupID: id,
-                title: "Preview",
+                title: LumiPluginLocalization.string("Preview", bundle: .module),
                 systemImage: "eye",
                 order: order
             ) {

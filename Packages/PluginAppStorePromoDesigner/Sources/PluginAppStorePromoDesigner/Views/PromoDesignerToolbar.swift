@@ -127,7 +127,7 @@ struct PromoDesignerToolbar: View {
             workspace: WorkspaceStore.shared,
             task: AppStorePromoTask(
                 id: "preview",
-                title: "Launch Campaign",
+                title: PromoLocalization.string("Launch Campaign"),
                 appName: "Demo",
                 deviceFamily: .iphone,
                 images: []

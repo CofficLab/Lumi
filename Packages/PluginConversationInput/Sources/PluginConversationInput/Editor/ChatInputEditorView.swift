@@ -830,10 +830,10 @@ final class PastePreviewPopoverViewController: NSViewController {
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let copyButton = NSButton(title: "Copy original", target: self, action: #selector(copyOriginalText))
+        let copyButton = NSButton(title: LumiPluginLocalization.string("Copy original", bundle: .module), target: self, action: #selector(copyOriginalText))
         copyButton.bezelStyle = .rounded
         copyButton.translatesAutoresizingMaskIntoConstraints = false
-        let closeButton = NSButton(title: "Close", target: self, action: #selector(closePopover))
+        let closeButton = NSButton(title: LumiPluginLocalization.string("Close", bundle: .module), target: self, action: #selector(closePopover))
         closeButton.bezelStyle = .rounded
         closeButton.translatesAutoresizingMaskIntoConstraints = false
 

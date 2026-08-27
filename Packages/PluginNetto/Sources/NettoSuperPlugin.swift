@@ -31,7 +31,7 @@ public final class NettoSuperPlugin: SuperPlugin {
         workspace?.registerContainer(
             WorkspaceContainer(
                 id: id,
-                title: "Netto Firewall",
+                title: LumiPluginLocalization.string("Netto Firewall", bundle: .module),
                 systemImage: "shield.lefthalf.filled",
                 order: order,
                 railVisibility: .unsupported,

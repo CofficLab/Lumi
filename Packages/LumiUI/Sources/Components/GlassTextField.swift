@@ -193,8 +193,8 @@ public struct GlassTextField: View {
         @State private var text = ""
         var body: some View {
             VStack(spacing: 16) {
-                GlassTextField(title: "Username", text: $text, placeholder: "Enter name")
-                GlassTextField(title: "Password", text: $text, isSecure: true)
+                GlassTextField(title: LumiUILocalization.string("Username"), text: $text, placeholder: "Enter name")
+                GlassTextField(title: LumiUILocalization.string("Password"), text: $text, isSecure: true)
             }
             .padding()
             .frame(width: 300)

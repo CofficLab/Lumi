@@ -23,6 +23,6 @@ struct ResumeEmptyStateView: View {
 // MARK: - 预览
 
 #Preview {
-    ResumeEmptyStateView(message: "Ask the Agent to create a resume.")
+    ResumeEmptyStateView(message: ResumeDesignerLocalization.string("Ask the Agent to create a resume."))
         .frame(width: 600, height: 400)
 }

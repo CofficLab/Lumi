@@ -54,7 +54,7 @@ struct ModelListView: View {
             AppDivider()
 
             // Search
-            AppSearchBar(text: $searchText, placeholder: "Search models")
+            AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search models", bundle: .module)))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
 

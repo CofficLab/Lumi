@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginAskUser",
-    defaultLocalization: "zh-Hans",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "PluginAskUser", targets: ["PluginAskUser"]),
@@ -22,6 +22,7 @@ let package = Package(
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../KitLLM"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
@@ -36,8 +37,10 @@ let package = Package(
                 "ProviderAgentLoop",
                 "ProviderMessageSender",
                 "ProviderToolManager",
+                "KitLocalization",
             ],
-            path: "Sources/PluginAskUser"
+            path: "Sources/PluginAskUser",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginAskUserTests",

@@ -59,13 +59,13 @@ public struct AppDisclosureCard<Content: View>: View {
 
 #Preview {
     VStack(spacing: 12) {
-        AppDisclosureCard(title: "Advanced Settings") {
+        AppDisclosureCard(title: LocalizedStringKey(LumiUILocalization.string("Advanced Settings"))) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(LumiUILocalization.string("Setting 1"))
                 Text(LumiUILocalization.string("Setting 2"))
             }
         }
-        AppDisclosureCard(title: "Account Info", icon: "person.circle") {
+        AppDisclosureCard(title: LocalizedStringKey(LumiUILocalization.string("Account Info")), icon: "person.circle") {
             Text(LumiUILocalization.string("User details go here"))
         }
     }

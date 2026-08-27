@@ -117,7 +117,7 @@ public struct AppIconButton: View {
     VStack(spacing: 12) {
         HStack(spacing: 8) {
             AppIconButton(systemImage: "gearshape") {}
-            AppIconButton(systemImage: "plus", label: "Add") {}
+            AppIconButton(systemImage: "plus", label: LumiUILocalization.string("Add")) {}
             AppIconButton(systemImage: "trash", tint: .red) {}
         }
         HStack(spacing: 8) {

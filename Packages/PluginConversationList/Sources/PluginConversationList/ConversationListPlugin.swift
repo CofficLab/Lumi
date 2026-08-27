@@ -101,7 +101,7 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
         toolbar?.addToolbarItems([
             ToolbarItem(
                 id: "\(id).conversation-list",
-                title: "Chats",
+                title: LumiPluginLocalization.string("Chats", bundle: .module),
                 placement: .trailing,
                 order: 200
             ) { [self] in

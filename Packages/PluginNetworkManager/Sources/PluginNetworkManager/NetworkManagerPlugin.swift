@@ -90,14 +90,14 @@ public final class NetworkManagerPlugin: SuperPlugin {
         if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
             menuBar.addContent(MenuBarContentItem(
                 id: "\(id).speed",
-                title: "Network Speed",
+                title: LumiPluginLocalization.string("Network Speed", bundle: .module),
                 order: order
             ) {
                 NetworkMenuBarContentView()
             })
             menuBar.addPopup(MenuBarPopupItem(
                 id: "\(id).popup",
-                title: "Network Monitor",
+                title: LumiPluginLocalization.string("Network Monitor", bundle: .module),
                 order: order
             ) {
                 NetworkMenuBarPopupView()

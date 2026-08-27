@@ -48,7 +48,7 @@ public final class BrewManagerSuperPlugin: SuperPlugin {
                 if activeID == activityItemID {
                     content?.setContentView(AnyView(BrewManagerView()))
                     toolbar?.addToolbarItems([
-                        ToolbarItem(id: refreshItemID, title: "Refresh", placement: .trailing, order: 260) {
+                        ToolbarItem(id: refreshItemID, title: LumiPluginLocalization.string("Refresh", bundle: .module), placement: .trailing, order: 260) {
                             AppIconButton(systemImage: "arrow.clockwise") {
                                 NotificationCenter.default.post(name: .brewManagerRefreshRequested, object: nil)
                             }

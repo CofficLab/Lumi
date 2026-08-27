@@ -25,8 +25,8 @@ struct PromoScopeEmptyView: View {
 
 #Preview {
     VStack(alignment: .leading) {
-        PromoScopeEmptyView(message: "Open a project to enable project-local storage.")
-        PromoScopeEmptyView(message: "Ask the Agent to create a promotional artwork task.")
+        PromoScopeEmptyView(message: PromoLocalization.string("Open a project to enable project-local storage."))
+        PromoScopeEmptyView(message: PromoLocalization.string("Ask the Agent to create a promotional artwork task."))
     }
     .frame(width: 280)
 }

@@ -255,16 +255,16 @@ public struct HostAddView: View {
 
             AppCard {
                 VStack(alignment: .leading, spacing: 8) {
-                    GlassTextField(title: "IP Address", text: $ip, placeholder: "127.0.0.1")
+                    GlassTextField(title: LumiPluginLocalization.string("IP Address", bundle: .module), text: $ip, placeholder: "127.0.0.1")
                     if showIPError {
                         AppErrorBanner(message: LocalizedStringKey(LumiPluginLocalization.string("Invalid IP address format", bundle: .module)))
                     }
 
-                    GlassTextField(title: "Domain", text: $domain, placeholder: "dev.example.com")
+                    GlassTextField(title: LumiPluginLocalization.string("Domain", bundle: .module), text: $domain, placeholder: "dev.example.com")
                     if showDomainError {
                         AppErrorBanner(message: LocalizedStringKey(LumiPluginLocalization.string("Invalid domain format", bundle: .module)))
                     }
-                    GlassTextField(title: "Comment", text: $comment, placeholder: "Optional")
+                    GlassTextField(title: "Comment", text: $comment, placeholder: LumiPluginLocalization.string("Optional", bundle: .module))
                     GlassTextField(title: LumiPluginLocalization.string("Group", bundle: .module), text: $group, placeholder: "Optional")
                 }
             }

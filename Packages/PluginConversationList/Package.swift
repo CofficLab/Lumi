@@ -2,6 +2,7 @@
 import PackageDescription
 let package = Package(
     name: "PluginConversationList",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [.library(name: "PluginConversationList", targets: ["PluginConversationList"])],
     dependencies: [
@@ -18,9 +19,11 @@ let package = Package(
         .package(path: "../ProviderConversationState"),
         .package(path: "../KitAgentTool"),
         .package(path: "../LumiUI"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [.target(name: "PluginConversationList", dependencies: [
         .product(name: "KernelCore", package: "KernelCore"),
+        .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
         .product(name: "ProviderConversation", package: "ProviderConversation"),
         .product(name: "ProviderChatSection", package: "ProviderChatSection"),
@@ -33,5 +36,7 @@ let package = Package(
         .product(name: "ProviderConversationState", package: "ProviderConversationState"),
         .product(name: "KitAgentTool", package: "KitAgentTool"),
         .product(name: "LumiUI", package: "LumiUI"),
-    ])]
+    ],
+        resources: [.process("Resources/Localizable.xcstrings")]
+    )]
 )

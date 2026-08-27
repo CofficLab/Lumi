@@ -44,7 +44,7 @@ struct ConnectionFormView: View {
 
             AppCard {
                 VStack(alignment: .leading, spacing: 8) {
-                    GlassTextField(title: "Connection Name", text: $name, placeholder: "My Database")
+                    GlassTextField(title: "Connection Name", text: $name, placeholder: LumiPluginLocalization.string("My Database", bundle: .module))
 
                     HStack {
                         Text(LumiPluginLocalization.string("Database Type", bundle: .module))
@@ -61,15 +61,15 @@ struct ConnectionFormView: View {
                     }
 
                     if type == .sqlite {
-                        GlassTextField(title: "Database Path", text: $sqlitePath, placeholder: "/path/to/db.sqlite")
+                        GlassTextField(title: LumiPluginLocalization.string("Database Path", bundle: .module), text: $sqlitePath, placeholder: "/path/to/db.sqlite")
                     } else {
-                        GlassTextField(title: "Host", text: $host, placeholder: "127.0.0.1")
-                        GlassTextField(title: "Port", text: $portText, placeholder: "\(type.defaultPort ?? 0)")
+                        GlassTextField(title: LumiPluginLocalization.string("Host", bundle: .module), text: $host, placeholder: "127.0.0.1")
+                        GlassTextField(title: LumiPluginLocalization.string("Port", bundle: .module), text: $portText, placeholder: "\(type.defaultPort ?? 0)")
                         if type != .redis {
                             GlassTextField(title: LumiPluginLocalization.string("Database", bundle: .module), text: $database, placeholder: type == .postgresql ? "postgres" : "test")
-                            GlassTextField(title: "Username", text: $username, placeholder: "user")
+                            GlassTextField(title: LumiPluginLocalization.string("Username", bundle: .module), text: $username, placeholder: "user")
                         }
-                        GlassTextField(title: "Password", text: $password, placeholder: passwordPlaceholder, isSecure: true, allowsReveal: true)
+                        GlassTextField(title: LumiPluginLocalization.string("Password", bundle: .module), text: $password, placeholder: passwordPlaceholder, isSecure: true, allowsReveal: true)
 
                         if type.capabilities.supportsSSL {
                             sslPicker

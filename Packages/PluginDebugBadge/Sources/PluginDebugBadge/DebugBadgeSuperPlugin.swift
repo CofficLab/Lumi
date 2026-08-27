@@ -40,7 +40,7 @@ public final class DebugBadgeSuperPlugin: SuperPlugin, SuperLog {
             toolbar.addToolbarItems([
                 ToolbarItem(
                     id: "\(id).badge",
-                    title: "Running a Debug build",
+                    title: LumiPluginLocalization.string("Running a Debug build", bundle: .module),
                     placement: .leading,
                     order: 900
                 ) {

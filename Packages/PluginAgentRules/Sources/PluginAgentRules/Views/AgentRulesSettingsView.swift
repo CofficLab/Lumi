@@ -123,7 +123,7 @@ public struct AgentRulesSettingsView: View {
             if projects.isEmpty {
                 AppEmptyState(
                     icon: "folder",
-                    title: "No projects yet"
+                    title: LumiPluginLocalization.string("No projects yet", bundle: .module)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -195,10 +195,10 @@ public struct AgentRulesSettingsView: View {
                 AppEmptyState(icon: "exclamationmark.triangle", title: error)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if selectedProject == nil {
-                AppEmptyState(icon: "folder", title: "Select a project")
+                AppEmptyState(icon: "folder", title: LumiPluginLocalization.string("Select a project", bundle: .module))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if rules.isEmpty {
-                AppEmptyState(icon: "doc.text", title: "No rules yet")
+                AppEmptyState(icon: "doc.text", title: LumiPluginLocalization.string("No rules yet", bundle: .module))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {

@@ -63,7 +63,7 @@ struct RenameSchemaColumnSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(LumiPluginLocalization.string("Rename Column", bundle: .module)).font(.title3.weight(.semibold))
-            TextField("Name", text: $name)
+            TextField(LumiPluginLocalization.string("Name", bundle: .module), text: $name)
             if let errorMessage {
                 Text(errorMessage).font(.appCaption).foregroundStyle(.red)
             }

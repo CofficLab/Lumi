@@ -110,17 +110,17 @@ private struct CacheHitRatePopover: View {
 
             statRow(
                 icon: "arrow.down.circle",
-                label: "Cached tokens",
+                label: LumiPluginLocalization.string("Cached tokens", bundle: .module),
                 value: stats.totalCachedTokens.formatted(.number.grouping(.automatic))
             )
             statRow(
                 icon: "arrow.up.circle",
-                label: "Total input tokens",
+                label: LumiPluginLocalization.string("Total input tokens", bundle: .module),
                 value: stats.totalInputTokens.formatted(.number.grouping(.automatic))
             )
             statRow(
                 icon: "scalemass",
-                label: "Token-weighted rate",
+                label: LumiPluginLocalization.string("Token-weighted rate", bundle: .module),
                 value: String(format: "%.1f%%", stats.weightedHitRate * 100)
             )
 

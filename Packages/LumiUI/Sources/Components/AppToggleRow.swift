@@ -59,9 +59,9 @@ public struct AppToggleRow: View {
         @State private var toggle2 = false
         var body: some View {
             VStack(spacing: 0) {
-                AppToggleRow(title: "Notifications", systemImage: "bell", isOn: $toggle1)
+                AppToggleRow(title: LocalizedStringKey(LumiUILocalization.string("Notifications")), systemImage: "bell", isOn: $toggle1)
                 AppToggleRow(
-                    title: "Dark Mode",
+                    title: LocalizedStringKey(LumiUILocalization.string("Dark Mode")),
                     description: "Use dark appearance",
                     isOn: $toggle2
                 )

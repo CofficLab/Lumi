@@ -1679,6 +1679,41 @@
         }
       }
     },
+    "Search clipboard history...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search clipboard history..."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索剪贴板历史…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索剪贴板历史…"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索剪贴板历史…"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索剪贴板历史…"
+          }
+        }
+      }
+    },
     "Search through clipboard history to find what you need": {
       "extractionState": "stale",
       "localizations": {

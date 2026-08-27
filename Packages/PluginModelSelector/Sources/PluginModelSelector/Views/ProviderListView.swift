@@ -72,7 +72,7 @@ struct ProviderListView: View {
             AppDivider()
 
             // Search
-            AppSearchBar(text: $searchText, placeholder: "Search providers")
+            AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search providers", bundle: .module)))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
 

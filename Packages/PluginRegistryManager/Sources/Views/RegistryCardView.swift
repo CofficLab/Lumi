@@ -65,7 +65,7 @@ public struct RegistryCard: View {
                         .onTapGesture {
                             NSPasteboard.general.clearContents()
                             NSPasteboard.general.setString(currentUrl, forType: .string)
-                            viewModel.showToast(message: "Copied to clipboard")
+                            viewModel.showToast(message: LumiPluginLocalization.string("Copied to clipboard", bundle: .module))
                         }
                 }
 

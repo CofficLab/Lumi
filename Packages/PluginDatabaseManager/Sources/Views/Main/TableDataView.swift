@@ -44,12 +44,12 @@ struct TableDataView: View {
                 .font(.appMicroEmphasized)
                 .foregroundStyle(theme.textPrimary)
 
-            AppIconButton(systemImage: "arrow.uturn.backward", label: "Undo", size: .compact) {
+            AppIconButton(systemImage: "arrow.uturn.backward", label: LumiPluginLocalization.string("Undo", bundle: .module), size: .compact) {
                 viewModel.undoChange()
             }
             .disabled(cm?.canUndo != true)
 
-            AppIconButton(systemImage: "arrow.uturn.forward", label: "Redo", size: .compact) {
+            AppIconButton(systemImage: "arrow.uturn.forward", label: LumiPluginLocalization.string("Redo", bundle: .module), size: .compact) {
                 viewModel.redoChange()
             }
             .disabled(cm?.canRedo != true)
@@ -164,7 +164,7 @@ struct TableDataView: View {
         let currentPage = min(viewModel.tablePage + 1, pageCount)
 
         return HStack(spacing: 8) {
-            AppIconButton(systemImage: "chevron.left", label: "Prev", size: .compact) {
+            AppIconButton(systemImage: "chevron.left", label: LumiPluginLocalization.string("Prev", bundle: .module), size: .compact) {
                 Task { await viewModel.prevPage() }
             }
             .disabled(viewModel.tablePage == 0)
@@ -173,7 +173,7 @@ struct TableDataView: View {
                 .font(.appMicro)
                 .foregroundStyle(.secondary)
 
-            AppIconButton(systemImage: "chevron.right", label: "Next", size: .compact) {
+            AppIconButton(systemImage: "chevron.right", label: LumiPluginLocalization.string("Next", bundle: .module), size: .compact) {
                 Task { await viewModel.nextPage() }
             }
             .disabled(currentPage >= pageCount)

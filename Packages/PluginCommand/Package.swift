@@ -11,6 +11,7 @@ let package = Package(
         .package(path: "../ProviderCommand"),
         .package(path: "../ProviderStorage"),
         .package(path: "../LumiUI"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
@@ -20,8 +21,10 @@ let package = Package(
                 .product(name: "ProviderCommand", package: "ProviderCommand"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
             ],
-            path: "Sources/PluginCommand"
+            path: "Sources/PluginCommand",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(name: "PluginCommandTests", dependencies: ["PluginCommand"]),
     ]

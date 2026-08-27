@@ -63,9 +63,9 @@ public extension GlassKeyValueRow {
 
 #Preview {
     VStack(spacing: 12) {
-        GlassKeyValueRow(label: "Status", value: "Active")
-        GlassKeyValueRow(label: "Model", value: "gpt-4o", valueColor: .blue)
-        GlassKeyValueRow(label: "Tokens", value: "1,234", isValueSelectable: false)
+        GlassKeyValueRow(label: LumiUILocalization.string("Status"), value: "Active")
+        GlassKeyValueRow(label: LumiUILocalization.string("Model"), value: "gpt-4o", valueColor: .blue)
+        GlassKeyValueRow(label: LumiUILocalization.string("Tokens"), value: "1,234", isValueSelectable: false)
     }
     .padding()
     .frame(width: 300)
