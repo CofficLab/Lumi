@@ -9,7 +9,6 @@ public enum ConversationToolState: String, Codable, Sendable {
     case suspended
     case completed
 }
-
 /// 当前会话是否有等待用户处理的授权请求。
 public enum ConversationAuthorizationState: String, Codable, Sendable {
     case none
@@ -57,7 +56,6 @@ public struct ConversationStateSnapshot: Equatable, Sendable {
         self.lastError = lastError
     }
 }
-
 @MainActor
 public enum ConversationStateEvent: Sendable, Equatable {
     case updated(UUID)
@@ -88,10 +86,4 @@ public extension ConversationStateProviding {
     ) -> any ConversationStateObserverHandle {
         NoopConversationStateObserverHandle()
     }
-}
-
-@MainActor
-public final class NoopConversationStateObserverHandle: ConversationStateObserverHandle {
-    public init() {}
-    public func cancel() {}
 }
