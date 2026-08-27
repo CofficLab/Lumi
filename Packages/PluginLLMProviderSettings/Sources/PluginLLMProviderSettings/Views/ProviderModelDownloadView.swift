@@ -56,46 +56,44 @@ struct ProviderModelDownloadView: View {
     }
 
     private var cacheRow: some View {
-        HStack {
-            Text("缓存占用")
-                .font(.appCaption)
-                .foregroundStyle(theme.textSecondary)
-            Spacer()
-            Text(ByteCountFormatter.string(fromByteCount: downloadState.cacheSizeBytes, countStyle: .file))
-                .font(.appCaption)
-                .foregroundStyle(theme.textPrimary)
+        AppSettingsRow(horizontalPadding: 10, verticalPadding: 8) {
+            HStack {
+                Image(systemName: "internaldrive")
+                    .font(.appCallout)
+                    .foregroundStyle(theme.primary)
+                    .frame(width: 24)
+                Text("缓存占用")
+                    .font(.appBody)
+                    .foregroundStyle(theme.textPrimary)
+                Spacer()
+                Text(ByteCountFormatter.string(fromByteCount: downloadState.cacheSizeBytes, countStyle: .file))
+                    .font(.appCaption)
+                    .foregroundStyle(theme.textSecondary)
             #if os(macOS)
-            Button {
-                NSWorkspace.shared.open(downloader.modelCacheDirectoryURL)
-            } label: {
-                Image(systemName: "folder")
-            }
-            .buttonStyle(.borderless)
-            .help("在访达中打开模型缓存目录")
+                AppIconButton(
+                    systemImage: "folder",
+                    label: "打开",
+                    tint: theme.primary,
+                    size: .compact
+                ) {
+                    NSWorkspace.shared.open(downloader.modelCacheDirectoryURL)
+                }
             #endif
+            }
         }
     }
 
     private var downloadSpeedRow: some View {
-        HStack {
-            Text("下载限速")
-                .font(.appCaption)
-                .foregroundStyle(theme.textSecondary)
-            Spacer()
-            Picker("下载限速", selection: $speedLimitBytes) {
-                Text("不限速").tag(0)
-                Text("512 KB/s").tag(512 * 1024)
-                Text("1 MB/s").tag(1024 * 1024)
-                Text("2 MB/s").tag(2 * 1024 * 1024)
-                Text("5 MB/s").tag(5 * 1024 * 1024)
-            }
-            .labelsHidden()
-            .pickerStyle(.menu)
-            .onChange(of: speedLimitBytes) { _, value in
-                downloader.setDownloadSpeedLimit(bytesPerSecond: value > 0 ? value : nil)
-            }
+        AppSettingsPickerRow("下载限速", systemImage: "speedometer", selection: $speedLimitBytes) {
+            Text("不限速").tag(0)
+            Text("512 KB/s").tag(512 * 1024)
+            Text("1 MB/s").tag(1024 * 1024)
+            Text("2 MB/s").tag(2 * 1024 * 1024)
+            Text("5 MB/s").tag(5 * 1024 * 1024)
         }
-        .padding(.bottom, 8)
+        .onChange(of: speedLimitBytes) { _, value in
+            downloader.setDownloadSpeedLimit(bytesPerSecond: value > 0 ? value : nil)
+        }
     }
 
     @ViewBuilder
@@ -105,62 +103,75 @@ struct ProviderModelDownloadView: View {
         let isCached = !isDownloading && !isPaused && downloadState.downloadedModelIDs.contains(model.id)
         let isSelected = isModelSelected(model.id)
 
-        VStack(alignment: .leading, spacing: 7) {
-            HStack(spacing: 10) {
-                Button {
-                    guard isCached else { return }
-                    onSelectModel(model.id)
-                } label: {
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(isSelected ? theme.primary : theme.textTertiary)
-                }
-                .buttonStyle(.plain)
-                .disabled(!isCached)
+        AppSettingsRow(
+            isSelected: isSelected,
+            isHighlighted: isDownloading || isPaused,
+            horizontalPadding: 10,
+            verticalPadding: 10
+        ) {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 10) {
+                    AppIconButton(
+                        systemImage: isSelected ? "checkmark.circle.fill" : "circle",
+                        tint: isSelected ? theme.primary : theme.textTertiary,
+                        size: .regular,
+                        isActive: isSelected
+                    ) {
+                        guard isCached else { return }
+                        onSelectModel(model.id)
+                    }
+                    .disabled(!isCached)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(model.displayName)
-                        .font(.appBody)
-                        .foregroundStyle(theme.textPrimary)
-                    Text(model.id)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(model.displayName)
+                            .font(.appBody)
+                            .foregroundStyle(theme.textPrimary)
+                        Text(model.id)
+                            .font(.appMicro)
+                            .foregroundStyle(theme.textSecondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    actionButtons(
+                        modelID: model.id,
+                        isDownloading: isDownloading,
+                        isPaused: isPaused,
+                        isCached: isCached
+                    )
+                }
+
+                if isDownloading || isPaused {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ProgressView(value: downloadState.progress.fractionCompleted)
+                            .tint(theme.primary)
+                        HStack(spacing: 6) {
+                            Image(systemName: isPaused ? "pause.circle.fill" : "arrow.down.circle.fill")
+                            Text(isPaused ? "已暂停" : "正在下载")
+                            if let fileName = downloadState.currentFileName {
+                                Text(fileName).lineLimit(1).truncationMode(.middle)
+                            }
+                            Spacer()
+                            Text("(Int(downloadState.progress.fractionCompleted * 100))%")
+                            if isDownloading, let speed = downloadState.progress.speedBytesPerSecond, speed > 0 {
+                                Text(ByteCountFormatter.string(fromByteCount: Int64(speed), countStyle: .file) + "/s")
+                            }
+                        }
                         .font(.appMicro)
                         .foregroundStyle(theme.textSecondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                actionButtons(modelID: model.id, isDownloading: isDownloading, isPaused: isPaused, isCached: isCached)
-            }
-
-            if isDownloading || isPaused {
-                VStack(alignment: .leading, spacing: 4) {
-                    ProgressView(value: downloadState.progress.fractionCompleted)
-                    HStack(spacing: 6) {
-                        Image(systemName: isPaused ? "pause.circle.fill" : "arrow.down.circle.fill")
-                        Text(isPaused ? "已暂停" : "正在下载")
-                        if let fileName = downloadState.currentFileName {
-                            Text(fileName).lineLimit(1).truncationMode(.middle)
-                        }
-                        Spacer()
-                        Text("\(Int(downloadState.progress.fractionCompleted * 100))%")
-                        if isDownloading, let speed = downloadState.progress.speedBytesPerSecond, speed > 0 {
-                            Text(ByteCountFormatter.string(fromByteCount: Int64(speed), countStyle: .file) + "/s")
-                        }
                     }
-                    .font(.appMicro)
-                    .foregroundStyle(theme.textSecondary)
+                    .padding(.leading, 34)
                 }
-                .padding(.leading, 30)
-            }
 
-            if errorModelID == model.id, let errorMessage {
-                Text(errorMessage)
-                    .font(.appMicro)
-                    .foregroundStyle(theme.error)
-                    .padding(.leading, 30)
+                if errorModelID == model.id, let errorMessage {
+                    Text(errorMessage)
+                        .font(.appMicro)
+                        .foregroundStyle(theme.error)
+                        .padding(.leading, 34)
+                }
             }
         }
-        .padding(.vertical, 8)
     }
 
     @ViewBuilder
@@ -171,28 +182,27 @@ struct ProviderModelDownloadView: View {
         isCached: Bool
     ) -> some View {
         if isCached {
-            Button("删除") { delete(modelID) }
-                .buttonStyle(.bordered)
-        } else if isDownloading {
-            Button { downloader.pauseDownload() } label: {
-                Image(systemName: "pause.fill")
+            AppButton("删除", systemImage: "trash", style: .destructive, size: .small) {
+                delete(modelID)
             }
-            .buttonStyle(.bordered)
+        } else if isDownloading {
+            AppButton(systemImage: "pause.fill", style: .tonal, size: .small) {
+                downloader.pauseDownload()
+            }
             .help("暂停下载")
         } else if isPaused {
-            Button { Task { await downloader.resumeDownload() } } label: {
-                Image(systemName: "play.fill")
+            AppButton(systemImage: "play.fill", style: .tonal, size: .small) {
+                Task { await downloader.resumeDownload() }
             }
-            .buttonStyle(.bordered)
             .help("继续下载")
-            Button { downloader.cancelDownload() } label: {
-                Image(systemName: "xmark")
+            AppButton(systemImage: "xmark", style: .ghost, size: .small) {
+                downloader.cancelDownload()
             }
-            .buttonStyle(.borderless)
             .help("取消下载")
         } else {
-            Button("下载") { startDownload(modelID) }
-                .buttonStyle(.borderedProminent)
+            AppButton("下载", systemImage: "arrow.down.circle", style: .primary, size: .small) {
+                startDownload(modelID)
+            }
         }
     }
 

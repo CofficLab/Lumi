@@ -71,21 +71,14 @@ public struct ProviderDetailView: View {
                 Text(info.displayName)
                     .font(.appTitle)
                 if isLocal {
-                    Text("本地")
-                        .font(.appMicro)
-                        .foregroundStyle(theme.textSecondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(theme.divider.opacity(0.5), in: Capsule())
+                    AppTag("本地", systemImage: "cpu")
                 }
                 Spacer()
                 if let url = info.websiteURL {
                     Link(destination: url) {
-                        Label("访问官网", systemImage: "arrow.up.right.square")
-                            .font(.appCaption)
+                        AppTag("访问官网", systemImage: "arrow.up.right.square", style: .accent)
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(theme.primary)
                 }
             }
             if !info.description.isEmpty {
@@ -155,26 +148,20 @@ public struct ProviderDetailView: View {
             title: "可用模型",
             subtitle: isSelectedProvider ? "当前供应商已选中" : "点击模型以切换选中"
         ) {
-            VStack(spacing: 0) {
-                ForEach(Array(info.models.enumerated()), id: \.element.id) { index, model in
-                    modelRow(model)
-                    if index < info.models.count - 1 {
-                        AppDivider()
-                            .padding(.horizontal, 8)
-                    }
-                }
+            ForEach(info.models, id: \.id) { model in
+                modelRow(model)
             }
         }
     }
 
     private func modelRow(_ model: LLMModelInfo) -> some View {
         let isSelectedModel = isSelectedProvider && manager.selectedModel == model.id
-        return Button {
-            manager.select(providerID: info.id, model: model.id)
-        } label: {
+        return AppSettingsRow(isSelected: isSelectedModel, horizontalPadding: 10, verticalPadding: 10) {
             HStack(spacing: 10) {
                 Image(systemName: isSelectedModel ? "checkmark.circle.fill" : "circle")
+                    .font(.appCallout)
                     .foregroundStyle(isSelectedModel ? theme.primary : theme.textTertiary)
+                    .frame(width: 24)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.displayName)
@@ -189,16 +176,15 @@ public struct ProviderDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 if model.supportsVision {
-                    Label("视觉", systemImage: "eye")
-                        .font(.appMicro)
-                        .foregroundStyle(theme.textTertiary)
+                    AppTag("视觉", systemImage: "eye")
                 }
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 8)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            manager.select(providerID: info.id, model: model.id)
+        }
+        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - API Key Actions
