@@ -80,9 +80,11 @@ public struct SettingsView: View {
                 Text(selected.name)
             }
             Spacer()
-            AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", size: .small) {
+#if DEBUG
+            AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
                 openDataDirectory()
             }
+#endif
         }
         .font(.appCaption)
         .foregroundStyle(theme.textSecondary)

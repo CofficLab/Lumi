@@ -10,6 +10,7 @@ public struct AppButton: View {
         case secondary
         case ghost
         case tonal
+        case warning
         case destructive
     }
 
@@ -198,6 +199,8 @@ public struct AppButton: View {
             return theme.primary
         case .tonal:
             return theme.textSecondary
+        case .warning:
+            return .yellow
         case .destructive:
             return theme.error
         }
@@ -222,6 +225,9 @@ public struct AppButton: View {
             case .tonal:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .fill(isEffectivelyHovered ? theme.textSecondary.opacity(0.18) : theme.textSecondary.opacity(0.10))
+            case .warning:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .fill(isEffectivelyHovered ? Color.yellow.opacity(0.18) : Color.yellow.opacity(0.10))
             case .destructive:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .fill(isEffectivelyHovered ? theme.error.opacity(0.35) : theme.error.opacity(0.22))
@@ -246,6 +252,12 @@ public struct AppButton: View {
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .stroke(
                         isEffectivelyHovered ? theme.primary.opacity(0.45) : theme.primary.opacity(0.25),
+                        lineWidth: 1
+                    )
+            case .warning:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .stroke(
+                        isEffectivelyHovered ? Color.yellow.opacity(0.55) : Color.yellow.opacity(0.35),
                         lineWidth: 1
                     )
             case .destructive:
