@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "(Int(downloadState.progress.fractionCompleted * 100))%" : {
+
+    },
     "%lld 个云端供应商" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -106,6 +109,18 @@
         }
       }
     },
+    "1 MB/s" : {
+
+    },
+    "2 MB/s" : {
+
+    },
+    "5 MB/s" : {
+
+    },
+    "512 KB/s" : {
+
+    },
     "Delete API Key" : {
       "localizations" : {
         "en" : {
@@ -209,6 +224,21 @@
         }
       }
     },
+    "下载" : {
+
+    },
+    "下载限速" : {
+
+    },
+    "不限速" : {
+
+    },
+    "删除" : {
+
+    },
+    "取消下载" : {
+
+    },
     "已保存" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -243,6 +273,9 @@
           }
         }
       }
+    },
+    "已暂停" : {
+
     },
     "搜索供应商" : {
       "extractionState" : "manual",
@@ -279,6 +312,9 @@
         }
       }
     },
+    "暂停下载" : {
+
+    },
     "本地" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -314,6 +350,9 @@
         }
       }
     },
+    "正在下载" : {
+
+    },
     "视觉" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -348,6 +387,12 @@
           }
         }
       }
+    },
+    "继续下载" : {
+
+    },
+    "缓存占用" : {
+
     },
     "访问官网" : {
       "extractionState" : "manual",
