@@ -27,7 +27,7 @@ struct NoConversationSelectedView: View {
         VStack(spacing: 16) {
             Image(systemName: "square.and.pencil").font(.system(size: 48, weight: .light)).foregroundColor(theme.textSecondary.opacity(0.5))
             if let project { projectTitle(project) } else {
-                Text("How can I help you today?").font(.system(size: 18, weight: .semibold)).foregroundStyle(theme.textPrimary)
+                Text(LumiPluginLocalization.string("How can I help you today?")).font(.system(size: 18, weight: .semibold)).foregroundStyle(theme.textPrimary)
             }
             if !suggestions.isEmpty { PromptSuggestionFlow(suggestions: suggestions, services: services) { importingFolder = true } }
         }
