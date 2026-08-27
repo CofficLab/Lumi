@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import ProviderWorkspace
 
@@ -19,7 +20,8 @@ import ProviderWorkspace
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any RootViewProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
-public protocol RootViewProviding: AnyObject {
+public protocol RootViewProviding: AnyObject, ObservableObject
+    where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 根视图叠层贡献（例如全局搜索、预览浮层）。后注册项显示在更上层。
     var overlays: [RootOverlayItem] { get }
 

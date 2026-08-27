@@ -92,12 +92,12 @@ struct ProviderRootViewTests {
 
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
-        final class CustomRootView: RootViewProviding {
-            var toolbarView: AnyView?
-            var activityBarView: AnyView?
-            var railView: AnyView?
-            var contentView: AnyView?
-            var trailingPane: RootTrailingPane?
+        @MainActor final class CustomRootView: RootViewProviding {
+            @Published var toolbarView: AnyView?
+            @Published var activityBarView: AnyView?
+            @Published var railView: AnyView?
+            @Published var contentView: AnyView?
+            @Published var trailingPane: RootTrailingPane?
 
             func setToolbarView(_ view: AnyView?) {
                 toolbarView = view

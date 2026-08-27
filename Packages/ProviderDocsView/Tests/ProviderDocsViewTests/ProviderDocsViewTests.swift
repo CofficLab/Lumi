@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import Testing
 @testable import ProviderDocsView
@@ -53,9 +54,9 @@ struct ProviderDocsViewTests {
 
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
-        final class CustomDocsView: DocsViewProviding {
-            var aboutEntries: [DocsEntry] = []
-            var manualEntries: [DocsEntry] = []
+        @MainActor final class CustomDocsView: DocsViewProviding {
+            @Published var aboutEntries: [DocsEntry] = []
+            @Published var manualEntries: [DocsEntry] = []
 
             func replaceAboutEntries(_ entries: [DocsEntry]) {
                 aboutEntries = entries

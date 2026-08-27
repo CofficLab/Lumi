@@ -28,6 +28,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         didSet {
             guard selectedConversationID != oldValue else { return }
             notifySelectedConversationObservers()
+            notifyConversationObservers(.selected(selectedConversationID))
         }
     }
 
@@ -166,6 +167,14 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
     /// 当前注册的选中对话观察者集合（弱引用持有令牌：外部释放令牌后自动失效）。
     var selectedConversationObservers: [WeakSelectedConversationObserver] = []
+    var conversationObservers: [WeakConversationObserver] = []
+
+    @discardableResult
+    public func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle {
+        let handle = ConversationObserverHandleImpl(owner: self, callback: callback)
+        conversationObservers.append(WeakConversationObserver(handle))
+        return handle
+    }
 
     /// 从集合中移除指定观察者（供令牌 cancel 调用）。
     fileprivate func removeSelectedConversationObserver(_ handle: SelectedConversationObserverHandle) {
@@ -181,6 +190,18 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         let selectedID = selectedConversationID
         for observer in observers {
             observer.handle?.invoke(selectedID)
+        }
+    }
+
+    fileprivate func removeConversationObserver(_ handle: ConversationObserverHandleImpl) {
+        conversationObservers.removeAll { $0.handle === handle }
+    }
+
+    func notifyConversationObservers(_ event: ConversationEvent) {
+        conversationObservers.removeAll { $0.handle == nil }
+        let observers = conversationObservers
+        for observer in observers {
+            observer.handle?.invoke(event)
         }
     }
 

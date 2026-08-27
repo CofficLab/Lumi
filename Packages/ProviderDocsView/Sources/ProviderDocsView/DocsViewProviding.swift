@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 // MARK: - Docs Entry
@@ -40,7 +41,8 @@ public struct DocsEntry: Identifiable {
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any DocsViewProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
-public protocol DocsViewProviding: AnyObject {
+public protocol DocsViewProviding: AnyObject, ObservableObject
+    where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 全部「关于」条目。
     var aboutEntries: [DocsEntry] { get }
 

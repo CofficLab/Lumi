@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 /// 设置视图提供能力协议
@@ -14,7 +15,8 @@ import SwiftUI
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any SettingViewProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
-public protocol SettingViewProviding: AnyObject {
+public protocol SettingViewProviding: AnyObject, ObservableObject
+    where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 当前已注入的全部设置入口项。
     var entries: [SettingEntryItem] { get }
     var projectDetailSections: [ProjectDetailSectionItem] { get }

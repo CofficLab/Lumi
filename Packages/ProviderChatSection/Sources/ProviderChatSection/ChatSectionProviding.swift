@@ -1,4 +1,5 @@
 import ProviderConversation
+import Combine
 import SwiftUI
 
 /// 聊天分区宿主能力协议。
@@ -7,7 +8,8 @@ import SwiftUI
 /// stack+bottomFixed / action bar），插件通过它注册内容区与各栏贡献；
 /// 宿主通过 `makeChatSectionView()` 渲染整个聊天分区。
 @MainActor
-public protocol ChatSectionProviding: AnyObject {
+public protocol ChatSectionProviding: AnyObject, ObservableObject
+    where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 聊天分区整体是否可见（由容器切换驱动）。
     var isVisible: Bool { get }
 

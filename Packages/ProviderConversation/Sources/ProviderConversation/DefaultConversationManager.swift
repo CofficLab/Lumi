@@ -25,6 +25,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         didSet {
             guard selectedConversationID != oldValue else { return }
             notifySelectedConversationObservers()
+            notifyConversationObservers(.selected(selectedConversationID))
         }
     }
     @Published public private(set) var currentTitle: String = "No conversation"
@@ -206,6 +207,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
             cache(conversation)
             selectedConversationID = id
             updateCurrentTitle()
+            notifyConversationObservers(.created(id))
         }
         if Self.verbose {
             Self.logger.info("\(self.t)created conversation id=\(id.uuidString), title=\(normalizedTitle ?? "nil"), parent=\(parentConversationID?.uuidString ?? "nil"), project=\(projectPath ?? "nil"), provider=\(providerID ?? "nil"), model=\(modelName ?? "nil")")
@@ -230,6 +232,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
     }
 
     public func deleteConversation(id: UUID) {
+        guard conversations.contains(where: { $0.id == id }) else { return }
         conversations.removeAll { $0.id == id }
 
         if selectedConversationID == id {
@@ -239,6 +242,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         if Self.verbose {
             Self.logger.info("\(self.t)deleted conversation \(id.uuidString), remaining=\(self.conversations.count)")
         }
+        notifyConversationObservers(.deleted(id))
     }
 
     // MARK: - Selected Conversation Observation
@@ -256,6 +260,15 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
     /// 下次广播时清理已失效的弱引用。
     private var selectedConversationObservers: [WeakSelectedConversationObserver] = []
 
+    private var conversationObservers: [WeakConversationObserver] = []
+
+    @discardableResult
+    public func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle {
+        let handle = ConversationObserverHandleImpl(owner: self, callback: callback)
+        conversationObservers.append(WeakConversationObserver(handle))
+        return handle
+    }
+
     /// 从集合中移除指定观察者（供令牌的 cancel 调用）。
     fileprivate func removeSelectedConversationObserver(_ handle: SelectedConversationObserverHandle) {
         selectedConversationObservers.removeAll { $0.handle === handle }
@@ -272,6 +285,18 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         }
     }
 
+    fileprivate func removeConversationObserver(_ handle: ConversationObserverHandleImpl) {
+        conversationObservers.removeAll { $0.handle === handle }
+    }
+
+    private func notifyConversationObservers(_ event: ConversationEvent) {
+        conversationObservers.removeAll { $0.handle == nil }
+        let observers = conversationObservers
+        for observer in observers {
+            observer.handle?.invoke(event)
+        }
+    }
+
     public func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool {
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
             if Self.verbose {
@@ -281,6 +306,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         }
         let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let storedTitle = normalized.isEmpty ? nil : normalized
+        guard conversations[index].title != storedTitle else { return true }
         conversations[index].title = storedTitle
 
         if conversationID == selectedConversationID {
@@ -289,6 +315,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         if Self.verbose {
             Self.logger.debug("\(self.t)updated title for \(conversationID.uuidString): \(storedTitle ?? "nil")")
         }
+        notifyConversationObservers(.updated(conversationID))
         return true
     }
 
@@ -302,6 +329,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         conversations[index].lastMessageAt = messageDate
         conversations[index].updatedAt = Date()
         conversations = conversations
+        notifyConversationObservers(.markedActive(id))
         if Self.verbose {
             Self.logger.debug("\(self.t)marked conversation \(id.uuidString) active")
         }
@@ -329,12 +357,16 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
               let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].providerID = id
         conversations[index].modelName = model
+        conversations = conversations
+        notifyConversationObservers(.providerChanged(conversationID))
     }
 
     // MARK: - Verbosity
 
     public func setGlobalVerbosity(_ verbosity: ResponseVerbosity) {
+        guard globalVerbosity != verbosity else { return }
         globalVerbosity = verbosity
+        notifyConversationObservers(.verbosityChanged(nil))
     }
 
     public func verbosity(for conversationID: UUID?) -> ResponseVerbosity {
@@ -350,12 +382,15 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].verbosity = verbosity
         conversations = conversations
+        notifyConversationObservers(.verbosityChanged(conversationID))
     }
 
     // MARK: - Reasoning Effort
 
     public func setGlobalReasoningEffort(_ reasoningEffort: ReasoningEffort?) {
+        guard globalReasoningEffort != reasoningEffort else { return }
         globalReasoningEffort = reasoningEffort
+        notifyConversationObservers(.reasoningChanged(nil))
     }
 
     public func reasoningEffort(for conversationID: UUID?) -> ReasoningEffort {
@@ -376,6 +411,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].reasoningEffort = reasoningEffort
         conversations = conversations
+        notifyConversationObservers(.reasoningChanged(conversationID))
     }
 
     public func clearReasoningEffort(for conversationID: UUID?) {
@@ -386,12 +422,15 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].reasoningEffort = nil
         conversations = conversations
+        notifyConversationObservers(.reasoningChanged(conversationID))
     }
 
     // MARK: - Automation Level
 
     public func setGlobalAutomationLevel(_ automationLevel: AutomationLevel) {
+        guard globalAutomationLevel != automationLevel else { return }
         globalAutomationLevel = automationLevel
+        notifyConversationObservers(.automationChanged(nil))
     }
 
     public func automationLevel(for conversationID: UUID?) -> AutomationLevel {
@@ -407,6 +446,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].automationLevel = automationLevel
         conversations = conversations
+        notifyConversationObservers(.automationChanged(conversationID))
     }
 
     // MARK: - Language
@@ -417,7 +457,9 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
     }
 
     public func setGlobalLanguage(_ language: ConversationLanguage) {
+        guard globalLanguage != language else { return }
         globalLanguage = language
+        notifyConversationObservers(.languageChanged(nil))
     }
 
     public func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?) {
@@ -427,6 +469,8 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         }
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].language = language
+        conversations = conversations
+        notifyConversationObservers(.languageChanged(conversationID))
     }
 
     // MARK: - Private
@@ -507,6 +551,38 @@ private final class WeakSelectedConversationObserver {
     fileprivate weak var handle: SelectedConversationObserverHandleImpl?
 
     init(_ handle: SelectedConversationObserverHandleImpl) {
+        self.handle = handle
+    }
+}
+
+@MainActor
+private final class ConversationObserverHandleImpl: ConversationObserverHandle {
+    private weak var owner: DefaultConversationManager?
+    private let callback: (ConversationEvent) -> Void
+    private var isCancelled = false
+
+    init(owner: DefaultConversationManager, callback: @escaping (ConversationEvent) -> Void) {
+        self.owner = owner
+        self.callback = callback
+    }
+
+    func cancel() {
+        guard !isCancelled else { return }
+        isCancelled = true
+        owner?.removeConversationObserver(self)
+    }
+
+    fileprivate func invoke(_ event: ConversationEvent) {
+        guard !isCancelled else { return }
+        callback(event)
+    }
+}
+
+@MainActor
+private final class WeakConversationObserver {
+    fileprivate weak var handle: ConversationObserverHandleImpl?
+
+    init(_ handle: ConversationObserverHandleImpl) {
         self.handle = handle
     }
 }

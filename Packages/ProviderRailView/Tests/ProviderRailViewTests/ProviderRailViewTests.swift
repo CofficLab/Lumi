@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import Testing
 @testable import ProviderRailView
@@ -138,8 +139,8 @@ struct ProviderRailViewTests {
 
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
-        final class CustomRailView: RailViewProviding {
-            var tabs: [RailTabItem] = []
+        @MainActor final class CustomRailView: RailViewProviding {
+            @Published var tabs: [RailTabItem] = []
 
             func registerTabs(_ tabs: [RailTabItem]) {
                 self.tabs = tabs

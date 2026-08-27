@@ -211,6 +211,29 @@ final class ProviderConversationTests: XCTestCase {
         XCTAssertEqual(received.count, 1, "令牌释放（deinit）后应自动注销")
     }
 
+    func testConversationObserverReceivesSemanticChanges() throws {
+        let manager = DefaultConversationManager()
+        var events: [ConversationEvent] = []
+        let token = manager.addConversationObserver { events.append($0) }
+
+        let id = try manager.createConversation(title: "A", projectPath: nil, providerID: nil, modelName: nil)
+        XCTAssertTrue(events.contains(.created(id)))
+
+        _ = manager.updateConversationTitle("B", for: id)
+        manager.setGlobalAutomationLevel(.autonomous)
+        manager.setAutomationLevel(.chat, for: id)
+        manager.markConversationActive(id: id, messageDate: Date())
+        manager.deleteConversation(id: id)
+
+        XCTAssertTrue(events.contains(.updated(id)))
+        XCTAssertTrue(events.contains(.automationChanged(nil)))
+        XCTAssertTrue(events.contains(.automationChanged(id)))
+        XCTAssertTrue(events.contains(.markedActive(id)))
+        XCTAssertTrue(events.contains(.deleted(id)))
+
+        token.cancel()
+    }
+
     func testMultipleSelectedConversationObservers() throws {
         let manager = DefaultConversationManager()
         var firstCount = 0

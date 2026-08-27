@@ -115,6 +115,13 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     @discardableResult
     func addSelectedConversationObserver(_ callback: @escaping (UUID?) -> Void) -> any SelectedConversationObserverHandle
 
+    /// 注册对话领域事件观察者。
+    ///
+    /// 事件只描述语义变化，适合需要区分创建、删除、偏好修改等场景的消费者；
+    /// 一般 UI 刷新仍应使用 `ObservableObject.objectWillChange`。
+    @discardableResult
+    func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle
+
     /// 删除对话
     func deleteConversation(id: UUID)
 
@@ -208,6 +215,10 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
 /// Lightweight compatibility defaults for providers and test doubles that do
 /// not need paginated conversation storage.
 public extension ConversationManaging {
+    func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle {
+        NoopConversationObserverHandle()
+    }
+
     var sortedConversations: [ConversationSummary] { conversations }
     var isLoadingConversations: Bool { false }
 

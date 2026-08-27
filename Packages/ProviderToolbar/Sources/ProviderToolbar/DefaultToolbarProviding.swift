@@ -1,3 +1,4 @@
+import Combine
 import LumiUI
 import SwiftUI
 
@@ -16,8 +17,8 @@ import AppKit
 /// - 背景使用 `AppToolbarContainer(style: .toolbar)`、前景 `theme.textPrimary`
 ///   （与旧版 `AppTitleToolbar` 一致）。
 @MainActor
-public final class DefaultToolbarProviding: ToolbarProviding {
-    public private(set) var toolbarItems: [ToolbarItem] = []
+public final class DefaultToolbarProviding: ToolbarProviding, ObservableObject {
+    @Published public private(set) var toolbarItems: [ToolbarItem] = []
 
     public init() {}
 

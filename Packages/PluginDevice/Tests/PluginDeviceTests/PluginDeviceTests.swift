@@ -1,3 +1,4 @@
+import Combine
 import KernelCore
 import ProviderActivityBar
 import ProviderContentView
@@ -86,8 +87,8 @@ struct PluginDeviceTests {
 
     @Test("ActivityBar 激活设备入口时切换主内容")
     func activityBarActivationSetsContentView() throws {
-        final class TrackingContentView: ContentViewProviding {
-            var setCount = 0
+        @MainActor final class TrackingContentView: ContentViewProviding {
+            @Published var setCount = 0
 
             func setContentView(_ view: AnyView?) {
                 if view != nil { setCount += 1 }

@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 /// Rail（侧边栏）视图提供能力协议
@@ -14,7 +15,8 @@ import SwiftUI
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any RailViewProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
-public protocol RailViewProviding: AnyObject {
+public protocol RailViewProviding: AnyObject, ObservableObject
+    where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 当前已注入的全部 Rail tab 项。
     var tabs: [RailTabItem] { get }
 

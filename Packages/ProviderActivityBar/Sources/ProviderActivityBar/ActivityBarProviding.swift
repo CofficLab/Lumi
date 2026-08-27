@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 /// ActivityBar 视图提供能力协议
@@ -12,7 +13,8 @@ import SwiftUI
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any ActivityBarProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
-public protocol ActivityBarProviding: AnyObject {
+public protocol ActivityBarProviding: AnyObject, ObservableObject
+    where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 当前已注入的全部 ActivityBar 项。
     var items: [ActivityBarItem] { get }
 

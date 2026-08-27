@@ -70,6 +70,7 @@ extension ConversationManager {
             updateCurrentTitle()
             persistSelectedConversationID()
             notifySelectedConversationChanged()
+            notifyConversationObservers(.created(id))
         }
 
         // Persist first, then notify the list. Otherwise the list may query the
@@ -150,6 +151,7 @@ extension ConversationManager {
             conversations[index].lastMessageAt = messageDate
             conversations[index].updatedAt = Date()
             notifyConversationsChanged()
+            notifyConversationObservers(.markedActive(id))
         }
 
         Task {
@@ -166,7 +168,9 @@ extension ConversationManager {
             Self.logger.info("\(Self.t)Deleting conversation \(id.uuidString.prefix(8))...")
         }
 
+        guard conversations.contains(where: { $0.id == id }) else { return }
         conversations.removeAll { $0.id == id }
+        notifyConversationObservers(.deleted(id))
 
         if selectedConversationID == id {
             selectedConversationID = conversations.first?.id
@@ -202,6 +206,7 @@ extension ConversationManager {
             updateCurrentTitle()
         }
         notifyConversationsChanged()
+        notifyConversationObservers(.updated(conversationID))
         eventBus?.publishAsLegacy(
             ConversationTitleDidChangeEvent(conversationID: conversationID),
             notificationName: .lumiConversationTitleDidChange,

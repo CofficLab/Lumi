@@ -60,8 +60,8 @@ struct ProviderContentViewTests {
 
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
-        final class CustomContentView: ContentViewProviding {
-            var content: AnyView?
+        @MainActor final class CustomContentView: ContentViewProviding {
+            @Published var content: AnyView?
 
             func setContentView(_ view: AnyView?) {
                 content = view

@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import Testing
 @testable import ProviderActivityBar
@@ -123,8 +124,8 @@ struct ProviderActivityBarTests {
 
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
-        final class CustomActivityBar: ActivityBarProviding {
-            var items: [ActivityBarItem] = []
+        @MainActor final class CustomActivityBar: ActivityBarProviding {
+            @Published var items: [ActivityBarItem] = []
 
             func registerItems(_ items: [ActivityBarItem]) {
                 self.items = items

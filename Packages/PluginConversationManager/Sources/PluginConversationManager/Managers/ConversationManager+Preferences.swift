@@ -27,6 +27,8 @@ extension ConversationManager {
         }
         conversations[index].providerID = id
         conversations[index].modelName = model
+        conversations = conversations
+        notifyConversationObservers(.providerChanged(conversationID))
 
         // Persist to database async
         Task {
@@ -41,7 +43,9 @@ extension ConversationManager {
     // MARK: - Verbosity
 
     public func setGlobalVerbosity(_ verbosity: ResponseVerbosity) {
+        guard globalVerbosity != verbosity else { return }
         globalVerbosity = verbosity
+        notifyConversationObservers(.verbosityChanged(nil))
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setGlobalVerbosity: verbosity=\(verbosity.rawValue)")
@@ -67,6 +71,7 @@ extension ConversationManager {
         // （消息列表、工具栏等）即时刷新：消息列表会据此重新加载（工具消息的显隐）
         // 并注入新的 verbosity 环境值。
         conversations = conversations
+        notifyConversationObservers(.verbosityChanged(conversationID))
         notifyConversationsChanged()
 
         Task {
@@ -81,7 +86,9 @@ extension ConversationManager {
     // MARK: - Reasoning Effort
 
     public func setGlobalReasoningEffort(_ reasoningEffort: ReasoningEffort?) {
+        guard globalReasoningEffort != reasoningEffort else { return }
         globalReasoningEffort = reasoningEffort
+        notifyConversationObservers(.reasoningChanged(nil))
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setGlobalReasoningEffort: effort=\(reasoningEffort?.rawValue ?? "off")")
@@ -104,6 +111,7 @@ extension ConversationManager {
         }
         conversations[index].reasoningEffort = reasoningEffort
         conversations = conversations
+        notifyConversationObservers(.reasoningChanged(conversationID))
         notifyConversationsChanged()
 
         Task {
@@ -131,6 +139,7 @@ extension ConversationManager {
         }
         conversations[index].reasoningEffort = nil
         conversations = conversations
+        notifyConversationObservers(.reasoningChanged(conversationID))
         notifyConversationsChanged()
 
         Task {
@@ -145,7 +154,9 @@ extension ConversationManager {
     // MARK: - Automation Level
 
     public func setGlobalAutomationLevel(_ automationLevel: AutomationLevel) {
+        guard globalAutomationLevel != automationLevel else { return }
         globalAutomationLevel = automationLevel
+        notifyConversationObservers(.automationChanged(nil))
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setGlobalAutomationLevel: level=\(automationLevel.rawValue)")
@@ -168,6 +179,7 @@ extension ConversationManager {
         }
         conversations[index].automationLevel = automationLevel
         conversations = conversations
+        notifyConversationObservers(.automationChanged(conversationID))
         notifyConversationsChanged()
 
         Task {
@@ -189,7 +201,9 @@ extension ConversationManager {
     }
 
     public func setGlobalLanguage(_ language: ConversationLanguage) {
+        guard globalLanguage != language else { return }
         globalLanguage = language
+        notifyConversationObservers(.languageChanged(nil))
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setGlobalLanguage: language=\(language.rawValue)")
@@ -204,6 +218,8 @@ extension ConversationManager {
             return
         }
         conversations[index].language = language
+        conversations = conversations
+        notifyConversationObservers(.languageChanged(conversationID))
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setLanguage: conversation=\(conversationID.uuidString.prefix(8)), language=\(language.rawValue)")
