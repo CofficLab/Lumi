@@ -51,6 +51,7 @@ import PluginConversationStats
 import PluginConversationNew
 import PluginConversationPendingMessage
 import PluginConversationTitle
+import PluginConversationState
 import PluginDevice
 import PluginDiskManager
 import PluginNetworkManager
@@ -169,6 +170,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationSpeedPlugin(),
             ConversationAgentTurnCountPlugin(),
             ConversationTitlePlugin(),
+            ConversationStatePlugin(),
             ConversationPendingMessagePlugin(),
             ConversationForkPlugin(),
             AskUserPlugin(),
