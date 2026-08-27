@@ -6,11 +6,11 @@ import Testing
 @MainActor
 @Suite("ChatInputEditorView")
 struct ChatInputEditorViewTests {
-    @Test("active turn keeps both queue send and stop controls available")
-    func activeTurnKeepsQueueSendAffordance() {
+    @Test("active turn only shows the stop control")
+    func activeTurnOnlyShowsStop() {
         let state = SendActionBarState(isSending: true, canSend: true)
 
-        #expect(state.showsSendButton)
+        #expect(!state.showsSendButton)
         #expect(state.showsStopButton)
         #expect(state.canSend)
     }

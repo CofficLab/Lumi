@@ -1,14 +1,10 @@
 import Foundation
 
-/// Keeps the queue affordance visible while a turn is running.
-///
-/// Sending another non-empty draft during an active turn enqueues it in
-/// `MessageSender`; the stop control is an additional action, not a replacement
-/// for the send control.
+/// Describes the mutually exclusive send/stop controls for the action bar.
 struct SendActionBarState {
     var isSending: Bool
     var canSend: Bool
 
-    var showsSendButton: Bool { true }
+    var showsSendButton: Bool { !isSending }
     var showsStopButton: Bool { isSending }
 }
