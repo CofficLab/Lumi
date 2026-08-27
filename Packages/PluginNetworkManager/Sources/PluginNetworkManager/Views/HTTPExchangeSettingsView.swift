@@ -137,9 +137,11 @@ public struct HTTPExchangeSettingsView: View {
                     AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), systemImage: "arrow.clockwise", size: .small) {
                         Task { await reloadAsync() }
                     }
+#if DEBUG
                     AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", size: .small) {
                         NSWorkspace.shared.open(store.directory)
                     }
+#endif
                 }
 
                 requestActivity

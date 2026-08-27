@@ -1,3 +1,4 @@
+import AppKit
 import LumiUI
 import ProviderDocsView
 import SwiftUI
@@ -21,6 +22,9 @@ struct GeneralSettingsDetailView: View {
     var body: some View {
         AppSettingsContentScaffold(maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 24) {
+#if DEBUG
+                debugHeader
+#endif
                 onboardingSection
                 lumiSection
                 websiteSection
@@ -34,6 +38,20 @@ struct GeneralSettingsDetailView: View {
             }
         }
     }
+
+    // MARK: - Debug Header
+
+    #if DEBUG
+    private var debugHeader: some View {
+        HStack(spacing: 10) {
+            Spacer()
+            AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
+                openDataDirectory()
+            }
+        }
+        .font(.appCaption)
+    }
+    #endif
 
     // MARK: - 新手引导
 
@@ -190,6 +208,18 @@ struct GeneralSettingsDetailView: View {
             }
         }
     }
+
+    // MARK: - Debug Helpers
+
+    #if DEBUG
+    private func openDataDirectory() {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
+        guard let url = appSupport else { return }
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        NSWorkspace.shared.open(url)
+    }
+    #endif
 }
 
 // MARK: - Onboarding 通知

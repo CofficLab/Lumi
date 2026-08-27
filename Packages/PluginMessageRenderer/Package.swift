@@ -26,6 +26,7 @@ let package = Package(
             name: "PluginMessageRenderer",
             dependencies: [
                 "KernelCore",
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
                 "ProviderConversation",
                 "ProviderAgentLoop",
                 "ProviderMessage",

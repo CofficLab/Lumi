@@ -1,7 +1,9 @@
 import Foundation
 import KernelCore
 import KitAgentTool
+import KitSuperLog
 import LumiUI
+import os
 import ProviderAgentLoop
 import ProviderMessageRendering
 import ProviderToolManager
@@ -21,8 +23,12 @@ private struct ToolPermissionRequest: Codable {
 }
 
 @MainActor
-final class ToolApprovalBridge {
+final class ToolApprovalBridge: SuperLog {
     static let shared = ToolApprovalBridge()
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi.plugin.message-renderer",
+        category: "ToolApprovalBridge"
+    )
 
     private weak var agentLoop: (any AgentLoopProviding)?
     private weak var toolManager: (any ToolManagerProviding)?
@@ -32,11 +38,15 @@ final class ToolApprovalBridge {
     func start(kernel: KernelCoreContainer) {
         agentLoop = kernel.resolveProvider((any AgentLoopProviding).self)
         toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
+        Self.logger.info(
+            "\(Self.t)授权桥接已启动 agentLoop=\(self.agentLoop != nil, privacy: .public) toolManager=\(self.toolManager != nil, privacy: .public)"
+        )
     }
 
     func stop() {
         agentLoop = nil
         toolManager = nil
+        Self.logger.info("\(Self.t)授权桥接已停止")
     }
 
     fileprivate func permissionRequest(for toolCall: ToolCall) -> ToolPermissionRequest? {
@@ -46,11 +56,26 @@ final class ToolApprovalBridge {
                from: Data(content.utf8)
            ),
            request.kind == "permission" {
+            Self.logger.info(
+                "\(Self.t)使用工具结果中的授权请求 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public)"
+            )
             return request
         }
-        guard let risk = toolManager?.riskLevel(for: toolCall), risk.requiresPermission else {
+        guard let risk = toolManager?.riskLevel(for: toolCall) else {
+            Self.logger.warning(
+                "\(Self.t)无法判断工具风险，跳过授权界面 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public)"
+            )
             return nil
         }
+        guard risk.requiresPermission else {
+            Self.logger.debug(
+                "\(Self.t)工具风险不要求授权 tool=\(toolCall.name, privacy: .public) risk=\(risk.rawValue, privacy: .public)"
+            )
+            return nil
+        }
+        Self.logger.info(
+            "\(Self.t)根据风险等级生成授权请求 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) risk=\(risk.rawValue, privacy: .public)"
+        )
         return ToolPermissionRequest(
             toolCallID: "approval:\(toolCall.id)",
             kind: "permission",
@@ -61,9 +86,17 @@ final class ToolApprovalBridge {
     }
 
     func resolve(conversationID: UUID, toolCall: ToolCall, answer: String) {
-        guard let toolManager else { return }
+        guard let toolManager else {
+            Self.logger.error(
+                "\(Self.t)提交授权结果失败：ToolManager 不可用 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public)"
+            )
+            return
+        }
         let turnID = agentLoop?.currentTurnID(for: conversationID)
         let approved = Self.isApproval(answer)
+        Self.logger.info(
+            "\(Self.t)提交授权结果 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) approved=\(approved, privacy: .public)"
+        )
         Task { @MainActor in
             if approved {
                 _ = await toolManager.executeAuthorized(
@@ -92,21 +125,44 @@ final class ToolApprovalBridge {
 }
 
 /// 高风险工具审批的通用行渲染器。
-public struct ToolApprovalRowRenderer: ToolCallRowRenderer {
+public struct ToolApprovalRowRenderer: ToolCallRowRenderer, SuperLog {
     public static let id = "tool-approval-row"
     public static let priority = 120
+    public nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi.plugin.message-renderer",
+        category: "ToolApprovalRowRenderer"
+    )
 
     public init() {}
 
     public func canRender(toolCall: ToolCall) -> Bool {
-        toolCall.result == nil && toolCall.authorizationState == .pendingAuthorization
+        let hasNoResult = toolCall.result == nil
+        let isPending = toolCall.authorizationState == .pendingAuthorization
+        let shouldRender = hasNoResult && isPending
+        if shouldRender {
+            Self.logger.info(
+                "\(Self.t)命中授权界面渲染条件 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) authorization=\(toolCall.authorizationState.rawValue, privacy: .public) hasResult=\(toolCall.result != nil, privacy: .public)"
+            )
+        } else {
+            Self.logger.debug(
+                "\(Self.t)未命中授权界面渲染条件 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) authorization=\(toolCall.authorizationState.rawValue, privacy: .public) hasResult=\(toolCall.result != nil, privacy: .public)"
+            )
+        }
+        return shouldRender
     }
 
     @MainActor
     public func render(toolCall: ToolCall, message: ToolCallRowMessageContext) -> AnyView {
         guard let request = ToolApprovalBridge.shared.permissionRequest(for: toolCall) else {
+            Self.logger.error(
+                "\(Self.t)授权渲染器已命中但无法构造授权请求 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public)"
+            )
             return AnyView(Text("无法解析工具审批请求"))
         }
+
+        Self.logger.info(
+            "\(Self.t)显示授权界面 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) conversation=\(message.conversationId.uuidString, privacy: .public)"
+        )
 
         return AnyView(
             ToolApprovalPendingView(

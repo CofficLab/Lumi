@@ -79,9 +79,11 @@ public struct ConversationStoreSettingsView: View {
                         ProgressView()
                             .controlSize(.small)
                     }
+#if DEBUG
                     AppButton(L("Open Data Directory"), systemImage: "folder", size: .small) {
                         openDataDirectory()
                     }
+#endif
                 }
 
                 conversationActivity

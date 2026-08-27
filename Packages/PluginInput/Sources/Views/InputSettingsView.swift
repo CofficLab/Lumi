@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import LumiUI
 
@@ -11,6 +12,14 @@ public struct InputSettingsView: View {
             subtitle: LumiPluginLocalization.string("Automatically switch input sources per application.", bundle: .module),
             showHeader: false
         ) {
+#if DEBUG
+            HStack {
+                Spacer()
+                AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
+                    openDataDirectory()
+                }
+            }
+#endif
             AppCard {
                 AppSettingsSection(spacing: 12) {
                     AppSettingsToggleRow(
@@ -68,6 +77,21 @@ public struct InputSettingsView: View {
             }
         }
     }
+
+#if DEBUG
+    private func openDataDirectory() {
+        let directory = (InputPluginRuntimeBridge.dataRootDirectory
+            ?? InputPluginRuntimeBridge.fallbackRootDirectory)
+            .appendingPathComponent("InputPlugin", isDirectory: true)
+
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            NSWorkspace.shared.open(directory)
+        } catch {
+            assertionFailure("Unable to create input plugin data directory: \(error.localizedDescription)")
+        }
+    }
+#endif
 }
 
 #Preview("App") {

@@ -367,6 +367,7 @@
 			packageProductDependencies = (
 				F5FL200000000000000001 /* FactoryLumi */,
 				F5CBA1A13020000000425FF6 /* AppUpdatePlugin */,
+				LC2AFD000000000000000001 /* PluginLLMProviderCodex */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -447,6 +448,7 @@
 				AI2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryAppIconDesigner" */,
 				CD2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCADDesigner" */,
 				DB2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryDatabaseManager" */,
+				LC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -770,6 +772,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FactoryDatabaseManager;
 		};
+		LC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderCodex;
+		};
 		F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdate" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/PluginAppUpdate;
@@ -825,6 +831,11 @@
 		LF000000000000000019 /* KitLocalization */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = KitLocalization;
+		};
+		LC2AFD000000000000000001 /* PluginLLMProviderCodex */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = LC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */;
+			productName = PluginLLMProviderCodex;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

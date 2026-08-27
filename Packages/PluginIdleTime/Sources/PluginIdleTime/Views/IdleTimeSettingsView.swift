@@ -40,9 +40,11 @@ public struct IdleTimeSettingsView: View {
     private var header: some View {
         HStack(spacing: 10) {
             Spacer()
+#if DEBUG
             AppButton(L("Open Data Directory"), systemImage: "folder", size: .small) {
                 openDataDirectory()
             }
+#endif
         }
         .font(.appCaption)
         .foregroundStyle(.secondary)

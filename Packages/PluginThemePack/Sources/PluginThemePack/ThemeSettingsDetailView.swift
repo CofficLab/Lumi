@@ -1,3 +1,4 @@
+import AppKit
 import LumiUI
 import ProviderTheme
 import SwiftUI
@@ -96,6 +97,11 @@ struct ThemeSettingsDetailView: View {
                 Text("当前：\(active.displayName)")
             }
             Spacer()
+#if DEBUG
+            AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
+                openDataDirectory()
+            }
+#endif
         }
         .font(.appCaption)
         .foregroundStyle(uiTheme.textSecondary)
@@ -178,6 +184,18 @@ struct ThemeSettingsDetailView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
+
+    // MARK: - Debug Helpers
+
+    #if DEBUG
+    private func openDataDirectory() {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
+        guard let url = appSupport else { return }
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        NSWorkspace.shared.open(url)
+    }
+    #endif
 }
 
 private struct ThemePreviewPane: View {
