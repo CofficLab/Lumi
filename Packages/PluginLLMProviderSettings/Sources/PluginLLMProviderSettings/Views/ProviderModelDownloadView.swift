@@ -153,7 +153,7 @@ struct ProviderModelDownloadView: View {
                                 Text(fileName).lineLimit(1).truncationMode(.middle)
                             }
                             Spacer()
-                            Text("(Int(downloadState.progress.fractionCompleted * 100))%")
+                            Text("\(Int(downloadState.progress.fractionCompleted * 100))%")
                             if isDownloading, let speed = downloadState.progress.speedBytesPerSecond, speed > 0 {
                                 Text(ByteCountFormatter.string(fromByteCount: Int64(speed), countStyle: .file) + "/s")
                             }

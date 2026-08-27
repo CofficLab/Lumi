@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "(Int(downloadState.progress.fractionCompleted * 100))%" : {
-
-    },
     "%lld 个云端供应商" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -108,6 +105,9 @@
           }
         }
       }
+    },
+    "%lld%%" : {
+
     },
     "1 MB/s" : {
 
