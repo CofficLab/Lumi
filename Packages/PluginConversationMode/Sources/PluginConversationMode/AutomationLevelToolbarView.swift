@@ -1,17 +1,24 @@
+import Combine
 import ProviderConversation
 import ProviderToast
 import SwiftUI
 
 /// 自动化级别 chip：显示当前会话的 automationLevel，点击弹出三档选择。
 struct AutomationLevelToolbarView: View {
-    let conversations: any ConversationManaging
+    @StateObject private var conversationObservation: ConversationManagerObservationBox
     let toast: (any ToastProviding)?
 
     @State private var isPopoverPresented = false
 
     init(conversations: any ConversationManaging, toast: (any ToastProviding)? = nil) {
-        self.conversations = conversations
+        _conversationObservation = StateObject(
+            wrappedValue: ConversationManagerObservationBox(conversations: conversations)
+        )
         self.toast = toast
+    }
+
+    private var conversations: any ConversationManaging {
+        conversationObservation.conversations
     }
 
     private var selectedLevel: AutomationLevel {
@@ -22,6 +29,7 @@ struct AutomationLevelToolbarView: View {
     }
 
     var body: some View {
+        let _ = conversationObservation.revision
         Button {
             isPopoverPresented.toggle()
         } label: {
@@ -72,6 +80,28 @@ struct AutomationLevelToolbarView: View {
         case .build: Color.orange.opacity(0.22)
         case .autonomous: Color.green.opacity(0.22)
         }
+    }
+}
+
+/// 将协议存在类型的对话管理变化桥接给 SwiftUI。
+///
+/// `@ObservedObject` 无法直接持有 `any ConversationManaging`，因此用具体对象
+/// 转发 publisher；按钮每次重绘时重新读取当前选中对话的自动化级别。
+@MainActor
+private final class ConversationManagerObservationBox: ObservableObject {
+    let conversations: any ConversationManaging
+
+    @Published private(set) var revision = 0
+    private var cancellable: AnyCancellable?
+
+    init(conversations: any ConversationManaging) {
+        self.conversations = conversations
+        cancellable = conversations.objectWillChange
+            .map { _ in () }
+            .eraseToAnyPublisher()
+            .sink { [weak self] _ in
+                self?.revision += 1
+            }
     }
 }
 
