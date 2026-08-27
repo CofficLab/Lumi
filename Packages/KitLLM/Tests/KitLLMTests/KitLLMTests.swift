@@ -76,6 +76,26 @@ struct KitLLMTests {
         #expect(body["model"] as? String == "gpt-4")
         let bodyMessages = body["messages"] as? [[String: Any]]
         #expect(bodyMessages?.count == 1)
+
+        let streamingBody = try adapter.buildStreamingRequestBody(
+            messages: messages,
+            model: "gpt-4",
+            tools: nil,
+            systemPrompt: ""
+        )
+        #expect((streamingBody["stream_options"] as? [String: Bool])?["include_usage"] == true)
+    }
+
+    @Test("OpenAI 兼容流式解析器兼容 input/output token 字段")
+    func openAIAdapterParsesUsageAliases() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
+        )
+        let event = "data: {\"choices\":[],\"usage\":{\"input_tokens\":12,\"output_tokens\":8}}\n\n"
+        let chunk = try adapter.parseStreamChunk(data: Data(event.utf8))
+
+        #expect(chunk?.inputTokens == 12)
+        #expect(chunk?.outputTokens == 8)
     }
 
     @Test("Anthropic adapter 构建请求体")

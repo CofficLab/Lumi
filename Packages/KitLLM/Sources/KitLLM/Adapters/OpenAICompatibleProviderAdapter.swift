@@ -290,8 +290,9 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
            let firstChoice = choices.first,
            let delta = firstChoice["delta"] as? [String: Any] {
             let usage = json["usage"] as? [String: Any]
-            let inputTokens = usage?["prompt_tokens"] as? Int
-            let outputTokens = usage?["completion_tokens"] as? Int
+            let tokenCounts = Self.tokenCounts(from: usage)
+            let inputTokens = tokenCounts.input
+            let outputTokens = tokenCounts.output
             let cachedInputTokens = Self.cachedInputTokens(from: usage)
             let stopReason = delta["stop_reason"] as? String
 
@@ -338,12 +339,12 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         // 只有当没有 content/reasoning/toolCalls 时，才单独返回 usage
         // 某些供应商（如 StepFun）每个 chunk 都带 usage，但不能因此跳过内容
         if let usage = json["usage"] as? [String: Any] {
-            let inputTokens = usage["prompt_tokens"] as? Int
+            let tokenCounts = Self.tokenCounts(from: usage)
             return StreamChunk(
-                inputTokens: inputTokens,
-                outputTokens: usage["completion_tokens"] as? Int,
+                inputTokens: tokenCounts.input,
+                outputTokens: tokenCounts.output,
                 cachedInputTokens: Self.cachedInputTokens(from: usage),
-                cacheTotalInputTokens: inputTokens
+                cacheTotalInputTokens: tokenCounts.input
             )
         }
 
@@ -387,6 +388,23 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             return nil
         }
         return details["cached_tokens"] as? Int
+    }
+
+    /// OpenAI-compatible gateways do not all use the same usage spelling.
+    /// Keep the aliases here so the shared streaming accumulator can preserve
+    /// usage for every provider without provider-specific parsers.
+    private static func tokenCounts(from usage: [String: Any]?) -> (input: Int?, output: Int?) {
+        guard let usage else { return (nil, nil) }
+        return (
+            usage["prompt_tokens"] as? Int
+                ?? usage["input_tokens"] as? Int
+                ?? usage["prompt_token_count"] as? Int
+                ?? usage["input_token_count"] as? Int,
+            usage["completion_tokens"] as? Int
+                ?? usage["output_tokens"] as? Int
+                ?? usage["candidates_token_count"] as? Int
+                ?? usage["output_token_count"] as? Int
+        )
     }
 
     private func parseToolCallDelta(_ toolCalls: [[String: Any]], stopReason: String?) -> StreamChunk? {

@@ -107,11 +107,15 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             body: finalBody
         )
         let parsed = try adapter.parseResponse(data: data, reverseMap: reverseMap)
+        let tokenCounts = tokenCounts(from: data, anthropic: false)
         return LLMResponse(
             content: parsed.content,
             model: model,
             toolCalls: parsed.toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
-            reasoningContent: parsed.reasoningContent
+            reasoningContent: parsed.reasoningContent,
+            inputTokenCount: tokenCounts.input,
+            outputTokenCount: tokenCounts.output,
+            cachedInputTokenCount: tokenCounts.cachedInput
         )
     }
 
@@ -142,10 +146,14 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             body: finalBody
         )
         let parsed = try adapter.parseResponse(data: data, reverseMap: reverseMap)
+        let tokenCounts = tokenCounts(from: data, anthropic: true)
         return LLMResponse(
             content: parsed.content,
             model: model,
-            toolCalls: parsed.toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }
+            toolCalls: parsed.toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
+            inputTokenCount: tokenCounts.input,
+            outputTokenCount: tokenCounts.output,
+            cachedInputTokenCount: tokenCounts.cachedInput
         )
     }
 
@@ -170,7 +178,14 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
         let data = try await apiService.sendJSON(request: httpRequest, body: body)
         let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
         let text = Self.responsesText(from: object)
-        return LLMResponse(content: text, model: model)
+        let tokenCounts = tokenCounts(from: data, anthropic: false)
+        return LLMResponse(
+            content: text,
+            model: model,
+            inputTokenCount: tokenCounts.input,
+            outputTokenCount: tokenCounts.output,
+            cachedInputTokenCount: tokenCounts.cachedInput
+        )
     }
 
     open var responsesEndpointURL: String { "https://api.openai.com/v1/responses" }
@@ -308,6 +323,43 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             .flatMap { ($0["content"] as? [[String: Any]]) ?? [] }
             .compactMap { $0["text"] as? String }
             .joined()
+    }
+
+    /// Normalize the usage shapes used by OpenAI, Anthropic-compatible
+    /// gateways, Responses proxies, and common OpenAI-compatible gateways.
+    private func tokenCounts(from data: Data, anthropic: Bool) -> (
+        input: Int?,
+        output: Int?,
+        cachedInput: Int?
+    ) {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let usage = object["usage"] as? [String: Any] else {
+            return (nil, nil, nil)
+        }
+
+        let input: Int?
+        let output: Int?
+        if anthropic {
+            input = usage["input_tokens"] as? Int
+                ?? usage["prompt_tokens"] as? Int
+                ?? usage["input_token_count"] as? Int
+            output = usage["output_tokens"] as? Int
+                ?? usage["completion_tokens"] as? Int
+                ?? usage["output_token_count"] as? Int
+        } else {
+            input = usage["prompt_tokens"] as? Int
+                ?? usage["input_tokens"] as? Int
+                ?? usage["prompt_token_count"] as? Int
+                ?? usage["input_token_count"] as? Int
+            output = usage["completion_tokens"] as? Int
+                ?? usage["output_tokens"] as? Int
+                ?? usage["candidates_token_count"] as? Int
+                ?? usage["output_token_count"] as? Int
+        }
+
+        let cachedInput = (usage["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
+            ?? usage["cache_read_input_tokens"] as? Int
+        return (input, output, cachedInput)
     }
 }
 
