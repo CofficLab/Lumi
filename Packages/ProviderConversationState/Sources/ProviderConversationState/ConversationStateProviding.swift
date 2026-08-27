@@ -48,8 +48,39 @@ public struct ConversationStateSnapshot: Equatable, Sendable {
 }
 
 @MainActor
+public enum ConversationStateEvent: Sendable, Equatable {
+    case updated(UUID)
+    case removed(UUID)
+}
+
+@MainActor
+public protocol ConversationStateObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
 public protocol ConversationStateProviding: AnyObject, ObservableObject
 where ObjectWillChangePublisher == ObservableObjectPublisher {
     func state(for conversationID: UUID) -> ConversationStateSnapshot
     var states: [UUID: ConversationStateSnapshot] { get }
+
+    @discardableResult
+    func addConversationStateObserver(
+        _ callback: @escaping (ConversationStateEvent) -> Void
+    ) -> any ConversationStateObserverHandle
+}
+
+public extension ConversationStateProviding {
+    @discardableResult
+    func addConversationStateObserver(
+        _ callback: @escaping (ConversationStateEvent) -> Void
+    ) -> any ConversationStateObserverHandle {
+        NoopConversationStateObserverHandle()
+    }
+}
+
+@MainActor
+public final class NoopConversationStateObserverHandle: ConversationStateObserverHandle {
+    public init() {}
+    public func cancel() {}
 }

@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import os
 import ProviderConversation
@@ -26,7 +25,7 @@ final class SendActionBarViewModel: SuperLog {
     private let sender: any MessageSendingProviding
     private let conversations: any ConversationManaging
     private let conversationState: any ConversationStateProviding
-    private var conversationStateCancellable: AnyCancellable?
+    private var conversationStateObserver: (any ConversationStateObserverHandle)?
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
 
     private(set) var state: SendActionBarState
@@ -47,7 +46,7 @@ final class SendActionBarViewModel: SuperLog {
             isSending: conversationState.state(for: conversations.selectedConversationID ?? UUID()).isSending,
             canSend: !input.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         )
-        conversationStateCancellable = conversationState.objectWillChange.sink { [weak self] _ in
+        conversationStateObserver = conversationState.addConversationStateObserver { [weak self] _ in
             self?.refreshConversationState()
         }
         selectedConversationObserver = conversations.addSelectedConversationObserver { [weak self] _ in
@@ -70,8 +69,8 @@ final class SendActionBarViewModel: SuperLog {
     }
 
     func stopObservingConversationState() {
-        conversationStateCancellable?.cancel()
-        conversationStateCancellable = nil
+        conversationStateObserver?.cancel()
+        conversationStateObserver = nil
         selectedConversationObserver?.cancel()
         selectedConversationObserver = nil
     }
