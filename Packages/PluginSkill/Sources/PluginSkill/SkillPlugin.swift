@@ -106,7 +106,7 @@ struct SkillChatToolbarView: View {
                 .help(skills.isEmpty ? "无可用技能" : "\(skills.count) 个可用技能")
                 .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Skills")
+                        Text(LumiPluginLocalization.string("Skills", bundle: .module))
                             .font(.system(size: 12, weight: .semibold))
                         if skills.isEmpty {
                             Text("当前项目没有配置技能（.agent/skills/）")

@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginSkill",
-    defaultLocalization: "zh-Hans",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "PluginSkill", targets: ["PluginSkill"]),
@@ -17,6 +17,7 @@ let package = Package(
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
@@ -26,8 +27,10 @@ let package = Package(
                 "ProviderChatSection",
                 "ProviderLifecycleHooks",
                 "ProviderProject",
+                "KitLocalization",
             ],
-            path: "Sources/PluginSkill"
+            path: "Sources/PluginSkill",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginSkillTests",
