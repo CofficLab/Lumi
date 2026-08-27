@@ -6,6 +6,7 @@ import ProviderChatSection
 import ProviderCommand
 import ProviderContentView
 import ProviderConversation
+import ProviderConversationState
 import ProviderConversationInput
 import ProviderDocsView
 import ProviderExternalFile
@@ -65,6 +66,10 @@ public protocol ProviderFactory {
         streaming: any MessageStreamingProviding,
         conversations: any ConversationManaging
     ) -> any AgentLoopProviding
+    func makeConversationStateProvider(
+        agentLoop: any AgentLoopProviding,
+        toolManager: any ToolManagerProviding
+    ) -> any ConversationStateProviding
     func makeLLMProvider() -> any SuperLLMProvider
     func makeMessageSenderProvider(
         conversations: any ConversationManaging,
