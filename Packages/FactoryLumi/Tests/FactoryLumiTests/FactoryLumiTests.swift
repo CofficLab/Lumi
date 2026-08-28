@@ -29,6 +29,22 @@ import Testing
 @Suite("FactoryLumi")
 struct FactoryLumiTests {
 
+    @Test("默认插件目录包含编辑器基础设施、语言包和可选工作区")
+    func defaultFactoryIncludesEditorPluginStack() throws {
+        let plugins = Dictionary(
+            uniqueKeysWithValues: DefaultPluginFactory().makePlugins().map { ($0.id, $0) }
+        )
+
+        let host = try #require(plugins["com.coffic.lumi.plugin.editor-host"])
+        let languages = try #require(plugins["com.coffic.lumi.plugin.editor-languages"])
+        let workspace = try #require(plugins["com.coffic.lumi.plugin.editor-workspace"])
+
+        #expect(host.metadata.policy == .alwaysOn)
+        #expect(languages.metadata.policy == .required)
+        #expect(workspace.metadata.policy == .disabledByDefault)
+        #expect(workspace.dependencies == ["com.coffic.lumi.plugin.editor-host"])
+    }
+
     private final class AdditionalPlugin: SuperPlugin {
         let id = "test.additional-plugin"
         let metadata = PluginMetadata(

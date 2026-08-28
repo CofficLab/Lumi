@@ -96,9 +96,18 @@ import PluginMessageSender
 import PluginMindMapDesigner
 import PluginModelSelector
 import PluginOcr
-import PluginOpenIn
+import PluginOpenInAntigravity
+import PluginOpenInCursor
+import PluginOpenInFinder
+import PluginOpenInGitHubDesktop
+import PluginOpenInGitOK
+import PluginOpenInVSCode
+import PluginOpenInXcode
 import PluginPluginManager
 import PluginProjects
+import PluginEditorHost
+import PluginEditorLanguages
+import PluginEditorWorkspace
 import PluginProjectRAG
 import PluginResumeDesigner
 import PluginSettingGeneral
@@ -130,6 +139,8 @@ public struct DefaultPluginFactory: PluginFactory {
             ToastSuperPlugin(),
             CaffeinatePlugin(),
             SettingGeneralPlugin(),
+            EditorHostSuperPlugin(),
+            EditorLanguagesSuperPlugin(),
             ProjectsPlugin(),
             // 原 LumiApp 显式注入的项目 RAG：保留旧索引数据库和 search_code 工具。
             ProjectRAGSuperPlugin(),
@@ -151,6 +162,7 @@ public struct DefaultPluginFactory: PluginFactory {
             // ActivityBar 自定义实现：替换 ProviderFactory 预注册的 DefaultActivityBarProviding，
             // 必须在所有 onBoot 中调用 addItems 的业务插件（如 ResumeDesignerPlugin order=81）之前。
             PluginActivityBar(),
+            EditorWorkspaceSuperPlugin(),
             LogoCofficPlugin(),
             LogoSmartLightPlugin(),
             SettingsToolbarPlugin(),
@@ -177,7 +189,13 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationPendingMessagePlugin(),
             ConversationForkPlugin(),
             AskUserPlugin(),
-            OpenInPlugin(),
+            OpenInFinderPlugin(),
+            OpenInXcodePlugin(),
+            OpenInCursorPlugin(),
+            OpenInVSCodePlugin(),
+            OpenInAntigravityPlugin(),
+            OpenInGitHubDesktopPlugin(),
+            OpenInGitOKPlugin(),
             AgentTurnNotificationPlugin(),
             DebugBadgeSuperPlugin(),
             FileLogPlugin(),

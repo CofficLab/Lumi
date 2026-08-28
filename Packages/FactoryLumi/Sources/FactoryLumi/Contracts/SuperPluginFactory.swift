@@ -55,7 +55,6 @@ import PluginMessageSender
 import PluginMindMapDesigner
 import PluginModelSelector
 import PluginOcr
-import PluginOpenIn
 import PluginPluginManager
 import PluginProjects
 import PluginResumeDesigner
