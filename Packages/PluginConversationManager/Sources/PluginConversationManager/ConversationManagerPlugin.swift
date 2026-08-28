@@ -56,8 +56,10 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
             agentTurn: kernel.resolveProvider((any AgentLoopProviding).self),
             eventBus: KernelCoreEventBus()
         )
+        let previousManager = kernel.resolveProvider((any ConversationManaging).self)
         kernel.unregisterProvider((any ConversationManaging).self)
         try kernel.registerProvider((any ConversationManaging).self, manager)
+        previousManager?.transferObservers(to: manager)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)已注册 SwiftData ConversationManager，数据库路径：\(databaseRootURL.path)")

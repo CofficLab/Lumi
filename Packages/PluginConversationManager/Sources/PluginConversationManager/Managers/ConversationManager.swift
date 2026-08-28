@@ -279,7 +279,7 @@ private struct ConversationState: Codable {
 @MainActor
 final class ConversationSelectedConversationObserverHandle: SelectedConversationObserverHandle {
     private weak var owner: ConversationManager?
-    private let callback: (UUID?) -> Void
+    let callback: (UUID?) -> Void
     private var isCancelled = false
 
     init(owner: ConversationManager, callback: @escaping (UUID?) -> Void) {
@@ -303,7 +303,7 @@ final class ConversationSelectedConversationObserverHandle: SelectedConversation
 /// 观察者集合的元素：弱引用持有令牌，令牌被外部释放后自动失效。
 @MainActor
 final class WeakSelectedConversationObserver {
-    fileprivate weak var handle: ConversationSelectedConversationObserverHandle?
+    weak var handle: ConversationSelectedConversationObserverHandle?
 
     init(_ handle: ConversationSelectedConversationObserverHandle) {
         self.handle = handle

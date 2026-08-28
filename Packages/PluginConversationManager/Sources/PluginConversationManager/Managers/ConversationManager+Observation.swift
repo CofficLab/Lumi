@@ -4,7 +4,7 @@ import ProviderConversation
 @MainActor
 final class ConversationObserverHandleImpl: ConversationObserverHandle {
     private weak var owner: ConversationManager?
-    private let callback: (ConversationEvent) -> Void
+    let callback: (ConversationEvent) -> Void
     private var isCancelled = false
 
     init(owner: ConversationManager, callback: @escaping (ConversationEvent) -> Void) {

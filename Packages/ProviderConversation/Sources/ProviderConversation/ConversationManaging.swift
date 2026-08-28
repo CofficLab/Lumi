@@ -122,6 +122,9 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     @discardableResult
     func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle
 
+    /// 将当前实现上注册的观察者迁移到新的实现。
+    func transferObservers(to replacement: any ConversationManaging)
+
     /// 删除对话
     func deleteConversation(id: UUID)
 
@@ -215,6 +218,8 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
 /// Lightweight compatibility defaults for providers and test doubles that do
 /// not need paginated conversation storage.
 public extension ConversationManaging {
+    func transferObservers(to replacement: any ConversationManaging) {}
+
     func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle {
         NoopConversationObserverHandle()
     }

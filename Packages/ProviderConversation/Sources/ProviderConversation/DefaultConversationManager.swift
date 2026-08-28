@@ -254,6 +254,18 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         return handle
     }
 
+    public func transferObservers(to replacement: any ConversationManaging) {
+        selectedConversationObservers.removeAll { $0.handle == nil }
+        conversationObservers.removeAll { $0.handle == nil }
+
+        for callback in selectedConversationObservers.compactMap({ $0.handle?.callback }) {
+            _ = replacement.addSelectedConversationObserver(callback)
+        }
+        for callback in conversationObservers.compactMap({ $0.handle?.callback }) {
+            _ = replacement.addConversationObserver(callback)
+        }
+    }
+
     /// 当前注册的选中对话观察者集合。
     ///
     /// 弱引用持有令牌：外部释放令牌后，其 deinit 即视为自动注销，
@@ -524,7 +536,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
 @MainActor
 private final class SelectedConversationObserverHandleImpl: SelectedConversationObserverHandle {
     private weak var owner: DefaultConversationManager?
-    private let callback: (UUID?) -> Void
+    fileprivate let callback: (UUID?) -> Void
     private var isCancelled = false
 
     init(owner: DefaultConversationManager, callback: @escaping (UUID?) -> Void) {
@@ -558,7 +570,7 @@ private final class WeakSelectedConversationObserver {
 @MainActor
 private final class ConversationObserverHandleImpl: ConversationObserverHandle {
     private weak var owner: DefaultConversationManager?
-    private let callback: (ConversationEvent) -> Void
+    fileprivate let callback: (ConversationEvent) -> Void
     private var isCancelled = false
 
     init(owner: DefaultConversationManager, callback: @escaping (ConversationEvent) -> Void) {
