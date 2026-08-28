@@ -44,7 +44,7 @@ flowchart TD
     FC --> Kernel["KernelLumi"]
     FC --> UI["LumiUI"]
     FC --> Editor["EditorService"]
-    FC --> Localization["LumiLocalizationKit"]
+    FC --> Localization["LumiKitLocalization"]
 
     FL --> FullPlugins["完整插件目录"]
     FB --> BookletPlugins["BookletMaker 最小插件目录"]
@@ -69,8 +69,8 @@ flowchart TD
 
 - `KernelLumi`
 - `LumiUI`
-- `LumiLocalizationKit`
-- `SuperLogKit`
+- `LumiKitLocalization`
+- `KitSuperLog`
 - `EditorService`
 
 原 `LumiFactory` 中除 `Services/PluginService.swift` 外的窗口、视图、Bootstrap、资源和生命周期实现迁移到这里。核心入口改名为 `FactoryCore`。

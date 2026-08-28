@@ -91,13 +91,13 @@ public extension View {
 
 #Preview {
     VStack(spacing: 12) {
-        Text("Glass Surface")
+        Text(LumiUILocalization.string("Glass Surface"))
             .frame(width: 200, height: 60)
             .appSurface(style: .glass)
-        Text("Glass Thick")
+        Text(LumiUILocalization.string("Glass Thick"))
             .frame(width: 200, height: 60)
             .appSurface(style: .glassThick)
-        Text("Subtle")
+        Text(LumiUILocalization.string("Subtle"))
             .frame(width: 200, height: 60)
             .appSurface(style: .subtle)
     }

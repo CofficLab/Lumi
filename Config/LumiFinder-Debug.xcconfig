@@ -8,7 +8,7 @@
 
 // 产物
 PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.debug.finder
-INFOPLIST_FILE = Plugins/RClickPlugin/FinderExtension/Info.plist
+INFOPLIST_FILE = Packages/PluginRClick/FinderExtension/Info.plist
 GENERATE_INFOPLIST_FILE = NO
 
 // 沙盒：扩展必须开启
@@ -19,7 +19,7 @@ ENABLE_HARDENED_RUNTIME = YES
 LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks
 
 // 权限
-CODE_SIGN_ENTITLEMENTS = Plugins/RClickPlugin/FinderExtension/LumiFinder.entitlements
+CODE_SIGN_ENTITLEMENTS = Packages/PluginRClick/FinderExtension/LumiFinder.entitlements
 
 // 部署目标（与项目级一致，显式声明保留原状）
 MACOSX_DEPLOYMENT_TARGET = 14.0

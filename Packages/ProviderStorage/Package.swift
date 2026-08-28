@@ -15,15 +15,24 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "../KernelCore"),
+        .package(path: "../KitSuperLog"),
     ],
     targets: [
         .target(
             name: "ProviderStorage",
+            dependencies: [
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
+            ],
             path: "Sources/ProviderStorage"
         ),
         .testTarget(
             name: "ProviderStorageTests",
-            dependencies: ["ProviderStorage"]
+            dependencies: [
+                "ProviderStorage",
+                .product(name: "KernelCore", package: "KernelCore"),
+            ]
         )
     ]
 )

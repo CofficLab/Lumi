@@ -53,9 +53,9 @@ public struct AppErrorBanner: View {
 
 #Preview {
     VStack(spacing: 12) {
-        AppErrorBanner(message: "Failed to load data")
+        AppErrorBanner(message: LocalizedStringKey(LumiUILocalization.string("Failed to load data")))
         AppErrorBanner(
-            message: "Connection timeout",
+            message: LocalizedStringKey(LumiUILocalization.string("Connection timeout")),
             retryTitle: "Retry",
             onRetry: {}
         )

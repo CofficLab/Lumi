@@ -8,7 +8,11 @@ struct SuperPluginTests {
 
     private final class MockPlugin: SuperPlugin {
         let id: String
-        init(id: String) { self.id = id }
+        let metadata: PluginMetadata
+        init(id: String) {
+            self.id = id
+            self.metadata = PluginMetadata(id: id)
+        }
     }
 
     @Test("SuperPlugin 可被实现并通过协议访问")
@@ -16,6 +20,11 @@ struct SuperPluginTests {
         let plugin: any SuperPlugin = MockPlugin(id: "test.plugin")
 
         #expect(plugin.id == "test.plugin")
+        #expect(plugin.metadata.id == "test.plugin")
+        // 默认启用策略为 alwaysOn（始终启用，不可禁用）
+        #expect(plugin.metadata.policy == .alwaysOn)
+        #expect(!plugin.metadata.policy.isConfigurable)
+        #expect(plugin.metadata.policy.enabledByDefault)
     }
 
     @Test("不同插件实例 id 独立")

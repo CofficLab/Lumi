@@ -76,8 +76,8 @@ public struct AppActivityIconButton: View {
 
 #Preview {
     VStack(spacing: 4) {
-        AppActivityIconButton(systemImage: "folder", label: "Projects", isActive: true) {}
-        AppActivityIconButton(systemImage: "magnifyingglass", label: "Search") {}
+        AppActivityIconButton(systemImage: "folder", label: LumiUILocalization.string("Projects"), isActive: true) {}
+        AppActivityIconButton(systemImage: "magnifyingglass", label: LumiUILocalization.string("Search")) {}
     }
     .frame(width: 48)
     .padding(.vertical, 8)

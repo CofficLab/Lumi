@@ -3,6 +3,13 @@ import SwiftTreeSitter
 
 /// Loads and caches tree-sitter highlight queries from plugin-provided resource bundles.
 public final class LanguageQueryRegistry: @unchecked Sendable {
+    /// 使某 grammar 的查询缓存失效（语言/grammar 撤回时调用）。
+    public func invalidate(grammarId: String) {
+        lock.lock()
+        queries[grammarId] = nil
+        lock.unlock()
+    }
+
     public static let shared = LanguageQueryRegistry()
 
     private let lock = NSLock()

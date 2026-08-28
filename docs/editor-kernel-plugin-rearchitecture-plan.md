@@ -343,7 +343,7 @@ public protocol EditorSelectionProviding: AnyObject {
 }
 ```
 
-选择状态是高频状态，注册到 Kernel 时必须关闭全局 `objectWillChange` 转发。只有编辑器相关视图直接订阅。
+选择状态是高频状态，Provider 自己发布精准事件；Kernel 不转发全局 `objectWillChange`。只有编辑器相关视图直接订阅。
 
 ### 8.5 导航能力
 
@@ -411,7 +411,7 @@ public protocol EditorConfigurationProviding: AnyObject {
 - `statePublisher` 具有 `CurrentValue` 语义：新订阅者先收到当前 Snapshot，再接收后续变化。
 - UI adapter 在主线程订阅，并只观察自己需要的子服务。
 - 文档内容变化事件携带 revision 和增量 change，不在每次键入时广播完整文本。
-- Selection、viewport、streaming diagnostics 等高频状态禁止转发到 Kernel 全局 `objectWillChange`。
+- Selection、viewport、streaming diagnostics 等高频状态禁止经 Kernel 全局 `objectWillChange` 广播；由对应 Provider 或局部 ViewModel 发布。
 - 状态 Publisher 不以 failure 结束；操作错误由 async throws 或结果对象返回。
 
 ### 8.9 State 与 Event 分离

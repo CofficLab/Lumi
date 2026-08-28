@@ -40,7 +40,7 @@ struct FindControls: View {
                         .opacity(imageOpacity)
                         .padding(.horizontal, dynamicPadding)
                 }
-                .help("Previous Match")
+                .help(EditorSourceLocalization.string("Previous Match", bundle: .module))
                 .disabled(viewModel.matchesEmpty)
 
                 Divider()
@@ -52,7 +52,7 @@ struct FindControls: View {
                         .opacity(imageOpacity)
                         .padding(.horizontal, dynamicPadding)
                 }
-                .help("Next Match")
+                .help(EditorSourceLocalization.string("Next Match", bundle: .module))
                 .disabled(viewModel.matchesEmpty)
             }
             .controlGroupStyle(PanelControlGroupStyle())
@@ -65,7 +65,7 @@ struct FindControls: View {
                     if condensed {
                         Image(systemName: "xmark")
                     } else {
-                        Text("Done")
+                        Text(EditorSourceLocalization.string("Done", bundle: .module))
                     }
                 }
                 .help(condensed ? "Done" : "")

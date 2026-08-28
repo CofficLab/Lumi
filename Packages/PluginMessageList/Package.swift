@@ -1,0 +1,52 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "PluginMessageList",
+    defaultLocalization: "en",
+    platforms: [.macOS(.v14)],
+    products: [.library(name: "PluginMessageList", targets: ["PluginMessageList"])],
+    dependencies: [
+        .package(path: "../KernelCore"),
+        .package(path: "../LumiUI"),
+        .package(path: "../KitMarkdown"),
+        .package(path: "../KitLocalization"),
+        .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderChatSection"),
+        .package(path: "../ProviderConversation"),
+        .package(path: "../ProviderConversationState"),
+        .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderMessageRendering"),
+        .package(path: "../ProviderMessageSender"),
+        .package(path: "../ProviderMessageStreaming"),
+        .package(path: "../ProviderPromptSuggestion"),
+        .package(path: "../ProviderProject"),
+        .package(path: "../ProviderToolManager"),
+        .package(path: "../KitSuperLog"),
+    ],
+    targets: [
+        .target(name: "PluginMessageList", dependencies: [
+            .product(name: "KernelCore", package: "KernelCore"),
+            .product(name: "LumiUI", package: "LumiUI"),
+            .product(name: "KitMarkdown", package: "KitMarkdown"),
+            .product(name: "KitLocalization", package: "KitLocalization"),
+            .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+            .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+            .product(name: "ProviderConversation", package: "ProviderConversation"),
+            .product(name: "ProviderConversationState", package: "ProviderConversationState"),
+            .product(name: "ProviderMessage", package: "ProviderMessage"),
+            .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
+            .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
+            .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
+            .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
+            .product(name: "ProviderProject", package: "ProviderProject"),
+            .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+            .product(name: "KitSuperLog", package: "KitSuperLog"),
+        ], resources: [.process("Resources/Localizable.xcstrings")]),
+        .testTarget(name: "PluginMessageListTests", dependencies: [
+            "PluginMessageList",
+            .product(name: "ProviderMessage", package: "ProviderMessage"),
+            .product(name: "ProviderConversation", package: "ProviderConversation"),
+        ]),
+    ]
+)

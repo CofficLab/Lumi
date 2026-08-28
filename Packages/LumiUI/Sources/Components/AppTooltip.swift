@@ -48,9 +48,9 @@ extension KeyboardShortcut {
 
 #Preview {
     VStack(spacing: 16) {
-        Text("Hover me")
+        Text(LumiUILocalization.string("Hover me"))
             .appTooltip("Simple tooltip")
-        Text("With shortcut")
+        Text(LumiUILocalization.string("With shortcut"))
             .appTooltip("Save file", shortcut: .init("s", modifiers: .command))
     }
     .padding()

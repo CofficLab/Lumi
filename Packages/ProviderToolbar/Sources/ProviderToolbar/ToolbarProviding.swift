@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 /// 工具栏视图提供能力协议
@@ -13,7 +14,8 @@ import SwiftUI
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any ToolbarProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
-public protocol ToolbarProviding: AnyObject {
+public protocol ToolbarProviding: AnyObject, ObservableObject
+    where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 当前已注入的全部工具栏项。
     var toolbarItems: [ToolbarItem] { get }
 
@@ -27,6 +29,9 @@ public protocol ToolbarProviding: AnyObject {
     /// 供多个插件各自贡献工具栏项时使用，互不覆盖。
     func addToolbarItems(_ items: [ToolbarItem])
 
+    /// 按 id 撤回插件贡献的工具栏项。
+    func removeToolbarItems(ids: Set<String>)
+
     /// 返回工具栏视图（基于已注入的 items 渲染）。
     func makeToolbarView() -> AnyView
 }
@@ -39,5 +44,9 @@ public extension ToolbarProviding {
             merged.append(item)
         }
         registerToolbarItems(merged)
+    }
+
+    func removeToolbarItems(ids: Set<String>) {
+        registerToolbarItems(toolbarItems.filter { !ids.contains($0.id) })
     }
 }

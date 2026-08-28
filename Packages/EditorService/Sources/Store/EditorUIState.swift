@@ -1,6 +1,6 @@
 import Foundation
 import AppKit
-import SuperLogKit
+import KitSuperLog
 import EditorSource
 
 /// 编辑器 UI 状态

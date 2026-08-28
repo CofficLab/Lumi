@@ -47,13 +47,13 @@ public enum EditorSettingsCatalog {
                     ),
                     .init(
                         id: "editor.tab-width",
-                        title: "Tab Size",
+                        title: EditorServiceLocalization.string("Tab Size", bundle: .module),
                         subtitle: "控制缩进宽度和软制表符长度。",
                         keywords: ["tab", "tab size", "indent", "缩进"],
                         content: { state in
                             AnyView(
                                 EditorSegmentedSettingRow(
-                                    title: "Tab Size",
+                                    title: EditorServiceLocalization.string("Tab Size", bundle: .module),
                                     subtitle: "代码缩进默认宽度",
                                     selection: Binding(
                                         get: { state.tabWidth },
@@ -66,13 +66,13 @@ public enum EditorSettingsCatalog {
                     ),
                     .init(
                         id: "editor.use-spaces",
-                        title: "Insert Spaces",
+                        title: EditorServiceLocalization.string("Insert Spaces", bundle: .module),
                         subtitle: "使用空格替代真实 Tab 字符。",
                         keywords: ["spaces", "tabs", "indent", "空格", "tab"],
                         content: { state in
                             AnyView(
                                 EditorToggleSettingRow(
-                                    title: "Insert Spaces",
+                                    title: EditorServiceLocalization.string("Insert Spaces", bundle: .module),
                                     subtitle: "输入缩进时优先插入空格",
                                     isOn: Binding(
                                         get: { state.useSpaces },
@@ -91,13 +91,13 @@ public enum EditorSettingsCatalog {
                 entries: [
                     .init(
                         id: "editor.wrap-lines",
-                        title: "Word Wrap",
+                        title: EditorServiceLocalization.string("Word Wrap", bundle: .module),
                         subtitle: "长行在视口宽度内自动折返。",
                         keywords: ["wrap", "word wrap", "自动换行"],
                         content: { state in
                             AnyView(
                                 EditorToggleSettingRow(
-                                    title: "Word Wrap",
+                                    title: EditorServiceLocalization.string("Word Wrap", bundle: .module),
                                     subtitle: "超长文本在当前视口内换行显示",
                                     isOn: Binding(
                                         get: { state.wrapLines },
@@ -109,13 +109,13 @@ public enum EditorSettingsCatalog {
                     ),
                     .init(
                         id: "editor.minimap",
-                        title: "Minimap",
+                        title: EditorServiceLocalization.string("Minimap", bundle: .module),
                         subtitle: "在右侧显示文档概览；大文件模式下可能被强制关闭。",
                         keywords: ["minimap", "overview", "概览"],
                         content: { state in
                             AnyView(
                                 EditorToggleSettingRow(
-                                    title: "Minimap",
+                                    title: EditorServiceLocalization.string("Minimap", bundle: .module),
                                     subtitle: "显示右侧文档概览",
                                     isOn: Binding(
                                         get: { state.showMinimap },
@@ -127,13 +127,13 @@ public enum EditorSettingsCatalog {
                     ),
                     .init(
                         id: "editor.line-numbers",
-                        title: "Line Numbers",
+                        title: EditorServiceLocalization.string("Line Numbers", bundle: .module),
                         subtitle: "显示左侧 gutter 与行号。",
                         keywords: ["line numbers", "gutter", "行号"],
                         content: { state in
                             AnyView(
                                 EditorToggleSettingRow(
-                                    title: "Line Numbers",
+                                    title: EditorServiceLocalization.string("Line Numbers", bundle: .module),
                                     subtitle: "显示 gutter、行号与左侧 marker",
                                     isOn: Binding(
                                         get: { state.showGutter },
@@ -145,13 +145,13 @@ public enum EditorSettingsCatalog {
                     ),
                     .init(
                         id: "editor.folding",
-                        title: "Code Folding",
+                        title: EditorServiceLocalization.string("Code Folding", bundle: .module),
                         subtitle: "显示折叠 ribbon 与折叠摘要。",
                         keywords: ["folding", "fold", "折叠"],
                         content: { state in
                             AnyView(
                                 EditorToggleSettingRow(
-                                    title: "Code Folding",
+                                    title: EditorServiceLocalization.string("Code Folding", bundle: .module),
                                     subtitle: "显示折叠控制与折叠摘要",
                                     isOn: Binding(
                                         get: { state.showFoldingRibbon },
@@ -163,13 +163,13 @@ public enum EditorSettingsCatalog {
                     ),
                     .init(
                         id: "editor.render-whitespace",
-                        title: "Render Whitespace",
+                        title: EditorServiceLocalization.string("Render Whitespace", bundle: .module),
                         subtitle: "当前底层 editor engine 尚未开放独立 whitespace 渲染开关。",
                         keywords: ["render whitespace", "whitespace", "空白字符"],
                         content: { state in
                             AnyView(
                                 EditorReadOnlySettingRow(
-                                    title: "Render Whitespace",
+                                    title: EditorServiceLocalization.string("Render Whitespace", bundle: .module),
                                     subtitle: state.supportsRenderWhitespace
                                         ? "Whitespace rendering is available."
                                         : "Unavailable in the current source editor backend.",
@@ -187,13 +187,13 @@ public enum EditorSettingsCatalog {
                 entries: [
                     .init(
                         id: "editor.format-on-save",
-                        title: "Format On Save",
+                        title: EditorServiceLocalization.string("Format On Save", bundle: .module),
                         subtitle: "保存时尝试运行格式化。",
                         keywords: ["format on save", "save", "格式化"],
                         content: { state in
                             AnyView(
                                 EditorToggleSettingRow(
-                                    title: "Format On Save",
+                                    title: EditorServiceLocalization.string("Format On Save", bundle: .module),
                                     subtitle: "保存文件时自动触发格式化",
                                     isOn: Binding(
                                         get: { state.formatOnSave },
@@ -205,13 +205,13 @@ public enum EditorSettingsCatalog {
                     ),
                     .init(
                         id: "editor.organize-imports-on-save",
-                        title: "Organize Imports On Save",
+                        title: EditorServiceLocalization.string("Organize Imports On Save", bundle: .module),
                         subtitle: "保存时请求 LSP 整理 imports。",
                         keywords: ["organize imports", "imports", "save"],
                         content: { state in
                             AnyView(
                                 EditorToggleSettingRow(
-                                    title: "Organize Imports On Save",
+                                    title: EditorServiceLocalization.string("Organize Imports On Save", bundle: .module),
                                     subtitle: "保存时整理 imports",
                                     isOn: Binding(
                                         get: { state.organizeImportsOnSave },
@@ -223,13 +223,13 @@ public enum EditorSettingsCatalog {
                     ),
                     .init(
                         id: "editor.fix-all-on-save",
-                        title: "Fix All On Save",
+                        title: EditorServiceLocalization.string("Fix All On Save", bundle: .module),
                         subtitle: "保存时请求 LSP 执行 source.fixAll。",
                         keywords: ["fix all", "save", "code actions"],
                         content: { state in
                             AnyView(
                                 EditorToggleSettingRow(
-                                    title: "Fix All On Save",
+                                    title: EditorServiceLocalization.string("Fix All On Save", bundle: .module),
                                     subtitle: "保存时运行 source.fixAll",
                                     isOn: Binding(
                                         get: { state.fixAllOnSave },
@@ -241,13 +241,13 @@ public enum EditorSettingsCatalog {
                     ),
                     .init(
                         id: "editor.trim-trailing-whitespace",
-                        title: "Trim Trailing Whitespace",
+                        title: EditorServiceLocalization.string("Trim Trailing Whitespace", bundle: .module),
                         subtitle: "保存时移除每行末尾多余空格。",
                         keywords: ["trim trailing whitespace", "whitespace", "save"],
                         content: { state in
                             AnyView(
                                 EditorToggleSettingRow(
-                                    title: "Trim Trailing Whitespace",
+                                    title: EditorServiceLocalization.string("Trim Trailing Whitespace", bundle: .module),
                                     subtitle: "保存时清理行尾空白",
                                     isOn: Binding(
                                         get: { state.trimTrailingWhitespaceOnSave },
@@ -259,13 +259,13 @@ public enum EditorSettingsCatalog {
                     ),
                     .init(
                         id: "editor.insert-final-newline",
-                        title: "Insert Final Newline",
+                        title: EditorServiceLocalization.string("Insert Final Newline", bundle: .module),
                         subtitle: "保存时确保文件结尾带换行。",
                         keywords: ["final newline", "newline", "save"],
                         content: { state in
                             AnyView(
                                 EditorToggleSettingRow(
-                                    title: "Insert Final Newline",
+                                    title: EditorServiceLocalization.string("Insert Final Newline", bundle: .module),
                                     subtitle: "保存时补齐文件末尾换行",
                                     isOn: Binding(
                                         get: { state.insertFinalNewlineOnSave },

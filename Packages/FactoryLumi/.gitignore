@@ -1,0 +1,7 @@
+# Swift Package Manager
+.build/
+*.swiftpm
+
+# Local build artifacts (e.g. produced by xcodebuild)
+build/
+Package.resolved

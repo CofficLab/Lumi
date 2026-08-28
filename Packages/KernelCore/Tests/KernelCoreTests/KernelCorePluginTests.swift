@@ -11,7 +11,16 @@ struct KernelCorePluginTests {
 
     private final class MockPlugin: SuperPlugin {
         let id: String
-        init(id: String) { self.id = id }
+        var metadata: PluginMetadata
+        var registerCount = 0
+        var unregisterCount = 0
+        init(id: String) {
+            self.id = id
+            self.metadata = PluginMetadata(id: id)
+        }
+
+        func onRegister(kernel: KernelCoreContainer) throws { registerCount += 1 }
+        func onUnregister(kernel: KernelCoreContainer) throws { unregisterCount += 1 }
     }
 
     @Test("注入后可通过 id 解析")
@@ -27,6 +36,7 @@ struct KernelCorePluginTests {
         #expect(core.isPluginRegistered(id: "test.plugin"))
         #expect(core.registeredPluginCount == 1)
         #expect(core.allPlugins.count == 1)
+        #expect(plugin.registerCount == 1)
     }
 
     @Test("重复注入同 id 抛错")
@@ -51,12 +61,31 @@ struct KernelCorePluginTests {
     @Test("注销后不可再解析")
     func unregisterRemovesPlugin() throws {
         let core = KernelCoreContainer()
-        try core.registerPlugin(MockPlugin(id: "a"))
+        let plugin = MockPlugin(id: "a")
+        try core.registerPlugin(plugin)
 
         core.unregisterPlugin(id: "a")
 
         #expect(core.resolvePlugin(id: "a") == nil)
         #expect(!core.isPluginRegistered(id: "a"))
+        #expect(plugin.unregisterCount == 1)
+    }
+
+    @Test("禁用插件仍执行 onRegister，但跳过 Boot/Ready")
+    func disabledPluginRegistersWithoutBooting() throws {
+        let core = KernelCoreContainer()
+        let plugin = MockPlugin(id: "disabled")
+        plugin.metadata = PluginMetadata(id: "disabled", policy: .disabledByDefault)
+
+        try core.start(plugins: [plugin])
+
+        #expect(core.isPluginRegistered(id: plugin.id))
+        #expect(!core.isPluginEnabled(id: plugin.id))
+        #expect(plugin.registerCount == 1)
+        #expect(plugin.unregisterCount == 0)
+
+        try core.stop()
+        #expect(plugin.unregisterCount == 1)
     }
 
     @Test("注销未注入 id 为幂等 no-op")

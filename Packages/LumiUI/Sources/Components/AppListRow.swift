@@ -70,15 +70,15 @@ public struct AppListRow<Content: View>: View {
 #Preview {
     VStack(spacing: 4) {
         AppListRow(isSelected: true) {
-            Text("Selected Item")
+            Text(LumiUILocalization.string("Selected Item"))
         }
         AppListRow {
-            Text("Normal Item")
+            Text(LumiUILocalization.string("Normal Item"))
         }
         AppListRow(isSelected: false, action: {}) {
             HStack {
                 Image(systemName: "star")
-                Text("With Action")
+                Text(LumiUILocalization.string("With Action"))
             }
         }
     }

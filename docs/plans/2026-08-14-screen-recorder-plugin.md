@@ -364,7 +364,7 @@ execute 流程：
 
 ### Task 2：插件脚手架与数据模型
 **Files:**
-- Create: `Plugins/ScreenRecorderPlugin/Package.swift`（deps: `KernelLumi`, `LumiUI`, `LocalizationKit`, `SuperLogKit`；`platforms: [.macOS(.v15)]`）
+- Create: `Plugins/ScreenRecorderPlugin/Package.swift`（deps: `KernelLumi`, `LumiUI`, `KitLocalization`, `KitSuperLog`；`platforms: [.macOS(.v15)]`）
 - Create: `Plugins/ScreenRecorderPlugin/Sources/ScreenRecorderPlugin/Models/RecordingModels.swift`（§6.1 全部类型 + `RecordingError`）
 - Create: `Plugins/ScreenRecorderPlugin/Sources/ScreenRecorderPlugin/ScreenRecorderPlugin.swift`（最小骨架：identity 字段 + 空 `onBoot`/`onReady`，先返回 `[]`）
 1. 仿 `MindMapPlugin.swift:13-44` 写插件骨架（`id = "com.coffic.lumi.plugin.screen-recorder"`、`order = 285`、`policy = .optIn`、`category = .agent`、`stage = .beta`、`SuperLog`）。

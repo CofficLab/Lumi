@@ -73,4 +73,20 @@ else
     echo "WARNING: ${SCHEME_PATH} 不存在!"
 fi
 
+# --------------------------------------------------
+# 6. 编辑器依赖护栏（docs/editor-kernel-plugin-rearchitecture-plan.md §6）
+#    非宿主插件禁止依赖/导入 EditorService/EditorSource/EditorTextView/EditorKernel
+# --------------------------------------------------
+echo "==> [ci_pre_xcodebuild] 运行编辑器依赖护栏检查..."
+GUARDRAIL_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/Scripts/check-editor-dependencies.py"
+if [[ -f "${GUARDRAIL_SCRIPT}" ]]; then
+    if ! python3 "${GUARDRAIL_SCRIPT}"; then
+        echo "ERROR: 编辑器依赖护栏检查失败，禁止构建。" >&2
+        exit 1
+    fi
+    echo "    ✓ 编辑器依赖护栏检查通过"
+else
+    echo "WARNING: 护栏脚本不存在: ${GUARDRAIL_SCRIPT}"
+fi
+
 echo "==> [ci_pre_xcodebuild] 完成,开始 xcodebuild..."

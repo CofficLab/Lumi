@@ -1,7 +1,7 @@
 import EditorKernel
 import Foundation
 import os
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 
 private let editorKeybindingsFileName = "editor_keybindings.json"

@@ -15,11 +15,18 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "../LumiUI"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
             name: "ProviderSettingView",
-            path: "Sources/ProviderSettingView"
+            dependencies: [
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
+            ],
+            path: "Sources/ProviderSettingView",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "ProviderSettingViewTests",

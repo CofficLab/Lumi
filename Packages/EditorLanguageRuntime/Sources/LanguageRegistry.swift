@@ -39,6 +39,30 @@ public final class LanguageRegistry: ObservableObject, @unchecked Sendable {
         lock.unlock()
     }
 
+    /// 按语言 id 撤回注册（含扩展名映射与其 highlight grammar）。
+    ///
+    /// 供贡献包按插件维度撤回（重构方案 §9.3）；未注册时为 no-op。
+    public func unregister(languageId: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let descriptor = descriptorsById[languageId] else { return }
+        descriptors.removeAll { $0.languageId == languageId }
+        descriptorsById[languageId] = nil
+        for ext in descriptor.fileExtensions where extensionToLanguageId[ext.lowercased()] == languageId {
+            extensionToLanguageId[ext.lowercased()] = nil
+        }
+        grammars[descriptor.highlightLanguageId] = nil
+        LanguageQueryRegistry.shared.invalidate(grammarId: descriptor.highlightLanguageId)
+    }
+
+    /// 按 grammar id 撤回 grammar provider（未注册时为 no-op）。
+    public func unregisterGrammarProvider(grammarId: String) {
+        lock.lock()
+        grammars[grammarId] = nil
+        lock.unlock()
+        LanguageQueryRegistry.shared.invalidate(grammarId: grammarId)
+    }
+
     public var availableLanguageIDs: [String] {
         lock.lock()
         let ids = descriptors.map(\.languageId).sorted()

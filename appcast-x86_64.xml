@@ -31,6 +31,26 @@
 <li>feat(AppStorePromoDesignerPlugin): rebuild about view with LumiUI landing components</li>
 <li>feat(AppUpdatePlugin): rebuild about view with LumiUI landing components</li>
 <li>feat(BookletMakerPlugin): rebuild about view with LumiUI landing components</li>
+<li>feat: add elegant macOS-style Loading page</li>
+<li>feat: refactor LLM provider base classes and fix Keychain service regression</li>
+<li>feat(core): extract KitKeychain as independent package</li>
+<li>feat(editor-chat): add EditorChatPlugin for sending code references to chat</li>
+<li>feat(goal-task): add chat toolbar button to display goals</li>
+<li>feat(goal-task): enforce single active goal policy</li>
+<li>feat(menu-bar): sort menu bar popup items by order</li>
+<li>feat(plugin): allow agentTools to throw and surface failures to UI</li>
+<li>fix(menu-bar): honor LumiMenuBarPopupItem.order when aggregating popup items</li>
+<li>refactor: move plugin-related types to Plugin directory</li>
+<li>refactor(agent-tool): extract tool service methods into AgentToolComponent</li>
+<li>refactor(app): simplify RootContainer and rename project types</li>
+<li>refactor(bootstrap): merge LumiCoreService into RootContainer</li>
+<li>refactor(core): introduce ProjectComponent to encapsulate ProjectState</li>
+<li>refactor(core): remove KitKeychain dependency from LumiLLMProvider protocol</li>
+<li>refactor(core): remove LumiCoreKit Security module, use KitKeychain directly</li>
+<li>refactor(goal-task): simplify sidebar to show single active goal</li>
+<li>refactor(layout): introduce LayoutComponent to encapsulate LumiLayoutState</li>
+<li>refactor(logo): rename LogoRegistry to LogoComponent, migrate to component pattern</li>
+<li>refactor(plugins): surface agentTools dependency failures instead of silent returns</li>
 </ul>]]></description>
             <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.16.0</sparkle:fullReleaseNotesLink>
             <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.16.0/Lumi_5.16.0_x86_64.dmg" length="53522217" type="application/octet-stream" sparkle:edSignature="QH45JPAmW5sLnifz44DHMnl+rhg6xRlAXA2ErHXKVgUYPBdletHOvZxkFuMW6Sj5+iyMS92RexhbkDlv4vMcBQ=="/>

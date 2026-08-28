@@ -15,10 +15,14 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "../EditorContracts"),
     ],
     targets: [
         .target(
             name: "KernelCore",
+            dependencies: [
+                .product(name: "EditorContracts", package: "EditorContracts"),
+            ],
             path: "Sources/KernelCore"
         ),
         .testTarget(

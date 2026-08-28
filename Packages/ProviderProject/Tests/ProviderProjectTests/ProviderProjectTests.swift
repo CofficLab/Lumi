@@ -25,6 +25,11 @@ struct ProviderProjectTests {
         }
 
         func refreshProjects() async throws {}
+
+        func updateCurrentFile(_ fileURL: URL?) { currentFileURL = fileURL }
+        func updateOpenFiles(_ fileURLs: [URL]) { openFileURLs = fileURLs }
+        func closeFile(_ fileURL: URL) { openFileURLs.removeAll { $0 == fileURL } }
+        func synchronizeProjects(_ projects: [ProjectInfo]) {}
     }
 
     @Test("ProjectInfo 可创建且 Codable 往返")
@@ -51,17 +56,18 @@ struct ProviderProjectTests {
         #expect(resolved.currentProject == nil)
     }
 
-    @Test("默认实现为空操作，无需实现类覆盖")
-    func defaultImplementationsAreNoOps() {
+    @Test("Mock 实现可操作文件状态")
+    func mockProjectProviderFileState() {
         let provider = MockProjectProvider()
 
-        // 这些默认实现不应抛错或产生副作用
-        provider.updateCurrentFile(nil)
-        provider.updateOpenFiles([])
-        provider.closeFile(URL(fileURLWithPath: "/tmp/x.swift"))
-        provider.synchronizeProjects([])
+        let fileURL = URL(fileURLWithPath: "/tmp/x.swift")
+        provider.updateCurrentFile(fileURL)
+        #expect(provider.currentFileURL == fileURL)
 
-        #expect(provider.currentFileURL == nil)
+        provider.updateOpenFiles([fileURL])
+        #expect(provider.openFileURLs == [fileURL])
+
+        provider.closeFile(fileURL)
         #expect(provider.openFileURLs.isEmpty)
     }
 

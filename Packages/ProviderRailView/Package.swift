@@ -15,10 +15,14 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "../LumiUI"),
     ],
     targets: [
         .target(
             name: "ProviderRailView",
+            dependencies: [
+                .product(name: "LumiUI", package: "LumiUI"),
+            ],
             path: "Sources/ProviderRailView"
         ),
         .testTarget(

@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import Testing
 @testable import ProviderSettingView
@@ -77,8 +78,8 @@ struct ProviderSettingViewTests {
 
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
-        final class CustomSettingView: SettingViewProviding {
-            var entries: [SettingEntryItem] = []
+        @MainActor final class CustomSettingView: SettingViewProviding {
+            @Published var entries: [SettingEntryItem] = []
 
             func registerEntries(_ entries: [SettingEntryItem]) {
                 self.entries = entries

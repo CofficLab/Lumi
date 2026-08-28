@@ -102,7 +102,7 @@ public struct AppEmptyState: View {
     VStack(spacing: 16) {
         AppEmptyState(
             icon: "doc.text.magnifyingglass",
-            title: "No Results",
+            title: LumiUILocalization.string("No Results"),
             description: "Try adjusting your search terms"
         )
         .frame(height: 200)
@@ -114,7 +114,7 @@ public struct AppEmptyState: View {
 #Preview("With Action") {
     AppEmptyState(
         icon: "tray",
-        title: "Nothing Here Yet",
+        title: LumiUILocalization.string("Nothing Here Yet"),
         description: "Create your first item to get started",
         actionTitle: "Get Started",
         action: {}

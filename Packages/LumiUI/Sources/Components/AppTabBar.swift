@@ -130,9 +130,9 @@ private struct AppTabButton: View {
             VStack(spacing: 16) {
                 AppTabBar(tabs: ["Chat", "Code", "Images"], selectedTab: $selected)
                 AppTabBar(tabs: [
-                    AppTabBar.Tab(title: "Home", icon: "house"),
-                    AppTabBar.Tab(title: "Search", icon: "magnifyingglass"),
-                    AppTabBar.Tab(title: "Settings", icon: "gearshape"),
+                    AppTabBar.Tab(title: LumiUILocalization.string("Home"), icon: "house"),
+                    AppTabBar.Tab(title: LumiUILocalization.string("Search"), icon: "magnifyingglass"),
+                    AppTabBar.Tab(title: LumiUILocalization.string("Settings"), icon: "gearshape"),
                 ], selectedTab: $selected, showText: false)
             }
             .padding()

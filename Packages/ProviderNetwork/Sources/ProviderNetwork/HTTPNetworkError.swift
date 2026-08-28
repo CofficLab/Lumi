@@ -11,19 +11,22 @@ public struct HTTPNetworkError: Error, LocalizedError, Sendable {
     public let headers: [String: String]
     public let body: Data?
     public let underlyingDescription: String?
+    public let underlyingCode: Int?
 
     public init(
         url: URL,
         statusCode: Int? = nil,
         headers: [String: String] = [:],
         body: Data? = nil,
-        underlyingDescription: String? = nil
+        underlyingDescription: String? = nil,
+        underlyingCode: Int? = nil
     ) {
         self.url = url
         self.statusCode = statusCode
         self.headers = headers
         self.body = body
         self.underlyingDescription = underlyingDescription
+        self.underlyingCode = underlyingCode
     }
 
     public var errorDescription: String? {

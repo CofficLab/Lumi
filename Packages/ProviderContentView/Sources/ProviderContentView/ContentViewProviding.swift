@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 /// 主内容视图提供能力协议
@@ -11,7 +12,8 @@ import SwiftUI
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any ContentViewProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
-public protocol ContentViewProviding: AnyObject {
+public protocol ContentViewProviding: AnyObject, ObservableObject
+    where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 设置当前主内容视图（传 `nil` 表示清空，回退到占位）。
     func setContentView(_ view: AnyView?)
 

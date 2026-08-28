@@ -8,25 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		0B7F9C3C30306DC5001526F4 /* AppUpdatePlugin in Frameworks */ = {isa = PBXBuildFile; productRef = F5CBA1A13020000000425FF6 /* AppUpdatePlugin */; };
-		0B7F9C3D30306DC5001526F4 /* DebugBadgePlugin in Frameworks */ = {isa = PBXBuildFile; productRef = F5DBBA0000000000DBGP0004 /* DebugBadgePlugin */; };
-		0B7F9C3E30306DC5001526F4 /* ProjectRAGPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = F5CBA1A53020000000425FF6 /* ProjectRAGPlugin */; };
-		AIFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = AIFC000000000000000001 /* FactoryCore */; };
-		AIFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = AIFL000000000000000001 /* FactoryLumi */; };
-		BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = BMFB000000000000000001 /* FactoryBookletMaker */; };
-		BMFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = BMFC000000000000000001 /* FactoryCore */; };
-		CDFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = CDFC000000000000000001 /* FactoryCore */; };
-		CDFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = CDFL000000000000000001 /* FactoryLumi */; };
-		DBFC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = DBFC000000000000000001 /* FactoryCore */; };
-		DBFL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = DBFL000000000000000001 /* FactoryLumi */; };
+		AI2AFB000000000000000001 /* FactoryAppIconDesigner in Frameworks */ = {isa = PBXBuildFile; productRef = AI2AFD000000000000000001 /* FactoryAppIconDesigner */; };
+		BM2BFB000000000000000B001 /* FactoryBookletMaker in Frameworks */ = {isa = PBXBuildFile; productRef = BM2AFB0000000000000000001 /* FactoryBookletMaker */; };
+		CD2AFB000000000000000001 /* FactoryCADDesigner in Frameworks */ = {isa = PBXBuildFile; productRef = CD2AFD000000000000000001 /* FactoryCADDesigner */; };
+		DB2AFB000000000000000001 /* FactoryDatabaseManager in Frameworks */ = {isa = PBXBuildFile; productRef = DB2AFD000000000000000001 /* FactoryDatabaseManager */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
-		F5FC00000000000000B001 /* FactoryCore in Frameworks */ = {isa = PBXBuildFile; productRef = F5FC000000000000000001 /* FactoryCore */; };
-		F5FL00000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = F5FL000000000000000001 /* FactoryLumi */; };
-		F5FL20000000000000B001 /* FactoryLumi2 in Frameworks */ = {isa = PBXBuildFile; productRef = F5FL200000000000000001 /* FactoryLumi2 */; };
-		FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = FBMIOD000000000000000001 /* FactoryBookletMakerMobile */; };
+		F5FL20000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = F5FL200000000000000001 /* FactoryLumi */; };
 		LF000000000000000014 /* LumiFinder.appex in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = LF000000000000000001 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		LF000000000000000015 /* SuperLogKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000016 /* SuperLogKit */; };
-		LF00000000000000001A /* LocalizationKit in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000019 /* LocalizationKit */; };
-		LMFL00000000000000B001 /* FactoryLumi2 in Frameworks */ = {isa = PBXBuildFile; productRef = LM0000000000000000000001 /* FactoryLumi2 */; };
+		LF000000000000000015 /* KitSuperLog in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000016 /* KitSuperLog */; };
+		LF00000000000000001A /* KitLocalization in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000019 /* KitLocalization */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,8 +61,6 @@
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		LF000000000000000001 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		LM0000000000000000000002 /* LumiMinimal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LumiMinimal.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		LM00000000000000000000B1 /* LumiMinimal.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = LumiMinimal.xcconfig; path = LumiMinimalApp/LumiMinimalApp.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -111,19 +99,12 @@
 			);
 			target = F54F8C7D2F1A3B6500AABB2A /* Lumi */;
 		};
-		LF000000000000000010 /* Exceptions for "Plugins/RClickPlugin/FinderExtension" folder in "LumiFinder" target */ = {
+		LF000000000000000010 /* Exceptions for "Packages/PluginRClick/FinderExtension" folder in "LumiFinder" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
 			target = LF000000000000000002 /* LumiFinder */;
-		};
-		LM0000000000000000000003 /* Exceptions for "LumiMinimalApp" folder in "LumiMinimal" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"LumiMinimalApp-Info.plist",
-			);
-			target = LM0000000000000000000009 /* LumiMinimal */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -168,20 +149,12 @@
 			path = LumiApp;
 			sourceTree = "<group>";
 		};
-		LF000000000000000009 /* Plugins/RClickPlugin/FinderExtension */ = {
+		LF000000000000000009 /* Packages/PluginRClick/FinderExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				LF000000000000000010 /* Exceptions for "Plugins/RClickPlugin/FinderExtension" folder in "LumiFinder" target */,
+				LF000000000000000010 /* Exceptions for "Packages/PluginRClick/FinderExtension" folder in "LumiFinder" target */,
 			);
-			path = Plugins/RClickPlugin/FinderExtension;
-			sourceTree = "<group>";
-		};
-		LM0000000000000000000004 /* LumiMinimalApp */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				LM0000000000000000000003 /* Exceptions for "LumiMinimalApp" folder in "LumiMinimal" target */,
-			);
-			path = LumiMinimalApp;
+			path = Packages/PluginRClick/FinderExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -191,8 +164,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AIFC00000000000000B001 /* FactoryCore in Frameworks */,
-				AIFL00000000000000B001 /* FactoryLumi in Frameworks */,
+				AI2AFB000000000000000001 /* FactoryAppIconDesigner in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -200,9 +172,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BMFC00000000000000B001 /* FactoryCore in Frameworks */,
-				BMFB00000000000000B001 /* FactoryBookletMaker in Frameworks */,
-				FBMIOB000000000000000001 /* FactoryBookletMakerMobile in Frameworks */,
+				BM2BFB000000000000000B001 /* FactoryBookletMaker in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -210,8 +180,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CDFC00000000000000B001 /* FactoryCore in Frameworks */,
-				CDFL00000000000000B001 /* FactoryLumi in Frameworks */,
+				CD2AFB000000000000000001 /* FactoryCADDesigner in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -219,8 +188,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DBFC00000000000000B001 /* FactoryCore in Frameworks */,
-				DBFL00000000000000B001 /* FactoryLumi in Frameworks */,
+				DB2AFB000000000000000001 /* FactoryDatabaseManager in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -228,12 +196,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0B7F9C3E30306DC5001526F4 /* ProjectRAGPlugin in Frameworks */,
-				0B7F9C3D30306DC5001526F4 /* DebugBadgePlugin in Frameworks */,
 				0B7F9C3C30306DC5001526F4 /* AppUpdatePlugin in Frameworks */,
-				F5FC00000000000000B001 /* FactoryCore in Frameworks */,
-				F5FL00000000000000B001 /* FactoryLumi in Frameworks */,
-				F5FL20000000000000B001 /* FactoryLumi2 in Frameworks */,
+				F5FL20000000000000B001 /* FactoryLumi in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -241,16 +205,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				LF000000000000000015 /* SuperLogKit in Frameworks */,
-				LF00000000000000001A /* LocalizationKit in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		LM0000000000000000000005 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				LMFL00000000000000B001 /* FactoryLumi2 in Frameworks */,
+				LF000000000000000015 /* KitSuperLog in Frameworks */,
+				LF00000000000000001A /* KitLocalization in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -273,14 +229,12 @@
 				BM0000000000000000000004 /* BookletMakerApp */,
 				CD0000000000000000000004 /* CADDesignerApp */,
 				DB0000000000000000000004 /* DatabaseManagerApp */,
-				LM0000000000000000000004 /* LumiMinimalApp */,
-				LF000000000000000009 /* Plugins/RClickPlugin/FinderExtension */,
+				LF000000000000000009 /* Packages/PluginRClick/FinderExtension */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
 				AI0000000000000000000002 /* AppIconDesigner.app */,
 				BM0000000000000000000002 /* BookletMaker.app */,
 				CD0000000000000000000002 /* CADDesigner.app */,
 				DB0000000000000000000002 /* DatabaseManager.app */,
-				LM0000000000000000000002 /* LumiMinimal.app */,
 				LF000000000000000001 /* LumiFinder.appex */,
 				0BBD822C30067A13005CCD05 /* Frameworks */,
 				7BACB91084647EBF2FC35695 /* Project-Debug.xcconfig */,
@@ -289,7 +243,6 @@
 				DD36141333F791471BC94F98 /* BookletMaker.xcconfig */,
 				70E0C23EA196F323323F057B /* CADDesigner.xcconfig */,
 				08B37721AB3348660D4B2D5E /* DatabaseManager.xcconfig */,
-				LM00000000000000000000B1 /* LumiMinimal.xcconfig */,
 				4991976404FE2623D0C4E068 /* Lumi-Debug.xcconfig */,
 				57BB92AADE19B8FAE116DCAD /* Lumi-Release.xcconfig */,
 				BEB5089FCE8F5EB98AEF0906 /* LumiFinder-Debug.xcconfig */,
@@ -317,8 +270,7 @@
 			);
 			name = AppIconDesigner;
 			packageProductDependencies = (
-				AIFC000000000000000001 /* FactoryCore */,
-				AIFL000000000000000001 /* FactoryLumi */,
+				AI2AFD000000000000000001 /* FactoryAppIconDesigner */,
 			);
 			productName = AppIconDesigner;
 			productReference = AI0000000000000000000002 /* AppIconDesigner.app */;
@@ -341,9 +293,7 @@
 			);
 			name = BookletMaker;
 			packageProductDependencies = (
-				BMFC000000000000000001 /* FactoryCore */,
-				BMFB000000000000000001 /* FactoryBookletMaker */,
-				FBMIOD000000000000000001 /* FactoryBookletMakerMobile */,
+				BM2AFB0000000000000000001 /* FactoryBookletMaker */,
 			);
 			productName = BookletMaker;
 			productReference = BM0000000000000000000002 /* BookletMaker.app */;
@@ -366,8 +316,7 @@
 			);
 			name = CADDesigner;
 			packageProductDependencies = (
-				CDFC000000000000000001 /* FactoryCore */,
-				CDFL000000000000000001 /* FactoryLumi */,
+				CD2AFD000000000000000001 /* FactoryCADDesigner */,
 			);
 			productName = CADDesigner;
 			productReference = CD0000000000000000000002 /* CADDesigner.app */;
@@ -390,8 +339,7 @@
 			);
 			name = DatabaseManager;
 			packageProductDependencies = (
-				DBFC000000000000000001 /* FactoryCore */,
-				DBFL000000000000000001 /* FactoryLumi */,
+				DB2AFD000000000000000001 /* FactoryDatabaseManager */,
 			);
 			productName = DatabaseManager;
 			productReference = DB0000000000000000000002 /* DatabaseManager.app */;
@@ -406,7 +354,6 @@
 				F54F8C7C2F1A3B6500AABB2A /* Resources */,
 				LF000000000000000013 /* Embed PlugIns */,
 				F5A4E9203026524000A90001 /* Embed Signed RAG Vector Extension */,
-				IPH1000000000000000001 /* Embed Inline Preview Host */,
 			);
 			buildRules = (
 			);
@@ -418,12 +365,9 @@
 			);
 			name = Lumi;
 			packageProductDependencies = (
-				F5FC000000000000000001 /* FactoryCore */,
-				F5FL000000000000000001 /* FactoryLumi */,
-				F5FL200000000000000001 /* FactoryLumi2 */,
+				F5FL200000000000000001 /* FactoryLumi */,
 				F5CBA1A13020000000425FF6 /* AppUpdatePlugin */,
-				F5DBBA0000000000DBGP0004 /* DebugBadgePlugin */,
-				F5CBA1A53020000000425FF6 /* ProjectRAGPlugin */,
+				LC2AFD000000000000000001 /* PluginLLMProviderCodex */,
 			);
 			productName = Lumi;
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
@@ -442,39 +386,16 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				LF000000000000000009 /* Plugins/RClickPlugin/FinderExtension */,
+				LF000000000000000009 /* Packages/PluginRClick/FinderExtension */,
 			);
 			name = LumiFinder;
 			packageProductDependencies = (
-				LF000000000000000016 /* SuperLogKit */,
-				LF000000000000000019 /* LocalizationKit */,
+				LF000000000000000016 /* KitSuperLog */,
+				LF000000000000000019 /* KitLocalization */,
 			);
 			productName = LumiFinder;
 			productReference = LF000000000000000001 /* LumiFinder.appex */;
 			productType = "com.apple.product-type.app-extension";
-		};
-		LM0000000000000000000009 /* LumiMinimal */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = LM000000000000000000000F /* Build configuration list for PBXNativeTarget "LumiMinimal" */;
-			buildPhases = (
-				LM0000000000000000000007 /* Sources */,
-				LM0000000000000000000005 /* Frameworks */,
-				LM0000000000000000000006 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				LM0000000000000000000004 /* LumiMinimalApp */,
-			);
-			name = LumiMinimal;
-			packageProductDependencies = (
-				LM0000000000000000000001 /* FactoryLumi2 */,
-			);
-			productName = LumiMinimal;
-			productReference = LM0000000000000000000002 /* LumiMinimal.app */;
-			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
@@ -504,9 +425,6 @@
 					LF000000000000000002 = {
 						CreatedOnToolsVersion = 16.4;
 					};
-					LM0000000000000000000009 = {
-						CreatedOnToolsVersion = 16.4;
-					};
 				};
 			};
 			buildConfigurationList = F54F8C792F1A3B6500AABB2A /* Build configuration list for PBXProject "Lumi" */;
@@ -522,16 +440,15 @@
 			mainGroup = F54F8C752F1A3B6500AABB2A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */,
-				FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */,
-				FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi2" */,
-				FB00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */,
-				LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */,
-				LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/LocalizationKit" */,
-				F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/AppUpdatePlugin" */,
-				F5DBBA0000000000DBGP0001 /* XCLocalSwiftPackageReference "Plugins/DebugBadgePlugin" */,
-				F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/ProjectRAGPlugin" */,
-				FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMakerMobile" */,
+				FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */,
+				LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/KitSuperLog" */,
+				LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/KitLocalization" */,
+				F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdate" */,
+				BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */,
+				AI2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryAppIconDesigner" */,
+				CD2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCADDesigner" */,
+				DB2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryDatabaseManager" */,
+				LC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -543,7 +460,6 @@
 				AI0000000000000000000009 /* AppIconDesigner */,
 				CD0000000000000000000009 /* CADDesigner */,
 				DB0000000000000000000009 /* DatabaseManager */,
-				LM0000000000000000000009 /* LumiMinimal */,
 				LF000000000000000002 /* LumiFinder */,
 			);
 		};
@@ -593,13 +509,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		LM0000000000000000000006 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -612,7 +521,7 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/Plugins/ProjectRAGPlugin/Resources/vec0.dylib",
+				"$(SRCROOT)/Packages/PluginProjectRAG/Resources/vec0.dylib",
 			);
 			name = "Embed Signed RAG Vector Extension";
 			outputFileListPaths = (
@@ -622,27 +531,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "set -euo pipefail\n\nAPP_RESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nAPP_FRAMEWORKS=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nSOURCE=\"\"\n\nif [[ -d \"${APP_RESOURCES}\" ]]; then\n  SOURCE=\"$(/usr/bin/find \"${APP_RESOURCES}\" -path '*ProjectRAGPlugin_ProjectRAGPlugin.bundle*' -name 'vec0.dylib' -type f -print -quit)\"\nfi\n\nif [[ -z \"${SOURCE}\" ]]; then\n  SOURCE=\"${SRCROOT}/Plugins/ProjectRAGPlugin/Resources/vec0.dylib\"\nfi\n\nDEST=\"${APP_FRAMEWORKS}/vec0.dylib\"\n/bin/mkdir -p \"${APP_FRAMEWORKS}\"\n/bin/cp -f \"${SOURCE}\" \"${DEST}\"\n/bin/chmod 755 \"${DEST}\"\n\nif [[ \"${CODE_SIGNING_ALLOWED:-NO}\" == \"YES\" ]]; then\n  SIGN_IDENTITY=\"${EXPANDED_CODE_SIGN_IDENTITY:-}\"\n  if [[ -z \"${SIGN_IDENTITY}\" ]]; then\n    SIGN_IDENTITY=\"${CODE_SIGN_IDENTITY:-}\"\n  fi\n  if [[ -n \"${SIGN_IDENTITY}\" ]]; then\n    /usr/bin/codesign --force --sign \"${SIGN_IDENTITY}\" --timestamp=none \"${DEST}\"\n  fi\nfi\n";
-		};
-		IPH1000000000000000001 /* Embed Inline Preview Host */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Embed Inline Preview Host";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/LumiPreviewHostApp",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/zsh;
-			shellScript = "\"${SRCROOT}/Packages/LumiPreviewKit/scripts/embed-inline-preview-host.sh\"\n";
+			shellScript = "set -euo pipefail\n\nAPP_RESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nAPP_FRAMEWORKS=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nLOCAL_EXTENSION=\"${SRCROOT}/Packages/PluginProjectRAG/Resources/vec0.dylib\"\nSOURCE=\"\"\n\nif [[ -d \"${APP_RESOURCES}\" ]]; then\n  SOURCE=\"$(/usr/bin/find \"${APP_RESOURCES}\" -path '*ProjectRAGEngine_ProjectRAGEngine.bundle*' -name 'vec0.dylib' -type f -print -quit)\"\nfi\n\nif [[ -z \"${SOURCE}\" && -f \"${LOCAL_EXTENSION}\" ]]; then\n  SOURCE=\"${LOCAL_EXTENSION}\"\nfi\n\nif [[ -z \"${SOURCE}\" ]]; then\n  echo \"error: required vec0.dylib is missing; Project RAG cannot start without sqlite-vec.\" >&2\n  exit 1\nfi\n\nDEST=\"${APP_FRAMEWORKS}/vec0.dylib\"\n/bin/mkdir -p \"${APP_FRAMEWORKS}\"\n/bin/cp -f \"${SOURCE}\" \"${DEST}\"\n/bin/chmod 755 \"${DEST}\"\n\nif [[ \"${CODE_SIGNING_ALLOWED:-NO}\" == \"YES\" ]]; then\n  SIGN_IDENTITY=\"${EXPANDED_CODE_SIGN_IDENTITY:-}\"\n  if [[ -z \"${SIGN_IDENTITY}\" ]]; then\n    SIGN_IDENTITY=\"${CODE_SIGN_IDENTITY:-}\"\n  fi\n  if [[ -n \"${SIGN_IDENTITY}\" ]]; then\n    /usr/bin/codesign --force --sign \"${SIGN_IDENTITY}\" --timestamp=none \"${DEST}\"\n  fi\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -683,13 +572,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		LF000000000000000003 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		LM0000000000000000000007 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -805,20 +687,6 @@
 			};
 			name = Release;
 		};
-		LM000000000000000000000D /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = LM00000000000000000000B1 /* LumiMinimal.xcconfig */;
-			buildSettings = {
-			};
-			name = Debug;
-		};
-		LM000000000000000000000E /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = LM00000000000000000000B1 /* LumiMinimal.xcconfig */;
-			buildSettings = {
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -885,145 +753,89 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		LM000000000000000000000F /* Build configuration list for PBXNativeTarget "LumiMinimal" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				LM000000000000000000000D /* Debug */,
-				LM000000000000000000000E /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/AppUpdatePlugin" */ = {
+		AI2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryAppIconDesigner" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/AppUpdatePlugin;
+			relativePath = Packages/FactoryAppIconDesigner;
 		};
-		F5CBA1A43020000000425FF6 /* XCLocalSwiftPackageReference "Plugins/ProjectRAGPlugin" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/ProjectRAGPlugin;
-		};
-		F5DBBA0000000000DBGP0001 /* XCLocalSwiftPackageReference "Plugins/DebugBadgePlugin" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Plugins/DebugBadgePlugin;
-		};
-		FB00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */ = {
+		BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FactoryBookletMaker;
 		};
-		FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMakerMobile" */ = {
+		CD2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCADDesigner" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FactoryBookletMakerMobile;
+			relativePath = Packages/FactoryCADDesigner;
 		};
-		FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */ = {
+		DB2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryDatabaseManager" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FactoryCore;
+			relativePath = Packages/FactoryDatabaseManager;
 		};
-		FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */ = {
+		LC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderCodex;
+		};
+		F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdate" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginAppUpdate;
+		};
+		FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FactoryLumi;
 		};
-		FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi2" */ = {
+		LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/KitSuperLog" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FactoryLumi2;
+			relativePath = Packages/KitSuperLog;
 		};
-		LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/SuperLogKit" */ = {
+		LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/KitLocalization" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/SuperLogKit;
-		};
-		LF000000000000000018 /* XCLocalSwiftPackageReference "Packages/LocalizationKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LocalizationKit;
+			relativePath = Packages/KitLocalization;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		AIFC000000000000000001 /* FactoryCore */ = {
+		AI2AFD000000000000000001 /* FactoryAppIconDesigner */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
-			productName = FactoryCore;
+			package = AI2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryAppIconDesigner" */;
+			productName = FactoryAppIconDesigner;
 		};
-		AIFL000000000000000001 /* FactoryLumi */ = {
+		BM2AFB0000000000000000001 /* FactoryBookletMaker */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
-			productName = FactoryLumi;
-		};
-		BMFB000000000000000001 /* FactoryBookletMaker */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FB00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */;
+			package = BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */;
 			productName = FactoryBookletMaker;
 		};
-		BMFC000000000000000001 /* FactoryCore */ = {
+		CD2AFD000000000000000001 /* FactoryCADDesigner */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
-			productName = FactoryCore;
+			package = CD2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCADDesigner" */;
+			productName = FactoryCADDesigner;
 		};
-		CDFC000000000000000001 /* FactoryCore */ = {
+		DB2AFD000000000000000001 /* FactoryDatabaseManager */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
-			productName = FactoryCore;
-		};
-		CDFL000000000000000001 /* FactoryLumi */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
-			productName = FactoryLumi;
-		};
-		DBFC000000000000000001 /* FactoryCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
-			productName = FactoryCore;
-		};
-		DBFL000000000000000001 /* FactoryLumi */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
-			productName = FactoryLumi;
+			package = DB2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryDatabaseManager" */;
+			productName = FactoryDatabaseManager;
 		};
 		F5CBA1A13020000000425FF6 /* AppUpdatePlugin */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppUpdatePlugin;
 		};
-		F5CBA1A53020000000425FF6 /* ProjectRAGPlugin */ = {
+		F5FL200000000000000001 /* FactoryLumi */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = ProjectRAGPlugin;
-		};
-		F5DBBA0000000000DBGP0004 /* DebugBadgePlugin */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = DebugBadgePlugin;
-		};
-		F5FC000000000000000001 /* FactoryCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FC00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCore" */;
-			productName = FactoryCore;
-		};
-		F5FL000000000000000001 /* FactoryLumi */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FL00000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
+			package = FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
 			productName = FactoryLumi;
 		};
-		F5FL200000000000000001 /* FactoryLumi2 */ = {
+		LF000000000000000016 /* KitSuperLog */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi2" */;
-			productName = FactoryLumi2;
+			productName = KitSuperLog;
 		};
-		FBMIOD000000000000000001 /* FactoryBookletMakerMobile */ = {
+		LF000000000000000019 /* KitLocalization */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FBMIOP000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMakerMobile" */;
-			productName = FactoryBookletMakerMobile;
+			productName = KitLocalization;
 		};
-		LF000000000000000016 /* SuperLogKit */ = {
+		LC2AFD000000000000000001 /* PluginLLMProviderCodex */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = SuperLogKit;
-		};
-		LF000000000000000019 /* LocalizationKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = LocalizationKit;
-		};
-		LM0000000000000000000001 /* FactoryLumi2 */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi2" */;
-			productName = FactoryLumi2;
+			package = LC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */;
+			productName = PluginLLMProviderCodex;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

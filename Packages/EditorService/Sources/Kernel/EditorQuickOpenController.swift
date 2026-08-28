@@ -1,4 +1,5 @@
 import Foundation
+import EditorContracts
 import EditorSource
 import LanguageServerProtocol
 

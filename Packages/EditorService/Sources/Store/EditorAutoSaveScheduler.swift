@@ -1,7 +1,7 @@
 import Foundation
 import EditorKernel
 import os
-import SuperLogKit
+import KitSuperLog
 
 /// 自动保存防抖调度器。
 ///

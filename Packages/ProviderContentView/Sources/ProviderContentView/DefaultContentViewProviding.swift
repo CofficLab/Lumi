@@ -5,8 +5,8 @@ import SwiftUI
 /// 插件通过 `setContentView(_:)` 注册主要内容（如设备信息视图）；
 /// 未设置时 `makeContentView()` 返回占位提示。
 @MainActor
-public final class DefaultContentViewProviding: ContentViewProviding {
-    private var contentView: AnyView?
+public final class DefaultContentViewProviding: ContentViewProviding, ObservableObject {
+    @Published fileprivate var contentView: AnyView?
 
     public init() {}
 
@@ -15,10 +15,19 @@ public final class DefaultContentViewProviding: ContentViewProviding {
     }
 
     public func makeContentView() -> AnyView {
-        if let contentView {
-            return contentView
+        AnyView(ContentHostView(provider: self))
+    }
+}
+
+/// 稳定挂在 RootView 中并观察 Provider；后续 `setContentView` 会直接刷新内容区。
+private struct ContentHostView: View {
+    @ObservedObject var provider: DefaultContentViewProviding
+
+    var body: some View {
+        if let contentView = provider.contentView {
+            contentView
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        return AnyView(ContentPlaceholderView())
     }
 }
 
@@ -29,7 +38,7 @@ private struct ContentPlaceholderView: View {
             Image(systemName: "macwindow")
                 .font(.system(size: 32))
                 .foregroundStyle(.secondary)
-            Text("No Content")
+            Text(LumiPluginLocalization.string("No Content", bundle: .module))
                 .font(.headline)
                 .foregroundStyle(.secondary)
         }

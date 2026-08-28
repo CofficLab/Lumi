@@ -42,20 +42,6 @@ public protocol ProjectProviding: ObservableObject where ObjectWillChangePublish
 
     /// 同步应用当前维护的完整项目列表。
     ///
-    /// 默认实现保持向后兼容；拥有项目持久化能力的实现应覆盖此方法。
+    /// 拥有项目持久化能力的实现应覆盖此方法以持久化项目列表。
     func synchronizeProjects(_ projects: [ProjectInfo])
-}
-
-public extension ProjectProviding {
-    var openFileURLs: [URL] { [] }
-
-    var currentFileURL: URL? { nil }
-
-    func updateCurrentFile(_ fileURL: URL?) {}
-
-    func updateOpenFiles(_ fileURLs: [URL]) {}
-
-    func closeFile(_ fileURL: URL) {}
-
-    func synchronizeProjects(_ projects: [ProjectInfo]) {}
 }

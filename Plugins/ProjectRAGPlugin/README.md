@@ -1,3 +1,0 @@
-# ProjectRAGPlugin
-
-Retrieval-Augmented Generation

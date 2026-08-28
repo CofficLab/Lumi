@@ -10,12 +10,19 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
     private let lock = NSLock()
     private var routesByPlugin: [String: [WebRoute]] = [:]
     private var _isRunning = false
+    private var observers: [UUID: @Sendable (WebServerEvent) -> Void] = [:]
 
     /// 配置端口。骨架实现不真实绑定端口,启动后仍返回此值。
     public let port: Int
+    /// 路由处理完成后的活动事件；宿主可据此显示写操作反馈。
+    public let onActivity: (@Sendable (WebRequestActivity) -> Void)?
 
-    public init(port: Int = 8765) {
+    public init(
+        port: Int = 8765,
+        onActivity: (@Sendable (WebRequestActivity) -> Void)? = nil
+    ) {
         self.port = port
+        self.onActivity = onActivity
     }
 
     public var isRunning: Bool {
@@ -26,18 +33,20 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
 
     public func register(_ routes: [WebRoute], forPlugin pluginID: String) {
         lock.lock()
-        defer { lock.unlock() }
         if routes.isEmpty {
             routesByPlugin[pluginID] = nil
         } else {
             routesByPlugin[pluginID] = routes
         }
+        lock.unlock()
+        notify(.routesChanged(pluginID: pluginID))
     }
 
     public func unregister(pluginID: String) {
         lock.lock()
-        defer { lock.unlock() }
         routesByPlugin[pluginID] = nil
+        lock.unlock()
+        notify(.routesChanged(pluginID: pluginID))
     }
 
     public func start() async throws {
@@ -52,8 +61,35 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
     /// 同步更新运行状态（async 方法体内不可直接调用 NSLock，故提取为同步函数）。
     private func setRunning(_ running: Bool) {
         lock.lock()
+        guard _isRunning != running else {
+            lock.unlock()
+            return
+        }
         _isRunning = running
         lock.unlock()
+        notify(running ? .started(port: port) : .stopped)
+    }
+
+    @discardableResult
+    public func addWebServerObserver(_ callback: @escaping @Sendable (WebServerEvent) -> Void) -> any WebServerObserverHandle {
+        let id = UUID()
+        lock.lock()
+        observers[id] = callback
+        lock.unlock()
+        return DefaultWebServerObserverHandle { [weak self] in
+            self?.lock.lock()
+            self?.observers.removeValue(forKey: id)
+            self?.lock.unlock()
+        }
+    }
+
+    private func notify(_ event: WebServerEvent) {
+        lock.lock()
+        let callbacks = Array(observers.values)
+        lock.unlock()
+        for callback in callbacks {
+            callback(event)
+        }
     }
 
     // MARK: - Request Handling
@@ -66,7 +102,7 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
     public func handle(_ request: WebRouteRequest) async throws -> WebRouteResponse {
         let routeAndParams = match(request)
         switch routeAndParams {
-        case .matched(let route, let pathParameters):
+        case .matched(let route, let pathParameters, let pluginID):
             let routedRequest = WebRouteRequest(
                 method: request.method,
                 path: request.path,
@@ -75,7 +111,15 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
                 headers: request.headers,
                 body: request.body
             )
-            return try await route.handler(routedRequest)
+            let response = try await route.handler(routedRequest)
+            onActivity?(WebRequestActivity(
+                pluginID: pluginID,
+                method: route.method.rawValue,
+                path: route.path,
+                description: route.description,
+                statusCode: response.statusCode
+            ))
+            return response
         case .methodNotAllowed:
             return .methodNotAllowed
         case .notFound:
@@ -84,7 +128,7 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
     }
 
     private enum MatchResult {
-        case matched(WebRoute, [String: String])
+        case matched(WebRoute, [String: String], String)
         case methodNotAllowed
         case notFound
     }
@@ -93,14 +137,16 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
         lock.lock()
         defer { lock.unlock() }
         var pathMatchedButMethodWrong = false
-        for route in routesByPlugin.values.flatMap({ $0 }) {
+        for (pluginID, routes) in routesByPlugin {
+            for route in routes {
             guard let pathParameters = Self.match(pathTemplate: route.path, requestPath: request.path) else {
                 continue
             }
             if route.method == request.method {
-                return .matched(route, pathParameters)
+                return .matched(route, pathParameters, pluginID)
             }
             pathMatchedButMethodWrong = true
+            }
         }
         return pathMatchedButMethodWrong ? .methodNotAllowed : .notFound
     }
@@ -120,5 +166,26 @@ public final class DefaultWebServerProviding: WebServerProviding, @unchecked Sen
             }
         }
         return parameters
+    }
+}
+
+private final class DefaultWebServerObserverHandle: WebServerObserverHandle, @unchecked Sendable {
+    private let cancellation: @Sendable () -> Void
+    private let lock = NSLock()
+    private var isCancelled = false
+
+    init(cancellation: @escaping @Sendable () -> Void) {
+        self.cancellation = cancellation
+    }
+
+    func cancel() {
+        lock.lock()
+        guard !isCancelled else {
+            lock.unlock()
+            return
+        }
+        isCancelled = true
+        lock.unlock()
+        cancellation()
     }
 }

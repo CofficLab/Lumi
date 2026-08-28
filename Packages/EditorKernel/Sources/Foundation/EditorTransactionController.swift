@@ -178,6 +178,18 @@ public final class EditorTransactionController {
             return lhs.range.length < rhs.range.length
         }
 
+        // Snippet placeholder/exit ranges are relative to the inserted snippet
+        // text, so they must NOT be remapped through the snippet's own
+        // replacement — only through additional text edits.
+        let snippetReplacement = EditorTransaction.Replacement(
+            range: EditorRange(
+                location: replacementRange.location,
+                length: replacementRange.length
+            ),
+            text: snippet.text
+        )
+        let additionalReplacements = sortedReplacements.filter { $0 != snippetReplacement }
+
         let remapRange: (NSRange) -> NSRange = { range in
             guard self.isValidRange(range),
                   replacementRange.location <= Int.max - range.location else {
@@ -191,12 +203,12 @@ public final class EditorTransactionController {
             let mappedStart = self.remappedOffset(
                 absoluteStart,
                 isRangeEnd: false,
-                replacements: sortedReplacements
+                replacements: additionalReplacements
             )
             let mappedEnd = self.remappedOffset(
                 absoluteEnd,
                 isRangeEnd: true,
-                replacements: sortedReplacements
+                replacements: additionalReplacements
             )
             return NSRange(location: min(mappedStart, mappedEnd), length: max(mappedEnd - mappedStart, 0))
         }

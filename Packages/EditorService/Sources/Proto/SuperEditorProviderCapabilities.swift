@@ -14,7 +14,7 @@ import LanguageServerProtocol
 /// 抽象为内核可消费的接口。内核只依赖这些协议，不直接引用具体实现。
 ///
 /// ## 注册流程
-/// 1. LSP 子插件在 `registerEditorExtensions(into:)` 中创建并注册自己的 Provider
+/// 1. LSP 贡献随 `EditorContributionBundle`（或 Host 内部装配）注册自己的 Provider
 /// 2. `EditorExtensionRegistry` 聚合所有 Provider
 /// 3. `EditorState` 从 registry 获取 Provider 实例
 

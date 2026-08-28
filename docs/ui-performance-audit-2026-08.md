@@ -2,7 +2,7 @@
 
 > 范围:`LumiApp/`、`Packages/`、`Plugins/`(排除 build 产物)。
 > 方法:静态扫描三类风险——主线程阻塞 IO/子进程、SwiftUI 重渲染、聊天 Markdown 渲染链路。
-> 结论先行:历史消息滚动路径已经过一轮系统性治理(List 复用、三级缓存、流式增量解析、16ms 帧门禁),整体健康;剩余风险集中在 **流式输出后期掉帧**、**启动主线程同步 IO**、以及 **kernel 高频 objectWillChange 整页重渲染** 三块。
+> 结论先行:历史消息滚动路径已经过一轮系统性治理(List 复用、三级缓存、流式增量解析、16ms 帧门禁),整体健康;剩余风险集中在 **流式输出后期掉帧** 与 **启动主线程同步 IO**。Kernel 已不再转发 Provider 的 `objectWillChange`。
 
 ---
 
@@ -11,7 +11,7 @@
 | 编号 | 严重度 | 位置 | 问题 |
 |---|---|---|---|
 | P1 | 高 | `MarkdownBlockRenderer.swift:531-538` | 流式期间 `HorizontalScrollView.updateNSView` 每帧清空 fittingSize 缓存,每 16ms 重跑全内容 `NSHostingView.fittingSize` |
-| P2 | 高 | `KernelLumi+Registration.swift:34,57,62,99,109` + `ListView.swift:23` | MessageSending 等高频服务把 objectWillChange 转发到 kernel,`@ObservedObject kernel` 的视图整页重渲染 |
+| P2 | 已处理 | `KernelCore` Provider 注册与 UI 宿主 | Provider 状态改为精准观察，Kernel 不再转发 `objectWillChange`，菜单和主窗口不因无关 Provider 更新整页重渲染 |
 | P3 | 高 | `ProjectsPlugin/Sources/Hooks/OnReady.swift:20-66` | 启动阶段 @MainActor 上做迁移、示例项目整目录复制、同步 JSON 读取 |
 | P4 | 高 | `ConversationService.swift:43-73` | @MainActor init 同步读+解码整个会话列表,会话多时启动卡顿 |
 | P5 | 高 | `XcodeBuildServerLocator.swift:28-56` | 主线程同步 spawn 子进程 + `waitUntilExit`(经 `XcodeProjectStatusBarViewModel.refreshCapabilityLevel` 调用) |
@@ -20,7 +20,7 @@
 | P8 | 中 | `MarkdownBlockRenderer.swift:50-57,429-435`、`HighlightedCodeView.swift:35-49` | `.task` 继承 View 的 MainActor,"异步解析"实际仍跑主线程(注释与事实不符)——**✅ 已修复(2026-08-15)** |
 | P9 | 中 | `MessageStreamingStore.swift:56-70` | 每 token 全串 `content += piece` + 字典整体写回,O(n²)/回合;下游 `blocks(for:)` 再拷贝 |
 | P10 | 中 | `MarkdownParser.swift:11-14` + `MarkdownTableNormalizer.swift:24` | 每次 parse 前全文表格归一化(逐行正则),无表格文档纯冗余 |
-| P11 | 中 | `ShellKit/ShellExecutor.swift:262`、`GitSection.swift:26-48`、`GitHubCLIDetectService.swift:135-153`、`SubprocessTransport.swift:166-170` | 四处 semaphore.wait "同步壳包异步" 模式,落在 UI 路径即冻结 |
+| P11 | 中 | `KitShell/ShellExecutor.swift:262`、`GitSection.swift:26-48`、`GitHubCLIDetectService.swift:135-153`、`SubprocessTransport.swift:166-170` | 四处 semaphore.wait "同步壳包异步" 模式,落在 UI 路径即冻结 |
 | P12 | 中 | `XcodeBuildServerStore.swift:62-255` | 主 Actor 状态栏 VM 高频同步读 JSON(manifest 读写) |
 | P13 | 低 | `AgentTurnView.swift:53-62`、`ScrollViewBottomTracker.swift:148-157` | item 每变更新建 Task;滚动每事件分配一个 Task |
 | P14 | 低 | `TokenLineChartView.swift:270-283`、`ProviderSettingsPageBase.swift:78`、`AssistantMessageView.swift:53,94` 等 | 每次渲染新建 DateFormatter / body 内 filter+map / theme 重建 |
@@ -31,7 +31,7 @@
 ## 二、已确认做对的关键点(勿回退)
 
 1. **列表容器**:`ListV3View` / `ListV2View` 用 `List`(NSTableView cell 复用)替代 LazyVStack,规避富文本长列表 AttributeGraph 活锁。
-2. **流式行隔离**:流式临时行用进程级常量 `LumiStreamingRowID` 单独渲染;VM 侧 16ms 帧门禁合并逐 token 广播;`MessageStreaming` 注册时 `forwardsObjectWillChange: false`。
+2. **流式行隔离**:流式临时行用进程级常量 `LumiStreamingRowID` 单独渲染;VM 侧 16ms 帧门禁合并逐 token 广播;消费者直接观察 `MessageStreaming`，Kernel 不转发 Provider 变化。
 3. **重建短路**:`HistoryBuildSignatureV3` 指纹签名跳过 O(rows×content) 数组比较。
 4. **底部判定**:`ScrollViewBottomTracker` 用 `NSClipView.boundsDidChangeNotification` 替代 GeometryReader+PreferenceKey,`AtBottomBox` 刻意非 Observable,切断布局反馈环,含迟滞防抖。
 5. **Markdown 缓存**:块级有界 LRU(384)+ 流式稳定前缀增量解析 + 行内 AttributedString 缓存(2048)+ 代码高亮缓存(512)。
@@ -61,11 +61,11 @@
 
 > **📎 滚动专项第二轮:SwiftUI 路径极限优化(2026-08-15)**
 > 在不动 AppKit 插件的前提下,清除生产行 chrome 渲染路径上所有"每次 body 求值/每次重物化都重做"的工作:
-> - **纯缓存化**:`NSFullUserName()` 目录服务查询、`Color(hex:)` 解析(AvatarView 预构建)、`LumiLocalization.string` 结果级记忆化(原每次调用做 bundle 路径探测,LocalizationKit 内修复惠及全部插件)、`ErrorMessageView` 解析器双跑、`MessageViewChrome` token/thinking 双计算、`CollapsiblePlainText` 无守卫整串切分、`ToolCallRowView` 注册表二次查找 + AnyView 闭包、`AppIdentityRow` 逐条 trim。
+> - **纯缓存化**:`NSFullUserName()` 目录服务查询、`Color(hex:)` 解析(AvatarView 预构建)、`LumiLocalization.string` 结果级记忆化(原每次调用做 bundle 路径探测,KitLocalization 内修复惠及全部插件)、`ErrorMessageView` 解析器双跑、`MessageViewChrome` token/thinking 双计算、`CollapsiblePlainText` 无守卫整串切分、`ToolCallRowView` 注册表二次查找 + AnyView 闭包、`AppIdentityRow` 逐条 trim。
 > - **高影响修复**:① `ToolCallResolutionCache`——工具调用结果按消息 id 进程级缓存(仅全解析完成才缓存,进行中回合不钉死),行重物化不再逐个 await kernel;② `MessageAttachmentDecodeCache` + `AppImageDecodeCache`——用户消息附件 JSON/base64 解码与位图解码各缓存一次;③ `CopyMessageButton` 内容改惰性闭包(空消息的 metadata dump 不再进渲染路径)。
 > - **行结构精简(产品已确认 UX 变化)**:操作按钮组(复制/重发/思考/详情/info)仅在行悬停 150ms 后物化,离开即隐藏;防抖刻意防"滚动时光标下行的 hover 风暴"。时间戳/token 文本常驻。
 > - **按证据跳过**:状态行 `PulseRipple` 门控——数据模型中 status 行全部为瞬态(turn 结束即清除),不存在"终态 status 行",当前行为已等价于"仅进行中动画"意图。
-> - **测量教训**:本轮 harness 复测揭示环境噪声在 ±40% 量级主导(同一二进制在不同时间窗测得 2.3~4.5ms/趟);跨时间窗对比无效,只接受同一时间窗内的交错 A/B。chrome 层收益无法用纯 MarkdownKit harness 量化,以真机体感验收为准。
+> - **测量教训**:本轮 harness 复测揭示环境噪声在 ±40% 量级主导(同一二进制在不同时间窗测得 2.3~4.5ms/趟);跨时间窗对比无效,只接受同一时间窗内的交错 A/B。chrome 层收益无法用纯 KitMarkdown harness 量化,以真机体感验收为准。
 
 ### 阶段 1:高收益、低风险(建议先做)
 
@@ -84,7 +84,7 @@
 > - 局限:harness 的纯流式逐 token 场景被全量重解析(P7 领域)主导且运行方差大,不适合作为 P1 的隔离信号;真实 App 端到端确认待 P2/P9 修复后统一验收。
 
 **P2 — kernel 转发豁免**
-对 `MessageSending`、`ConversationManaging`、`MessageManaging`、`ToolManaging`、`AgentTurnManaging` 的注册加 `forwardsObjectWillChange: false`(与 `MessageStreaming` 同法),消费方改为窄播观察具体服务;`ListView` 移除对整个 kernel 的 `@ObservedObject`。
+移除 Kernel 对所有 Provider 的 `objectWillChange` 转发，消费方改为窄播观察具体服务;`ListView` 移除对整个 kernel 的 `@ObservedObject`。高频 Provider 由自身观察接口或 `objectWillChange` 驱动局部 ViewModel。
 
 **P3/P4 — 启动主线程 IO 下放**
 - `ProjectsOnReadyHook.execute` 的迁移/示例安装/loadProjects 移入 `Task.detached`,完成后回 MainActor 赋值。

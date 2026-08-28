@@ -1,5 +1,5 @@
 import Foundation
-import LocalizationKit
+import KitLocalization
 
 public enum LumiUILocalization {
     public static func string(_ key: String, locale: Locale = .current) -> String {

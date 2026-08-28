@@ -10,6 +10,7 @@ public struct AppButton: View {
         case secondary
         case ghost
         case tonal
+        case warning
         case destructive
     }
 
@@ -198,6 +199,8 @@ public struct AppButton: View {
             return theme.primary
         case .tonal:
             return theme.textSecondary
+        case .warning:
+            return .yellow
         case .destructive:
             return theme.error
         }
@@ -222,6 +225,9 @@ public struct AppButton: View {
             case .tonal:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .fill(isEffectivelyHovered ? theme.textSecondary.opacity(0.18) : theme.textSecondary.opacity(0.10))
+            case .warning:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .fill(isEffectivelyHovered ? Color.yellow.opacity(0.18) : Color.yellow.opacity(0.10))
             case .destructive:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .fill(isEffectivelyHovered ? theme.error.opacity(0.35) : theme.error.opacity(0.22))
@@ -248,6 +254,12 @@ public struct AppButton: View {
                         isEffectivelyHovered ? theme.primary.opacity(0.45) : theme.primary.opacity(0.25),
                         lineWidth: 1
                     )
+            case .warning:
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .stroke(
+                        isEffectivelyHovered ? Color.yellow.opacity(0.55) : Color.yellow.opacity(0.35),
+                        lineWidth: 1
+                    )
             case .destructive:
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
                     .stroke(
@@ -266,17 +278,17 @@ public struct AppButton: View {
         Spacer()
         VStack(spacing: 12) {
             HStack(spacing: 8) {
-                AppButton("Primary", style: .primary) {}
-                AppButton("Secondary", style: .secondary) {}
+                AppButton(LumiUILocalization.string("Primary"), style: .primary) {}
+                AppButton(LumiUILocalization.string("Secondary"), style: .secondary) {}
             }
             HStack(spacing: 8) {
-                AppButton("Ghost", style: .ghost) {}
-                AppButton("Tonal", style: .tonal) {}
-                AppButton("Destructive", style: .destructive) {}
+                AppButton(LumiUILocalization.string("Ghost"), style: .ghost) {}
+                AppButton(LumiUILocalization.string("Tonal"), style: .tonal) {}
+                AppButton(LumiUILocalization.string("Destructive"), style: .destructive) {}
             }
             HStack(spacing: 8) {
-                AppButton("Small", systemImage: "star", style: .primary, size: .small) {}
-                AppButton("With Icon", systemImage: "gearshape", style: .secondary) {}
+                AppButton(LumiUILocalization.string("Small"), systemImage: "star", style: .primary, size: .small) {}
+                AppButton(LumiUILocalization.string("With Icon"), systemImage: "gearshape", style: .secondary) {}
             }
         }
         Spacer()

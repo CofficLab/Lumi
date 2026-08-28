@@ -19,7 +19,14 @@ let package = Package(
     targets: [
         .target(
             name: "ProviderWebServer",
-            path: "Sources/ProviderWebServer"
+            path: "Sources/ProviderWebServer",
+            sources: [
+                "DefaultWebServerProviding.swift",
+                "HTTPMethod.swift",
+                "WebRequestActivity.swift",
+                "WebRoute.swift",
+                "WebServerProviding.swift",
+            ]
         ),
         .testTarget(
             name: "ProviderWebServerTests",

@@ -62,7 +62,17 @@ public final class EditorSessionStore: ObservableObject {
 
     func syncActiveSession(from snapshot: EditorSession) {
         guard let fileURL = snapshot.fileURL else {
-            activeSessionID = nil
+            // 文件尚未加载完成（如关闭标签后加载下一个文件的窗口期）不应清空活跃标签；
+            // 真正清空场景由 closeAll() 显式处理。
+            return
+        }
+
+        // 快照文件与当前活跃 session 不一致时视为过期同步（活跃 tab 刚切换/关闭、
+        // 编辑器内容尚未跟上），忽略以避免已关闭的标签被复活或活跃标签被清空。
+        if let activeID = activeSessionID,
+           let activeSession = session(for: activeID),
+           let activeFileURL = activeSession.fileURL,
+           activeFileURL.standardizedFileURL != fileURL.standardizedFileURL {
             return
         }
 

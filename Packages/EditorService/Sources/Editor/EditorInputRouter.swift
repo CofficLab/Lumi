@@ -4,7 +4,7 @@ import EditorSource
 import EditorTextView
 import LanguageServerProtocol
 import os
-import SuperLogKit
+import KitSuperLog
 
 @MainActor
 final class EditorInputRouter: SuperLog {

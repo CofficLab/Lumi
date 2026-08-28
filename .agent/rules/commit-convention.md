@@ -24,7 +24,7 @@
 | `fix` | 修复 bug | `fix(mind-map): only show toolbar title when active` |
 | `refactor` | 重构（不改变行为） | `refactor(layout): move settings button to title toolbar` |
 | `style` | 样式/格式调整（不改变行为） | `style(activitybar): use LayoutManager directly` |
-| `perf` | 性能优化 | `perf(MarkdownKit): convert caches to synchronous lock` |
+| `perf` | 性能优化 | `perf(KitMarkdown): convert caches to synchronous lock` |
 | `chore` | 杂务、依赖更新、构建脚本 | `chore: update Package.resolved` |
 | `docs` | 文档变更 | `docs(WebServerPlugin): add README` |
 | `test` | 测试相关 | `test(InputPlugin): add validation tests` |
@@ -42,7 +42,7 @@ scope 为**模块名或组件名**，使用 PascalCase 或 kebab-case，与代�
 | 核心框架 | `FactoryCore`、`KernelLumi`、`FactoryLumi` |
 | UI 组件 | `ActivityBar`、`StatusBar`、`MenuBar` |
 | 插件 | `TextActionsPlugin`、`MindMapPlugin`、`WhiteNoisePlugin` |
-| Package | `MarkdownKit`、`WebServerKit`、`EditorService` |
+| Package | `KitMarkdown`、`KitWebServer`、`EditorService` |
 
 ### 规则
 
@@ -86,7 +86,7 @@ refactor(PrototypeDesignerPlugin): reuse main chat via agent tools
 
 fix(MessageRenderer): bound match cache and avoid full-string trim
 
-perf(MarkdownKit): convert highlight and inline parse caches from actor to synchronous lock
+perf(KitMarkdown): convert highlight and inline parse caches from actor to synchronous lock
 
 chore: update Package.resolved and add screen recorder plugin plan
 ```

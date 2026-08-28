@@ -132,4 +132,42 @@ struct ProviderNetworkTests {
         // 协议存在类型可正常构造即可；具体请求行为已由上面用例覆盖。
         _ = provider
     }
+
+    @Test("stream 按 SSE 空行切分完整事件块，而非逐字节回调")
+    func streamSplitsSSEEventsByBlankLine() async throws {
+        // 模拟 opencode.ai 流式响应：多个 `data: {...}` 事件，事件间以空行分隔。
+        // 历史 bug 会把这些内容逐字节回调，导致 JSON 解析全部失败、正文丢失。
+        let event1 = "data: {\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\"}}]}"
+        let event2 = "data: {\"choices\":[{\"delta\":{\"content\":\"# 项目介绍\"}}]}"
+        let event3 = "data: {\"choices\":[{\"delta\":{\"content\":\"\\n\\n正文\"}}]}"
+        let event4 = "data: [DONE]"
+        let body = [event1, event2, event3, event4].joined(separator: "\n\n") + "\n\n"
+
+        MockURLProtocol.handler = { _ in
+            (200, ["Content-Type": "text/event-stream"], Data(body.utf8))
+        }
+
+        let provider = makeProvider()
+
+        final class Collector: @unchecked Sendable {
+            var events: [String] = []
+        }
+        let collector = Collector()
+
+        // 每个 onChunk 应恰好收到一个完整 SSE 事件块（不跨事件拼接，也不被切碎）。
+        try await provider.stream(
+            HTTPRequest(url: URL(string: "https://mock.local/sse")!, timeout: 5),
+            onResponse: { _ in },
+            onChunk: { data in
+                collector.events.append(String(data: data, encoding: .utf8) ?? "")
+                return true
+            }
+        )
+
+        #expect(collector.events.count == 4, "应切出 4 个完整事件块，实际 \(collector.events.count)")
+        #expect(collector.events[0].hasPrefix("data: "))
+        #expect(collector.events[1].contains("项目介绍"))
+        #expect(collector.events[2].contains("正文"))
+        #expect(collector.events[3] == "data: [DONE]")
+    }
 }

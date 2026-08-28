@@ -16,8 +16,8 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/ChimeHQ/LanguageServerProtocol", from: "0.14.0"),
         .package(path: "../EditorLanguageRuntime"),
-        .package(path: "../SuperLogKit"),
-        .package(path: "../LocalizationKit"),
+        .package(path: "../KitSuperLog"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
@@ -25,8 +25,8 @@ let package = Package(
             dependencies: [
                 .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
                 .product(name: "EditorLanguageRuntime", package: "EditorLanguageRuntime"),
-                .product(name: "SuperLogKit", package: "SuperLogKit"),
-                .product(name: "LocalizationKit", package: "LocalizationKit"),
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
             ],
             path: ".",
             exclude: ["Tests", "README.md"],

@@ -1328,7 +1328,7 @@ struct EditorKernelTests {
         ])
 
         let hoverPlacement = EditorHoverOverlayPlacement(
-            anchor: .topLeading,
+            anchor: EditorOverlayAnchor.topLeading,
             origin: CGPoint(x: 12, y: 24),
             cardSize: CGSize(width: 200, height: 80),
             isPresentedAboveSymbol: true
@@ -3159,6 +3159,103 @@ struct EditorKernelTests {
         let closedReference = EditorPanelCommandController.apply(.closeReferences, to: openedSymbols)
         #expect(!closedReference.isReferencePanelPresented)
         #expect(closedReference.isWorkspaceSymbolSearchPresented)
+    }
+
+    @Test
+    func panelCommandControllerTogglesAndClosesRemainingPanels() {
+        let allOpen = EditorPanelSnapshot(
+            isOpenEditorsPanelPresented: true,
+            isOutlinePanelPresented: true,
+            isProblemsPanelPresented: true,
+            isReferencePanelPresented: true,
+            isWorkspaceSearchPresented: true,
+            isWorkspaceSymbolSearchPresented: true,
+            isCallHierarchyPresented: true
+        )
+        let empty = EditorPanelSnapshot(
+            isOpenEditorsPanelPresented: false,
+            isOutlinePanelPresented: false,
+            isProblemsPanelPresented: false,
+            isReferencePanelPresented: false,
+            isWorkspaceSearchPresented: false,
+            isWorkspaceSymbolSearchPresented: false,
+            isCallHierarchyPresented: false
+        )
+
+        // Toggling an already-open exclusive panel only closes that panel.
+        let toggledOutlineOff = EditorPanelCommandController.apply(.toggleOutline, to: allOpen)
+        #expect(!toggledOutlineOff.isOutlinePanelPresented)
+        #expect(toggledOutlineOff.isOpenEditorsPanelPresented)
+        #expect(toggledOutlineOff.isProblemsPanelPresented)
+
+        let toggledProblemsOff = EditorPanelCommandController.apply(.toggleProblems, to: allOpen)
+        #expect(!toggledProblemsOff.isProblemsPanelPresented)
+        #expect(toggledProblemsOff.isOpenEditorsPanelPresented)
+        #expect(toggledProblemsOff.isOutlinePanelPresented)
+
+        // Explicit close commands preserve sibling panels.
+        let closedOpenEditors = EditorPanelCommandController.apply(.closeOpenEditors, to: allOpen)
+        #expect(!closedOpenEditors.isOpenEditorsPanelPresented)
+        #expect(closedOpenEditors.isOutlinePanelPresented)
+
+        let closedOutline = EditorPanelCommandController.apply(.closeOutline, to: allOpen)
+        #expect(!closedOutline.isOutlinePanelPresented)
+        #expect(closedOutline.isProblemsPanelPresented)
+
+        let closedProblems = EditorPanelCommandController.apply(.closeProblems, to: allOpen)
+        #expect(!closedProblems.isProblemsPanelPresented)
+        #expect(closedProblems.isReferencePanelPresented)
+
+        let closedWorkspaceSearch = EditorPanelCommandController.apply(.closeWorkspaceSearch, to: allOpen)
+        #expect(!closedWorkspaceSearch.isWorkspaceSearchPresented)
+        #expect(closedWorkspaceSearch.isWorkspaceSymbolSearchPresented)
+
+        let closedSymbolSearch = EditorPanelCommandController.apply(.closeWorkspaceSymbolSearch, to: allOpen)
+        #expect(!closedSymbolSearch.isWorkspaceSymbolSearchPresented)
+        #expect(closedSymbolSearch.isWorkspaceSearchPresented)
+
+        let closedCallHierarchy = EditorPanelCommandController.apply(.closeCallHierarchy, to: allOpen)
+        #expect(!closedCallHierarchy.isCallHierarchyPresented)
+        #expect(closedCallHierarchy.isWorkspaceSearchPresented)
+
+        // Toggling workspace search flips without touching other panels.
+        let toggledSearch = EditorPanelCommandController.apply(.toggleWorkspaceSearch, to: empty)
+        #expect(toggledSearch.isWorkspaceSearchPresented)
+        let toggledSearchOff = EditorPanelCommandController.apply(.toggleWorkspaceSearch, to: toggledSearch)
+        #expect(!toggledSearchOff.isWorkspaceSearchPresented)
+
+        // Opening an exclusive panel from an empty snapshot closes the other exclusive panels.
+        let openedOutline = EditorPanelCommandController.apply(.toggleOutline, to: empty)
+        #expect(openedOutline.isOutlinePanelPresented)
+        #expect(!openedOutline.isOpenEditorsPanelPresented)
+        #expect(!openedOutline.isProblemsPanelPresented)
+        #expect(!openedOutline.isReferencePanelPresented)
+
+        let openedProblems = EditorPanelCommandController.apply(.toggleProblems, to: empty)
+        #expect(openedProblems.isProblemsPanelPresented)
+        #expect(!openedProblems.isOpenEditorsPanelPresented)
+        #expect(!openedProblems.isOutlinePanelPresented)
+
+        let openedCallHierarchy = EditorPanelCommandController.apply(.openCallHierarchy, to: empty)
+        #expect(openedCallHierarchy.isCallHierarchyPresented)
+        #expect(!openedCallHierarchy.isWorkspaceSymbolSearchPresented)
+    }
+
+    @Test
+    func findReplaceStateControllerWithoutExistingStateUsesDefaults() {
+        let state = EditorFindReplaceStateController.state(
+            findText: "hello",
+            replaceText: "world",
+            isFindPanelVisible: true
+        )
+
+        #expect(state.findText == "hello")
+        #expect(state.replaceText == "world")
+        #expect(state.isFindPanelVisible)
+        #expect(state.options == EditorFindReplaceOptions())
+        #expect(state.resultCount == 0)
+        #expect(state.selectedMatchIndex == nil)
+        #expect(state.selectedMatchRange == nil)
     }
 
     @Test

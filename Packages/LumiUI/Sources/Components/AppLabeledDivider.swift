@@ -39,8 +39,8 @@ public struct AppLabeledDivider: View {
 
 #Preview {
     VStack(spacing: 8) {
-        AppLabeledDivider(title: "Section")
-        AppLabeledDivider(title: "Advanced", detail: "v2.0")
+        AppLabeledDivider(title: LumiUILocalization.string("Section"))
+        AppLabeledDivider(title: LumiUILocalization.string("Advanced"), detail: "v2.0")
     }
     .padding()
     .frame(width: 300)

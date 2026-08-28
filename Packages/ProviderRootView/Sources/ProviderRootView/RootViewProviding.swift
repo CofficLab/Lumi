@@ -1,4 +1,6 @@
+import Combine
 import SwiftUI
+import ProviderWorkspace
 
 /// 根视图提供能力协议
 ///
@@ -18,7 +20,16 @@ import SwiftUI
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any RootViewProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
-public protocol RootViewProviding: AnyObject {
+public protocol RootViewProviding: AnyObject, ObservableObject
+    where ObjectWillChangePublisher == ObservableObjectPublisher {
+    /// 根视图叠层贡献（例如全局搜索、预览浮层）。后注册项显示在更上层。
+    var overlays: [RootOverlayItem] { get }
+
+    /// 追加根视图叠层；同 id 的贡献不会重复注册。
+    func addOverlays(_ overlays: [RootOverlayItem])
+
+    /// 撤回根视图叠层。
+    func removeOverlays(ids: Set<String>)
     /// 注入工具栏视图（传 `nil` 表示无工具栏）。
     ///
     /// 宿主通常把 `ToolbarProviding.makeToolbarView()` 的结果注入进来。
@@ -27,7 +38,7 @@ public protocol RootViewProviding: AnyObject {
     /// 注入 ActivityBar 视图（传 `nil` 表示无 ActivityBar）。
     ///
     /// 宿主通常把 `ActivityBarProviding.makeActivityBarView()` 的结果注入进来，
-    /// 显示在内容区左侧。
+    /// 显示在内容区左侧；ActivityBar 自身负责在需要显示时绘制分隔线。
     func setActivityBarView(_ view: AnyView?)
 
     /// 注入 Rail 视图（传 `nil` 表示无 Rail）。
@@ -42,6 +53,63 @@ public protocol RootViewProviding: AnyObject {
     /// 显示在内容区（ActivityBar / Rail 右侧）。
     func setContentView(_ view: AnyView?)
 
+    /// 注入根布局右侧的通用面板（传 `nil` 表示没有右侧面板）。
+    ///
+    /// 右侧面板不限定为聊天：聊天、检查器、预览等都可以通过这个契约
+    /// 接入根布局。面板的显隐状态和尺寸元数据由 `RootTrailingPane` 持有。
+    func setTrailingPane(_ pane: RootTrailingPane?)
+
+    /// 注入工作区状态机，使根 Host 按容器策略控制 Rail/Chat 显隐与持久化宽度。
+    func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?)
+
     /// 返回根布局视图（工具栏 + 内容区，内容区左侧可带 ActivityBar 与 Rail）。
     func makeRootView() -> AnyView
+}
+
+public extension RootViewProviding {
+    var overlays: [RootOverlayItem] { [] }
+    func addOverlays(_ overlays: [RootOverlayItem]) {}
+    func removeOverlays(ids: Set<String>) {}
+    func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?) {}
+}
+
+@MainActor
+public struct RootOverlayItem: Identifiable {
+    public let id: String
+    public let order: Int
+    public let wrap: @MainActor (AnyView) -> AnyView
+
+    public init<Content: View>(id: String, order: Int = 0, @ViewBuilder wrap: @escaping @MainActor (AnyView) -> Content) {
+        self.id = id
+        self.order = order
+        self.wrap = { AnyView(wrap($0)) }
+    }
+}
+
+/// 根布局的右侧面板描述。
+@MainActor
+public final class RootTrailingPane: ObservableObject {
+    public let id: String
+    public let minWidth: CGFloat
+    public let idealWidth: CGFloat
+    public let maxWidth: CGFloat
+    public let content: AnyView
+
+    @Published public var isVisible: Bool
+
+    public init(
+        id: String,
+        minWidth: CGFloat = 280,
+        idealWidth: CGFloat = 320,
+        maxWidth: CGFloat = .infinity,
+        isVisible: Bool = true,
+        content: AnyView
+    ) {
+        self.id = id
+        self.minWidth = minWidth
+        self.idealWidth = idealWidth
+        self.maxWidth = maxWidth
+        self.isVisible = isVisible
+        self.content = content
+    }
 }

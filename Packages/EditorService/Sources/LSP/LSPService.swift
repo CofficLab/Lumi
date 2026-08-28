@@ -1,5 +1,5 @@
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import SwiftUI
 import LanguageClient
 import LanguageServerProtocol
@@ -55,7 +55,7 @@ public final class LSPService: ObservableObject, SuperLog {
     
     public private(set) var _editorExtensionRegistry: EditorExtensionRegistry?
 
-    /// 注入编辑器扩展注册中心（由 LSPServiceEditorPlugin.registerEditorExtensions 调用）
+    /// 注入编辑器扩展注册中心（由 Host 装配时调用）
     public func configureRegistry(_ registry: EditorExtensionRegistry) {
         _editorExtensionRegistry = registry
     }

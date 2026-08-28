@@ -55,9 +55,9 @@ public struct PluginSettingsScaffold<Content: View>: View {
 }
 
 #Preview {
-    PluginSettingsScaffold(title: "Example Plugin", subtitle: "Plugin-specific options") {
+    PluginSettingsScaffold(title: "Example Plugin", subtitle: LumiUILocalization.string("Plugin-specific options")) {
         AppCard {
-            AppSettingsSection(title: "General") {
+            AppSettingsSection(title: LumiUILocalization.string("General")) {
                 AppSettingsToggleRow("Enable feature", isOn: .constant(true))
             }
         }

@@ -1,10 +1,10 @@
 import Foundation
-import LocalizationKit
+import KitLocalization
 
 /// Runtime localization for EditorKernel bundle.
 ///
 /// Provides localization lookup scoped to EditorKernel by delegating to
-/// `LocalizationKit`. New code should prefer `LumiLocalization.string(...)`
+/// `KitLocalization`. New code should prefer `LumiLocalization.string(...)`
 /// directly; this wrapper exists for backward compatibility with existing
 /// EditorKernel call sites.
 public enum EditorKernelLocalization {

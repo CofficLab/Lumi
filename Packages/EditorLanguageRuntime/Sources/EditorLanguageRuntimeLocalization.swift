@@ -1,5 +1,5 @@
 import Foundation
-import LocalizationKit
+import KitLocalization
 
 public enum EditorLanguageRuntimeLocalization {
     public static func string(_ key: String, bundle: Bundle, locale: Locale = .current) -> String {

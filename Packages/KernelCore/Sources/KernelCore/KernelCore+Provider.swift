@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 // MARK: - Provider Registry
@@ -15,49 +14,17 @@ extension KernelCoreContainer {
 
     /// 注册 Provider 实现。
     ///
-    /// 默认把 Provider 的 `objectWillChange` 转发到容器，使订阅容器的视图能感知
-    /// Provider 状态变化（与 KernelLumi 的行为一致）。
-    ///
-    /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
+    /// Kernel 只维护注册表，不发布 Provider 状态变化。需要响应变化的消费者
+    /// 必须直接观察具体 Provider 的精准观察接口或 `objectWillChange`。
     public func registerProvider<T>(_ type: T.Type, _ provider: T) throws {
-        try registerProvider(type, provider, forwardsObjectWillChange: true)
-    }
-
-    /// 注册 Provider 实现，可选择是否把其 `objectWillChange` 转发到容器。
-    ///
-    /// 高频变更的 Provider（如流式输出 store：每个 token 都触发 objectWillChange）
-    /// 应传 `forwardsObjectWillChange: false`——否则容器会把高频更新广播给所有
-    /// 订阅方，导致整个 app 跟着重渲染。此类 Provider 改由消费方直接窄播订阅。
-    ///
-    /// - Throws: `KernelCoreError.providerAlreadyRegistered` — 同类型重复注册时。
-    public func registerProvider<T>(
-        _ type: T.Type,
-        _ provider: T,
-        forwardsObjectWillChange: Bool
-    ) throws {
         let key = ObjectIdentifier(type)
         guard providers[key] == nil else {
             throw KernelCoreError.providerAlreadyRegistered(type: type)
         }
         providers[key] = provider
-
-        if forwardsObjectWillChange {
-            subscribeToObjectWillChange(provider: provider, key: key)
+        if let activePluginID {
+            providerOwners[key] = activePluginID
         }
-    }
-
-    /// 订阅 `ObservableObject` 的 `objectWillChange` 并转发到容器。
-    private func subscribeToObjectWillChange<T>(provider: T, key: ObjectIdentifier) {
-        guard let observableObject = provider as? any ObservableObject else { return }
-
-        // Force cast to ObservableObjectPublisher which is the concrete type
-        let publisher = observableObject.objectWillChange as! ObservableObjectPublisher
-        providerSubscriptions[key] = publisher
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                self.objectWillChange.send()
-            }
     }
 
     // MARK: - Resolve
@@ -82,10 +49,15 @@ extension KernelCoreContainer {
 
     // MARK: - Unregister
 
-    /// 注销 Provider 实现，并释放其变更订阅。
+    /// 注销 Provider 实现。
     public func unregisterProvider<T>(_ type: T.Type) {
         let key = ObjectIdentifier(type)
         providers.removeValue(forKey: key)
-        providerSubscriptions.removeValue(forKey: key)
+        providerOwners.removeValue(forKey: key)
+    }
+
+    /// 当前 Provider 是否由指定插件注册（诊断与生命周期测试用）。
+    public func isProvider<T>(_ type: T.Type, ownedByPlugin id: String) -> Bool {
+        providerOwners[ObjectIdentifier(type)] == id
     }
 }

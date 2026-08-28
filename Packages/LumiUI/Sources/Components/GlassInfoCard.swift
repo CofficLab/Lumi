@@ -65,16 +65,16 @@ public struct GlassInfoCard<Content: View>: View {
 
 #Preview {
     VStack(spacing: 12) {
-        GlassInfoCard(title: "Model Info", icon: "cpu") {
-            Text("GPT-4o • OpenAI")
+        GlassInfoCard(title: LumiUILocalization.string("Model Info"), icon: "cpu") {
+            Text(LumiUILocalization.string("GPT-4o • OpenAI"))
         }
         GlassInfoCard(
-            title: "Usage Stats",
+            title: LumiUILocalization.string("Usage Stats"),
             icon: "chart.bar.fill",
             iconColor: .green,
-            subtitle: "Last 24 hours"
+            subtitle: LumiUILocalization.string("Last 24 hours")
         ) {
-            Text("Tokens: 1,234\nRequests: 56")
+            Text(LumiUILocalization.string("Tokens: 1,234\nRequests: 56"))
         }
     }
     .padding()

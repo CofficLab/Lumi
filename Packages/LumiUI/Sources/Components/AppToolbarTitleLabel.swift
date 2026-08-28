@@ -48,12 +48,12 @@ public struct AppToolbarTitleLabel<Trailing: View>: View {
     VStack(spacing: 12) {
         AppToolbarTitleLabel(title: "Git")
 
-        AppToolbarTitleLabel(icon: "folder", title: "Projects")
+        AppToolbarTitleLabel(icon: "folder", title: LumiUILocalization.string("Projects"))
 
-        AppToolbarTitleLabel(icon: "brain.head.profile", title: "Mind Map") {
+        AppToolbarTitleLabel(icon: "brain.head.profile", title: LumiUILocalization.string("Mind Map")) {
             Text("·")
                 .foregroundStyle(.tertiary)
-            Text("untitled")
+            Text(LumiUILocalization.string("untitled"))
                 .lineLimit(1)
                 .foregroundStyle(.secondary)
             Text("(3)")

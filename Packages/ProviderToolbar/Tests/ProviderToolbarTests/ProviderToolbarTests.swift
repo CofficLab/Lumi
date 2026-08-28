@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import Testing
 @testable import ProviderToolbar
@@ -58,8 +59,8 @@ struct ProviderToolbarTests {
 
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
-        final class CustomToolbar: ToolbarProviding {
-            var toolbarItems: [ProviderToolbar.ToolbarItem] = []
+        @MainActor final class CustomToolbar: ToolbarProviding {
+            @Published var toolbarItems: [ProviderToolbar.ToolbarItem] = []
 
             func registerToolbarItems(_ items: [ProviderToolbar.ToolbarItem]) {
                 toolbarItems = items

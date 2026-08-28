@@ -1,5 +1,5 @@
 import Foundation
-import SuperLogKit
+import KitSuperLog
 import JSONRPC
 import LanguageClient
 import LanguageServerProtocol

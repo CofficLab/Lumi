@@ -28,7 +28,7 @@ public struct CopyMessageButton: View {
                     .font(.system(size: 10, weight: .medium))
                     .frame(width: 14, height: 14)
                 if showFeedback {
-                    Text("Copied")
+                    Text(LumiUILocalization.string("Copied"))
                         .font(.system(size: 10, weight: .medium))
                 }
             }
@@ -46,7 +46,7 @@ public struct CopyMessageButton: View {
             .scaleEffect(isHovered && motionPreference.allowsMotion ? AppUI.Motion.hoverScale : 1.0)
         }
         .buttonStyle(.plain)
-        .help("Copy message content")
+        .help(LumiUILocalization.string("Copy message content"))
         .onHover { hovering in
             AppUI.Motion.animate(AppUI.Motion.enabled(AppUI.Motion.hover, preference: motionPreference)) {
                 isHovered = hovering

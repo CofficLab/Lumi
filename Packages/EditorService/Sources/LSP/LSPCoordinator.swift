@@ -1,6 +1,6 @@
 import Foundation
 import EditorKernel
-import SuperLogKit
+import KitSuperLog
 import AppKit
 @preconcurrency import EditorSource
 import EditorTextView
