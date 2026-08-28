@@ -120,7 +120,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     guard state == .activated else { return }
-                    railView?.setVisibleCategories([.design])
+                    railView?.setVisibleTabID(Self.railTabID)
                     WorkspaceStore.shared.reload()
                     contentView?.setContentView(AnyView(PromoDesignerView()))
                     chat?.setVisible(true)
