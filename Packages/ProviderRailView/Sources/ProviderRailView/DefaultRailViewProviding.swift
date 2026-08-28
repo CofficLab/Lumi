@@ -32,8 +32,11 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
     }
 
     public func setVisibleCategories(_ categories: Set<RailViewCategory>) {
-        guard visibleCategories != categories else { return }
+        guard visibleCategories != categories || visibleTabID != nil else { return }
         visibleCategories = categories
+        // 分类过滤和指定 tab 过滤是两种互斥的显示模式；切换回分类模式时，
+        // 必须清除上一个插件留下的 tab id，否则可能把分类内所有 tab 都过滤掉。
+        visibleTabID = nil
         reconcileActiveTab()
     }
 

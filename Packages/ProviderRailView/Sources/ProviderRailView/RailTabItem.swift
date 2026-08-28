@@ -3,6 +3,7 @@ import SwiftUI
 /// Rail 标签的预定义业务分类。
 public enum RailViewCategory: String, CaseIterable, Hashable, Sendable {
     case chat
+    case fileTree
     case project
     case design
     case system

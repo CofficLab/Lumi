@@ -54,15 +54,16 @@ struct ProviderRailViewTests {
         provider.registerTabs([
             RailTabItem(id: "chat", category: .chat, title: "Chat", systemImage: "message") { Text("Chat") },
             RailTabItem(id: "project", category: .project, title: "Project", systemImage: "folder") { Text("Project") },
+            RailTabItem(id: "files", category: .fileTree, title: "Files", systemImage: "folder.fill") { Text("Files") },
         ])
         provider.activateTab(id: "project")
 
-        provider.setVisibleCategories([.chat])
+        provider.setVisibleCategories([.fileTree])
 
-        #expect(provider.visibleCategories == [.chat])
-        #expect(provider.activeTabID == "chat")
+        #expect(provider.visibleCategories == [.fileTree])
+        #expect(provider.activeTabID == "files")
         provider.activateTab(id: "project")
-        #expect(provider.activeTabID == "chat")
+        #expect(provider.activeTabID == "files")
     }
 
     @Test("隐藏全部分类时不激活任何标签")
@@ -94,6 +95,21 @@ struct ProviderRailViewTests {
 
         provider.setVisibleTabID(nil)
         #expect(provider.visibleTabID == nil)
+    }
+
+    @Test("切换到分类过滤时清除指定 tab 过滤")
+    func categoryFilterClearsVisibleID() {
+        let provider = DefaultRailViewProviding()
+        provider.registerTabs([
+            RailTabItem(id: "chat", category: .chat, title: "Chat", systemImage: "message") { Text("Chat") },
+            RailTabItem(id: "project", category: .project, title: "Project", systemImage: "folder") { Text("Project") },
+        ])
+
+        provider.setVisibleTabID("project")
+        provider.setVisibleCategories([.chat])
+
+        #expect(provider.visibleTabID == nil)
+        #expect(provider.activeTabID == "chat")
     }
 
     @Test("不能激活未知标签")
