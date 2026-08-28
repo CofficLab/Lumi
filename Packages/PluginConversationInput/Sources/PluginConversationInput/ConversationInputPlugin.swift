@@ -67,7 +67,20 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
         let actionBarViewModel = sendActionBarViewModel
         let actionBarMissingProviders = missingActionBarProviders
 
-        // 1. 底部固定输入框
+        // 1. 输入框上方的挂起图片预览
+        chat.addItems([
+            ChatSectionItem(
+                id: "\(id).attachment-preview",
+                order: 899,
+                placement: .bottomFixed,
+                fillsRemainingHeight: false,
+                showsTrailingDivider: false
+            ) {
+                AttachmentPreviewView(sender: sender)
+            },
+        ])
+
+        // 2. 底部固定输入框
         chat.addItems([
             ChatSectionItem(
                 id: id,
@@ -80,7 +93,7 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
             },
         ])
 
-        // 2. Action Bar 发送/停止按钮
+        // 3. Action Bar 发送/停止按钮
         chat.addBarItems([
             ChatSectionBarItem(
                 id: "\(id).send-button",
@@ -122,6 +135,8 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
         missingActionBarProviders = []
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeItem(id: id)
+        kernel.resolveProvider((any ChatSectionProviding).self)?
+            .removeItem(id: "\(id).attachment-preview")
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).send-button")
     }
