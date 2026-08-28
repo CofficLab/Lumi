@@ -1,10 +1,13 @@
 import KitAgentTool
 import KitDownload
+import KitSuperLog
 import Foundation
 import KernelCore
+import os
 import ProviderToolManager
 
-@MainActor public final class DownloadSuperPlugin: SuperPlugin {
+@MainActor public final class DownloadSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.download-agent", category: "Download")
     public let id = "com.coffic.lumi.plugin.download-agent"; public let order = 92
     public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.download-agent", name: "Download Agent", description: "Download files with progress tracking and batch support.", category: .project, stage: .preview, policy: .alwaysOn)
     public init() {}
