@@ -6,6 +6,7 @@ import ProviderMessageSender
 import ProviderSettingView
 import SwiftUI
 import os
+import KitSuperLog
 
 struct QuickLauncherPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "QuickLauncherPlugin")
@@ -16,7 +17,8 @@ struct QuickLauncherPlugin {
 /// It preserves the global hotkey, floating panel, persisted source switches,
 /// command search, and `?` direct-send behavior from the legacy plugin.
 @MainActor
-public final class QuickLauncherSuperPlugin: SuperPlugin {
+public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.quick-launcher", category: "QuickLauncher")
     public let id = "com.coffic.lumi.plugin.quick-launcher"
     public let order = 8
     public let metadata = PluginMetadata(
