@@ -5,9 +5,12 @@ import ProviderDocsView
 import ProviderRailView
 import ProviderStorage
 import SwiftUI
+import KitSuperLog
+import os
 
 @MainActor
-public final class RClickSuperPlugin: SuperPlugin {
+public final class RClickSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.rclick", category: "RClick")
     public let id = "com.coffic.lumi.plugin.rclick"
     public let order = 50
     public let metadata = PluginMetadata(
