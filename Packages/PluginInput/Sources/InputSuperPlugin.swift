@@ -61,8 +61,10 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
                     if state == .activated {
                         content?.setContentView(AnyView(InputSettingsView()))
                         rootView?.setRailView(nil)
+                        rootView?.setContentHeaderViewHidden(true)
                     } else {
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setContentHeaderViewHidden(false)
                     }
                 },
             ])
