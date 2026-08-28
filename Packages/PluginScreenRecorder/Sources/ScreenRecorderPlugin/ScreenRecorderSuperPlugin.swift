@@ -24,6 +24,13 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { ScreenRecorderAboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { ScreenRecorderManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         let dataDirectory = kernel.resolveProvider((any StorageProviding).self)?
             .pluginDataDirectory(for: "ScreenRecorder")
@@ -40,10 +47,6 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
                 ScreenRecorderSettingsView()
             },
         ])
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: metadata.name) { ScreenRecorderAboutView() })
-            docs.addManual(DocsEntry(id: id, name: metadata.name) { ScreenRecorderManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -51,9 +54,12 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
         [StartRecordingV2Tool.toolName, StopRecordingV2Tool.toolName, ListRecordableAppsV2Tool.toolName].forEach {
             tools?.remove(id: $0)
         }
+        ScreenRecorderRuntime.reset()
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: ["\(id).settings"])
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
-        ScreenRecorderRuntime.reset()
     }
 }
 

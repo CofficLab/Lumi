@@ -33,6 +33,14 @@ public final class DockerManagerSuperPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        let title = metadata.name
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: title) { DockerManagerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: title) { DockerManagerManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
@@ -57,17 +65,14 @@ public final class DockerManagerSuperPlugin: SuperPlugin, SuperLog {
                 }
             },
         ])
-        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
-            DocsEntry(id: id, name: title) { DockerManagerAboutView() }
-        )
-        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
-            DocsEntry(id: id, name: title) { DockerManagerManualView() }
-        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: [activityItemID])
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: [titleItemID])
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

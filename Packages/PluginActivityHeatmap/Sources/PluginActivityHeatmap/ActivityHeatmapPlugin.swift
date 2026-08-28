@@ -68,20 +68,29 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
                 )
             },
         ])
-        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
-            DocsEntry(id: id, name: LumiPluginLocalization.string("Activity Heatmap", bundle: .module)) { ActivityHeatmapAboutView() }
-        )
-        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
-            DocsEntry(id: id, name: LumiPluginLocalization.string("Activity Heatmap", bundle: .module)) { ActivityHeatmapManualView() }
-        )
+    }
+
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(
+                DocsEntry(id: id, name: LumiPluginLocalization.string("Activity Heatmap", bundle: .module)) { ActivityHeatmapAboutView() }
+            )
+            docs.addManual(
+                DocsEntry(id: id, name: LumiPluginLocalization.string("Activity Heatmap", bundle: .module)) { ActivityHeatmapManualView() }
+            )
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         cache = nil
         cacheDirectory = nil
     }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
 }
 
 public enum ActivityHeatmapPeriod: Int, CaseIterable, Identifiable, Sendable {

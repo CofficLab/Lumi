@@ -44,10 +44,16 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
         LumiPluginLocalization.string("Network Monitor", bundle: .module)
     }
 
-
     private var httpExchangeStore: HTTPExchangeStore?
 
     public init() {}
+
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { NetworkManagerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { NetworkManagerManualView() })
+        }
+    }
 
     // MARK: - SuperPlugin
 
@@ -119,12 +125,6 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
                 },
             ])
         }
-
-        // 6. 注册文档入口（关于）
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { NetworkManagerAboutView() })
-            docs.addManual(DocsEntry(id: id, name: name) { NetworkManagerManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -142,10 +142,10 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
         // 撤回设置入口
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
+    }
 
-        // 撤回文档入口
-        kernel.resolveProvider((any DocsViewProviding).self)?
-            .removeEntries(id: id)
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     // MARK: - Agent Tools

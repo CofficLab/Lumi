@@ -25,6 +25,17 @@ public final class OpenInAntigravityPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) {
+                OpenInAboutView(displayName: OpenInTool.antigravity.displayName, systemImage: OpenInTool.antigravity.systemImage, toolName: OpenInTool.antigravity.toolName)
+            })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) {
+                OpenInManualView(displayName: OpenInTool.antigravity.displayName, toolName: OpenInTool.antigravity.toolName)
+            })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding from kernel")
@@ -34,16 +45,6 @@ public final class OpenInAntigravityPlugin: SuperPlugin, SuperLog {
 
         let tool = OpenInTool(config: OpenInTool.antigravity, project: project)
         toolManager.add(tool, pluginID: id)
-        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
-            DocsEntry(id: id, name: metadata.name) {
-                OpenInAboutView(displayName: OpenInTool.antigravity.displayName, systemImage: OpenInTool.antigravity.systemImage, toolName: OpenInTool.antigravity.toolName)
-            }
-        )
-        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
-            DocsEntry(id: id, name: metadata.name) {
-                OpenInManualView(displayName: OpenInTool.antigravity.displayName, toolName: OpenInTool.antigravity.toolName)
-            }
-        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

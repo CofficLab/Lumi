@@ -38,6 +38,12 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
         LumiPluginLocalization.string("Hosts Manager", bundle: .module)
     }
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { HostsManagerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { HostsManagerManualView() })
+        }
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
@@ -60,12 +66,6 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
         } else {
             contentView?.setContentView(AnyView(HostsManagerView()))
         }
-
-        // 「说明书」文档（沿用旧版 pluginManualView）。
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { HostsManagerAboutView() })
-            docs.addManual(DocsEntry(id: id, name: name) { HostsManagerManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -74,7 +74,9 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
-        kernel.resolveProvider((any DocsViewProviding).self)?
-            .removeEntries(id: id)
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

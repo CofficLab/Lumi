@@ -27,6 +27,13 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: "设备信息") { DeviceInfoAboutView() })
+            docs.addManual(DocsEntry(id: id, name: "设备信息") { DeviceInfoManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 0. 配置 MemoryHistoryService 存储目录
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
@@ -76,13 +83,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
             contentView?.setContentView(AnyView(DeviceInfoView()))
         }
 
-        // 3. 贡献「关于」与「说明书」文档（沿用旧版 pluginAboutView / pluginManualView）
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: "设备信息") { DeviceInfoAboutView() })
-            docs.addManual(DocsEntry(id: id, name: "设备信息") { DeviceInfoManualView() })
-        }
-
-        // 4. 贡献菜单栏内容与弹窗（沿用旧版 menuBarContentItems / menuBarPopupItems）
+        // 3. 贡献菜单栏内容与弹窗（沿用旧版 menuBarContentItems / menuBarPopupItems）
         if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
             menuBar.addContent(MenuBarContentItem(id: "\(id).metrics", title: "设备信息", order: order) {
                 DeviceInfoMenuBarContentView()
@@ -106,11 +107,14 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         kernel.resolveProvider((any MenuBarProviding).self)?.removeItems(ids: [
             "\(id).metrics",
             "\(id).cpu",
             "\(id).memory",
         ])
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

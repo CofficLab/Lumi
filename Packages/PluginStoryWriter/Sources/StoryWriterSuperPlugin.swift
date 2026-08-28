@@ -23,6 +23,13 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
     private let entryID = "com.coffic.lumi.plugin.story-writer.entry"
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { StoryWriterAboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { StoryWriterManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         let directory = kernel.resolveProvider((any StorageProviding).self)?.pluginDataDirectory(for: "StoryWriter")
         StoryWriterStorage.configureV2(directory: directory)

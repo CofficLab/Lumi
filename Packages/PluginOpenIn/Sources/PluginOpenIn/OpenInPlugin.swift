@@ -50,12 +50,10 @@ public final class OpenInPlugin: SuperPlugin, SuperLog {
         ]
         for tool in tools {
         toolManager.add(tool, pluginID: id)
-        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
             DocsEntry(id: id, name: metadata.name) {
                 OpenInKit.OpenInAboutView(displayName: OpenInApps.finder.displayName, systemImage: OpenInApps.finder.systemImage, toolName: OpenInApps.finder.toolName)
             }
         )
-        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
             DocsEntry(id: id, name: metadata.name) {
                 OpenInKit.OpenInManualView(displayName: OpenInApps.finder.displayName, toolName: OpenInApps.finder.toolName)
             }
@@ -64,7 +62,12 @@ public final class OpenInPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id
+    public func onRegister(kernel: KernelCoreContainer) throws {
+            kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
+            kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+    }
+: id)
         guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding from kernel")
             return

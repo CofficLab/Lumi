@@ -22,6 +22,13 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { DisplayControlAboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { DisplayControlManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let entryID = "\(id).entry"
@@ -42,15 +49,13 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
         } else {
             content?.setContentView(AnyView(DisplayControlView()))
         }
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: metadata.name) { DisplayControlAboutView() })
-            docs.addManual(DocsEntry(id: id, name: metadata.name) { DisplayControlManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

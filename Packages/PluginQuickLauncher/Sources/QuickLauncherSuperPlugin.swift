@@ -31,6 +31,14 @@ public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        let title = metadata.name
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: title) { QuickLauncherAboutView() })
+            docs.addManual(DocsEntry(id: id, name: title) { QuickLauncherManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
@@ -42,16 +50,7 @@ public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
                 LauncherSettingsView()
             },
         ])
-        let title = metadata.name
-        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
-            DocsEntry(id: id, name: title) { QuickLauncherAboutView() }
-        )
-        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
-            DocsEntry(id: id, name: title) { QuickLauncherManualView() }
-        )
-    }
 
-    public func onReady(kernel: KernelCoreContainer) throws {
         let commands = kernel.resolveProvider((any CommandProviding).self)
         let sender = kernel.resolveProvider((any MessageSendingProviding).self)
 
@@ -100,6 +99,9 @@ public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
         LauncherBridge.askAIHandler = nil
         LauncherBridge.commandGroupsProvider = nil
         LauncherBridge.activateMainWindowHandler = nil
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }

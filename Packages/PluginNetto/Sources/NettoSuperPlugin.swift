@@ -27,6 +27,13 @@ public final class NettoSuperPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: "Netto Firewall") { NettoAboutView() })
+            docs.addManual(DocsEntry(id: id, name: "Netto Firewall") { NettoManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
         let content = kernel.resolveProvider((any ContentViewProviding).self)
@@ -46,17 +53,14 @@ public final class NettoSuperPlugin: SuperPlugin, SuperLog {
             ownerPluginID: id
         )
         content?.setContentView(AnyView(NettoDashboardView()))
-        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
-            DocsEntry(id: id, name: "Netto Firewall") { NettoAboutView() }
-        )
-        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
-            DocsEntry(id: id, name: "Netto Firewall") { NettoManualView() }
-        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         kernel.resolveProvider((any WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

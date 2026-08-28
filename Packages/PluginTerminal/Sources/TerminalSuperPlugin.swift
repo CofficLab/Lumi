@@ -31,6 +31,13 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { TerminalAboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { TerminalManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         TerminalPluginBridge.editorThemeIdProvider = {
             LumiUIThemeRegistry.shared.resolvedEditorThemeId(
@@ -66,10 +73,6 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
                 workspace?.activateContainer(id: self.id)
             },
         ])
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: metadata.name) { TerminalAboutView() })
-            docs.addManual(DocsEntry(id: id, name: metadata.name) { TerminalManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -81,6 +84,9 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
         kernel.resolveProvider((any WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

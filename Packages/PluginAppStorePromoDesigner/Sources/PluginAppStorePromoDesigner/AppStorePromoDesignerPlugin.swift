@@ -61,6 +61,10 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
 
     public func onRegister(kernel: KernelCoreContainer) throws {
         registerPromptSuggestion(kernel: kernel, requiresEnable: !kernel.isPluginEnabled(id: id))
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { PromoAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { PromoManualView() })
+        }
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -133,11 +137,6 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
             railView?.activateGroup(id: id)
             workspace?.activateContainer(id: id)
         }
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { PromoAboutView() })
-            docs.addManual(DocsEntry(id: id, name: name) { PromoManualView() })
-        }
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {
@@ -167,7 +166,6 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
 
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         PromoDesignerRuntime.reset()
     }
 
@@ -177,6 +175,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     // MARK: - Agent Tools

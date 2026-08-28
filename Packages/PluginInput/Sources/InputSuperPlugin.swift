@@ -32,6 +32,13 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { InputAboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { InputManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             InputPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
@@ -55,16 +62,14 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
         } else {
             content?.setContentView(AnyView(InputSettingsView()))
         }
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: metadata.name) { InputAboutView() })
-            docs.addManual(DocsEntry(id: id, name: metadata.name) { InputManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: [activityItemID])
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         InputPluginRuntimeBridge.dataRootDirectory = nil
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

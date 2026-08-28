@@ -26,6 +26,17 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) {
+                ClipboardManagerAboutView()
+            })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) {
+                ClipboardManagerManualView()
+            })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         ClipboardMonitor.shared.startMonitoring()
         let content = kernel.resolveProvider((any ContentViewProviding).self)
@@ -48,20 +59,14 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
         } else {
             content?.setContentView(AnyView(ClipboardHistoryView()))
         }
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: metadata.name) {
-                ClipboardManagerAboutView()
-            })
-            docs.addManual(DocsEntry(id: id, name: metadata.name) {
-                ClipboardManagerManualView()
-            })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         ClipboardMonitor.shared.stopMonitoring()
         kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

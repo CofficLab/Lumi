@@ -44,7 +44,6 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
         PluginDiskManagerLocalization.string("Disk Manager")
     }
 
-
     // MARK: - Logging（兼容旧版 ViewModel 的 DiskManagerPlugin.verbose / logger 引用）
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.disk-manager")
@@ -61,6 +60,13 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     // MARK: - SuperPlugin
+
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { DiskManagerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { DiskManagerManualView() })
+        }
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 1. 注册 Agent 工具到 ToolManagerProviding。
@@ -111,12 +117,6 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
                 DiskManagerView(categoryStore: self.categoryStore, workspace: self.workspace)
             ))
         }
-
-        // 4. 贡献「关于」与「说明书」文档（沿用旧版 pluginAboutView / pluginManualView）。
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { DiskManagerAboutView() })
-            docs.addManual(DocsEntry(id: id, name: name) { DiskManagerManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -135,7 +135,9 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
+    }
 
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 

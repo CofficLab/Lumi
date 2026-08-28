@@ -27,6 +27,13 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { RClickAboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { RClickManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             RClickPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
@@ -62,17 +69,15 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                 }
             },
         ])
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: metadata.name) { RClickAboutView() })
-            docs.addManual(DocsEntry(id: id, name: metadata.name) { RClickManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: [activityItemID])
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [railTabID])
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         RClickPluginRuntimeBridge.dataRootDirectory = nil
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

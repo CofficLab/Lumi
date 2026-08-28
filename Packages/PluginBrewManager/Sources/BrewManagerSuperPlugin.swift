@@ -35,6 +35,13 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { AboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { BrewManagerManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
@@ -61,16 +68,14 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
                 }
             },
         ])
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: metadata.name) { AboutView() })
-            docs.addManual(DocsEntry(id: id, name: metadata.name) { BrewManagerManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: [activityItemID])
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: [refreshItemID])
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

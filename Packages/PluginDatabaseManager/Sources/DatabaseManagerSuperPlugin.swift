@@ -33,6 +33,13 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { AboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { DatabaseManagerManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         EmbeddedEditorServiceLocator.provider = kernel.resolveProvider(EditorEmbeddedEditorProviding.self)
         if let editor = kernel.resolveProvider(EditorService.self) {
@@ -55,10 +62,6 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
         tools?.add(DatabaseDescribeSchemaV2Tool(), pluginID: id)
         tools?.add(DatabaseReadonlyQueryV2Tool(), pluginID: id)
         tools?.add(DatabaseSampleTableV2Tool(), pluginID: id)
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: metadata.name) { AboutView() })
-            docs.addManual(DocsEntry(id: id, name: metadata.name) { DatabaseManagerManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -70,8 +73,11 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
         tools?.remove(id: DatabaseDescribeSchemaV2Tool.toolName)
         tools?.remove(id: DatabaseReadonlyQueryV2Tool.toolName)
         tools?.remove(id: DatabaseSampleTableV2Tool.toolName)
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         EmbeddedEditorServiceLocator.provider = nil
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     private func openSQLiteDatabase(_ url: URL) -> Bool {

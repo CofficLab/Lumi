@@ -31,6 +31,13 @@ public final class WhiteNoisePlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: "白噪音") { WhiteNoiseAboutView() })
+            docs.addManual(DocsEntry(id: id, name: "白噪音") { WhiteNoiseManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
@@ -54,12 +61,6 @@ public final class WhiteNoisePlugin: SuperPlugin, SuperLog {
         } else {
             contentView?.setContentView(AnyView(WhiteNoiseView()))
         }
-
-        // 2. 贡献「关于」与「说明书」文档（沿用旧版 pluginAboutView / pluginManualView）
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: "白噪音") { WhiteNoiseAboutView() })
-            docs.addManual(DocsEntry(id: id, name: "白噪音") { WhiteNoiseManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -68,6 +69,9 @@ public final class WhiteNoisePlugin: SuperPlugin, SuperLog {
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

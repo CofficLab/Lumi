@@ -45,6 +45,12 @@ public final class CaffeinatePlugin: SuperPlugin, SuperLog {
         LumiPluginLocalization.string("Caffeinate", bundle: .module)
     }
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { CaffeinateAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { CaffeinateManualView() })
+        }
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 配置 Manager：存储目录 + Logo 高亮（沿用旧版 onReady 的 configure）。
@@ -64,12 +70,6 @@ public final class CaffeinatePlugin: SuperPlugin, SuperLog {
                 CaffeinateMenuBarPopupView()
             })
         }
-
-        // 「关于」与「说明书」文档（沿用旧版 pluginAboutView / pluginManualView）。
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { CaffeinateAboutView() })
-            docs.addManual(DocsEntry(id: id, name: name) { CaffeinateManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -80,8 +80,10 @@ public final class CaffeinatePlugin: SuperPlugin, SuperLog {
         }
         kernel.resolveProvider((any MenuBarProviding).self)?
             .removeItems(ids: ["\(id).popup"])
-        kernel.resolveProvider((any DocsViewProviding).self)?
-            .removeEntries(id: id)
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     // MARK: - Agent Tools

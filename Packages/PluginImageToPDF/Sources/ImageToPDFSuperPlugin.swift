@@ -23,6 +23,13 @@ import SwiftUI
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { ImageToPDFAboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { ImageToPDFManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         ImageToPDFRuntimeBridge.directoryURL = kernel.resolveProvider((any StorageProviding).self)?.pluginDataDirectory(for: "ImageToPDF")
         let content = kernel.resolveProvider((any ContentViewProviding).self)
@@ -44,8 +51,13 @@ import SwiftUI
         } else {
             content?.setContentView(AnyView(ImageToPDFMainView()))
         }
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) { docs.addAbout(DocsEntry(id: id, name: metadata.name) { ImageToPDFAboutView() }); docs.addManual(DocsEntry(id: id, name: metadata.name) { ImageToPDFManualView() }) }
     }
 
-    public func onShutdown(kernel: KernelCoreContainer) throws { kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"]); kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id); ImageToPDFRuntimeBridge.directoryURL = nil }
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        ImageToPDFRuntimeBridge.directoryURL = nil
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
 }

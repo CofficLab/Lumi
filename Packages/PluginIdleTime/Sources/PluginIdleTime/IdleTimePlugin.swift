@@ -35,6 +35,13 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: LumiPluginLocalization.string("Idle Time", bundle: .module)) { IdleTimeAboutView() })
+            docs.addManual(DocsEntry(id: id, name: LumiPluginLocalization.string("Idle Time", bundle: .module)) { IdleTimeManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 1. 解析 IdleTimeProviding（FactoryLumi 已装配真实 IdleTimeService）。
         let provider = kernel.resolveProvider((any IdleTimeProviding).self)
@@ -59,12 +66,6 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
             }
             settings.addEntries([entry])
         }
-
-        // 4. 关于文档。
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: LumiPluginLocalization.string("Idle Time", bundle: .module)) { IdleTimeAboutView() })
-            docs.addManual(DocsEntry(id: id, name: LumiPluginLocalization.string("Idle Time", bundle: .module)) { IdleTimeManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -78,8 +79,10 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
 
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
-        kernel.resolveProvider((any DocsViewProviding).self)?
-            .removeEntries(id: id)
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     // MARK: - 事件监听（替代旧版 IdleTimeRootObserver）

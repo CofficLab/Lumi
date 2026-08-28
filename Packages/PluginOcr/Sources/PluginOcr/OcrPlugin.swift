@@ -28,6 +28,12 @@ public final class OcrPlugin: SuperPlugin, SuperLog {
 
     public var name: String { OcrLocalization.string("OCR", "OCR 文字识别") }
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { OcrAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { OcrManualView() })
+        }
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 注册 Agent 工具。
@@ -35,12 +41,6 @@ public final class OcrPlugin: SuperPlugin, SuperLog {
             for tool in Self.agentTools {
                 toolManager.add(tool, pluginID: id)
             }
-        }
-
-        // 「关于」文档（沿用旧版 pluginAboutView）。
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { OcrAboutView() })
-            docs.addManual(DocsEntry(id: id, name: name) { OcrManualView() })
         }
     }
 
@@ -50,8 +50,10 @@ public final class OcrPlugin: SuperPlugin, SuperLog {
                 toolManager.remove(id: tool.name)
             }
         }
-        kernel.resolveProvider((any DocsViewProviding).self)?
-            .removeEntries(id: id)
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     // MARK: - Agent Tools

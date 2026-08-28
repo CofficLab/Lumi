@@ -38,6 +38,13 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { MindMapAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { MindMapManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         MindMapDesignerRuntime.configure(kernel: kernel, pluginID: id)
 
@@ -85,11 +92,6 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
             contentView?.setContentView(AnyView(MindMapDesignerView()))
             railView?.activateGroup(id: id)
         }
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { MindMapAboutView() })
-            docs.addManual(DocsEntry(id: id, name: name) { MindMapManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -109,8 +111,11 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
 
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         MindMapDesignerRuntime.reset()
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     // MARK: - Agent Tools

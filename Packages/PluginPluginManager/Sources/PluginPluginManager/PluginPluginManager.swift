@@ -48,6 +48,9 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
 
     public func onRegister(kernel: KernelCoreContainer) throws {
         registerPromptSuggestion(kernel: kernel, requiresEnable: !kernel.isPluginEnabled(id: id))
+        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+            DocsEntry(id: id, name: metadata.name) { PluginManagerManualView() }
+        )
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -77,10 +80,6 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
         }
 
         settings.addEntries([entry])
-
-        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
-            DocsEntry(id: id, name: metadata.name) { PluginManagerManualView() }
-        )
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {
@@ -121,5 +120,6 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

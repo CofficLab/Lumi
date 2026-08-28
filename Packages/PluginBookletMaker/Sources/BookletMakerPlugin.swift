@@ -58,6 +58,13 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - Lifecycle
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { BookletMakerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { BookletMakerManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         BookletMakerRuntimeBridge.directoryURL = kernel
             .resolveProvider((any ProviderStorage.StorageProviding).self)?
@@ -135,11 +142,6 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                 BookletMakerToolbarTitleView(viewModel: self.sharedViewModel)
             },
         ])
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { BookletMakerAboutView() })
-            docs.addManual(DocsEntry(id: id, name: name) { BookletMakerManualView() })
-        }
     }
 
     // MARK: - Save Panel
@@ -210,8 +212,11 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
         kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         kernel.resolveProvider((any ProviderWorkspace.WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
         BookletMakerRuntimeBridge.directoryURL = nil
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }
