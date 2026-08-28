@@ -16,7 +16,7 @@ public struct OpenInManualView: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             ManualHeader(
-                title: "Open In \(displayName)",
+                title: String(localized: "Open In \(displayName)", bundle: .module),
                 subtitle: L("User Manual")
             )
 
@@ -51,6 +51,6 @@ public struct OpenInManualView: View {
     }
 
     private func L(_ key: String) -> String {
-        key
+        String(localized: String.LocalizationValue(key), bundle: .module)
     }
 }

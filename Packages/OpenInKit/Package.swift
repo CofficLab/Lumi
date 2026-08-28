@@ -21,7 +21,8 @@ let package = Package(
                 "LumiUI",
                 "ProviderProject",
             ],
-            path: "Sources/OpenInKit"
+            path: "Sources/OpenInKit",
+            resources: [.process("Resources")]
         ),
     ]
 )

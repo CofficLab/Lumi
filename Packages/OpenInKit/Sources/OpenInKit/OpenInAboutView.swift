@@ -20,51 +20,51 @@ public struct OpenInAboutView: View {
             LandingHero(
                 icon: systemImage,
                 accent: theme.primary,
-                tagline: "Open the current project or any specified path in \(displayName).",
-                chips: ["External App", "Agent Tool", displayName],
+                tagline: String(localized: "Open the current project or any specified path in \(displayName).", bundle: .module),
+                chips: [String(localized: "External App", bundle: .module), String(localized: "Agent Tool", bundle: .module), displayName],
                 metrics: [
-                    .init(value: "1", label: "Agent tool"),
-                    .init(value: "Low", label: "Permission risk")
+                    .init(value: "1", label: String(localized: "Agent tool", bundle: .module)),
+                    .init(value: String(localized: "Low", bundle: .module), label: String(localized: "Permission risk", bundle: .module))
                 ]
             )
 
             LandingSpotlight(
                 icon: "arrow.up.forward.app",
                 tint: theme.primary,
-                title: "A direct handoff to \(displayName)",
-                message: "Keep the project in Lumi while sending the current project or a specific absolute path to the external application."
+                title: String(localized: "A direct handoff to \(displayName)", bundle: .module),
+                message: String(localized: "Keep the project in Lumi while sending the current project or a specific absolute path to the external application.", bundle: .module)
             ) {
                 AppTag(toolName, style: .accent)
             }
 
-            LandingSection(title: "Core Capabilities", icon: "square.grid.2x2") {
+            LandingSection(title: String(localized: "Core Capabilities", bundle: .module), icon: "square.grid.2x2") {
                 LandingFeatureGrid(items: [
                     .init(
                         icon: "folder",
                         tint: theme.primary,
-                        title: "Current Project",
-                        description: "Uses the open project as the default target when no path is supplied."
+                        title: String(localized: "Current Project", bundle: .module),
+                        description: String(localized: "Uses the open project as the default target when no path is supplied.", bundle: .module)
                     ),
                     .init(
                         icon: "arrow.right.doc.on.clipboard",
                         tint: theme.info,
-                        title: "Explicit Paths",
-                        description: "Accepts an absolute path when you need to open a different project or folder."
+                        title: String(localized: "Explicit Paths", bundle: .module),
+                        description: String(localized: "Accepts an absolute path when you need to open a different project or folder.", bundle: .module)
                     ),
                     .init(
                         icon: "lock.shield",
                         tint: theme.success,
-                        title: "Low-Risk Action",
-                        description: "Only asks the operating system to open the target in \(displayName)."
+                        title: String(localized: "Low-Risk Action", bundle: .module),
+                        description: String(localized: "Only asks the operating system to open the target in \(displayName).", bundle: .module)
                     )
                 ])
             }
 
-            LandingSection(title: "How It Works", icon: "arrow.triangle.branch.and.merge") {
+            LandingSection(title: String(localized: "How It Works", bundle: .module), icon: "arrow.triangle.branch.and.merge") {
                 LandingStepFlow(steps: [
-                    .init(title: "Choose a target", description: "Ask the Agent to open the current project, or provide an absolute path.", icon: "scope"),
-                    .init(title: "Resolve the application", description: "The plugin finds the installed \(displayName) app and uses its standard open action.", icon: systemImage),
-                    .init(title: "Continue in context", description: "The selected project or path opens directly in \(displayName).", icon: "checkmark.seal")
+                    .init(title: String(localized: "Choose a target", bundle: .module), description: String(localized: "Ask the Agent to open the current project, or provide an absolute path.", bundle: .module), icon: "scope"),
+                    .init(title: String(localized: "Resolve the application", bundle: .module), description: String(localized: "The plugin finds the installed \(displayName) app and uses its standard open action.", bundle: .module), icon: systemImage),
+                    .init(title: String(localized: "Continue in context", bundle: .module), description: String(localized: "The selected project or path opens directly in \(displayName).", bundle: .module), icon: "checkmark.seal")
                 ])
             }
         }
