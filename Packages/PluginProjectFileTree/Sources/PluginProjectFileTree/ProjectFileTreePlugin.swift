@@ -104,7 +104,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
         railView.addTabs([
             RailTabItem(
                 id: Self.railTabID,
-                category: .project,
+                category: .fileTree,
                 title: "Explorer",
                 systemImage: "square.grid.2x2.fill",
                 order: order
