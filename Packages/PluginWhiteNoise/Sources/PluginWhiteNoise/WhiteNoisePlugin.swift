@@ -57,8 +57,10 @@ public final class WhiteNoisePlugin: SuperPlugin, SuperLog {
                     if state == .activated {
                         contentView?.setContentView(AnyView(WhiteNoiseView()))
                         rootView?.setRailView(nil)
+                        rootView?.setContentHeaderViewHidden(true)
                     } else {
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setContentHeaderViewHidden(false)
                     }
                 },
             ])
