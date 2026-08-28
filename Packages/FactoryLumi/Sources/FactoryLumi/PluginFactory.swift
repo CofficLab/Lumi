@@ -108,7 +108,7 @@ import PluginProjects
 import PluginProjectFileTree
 import PluginEditorHost
 import PluginEditorLanguages
-import PluginEditorWorkspace
+import PluginCodeEditor
 import PluginProjectRAG
 import PluginResumeDesigner
 import PluginSettingGeneral
@@ -165,7 +165,7 @@ public struct DefaultPluginFactory: PluginFactory {
             // ActivityBar 自定义实现：替换 ProviderFactory 预注册的 DefaultActivityBarProviding，
             // 必须在所有 onBoot 中调用 addItems 的业务插件（如 ResumeDesignerPlugin order=81）之前。
             PluginActivityBar(),
-            EditorWorkspaceSuperPlugin(),
+            CodeEditorSuperPlugin(),
             LogoCofficPlugin(),
             LogoSmartLightPlugin(),
             SettingsToolbarPlugin(),

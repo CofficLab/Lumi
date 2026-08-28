@@ -37,12 +37,15 @@ struct FactoryLumiTests {
 
         let host = try #require(plugins["com.coffic.lumi.plugin.editor-host"])
         let languages = try #require(plugins["com.coffic.lumi.plugin.editor-languages"])
-        let workspace = try #require(plugins["com.coffic.lumi.plugin.editor-workspace"])
+        let workspace = try #require(plugins["com.coffic.lumi.plugin.code-editor"])
 
         #expect(host.metadata.policy == .alwaysOn)
         #expect(languages.metadata.policy == .required)
         #expect(workspace.metadata.policy == .disabledByDefault)
-        #expect(workspace.dependencies == ["com.coffic.lumi.plugin.editor-host"])
+        #expect(workspace.dependencies == [
+            "com.coffic.lumi.plugin.editor-host",
+            "com.coffic.lumi.plugin.project-file-tree",
+        ])
     }
 
     private final class AdditionalPlugin: SuperPlugin {

@@ -88,7 +88,7 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     /// 产出 `ProjectProviding` 实现（默认内存实现）。
     public func makeProjectProvider() -> any ProjectProviding {
-        DefaultProjectProviding()
+        DefaultProjectProvider()
     }
 
     /// 产出 `ToastProviding` 实现（默认 no-op 实现）。

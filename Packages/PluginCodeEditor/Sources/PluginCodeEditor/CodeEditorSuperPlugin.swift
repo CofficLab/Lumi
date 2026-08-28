@@ -5,20 +5,23 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderProject
 import ProviderRailView
+import PluginProjectFileTree
 import SwiftUI
 import KitSuperLog
 import os
 
 @MainActor
-public final class EditorWorkspaceSuperPlugin: SuperPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.editor-workspace", category: "EditorWorkspace")
-    public static let pluginID = "com.coffic.lumi.plugin.editor-workspace"
+public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.code-editor", category: "CodeEditor")
+    public static let pluginID = "com.coffic.lumi.plugin.code-editor"
     public static let activityItemID = "\(pluginID).entry"
-    public static let explorerTabID = "\(pluginID).explorer"
 
     public let id = pluginID
     public let order = 82
-    public let dependencies = ["com.coffic.lumi.plugin.editor-host"]
+    public let dependencies = [
+        "com.coffic.lumi.plugin.editor-host",
+        ProjectFileTreePlugin.pluginID,
+    ]
     public let metadata = PluginMetadata(
         id: pluginID,
         name: "Code Editor",
@@ -79,18 +82,6 @@ public final class EditorWorkspaceSuperPlugin: SuperPlugin, SuperLog {
         self.railView = railView
         self.contentView = contentView
 
-        railView.addTabs([
-            RailTabItem(
-                id: Self.explorerTabID,
-                groupID: id,
-                title: "Explorer",
-                systemImage: "doc.on.doc",
-                order: order
-            ) {
-                EditorFileTreeView(controller: controller)
-            },
-        ])
-
         activityBar.addItems([
             ActivityBarItem(
                 id: Self.activityItemID,
@@ -104,14 +95,14 @@ public final class EditorWorkspaceSuperPlugin: SuperPlugin, SuperLog {
                     controller: controller,
                     surface: surface
                 )))
-                railView?.activateGroup(id: Self.pluginID)
+                // ProjectFileTreePlugin owns the canonical Explorer rail.
+                railView?.activateGroup(id: ProjectFileTreePlugin.pluginID)
             },
         ])
     }
 
     private func uninstallContributions() {
         let ownedCurrentContent = activityBar?.activeItemID == Self.activityItemID
-        railView?.removeTabs(ids: [Self.explorerTabID])
         activityBar?.removeItems(ids: [Self.activityItemID])
         if ownedCurrentContent { contentView?.setContentView(nil) }
         controller = nil

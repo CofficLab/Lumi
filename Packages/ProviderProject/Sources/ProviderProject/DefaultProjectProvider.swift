@@ -9,7 +9,7 @@ import os
 /// 打开项目、关闭项目、维护内存中的项目列表。
 /// 需要持久化等完整能力的宿主应提供自己的实现替换。
 @MainActor
-public final class DefaultProjectProviding: ProjectProviding, SuperLog {
+public final class DefaultProjectProvider: ProjectProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-project", category: "Project")
     public nonisolated static let emoji = "📁"
 

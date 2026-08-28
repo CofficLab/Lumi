@@ -4,7 +4,7 @@
 
 **Goal:** Deliver a user-toggleable Lumi code workspace with Activity Bar entry, project file explorer, tabbed source editing, syntax highlighting, save/auto-save, restoration, and verified error handling.
 
-**Architecture:** Keep `PluginEditorHost` as required editor infrastructure and add a disabled-by-default `PluginEditorWorkspace` for visible workbench contributions. Reuse `EditorService` as the source of truth for buffers and sessions, mirror session state through `ProjectProviding`, and register language grammars through a separate language-support target.
+**Architecture:** Keep `PluginEditorHost` as required editor infrastructure and add a disabled-by-default `PluginCodeEditor` for visible workbench contributions. Reuse `EditorService` as the source of truth for buffers and sessions, mirror session state through `ProjectProviding`, reuse `PluginProjectFileTree` for the canonical explorer, and register language grammars through a separate language-support target.
 
 **Tech Stack:** Swift 6, SwiftUI/AppKit, KernelCore plugin lifecycle, ProviderActivityBar, ProviderRailView, ProviderContentView, ProviderProject, EditorService, EditorSource, EditorLanguageRuntime, Tree-sitter, Swift Testing/XCTest.
 
@@ -30,10 +30,10 @@
 ### Task 2: Build the workspace state and project/session bridge
 
 **Files:**
-- Create: `Packages/PluginEditorWorkspace/Package.swift`
-- Create: `Packages/PluginEditorWorkspace/Sources/PluginEditorWorkspace/EditorWorkspaceController.swift`
-- Create: `Packages/PluginEditorWorkspace/Sources/PluginEditorWorkspace/EditorWorkspaceRuntime.swift`
-- Test: `Packages/PluginEditorWorkspace/Tests/EditorWorkspaceControllerTests.swift`
+- Create: `Packages/PluginCodeEditor/Package.swift`
+- Create: `Packages/PluginCodeEditor/Sources/PluginCodeEditor/EditorWorkspaceController.swift`
+- Create: `Packages/PluginCodeEditor/Sources/PluginCodeEditor/EditorWorkspaceRuntime.swift`
+- Test: `Packages/PluginCodeEditor/Tests/EditorWorkspaceControllerTests.swift`
 
 **Steps:**
 
@@ -44,33 +44,30 @@
 5. Restore only files inside the active project and tolerate missing/deleted files.
 6. Run the focused tests and commit the controller slice.
 
-### Task 3: Implement a lazy project file explorer
+### Task 3: Integrate the existing project file explorer
 
 **Files:**
-- Create: `Packages/PluginEditorWorkspace/Sources/PluginEditorWorkspace/Explorer/EditorFileTreeNode.swift`
-- Create: `Packages/PluginEditorWorkspace/Sources/PluginEditorWorkspace/Explorer/EditorFileTreeModel.swift`
-- Create: `Packages/PluginEditorWorkspace/Sources/PluginEditorWorkspace/Explorer/EditorFileTreeView.swift`
-- Create: `Packages/PluginEditorWorkspace/Sources/PluginEditorWorkspace/Explorer/EditorFileIcon.swift`
-- Test: `Packages/PluginEditorWorkspace/Tests/EditorFileTreeModelTests.swift`
+- Modify: `Packages/PluginProjectFileTree/Sources/PluginProjectFileTree/ProjectFileTreePlugin.swift`
+- Test: `Packages/PluginProjectFileTree/Tests/PluginProjectFileTreeTests/`
 
 **Steps:**
 
 1. Add temporary-directory tests for folder-first sorting, hidden/build exclusions, lazy loading, refresh, cancellation, inaccessible folders, symlinks, and stable identity.
 2. Run tests and confirm the model is absent/failing.
-3. Implement cancellable detached enumeration with results applied on the main actor.
-4. Implement a hierarchical SwiftUI Rail view with expand/collapse, refresh, selected-file reveal, empty project, loading, and error states.
+3. Reuse the existing `PluginProjectFileTree` Rail contribution and its `ProjectProviding` current-file callback.
+4. Activate the canonical Explorer group when the Code Editor Activity Bar item is selected.
 5. Open regular files through the workspace controller; never treat directories or packages as text files.
-6. Run model and package tests, then commit the explorer slice.
+6. Run the project-file-tree and editor package tests, then commit the integration slice.
 
 ### Task 4: Build the tabbed editor workbench
 
 **Files:**
-- Create: `Packages/PluginEditorWorkspace/Sources/PluginEditorWorkspace/Workbench/EditorWorkbenchView.swift`
-- Create: `Packages/PluginEditorWorkspace/Sources/PluginEditorWorkspace/Workbench/EditorTabStripView.swift`
-- Create: `Packages/PluginEditorWorkspace/Sources/PluginEditorWorkspace/Workbench/EditorBreadcrumbView.swift`
-- Create: `Packages/PluginEditorWorkspace/Sources/PluginEditorWorkspace/Workbench/EditorStatusBarView.swift`
-- Create: `Packages/PluginEditorWorkspace/Sources/PluginEditorWorkspace/Workbench/EditorEmptyStateView.swift`
-- Test: `Packages/PluginEditorWorkspace/Tests/EditorWorkbenchModelTests.swift`
+- Create: `Packages/PluginCodeEditor/Sources/PluginCodeEditor/Workbench/EditorWorkbenchView.swift`
+- Create: `Packages/PluginCodeEditor/Sources/PluginCodeEditor/Workbench/EditorTabStripView.swift`
+- Create: `Packages/PluginCodeEditor/Sources/PluginCodeEditor/Workbench/EditorBreadcrumbView.swift`
+- Create: `Packages/PluginCodeEditor/Sources/PluginCodeEditor/Workbench/EditorStatusBarView.swift`
+- Create: `Packages/PluginCodeEditor/Sources/PluginCodeEditor/Workbench/EditorEmptyStateView.swift`
+- Test: `Packages/PluginCodeEditor/Tests/EditorWorkbenchModelTests.swift`
 
 **Steps:**
 
@@ -84,15 +81,15 @@
 ### Task 5: Implement plugin lifecycle and visible contributions
 
 **Files:**
-- Create: `Packages/PluginEditorWorkspace/Sources/PluginEditorWorkspace/EditorWorkspaceSuperPlugin.swift`
-- Create: `Packages/PluginEditorWorkspace/Resources/Localizable.xcstrings`
-- Test: `Packages/PluginEditorWorkspace/Tests/EditorWorkspaceSuperPluginTests.swift`
+- Create: `Packages/PluginCodeEditor/Sources/PluginCodeEditor/CodeEditorSuperPlugin.swift`
+- Create: `Packages/PluginCodeEditor/Resources/Localizable.xcstrings`
+- Test: `Packages/PluginCodeEditor/Tests/CodeEditorSuperPluginTests.swift`
 
 **Steps:**
 
 1. Write a kernel integration test with default Activity Bar, Rail, Content, Project, and Editor Host providers.
 2. Assert the disabled-by-default metadata and dependency on `com.coffic.lumi.plugin.editor-host`.
-3. Implement `onBoot` to add one Activity Bar entry and one Explorer Rail tab; activate the editor content and Rail group from the entry callback.
+3. Implement `onBoot` to add one Activity Bar entry; activate the editor content and the existing ProjectFileTree Rail group from the entry callback.
 4. Implement `onShutdown` to remove owned contributions, cancel observations, and avoid clearing another plugin's content.
 5. Verify enable/disable/re-enable does not duplicate entries or observers.
 6. Run integration tests and commit the plugin lifecycle slice.
@@ -141,9 +138,8 @@
 **Steps:**
 
 1. Replace stale `KernelLumi` test imports with current `EditorContracts`/runtime types and run the full EditorService suite.
-2. Run `swift test` for EditorLanguageRuntime, EditorSource, EditorKernel, EditorService, PluginEditorHost, PluginEditorLanguages, PluginEditorWorkspace, and FactoryLumi.
+2. Run `swift test` for EditorLanguageRuntime, EditorSource, EditorKernel, EditorService, PluginEditorHost, PluginEditorLanguages, PluginCodeEditor, and FactoryLumi.
 3. Build the Lumi Debug scheme with code signing disabled and treat warnings separately from errors.
 4. Launch the app and execute the documented smoke flow: enable plugin, activate editor, open project, expand folders, open two language fixtures, edit, Cmd-S, verify disk, auto-save, external conflict, close/reopen, restore tabs.
 5. Capture screenshots of Explorer, highlighted editor with dirty tab, and save/conflict state for visual review.
 6. Fix all failures, rerun the relevant gate, and only then mark the editor goal complete.
-

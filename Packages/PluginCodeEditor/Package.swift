@@ -2,16 +2,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "PluginEditorWorkspace",
+    name: "PluginCodeEditor",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "PluginEditorWorkspace", targets: ["PluginEditorWorkspace"]),
+        .library(name: "PluginCodeEditor", targets: ["PluginCodeEditor"]),
     ],
     dependencies: [
         .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../PluginEditorHost"),
+        .package(path: "../PluginProjectFileTree"),
         .package(path: "../EditorContracts"),
         .package(path: "../EditorService"),
         .package(path: "../ProviderActivityBar"),
@@ -23,12 +24,13 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "PluginEditorWorkspace",
+            name: "PluginCodeEditor",
             dependencies: [
                 "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "EditorService", package: "EditorService"),
+                .product(name: "PluginProjectFileTree", package: "PluginProjectFileTree"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
@@ -38,13 +40,14 @@ let package = Package(
             resources: [.process("Resources")]
         ),
         .testTarget(
-            name: "PluginEditorWorkspaceTests",
+            name: "PluginCodeEditorTests",
             dependencies: [
-                "PluginEditorWorkspace",
+                "PluginCodeEditor",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "PluginEditorHost", package: "PluginEditorHost"),
+                .product(name: "PluginProjectFileTree", package: "PluginProjectFileTree"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderProject", package: "ProviderProject"),

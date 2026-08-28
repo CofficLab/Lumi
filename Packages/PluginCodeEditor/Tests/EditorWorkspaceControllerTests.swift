@@ -1,6 +1,6 @@
 import EditorService
 import Foundation
-import PluginEditorWorkspace
+import PluginCodeEditor
 import ProviderProject
 import Testing
 

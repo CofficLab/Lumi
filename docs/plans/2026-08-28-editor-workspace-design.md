@@ -15,15 +15,15 @@ The initial built-in language set is Swift, JavaScript/TypeScript, JSON, Markdow
 The implementation uses two plugins with different lifecycles:
 
 - `PluginEditorHost` is required infrastructure. It remains UI-neutral and owns the single `EditorService`, the V2 editor contract adapter, the standard source-editor surface, and the embedded editor provider used by feature plugins.
-- `PluginEditorWorkspace` is user-facing and `disabledByDefault`. Its `onBoot` registers one Activity Bar item and one Rail tab. Activating the Activity Bar item installs the editor workbench into `ContentViewProviding` and activates the editor Rail group. `onShutdown` removes every contribution and clears the content only when the editor owns it.
+- `PluginCodeEditor` is user-facing and `disabledByDefault`. Its `onBoot` registers one Activity Bar item. Activating the Activity Bar item installs the editor workbench into `ContentViewProviding` and activates the canonical `PluginProjectFileTree` Rail group. `onShutdown` removes every contribution and clears the content only when the editor owns it.
 
 `FactoryLumi` includes both plugins. The host boots before language and workspace plugins. Enabling or disabling the workspace therefore changes only visible workspace contributions and does not invalidate embedded editors used elsewhere.
 
 ## Components and data flow
 
-`EditorWorkspaceController` observes `ProjectProviding`, `EditorService`, and `EditorSessionStore`. The current project path is the authoritative workspace root. Project changes rebuild the explorer, update `EditorService.projectRootPath`, restore that project's tabs, and select its current file. Editor session changes are mirrored back to `ProjectProviding.openFileURLs` and `currentFileURL`, preserving the existing Projects persistence format.
+`EditorWorkspaceController` observes `ProjectProviding`, `EditorService`, and `EditorSessionStore`. The current project path is the authoritative workspace root. Project changes update `EditorService.projectRootPath`, restore that project's tabs, and select its current file. The existing `PluginProjectFileTree` owns the canonical project explorer and file selection; editor session changes are mirrored back to `ProjectProviding.openFileURLs` and `currentFileURL`, preserving the existing Projects persistence format.
 
-`EditorFileTreeModel` performs cancellable, off-main-thread directory enumeration. Nodes are loaded lazily, sorted with folders first, and use stable standardized URLs as identity. `.git`, `.build`, `DerivedData`, `node_modules`, and package build directories are excluded by default. Refresh preserves expansion and selection where possible. File activation calls `EditorService.sessions.open(at:)`; directories toggle expansion.
+`PluginProjectFileTree` owns cancellable directory enumeration, folder expansion, selection, and file operations. The editor workspace consumes its selected-file/project provider contract and does not duplicate the file-tree implementation.
 
 `EditorWorkbenchView` contains a tab strip, optional breadcrumb row, editor surface, empty/loading/error states, and status bar. The editor surface binds `SourceEditor` to the active `EditorState`, preserving its existing coordinators, highlighter, find/replace, multi-cursor, folding, minimap, completion, and LSP bridges. Dirty tabs show a marker; close requests use the existing save workflow and never silently discard changes.
 
@@ -44,4 +44,3 @@ Language support is packaged separately from the workspace shell so it can be te
 Package tests cover plugin lifecycle registration and removal, file-tree ordering and filtering, lazy expansion, project/session synchronization, tab activation and close behavior, dirty-state protection, save/error state mapping, and language detection. Integration tests start a real `KernelCoreContainer` with host and workspace plugins and assert that enabling the workspace contributes Activity Bar/Rail/content views.
 
 The final gate is an unsigned Debug build of the Lumi scheme plus a macOS UI smoke test: enable plugin, activate editor, choose project, expand tree, open two files, verify highlighting, edit both, save with Cmd-S, confirm disk contents, trigger an external modification, close/reopen the app, and verify session restoration.
-

@@ -2,7 +2,8 @@ import Combine
 import EditorContracts
 import KernelCore
 import PluginEditorHost
-import PluginEditorWorkspace
+import PluginProjectFileTree
+import PluginCodeEditor
 import ProviderActivityBar
 import ProviderContentView
 import ProviderPluginControl
@@ -12,12 +13,15 @@ import SwiftUI
 import Testing
 
 @MainActor
-struct EditorWorkspaceSuperPluginTests {
+struct CodeEditorSuperPluginTests {
     @Test("is user configurable and disabled by default")
     func metadata() {
-        let plugin = EditorWorkspaceSuperPlugin()
+        let plugin = CodeEditorSuperPlugin()
         #expect(plugin.metadata.policy == .disabledByDefault)
-        #expect(plugin.dependencies == ["com.coffic.lumi.plugin.editor-host"])
+        #expect(plugin.dependencies == [
+            "com.coffic.lumi.plugin.editor-host",
+            ProjectFileTreePlugin.pluginID,
+        ])
     }
 
     @Test("enabling and disabling installs and removes workspace contributions")
@@ -31,27 +35,27 @@ struct EditorWorkspaceSuperPluginTests {
         try kernel.registerProvider((any RailViewProviding).self, rail)
         try kernel.registerProvider((any ContentViewProviding).self, content)
         try kernel.registerProvider((any ProjectProviding).self, project)
-        let workspace = EditorWorkspaceSuperPlugin()
-        try kernel.start(plugins: [EditorHostSuperPlugin(), workspace])
+        let workspace = CodeEditorSuperPlugin()
+        try kernel.start(plugins: [ProjectFileTreePlugin(), EditorHostSuperPlugin(), workspace])
         let control = DefaultPluginControlling(kernel: kernel)
 
-        #expect(activity.items.allSatisfy { $0.id != EditorWorkspaceSuperPlugin.activityItemID })
+        #expect(activity.items.allSatisfy { $0.id != CodeEditorSuperPlugin.activityItemID })
         #expect(await control.enablePlugin(id: workspace.id))
-        #expect(activity.items.filter { $0.id == EditorWorkspaceSuperPlugin.activityItemID }.count == 1)
-        #expect(rail.tabs.filter { $0.id == EditorWorkspaceSuperPlugin.explorerTabID }.count == 1)
+        #expect(activity.items.filter { $0.id == CodeEditorSuperPlugin.activityItemID }.count == 1)
+        #expect(rail.tabs.filter { $0.id == ProjectFileTreePlugin.railTabID }.count == 1)
 
-        activity.activateItem(id: EditorWorkspaceSuperPlugin.activityItemID)
-        #expect(rail.activeGroupID == workspace.id)
+        activity.activateItem(id: CodeEditorSuperPlugin.activityItemID)
+        #expect(rail.activeGroupID == ProjectFileTreePlugin.pluginID)
         #expect(content.setCount == 1)
 
         #expect(await control.disablePlugin(id: workspace.id))
-        #expect(activity.items.allSatisfy { $0.id != EditorWorkspaceSuperPlugin.activityItemID })
-        #expect(rail.tabs.allSatisfy { $0.id != EditorWorkspaceSuperPlugin.explorerTabID })
+        #expect(activity.items.allSatisfy { $0.id != CodeEditorSuperPlugin.activityItemID })
+        #expect(rail.tabs.contains { $0.id == ProjectFileTreePlugin.railTabID })
         #expect(content.clearCount == 1)
 
         #expect(await control.enablePlugin(id: workspace.id))
-        #expect(activity.items.filter { $0.id == EditorWorkspaceSuperPlugin.activityItemID }.count == 1)
-        #expect(rail.tabs.filter { $0.id == EditorWorkspaceSuperPlugin.explorerTabID }.count == 1)
+        #expect(activity.items.filter { $0.id == CodeEditorSuperPlugin.activityItemID }.count == 1)
+        #expect(rail.tabs.filter { $0.id == ProjectFileTreePlugin.railTabID }.count == 1)
     }
 }
 
