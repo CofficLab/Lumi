@@ -23,7 +23,6 @@ let package = Package(
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
-        .package(path: "../ProviderWorkspace"),
     ],
     targets: [
         .target(
@@ -43,7 +42,6 @@ let package = Package(
                 "ProviderStorage",
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
-                "ProviderWorkspace",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
@@ -60,7 +58,6 @@ let package = Package(
                 "ProviderRailView",
                 "ProviderStorage",
                 "ProviderToolManager",
-                "ProviderWorkspace",
             ]
         ),
     ]

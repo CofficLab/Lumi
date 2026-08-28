@@ -9,7 +9,6 @@ import ProviderDocsView
 import ProviderPromptSuggestion
 import ProviderRailView
 import ProviderToolManager
-import ProviderWorkspace
 import SwiftUI
 
 /// App Icon 设计器插件。
@@ -43,8 +42,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             systemImage: "app.dashed",
             action: .activatePluginEntry(
                 activityBarItemID: "\(id).entry",
-                railTabID: Self.railTabID,
-                railGroupID: id
+                railTabID: Self.railTabID
             )
         )
     }
@@ -82,33 +80,12 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
-        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
-
-        if let workspace = workspace {
-            workspace.registerContainer(
-                WorkspaceContainer(
-                    id: id,
-                    title: name,
-                    systemImage: "app.dashed",
-                    order: order,
-                    railVisibility: .alwaysVisible,
-                    chatVisibility: .alwaysVisible,
-                    panelHeaderVisibility: .unsupported,
-                    panelBodyVisibility: .unsupported,
-                    panelBottomVisibility: .unsupported
-                ),
-                ownerPluginID: id
-            )
-        } else {
-            Self.logger.error("\(Self.t) WorkspaceProviding not found")
-        }
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         if let railView = railView {
             railView.addTabs([
                 RailTabItem(
                     id: Self.railTabID,
-                    groupID: id,
                     title: AppIconDesignerLocalization.string("Icon Documents"),
                     systemImage: "doc.text",
                     order: order
@@ -135,8 +112,6 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                     contentView?.setContentView(AnyView(DesignerView()))
                     chat?.setVisible(true)
                     chat?.setContextActive(true)
-                    railView?.activateGroup(id: self.id)
-                    workspace?.activateContainer(id: self.id)
                 },
             ])
         } else {
@@ -144,8 +119,6 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             contentView?.setContentView(AnyView(DesignerView()))
             chat?.setVisible(true)
             chat?.setContextActive(true)
-            railView?.activateGroup(id: id)
-            workspace?.activateContainer(id: id)
         }
     }
 
@@ -167,8 +140,6 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
 
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
-        kernel.resolveProvider((any WorkspaceProviding).self)?
-            .unregisterContainers(ownerPluginID: id)
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         activityBar?.removeItems(ids: ["\(id).entry"])

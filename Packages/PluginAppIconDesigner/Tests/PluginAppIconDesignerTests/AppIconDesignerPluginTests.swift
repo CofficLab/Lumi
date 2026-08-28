@@ -9,7 +9,6 @@ import ProviderStorage
 import ProviderToolManager
 import ProviderPromptSuggestion
 import Testing
-import ProviderWorkspace
 @testable import PluginAppIconDesigner
 
 @Suite("PluginAppIconDesigner", .serialized)
@@ -32,16 +31,12 @@ struct AppIconDesignerPluginTests {
         }
     }
 
-    @Test("启动后注册 ActivityBar 与分组 Rail，并在激活时联动")
+    @Test("启动后注册 ActivityBar 与 Rail，并在激活时联动")
     func registersAndActivatesContributions() async throws {
         let kernel = KernelCoreContainer()
         let activity = DefaultActivityBarProviding()
         let rail = DefaultRailViewProviding()
         let chat = DefaultChatSectionProviding()
-        let workspace = DefaultWorkspaceProviding(
-            pluginDirectory: FileManager.default.temporaryDirectory
-                .appendingPathComponent("PluginAppIconDesignerWorkspaceTests-\(UUID().uuidString)")
-        )
         let storage = TestStorage()
 
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
@@ -51,7 +46,6 @@ struct AppIconDesignerPluginTests {
         )
         try kernel.registerProvider((any RailViewProviding).self, rail)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
-        try kernel.registerProvider((any WorkspaceProviding).self, workspace)
         try kernel.registerProvider((any StorageProviding).self, storage)
 
         try kernel.start(plugins: [AppIconDesignerPlugin()])
@@ -59,11 +53,7 @@ struct AppIconDesignerPluginTests {
 
         #expect(activity.items.map(\.id) == ["com.coffic.lumi.plugin.app-icon-designer.entry"])
         #expect(rail.tabs.map(\.id) == [AppIconDesignerPlugin.railTabID])
-        #expect(rail.tabs.first?.groupID == "com.coffic.lumi.plugin.app-icon-designer")
-        #expect(rail.activeGroupID == "com.coffic.lumi.plugin.app-icon-designer")
         #expect(rail.activeTabID == AppIconDesignerPlugin.railTabID)
-        #expect(workspace.activeContainerID == AppIconDesignerPlugin().id)
-        #expect(workspace.isChatVisible)
         #expect(chat.isVisible)
         #expect(chat.isContextActive)
 
@@ -71,7 +61,6 @@ struct AppIconDesignerPluginTests {
 
         #expect(activity.items.isEmpty)
         #expect(rail.tabs.isEmpty)
-        #expect(workspace.containers.isEmpty)
         try? FileManager.default.removeItem(at: storage.dataRootDirectory)
     }
 
