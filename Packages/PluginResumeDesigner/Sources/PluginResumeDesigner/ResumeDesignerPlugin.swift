@@ -96,7 +96,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     guard state == .activated else { return }
-                    railView?.setVisibleCategories([.design])
+                    railView?.setVisibleTabID(Self.railTabID)
                     chat?.setVisible(true)
                     chat?.setContextActive(true)
                     WorkspaceStore.shared.reload()
