@@ -3,6 +3,8 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderWorkspace
 import SwiftUI
+import KitSuperLog
+import os
 
 /// KernelCore migration of the Netto firewall workspace.
 ///
@@ -10,7 +12,8 @@ import SwiftUI
 /// same disabled policy: it is present for compatibility and diagnostics but
 /// does not publish a workspace until a future host explicitly enables it.
 @MainActor
-public final class NettoSuperPlugin: SuperPlugin {
+public final class NettoSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.netto", category: "Netto")
     public let id = "com.coffic.lumi.plugin.netto"
     public let order = 99
     public let metadata = PluginMetadata(
