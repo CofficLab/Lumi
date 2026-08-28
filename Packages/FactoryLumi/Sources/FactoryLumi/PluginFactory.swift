@@ -106,6 +106,7 @@ import PluginOpenInXcode
 import PluginPluginManager
 import PluginProjects
 import PluginProjectFileTree
+import PluginProjectFiles
 import PluginEditorHost
 import PluginEditorLanguages
 import PluginCodeEditor
@@ -147,6 +148,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ProjectRAGSuperPlugin(),
             // 项目文件树（由旧版 Plugins/ProjectFileTreePlugin 迁移而来）。
             ProjectFileTreePlugin(),
+            ProjectFilesSuperPlugin(),
             DevicePlugin(),
             HostsManagerPlugin(),
             DiskManagerPlugin(),

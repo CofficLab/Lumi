@@ -18,6 +18,7 @@ import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
 import ProviderLLMManager
+import PluginProjectFiles
 import KitLLM
 import ProviderMessage
 import PluginConversationManager
@@ -38,10 +39,15 @@ struct FactoryLumiTests {
         let host = try #require(plugins["com.coffic.lumi.plugin.editor-host"])
         let languages = try #require(plugins["com.coffic.lumi.plugin.editor-languages"])
         let workspace = try #require(plugins["com.coffic.lumi.plugin.code-editor"])
+        let projectFiles = try #require(plugins[ProjectFilesSuperPlugin.pluginID])
 
         #expect(host.metadata.policy == .alwaysOn)
         #expect(languages.metadata.policy == .required)
         #expect(workspace.metadata.policy == .disabledByDefault)
+        #expect(projectFiles.metadata.policy == .required)
+        #expect(projectFiles.dependencies == [
+            "com.coffic.lumi.plugin.projects",
+        ])
         #expect(workspace.dependencies == [
             "com.coffic.lumi.plugin.editor-host",
             "com.coffic.lumi.plugin.project-file-tree",
