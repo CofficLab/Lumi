@@ -105,6 +105,7 @@ import PluginOpenInVSCode
 import PluginOpenInXcode
 import PluginPluginManager
 import PluginProjects
+import PluginProjectFileTree
 import PluginEditorHost
 import PluginEditorLanguages
 import PluginEditorWorkspace
@@ -144,6 +145,8 @@ public struct DefaultPluginFactory: PluginFactory {
             ProjectsPlugin(),
             // 原 LumiApp 显式注入的项目 RAG：保留旧索引数据库和 search_code 工具。
             ProjectRAGSuperPlugin(),
+            // 项目文件树（由旧版 Plugins/ProjectFileTreePlugin 迁移而来）。
+            ProjectFileTreePlugin(),
             DevicePlugin(),
             HostsManagerPlugin(),
             DiskManagerPlugin(),
