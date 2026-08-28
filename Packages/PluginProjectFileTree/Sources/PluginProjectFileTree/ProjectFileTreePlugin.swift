@@ -59,28 +59,48 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
                     for: ProjectFileTreePluginRuntimeBridge.pluginName
                 )
             )
+        } else {
+            Self.logger.error("\(Self.t) StorageProviding not found")
         }
 
         // 组装文件树上下文（项目 / 对话输入 / Toast 提示）。
+        let project = kernel.resolveProvider((any ProjectProviding).self)
+        if project == nil {
+            Self.logger.error("\(Self.t) ProjectProviding not found")
+        }
+
+        let conversationInput = kernel.resolveProvider((any ConversationInputProviding).self)
+        if conversationInput == nil {
+            Self.logger.error("\(Self.t) ConversationInputProviding not found")
+        }
+
+        let toast = kernel.resolveProvider((any ToastProviding).self)
+        if toast == nil {
+            Self.logger.error("\(Self.t) ToastProviding not found")
+        }
+
         let context = FileTreeContext(
-            project: kernel.resolveProvider((any ProjectProviding).self),
-            conversationInput: kernel.resolveProvider((any ConversationInputProviding).self),
-            toast: kernel.resolveProvider((any ToastProviding).self)
+            project: project,
+            conversationInput: conversationInput,
+            toast: toast
         )
 
         // 在 Rail 侧边栏注入 Explorer 标签。
-        if let railView = kernel.resolveProvider((any RailViewProviding).self) {
-            railView.addTabs([
-                RailTabItem(
-                    id: Self.railTabID,
-                    groupID: id,
-                    title: "Explorer",
-                    systemImage: "square.grid.2x2.fill",
-                    order: order
-                ) {
-                    TreeView(context: context)
-                }
-            ])
+        guard let railView = kernel.resolveProvider((any RailViewProviding).self) else {
+            Self.logger.error("\(Self.t) RailViewProviding not found")
+            return
         }
+
+        railView.addTabs([
+            RailTabItem(
+                id: Self.railTabID,
+                groupID: id,
+                title: "Explorer",
+                systemImage: "square.grid.2x2.fill",
+                order: order
+            ) {
+                TreeView(context: context)
+            }
+        ])
     }
 }
