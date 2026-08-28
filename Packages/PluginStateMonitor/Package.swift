@@ -8,6 +8,7 @@ let package = Package(
         .library(name: "PluginStateMonitor", targets: ["PluginStateMonitor"]),
     ],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderProject"),
@@ -16,6 +17,7 @@ let package = Package(
         .target(
             name: "PluginStateMonitor",
             dependencies: [
+                "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderProject", package: "ProviderProject"),

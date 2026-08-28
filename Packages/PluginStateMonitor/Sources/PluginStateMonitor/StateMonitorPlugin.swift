@@ -3,6 +3,8 @@ import Foundation
 import KernelCore
 import ProviderConversation
 import ProviderProject
+import KitSuperLog
+import os
 
 /// V2 runtime state coordination.
 ///
@@ -11,7 +13,8 @@ import ProviderProject
 /// have no other owner: selecting a project-bound conversation follows its
 /// project, and independently changing projects clears an incompatible selection.
 @MainActor
-public final class StateMonitorPlugin: SuperPlugin {
+public final class StateMonitorPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.state-monitor", category: "StateMonitor")
     public let id = "com.coffic.lumi.plugin.state-monitor"
     public let order = 75
     public let metadata = PluginMetadata(
