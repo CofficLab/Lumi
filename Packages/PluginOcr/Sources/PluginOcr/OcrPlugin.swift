@@ -6,11 +6,7 @@ import ProviderToolManager
 import KitSuperLog
 import SwiftUI
 
-/// OCR 文字识别插件（KernelCore 版本）
-///
-/// 由旧版 `Plugins/OcrPlugin`（KernelLumi / LumiPlugin 架构）复刻而来，
-/// 纯工具型插件：`onBoot` 向 `ToolManagerProviding` 注册 `OcrImageTool`，
-/// 并贡献「关于」文档。
+/// OCR 文字识别插件
 ///
 /// 识别逻辑 `OcrEngine` 基于 macOS Vision，纯本地离线，无内核依赖。
 @MainActor
@@ -23,7 +19,7 @@ public final class OcrPlugin: SuperPlugin {
         description: "",
         category: .integration,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .required
     )
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.ocr")
