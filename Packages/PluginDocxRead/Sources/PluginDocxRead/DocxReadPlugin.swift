@@ -2,13 +2,15 @@ import KitAgentTool
 import KernelCore
 import os
 import ProviderToolManager
+import KitSuperLog
 
 /// Docx Read 插件（KernelCore 版本）
 ///
 /// 由旧版 `Plugins/DocxReadPlugin`（KernelLumi / LumiPlugin 架构）复刻而来，
 /// 纯工具型插件：`onBoot` 向 `ToolManagerProviding` 注册 `DocxReadTool`。
 @MainActor
-public final class DocxReadPlugin: SuperPlugin {
+public final class DocxReadPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.docx-read", category: "DocxRead")
     public let id = "com.coffic.lumi.plugin.docx-read"
     public let order = 90
     public let metadata = PluginMetadata(
