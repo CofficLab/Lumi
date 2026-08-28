@@ -4,6 +4,8 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderStorage
 import SwiftUI
+import KitSuperLog
+import os
 
 enum InputPluginRuntimeBridge {
     nonisolated(unsafe) static var dataRootDirectory: URL?
@@ -13,7 +15,8 @@ enum InputPluginRuntimeBridge {
 }
 
 @MainActor
-public final class InputSuperPlugin: SuperPlugin {
+public final class InputSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.input-manager", category: "Input")
     public let id = "com.coffic.lumi.plugin.input-manager"
     public let order = 70
     public let metadata = PluginMetadata(
