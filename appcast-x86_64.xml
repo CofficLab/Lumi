@@ -3,57 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.16.0</title>
-            <pubDate>Sat, 15 Aug 2026 13:26:54 +0000</pubDate>
-            <sparkle:version>611</sparkle:version>
-            <sparkle:shortVersionString>5.16.0</sparkle:shortVersionString>
+            <title>5.17.0</title>
+            <pubDate>Fri, 28 Aug 2026 01:32:34 +0000</pubDate>
+            <sparkle:version>612</sparkle:version>
+            <sparkle:shortVersionString>5.17.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.16.0</h2>
-<h3>Changes since v5.15.0</h3>
+            <description><![CDATA[<h2>Release v5.17.0</h2>
+<h3>Changes since v5.16.0</h3>
 <ul>
-<li>docs: add editor rearchitecture plan, refresh architecture notes</li>
-<li>docs: rewrite README with updated features, architecture, and plugin system</li>
-<li>docs(ui-performance): record P1/P8 verification and 88-message scroll jank findings</li>
-<li>feat: add guided empty state for projects list and finalize migration policy</li>
-<li>feat: add ProviderContentView so plugins can set the main content</li>
-<li>feat: add ProviderSettingView and assemble settings view into factory</li>
-<li>feat: add ProviderStorage and assemble it into FactoryLumi2</li>
-<li>feat: add requiresProject flag to prompt suggestions</li>
-<li>feat: add SettingGeneralPlugin that registers a General settings entry</li>
-<li>feat: add toolbar settings button that opens the settings window</li>
-<li>feat: assemble ActivityBarProviding and wire it into RootView</li>
-<li>feat: assemble RailViewProviding and wire it into RootView</li>
-<li>feat: assemble RootViewProviding and replace ProviderWindow with RootView</li>
-<li>feat: wire ContentViewProviding into the root view</li>
-<li>feat(app-icon-designer): add plugin manual view with localized guide</li>
-<li>feat(app-store-promo): add plugin manual view with localized guide</li>
-<li>feat(AppIconDesignerPlugin): revamp manual view into chaptered guide</li>
-<li>feat(AppStorePromoDesignerPlugin): rebuild about view with LumiUI landing components</li>
-<li>feat(AppUpdatePlugin): rebuild about view with LumiUI landing components</li>
-<li>feat(BookletMakerPlugin): rebuild about view with LumiUI landing components</li>
-<li>feat: add elegant macOS-style Loading page</li>
-<li>feat: refactor LLM provider base classes and fix Keychain service regression</li>
-<li>feat(core): extract KitKeychain as independent package</li>
-<li>feat(editor-chat): add EditorChatPlugin for sending code references to chat</li>
-<li>feat(goal-task): add chat toolbar button to display goals</li>
-<li>feat(goal-task): enforce single active goal policy</li>
-<li>feat(menu-bar): sort menu bar popup items by order</li>
-<li>feat(plugin): allow agentTools to throw and surface failures to UI</li>
-<li>fix(menu-bar): honor LumiMenuBarPopupItem.order when aggregating popup items</li>
-<li>refactor: move plugin-related types to Plugin directory</li>
-<li>refactor(agent-tool): extract tool service methods into AgentToolComponent</li>
-<li>refactor(app): simplify RootContainer and rename project types</li>
-<li>refactor(bootstrap): merge LumiCoreService into RootContainer</li>
-<li>refactor(core): introduce ProjectComponent to encapsulate ProjectState</li>
-<li>refactor(core): remove KitKeychain dependency from LumiLLMProvider protocol</li>
-<li>refactor(core): remove LumiCoreKit Security module, use KitKeychain directly</li>
-<li>refactor(goal-task): simplify sidebar to show single active goal</li>
-<li>refactor(layout): introduce LayoutComponent to encapsulate LumiLayoutState</li>
-<li>refactor(logo): rename LogoRegistry to LogoComponent, migrate to component pattern</li>
-<li>refactor(plugins): surface agentTools dependency failures instead of silent returns</li>
+<li>Add selected conversation observer callback to ProviderConversation; migrate PluginMessageList to callback mechanism</li>
+<li>docs: add lumi v2 zero-difference migration master plan</li>
+<li>docs(agent-loop): add simplification plan to refactor tool execution into ToolManager</li>
+<li>docs(FactoryLumi): add README</li>
+<li>docs(migration): define legacy removal gates</li>
+<li>docs(migration): map consolidated conversation stats</li>
+<li>docs(migration): map v2 turn notifications</li>
+<li>docs(migration): map v2 utility plugins</li>
+<li>docs(migration): record PluginManagerPlugin → PluginPluginManager parityReview migration</li>
+<li>docs(plugin-manager): remove redundant description comment</li>
+<li>docs(PluginConversationManager): simplify plugin doc comment</li>
+<li>docs(PluginDevice): add package README and exclude it from target</li>
+<li>docs(ProviderMessageStreaming): document MainActor isolation contract</li>
+<li>feat: 为 LumiMinimalApp 添加 AppIcon 图标</li>
+<li>feat: add emoji icons to batch execution log messages for better readability</li>
+<li>feat: add generic LLM model download capability</li>
+<li>feat: add ProviderTheme for LumiMinimalApp</li>
+<li>feat: assemble DocsViewProviding and present About/Manual in General settings</li>
+<li>feat: assemble MenuBarProviding and contribute device menu bar</li>
+<li>feat: batch add localization string wrappers and translation resources for plugins &amp; components</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.16.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.16.0/Lumi_5.16.0_x86_64.dmg" length="53522217" type="application/octet-stream" sparkle:edSignature="QH45JPAmW5sLnifz44DHMnl+rhg6xRlAXA2ErHXKVgUYPBdletHOvZxkFuMW6Sj5+iyMS92RexhbkDlv4vMcBQ=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.17.0</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.17.0/Lumi_5.17.0_x86_64.dmg" length="44337760" type="application/octet-stream" sparkle:edSignature="4HyXediyON+o3TAEXo6JbotCnlERskBZipITrLNfRtigNlnPovCO4L2Q129tbUrq4lH8vjuTLlawnKns6F+xCA=="/>
         </item>
     </channel>
 </rss>
