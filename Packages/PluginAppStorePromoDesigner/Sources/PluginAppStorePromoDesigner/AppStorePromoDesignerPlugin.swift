@@ -7,7 +7,6 @@ import ProviderDocsView
 import ProviderRailView
 import ProviderToolManager
 import ProviderPromptSuggestion
-import ProviderWorkspace
 import SwiftUI
 import KitSuperLog
 import os
@@ -79,22 +78,6 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
-        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
-
-        workspace?.registerContainer(
-            WorkspaceContainer(
-                id: id,
-                title: name,
-                systemImage: "photo.artframe",
-                order: order,
-                railVisibility: .alwaysVisible,
-                chatVisibility: .alwaysVisible,
-                panelHeaderVisibility: .unsupported,
-                panelBodyVisibility: .unsupported,
-                panelBottomVisibility: .unsupported
-            ),
-            ownerPluginID: id
-        )
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         railView?.addTabs([
@@ -125,7 +108,6 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                     contentView?.setContentView(AnyView(PromoDesignerView()))
                     chat?.setVisible(true)
                     chat?.setContextActive(true)
-                    workspace?.activateContainer(id: self.id)
                 },
             ])
         } else {
@@ -133,7 +115,6 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
             contentView?.setContentView(AnyView(PromoDesignerView()))
             chat?.setVisible(true)
             chat?.setContextActive(true)
-            workspace?.activateContainer(id: id)
         }
     }
 
@@ -155,8 +136,6 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
 
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
-        kernel.resolveProvider((any WorkspaceProviding).self)?
-            .unregisterContainers(ownerPluginID: id)
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"

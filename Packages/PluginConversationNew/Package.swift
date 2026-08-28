@@ -11,7 +11,6 @@ let package = Package(
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderToolbar"),
-        .package(path: "../ProviderWorkspace"),
         .package(path: "../LumiUI"),
         .package(path: "../KitLocalization"),
     ],
@@ -22,7 +21,6 @@ let package = Package(
         .product(name: "ProviderConversation", package: "ProviderConversation"),
         .product(name: "ProviderChatSection", package: "ProviderChatSection"),
         .product(name: "ProviderToolbar", package: "ProviderToolbar"),
-        .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
         .product(name: "LumiUI", package: "LumiUI"),
     ],
         resources: [.process("Resources/Localizable.xcstrings")]

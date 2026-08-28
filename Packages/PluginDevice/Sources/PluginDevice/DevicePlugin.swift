@@ -9,7 +9,6 @@ import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
-import ProviderWorkspace
 import SwiftUI
 
 /// 设备信息插件。

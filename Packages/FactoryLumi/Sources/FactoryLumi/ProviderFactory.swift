@@ -24,7 +24,6 @@ import ProviderConversationInput
 import ProviderMessageStreaming
 import ProviderMessageRendering
 import ProviderPromptSuggestion
-import ProviderWorkspace
 import ProviderOnboarding
 import ProviderCommand
 import ProviderIdleTime
@@ -196,10 +195,6 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultPromptSuggestionProvider()
     }
 
-    public func makeWorkspaceProvider(storage: any StorageProviding) -> any WorkspaceProviding {
-        DefaultWorkspaceProviding(pluginDirectory: storage.pluginDataDirectory(for: "LayoutKernel"))
-    }
-
     public func makeOnboardingProvider() -> any OnboardingProviding {
         DefaultOnboardingProviding()
     }
@@ -347,10 +342,6 @@ public struct DefaultProviderFactory: ProviderFactory {
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
             throw KernelCoreError.providerNotRegistered(type: (any StorageProviding).self)
         }
-        try kernel.registerProvider(
-            (any WorkspaceProviding).self,
-            makeWorkspaceProvider(storage: storage)
-        )
         try kernel.registerProvider((any OnboardingProviding).self, makeOnboardingProvider())
         try kernel.registerProvider((any CommandProviding).self, makeCommandProvider())
         try kernel.registerProvider((any IdleTimeProviding).self, makeIdleTimeProvider(storage: storage))

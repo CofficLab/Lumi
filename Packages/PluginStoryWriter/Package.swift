@@ -20,7 +20,6 @@ let package = Package(
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../ProviderWorkspace"),
         .package(path: "../KitSuperLog")
     ],
     targets: [
@@ -38,7 +37,6 @@ let package = Package(
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
-                .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
                 .product(name: "KitSuperLog", package: "KitSuperLog")
             ],
             path: "Sources",

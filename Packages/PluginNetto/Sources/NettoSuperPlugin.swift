@@ -1,7 +1,6 @@
 import KernelCore
 import ProviderContentView
 import ProviderDocsView
-import ProviderWorkspace
 import SwiftUI
 import KitSuperLog
 import os
@@ -35,29 +34,12 @@ public final class NettoSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
         let content = kernel.resolveProvider((any ContentViewProviding).self)
-
-        workspace?.registerContainer(
-            WorkspaceContainer(
-                id: id,
-                title: LumiPluginLocalization.string("Netto Firewall", bundle: .module),
-                systemImage: "shield.lefthalf.filled",
-                order: order,
-                railVisibility: .unsupported,
-                chatVisibility: .unsupported,
-                panelHeaderVisibility: .unsupported,
-                panelBodyVisibility: .unsupported,
-                panelBottomVisibility: .unsupported
-            ),
-            ownerPluginID: id
-        )
         content?.setContentView(AnyView(NettoDashboardView()))
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
-        kernel.resolveProvider((any WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

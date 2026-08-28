@@ -8,7 +8,6 @@ import ProviderDocsView
 import ProviderRailView
 import ProviderStorage
 import ProviderToolManager
-import ProviderWorkspace
 import SwiftUI
 import KitSuperLog
 import os
@@ -40,15 +39,11 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let rail = kernel.resolveProvider((any RailViewProviding).self)
-        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
-        let containerID = id
-        workspace?.registerContainer(WorkspaceContainer(id: id, title: metadata.name, systemImage: "book.closed.fill", order: order, railVisibility: .alwaysVisible, chatVisibility: .alwaysVisible, panelHeaderVisibility: .unsupported, panelBodyVisibility: .unsupported, panelBottomVisibility: .unsupported), ownerPluginID: id)
         rail?.addTabs([RailTabItem(id: railID, category: .project, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([ActivityBarItem(id: entryID, title: metadata.name, systemImage: "book.closed.fill", order: order, ownerPluginID: id) { state in
             guard state == .activated else { return }
             rail?.setVisibleTabID(self.railID)
             content?.setContentView(AnyView(StoryWriterRootView()))
-            workspace?.activateContainer(id: containerID)
         }])
         content?.setContentView(AnyView(StoryWriterRootView()))
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
@@ -67,7 +62,6 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
         if wasActive {
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
-        kernel.resolveProvider((any WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)
         StoryWriterV2Tool.all.forEach { tools?.remove(id: $0.name) }

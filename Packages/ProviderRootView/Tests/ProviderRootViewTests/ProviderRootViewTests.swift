@@ -1,6 +1,5 @@
 import Combine
 import ProviderChatSection
-import ProviderWorkspace
 import SwiftUI
 import Testing
 @testable import ProviderRootView
@@ -50,8 +49,8 @@ struct ProviderRootViewTests {
         #expect(pane.isVisible)
     }
 
-    @Test("没有 Workspace container 时可通过 trailing pane 渲染")
-    func visibleTrailingPaneCountsAsActiveContentWithoutWorkspaceContainer() {
+    @Test("没有容器时可通过 trailing pane 渲染")
+    func visibleTrailingPaneCountsAsActiveContentWithoutContainer() {
         let provider = DefaultRootViewProvider()
         let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
         provider.setTrailingPane(pane)
@@ -199,62 +198,6 @@ struct ProviderRootViewTests {
         #expect(!provider.hasActiveContent)
     }
 
-    // MARK: - 显示条件（复刻旧版 AppLayoutView）
-
-    /// 构造一个含 N 个容器的 workspace。
-    private func makeWorkspace(containerCount: Int) -> DefaultWorkspaceProviding {
-        let workspace = DefaultWorkspaceProviding(
-            pluginDirectory: FileManager.default.temporaryDirectory
-                .appendingPathComponent("ProviderRootViewTests-\(UUID().uuidString)", isDirectory: true)
-        )
-        for index in 0..<containerCount {
-            workspace.registerContainer(
-                WorkspaceContainer(
-                    id: "container.\(index)",
-                    title: "Container \(index)",
-                    systemImage: "square",
-                    order: index
-                ),
-                ownerPluginID: "test"
-            )
-        }
-        return workspace
-    }
-
-    @Test("ActivityBar 注入后仍返回根视图（容器数 > 1 时显示）")
-    func activityBarVisibleWithMultipleContainers() {
-        let provider = DefaultRootViewProvider()
-        provider.setActivityBarView(AnyView(Text("activity bar")))
-        provider.setWorkspaceProvider(makeWorkspace(containerCount: 2))
-
-        #expect(type(of: provider.makeRootView()) == AnyView.self)
-    }
-
-    @Test("无活跃容器时返回根视图（Welcome 占位路径）")
-    func welcomePlaceholderWithoutActiveContainer() {
-        let provider = DefaultRootViewProvider()
-        // 有 workspace 但无活跃容器（未注册任何容器）。
-        let workspace = DefaultWorkspaceProviding(
-            pluginDirectory: FileManager.default.temporaryDirectory
-                .appendingPathComponent("ProviderRootViewTests-\(UUID().uuidString)", isDirectory: true)
-        )
-        provider.setWorkspaceProvider(workspace)
-        provider.setContentView(AnyView(Text("content")))
-
-        #expect(type(of: provider.makeRootView()) == AnyView.self)
-    }
-
-    @Test("存在活跃容器时返回带内容区的根视图")
-    func contentShownWithActiveContainer() {
-        let provider = DefaultRootViewProvider()
-        let workspace = makeWorkspace(containerCount: 1)
-        provider.setWorkspaceProvider(workspace)
-        provider.setContentView(AnyView(Text("content")))
-        provider.setRailView(AnyView(Text("rail")))
-
-        #expect(type(of: provider.makeRootView()) == AnyView.self)
-    }
-
     // MARK: - 注入守卫（值相同则跳过赋值，避免视图更新期间发布 objectWillChange）
 
     /// 订阅 objectWillChange 并返回发送次数计数。
@@ -317,19 +260,4 @@ struct ProviderRootViewTests {
         withExtendedLifetime(cancellable) {}
     }
 
-    @Test("重复注入相同 workspace 实例时跳过（不重复订阅/发布）")
-    func repeatedWorkspaceInjectionSkipsPublish() {
-        let provider = DefaultRootViewProvider()
-        let workspace = makeWorkspace(containerCount: 1)
-        let (count, cancellable) = makeChangeCounter(for: provider)
-
-        provider.setWorkspaceProvider(workspace)
-        let afterFirst = count()
-        provider.setWorkspaceProvider(workspace)
-        let afterSecond = count()
-
-        #expect(afterFirst == 1)
-        #expect(afterSecond == afterFirst)
-        withExtendedLifetime(cancellable) {}
-    }
 }

@@ -517,7 +517,6 @@
     "ProviderRailView",
     "ProviderStorage",
     "ProviderToolbar",
-    "ProviderWorkspace",
     "KitSuperLog"
    ],
    "providersConsumed": [
@@ -526,8 +525,7 @@
     "DocsViewProviding",
     "RailViewProviding",
     "StorageProviding",
-    "ToolbarProviding",
-    "WorkspaceProviding"
+    "ToolbarProviding"
    ],
    "providersPublished": [],
    "contributions": [

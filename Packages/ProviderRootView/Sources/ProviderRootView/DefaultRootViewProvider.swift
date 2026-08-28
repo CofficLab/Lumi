@@ -1,8 +1,6 @@
-import Combine
 import LumiUI
-import os
-import ProviderWorkspace
 import KitSuperLog
+import os
 import SwiftUI
 
 /// `RootViewProviding` 的默认实现：持有注入的工具栏、ActivityBar、Rail、内容 Header、
@@ -31,9 +29,6 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published public private(set) var overlays: [RootOverlayItem] = []
     @Published public private(set) var isContentViewHidden: Bool = false
     @Published public private(set) var isContentHeaderViewHidden: Bool = false
-    var workspaceProvider: (any WorkspaceProviding)?
-    private var workspaceSubscription: AnyCancellable?
-
     public init() {
         if Self.verbose {
             Self.logger.info("\(self.t)DefaultRootViewProviding initialized")
@@ -119,18 +114,6 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         }
     }
 
-    public func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?) {
-        guard provider !== workspaceProvider else { return }
-        workspaceProvider = provider
-        workspaceSubscription = provider?.objectWillChange.sink { [weak self] _ in
-            self?.objectWillChange.send()
-        }
-        objectWillChange.send()
-        if Self.verbose {
-            Self.logger.debug("\(self.t)set workspace provider: \(provider == nil ? "nil" : "injected")")
-        }
-    }
-
     // MARK: - 注入守卫（值相同则跳过赋值）
 
     /// 判断两次注入的视图是否「相同」：仅比较有值/无值状态。
@@ -155,7 +138,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
 
     public func makeRootView() -> AnyView {
         if Self.verbose {
-            Self.logger.debug("\(self.t)make root view: toolbar=\(self.toolbarView == nil ? "nil" : "set"), activityBar=\(self.activityBarView == nil ? "nil" : "set"), rail=\(self.railView == nil ? "nil" : "set"), content=\(self.contentView == nil ? "nil" : "set"), footer=\(self.contentFooterView == nil ? "nil" : "set"), activeContainer=\(self.containerID)")
+            Self.logger.debug("\(self.t)make root view: toolbar=\(self.toolbarView == nil ? "nil" : "set"), activityBar=\(self.activityBarView == nil ? "nil" : "set"), rail=\(self.railView == nil ? "nil" : "set"), content=\(self.contentView == nil ? "nil" : "set"), footer=\(self.contentFooterView == nil ? "nil" : "set")")
         }
         var root = AnyView(DefaultRootHostView(provider: self))
         for overlay in overlays { root = overlay.wrap(root) }
@@ -166,19 +149,9 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
 
     /// 是否存在可渲染的活跃内容。
     ///
-    /// WorkspaceContainer 是内容插件的可选布局增强，而不是根视图渲染的
-    /// 必要条件。ChatPanel 由 ActivityBar + ChatSection 驱动，因此即使它
-    /// 不注册 WorkspaceContainer，只要 trailing pane 可见也应正常显示。
+    /// 内容插件的容器状态不是根视图渲染的必要条件。ChatPanel 由
+    /// ActivityBar + ChatSection 驱动，只要 trailing pane 可见就应正常显示。
     var hasActiveContent: Bool {
-        if let containerID = workspaceProvider?.activeContainerID,
-           workspaceProvider?.container(id: containerID) != nil {
-            return true
-        }
         return contentHeaderView != nil || contentView != nil || contentFooterView != nil || trailingPane?.isVisible == true
-    }
-
-    /// 当前活跃容器 ID（无容器时回退 "root"）。
-    var containerID: String {
-        workspaceProvider?.activeContainerID ?? "root"
     }
 }

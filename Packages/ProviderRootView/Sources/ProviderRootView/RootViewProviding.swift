@@ -1,7 +1,6 @@
 import Combine
 import SwiftUI
 import ProviderChatSection
-import ProviderWorkspace
 
 /// 根视图提供能力协议
 ///
@@ -89,9 +88,6 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     /// 接入根布局。面板的显隐状态和尺寸元数据由 `RootTrailingPane` 持有。
     func setTrailingPane(_ pane: RootTrailingPane?)
 
-    /// 注入工作区状态机，使根 Host 按容器策略控制 Rail/Chat 显隐与持久化宽度。
-    func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?)
-
     /// 返回根布局视图（工具栏 + 内容区，内容区左侧可带 ActivityBar 与 Rail）。
     func makeRootView() -> AnyView
 }
@@ -104,7 +100,6 @@ public extension RootViewProviding {
     func removeOverlays(ids: Set<String>) {}
     func setContentViewHidden(_ hidden: Bool) {}
     func setContentHeaderViewHidden(_ hidden: Bool) {}
-    func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?) {}
 }
 
 @MainActor
@@ -151,7 +146,7 @@ public final class RootTrailingPane: ObservableObject {
     /// 将面板显隐状态绑定到 ChatSection Provider。
     ///
     /// ChatPanel 通过 `ChatSectionProviding` 响应 ActivityBar 切换；根布局
-    /// 不再要求 ChatPanel 注册 WorkspaceContainer，而是直接观察这个状态。
+    /// 直接观察这个状态。
     @MainActor
     public func bindVisibility(to provider: any ChatSectionProviding) {
         isVisible = provider.isVisible

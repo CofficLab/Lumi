@@ -12,7 +12,6 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderToast
 import ProviderToolbar
-import ProviderWorkspace
 import SwiftUI
 
 /// KernelFactory — 内核工厂。
@@ -89,10 +88,6 @@ public enum KernelFactory {
         if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
             rootView.setContentView(contentView.makeContentView())
         }
-        if let workspace = kernel.resolveProvider((any WorkspaceProviding).self) {
-            rootView.setWorkspaceProvider(workspace)
-        }
-
         return rootView.makeRootView()
     }
 

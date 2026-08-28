@@ -10,7 +10,6 @@ import ProviderRootView
 import ProviderSettingView
 import ProviderTheme
 import ProviderToolbar
-import ProviderWorkspace
 import SwiftUI
 
 /// 默认 `ViewFactory` 实现：使用内核已注册的 Provider 组装主视图与设置视图。
@@ -60,9 +59,6 @@ public struct DefaultViewFactory: ViewFactory {
             )
             trailingPane.bindVisibility(to: chat)
             rootView.setTrailingPane(trailingPane)
-        }
-        if let workspace = kernel.resolveProvider((any WorkspaceProviding).self) {
-            rootView.setWorkspaceProvider(workspace)
         }
         return themed(rootView.makeRootView(), kernel: kernel)
     }

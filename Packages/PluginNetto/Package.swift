@@ -17,7 +17,6 @@ let package = Package(
         .package(path: "../KitLocalization"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
-        .package(path: "../ProviderWorkspace"),
         .package(path: "../KitSuperLog")
     ],
     targets: [
@@ -29,7 +28,6 @@ let package = Package(
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
-                .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
                 .product(name: "KitSuperLog", package: "KitSuperLog")
             ],
             path: "Sources",

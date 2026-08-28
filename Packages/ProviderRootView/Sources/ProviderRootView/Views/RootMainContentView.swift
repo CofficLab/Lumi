@@ -1,12 +1,11 @@
 import SwiftUI
 import LumiUI
-import ProviderWorkspace
 
 /// 根布局内容区（可选带右侧 trailing pane）。
 ///
 /// 逻辑来自旧版 `AppLayoutView`：
 /// - 当 trailing pane 可见时，右侧显示面板（macOS 用 `HSplitView`
-///   + `appSplitDivider(.trailing)`，拖拽后通过 workspace 同步宽度）；
+///   + `appSplitDivider(.trailing)`）；
 /// - 否则只渲染主内容。
 ///
     /// 当主内容、content header 与 content footer 均未注入时（如 ChatPanel，激活时
@@ -20,9 +19,6 @@ struct RootMainContentView: View {
     let isContentViewHidden: Bool
     @ObservedObject var trailingPane: RootTrailingPane
     let trailingWidth: CGFloat
-    let containerID: String
-    let workspace: (any WorkspaceProviding)?
-
     init(
         contentHeaderView: AnyView?,
         isContentHeaderViewHidden: Bool,
@@ -30,9 +26,7 @@ struct RootMainContentView: View {
         contentFooterView: AnyView?,
         isContentViewHidden: Bool,
         trailingPane: RootTrailingPane?,
-        trailingWidth: CGFloat,
-        containerID: String,
-        workspace: (any WorkspaceProviding)?
+        trailingWidth: CGFloat
     ) {
         self.contentHeaderView = contentHeaderView
         self.isContentHeaderViewHidden = isContentHeaderViewHidden
@@ -40,8 +34,6 @@ struct RootMainContentView: View {
         self.contentFooterView = contentFooterView
         self.isContentViewHidden = isContentViewHidden
         self.trailingWidth = trailingWidth
-        self.containerID = containerID
-        self.workspace = workspace
         _trailingPane = ObservedObject(wrappedValue: trailingPane ?? RootTrailingPane(
             id: "root.empty",
             isVisible: false,
@@ -100,10 +92,7 @@ struct RootMainContentView: View {
                     HSplitView {
                         contentWithHeaderAndFooter
                             .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
-                            // 与旧版 AppLayoutView 一致：内容区 pane 的右侧分割线样式 + 拖拽后同步宽度。
-                            .appSplitDivider(.trailing, initialPosition: trailingWidth) { position in
-                                workspace?.setChatDivider(position, for: containerID, layout: .narrow)
-                            }
+                            .appSplitDivider(.trailing, initialPosition: trailingWidth, onResize: nil)
                         trailingPane.content
                             .frame(
                                 minWidth: trailingPane.minWidth,
@@ -112,8 +101,6 @@ struct RootMainContentView: View {
                                 maxHeight: .infinity
                             )
                     }
-                    // 与旧版 AppLayoutView 一致：切换容器时保留 Chat 分割状态。
-                    .id("host.chat.\(containerID)")
                     #else
                     HStack(spacing: 0) {
                         contentWithHeaderAndFooter
