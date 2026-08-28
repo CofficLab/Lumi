@@ -66,8 +66,10 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
                     if state == .activated {
                         contentView?.setContentView(AnyView(HostsManagerView()))
                         rootView?.setRailView(nil)
+                        rootView?.setContentHeaderViewHidden(true)
                     } else {
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setContentHeaderViewHidden(false)
                     }
                 },
             ])
@@ -82,7 +84,9 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
             let railView = kernel.resolveProvider((any RailViewProviding).self)
-            kernel.resolveProvider((any RootViewProviding).self)?.setRailView(railView?.makeRailView())
+            let rootView = kernel.resolveProvider((any RootViewProviding).self)
+            rootView?.setRailView(railView?.makeRailView())
+            rootView?.setContentHeaderViewHidden(false)
         }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
