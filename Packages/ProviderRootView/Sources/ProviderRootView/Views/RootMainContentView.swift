@@ -12,6 +12,7 @@ import ProviderWorkspace
 /// 主内容未注入时回退到 `ContentPlaceholderView`。
 @MainActor
 struct RootMainContentView: View {
+    let contentHeaderView: AnyView?
     let contentView: AnyView?
     @ObservedObject var trailingPane: RootTrailingPane
     let workspaceShowsTrailingPane: Bool
@@ -20,6 +21,7 @@ struct RootMainContentView: View {
     let workspace: (any WorkspaceProviding)?
 
     init(
+        contentHeaderView: AnyView?,
         contentView: AnyView?,
         trailingPane: RootTrailingPane?,
         workspaceShowsTrailingPane: Bool,
@@ -27,6 +29,7 @@ struct RootMainContentView: View {
         containerID: String,
         workspace: (any WorkspaceProviding)?
     ) {
+        self.contentHeaderView = contentHeaderView
         self.contentView = contentView
         self.workspaceShowsTrailingPane = workspaceShowsTrailingPane
         self.trailingWidth = trailingWidth
@@ -43,12 +46,24 @@ struct RootMainContentView: View {
         contentView ?? AnyView(ContentPlaceholderView())
     }
 
+    @ViewBuilder
+    private var contentWithHeader: some View {
+        if let contentHeaderView {
+            VStack(spacing: 0) {
+                contentHeaderView
+                mainContent
+            }
+        } else {
+            mainContent
+        }
+    }
+
     var body: some View {
         Group {
             if trailingPane.isVisible && workspaceShowsTrailingPane {
                 #if os(macOS)
                 HSplitView {
-                    mainContent
+                    contentWithHeader
                         .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
                         // 与旧版 AppLayoutView 一致：内容区 pane 的右侧分割线样式 + 拖拽后同步宽度。
                         .appSplitDivider(.trailing, initialPosition: trailingWidth) { position in
@@ -66,14 +81,14 @@ struct RootMainContentView: View {
                 .id("host.chat.\(containerID)")
                 #else
                 HStack(spacing: 0) {
-                    mainContent
+                    contentWithHeader
                     Divider()
                     trailingPane.content
                         .frame(minWidth: trailingPane.minWidth, idealWidth: trailingPane.idealWidth)
                 }
                 #endif
             } else {
-                mainContent
+                contentWithHeader
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

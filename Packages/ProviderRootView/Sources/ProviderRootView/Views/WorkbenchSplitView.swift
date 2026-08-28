@@ -45,6 +45,7 @@ struct WorkbenchSplitView: View {
 
     private var mainContent: some View {
         RootMainContentView(
+            contentHeaderView: provider.contentHeaderView,
             contentView: provider.contentView,
             trailingPane: provider.trailingPane,
             workspaceShowsTrailingPane: workspace?.isChatVisible ?? true,
