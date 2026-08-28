@@ -1,6 +1,7 @@
 import os
 import KernelCore
 import KitSuperLog
+import ProviderChatSection
 import ProviderConversation
 import ProviderToolbar
 import SwiftUI
@@ -25,22 +26,49 @@ public final class ConversationNewPlugin: SuperPlugin, SuperLog {
     /// - policy .alwaysOn → .required（不可禁用）
     /// - stage .beta → .preview
 
+    private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
+    private var chatSectionObserver: (any ChatSectionProvidingObserverHandle)?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let toolbar = kernel.resolveProvider((any ToolbarProviding).self) else {
-            Self.logger.error("\(Self.t)Failed to resolve ToolbarProviding from kernel")
+        guard let toolbar = kernel.resolveProvider((any ToolbarProviding).self),
+              let conversations = kernel.resolveProvider((any ConversationManaging).self),
+              let chat = kernel.resolveProvider((any ChatSectionProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ToolbarProviding, ConversationManaging or ChatSectionProviding from kernel")
             return
         }
 
-        toolbar.addToolbarItems([
-            ToolbarItem(id: "\(id).new-chat", title: LumiPluginLocalization.string("New Chat", bundle: .module), placement: .trailing, order: 30) {
-                NewChatButton(kernel: kernel)
-            },
-        ])
+        let toolbarItemID = "\(id).new-chat"
+        let syncToolbarItem: @MainActor () -> Void = { [weak toolbar, weak conversations, weak chat] in
+            guard let toolbar, let conversations, let chat else { return }
+            let shouldShow = chat.isVisible && conversations.selectedConversationID != nil
+            let isShown = toolbar.toolbarItems.contains { $0.id == toolbarItemID }
+            if shouldShow, !isShown {
+                toolbar.addToolbarItems([
+                    ToolbarItem(id: toolbarItemID, title: LumiPluginLocalization.string("New Chat", bundle: .module), placement: .trailing, order: 30) {
+                        NewChatButton(kernel: kernel)
+                    },
+                ])
+            } else if !shouldShow, isShown {
+                toolbar.removeToolbarItems(ids: [toolbarItemID])
+            }
+        }
+
+        selectedConversationObserver = conversations.addSelectedConversationObserver { _ in
+            syncToolbarItem()
+        }
+        chatSectionObserver = chat.addObserver { _ in
+            syncToolbarItem()
+        }
+        syncToolbarItem()
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        selectedConversationObserver?.cancel()
+        selectedConversationObserver = nil
+        chatSectionObserver?.cancel()
+        chatSectionObserver = nil
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).new-chat"])
     }
 }
