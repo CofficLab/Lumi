@@ -21,6 +21,8 @@ public final class PluginPluginManager: SuperPlugin {
         policy: .required
     )
 
+    private var generatedAboutPluginIDs: [String] = []
+
     public init() {}
 
     private var promptSuggestion: PromptSuggestion {
@@ -72,6 +74,18 @@ public final class PluginPluginManager: SuperPlugin {
 
     public func onReady(kernel: KernelCoreContainer) throws {
         registerPromptSuggestion(kernel: kernel, requiresEnable: false)
+
+        // 确保每个已启动插件都有 AboutView。插件自己的品牌化页面优先，
+        // 这里只为尚未贡献页面的插件补充统一的详细元信息页。
+        guard let docs = kernel.resolveProvider((any DocsViewProviding).self) else { return }
+        for plugin in kernel.allPlugins where !docs.aboutEntries.contains(where: { $0.id == plugin.id }) {
+            let metadata = plugin.metadata
+            let isEnabled = kernel.isPluginEnabled(id: plugin.id)
+            docs.addAbout(DocsEntry(id: plugin.id, name: metadata.name) {
+                PluginDefaultAboutView(metadata: metadata, isEnabled: isEnabled)
+            })
+            generatedAboutPluginIDs.append(plugin.id)
+        }
     }
 
     public func onEnable(kernel: KernelCoreContainer) async throws {
@@ -81,6 +95,13 @@ public final class PluginPluginManager: SuperPlugin {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["plugin-manager"])
+
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            for pluginID in generatedAboutPluginIDs {
+                docs.removeEntries(id: pluginID)
+            }
+        }
+        generatedAboutPluginIDs.removeAll()
     }
 
     public func onDisable(kernel: KernelCoreContainer) async throws {
