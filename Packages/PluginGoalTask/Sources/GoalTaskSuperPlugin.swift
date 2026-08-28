@@ -8,13 +8,16 @@ import ProviderLifecycleHooks
 import ProviderStorage
 import ProviderToolManager
 import SwiftUI
+import KitSuperLog
+import os
 
 /// KernelCore implementation of the goal and task workflow.
 ///
 /// It intentionally uses the legacy plugin's storage key and SQLite layout so
 /// existing goals remain visible after the host switches to LumiApp.
 @MainActor
-public final class GoalTaskSuperPlugin: SuperPlugin {
+public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.goal-task", category: "GoalTask")
     public let id = "com.coffic.lumi.plugin.goal-task"
     public let order = 91
     public let metadata = PluginMetadata(
