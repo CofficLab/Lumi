@@ -48,6 +48,54 @@ struct ProviderRailViewTests {
         #expect(provider.activeTabID == "b")
     }
 
+    @Test("只展示指定分类并校正当前标签")
+    func filtersTabsByVisibleCategories() {
+        let provider = DefaultRailViewProviding()
+        provider.registerTabs([
+            RailTabItem(id: "chat", category: .chat, title: "Chat", systemImage: "message") { Text("Chat") },
+            RailTabItem(id: "project", category: .project, title: "Project", systemImage: "folder") { Text("Project") },
+        ])
+        provider.activateTab(id: "project")
+
+        provider.setVisibleCategories([.chat])
+
+        #expect(provider.visibleCategories == [.chat])
+        #expect(provider.activeTabID == "chat")
+        provider.activateTab(id: "project")
+        #expect(provider.activeTabID == "chat")
+    }
+
+    @Test("隐藏全部分类时不激活任何标签")
+    func hidesAllCategories() {
+        let provider = DefaultRailViewProviding()
+        provider.registerTabs([
+            RailTabItem(id: "chat", category: .chat, title: "Chat", systemImage: "message") { Text("Chat") },
+        ])
+
+        provider.setVisibleCategories([])
+
+        #expect(provider.activeTabID == nil)
+    }
+
+    @Test("只展示指定 id 的标签")
+    func filtersTabsByVisibleID() {
+        let provider = DefaultRailViewProviding()
+        provider.registerTabs([
+            RailTabItem(id: "chat", category: .chat, title: "Chat", systemImage: "message") { Text("Chat") },
+            RailTabItem(id: "project", category: .project, title: "Project", systemImage: "folder") { Text("Project") },
+        ])
+
+        provider.setVisibleTabID("project")
+
+        #expect(provider.visibleTabID == "project")
+        #expect(provider.activeTabID == "project")
+        provider.activateTab(id: "chat")
+        #expect(provider.activeTabID == "project")
+
+        provider.setVisibleTabID(nil)
+        #expect(provider.visibleTabID == nil)
+    }
+
     @Test("不能激活未知标签")
     func rejectsUnknownTabs() {
         let provider = DefaultRailViewProviding()

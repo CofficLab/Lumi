@@ -8,9 +8,14 @@ import SwiftUI
 @MainActor
 public final class DefaultRailViewProviding: RailViewProviding, ObservableObject {
     @Published public private(set) var tabs: [RailTabItem] = []
+    @Published public private(set) var visibleCategories: Set<RailViewCategory>
+    @Published public private(set) var visibleTabID: String?
     @Published public private(set) var activeTabID: String?
 
-    public init() {}
+    public init(visibleCategories: Set<RailViewCategory> = Set(RailViewCategory.allCases), visibleTabID: String? = nil) {
+        self.visibleCategories = visibleCategories
+        self.visibleTabID = visibleTabID
+    }
 
     public func registerTabs(_ tabs: [RailTabItem]) {
         self.tabs = tabs.sorted { $0.order < $1.order }
@@ -22,23 +27,42 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
             activeTabID = nil
             return
         }
-        guard tabs.contains(where: { $0.id == id }) else { return }
+        guard visibleTabs.contains(where: { $0.id == id }) else { return }
         activeTabID = id
+    }
+
+    public func setVisibleCategories(_ categories: Set<RailViewCategory>) {
+        guard visibleCategories != categories else { return }
+        visibleCategories = categories
+        reconcileActiveTab()
+    }
+
+    public func setVisibleTabID(_ id: String?) {
+        guard visibleTabID != id else { return }
+        visibleTabID = id
+        reconcileActiveTab()
     }
 
     public func makeRailView() -> AnyView {
         AnyView(RailView(provider: self))
     }
 
+    fileprivate var visibleTabs: [RailTabItem] {
+        tabs.filter { tab in
+            visibleCategories.contains(tab.category)
+                && (visibleTabID == nil || tab.id == visibleTabID)
+        }
+    }
+
     private func reconcileActiveTab() {
-        guard !tabs.isEmpty else {
+        guard !visibleTabs.isEmpty else {
             activeTabID = nil
             return
         }
-        if let activeTabID, tabs.contains(where: { $0.id == activeTabID }) {
+        if let activeTabID, visibleTabs.contains(where: { $0.id == activeTabID }) {
             return
         }
-        activeTabID = tabs[0].id
+        activeTabID = visibleTabs[0].id
     }
 }
 
@@ -58,7 +82,7 @@ private struct RailView: View {
     @LumiTheme private var theme
 
     var body: some View {
-        let visibleTabs = provider.tabs
+        let visibleTabs = provider.visibleTabs
 
         VStack(spacing: 0) {
             // 标签栏：仅在 tab 数量大于一个时显示（复刻旧版 showsTabBar）。
