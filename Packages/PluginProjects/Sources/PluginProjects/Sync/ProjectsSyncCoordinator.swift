@@ -6,10 +6,6 @@ import ProviderProject
 import KitSuperLog
 
 /// 协调 `ProjectsViewModel` 与内核 `ProjectProviding` 之间的同步。
-///
-/// 复刻自旧版 `ProjectsSyncCoordinator`(KernelLumi),差异:
-/// - `kernel` 从 `KernelLumi` 改为 `KernelCoreContainer`(弱引用);
-/// - `kernel.project` 改为 `kernel.resolveProvider((any ProjectProviding).self)`。
 @MainActor
 public final class ProjectsSyncCoordinator: SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects.sync")

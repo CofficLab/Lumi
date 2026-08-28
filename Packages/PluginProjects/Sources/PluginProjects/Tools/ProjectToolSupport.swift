@@ -20,6 +20,6 @@ enum ProjectToolSupport {
         return nil
     }
 
-    /// 读取工具当前语言偏好（当前固定英文描述，与旧版一致）。
+    /// 读取工具当前语言偏好（当前固定英文描述）。
     static var language: LanguagePreference { .english }
 }

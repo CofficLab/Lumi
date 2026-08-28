@@ -1,12 +1,8 @@
 import Foundation
 import KernelCore
 
-/// Projects 运行时（KernelCore 版本）：在 `onBoot` 时装配 Store / ViewModel /
+/// Projects 运行时：在 `onBoot` 时装配 Store / ViewModel /
 /// SyncCoordinator,并提供给 Agent 工具与视图访问。
-///
-/// 复刻自旧版 `RuntimeBridge`(KernelLumi),差异:
-/// - 增加 `configure` / `reset` 生命周期管理,与 `MindMapDesignerRuntime` 保持一致;
-/// - 不持有 `kernel` 强引用——同步协调器通过 `ProjectsSyncCoordinator.kernel` 弱引用绑定。
 @MainActor
 public enum ProjectsRuntime {
     /// 当前 ViewModel（供工具与视图读取;未装配时为 nil）。

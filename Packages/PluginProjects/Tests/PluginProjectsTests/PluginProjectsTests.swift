@@ -32,9 +32,8 @@ struct ProjectsStoreTests {
         }
     }
 
-    /// 存储目录 key 必须与旧版 `Plugins/ProjectsPlugin` 一致（"Projects"），
-    /// 保证新旧版本共享同一份 projects.json（<数据根>/Projects/）。
-    @Test func storageDirectoryKeyMatchesLegacyPlugin() {
+    /// 存储目录 key 为 "Projects"。
+    @Test func storageDirectoryKeyIsProjects() {
         #expect(ProjectsPlugin.storageDirectoryKey == "Projects")
     }
 }

@@ -14,15 +14,14 @@ import ProviderPromptSuggestion
 import KitSuperLog
 import SwiftUI
 
-/// 项目管理插件（KernelCore 版本）。
+/// 项目管理插件。
 ///
-/// 由旧版 `Plugins/ProjectsPlugin`（KernelLumi / LumiPlugin）复刻而来：
 /// - `onBoot` 中装配带持久化的 `ProjectsStore` + `ProjectsViewModel`,
 ///   并通过 `ProjectsSyncCoordinator` 与内核已注册的 `ProjectProviding` 双向同步;
 /// - 注册 Agent 工具（list_projects / add_project / get_current_project）;
 /// - 贡献标题栏项目控件与设置页;
 /// - 通过 `willSendToLLM` 钩子将当前项目路径注入 LLM 上下文;
-///   「添加项目」动作胶囊（新版 PromptSuggestion 不支持动作）。
+///   「添加项目」动作胶囊。
 @MainActor
 public final class ProjectsPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.projects", category: "Projects")
@@ -52,13 +51,11 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     }
     public func onRegister(kernel: KernelCoreContainer) throws { registerPromptSuggestion(kernel: kernel, requiresEnable: !kernel.isPluginEnabled(id: id)) }
 
-    /// 存储目录 key：必须与旧版 `Plugins/ProjectsPlugin` 的
-    /// `storage.pluginDataDirectory(for: "Projects")` 完全一致，
-    /// 保证新旧版本共享同一份 projects.json（<数据根>/Projects/）。
+    /// 存储目录 key，用于 `storage.pluginDataDirectory(for:)`。
     static let storageDirectoryKey = "Projects"
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        // 1. 装配存储（应用数据目录按旧版 storage key "Projects" 隔离）
+        // 1. 装配存储（应用数据目录按 storage key "Projects" 隔离）
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve StorageProviding from kernel")
             return
@@ -183,7 +180,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
 
     // MARK: - Agent Tools
 
-    /// 本插件贡献的 Agent 工具（复刻旧版 ProjectsPlugin.agentTools）。
+    /// 本插件贡献的 Agent 工具。
     public static let agentTools: [any SuperAgentTool] = [
         ListProjectsTool(),
         AddProjectTool(),
