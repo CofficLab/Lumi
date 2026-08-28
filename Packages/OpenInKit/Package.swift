@@ -10,6 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KitAgentTool"),
+        .package(path: "../LumiUI"),
         .package(path: "../ProviderProject"),
     ],
     targets: [
@@ -17,6 +18,7 @@ let package = Package(
             name: "OpenInKit",
             dependencies: [
                 "KitAgentTool",
+                "LumiUI",
                 "ProviderProject",
             ],
             path: "Sources/OpenInKit"
