@@ -2,6 +2,8 @@ import KernelCore
 import LumiUI
 import ProviderToolbar
 import SwiftUI
+import KitSuperLog
+import os
 
 /// 工具栏 - 设置按钮插件
 ///
@@ -17,7 +19,8 @@ import SwiftUI
 /// 通过 `SuperPlugin.onBoot(kernel:)` 解析内核中的 `ToolbarProviding`，
 /// 用 `addToolbarItems(_:)`（追加语义）注册按钮，不覆盖其他插件的贡献。
 @MainActor
-public final class SettingsToolbarPlugin: SuperPlugin {
+public final class SettingsToolbarPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.toolbar-settings", category: "SettingsToolbar")
     public let id = "com.coffic.lumi.plugin.toolbar-settings"
     public let order = 200
     public let metadata = PluginMetadata(
