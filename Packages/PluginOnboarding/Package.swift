@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "PluginOnboarding", targets: ["PluginOnboarding"]),
     ],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../ProviderOnboarding"),
         .package(path: "../ProviderLLMManager"),
@@ -20,6 +21,7 @@ let package = Package(
         .target(
             name: "PluginOnboarding",
             dependencies: [
+                "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),

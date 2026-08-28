@@ -4,13 +4,16 @@ import LumiUI
 import ProviderLLMManager
 import ProviderOnboarding
 import SwiftUI
+import KitSuperLog
+import os
 
 /// First-run V2 onboarding contribution.
 ///
 /// The host owns presentation so the same pages work in every V2 app; this
 /// plugin owns only the user-facing welcome and AI setup content.
 @MainActor
-public final class OnboardingPlugin: SuperPlugin {
+public final class OnboardingPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.onboarding", category: "Onboarding")
     public let id = "com.coffic.lumi.plugin.onboarding"
     public let order = 10
     public let metadata = PluginMetadata(
