@@ -58,8 +58,10 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
                     if state == .activated {
                         content?.setContentView(AnyView(ClipboardHistoryView()))
                         rootView?.setRailView(nil)
+                        rootView?.setContentHeaderViewHidden(true)
                     } else {
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setContentHeaderViewHidden(false)
                     }
                 },
             ])
