@@ -11,7 +11,8 @@ import KitSuperLog
 /// 纯工具型插件：`onBoot` 从 `StorageProviding` 配置插件数据目录，并向
 /// `ToolManagerProviding` 注册 3 个工具（list / read / write temp file）。
 @MainActor
-public final class AgentTempStoragePlugin: SuperPlugin {
+public final class AgentTempStoragePlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.agent-temp-storage", category: "AgentTempStorage")
     public let id = "com.coffic.lumi.plugin.agent-temp-storage"
     public let order = 80
     public let metadata = PluginMetadata(
