@@ -2,6 +2,8 @@ import Combine
 import Foundation
 import KernelCore
 import ProviderToast
+import KitSuperLog
+import os
 
 // MARK: - Toast SuperPlugin
 
@@ -10,7 +12,8 @@ import ProviderToast
 /// 在 `onBoot` 中注册 `ToastCenter`（替换式节流 + 自动消失）。
 /// 任何持有内核的代码可通过 `kernel.resolveProvider((any ToastProviding).self)?.show(...)` 发出提示。
 @MainActor
-public final class ToastSuperPlugin: SuperPlugin {
+public final class ToastSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.toast", category: "Toast")
     public let id = "com.coffic.lumi.plugin.toast"
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.toast",
