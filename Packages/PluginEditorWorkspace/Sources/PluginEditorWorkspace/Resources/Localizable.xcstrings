@@ -1,0 +1,16 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Code Editor" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "代码编辑器" } }
+      }
+    },
+    "Explorer" : {
+      "localizations" : {
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "资源管理器" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

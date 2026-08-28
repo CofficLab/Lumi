@@ -1,0 +1,45 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "PluginEditorWorkspace",
+    defaultLocalization: "en",
+    platforms: [.macOS(.v14)],
+    products: [
+        .library(name: "PluginEditorWorkspace", targets: ["PluginEditorWorkspace"]),
+    ],
+    dependencies: [
+        .package(path: "../KernelCore"),
+        .package(path: "../EditorContracts"),
+        .package(path: "../EditorService"),
+        .package(path: "../ProviderActivityBar"),
+        .package(path: "../ProviderContentView"),
+        .package(path: "../ProviderProject"),
+        .package(path: "../ProviderRailView"),
+        .package(path: "../LumiUI"),
+    ],
+    targets: [
+        .target(
+            name: "PluginEditorWorkspace",
+            dependencies: [
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "EditorContracts", package: "EditorContracts"),
+                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderContentView", package: "ProviderContentView"),
+                .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "LumiUI", package: "LumiUI"),
+            ],
+            resources: [.process("Resources")]
+        ),
+        .testTarget(
+            name: "PluginEditorWorkspaceTests",
+            dependencies: [
+                "PluginEditorWorkspace",
+                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "ProviderProject", package: "ProviderProject"),
+            ]
+        ),
+    ]
+)
