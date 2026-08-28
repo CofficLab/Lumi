@@ -56,6 +56,9 @@ public final class DockerManagerSuperPlugin: SuperPlugin {
                 }
             },
         ])
+        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
+            DocsEntry(id: id, name: title) { DockerManagerAboutView() }
+        )
         kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
             DocsEntry(id: id, name: title) { DockerManagerManualView() }
         )

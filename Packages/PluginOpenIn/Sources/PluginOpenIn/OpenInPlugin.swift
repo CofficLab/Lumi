@@ -55,6 +55,11 @@ public final class OpenInPlugin: SuperPlugin, SuperLog {
                 OpenInKit.OpenInAboutView(displayName: OpenInApps.finder.displayName, systemImage: OpenInApps.finder.systemImage, toolName: OpenInApps.finder.toolName)
             }
         )
+        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+            DocsEntry(id: id, name: metadata.name) {
+                OpenInKit.OpenInManualView(displayName: OpenInApps.finder.displayName, toolName: OpenInApps.finder.toolName)
+            }
+        )
         }
     }
 

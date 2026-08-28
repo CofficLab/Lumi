@@ -39,6 +39,7 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin {
         ])
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
             docs.addAbout(DocsEntry(id: id, name: metadata.name) { ScreenRecorderAboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { ScreenRecorderManualView() })
         }
     }
 

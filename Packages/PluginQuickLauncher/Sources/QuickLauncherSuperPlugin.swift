@@ -1,6 +1,7 @@
 import AppKit
 import KernelCore
 import ProviderCommand
+import ProviderDocsView
 import ProviderMessageSender
 import ProviderSettingView
 import SwiftUI
@@ -40,6 +41,13 @@ public final class QuickLauncherSuperPlugin: SuperPlugin {
                 LauncherSettingsView()
             },
         ])
+        let title = metadata.name
+        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
+            DocsEntry(id: id, name: title) { QuickLauncherAboutView() }
+        )
+        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+            DocsEntry(id: id, name: title) { QuickLauncherManualView() }
+        )
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {
@@ -92,5 +100,6 @@ public final class QuickLauncherSuperPlugin: SuperPlugin {
         LauncherBridge.commandGroupsProvider = nil
         LauncherBridge.activateMainWindowHandler = nil
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

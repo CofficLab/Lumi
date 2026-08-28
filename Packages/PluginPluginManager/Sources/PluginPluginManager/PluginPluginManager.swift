@@ -70,6 +70,10 @@ public final class PluginPluginManager: SuperPlugin {
         }
 
         settings.addEntries([entry])
+
+        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+            DocsEntry(id: id, name: metadata.name) { PluginManagerManualView() }
+        )
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {

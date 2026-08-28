@@ -39,6 +39,11 @@ public final class OpenInAntigravityPlugin: SuperPlugin, SuperLog {
                 OpenInAboutView(displayName: OpenInTool.antigravity.displayName, systemImage: OpenInTool.antigravity.systemImage, toolName: OpenInTool.antigravity.toolName)
             }
         )
+        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+            DocsEntry(id: id, name: metadata.name) {
+                OpenInManualView(displayName: OpenInTool.antigravity.displayName, toolName: OpenInTool.antigravity.toolName)
+            }
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

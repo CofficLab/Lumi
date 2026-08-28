@@ -40,6 +40,7 @@ public final class OcrPlugin: SuperPlugin {
         // 「关于」文档（沿用旧版 pluginAboutView）。
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
             docs.addAbout(DocsEntry(id: id, name: name) { OcrAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { OcrManualView() })
         }
     }
 

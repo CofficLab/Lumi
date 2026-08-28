@@ -63,6 +63,7 @@ public final class HostsManagerPlugin: SuperPlugin {
 
         // 「说明书」文档（沿用旧版 pluginManualView）。
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { HostsManagerAboutView() })
             docs.addManual(DocsEntry(id: id, name: name) { HostsManagerManualView() })
         }
     }

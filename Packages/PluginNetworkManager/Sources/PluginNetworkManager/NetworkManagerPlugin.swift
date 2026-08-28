@@ -122,6 +122,7 @@ public final class NetworkManagerPlugin: SuperPlugin {
         // 6. 注册文档入口（关于）
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
             docs.addAbout(DocsEntry(id: id, name: name) { NetworkManagerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { NetworkManagerManualView() })
         }
     }
 

@@ -39,6 +39,11 @@ public final class OpenInXcodePlugin: SuperPlugin, SuperLog {
                 OpenInAboutView(displayName: OpenInTool.xcode.displayName, systemImage: OpenInTool.xcode.systemImage, toolName: OpenInTool.xcode.toolName)
             }
         )
+        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+            DocsEntry(id: id, name: metadata.name) {
+                OpenInManualView(displayName: OpenInTool.xcode.displayName, toolName: OpenInTool.xcode.toolName)
+            }
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

@@ -48,6 +48,9 @@ public final class RegistryManagerSuperPlugin: SuperPlugin {
                 }
             },
         ])
+        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
+            DocsEntry(id: id, name: title) { RegistryManagerAboutView() }
+        )
         kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
             DocsEntry(id: id, name: title) { RegistryManagerManualView() }
         )

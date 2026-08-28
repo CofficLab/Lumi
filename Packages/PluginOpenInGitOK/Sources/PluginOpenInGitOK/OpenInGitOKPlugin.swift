@@ -39,6 +39,11 @@ public final class OpenInGitOKPlugin: SuperPlugin, SuperLog {
                 OpenInAboutView(displayName: OpenInTool.gitOK.displayName, systemImage: OpenInTool.gitOK.systemImage, toolName: OpenInTool.gitOK.toolName)
             }
         )
+        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+            DocsEntry(id: id, name: metadata.name) {
+                OpenInManualView(displayName: OpenInTool.gitOK.displayName, toolName: OpenInTool.gitOK.toolName)
+            }
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

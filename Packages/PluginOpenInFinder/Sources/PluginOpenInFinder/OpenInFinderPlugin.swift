@@ -39,6 +39,11 @@ public final class OpenInFinderPlugin: SuperPlugin, SuperLog {
                 OpenInAboutView(displayName: OpenInTool.finder.displayName, systemImage: OpenInTool.finder.systemImage, toolName: OpenInTool.finder.toolName)
             }
         )
+        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+            DocsEntry(id: id, name: metadata.name) {
+                OpenInManualView(displayName: OpenInTool.finder.displayName, toolName: OpenInTool.finder.toolName)
+            }
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

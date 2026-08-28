@@ -22,6 +22,7 @@ let package = Package(
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../KitSuperLog"),
+        .package(path: "../ProviderDocsView"),
     ],
     targets: [
         .target(
@@ -35,6 +36,7 @@ let package = Package(
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
             ],
             path: "Sources",
             resources: [

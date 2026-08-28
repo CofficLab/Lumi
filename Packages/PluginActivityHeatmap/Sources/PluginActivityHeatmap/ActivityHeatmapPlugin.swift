@@ -59,6 +59,9 @@ public final class ActivityHeatmapPlugin: SuperPlugin {
         kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
             DocsEntry(id: id, name: LumiPluginLocalization.string("Activity Heatmap", bundle: .module)) { ActivityHeatmapAboutView() }
         )
+        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+            DocsEntry(id: id, name: LumiPluginLocalization.string("Activity Heatmap", bundle: .module)) { ActivityHeatmapManualView() }
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

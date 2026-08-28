@@ -39,6 +39,11 @@ public final class OpenInGitHubDesktopPlugin: SuperPlugin, SuperLog {
                 OpenInAboutView(displayName: OpenInTool.gitHubDesktop.displayName, systemImage: OpenInTool.gitHubDesktop.systemImage, toolName: OpenInTool.gitHubDesktop.toolName)
             }
         )
+        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+            DocsEntry(id: id, name: metadata.name) {
+                OpenInManualView(displayName: OpenInTool.gitHubDesktop.displayName, toolName: OpenInTool.gitHubDesktop.toolName)
+            }
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

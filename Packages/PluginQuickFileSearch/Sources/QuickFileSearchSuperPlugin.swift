@@ -1,4 +1,5 @@
 import KernelCore
+import ProviderDocsView
 import ProviderProject
 import ProviderRootView
 import ProviderSettingView
@@ -24,10 +25,18 @@ public final class QuickFileSearchSuperPlugin: SuperPlugin {
             FileSearchOverlay(content: content, projectPathProvider: { project?.currentProject?.path ?? "" }, windowIdProvider: { nil })
         }])
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([SettingEntryItem(id: id, title: LumiPluginLocalization.string("Quick File Search", bundle: .module), systemImage: "magnifyingglass", order: order) { QuickFileSearchSettingsView(projectPath: project?.currentProject?.path ?? "") }])
+        let title = metadata.name
+        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
+            DocsEntry(id: id, name: title) { QuickFileSearchAboutView() }
+        )
+        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+            DocsEntry(id: id, name: title) { QuickFileSearchManualView() }
+        )
     }
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any RootViewProviding).self)?.removeOverlays(ids: [id])
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         FileSearchHotkeyManager.shared.stopMonitoring()
         QuickFileSearchBridge.selectFileHandler = nil; QuickFileSearchBridge.activeWindowIdProvider = nil
     }

@@ -39,6 +39,11 @@ public final class OpenInVSCodePlugin: SuperPlugin, SuperLog {
                 OpenInAboutView(displayName: OpenInTool.vscode.displayName, systemImage: OpenInTool.vscode.systemImage, toolName: OpenInTool.vscode.toolName)
             }
         )
+        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+            DocsEntry(id: id, name: metadata.name) {
+                OpenInManualView(displayName: OpenInTool.vscode.displayName, toolName: OpenInTool.vscode.toolName)
+            }
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

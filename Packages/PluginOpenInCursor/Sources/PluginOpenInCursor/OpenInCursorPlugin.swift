@@ -39,6 +39,11 @@ public final class OpenInCursorPlugin: SuperPlugin, SuperLog {
                 OpenInAboutView(displayName: OpenInTool.cursor.displayName, systemImage: OpenInTool.cursor.systemImage, toolName: OpenInTool.cursor.toolName)
             }
         )
+        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+            DocsEntry(id: id, name: metadata.name) {
+                OpenInManualView(displayName: OpenInTool.cursor.displayName, toolName: OpenInTool.cursor.toolName)
+            }
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
