@@ -1,11 +1,14 @@
 import Combine
 import EditorContracts
+import EditorService
+import Foundation
 import KernelCore
 import PluginEditorHost
 import PluginProjectFileTree
 import PluginCodeEditor
 import ProviderActivityBar
 import ProviderContentView
+import ProviderDocsView
 import ProviderPluginControl
 import ProviderProject
 import ProviderRailView
@@ -30,15 +33,19 @@ struct CodeEditorSuperPluginTests {
         let activity = DefaultActivityBarProviding()
         let rail = DefaultRailViewProviding()
         let content = TestContentProvider()
-        let project = TestLifecycleProjectProvider()
+        let docs = DefaultDocsViewProviding()
+        let project = DefaultProjectProvider()
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
         try kernel.registerProvider((any RailViewProviding).self, rail)
         try kernel.registerProvider((any ContentViewProviding).self, content)
+        try kernel.registerProvider((any DocsViewProviding).self, docs)
         try kernel.registerProvider((any ProjectProviding).self, project)
         let workspace = CodeEditorSuperPlugin()
         try kernel.start(plugins: [ProjectFileTreePlugin(), EditorHostSuperPlugin(), workspace])
         let control = DefaultPluginControlling(kernel: kernel)
 
+        #expect(docs.aboutEntries.map(\.id) == [workspace.id])
+        #expect(docs.manualEntries.map(\.id) == [workspace.id])
         #expect(activity.items.allSatisfy { $0.id != CodeEditorSuperPlugin.activityItemID })
         #expect(await control.enablePlugin(id: workspace.id))
         #expect(activity.items.filter { $0.id == CodeEditorSuperPlugin.activityItemID }.count == 1)
@@ -48,6 +55,17 @@ struct CodeEditorSuperPluginTests {
         #expect(rail.activeGroupID == ProjectFileTreePlugin.pluginID)
         #expect(content.setCount == 1)
 
+        let file = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CodeEditorPlugin-\(UUID().uuidString).swift")
+        try "let value = 1\n".write(to: file, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: file) }
+        project.updateCurrentFile(file)
+        await waitForFileLoad(editor: try #require(kernel.resolveProvider(EditorService.self)))
+
+        let editor = try #require(kernel.resolveProvider(EditorService.self))
+        #expect(editor.files.currentFileURL == file.standardizedFileURL)
+        #expect(editor.files.content?.string == "let value = 1\n")
+
         #expect(await control.disablePlugin(id: workspace.id))
         #expect(activity.items.allSatisfy { $0.id != CodeEditorSuperPlugin.activityItemID })
         #expect(rail.tabs.contains { $0.id == ProjectFileTreePlugin.railTabID })
@@ -56,6 +74,12 @@ struct CodeEditorSuperPluginTests {
         #expect(await control.enablePlugin(id: workspace.id))
         #expect(activity.items.filter { $0.id == CodeEditorSuperPlugin.activityItemID }.count == 1)
         #expect(rail.tabs.filter { $0.id == ProjectFileTreePlugin.railTabID }.count == 1)
+    }
+
+    private func waitForFileLoad(editor: EditorService) async {
+        for _ in 0..<100 where editor.state.isFileLoadInProgress {
+            try? await Task.sleep(for: .milliseconds(10))
+        }
     }
 }
 
@@ -71,19 +95,4 @@ private final class TestContentProvider: ContentViewProviding {
     }
 
     func makeContentView() -> AnyView { AnyView(EmptyView()) }
-}
-
-@MainActor
-private final class TestLifecycleProjectProvider: ProjectProviding {
-    @Published var currentProject: ProjectInfo?
-    @Published var openFileURLs: [URL] = []
-    @Published var currentFileURL: URL?
-    @Published var projects: [ProjectInfo] = []
-    func openProject(at path: String) async throws {}
-    func updateCurrentFile(_ fileURL: URL?) { currentFileURL = fileURL }
-    func updateOpenFiles(_ fileURLs: [URL]) { openFileURLs = fileURLs }
-    func closeFile(_ fileURL: URL) { openFileURLs.removeAll { $0 == fileURL } }
-    func closeProject() async {}
-    func refreshProjects() async throws {}
-    func synchronizeProjects(_ projects: [ProjectInfo]) { self.projects = projects }
 }

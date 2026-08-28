@@ -3,6 +3,7 @@ import EditorService
 import KernelCore
 import ProviderActivityBar
 import ProviderContentView
+import ProviderDocsView
 import ProviderProject
 import ProviderRailView
 import PluginProjectFileTree
@@ -32,12 +33,21 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         policy: .disabledByDefault
     )
 
-    private var controller: EditorWorkspaceController?
+    private var viewModel: CodeEditorViewModel?
+    private var projectObserver: (any ProjectProvidingObserverHandle)?
     private weak var activityBar: (any ActivityBarProviding)?
     private weak var railView: (any RailViewProviding)?
     private weak var contentView: (any ContentViewProviding)?
 
     public init() {}
+
+    /// 文档属于插件目录型贡献，必须在插件注册阶段加入系统，
+    /// 即使插件当前处于 disabledByDefault 也能在设置中查看。
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        guard let docs = kernel.resolveProvider((any DocsViewProviding).self) else { return }
+        docs.addAbout(DocsEntry(id: id, name: metadata.name) { CodeEditorAboutView() })
+        docs.addManual(DocsEntry(id: id, name: metadata.name) { CodeEditorManualView() })
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         try installContributions(kernel: kernel)
@@ -53,6 +63,10 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         uninstallContributions()
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     private func installContributions(kernel: KernelCoreContainer) throws {
@@ -76,8 +90,15 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         }
 
         uninstallContributions()
-        let controller = EditorWorkspaceController(editor: editor, project: project)
-        self.controller = controller
+        let viewModel = CodeEditorViewModel(editor: editor)
+        viewModel.updateCurrentFile(project.currentFileURL)
+        let projectObserver = project.addObserver { [weak viewModel] event in
+            guard case .currentFileChanged(let fileURL) = event else { return }
+            viewModel?.updateCurrentFile(fileURL)
+        }
+
+        self.viewModel = viewModel
+        self.projectObserver = projectObserver
         self.activityBar = activityBar
         self.railView = railView
         self.contentView = contentView
@@ -92,7 +113,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
             ) { [weak railView, weak contentView] activeItemID in
                 guard activeItemID == Self.activityItemID else { return }
                 contentView?.setContentView(AnyView(EditorWorkbenchView(
-                    controller: controller,
+                    viewModel: viewModel,
                     surface: surface
                 )))
                 // ProjectFileTreePlugin owns the canonical Explorer rail.
@@ -105,7 +126,9 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         let ownedCurrentContent = activityBar?.activeItemID == Self.activityItemID
         activityBar?.removeItems(ids: [Self.activityItemID])
         if ownedCurrentContent { contentView?.setContentView(nil) }
-        controller = nil
+        projectObserver?.cancel()
+        projectObserver = nil
+        viewModel = nil
         activityBar = nil
         railView = nil
         contentView = nil

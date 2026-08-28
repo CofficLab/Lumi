@@ -1,21 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Binary file" : {
-
-    },
-    "Cancel" : {
-
-    },
-    "Choose a project from the title bar to browse its files." : {
-
-    },
-    "Close" : {
-
-    },
-    "Close Tab" : {
-
-    },
     "Code Editor" : {
       "localizations" : {
         "zh-Hans" : {
@@ -26,10 +11,8 @@
         }
       }
     },
-    "Don't Save" : {
-
-    },
     "Explorer" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -38,64 +21,6 @@
           }
         }
       }
-    },
-    "File changed on disk" : {
-
-    },
-    "Ln %lld, Col %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Ln %1$lld, Col %2$lld"
-          }
-        }
-      }
-    },
-    "Modified" : {
-
-    },
-    "No project open" : {
-
-    },
-    "Read Only" : {
-
-    },
-    "Refresh Explorer" : {
-
-    },
-    "Save" : {
-
-    },
-    "Save changes before closing?" : {
-
-    },
-    "Saved" : {
-
-    },
-    "Spaces: %lld" : {
-
-    },
-    "Tab Size: %lld" : {
-
-    },
-    "This file cannot be edited as text." : {
-
-    },
-    "Unable to open file" : {
-
-    },
-    "Unable to open project" : {
-
-    },
-    "Unsaved changes" : {
-
-    },
-    "UTF-8" : {
-
-    },
-    "Your changes will be lost if you close this tab without saving." : {
-
     }
   },
   "version" : "1.0"
