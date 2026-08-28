@@ -52,16 +52,20 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
-            // 设置视图未注册：优雅降级，不贡献入口。
+            Self.logger.error("\(Self.t) SettingViewProviding not found")
             return
         }
 
         guard let manager = kernel.resolveProvider((any PluginManaging).self) else {
+            Self.logger.error("\(Self.t) PluginManaging not found")
             return
         }
 
         // 捕获 docs/provider 引用，供插件管理详情面板展示各插件的 about 视图。
         let docsProvider = kernel.resolveProvider((any DocsViewProviding).self)
+        if docsProvider == nil {
+            Self.logger.error("\(Self.t) DocsViewProviding not found")
+        }
 
         let entry = SettingEntryItem(
             id: "plugin-manager",
