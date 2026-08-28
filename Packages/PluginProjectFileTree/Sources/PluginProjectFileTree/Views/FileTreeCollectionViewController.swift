@@ -323,13 +323,8 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
             return
         }
 
-        project.updateCurrentFile(fileItem.url)
-
-        let fileURL = fileItem.url.standardizedFileURL
-        var openFileURLs = project.openFileURLs.map(\.standardizedFileURL)
-        guard !openFileURLs.contains(fileURL) else { return }
-        openFileURLs.append(fileURL)
-        project.updateOpenFiles(openFileURLs)
+        guard ModifierFlags.currentClick.isEmpty else { return }
+        project.pinFile(fileItem.url)
     }
 
     func getProjectRootPath() -> String {
@@ -399,9 +394,14 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             return
         }
 
-        // 单击只切换当前文件，标签栏将其作为预览项显示；双击由
-        // FileTreeCollectionView 的双击回调负责固定到 openFileURLs。
-        context?.project?.updateCurrentFile(fileItem.url)
+        // 修饰键用于多选，不应同时打开文件。普通单击只切换当前文件，
+        // 标签栏将其作为预览项显示；双击由 FileTreeCollectionView 的双击
+        // 回调负责固定到 openFileURLs。
+        guard modifiers.isEmpty else {
+            reloadVisibleItems()
+            return
+        }
+        context?.project?.previewFile(fileItem.url)
         
         // 刷新所有可见 cell 以同步选中状态（避免上一个选中项的高亮残留）
         reloadVisibleItems()
