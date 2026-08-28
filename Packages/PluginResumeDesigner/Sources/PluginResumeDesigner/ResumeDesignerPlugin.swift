@@ -74,6 +74,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
+                category: .design,
                 title: ResumeDesignerLocalization.string("Resumes"),
                 systemImage: "doc.text",
                 order: order

@@ -43,7 +43,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
         let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
         let containerID = id
         workspace?.registerContainer(WorkspaceContainer(id: id, title: metadata.name, systemImage: "book.closed.fill", order: order, railVisibility: .alwaysVisible, chatVisibility: .alwaysVisible, panelHeaderVisibility: .unsupported, panelBodyVisibility: .unsupported, panelBottomVisibility: .unsupported), ownerPluginID: id)
-        rail?.addTabs([RailTabItem(id: railID, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
+        rail?.addTabs([RailTabItem(id: railID, category: .project, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([ActivityBarItem(id: entryID, title: metadata.name, systemImage: "book.closed.fill", order: order, ownerPluginID: id) { [entryID] activeID in
             guard activeID == entryID else { return }
             content?.setContentView(AnyView(StoryWriterRootView()))

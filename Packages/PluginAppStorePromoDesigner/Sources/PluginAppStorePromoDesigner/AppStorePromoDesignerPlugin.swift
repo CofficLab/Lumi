@@ -100,6 +100,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
+                category: .design,
                 title: PromoLocalization.string("Promo Tasks"),
                 systemImage: "photo.stack",
                 order: order

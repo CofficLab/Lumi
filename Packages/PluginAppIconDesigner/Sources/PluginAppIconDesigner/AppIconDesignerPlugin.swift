@@ -86,6 +86,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             railView.addTabs([
                 RailTabItem(
                     id: Self.railTabID,
+                    category: .design,
                     title: AppIconDesignerLocalization.string("Icon Documents"),
                     systemImage: "doc.text",
                     order: order

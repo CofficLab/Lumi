@@ -89,6 +89,7 @@ struct PromptSuggestionExecutorTests {
         railView.registerTabs([
             RailTabItem(
                 id: railTabID,
+                category: .project,
                 title: "Documents",
                 systemImage: "doc"
             ) {

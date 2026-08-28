@@ -146,6 +146,7 @@ final class ConversationRailTabController {
         let sortStabilizer = sortStabilizer
         return RailTabItem(
             id: chatsTabID,
+            category: .chat,
             title: "对话",
             systemImage: "message.fill",
             order: order
@@ -165,6 +166,7 @@ final class ConversationRailTabController {
         let sortStabilizer = sortStabilizer
         return RailTabItem(
             id: projectTabID,
+            category: .chat,
             title: "项目",
             systemImage: "folder.fill",
             order: order

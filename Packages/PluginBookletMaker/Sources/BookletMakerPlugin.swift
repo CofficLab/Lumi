@@ -95,6 +95,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
+                category: .design,
                 title: name,
                 systemImage: "square.grid.2x2",
                 order: order

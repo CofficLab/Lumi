@@ -10,11 +10,12 @@ struct ProviderRailViewTests {
 
     @Test("RailTabItem 可创建且携带信息")
     func itemBasics() {
-        let item = RailTabItem(id: "files", title: "Files", systemImage: "folder") {
+        let item = RailTabItem(id: "files", category: .project, title: "Files", systemImage: "folder") {
             Text("files content")
         }
 
         #expect(item.id == "files")
+        #expect(item.category == .project)
         #expect(item.title == "Files")
         #expect(item.systemImage == "folder")
         #expect(item.order == 200)
@@ -24,8 +25,8 @@ struct ProviderRailViewTests {
     func defaultProviderStoresSortsAndActivatesFirstTab() {
         let provider = DefaultRailViewProviding()
         let tabs = [
-            RailTabItem(id: "b", title: "B", systemImage: "b", order: 200) { Text("B") },
-            RailTabItem(id: "a", title: "A", systemImage: "a", order: 100) { Text("A") },
+            RailTabItem(id: "b", category: .general, title: "B", systemImage: "b", order: 200) { Text("B") },
+            RailTabItem(id: "a", category: .general, title: "A", systemImage: "a", order: 100) { Text("A") },
         ]
 
         provider.registerTabs(tabs)
@@ -39,8 +40,8 @@ struct ProviderRailViewTests {
     func activateTabSwitchesActive() {
         let provider = DefaultRailViewProviding()
         provider.registerTabs([
-            RailTabItem(id: "a", title: "A", systemImage: "a") { Text("A") },
-            RailTabItem(id: "b", title: "B", systemImage: "b") { Text("B") },
+            RailTabItem(id: "a", category: .general, title: "A", systemImage: "a") { Text("A") },
+            RailTabItem(id: "b", category: .general, title: "B", systemImage: "b") { Text("B") },
         ])
         provider.activateTab(id: "b")
 
@@ -51,8 +52,8 @@ struct ProviderRailViewTests {
     func rejectsUnknownTabs() {
         let provider = DefaultRailViewProviding()
         provider.registerTabs([
-            RailTabItem(id: "a", title: "A", systemImage: "a") { Text("A") },
-            RailTabItem(id: "b", title: "B", systemImage: "b") { Text("B") },
+            RailTabItem(id: "a", category: .general, title: "A", systemImage: "a") { Text("A") },
+            RailTabItem(id: "b", category: .general, title: "B", systemImage: "b") { Text("B") },
         ])
 
         provider.activateTab(id: "missing")
@@ -64,10 +65,10 @@ struct ProviderRailViewTests {
     func addAndRemoveTabsAreContributionSafe() {
         let provider = DefaultRailViewProviding()
         provider.addTabs([
-            RailTabItem(id: "a", title: "A", systemImage: "a") { Text("A") },
+            RailTabItem(id: "a", category: .general, title: "A", systemImage: "a") { Text("A") },
         ])
         provider.addTabs([
-            RailTabItem(id: "b", title: "B", systemImage: "b") { Text("B") },
+            RailTabItem(id: "b", category: .general, title: "B", systemImage: "b") { Text("B") },
         ])
 
         provider.removeTabs(ids: ["a"])
@@ -79,7 +80,7 @@ struct ProviderRailViewTests {
     func defaultProviderRendersView() {
         let provider = DefaultRailViewProviding()
         provider.registerTabs([
-            RailTabItem(id: "a", title: "A", systemImage: "folder") { Text("A") },
+            RailTabItem(id: "a", category: .general, title: "A", systemImage: "folder") { Text("A") },
         ])
 
         #expect(type(of: provider.makeRailView()) == AnyView.self)
@@ -89,7 +90,7 @@ struct ProviderRailViewTests {
     func providerAccessibleThroughProtocol() {
         let provider: any RailViewProviding = DefaultRailViewProviding()
         provider.registerTabs([
-            RailTabItem(id: "x", title: "X", systemImage: "xmark") { Text("X") },
+            RailTabItem(id: "x", category: .general, title: "X", systemImage: "xmark") { Text("X") },
         ])
 
         #expect(provider.tabs.count == 1)
@@ -112,7 +113,7 @@ struct ProviderRailViewTests {
 
         let provider: any RailViewProviding = CustomRailView()
         provider.registerTabs([
-            RailTabItem(id: "y", title: "Y", systemImage: "ycircle") { Text("Y") },
+            RailTabItem(id: "y", category: .general, title: "Y", systemImage: "ycircle") { Text("Y") },
         ])
 
         #expect(provider.tabs.count == 1)

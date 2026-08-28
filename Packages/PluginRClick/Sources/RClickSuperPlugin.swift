@@ -44,6 +44,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
         rail?.addTabs([
             RailTabItem(
                 id: railTabID,
+                category: .general,
                 title: LumiPluginLocalization.string("Preview", bundle: .module),
                 systemImage: "eye",
                 order: order

@@ -62,6 +62,7 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
+                category: .design,
                 title: MindMapLocalization.string("Mind Maps"),
                 systemImage: "doc.text",
                 order: order
