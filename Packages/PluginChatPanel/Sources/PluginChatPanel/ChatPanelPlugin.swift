@@ -52,7 +52,12 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             let isChatActive = activeID == entryID
             chat?.setVisible(isChatActive)
             chat?.setContextActive(isChatActive)
-            rail?.activateGroup(id: isChatActive ? self.id : nil)
+            // Rail 是跨 ActivityBar 入口共享的区域。ChatPanel 失活时不能
+            // 清空其他插件（例如 ProjectFileTree）当前展示的分组；只有
+            // ChatPanel 被激活时才切换到自己的 Rail group。
+            if isChatActive {
+                rail?.activateGroup(id: self.id)
+            }
             if isChatActive {
                 workspace?.activateContainer(id: self.id)
                 // Chat 容器自带聊天界面，不需要独立的主内容区：
