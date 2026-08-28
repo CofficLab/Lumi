@@ -62,7 +62,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { [activityItemID] state in
                 if state == .activated {
-                    rail?.setVisibleCategories([.general])
+                    rail?.setVisibleTabID(self.railTabID)
                     content?.setContentView(AnyView(RClickSettingsView()))
                 }
             },
