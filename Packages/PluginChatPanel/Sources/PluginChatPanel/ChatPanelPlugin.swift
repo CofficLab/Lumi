@@ -24,14 +24,26 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let activityBar = kernel.resolveProvider((any ActivityBarProviding).self),
-              let chat = kernel.resolveProvider((any ChatSectionProviding).self),
-              let workspace = kernel.resolveProvider((any WorkspaceProviding).self) else {
-            Self.logger.error("\(Self.t)Failed to resolve ActivityBarProviding, ChatSectionProviding, WorkspaceProviding from kernel")
+        guard let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ActivityBarProviding from kernel")
             return
         }
-        let rail = kernel.resolveProvider((any RailViewProviding).self)
-        let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding from kernel")
+            return
+        }
+        guard let workspace = kernel.resolveProvider((any WorkspaceProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve WorkspaceProviding from kernel")
+            return
+        }
+        guard let rail = kernel.resolveProvider((any RailViewProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve RailViewProviding from kernel")
+            return
+        }
+        guard let contentView = kernel.resolveProvider((any ContentViewProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ContentViewProviding from kernel")
+            return
+        }
         let entryID = "\(id).entry"
         workspace.registerContainer(.init(
             id: id,
@@ -59,13 +71,13 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             // 清空其他插件（例如 ProjectFileTree）当前展示的分组；只有
             // ChatPanel 被激活时才切换到自己的 Rail group。
             if isChatActive {
-                rail?.activateGroup(id: self.id)
+                rail.activateGroup(id: self.id)
             }
             if isChatActive {
                 workspace.activateContainer(id: self.id)
                 // Chat 容器自带聊天界面，不需要独立的主内容区：
                 // 激活时清空 contentView，回退到占位视图。
-                contentView?.setContentView(nil)
+                contentView.setContentView(nil)
             }
         }])
         // Adding a late plugin must still select Chat on first launch; the
@@ -73,7 +85,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         activityBar.activateItem(id: entryID)
         chat.setVisible(true)
         chat.setContextActive(true)
-        rail?.activateGroup(id: id)
+        rail.activateGroup(id: id)
         workspace.activateContainer(id: id)
     }
 
