@@ -5,7 +5,6 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderProject
-import ProviderWorkspace
 import SwiftUI
 import KitTerminalCore
 import KitSuperLog
@@ -14,7 +13,7 @@ import os
 /// KernelCore entry point for the legacy terminal workspace.
 ///
 /// It keeps the established terminal session model and project-directory
-/// behavior while using V2 activity/content/workspace contributions.
+/// behavior while using V2 activity/content contributions.
 @MainActor
 public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.terminal", category: "Terminal")
@@ -46,20 +45,7 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
         }
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
-        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
         let project = kernel.resolveProvider((any ProjectProviding).self)
-        workspace?.registerContainer(.init(
-            id: id,
-            title: metadata.name,
-            systemImage: "terminal",
-            order: order,
-            supportsProject: true,
-            railVisibility: .unsupported,
-            chatVisibility: .unsupported,
-            panelHeaderVisibility: .unsupported,
-            panelBodyVisibility: .unsupported,
-            panelBottomVisibility: .unsupported
-        ), ownerPluginID: id)
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
             ActivityBarItem(
                 id: "\(id).entry",
@@ -70,7 +56,6 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
             ) { activeID in
                 guard activeID == "\(self.id).entry" else { return }
                 content?.setContentView(AnyView(TerminalV2MainView(project: project)))
-                workspace?.activateContainer(id: self.id)
             },
         ])
     }
@@ -83,7 +68,6 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
-        kernel.resolveProvider((any WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
