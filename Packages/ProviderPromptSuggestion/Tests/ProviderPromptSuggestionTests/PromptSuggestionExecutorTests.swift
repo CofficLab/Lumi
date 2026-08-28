@@ -105,7 +105,7 @@ struct PromptSuggestionExecutorTests {
             action: .activatePluginEntry(
                 activityBarItemID: activityBarItemID,
                 railTabID: railTabID,
-                viewContainerID: containerID
+                railGroupID: containerID
             )
         )
 

@@ -17,7 +17,6 @@ let package = Package(
         .package(path: "../ProviderPluginManaging"),
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderToast"),
-        .package(path: "../ProviderWorkspace"),
     ],
     targets: [
         .target(name: "ProviderPromptSuggestion", dependencies: [

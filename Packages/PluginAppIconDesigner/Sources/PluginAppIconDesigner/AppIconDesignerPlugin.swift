@@ -44,7 +44,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             action: .activatePluginEntry(
                 activityBarItemID: "\(id).entry",
                 railTabID: Self.railTabID,
-                viewContainerID: id
+                railGroupID: id
             )
         )
     }

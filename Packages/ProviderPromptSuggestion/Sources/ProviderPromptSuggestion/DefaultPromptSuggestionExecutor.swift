@@ -7,7 +7,6 @@ import ProviderPluginControl
 import ProviderPluginManaging
 import ProviderRailView
 import ProviderToast
-import ProviderWorkspace
 
 /// Default coordinator for prompt suggestion actions.
 @MainActor
@@ -38,7 +37,7 @@ public final class DefaultPromptSuggestionExecutor: PromptSuggestionExecuting {
                 object: nil
             )
             return
-        case nil, .activatePluginEntry, .activateViewContainer, .activateRailTab:
+        case nil, .activatePluginEntry, .activateRailTab:
             break
         }
 
@@ -68,24 +67,16 @@ public final class DefaultPromptSuggestionExecutor: PromptSuggestionExecuting {
         }
 
         switch suggestion.action {
-        case let .activatePluginEntry(activityBarItemID, railTabID, containerID):
+        case let .activatePluginEntry(activityBarItemID, railTabID, railGroupID):
             kernel.resolveProvider((any ActivityBarProviding).self)?
                 .activateItem(id: activityBarItemID)
-            kernel.resolveProvider((any RailViewProviding).self)?.activateGroup(id: containerID)
+            kernel.resolveProvider((any RailViewProviding).self)?.activateGroup(id: railGroupID)
             kernel.resolveProvider((any RailViewProviding).self)?.activateTab(id: railTabID)
-            if let workspace = kernel.resolveProvider((any WorkspaceProviding).self) {
-                workspace.activateContainer(id: containerID)
-                workspace.presentRailTab(id: railTabID, for: containerID)
-            }
-        case let .activateViewContainer(id):
-            kernel.resolveProvider((any WorkspaceProviding).self)?.activateContainer(id: id)
-        case let .activateRailTab(railTabID, containerID):
-            kernel.resolveProvider((any RailViewProviding).self)?.activateGroup(id: containerID)
+        case let .activateRailTab(railTabID, railGroupID):
+            // Rail groups are selected by the plugin's ActivityBar callback.
+            // The suggestion only needs to select the requested tab after that.
+            kernel.resolveProvider((any RailViewProviding).self)?.activateGroup(id: railGroupID)
             kernel.resolveProvider((any RailViewProviding).self)?.activateTab(id: railTabID)
-            if let workspace = kernel.resolveProvider((any WorkspaceProviding).self) {
-                workspace.activateContainer(id: containerID)
-                workspace.presentRailTab(id: railTabID, for: containerID)
-            }
         default:
             break
         }
