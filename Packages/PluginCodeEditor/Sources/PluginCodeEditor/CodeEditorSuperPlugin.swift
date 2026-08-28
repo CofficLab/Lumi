@@ -5,8 +5,6 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderProject
-import ProviderRailView
-import PluginProjectFileTree
 import SwiftUI
 import KitSuperLog
 import os
@@ -21,7 +19,6 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     public let order = 82
     public let dependencies = [
         "com.coffic.lumi.plugin.editor-host",
-        ProjectFileTreePlugin.pluginID,
     ]
     public let metadata = PluginMetadata(
         id: pluginID,
@@ -36,7 +33,6 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     private var viewModel: CodeEditorViewModel?
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private weak var activityBar: (any ActivityBarProviding)?
-    private weak var railView: (any RailViewProviding)?
     private weak var contentView: (any ContentViewProviding)?
 
     public init() {}
@@ -82,9 +78,6 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         guard let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) else {
             throw KernelCoreError.providerNotRegistered(type: (any ActivityBarProviding).self)
         }
-        guard let railView = kernel.resolveProvider((any RailViewProviding).self) else {
-            throw KernelCoreError.providerNotRegistered(type: (any RailViewProviding).self)
-        }
         guard let contentView = kernel.resolveProvider((any ContentViewProviding).self) else {
             throw KernelCoreError.providerNotRegistered(type: (any ContentViewProviding).self)
         }
@@ -100,7 +93,6 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         self.viewModel = viewModel
         self.projectObserver = projectObserver
         self.activityBar = activityBar
-        self.railView = railView
         self.contentView = contentView
 
         activityBar.addItems([
@@ -110,14 +102,12 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "chevron.left.forwardslash.chevron.right",
                 order: order,
                 ownerPluginID: id
-            ) { [weak railView, weak contentView] activeItemID in
+            ) { [weak contentView] activeItemID in
                 guard activeItemID == Self.activityItemID else { return }
                 contentView?.setContentView(AnyView(EditorWorkbenchView(
                     viewModel: viewModel,
                     surface: surface
                 )))
-                // ProjectFileTreePlugin owns the canonical Explorer rail.
-                railView?.activateGroup(id: ProjectFileTreePlugin.pluginID)
             },
         ])
     }
@@ -130,7 +120,6 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         projectObserver = nil
         viewModel = nil
         activityBar = nil
-        railView = nil
         contentView = nil
     }
 }

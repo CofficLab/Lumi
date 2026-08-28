@@ -12,7 +12,6 @@ let package = Package(
         .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../PluginEditorHost"),
-        .package(path: "../PluginProjectFileTree"),
         .package(path: "../EditorContracts"),
         .package(path: "../EditorService"),
         .package(path: "../ProviderActivityBar"),
@@ -20,7 +19,6 @@ let package = Package(
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderPluginControl"),
-        .package(path: "../ProviderRailView"),
         .package(path: "../LumiUI"),
     ],
     targets: [
@@ -31,12 +29,10 @@ let package = Package(
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "EditorService", package: "EditorService"),
-                .product(name: "PluginProjectFileTree", package: "PluginProjectFileTree"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
-                .product(name: "ProviderRailView", package: "ProviderRailView"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             resources: [.process("Resources")]
@@ -49,13 +45,11 @@ let package = Package(
                 .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "PluginEditorHost", package: "PluginEditorHost"),
-                .product(name: "PluginProjectFileTree", package: "PluginProjectFileTree"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderPluginControl", package: "ProviderPluginControl"),
-                .product(name: "ProviderRailView", package: "ProviderRailView"),
             ]
         ),
     ]

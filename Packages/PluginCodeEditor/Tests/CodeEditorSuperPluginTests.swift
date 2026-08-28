@@ -4,14 +4,12 @@ import EditorService
 import Foundation
 import KernelCore
 import PluginEditorHost
-import PluginProjectFileTree
 import PluginCodeEditor
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderPluginControl
 import ProviderProject
-import ProviderRailView
 import SwiftUI
 import Testing
 
@@ -22,8 +20,7 @@ struct CodeEditorSuperPluginTests {
         let plugin = CodeEditorSuperPlugin()
         #expect(plugin.metadata.policy == .disabledByDefault)
         #expect(plugin.dependencies == [
-            "com.coffic.lumi.plugin.editor-host",
-            ProjectFileTreePlugin.pluginID,
+            "com.coffic.lumi.plugin.editor-host"
         ])
     }
 
@@ -31,17 +28,15 @@ struct CodeEditorSuperPluginTests {
     func lifecycle() async throws {
         let kernel = KernelCoreContainer()
         let activity = DefaultActivityBarProviding()
-        let rail = DefaultRailViewProviding()
         let content = TestContentProvider()
         let docs = DefaultDocsViewProviding()
         let project = DefaultProjectProvider()
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
-        try kernel.registerProvider((any RailViewProviding).self, rail)
         try kernel.registerProvider((any ContentViewProviding).self, content)
         try kernel.registerProvider((any DocsViewProviding).self, docs)
         try kernel.registerProvider((any ProjectProviding).self, project)
         let workspace = CodeEditorSuperPlugin()
-        try kernel.start(plugins: [ProjectFileTreePlugin(), EditorHostSuperPlugin(), workspace])
+        try kernel.start(plugins: [EditorHostSuperPlugin(), workspace])
         let control = DefaultPluginControlling(kernel: kernel)
 
         #expect(docs.aboutEntries.map(\.id) == [workspace.id])
@@ -49,10 +44,7 @@ struct CodeEditorSuperPluginTests {
         #expect(activity.items.allSatisfy { $0.id != CodeEditorSuperPlugin.activityItemID })
         #expect(await control.enablePlugin(id: workspace.id))
         #expect(activity.items.filter { $0.id == CodeEditorSuperPlugin.activityItemID }.count == 1)
-        #expect(rail.tabs.filter { $0.id == ProjectFileTreePlugin.railTabID }.count == 1)
-
         activity.activateItem(id: CodeEditorSuperPlugin.activityItemID)
-        #expect(rail.activeGroupID == ProjectFileTreePlugin.pluginID)
         #expect(content.setCount == 1)
 
         let file = FileManager.default.temporaryDirectory
@@ -68,12 +60,10 @@ struct CodeEditorSuperPluginTests {
 
         #expect(await control.disablePlugin(id: workspace.id))
         #expect(activity.items.allSatisfy { $0.id != CodeEditorSuperPlugin.activityItemID })
-        #expect(rail.tabs.contains { $0.id == ProjectFileTreePlugin.railTabID })
         #expect(content.clearCount == 1)
 
         #expect(await control.enablePlugin(id: workspace.id))
         #expect(activity.items.filter { $0.id == CodeEditorSuperPlugin.activityItemID }.count == 1)
-        #expect(rail.tabs.filter { $0.id == ProjectFileTreePlugin.railTabID }.count == 1)
     }
 
     private func waitForFileLoad(editor: EditorService) async {
