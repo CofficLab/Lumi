@@ -18,11 +18,19 @@ public final class ProjectFilesTabViewModel: ObservableObject {
     }
 
     public func activate(_ fileURL: URL) {
-        project.updateCurrentFile(fileURL)
+        project.activateFile(fileURL)
     }
 
     public func close(_ fileURL: URL) {
         project.closeFile(fileURL)
+
+        // 兼容尚未实现预览文件语义的 ProjectProviding：预览项不在
+        // openFileURLs 中时，closeFile 可能不会清除 currentFileURL。
+        let normalizedURL = fileURL.standardizedFileURL
+        if project.currentFileURL?.standardizedFileURL == normalizedURL,
+           !project.openFileURLs.contains(where: { $0.standardizedFileURL == normalizedURL }) {
+            project.updateCurrentFile(nil)
+        }
     }
 
     public func closeOthers(keeping fileURL: URL) {
