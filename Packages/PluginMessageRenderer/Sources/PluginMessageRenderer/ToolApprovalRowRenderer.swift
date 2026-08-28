@@ -141,15 +141,6 @@ public struct ToolApprovalRowRenderer: ToolCallRowRenderer, SuperLog {
         // 从 pending 改成 userApproved/userRejected。只有仍在等待授权时才展示。
         let isWaitingForAuthorization = toolCall.result == nil || toolCall.result?.awaitingUserResponse == true
         let shouldRender = isPending && isWaitingForAuthorization
-        if shouldRender {
-            Self.logger.info(
-                "\(Self.t)命中授权界面渲染条件 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) authorization=\(toolCall.authorizationState.rawValue, privacy: .public) hasResult=\(toolCall.result != nil, privacy: .public)"
-            )
-        } else {
-            Self.logger.debug(
-                "\(Self.t)未命中授权界面渲染条件 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) authorization=\(toolCall.authorizationState.rawValue, privacy: .public) hasResult=\(toolCall.result != nil, privacy: .public)"
-            )
-        }
         return shouldRender
     }
 
