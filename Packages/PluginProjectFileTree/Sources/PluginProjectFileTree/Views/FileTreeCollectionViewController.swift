@@ -13,11 +13,11 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     nonisolated static var verbose: Bool { ProjectFileTreePlugin.verbose }
     nonisolated static let logger = ProjectFileTreePlugin.logger
 
-    private let collectionView: NSCollectionView = {
-        let cv = NSCollectionView()
+    private let collectionView: FileTreeCollectionView = {
+        let cv = FileTreeCollectionView()
         cv.translatesAutoresizingMaskIntoConstraints = false
         cv.isSelectable = true
-        cv.allowsMultipleSelection = false
+        cv.allowsMultipleSelection = true
         cv.backgroundColors = [.clear]
         return cv
     }()
@@ -81,6 +81,10 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     }
 
     private func setupCollectionView() {
+        collectionView.onDoubleClick = { [weak self] indexPath in
+            self?.handleDoubleClick(at: indexPath)
+        }
+
         let layout = Self.makeLayout()
         collectionView.collectionViewLayout = layout
 
@@ -310,6 +314,24 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
             ?? gitStatusSnapshot.aggregateStatusForDirectory(relativePath)
     }
 
+    /// VS Code 风格的双击：将文件从预览状态固定为持久打开的文件。
+    private func handleDoubleClick(at indexPath: IndexPath) {
+        guard let item = dataSource.itemIdentifier(for: indexPath),
+              case .file(let fileItem) = item,
+              !fileItem.isDirectory,
+              let project = context?.project else {
+            return
+        }
+
+        project.updateCurrentFile(fileItem.url)
+
+        let fileURL = fileItem.url.standardizedFileURL
+        var openFileURLs = project.openFileURLs.map(\.standardizedFileURL)
+        guard !openFileURLs.contains(fileURL) else { return }
+        openFileURLs.append(fileURL)
+        project.updateOpenFiles(openFileURLs)
+    }
+
     func getProjectRootPath() -> String {
         return fileTreeDataSource.projectRootPath
     }
@@ -370,6 +392,15 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
                 self.onExpansionChange?(relativePath, !fileItem.isExpanded)
             }
         )
+
+        // 目录点击只改变展开状态；只有文件点击才会切换编辑器当前文件。
+        guard !fileItem.isDirectory else {
+            reloadVisibleItems()
+            return
+        }
+
+        // 单击只切换当前文件，标签栏将其作为预览项显示；双击由
+        // FileTreeCollectionView 的双击回调负责固定到 openFileURLs。
         context?.project?.updateCurrentFile(fileItem.url)
         
         // 刷新所有可见 cell 以同步选中状态（避免上一个选中项的高亮残留）
@@ -698,6 +729,20 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             ensureDirectoryExpanded(targetURL)
             return true
         }
+    }
+}
+
+/// 为文件树提供不干扰 NSCollectionView 原生选择的双击回调。
+private final class FileTreeCollectionView: NSCollectionView {
+    var onDoubleClick: ((IndexPath) -> Void)?
+
+    override func mouseDown(with event: NSEvent) {
+        super.mouseDown(with: event)
+
+        guard event.clickCount == 2 else { return }
+        let point = convert(event.locationInWindow, from: nil)
+        guard let indexPath = indexPathForItem(at: point) else { return }
+        onDoubleClick?(indexPath)
     }
 }
 
