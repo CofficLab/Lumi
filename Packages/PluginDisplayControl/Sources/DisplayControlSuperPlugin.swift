@@ -48,8 +48,10 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
                     if state == .activated {
                         content?.setContentView(AnyView(DisplayControlView()))
                         rootView?.setRailView(nil)
+                        rootView?.setContentHeaderViewHidden(true)
                     } else {
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setContentHeaderViewHidden(false)
                     }
                 },
             ])
