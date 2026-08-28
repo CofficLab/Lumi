@@ -4,6 +4,8 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import SwiftUI
+import KitSuperLog
+import os
 
 /// 视频转换插件
 ///
@@ -15,7 +17,8 @@ import SwiftUI
 /// 通过 `SuperPlugin.onBoot(kernel:)` 解析内核中的各 Provider，
 /// 用追加语义注册，不覆盖其他插件的贡献。
 @MainActor
-public final class VideoConverterPlugin: SuperPlugin {
+public final class VideoConverterPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.video-converter", category: "VideoConverter")
     public let id = "com.coffic.lumi.plugin.video-converter"
     public let order = 870
     public let metadata = PluginMetadata(
