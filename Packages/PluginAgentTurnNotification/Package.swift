@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "PluginAgentTurnNotification", targets: ["PluginAgentTurnNotification"]),
     ],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversation"),
@@ -18,6 +19,7 @@ let package = Package(
         .target(
             name: "PluginAgentTurnNotification",
             dependencies: [
+                "KitSuperLog",
                 "KernelCore",
                 "ProviderAgentLoop",
                 "ProviderConversation",

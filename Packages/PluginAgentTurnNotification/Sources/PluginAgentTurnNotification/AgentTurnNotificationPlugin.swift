@@ -4,6 +4,8 @@ import ProviderAgentLoop
 import ProviderConversation
 import ProviderLifecycleHooks
 import UserNotifications
+import KitSuperLog
+import os
 
 /// 回合通知插件：回合结束时发系统通知。
 ///
@@ -14,7 +16,8 @@ import UserNotifications
 /// 通知发送经 `notifier` 闭包注入（默认走 `UNUserNotificationCenter`），
 /// 便于测试注入 no-op 避免系统 API。
 @MainActor
-public final class AgentTurnNotificationPlugin: SuperPlugin {
+public final class AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.turn-notification", category: "AgentTurnNotification")
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.turn-notification"
     public let order = 99
