@@ -4,6 +4,7 @@ import KernelCore
 import KitSuperLog
 import OpenInKit
 import ProviderProject
+import ProviderDocsView
 import ProviderToolManager
 
 /// 在 VS Code 中打开项目的插件。
@@ -33,9 +34,15 @@ public final class OpenInVSCodePlugin: SuperPlugin, SuperLog {
 
         let tool = OpenInTool(config: OpenInTool.vscode, project: project)
         toolManager.add(tool, pluginID: id)
+        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
+            DocsEntry(id: id, name: metadata.name) {
+                OpenInAboutView(displayName: OpenInTool.vscode.displayName, systemImage: OpenInTool.vscode.systemImage, toolName: OpenInTool.vscode.toolName)
+            }
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding from kernel")
             return
