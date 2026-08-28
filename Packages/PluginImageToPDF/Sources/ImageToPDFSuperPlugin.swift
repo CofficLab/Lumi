@@ -43,8 +43,10 @@ import SwiftUI
                     if state == .activated {
                         content?.setContentView(AnyView(ImageToPDFMainView()))
                         rootView?.setRailView(nil)
+                        rootView?.setContentHeaderViewHidden(true)
                     } else {
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setContentHeaderViewHidden(false)
                     }
                 },
             ])
