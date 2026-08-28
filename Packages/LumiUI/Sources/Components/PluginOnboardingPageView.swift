@@ -28,6 +28,8 @@ public struct PluginOnboardingPageView: View {
     private let features: [Feature]
     private let tip: String?
 
+    @LumiTheme private var theme
+
     /// Creates an onboarding page view.
     /// - Parameters:
     ///   - icon: SF Symbol name shown in the header badge.
@@ -55,14 +57,14 @@ public struct PluginOnboardingPageView: View {
 
             if !features.isEmpty {
                 featuresList
-                    .padding(.top, AppUI.Spacing.lg)
+                    .padding(.top, DesignTokens.Spacing.lg)
             }
 
             Spacer(minLength: 0)
 
             if let tip {
                 tipCard(tip)
-                    .padding(.top, AppUI.Spacing.lg)
+                    .padding(.top, DesignTokens.Spacing.lg)
             }
         }
     }
@@ -70,12 +72,12 @@ public struct PluginOnboardingPageView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(spacing: AppUISpacing.headerSpacing) {
+        HStack(spacing: DesignTokens.Spacing.md + 4) {
             ZStack {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color.accentColor.opacity(0.15), Color.accentColor.opacity(0.05)],
+                            colors: [theme.primary.opacity(0.15), theme.primary.opacity(0.05)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -86,7 +88,7 @@ public struct PluginOnboardingPageView: View {
                     .font(.system(size: 28, weight: .semibold))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [.accentColor, .accentColor.opacity(0.8)],
+                            colors: [theme.primary, theme.primary.opacity(0.8)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -95,12 +97,12 @@ public struct PluginOnboardingPageView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(displayName)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
+                    .font(DesignTokens.Typography.title1)
+                    .foregroundStyle(theme.textPrimary)
 
                 Text(description)
-                    .font(AppUI.Typography.body)
-                    .foregroundStyle(.secondary)
+                    .font(DesignTokens.Typography.body)
+                    .foregroundStyle(theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -111,7 +113,7 @@ public struct PluginOnboardingPageView: View {
     // MARK: - Features
 
     private var featuresList: some View {
-        VStack(spacing: AppUI.Spacing.sm) {
+        VStack(spacing: DesignTokens.Spacing.sm) {
             ForEach(Array(features.enumerated()), id: \.element.id) { index, feature in
                 featureRow(feature)
                 if index < features.count - 1 {
@@ -124,62 +126,58 @@ public struct PluginOnboardingPageView: View {
     private func featureRow(_ feature: Feature) -> some View {
         HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(.quinary.opacity(0.5))
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm, style: .continuous)
+                    .fill(theme.textSecondary.opacity(0.08))
                     .frame(width: 36, height: 36)
 
                 Image(systemName: feature.icon)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(theme.textPrimary)
             }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(feature.title)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.primary)
+                    .font(DesignTokens.Typography.bodyEmphasized)
+                    .foregroundStyle(theme.textPrimary)
 
                 Text(feature.description)
-                    .font(AppUI.Typography.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(DesignTokens.Typography.subheadline)
+                    .foregroundStyle(theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer()
         }
         .padding(14)
-        .background(.quinary.opacity(0.3))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(theme.textSecondary.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.sm + 4, style: .continuous))
     }
 
     // MARK: - Tip
 
     private func tipCard(_ tip: String) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: DesignTokens.Spacing.sm + 2) {
             Image(systemName: "lightbulb.fill")
                 .font(.system(size: 14))
-                .foregroundStyle(.yellow)
+                .foregroundStyle(theme.warning)
 
             Text(tip)
-                .font(AppUI.Typography.subheadline)
-                .foregroundStyle(.secondary)
+                .font(DesignTokens.Typography.subheadline)
+                .foregroundStyle(theme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             Spacer()
         }
-        .padding(12)
+        .padding(DesignTokens.Spacing.sm + 4)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(.yellow.opacity(0.08))
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm + 2, style: .continuous)
+                .fill(theme.warning.opacity(0.08))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(.yellow.opacity(0.2), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm + 2, style: .continuous)
+                        .strokeBorder(theme.warning.opacity(0.2), lineWidth: 1)
                 )
         )
     }
-}
-
-private enum AppUISpacing {
-    static let headerSpacing: CGFloat = 20
 }
 
 // MARK: - Preview
@@ -195,7 +193,7 @@ private enum AppUISpacing {
         ],
         tip: "Open it from the sidebar at any time."
     )
-    .padding(32)
+    .padding(DesignTokens.Spacing.xl)
     .frame(width: 576)
 }
 
@@ -205,6 +203,6 @@ private enum AppUISpacing {
         displayName: "Device Info",
         description: "Shows basic device and system information."
     )
-    .padding(32)
+    .padding(DesignTokens.Spacing.xl)
     .frame(width: 576)
 }
