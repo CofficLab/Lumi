@@ -1,15 +1,12 @@
-import Combine
 import Foundation
 
 /// 项目管理能力协议
 ///
 /// 定义宿主需要的项目管理功能，由具体实现（如 ProjectsPlugin / 单用途 App）注入。
+/// 状态变化统一通过 `ProjectProvidingEvent` 语义通知发布。
 ///
-/// `ObjectWillChangePublisher == ObservableObjectPublisher` 约束与 `MessageSending` 一致，
-/// 用于让协议存在类型（`any ProjectProviding`）的 `objectWillChange` 可被订阅，从而支持
-/// SwiftUI 跨包响应式观察。
 @MainActor
-public protocol ProjectProviding: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol ProjectProviding: AnyObject {
     /// 当前打开的项目
     var currentProject: ProjectInfo? { get }
 
@@ -90,7 +87,7 @@ public extension ProjectProviding {
     /// 轻量项目 Provider 的兼容默认实现。
     ///
     /// 完整实现应覆盖此方法并发出语义事件；默认 no-op 使已有的测试替身和
-    /// 外部注入实现可以逐步接入监听能力，同时仍可使用 `objectWillChange`。
+    /// 外部注入实现可以逐步接入监听能力。
     @discardableResult
     func addObserver(_ callback: @escaping (ProjectProvidingEvent) -> Void) -> any ProjectProvidingObserverHandle {
         NoopProjectProvidingObserverHandle()

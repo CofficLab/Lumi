@@ -20,8 +20,8 @@ public protocol SelectedConversationObserverHandle: AnyObject {
 /// 事件总线 / 具体存储实现的依赖，使协议存在类型（`any ConversationManaging`）
 /// 可被 SwiftUI 跨包响应式观察 + Hook 订阅。
 ///
-/// `ObjectWillChangePublisher == ObservableObjectPublisher` 约束与 `ProjectProviding`
-/// 一致，用于让协议存在类型的 `objectWillChange` 可被订阅。
+/// `ObjectWillChangePublisher == ObservableObjectPublisher` 约束用于让协议存在类型的
+/// `objectWillChange` 可被订阅。
 @MainActor
 public protocol ConversationManaging: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 所有对话列表

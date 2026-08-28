@@ -1,5 +1,4 @@
 import KitAgentTool
-import Combine
 import Foundation
 import KernelCore
 import ProviderConversationInput
@@ -48,7 +47,7 @@ enum PromoDesignerRuntime {
     /// 聊天输入框服务（宿主注入，可空）。用于把选中的区块预填进输入框待发送。
     static var conversationInput: (any ConversationInputProviding)?
 
-    private static var projectCancellable: AnyCancellable?
+    private static var projectObserver: (any ProjectProvidingObserverHandle)?
     static let projectFolderName = "app-store-promo"
 
     static func configure(kernel: KernelCoreContainer, pluginID: String) {
@@ -67,7 +66,8 @@ enum PromoDesignerRuntime {
     }
 
     private static func installProjectObserver(kernel: KernelCoreContainer) {
-        projectCancellable = nil
+        projectObserver?.cancel()
+        projectObserver = nil
         guard let project = kernel.resolveProvider((any ProjectProviding).self) else {
             currentProjectPath = nil
             updateProjectStorageDirectory(projectPath: nil)
@@ -76,14 +76,12 @@ enum PromoDesignerRuntime {
 
         currentProjectPath = project.currentProject?.path
         updateProjectStorageDirectory(projectPath: currentProjectPath)
-        projectCancellable = project.objectWillChange
-            .sink { [weak project] _ in
-                Task { @MainActor in
-                    let newPath = project?.currentProject?.path
-                    guard newPath != currentProjectPath else { return }
-                    currentProjectPath = newPath
-                    updateProjectStorageDirectory(projectPath: newPath)
-                }
+        projectObserver = project.addObserver { [weak project] event in
+            guard case .currentProjectChanged = event else { return }
+            let newPath = project?.currentProject?.path
+            guard newPath != currentProjectPath else { return }
+            currentProjectPath = newPath
+            updateProjectStorageDirectory(projectPath: newPath)
             }
     }
 
@@ -128,7 +126,8 @@ enum PromoDesignerRuntime {
 
     /// 测试辅助：重置所有运行时状态（含 app / project 路径及订阅）。
     static func reset() {
-        projectCancellable = nil
+        projectObserver?.cancel()
+        projectObserver = nil
         appStorageDirectory = nil
         projectStorageDirectory = nil
         currentProjectPath = nil

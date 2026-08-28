@@ -107,13 +107,14 @@ private struct TerminalV2MainView: View {
 @MainActor
 private final class TerminalV2ProjectObserver: ObservableObject {
     @Published private(set) var currentPath: String?
-    private var cancellable: AnyCancellable?
+    private var projectObserver: (any ProjectProvidingObserverHandle)?
     private let project: (any ProjectProviding)?
 
     init(project: (any ProjectProviding)?) {
         self.project = project
         self.currentPath = project?.currentProject?.path
-        cancellable = project?.objectWillChange.sink { [weak self] _ in
+        projectObserver = project?.addObserver { [weak self] event in
+            guard case .currentProjectChanged = event else { return }
             self?.currentPath = self?.project?.currentProject?.path
         }
     }

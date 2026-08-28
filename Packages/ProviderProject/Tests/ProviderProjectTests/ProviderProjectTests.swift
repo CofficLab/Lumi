@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import Testing
 @testable import ProviderProject
@@ -10,8 +9,8 @@ struct ProviderProjectTests {
 
     /// 测试用实现：验证协议可被任意实现注入。
     private final class MockProjectProvider: ProjectProviding {
-        @Published var currentProject: ProjectInfo?
-        @Published var projects: [ProjectInfo] = []
+        var currentProject: ProjectInfo?
+        var projects: [ProjectInfo] = []
 
         var openFileURLs: [URL] = []
         var currentFileURL: URL?

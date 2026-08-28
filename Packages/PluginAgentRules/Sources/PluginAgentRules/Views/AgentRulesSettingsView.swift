@@ -10,19 +10,16 @@ import SwiftUI
 private final class AgentRulesProjectObserver: ObservableObject {
     @Published private(set) var projects: [ProjectInfo] = []
 
-    private var cancellable: AnyCancellable?
+    private var projectObserver: (any ProjectProvidingObserverHandle)?
 
     init(projectProvider: (any ProjectProviding)?) {
         guard let projectProvider else { return }
 
         projects = projectProvider.projects
-        cancellable = projectProvider.objectWillChange
-            .map { _ in () }
-            .eraseToAnyPublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                self.projects = projectProvider.projects
-            }
+        projectObserver = projectProvider.addObserver { [weak self] event in
+            guard case .projectsChanged(let projects) = event else { return }
+            self?.projects = projects
+        }
     }
 }
 

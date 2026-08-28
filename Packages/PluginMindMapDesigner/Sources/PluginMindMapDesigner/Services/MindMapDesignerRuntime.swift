@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import KernelCore
 import ProviderProject
@@ -36,7 +35,7 @@ enum MindMapDesignerRuntime {
     /// 当前打开项目的路径（供工具访问与 UI 展示）。
     static private(set) var currentProjectPath: String?
 
-    private static var projectCancellable: AnyCancellable?
+    private static var projectObserver: (any ProjectProvidingObserverHandle)?
 
     /// 项目内存储目录的末段名称（`<project>/.lumi/mind-map`）。
     static let projectFolderName = "mind-map"
@@ -57,7 +56,8 @@ enum MindMapDesignerRuntime {
 
     /// 安装对 `ProjectProviding` 变化的监听，自动刷新项目内存储路径。
     private static func installProjectObserver(kernel: KernelCoreContainer) {
-        projectCancellable = nil
+        projectObserver?.cancel()
+        projectObserver = nil
         guard let project = kernel.resolveProvider((any ProjectProviding).self) else {
             currentProjectPath = nil
             updateProjectStorageDirectory(projectPath: nil)
@@ -66,14 +66,12 @@ enum MindMapDesignerRuntime {
 
         currentProjectPath = project.currentProject?.path
         updateProjectStorageDirectory(projectPath: currentProjectPath)
-        projectCancellable = project.objectWillChange
-            .sink { [weak project] _ in
-                Task { @MainActor in
-                    let newPath = project?.currentProject?.path
-                    guard newPath != currentProjectPath else { return }
-                    currentProjectPath = newPath
-                    updateProjectStorageDirectory(projectPath: newPath)
-                }
+        projectObserver = project.addObserver { [weak project] event in
+            guard case .currentProjectChanged = event else { return }
+            let newPath = project?.currentProject?.path
+            guard newPath != currentProjectPath else { return }
+            currentProjectPath = newPath
+            updateProjectStorageDirectory(projectPath: newPath)
             }
     }
 
@@ -116,7 +114,8 @@ enum MindMapDesignerRuntime {
 
     /// 测试辅助：重置所有运行时状态（含 app / project 路径及订阅）。
     static func reset() {
-        projectCancellable = nil
+        projectObserver?.cancel()
+        projectObserver = nil
         appStorageDirectory = nil
         projectStorageDirectory = nil
         currentProjectPath = nil

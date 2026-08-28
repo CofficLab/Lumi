@@ -1,5 +1,4 @@
 import KitAgentTool
-import Combine
 import Foundation
 import KernelCore
 import ProviderProject
@@ -44,7 +43,7 @@ enum IconDesignerRuntime {
     /// `review_icon` 工具使用的 LLM 评审服务（宿主注入，可空）。
     static var designReviewLLM: (any IconDesignReviewLLMProviding)?
 
-    private static var projectCancellable: AnyCancellable?
+    private static var projectObserver: (any ProjectProvidingObserverHandle)?
     static let projectFolderName = "app-icon-designer"
 
     static func configure(kernel: KernelCoreContainer, pluginID: String) {
@@ -62,7 +61,8 @@ enum IconDesignerRuntime {
     }
 
     private static func installProjectObserver(kernel: KernelCoreContainer) {
-        projectCancellable = nil
+        projectObserver?.cancel()
+        projectObserver = nil
         guard let project = kernel.resolveProvider((any ProjectProviding).self) else {
             currentProjectPath = nil
             updateProjectStorageDirectory(projectPath: nil)
@@ -71,14 +71,12 @@ enum IconDesignerRuntime {
 
         currentProjectPath = project.currentProject?.path
         updateProjectStorageDirectory(projectPath: currentProjectPath)
-        projectCancellable = project.objectWillChange
-            .sink { [weak project] _ in
-                Task { @MainActor in
-                    let newPath = project?.currentProject?.path
-                    guard newPath != currentProjectPath else { return }
-                    currentProjectPath = newPath
-                    updateProjectStorageDirectory(projectPath: newPath)
-                }
+        projectObserver = project.addObserver { [weak project] event in
+            guard case .currentProjectChanged = event else { return }
+            let newPath = project?.currentProject?.path
+            guard newPath != currentProjectPath else { return }
+            currentProjectPath = newPath
+            updateProjectStorageDirectory(projectPath: newPath)
             }
     }
 
@@ -112,7 +110,8 @@ enum IconDesignerRuntime {
     }
 
     static func reset() {
-        projectCancellable = nil
+        projectObserver?.cancel()
+        projectObserver = nil
         appStorageDirectory = nil
         projectStorageDirectory = nil
         currentProjectPath = nil

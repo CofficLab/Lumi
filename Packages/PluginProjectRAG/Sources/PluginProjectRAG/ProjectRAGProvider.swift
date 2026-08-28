@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 import ProjectRAGEngine
 import ProviderProject
 import ProviderProjectRAG
@@ -10,13 +9,13 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
     private let service: RAGService
     private weak var project: (any ProjectProviding)?
     private var observers: [UUID: (ProjectRAGEvent) -> Void] = [:]
-    private var projectCancellable: AnyCancellable?
+    private var projectObserver: (any ProjectProvidingObserverHandle)?
 
     public init(service: RAGService, project: (any ProjectProviding)?) {
         self.service = service
         self.project = project
-        projectCancellable = project?.objectWillChange.sink { [weak self] _ in
-            guard let self else { return }
+        projectObserver = project?.addObserver { [weak self] event in
+            guard case .currentProjectChanged = event, let self else { return }
             self.notify(.projectChanged(self.currentProjectPath))
         }
     }

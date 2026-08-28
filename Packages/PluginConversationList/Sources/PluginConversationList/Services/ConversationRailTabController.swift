@@ -1,5 +1,5 @@
-import Combine
 import KernelCore
+import ProviderProject
 import ProviderRailView
 import ProviderRootView
 import SwiftUI
@@ -13,7 +13,7 @@ import SwiftUI
 ///
 /// 可见性在以下信号触发时重新评估（带去抖，避免一轮对话内反复查询 SQLite）：
 /// - `.lumiConversationsDidChange`：对话增删 / 标题 / 项目迁移；
-/// - `ProjectProviding.objectWillChange`：当前项目切换。
+/// - `ProjectProviding` 的 `.currentProjectChanged` 语义事件：当前项目切换。
 ///
 /// 所有评估均幂等：仅在期望状态与当前注册状态不一致时才执行 addTabs/removeTabs，
 /// 因此事件回环会在下一次评估中收敛为空操作。
@@ -32,7 +32,7 @@ final class ConversationRailTabController {
 
     private weak var rail: (any RailViewProviding)?
     private var conversationsObserver: NSObjectProtocol?
-    private var projectCancellable: AnyCancellable?
+    private var projectObserver: (any ProjectProvidingObserverHandle)?
     private var pendingRefresh: Task<Void, Never>?
     private var railVisibilityHandler: (@MainActor (AnyView?) -> Void)?
 
@@ -76,10 +76,9 @@ final class ConversationRailTabController {
         }
 
         if let project = context.project {
-            projectCancellable = project.objectWillChange
-                .receive(on: RunLoop.main)
-                .sink { [weak self] _ in
-                    self?.scheduleRefresh()
+            projectObserver = project.addObserver { [weak self] event in
+                guard case .currentProjectChanged = event else { return }
+                self?.scheduleRefresh()
                 }
         }
 
@@ -96,8 +95,8 @@ final class ConversationRailTabController {
             NotificationCenter.default.removeObserver(conversationsObserver)
         }
         conversationsObserver = nil
-        projectCancellable?.cancel()
-        projectCancellable = nil
+        projectObserver?.cancel()
+        projectObserver = nil
         railVisibilityHandler = nil
     }
 

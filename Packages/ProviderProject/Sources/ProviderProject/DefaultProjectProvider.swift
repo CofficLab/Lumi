@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import KitSuperLog
 import os
@@ -13,10 +12,10 @@ public final class DefaultProjectProvider: ProjectProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-project", category: "Project")
     public nonisolated static let emoji = "📁"
 
-    @Published public private(set) var currentProject: ProjectInfo?
-    @Published public private(set) var projects: [ProjectInfo] = []
-    @Published public private(set) var openFileURLs: [URL] = []
-    @Published public private(set) var currentFileURL: URL?
+    public private(set) var currentProject: ProjectInfo?
+    public private(set) var projects: [ProjectInfo] = []
+    public private(set) var openFileURLs: [URL] = []
+    public private(set) var currentFileURL: URL?
 
     private var observers: [WeakObserver] = []
 
