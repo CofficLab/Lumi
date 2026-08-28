@@ -1,0 +1,45 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    "%@ has unsaved changes." : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Close" : {
+
+    },
+    "Close Others" : {
+
+    },
+    "Discard Changes" : {
+
+    },
+    "No files open" : {
+
+    },
+    "OK" : {
+
+    },
+    "Pin Tab" : {
+
+    },
+    "Save Changes" : {
+
+    },
+    "Unable to close file" : {
+
+    },
+    "Unpin Tab" : {
+
+    },
+    "Unsaved Changes" : {
+
+    }
+  },
+  "version" : "1.0"
+}
