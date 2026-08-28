@@ -16,8 +16,8 @@ import SwiftUI
 
 /// 项目管理插件。
 ///
-/// - `onBoot` 中装配带持久化的 `ProjectsStore` + `ProjectsViewModel`,
-///   并通过 `ProjectsSyncCoordinator` 与内核已注册的 `ProjectProviding` 双向同步;
+/// - `onBoot` 中装配带持久化的 `ProjectsStore` + `ProjectsViewModel`，
+///   并通过 `ProjectProvidingObserver` 将内核 `ProjectProviding` 的状态同步到插件;
 /// - 注册 Agent 工具（list_projects / add_project / get_current_project）;
 /// - 贡献标题栏项目控件与设置页;
 /// - 通过 `willSendToLLM` 钩子将当前项目路径注入 LLM 上下文;
@@ -37,6 +37,8 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
+    private var viewModel: ProjectsViewModel?
+    private var projectObserver: ProjectProvidingObserver?
 
     public init() {}
 
@@ -68,13 +70,39 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
             store: store
         ).run()
 
-        // 3. 初始化 ViewModel
-        let viewModel = ProjectsViewModel(store: store)
+        guard let projectProvider = kernel.resolveProvider((any ProjectProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ProjectProviding")
+            return
+        }
 
-        // 4. 初始化同步协调器并绑定内核（ViewModel ↔ ProjectProviding）
-        let coordinator = ProjectsSyncCoordinator(viewModel: viewModel)
-        coordinator.kernel = kernel
-        ProjectsRuntime.configure(viewModel: viewModel, syncCoordinator: coordinator)
+        // 3. 恢复到 ProjectProviding。恢复只发生在启动装配阶段；运行时的
+        // 项目列表和当前项目始终以 ProjectProviding 为唯一来源。
+        let storedProjects = store.loadProjects()
+        if projectProvider.projects.isEmpty {
+            projectProvider.synchronizeProjects(storedProjects.map {
+                ProjectInfo(name: $0.name, path: $0.path, language: $0.language)
+            })
+        }
+        let storedCurrentProject = store.loadCurrentProject(from: storedProjects)
+
+        // 4. 初始化 ViewModel，并注册 Provider → ViewModel observer。
+        let viewModel = ProjectsViewModel(store: store, projectProvider: projectProvider)
+        self.viewModel = viewModel
+        projectObserver?.cancel()
+        let projectObserver = ProjectProvidingObserver(project: projectProvider, viewModel: viewModel)
+        self.projectObserver = projectObserver
+        ProjectsRuntime.configure(viewModel: viewModel, projectObserver: projectObserver)
+
+        // 恢复当前项目必须通过 ProjectProviding 执行，observer 会负责同步 ViewModel。
+        if projectProvider.currentProject == nil, let storedCurrentProject {
+            Task { @MainActor in
+                do {
+                    try await projectProvider.openProject(at: storedCurrentProject.path)
+                } catch {
+                    Self.logger.error("\(Self.t)Failed to restore current project: \(error.localizedDescription)")
+                }
+            }
+        }
 
         // 5. 注册 Agent 工具
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
@@ -157,6 +185,9 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        projectObserver?.cancel()
+        projectObserver = nil
+        viewModel = nil
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
                 toolManager.remove(id: tool.name)

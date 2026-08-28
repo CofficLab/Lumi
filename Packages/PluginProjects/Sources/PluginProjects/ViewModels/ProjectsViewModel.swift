@@ -1,17 +1,17 @@
-import Combine
 import Foundation
 import os
 import KitSuperLog
+import ProviderProject
 
-/// 项目视图模型，持有状态并暴露 Intent 给视图。
+/// 项目视图模型，持有插件视图状态并暴露 Intent 给视图。
 ///
 /// 职责：
-/// - 从 Store 加载初始状态
-/// - 持有 @Published 状态供视图观察
+/// - 缓存 `ProjectProviding` 的项目状态供视图观察
 /// - 暴露 Intent 方法供视图调用
 /// - 调用 Store 持久化数据
 ///
-/// 注意：ViewModel 不直接与内核交互，同步逻辑由 ProjectsSyncCoordinator 负责。
+/// 注意：`ProjectProviding` 是项目列表和当前项目的唯一运行时来源；
+/// ViewModel 不向外提供另一套项目状态，只保存 Provider 的视图快照。
 @MainActor
 public final class ProjectsViewModel: ObservableObject, SuperLog {
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.projects.viewmodel")
@@ -32,19 +32,22 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     // MARK: - Dependencies
 
     public let store: ProjectsStore
+    private let projectProvider: any ProjectProviding
 
     // MARK: - Init
 
-    public init(store: ProjectsStore) {
+    public init(store: ProjectsStore, projectProvider: any ProjectProviding) {
         if Self.verbose {
             Self.logger.info("\(Self.t)初始化开始")
         }
 
         self.store = store
+        self.projectProvider = projectProvider
 
-        // 从 Store 加载初始状态
-        self.projects = store.loadProjects()
-        self.currentProject = store.loadCurrentProject(from: projects)
+        // 运行时状态从 ProjectProviding 读取；Store 只由 ProjectsPlugin 在启动时
+        // 用于恢复 Provider，并在 Provider 事件后保存快照。
+        self.projects = []
+        self.currentProject = nil
 
         if Self.verbose {
             Self.logger.info("\(Self.t)初始化完成, 项目数量: \(self.projects.count), 当前项目: \(self.currentProject?.name ?? "nil")")
@@ -53,22 +56,46 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
 
     // MARK: - Intents
 
-    /// 选中项目：更新状态并持久化
+    /// 从 ProjectProviding 同步插件所需的项目快照。
+    ///
+    /// 该方法只读取 Provider，不向 Provider 写回项目状态。
+    func syncFromProvider(persist: Bool = true) {
+        let previousByPath = Dictionary(
+            uniqueKeysWithValues: projects.map { ($0.path, $0) }
+        )
+        let syncedProjects = projectProvider.projects.map { info in
+            ProjectEntry(
+                name: info.name,
+                path: info.path,
+                language: info.language,
+                lastUsed: previousByPath[info.path]?.lastUsed ?? Date()
+            )
+        }
+
+        projects = syncedProjects
+        if let info = projectProvider.currentProject {
+            currentProject = ProjectEntry(
+                name: info.name,
+                path: info.path,
+                language: info.language,
+                lastUsed: previousByPath[info.path]?.lastUsed ?? Date()
+            )
+        } else {
+            currentProject = nil
+        }
+
+        if persist {
+            persistAsync(projects: projects, currentProject: currentProject)
+        }
+    }
+
+    /// 选中项目：请求 ProjectProviding 打开项目。
     public func select(_ project: ProjectEntry) {
         if Self.verbose {
             Self.logger.info("\(Self.t)select: \(project.name) @ \(project.path)")
         }
 
-        let updatedProjects = store.selectProject(project, in: projects)
-        let updatedProject = ProjectEntry(
-            name: project.name, path: project.path, language: project.language
-        )
-
-        self.projects = updatedProjects
-        self.currentProject = updatedProject
-
-        // 持久化：写入是全量快照（atomic），下放到后台线程避免阻塞 UI。
-        persistAsync(projects: projects, currentProject: currentProject)
+        openProject(at: project.path)
     }
 
     /// 添加项目
@@ -79,15 +106,19 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         }
 
         let project = try store.add(path: path, to: projects)
+        let projectInfo = ProjectInfo(name: project.name, path: project.path, language: project.language)
 
         if shouldSelect {
-            select(project)
+            openProject(at: project.path)
         } else {
-            self.projects = store.addProject(project, to: projects)
-            if currentProject == nil {
-                currentProject = projects.first
+            var providerProjects = projectProvider.projects
+            if !providerProjects.contains(where: { $0.path == projectInfo.path }) {
+                providerProjects.insert(projectInfo, at: 0)
+                projectProvider.synchronizeProjects(providerProjects)
             }
-            persistAsync(projects: projects, currentProject: currentProject)
+            if projectProvider.currentProject == nil, let first = providerProjects.first {
+                openProject(at: first.path)
+            }
         }
 
         return project
@@ -99,13 +130,19 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)remove: \(project.name) @ \(project.path)")
         }
 
-        self.projects = store.removeProject(project, from: projects)
+        let wasCurrentProject = projectProvider.currentProject?.path == project.path
+        let remaining = projectProvider.projects.filter { $0.path != project.path }
+        projectProvider.synchronizeProjects(remaining)
 
-        if currentProject?.path == project.path {
-            currentProject = projects.first
+        if wasCurrentProject {
+            if let first = remaining.first {
+                openProject(at: first.path)
+            } else {
+                Task { @MainActor [projectProvider] in
+                    await projectProvider.closeProject()
+                }
+            }
         }
-
-        persistAsync(projects: projects, currentProject: currentProject)
     }
 
     /// 设置当前项目路径
@@ -118,8 +155,9 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
 
         // 空/空白路径 → "无项目"态
         guard !trimmed.isEmpty else {
-            currentProject = nil
-            persistAsync(projects: projects, currentProject: currentProject)
+            Task { @MainActor [projectProvider] in
+                await projectProvider.closeProject()
+            }
             return
         }
 
@@ -127,18 +165,13 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         let normalized = ProjectsStore.normalizedPath(trimmed)
 
         // 查找已存在的项目
-        if let existing = projects.first(where: { $0.path == normalized }) ?? projects.first(where: { $0.path == trimmed }) {
-            select(existing)
+        if let existing = projectProvider.projects.first(where: { $0.path == normalized }) ?? projectProvider.projects.first(where: { $0.path == trimmed }) {
+            openProject(at: existing.path)
             return
         }
 
         // 项目不在列表中：构造条目并选中（探测一次语言，供插件按项目类型筛选工具）
-        let entry = ProjectEntry(
-            name: ProjectsStore.directoryName(for: normalized),
-            path: normalized,
-            language: ProjectLanguageDetector.detect(at: normalized)
-        )
-        select(entry)
+        openProject(at: normalized)
     }
 
     /// 便捷方法：通过路径添加项目
@@ -150,6 +183,16 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     /// 便捷方法：通过 URL 添加并选项目
     public func addProject(url: URL) {
         _ = try? add(path: url.path, select: true)
+    }
+
+    private func openProject(at path: String) {
+        Task { @MainActor [projectProvider] in
+            do {
+                try await projectProvider.openProject(at: path)
+            } catch {
+                Self.logger.error("\(Self.t)打开项目失败: \(error.localizedDescription)")
+            }
+        }
     }
 
     // MARK: - Persistence
