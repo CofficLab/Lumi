@@ -102,5 +102,6 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
                 TreeView(context: context)
             }
         ])
+        railView.activateGroup(id: id)
     }
 }
