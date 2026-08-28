@@ -8,7 +8,6 @@ import ProviderDocsView
 import ProviderRailView
 import ProviderStorage
 import ProviderToolbar
-import ProviderWorkspace
 import KitSuperLog
 import SwiftUI
 
@@ -77,22 +76,6 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
-        let workspace = kernel.resolveProvider((any ProviderWorkspace.WorkspaceProviding).self)
-
-        workspace?.registerContainer(
-            WorkspaceContainer(
-                id: id,
-                title: name,
-                systemImage: "doc.on.doc",
-                order: order,
-                railVisibility: .alwaysVisible,
-                chatVisibility: .unsupported,
-                panelHeaderVisibility: .unsupported,
-                panelBodyVisibility: .unsupported,
-                panelBottomVisibility: .unsupported
-            ),
-            ownerPluginID: id
-        )
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
@@ -110,7 +93,6 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         ])
 
         contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: sharedViewModel)))
-        workspace?.activateContainer(id: id)
 
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
@@ -125,7 +107,6 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                     if state == .activated {
                         railView?.setVisibleTabID(Self.railTabID)
                         contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: self.sharedViewModel)))
-                        workspace?.activateContainer(id: self.id)
                         toolbar?.addToolbarItems([
                             ToolbarItem(
                                 id: "\(self.id).title",
@@ -217,7 +198,6 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
-        kernel.resolveProvider((any ProviderWorkspace.WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
         BookletMakerRuntimeBridge.directoryURL = nil
     }
 
