@@ -1,4 +1,5 @@
 import AppKit
+import EditorContracts
 import EditorLanguageRuntime
 import EditorService
 import EditorSource
@@ -24,12 +25,51 @@ public final class EditorHostSuperPlugin: SuperPlugin {
 
     public init() {}
 
+    private var editorService: EditorService?
+    private var editorAdapter: EditorProvidingV2Adapter?
+    private var embeddedEditorProvider: EmbeddedEditorSurfaceProvider?
+
     public func onBoot(kernel: KernelCoreContainer) throws {
-        let service = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
+        let registry = EditorExtensionRegistry()
+        let service = EditorService(editorExtensionRegistry: registry)
+        let contributions = EditorContributionRegistry(registry: registry)
+        let adapter = EditorProvidingV2Adapter(service: service, extensions: contributions)
+        adapter.surfaceBox.makeView = { [weak service] in
+            guard let service else {
+                return AnyView(EditorHostUnavailableView())
+            }
+            return AnyView(EditorSurfaceView(state: service.state))
+        }
+        let embeddedProvider = EmbeddedEditorSurfaceProvider(service: service)
+
         try kernel.registerProvider(EditorService.self, service)
-        try kernel.registerProvider(
-            EditorEmbeddedEditorProviding.self,
-            EmbeddedEditorSurfaceProvider(service: service)
+        try kernel.registerProvider(EditorProvidingV2.self, adapter)
+        try kernel.registerProvider(EditorSurfaceProviding.self, adapter.surface)
+        try kernel.registerProvider(EditorEmbeddedEditorProviding.self, embeddedProvider)
+
+        editorService = service
+        editorAdapter = adapter
+        embeddedEditorProvider = embeddedProvider
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        editorService?.cleanupForTeardown()
+        kernel.unregisterProvider(EditorEmbeddedEditorProviding.self)
+        kernel.unregisterProvider(EditorSurfaceProviding.self)
+        kernel.unregisterProvider(EditorProvidingV2.self)
+        kernel.unregisterProvider(EditorService.self)
+        embeddedEditorProvider = nil
+        editorAdapter = nil
+        editorService = nil
+    }
+}
+
+private struct EditorHostUnavailableView: View {
+    var body: some View {
+        ContentUnavailableView(
+            "Editor unavailable",
+            systemImage: "exclamationmark.triangle",
+            description: Text("The editor service is no longer available.")
         )
     }
 }
