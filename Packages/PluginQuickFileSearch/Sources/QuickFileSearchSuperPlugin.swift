@@ -16,9 +16,15 @@ public final class QuickFileSearchSuperPlugin: SuperPlugin, SuperLog {
     public init() {}
     public func onBoot(kernel: KernelCoreContainer) throws {
         let project = kernel.resolveProvider((any ProjectProviding).self)
+        if project == nil {
+            Self.logger.error("\(Self.t) ProjectProviding not found")
+        }
         QuickFileSearchBridge.selectFileHandler = { path, _ in
             Task { @MainActor in
-                guard let documents = kernel.resolveProvider((any EditorDocumentProviding).self) else { return }
+                guard let documents = kernel.resolveProvider((any EditorDocumentProviding).self) else {
+                    Self.logger.error("\(Self.t) EditorDocumentProviding not found")
+                    return
+                }
                 _ = try? await documents.open(EditorOpenRequest(uri: URL(fileURLWithPath: path)))
             }
         }
