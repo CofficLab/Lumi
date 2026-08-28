@@ -9,13 +9,16 @@ import ProviderStorage
 import SwiftUI
 #if canImport(AppKit)
 import AppKit
+import KitSuperLog
+import os
 #endif
 
 /// V2 activity dashboard. It preserves the legacy heatmap's three time ranges,
 /// daily message intensity, token trend, and persisted range preference while
 /// consuming only KernelCore providers.
 @MainActor
-public final class ActivityHeatmapPlugin: SuperPlugin {
+public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.activity-heatmap", category: "ActivityHeatmap")
     public let id = "com.coffic.activity-heatmap"
     public let order = 9
     public let metadata = PluginMetadata(
