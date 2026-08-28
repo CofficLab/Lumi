@@ -43,6 +43,7 @@ import PluginLLMProviderOpenRouter
 import PluginLLMProviderSettings
 import PluginLLMProviderStepFun
 import PluginLLMProviderSublyx
+import PluginLLMProviderTencent
 import PluginLLMProviderXiaomi
 import PluginLLMProviderXybbz
 import PluginLLMProviderZhipu
