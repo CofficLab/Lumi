@@ -105,7 +105,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     guard state == .activated else { return }
-                    railView?.setVisibleCategories([.system])
+                    railView?.setVisibleTabID(Self.railTabID)
                     contentView?.setContentView(AnyView(
                         DiskManagerView(categoryStore: self.categoryStore, workspace: self.workspace)
                     ))
