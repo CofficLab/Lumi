@@ -36,9 +36,18 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else { return }
+        guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
+            Self.logger.error("\(Self.t) SettingViewProviding not found")
+            return
+        }
         let messages = kernel.resolveProvider((any MessageManaging).self)
+        if messages == nil {
+            Self.logger.error("\(Self.t) MessageManaging not found")
+        }
         let idleTime = kernel.resolveProvider((any IdleTimeProviding).self)
+        if idleTime == nil {
+            Self.logger.error("\(Self.t) IdleTimeProviding not found")
+        }
         let directory = kernel.resolveProvider((any StorageProviding).self)?
             .pluginDataDirectory(for: "ActivityHeatmap")
         ActivityHeatmapViewModel.restoreLegacyPeriodIfNeeded(from: directory)
