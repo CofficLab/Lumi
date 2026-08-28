@@ -40,6 +40,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             return
         }
         let entryID = "\(id).entry"
+        
         activityBar.addItems([ActivityBarItem(
             id: entryID,
             title: LumiPluginLocalization.string("Chat", bundle: .module),
@@ -51,14 +52,11 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             chat.setVisible(isChatActive)
             chat.setContextActive(isChatActive)
             rootView.setContentViewHidden(isChatActive)
-            if isChatActive {
-                rail.activateGroup(id: self.id)
-            }
         }])
+        
         activityBar.activateItem(id: entryID)
         chat.setVisible(true)
         chat.setContextActive(true)
-        rail.activateGroup(id: id)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
