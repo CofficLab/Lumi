@@ -5,9 +5,12 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderToolbar
 import SwiftUI
+import KitSuperLog
+import os
 
 @MainActor
-public final class RegistryManagerSuperPlugin: SuperPlugin {
+public final class RegistryManagerSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.registry-manager", category: "RegistryManager")
     public let id = "com.coffic.lumi.plugin.registry-manager"
     public let order = 80
     public let metadata = PluginMetadata(
