@@ -18,7 +18,7 @@ struct FactoryAppIconDesignerTests {
             $0.ownerPluginID == FactoryAppIconDesigner.appIconDesignerPluginID
         } == true)
         #expect(kernel.resolveProvider((any RailViewProviding).self)?.tabs.contains {
-            $0.groupID == FactoryAppIconDesigner.appIconDesignerPluginID
+            $0.id == "app-icon-designer.documents"
         } == true)
         let toolNames = Set(kernel.resolveProvider((any ToolManagerProviding).self)?.allTools().map(\.name) ?? [])
         #expect([

@@ -84,7 +84,6 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
-                groupID: id,
                 title: PluginDiskManagerLocalization.string("Cleanup"),
                 systemImage: "list.bullet.indent",
                 order: order
@@ -108,7 +107,6 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
                     contentView?.setContentView(AnyView(
                         DiskManagerView(categoryStore: self.categoryStore, workspace: self.workspace)
                     ))
-                    railView?.activateGroup(id: self.id)
                 },
             ])
         } else {

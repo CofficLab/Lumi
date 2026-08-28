@@ -10,8 +10,6 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderPluginControl
 import ProviderProject
-import ProviderRailView
-import ProviderRootView
 import SwiftUI
 import Testing
 
@@ -33,14 +31,10 @@ struct CodeEditorSuperPluginTests {
         let content = TestContentProvider()
         let docs = DefaultDocsViewProviding()
         let project = DefaultProjectProvider()
-        let rail = DefaultRailViewProviding()
-        let root = TestRootViewProvider()
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
         try kernel.registerProvider((any ContentViewProviding).self, content)
         try kernel.registerProvider((any DocsViewProviding).self, docs)
         try kernel.registerProvider((any ProjectProviding).self, project)
-        try kernel.registerProvider((any RailViewProviding).self, rail)
-        try kernel.registerProvider((any RootViewProviding).self, root)
         let workspace = CodeEditorSuperPlugin()
         try kernel.start(plugins: [EditorHostSuperPlugin(), workspace])
         let control = DefaultPluginControlling(kernel: kernel)
@@ -52,7 +46,6 @@ struct CodeEditorSuperPluginTests {
         #expect(activity.items.filter { $0.id == CodeEditorSuperPlugin.activityItemID }.count == 1)
         activity.activateItem(id: CodeEditorSuperPlugin.activityItemID)
         #expect(content.setCount == 1)
-        #expect(root.railSetCount == 1)
 
         let file = FileManager.default.temporaryDirectory
             .appendingPathComponent("CodeEditorPlugin-\(UUID().uuidString).swift")
@@ -92,24 +85,4 @@ private final class TestContentProvider: ContentViewProviding {
     }
 
     func makeContentView() -> AnyView { AnyView(EmptyView()) }
-}
-
-@MainActor
-private final class TestRootViewProvider: RootViewProviding {
-    private(set) var railSetCount = 0
-
-    func setToolbarView(_ view: AnyView?) {}
-    func setActivityBarView(_ view: AnyView?) {}
-
-    func setRailView(_ view: AnyView?) {
-        railSetCount += 1
-    }
-
-    func setContentHeaderView(_ view: AnyView?) {}
-    func setContentView(_ view: AnyView?) {}
-    func setTrailingPane(_ pane: RootTrailingPane?) {}
-
-    func makeRootView() -> AnyView {
-        AnyView(EmptyView())
-    }
 }

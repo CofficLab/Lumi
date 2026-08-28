@@ -7,7 +7,6 @@ import ProviderConversation
 import ProviderConversationState
 import ProviderProject
 import ProviderRailView
-import ProviderRootView
 import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
@@ -52,7 +51,6 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
             return
         }
         let rail = kernel.resolveProvider((any RailViewProviding).self)
-        let root = kernel.resolveProvider((any RootViewProviding).self)
         let project = kernel.resolveProvider((any ProjectProviding).self)
         let agentTurn = kernel.resolveProvider((any AgentLoopProviding).self)
         let conversationState = kernel.resolveProvider((any ConversationStateProviding).self)
@@ -73,16 +71,14 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
         }
 
         // 1. Rail 侧栏：chats / project-chats 动态注册。
-        let railGroupID = "com.coffic.lumi.plugin.chat-panel"
         let controller = ConversationRailTabController(
             context: context,
             attentionStore: attentionStore,
             sortStabilizer: sortStabilizer,
             order: order,
-            groupID: railGroupID,
             pluginID: id
         )
-        controller.start(rail: rail, root: root)
+        controller.start(rail: rail)
         railTabController = controller
 
         // 2. 全局标题栏按钮 + popover（复刻旧版 titleToolbarItems / .trailing）。

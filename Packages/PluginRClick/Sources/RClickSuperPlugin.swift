@@ -44,7 +44,6 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
         rail?.addTabs([
             RailTabItem(
                 id: railTabID,
-                groupID: id,
                 title: LumiPluginLocalization.string("Preview", bundle: .module),
                 systemImage: "eye",
                 order: order
@@ -60,12 +59,9 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "cursorarrow.click.2",
                 order: order,
                 ownerPluginID: id
-            ) { [id, activityItemID] activeID in
+            ) { [activityItemID] activeID in
                 if activeID == activityItemID {
                     content?.setContentView(AnyView(RClickSettingsView()))
-                    rail?.activateGroup(id: id)
-                } else if rail?.activeGroupID == id {
-                    rail?.activateGroup(id: nil)
                 }
             },
         ])

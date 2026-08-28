@@ -1,7 +1,6 @@
 import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
-import ProviderRailView
 import ProviderRootView
 import KitSuperLog
 import os
@@ -29,10 +28,6 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         }
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding from kernel")
-            return
-        }
-        guard let rail = kernel.resolveProvider((any RailViewProviding).self) else {
-            Self.logger.error("\(Self.t)Failed to resolve RailViewProviding from kernel")
             return
         }
         guard let rootView = kernel.resolveProvider((any RootViewProviding).self) else {

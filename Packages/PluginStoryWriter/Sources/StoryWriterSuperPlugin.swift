@@ -41,14 +41,13 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let rail = kernel.resolveProvider((any RailViewProviding).self)
         let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
+        let containerID = id
         workspace?.registerContainer(WorkspaceContainer(id: id, title: metadata.name, systemImage: "book.closed.fill", order: order, railVisibility: .alwaysVisible, chatVisibility: .alwaysVisible, panelHeaderVisibility: .unsupported, panelBodyVisibility: .unsupported, panelBottomVisibility: .unsupported), ownerPluginID: id)
-        rail?.addTabs([RailTabItem(id: railID, groupID: id, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
-        kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([ActivityBarItem(id: entryID, title: metadata.name, systemImage: "book.closed.fill", order: order, ownerPluginID: id) { [entryID, id, railID] activeID in
+        rail?.addTabs([RailTabItem(id: railID, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
+        kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([ActivityBarItem(id: entryID, title: metadata.name, systemImage: "book.closed.fill", order: order, ownerPluginID: id) { [entryID] activeID in
             guard activeID == entryID else { return }
             content?.setContentView(AnyView(StoryWriterRootView()))
-            rail?.activateGroup(id: id)
-            rail?.activateTab(id: railID)
-            workspace?.activateContainer(id: id)
+            workspace?.activateContainer(id: containerID)
         }])
         content?.setContentView(AnyView(StoryWriterRootView()))
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {

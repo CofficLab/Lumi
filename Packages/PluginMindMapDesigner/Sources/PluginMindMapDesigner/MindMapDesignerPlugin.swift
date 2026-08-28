@@ -62,7 +62,6 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
-                groupID: id,
                 title: MindMapLocalization.string("Mind Maps"),
                 systemImage: "doc.text",
                 order: order
@@ -84,13 +83,11 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
                     guard activeItemID == entryID else { return }
                     MindMapStore.shared.reload()
                     contentView?.setContentView(AnyView(MindMapDesignerView()))
-                    railView?.activateGroup(id: self.id)
                 },
             ])
         } else {
             MindMapStore.shared.reload()
             contentView?.setContentView(AnyView(MindMapDesignerView()))
-            railView?.activateGroup(id: id)
         }
     }
 

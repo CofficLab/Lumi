@@ -2,7 +2,6 @@ import KernelCore
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
-import ProviderRailView
 import SwiftUI
 import KitSuperLog
 import os
@@ -40,8 +39,6 @@ public final class WhiteNoisePlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
-        let railView = kernel.resolveProvider((any RailViewProviding).self)
-
         // 1. 注册 ActivityBar 入口；激活后由插件切换自己的主内容。
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
@@ -55,7 +52,6 @@ public final class WhiteNoisePlugin: SuperPlugin, SuperLog {
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
                     contentView?.setContentView(AnyView(WhiteNoiseView()))
-                    railView?.activateGroup(id: self.id)
                 },
             ])
         } else {

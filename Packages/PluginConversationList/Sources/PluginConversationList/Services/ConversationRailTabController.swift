@@ -1,14 +1,13 @@
 import KernelCore
 import ProviderProject
 import ProviderRailView
-import ProviderRootView
 import SwiftUI
 
 /// 对话列表侧栏标签（`chats` / `project-chats`）的动态可见性控制器。
 ///
 /// 复刻旧版 ConversationListPlugin.ConversationRailTabController，适配新版
 /// KernelCore / RailViewProviding 架构：
-/// - `chats`：全库存在任意顶层对话时展示，否则彻底隐藏主入口；
+/// - `chats`：全库存在任意顶层对话时展示，否则不注册该标签；
 /// - `project-chats`：全库顶层对话来自 ≥2 个项目且当前项目确有对话时展示。
 ///
 /// 可见性在以下信号触发时重新评估（带去抖，避免一轮对话内反复查询 SQLite）：
@@ -24,8 +23,6 @@ final class ConversationRailTabController {
 
     /// 与插件 `order` 保持一致，使两个标签同序并排于插件所属位置。
     private let order: Int
-    /// Rail 标签所属分组：与 Chat 工作台一致，由 ChatPanelPlugin 激活。
-    private let groupID: String
     private let context: ConversationListContext
     private let attentionStore: ConversationAttentionStore
     private let sortStabilizer: ConversationSortStabilizer
@@ -34,36 +31,25 @@ final class ConversationRailTabController {
     private var conversationsObserver: NSObjectProtocol?
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private var pendingRefresh: Task<Void, Never>?
-    private var railVisibilityHandler: (@MainActor (AnyView?) -> Void)?
 
     init(
         context: ConversationListContext,
         attentionStore: ConversationAttentionStore,
         sortStabilizer: ConversationSortStabilizer,
         order: Int,
-        groupID: String,
         pluginID: String
     ) {
         self.context = context
         self.attentionStore = attentionStore
         self.sortStabilizer = sortStabilizer
         self.order = order
-        self.groupID = groupID
         self.chatsTabID = "\(pluginID).chats"
         self.projectTabID = "\(pluginID).project-chats"
     }
 
     /// 启动观察并执行首次评估。重复调用会刷新订阅（覆盖旧 token）。
-    func start(rail: (any RailViewProviding)?, root: (any RootViewProviding)?) {
+    func start(rail: (any RailViewProviding)?) {
         self.rail = rail
-        railVisibilityHandler = { [weak root] view in
-            root?.setRailView(view)
-        }
-
-        // Rail provider 本身会一直存在于新版内核中，但新用户不应看到一个
-        // 没有任何内容的 Rail pane。先撤掉根布局中的 Rail，首次评估有数据
-        // 后再注入；后续由对话变化驱动同样的切换。
-        root?.setRailView(nil)
 
         conversationsObserver = NotificationCenter.default.addObserver(
             forName: .lumiConversationsDidChange,
@@ -82,8 +68,7 @@ final class ConversationRailTabController {
                 }
         }
 
-        // 初始不注册对话 Rail，避免新用户先看到空侧栏；首次评估负责按数据
-        // 注册 `chats` / `project-chats` 并把 Rail 注入根布局。
+        // 首次评估负责按数据注册 `chats` / `project-chats`。
         scheduleRefresh()
     }
 
@@ -97,7 +82,6 @@ final class ConversationRailTabController {
         conversationsObserver = nil
         projectObserver?.cancel()
         projectObserver = nil
-        railVisibilityHandler = nil
     }
 
     /// 去抖调度：取消上一个待执行任务，延迟刷新。
@@ -112,15 +96,13 @@ final class ConversationRailTabController {
 
     /// 重新评估两个标签的注册状态并收敛到期望状态。
     private func refresh() async {
-        // `chats`：全库顶层对话总数 >0 时才展示——没有任何对话时隐藏主入口，
-        // 避免一个只能打开空列表的侧栏标签。
+        // `chats`：全库顶层对话总数 >0 时才注册，避免出现空标签。
         let appCount = await context.conversations.conversationCount(projectPath: nil)
         reconcile(
             tabID: chatsTabID,
             desiredVisible: appCount > 0,
             item: makeChatsItem()
         )
-        syncRootRailVisibility(hasConversations: appCount > 0)
 
         // `project-chats`：全库无对话时必然隐藏（短路，省去项目多样性查询）；
         // 否则沿用既有判定——全库 ≥2 个项目且当前项目确有对话。
@@ -154,15 +136,6 @@ final class ConversationRailTabController {
         }
     }
 
-    /// Rail provider 是常驻依赖，根布局中的 Rail pane 则随对话数据按需存在。
-    private func syncRootRailVisibility(hasConversations: Bool) {
-        guard let rail else { return }
-        // RootViewProviding 只持有已构建的 AnyView，因此这里在隐藏后重新构建
-        // Rail view，确保下一次从 nil 恢复时仍绑定同一个 provider。
-        // 通过闭包保留根布局引用会让控制器不承担新的所有权关系。
-        railVisibilityHandler?(hasConversations ? rail.makeRailView() : nil)
-    }
-
     // MARK: - Item Builders
 
     /// 构造 `chats` 标签项（`order` 显式设置以匹配插件排序——动态注册不经
@@ -173,7 +146,6 @@ final class ConversationRailTabController {
         let sortStabilizer = sortStabilizer
         return RailTabItem(
             id: chatsTabID,
-            groupID: groupID,
             title: "对话",
             systemImage: "message.fill",
             order: order
@@ -193,7 +165,6 @@ final class ConversationRailTabController {
         let sortStabilizer = sortStabilizer
         return RailTabItem(
             id: projectTabID,
-            groupID: groupID,
             title: "项目",
             systemImage: "folder.fill",
             order: order

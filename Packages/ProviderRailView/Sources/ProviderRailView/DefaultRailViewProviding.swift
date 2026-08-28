@@ -8,11 +8,7 @@ import SwiftUI
 @MainActor
 public final class DefaultRailViewProviding: RailViewProviding, ObservableObject {
     @Published public private(set) var tabs: [RailTabItem] = []
-    @Published public private(set) var activeGroupID: String?
     @Published public private(set) var activeTabID: String?
-
-    /// 记住每个分组最后一次选中的标签。
-    private var rememberedTabIDs: [String: String] = [:]
 
     public init() {}
 
@@ -21,62 +17,28 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         reconcileActiveTab()
     }
 
-    public func activateGroup(id: String?) {
-        guard activeGroupID != id else {
-            reconcileActiveTab()
-            return
-        }
-        rememberActiveTab()
-        activeGroupID = id
-        reconcileActiveTab()
-    }
-
     public func activateTab(id: String?) {
-        guard let groupID = activeGroupID else {
-            activeTabID = nil
-            return
-        }
         guard let id else {
             activeTabID = nil
-            rememberedTabIDs[groupID] = nil
             return
         }
-        guard visibleTabs.contains(where: { $0.id == id }) else { return }
+        guard tabs.contains(where: { $0.id == id }) else { return }
         activeTabID = id
-        rememberedTabIDs[groupID] = id
     }
 
     public func makeRailView() -> AnyView {
         AnyView(RailView(provider: self))
     }
 
-    fileprivate var visibleTabs: [RailTabItem] {
-        guard let activeGroupID else { return [] }
-        return tabs.filter { $0.groupID == activeGroupID }
-    }
-
-    private func rememberActiveTab() {
-        guard let groupID = activeGroupID, let activeTabID else { return }
-        rememberedTabIDs[groupID] = activeTabID
-    }
-
     private func reconcileActiveTab() {
-        let candidates = visibleTabs
-        guard let groupID = activeGroupID, !candidates.isEmpty else {
+        guard !tabs.isEmpty else {
             activeTabID = nil
             return
         }
-        if let activeTabID, candidates.contains(where: { $0.id == activeTabID }) {
-            rememberedTabIDs[groupID] = activeTabID
+        if let activeTabID, tabs.contains(where: { $0.id == activeTabID }) {
             return
         }
-        if let remembered = rememberedTabIDs[groupID],
-           candidates.contains(where: { $0.id == remembered }) {
-            activeTabID = remembered
-        } else {
-            activeTabID = candidates[0].id
-        }
-        rememberedTabIDs[groupID] = activeTabID
+        activeTabID = tabs[0].id
     }
 }
 
@@ -88,7 +50,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
 ///   分隔线由宿主的 `HSplitView` / `AppDivider` 提供）；
 /// - 标签栏复用 `AppToolbarContainer`（height 40、`.panel` 背景、
 ///   上下 8 / 左右 10 内边距）+ `AppTabBar(showText: false)`（图标式），
-///   并带 `borderBottom` + `shadowMd`；仅在当前分组多于一个 tab 时显示；
+///   并带 `borderBottom` + `shadowMd`；仅在 tab 数量大于一个时显示；
 /// - 内容区直接渲染激活 tab 视图（`.id` 保持切换动画），无内容时透明占位；
 /// - 整栏 `minWidth 200`、背景 `theme.surface`。
 private struct RailView: View {
@@ -96,10 +58,10 @@ private struct RailView: View {
     @LumiTheme private var theme
 
     var body: some View {
-        let visibleTabs = provider.visibleTabs
+        let visibleTabs = provider.tabs
 
         VStack(spacing: 0) {
-            // 标签栏：仅在当前分组多于一个 tab 时显示（复刻旧版 showsTabBar）。
+            // 标签栏：仅在 tab 数量大于一个时显示（复刻旧版 showsTabBar）。
             if let firstTab = visibleTabs.first, visibleTabs.count > 1 {
                 AppToolbarContainer(
                     height: 40,

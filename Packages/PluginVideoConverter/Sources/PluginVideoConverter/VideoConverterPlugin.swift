@@ -2,7 +2,6 @@ import KernelCore
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
-import ProviderRailView
 import SwiftUI
 import KitSuperLog
 import os
@@ -41,8 +40,6 @@ public final class VideoConverterPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
-        let railView = kernel.resolveProvider((any RailViewProviding).self)
-
         // 1. 在 ActivityBar 注册「视频转换」入口（沿用旧版 ActivityBar 容器入口）
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
@@ -56,7 +53,6 @@ public final class VideoConverterPlugin: SuperPlugin, SuperLog {
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
                     contentView?.setContentView(AnyView(VideoConverterMainView()))
-                    railView?.activateGroup(id: self.id)
                 },
             ])
         } else {

@@ -2,7 +2,6 @@ import KernelCore
 import PluginChatPanel
 import ProviderActivityBar
 import ProviderChatSection
-import ProviderRailView
 import ProviderRootView
 import Testing
 
@@ -15,11 +14,9 @@ struct ChatPanelPluginTests {
         let kernel = KernelCoreContainer()
         let activityBar = DefaultActivityBarProviding()
         let chat = DefaultChatSectionProviding()
-        let rail = DefaultRailViewProviding()
         let rootView = DefaultRootViewProvider()
         try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
-        try kernel.registerProvider((any RailViewProviding).self, rail)
         try kernel.registerProvider((any RootViewProviding).self, rootView)
 
         let plugin = ChatPanelPlugin()

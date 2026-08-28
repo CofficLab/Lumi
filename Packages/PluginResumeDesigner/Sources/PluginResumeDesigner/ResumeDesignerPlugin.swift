@@ -39,7 +39,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     private var promptSuggestion: PromptSuggestion {
-        PromptSuggestion(id: "\(id).create", title: ResumeDesignerLocalization.string("Prompt.Suggestion.Create"), order: order * 1_000, systemImage: "doc.badge.gearshape", action: .activateRailTab(id: Self.railTabID, railGroupID: id))
+        PromptSuggestion(id: "\(id).create", title: ResumeDesignerLocalization.string("Prompt.Suggestion.Create"), order: order * 1_000, systemImage: "doc.badge.gearshape", action: .activateRailTab(id: Self.railTabID))
     }
 
     private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
@@ -74,7 +74,6 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
-                groupID: id,
                 title: ResumeDesignerLocalization.string("Resumes"),
                 systemImage: "doc.text",
                 order: order
@@ -96,13 +95,11 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                     guard activeItemID == entryID else { return }
                     WorkspaceStore.shared.reload()
                     contentView?.setContentView(AnyView(DesignerView()))
-                    railView?.activateGroup(id: self.id)
                 },
             ])
         } else {
             WorkspaceStore.shared.reload()
             contentView?.setContentView(AnyView(DesignerView()))
-            railView?.activateGroup(id: id)
         }
     }
 

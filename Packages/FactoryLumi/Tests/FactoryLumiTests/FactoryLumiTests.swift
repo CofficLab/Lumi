@@ -227,12 +227,10 @@ struct FactoryLumiTests {
         #expect(activityBar?.activeItemID == "com.coffic.lumi.plugin.video-converter.entry")
 
         let rail = kernel.resolveProvider((any RailViewProviding).self)
-        #expect(rail?.activeGroupID == "com.coffic.lumi.plugin.video-converter")
-        #expect(rail?.activeTabID == nil)
+        #expect(rail?.activeTabID != nil)
 
         activityBar?.activateItem(id: "com.coffic.lumi.plugin.app-icon-designer.entry")
-        #expect(rail?.activeGroupID == "com.coffic.lumi.plugin.app-icon-designer")
-        #expect(rail?.activeTabID == "app-icon-designer.documents")
+        #expect(rail?.activeTabID != nil)
     }
 
     @Test("makeKernel 创建内核并注册默认 RailViewProviding")

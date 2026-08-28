@@ -12,7 +12,7 @@ import SwiftUI
 /// 与旧版 `AppLayoutView` 对齐的行为：
 /// - 主内容未注入、且无活跃内容时显示 `WelcomeView` 风格的欢迎占位；
 /// - ActivityBar 在存在至少两个入口时显示；
-/// - Rail 仅在存在活跃内容（且容器可见）时显示；
+/// - Rail 由宿主统一注入后常驻显示，不受当前插件容器影响；
 /// - 根视图应用主题背景、`appThemedAppearance`、`ThemeWindowAppearanceBridge`
 ///   与 `AppThemeVM` 环境对象（复刻旧版主题链）。
 @MainActor

@@ -67,15 +67,11 @@ public final class DefaultPromptSuggestionExecutor: PromptSuggestionExecuting {
         }
 
         switch suggestion.action {
-        case let .activatePluginEntry(activityBarItemID, railTabID, railGroupID):
+        case let .activatePluginEntry(activityBarItemID, railTabID):
             kernel.resolveProvider((any ActivityBarProviding).self)?
                 .activateItem(id: activityBarItemID)
-            kernel.resolveProvider((any RailViewProviding).self)?.activateGroup(id: railGroupID)
             kernel.resolveProvider((any RailViewProviding).self)?.activateTab(id: railTabID)
-        case let .activateRailTab(railTabID, railGroupID):
-            // Rail groups are selected by the plugin's ActivityBar callback.
-            // The suggestion only needs to select the requested tab after that.
-            kernel.resolveProvider((any RailViewProviding).self)?.activateGroup(id: railGroupID)
+        case let .activateRailTab(railTabID):
             kernel.resolveProvider((any RailViewProviding).self)?.activateTab(id: railTabID)
         default:
             break

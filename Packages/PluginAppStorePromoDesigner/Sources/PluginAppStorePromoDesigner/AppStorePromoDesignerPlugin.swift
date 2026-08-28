@@ -46,8 +46,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
             systemImage: "photo.artframe",
             action: .activatePluginEntry(
                 activityBarItemID: "\(id).entry",
-                railTabID: Self.railTabID,
-                railGroupID: id
+                railTabID: Self.railTabID
             )
         )
     }
@@ -101,7 +100,6 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
-                groupID: id,
                 title: PromoLocalization.string("Promo Tasks"),
                 systemImage: "photo.stack",
                 order: order
@@ -125,7 +123,6 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                     contentView?.setContentView(AnyView(PromoDesignerView()))
                     chat?.setVisible(true)
                     chat?.setContextActive(true)
-                    railView?.activateGroup(id: self.id)
                     workspace?.activateContainer(id: self.id)
                 },
             ])
@@ -134,7 +131,6 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
             contentView?.setContentView(AnyView(PromoDesignerView()))
             chat?.setVisible(true)
             chat?.setContextActive(true)
-            railView?.activateGroup(id: id)
             workspace?.activateContainer(id: id)
         }
     }

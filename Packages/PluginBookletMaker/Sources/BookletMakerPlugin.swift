@@ -95,7 +95,6 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
-                groupID: id,
                 title: name,
                 systemImage: "square.grid.2x2",
                 order: order
@@ -109,8 +108,6 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         ])
 
         contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: sharedViewModel)))
-        railView?.activateGroup(id: id)
-        railView?.activateTab(id: Self.railTabID)
         workspace?.activateContainer(id: id)
 
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
@@ -125,8 +122,6 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
                     contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: self.sharedViewModel)))
-                    railView?.activateGroup(id: self.id)
-                    railView?.activateTab(id: Self.railTabID)
                     workspace?.activateContainer(id: self.id)
                 },
             ])

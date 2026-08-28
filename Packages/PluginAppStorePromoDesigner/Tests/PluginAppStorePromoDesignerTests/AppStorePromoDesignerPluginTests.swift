@@ -64,7 +64,6 @@ struct AppStorePromoDesignerPluginTests {
         try await kernel.enablePlugin(id: AppStorePromoDesignerPlugin().id)
 
         #expect(activity.activeItemID == "com.coffic.lumi.plugin.app-store-promo-designer.entry")
-        #expect(rail.activeGroupID == AppStorePromoDesignerPlugin().id)
         #expect(rail.activeTabID == AppStorePromoDesignerPlugin.railTabID)
         #expect(workspace.activeContainerID == AppStorePromoDesignerPlugin().id)
         #expect(workspace.isChatVisible)

@@ -57,7 +57,7 @@ struct ResumeDesignerSuite {
     }
 
     @Test("启动后注册 ActivityBar 入口、Rail 标签与 Docs 文档，停止后全部撤回")
-    func registersAndActivatesContributions() throws {
+    func registersAndActivatesContributions() async throws {
         let kernel = KernelCoreContainer()
         let activity = DefaultActivityBarProviding()
         let rail = DefaultRailViewProviding()
@@ -74,11 +74,11 @@ struct ResumeDesignerSuite {
         try kernel.registerProvider((any StorageProviding).self, storage)
 
         try kernel.start(plugins: [ResumeDesignerPlugin()])
+        try await kernel.enablePlugin(id: ResumeDesignerPlugin().id)
 
         // ActivityBar 入口与 Rail 标签注册。
         #expect(activity.items.map(\.id) == ["com.coffic.lumi.plugin.resume-designer.entry"])
         #expect(rail.tabs.map(\.id) == [ResumeDesignerPlugin.railTabID])
-        #expect(rail.tabs.first?.groupID == "com.coffic.lumi.plugin.resume-designer")
         // Docs 关于页与说明书注册。
         #expect(docs.aboutEntries.map(\.id) == ["com.coffic.lumi.plugin.resume-designer"])
         #expect(docs.manualEntries.map(\.id) == ["com.coffic.lumi.plugin.resume-designer"])
@@ -93,7 +93,7 @@ struct ResumeDesignerSuite {
     }
 
     @Test("启动后 10 个 Agent 工具注册到 ToolManagerProviding，停止后移除")
-    func registersAndRemovesAgentTools() throws {
+    func registersAndRemovesAgentTools() async throws {
         let kernel = KernelCoreContainer()
         let toolManager = DefaultToolManagerProviding()
         let storage = TestStorage()
@@ -108,6 +108,7 @@ struct ResumeDesignerSuite {
         try kernel.registerProvider((any StorageProviding).self, storage)
 
         try kernel.start(plugins: [ResumeDesignerPlugin()])
+        try await kernel.enablePlugin(id: ResumeDesignerPlugin().id)
 
         // 10 个工具全部注册，且归入本插件分组。
         #expect(toolManager.allTools().count == 10)

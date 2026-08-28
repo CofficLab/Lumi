@@ -14,10 +14,9 @@ public enum PromptSuggestionStyle: Equatable, Sendable {
 public enum PromptSuggestionAction: Equatable, Sendable {
     case activatePluginEntry(
         activityBarItemID: String,
-        railTabID: String,
-        railGroupID: String
+        railTabID: String
     )
-    case activateRailTab(id: String, railGroupID: String)
+    case activateRailTab(id: String)
     case pickProjectFolder
     case openSettingsTab(String)
 }
