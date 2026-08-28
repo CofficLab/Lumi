@@ -30,9 +30,12 @@ public final class MLXProviderPlugin: SuperPlugin, SuperLog {
             MLXModelPaths.configure(rootDirectory: rootDirectory)
             MLXDownloadManager.shared.configure(rootDirectory: rootDirectory)
             MLXRuntime.shared.configure(rootDirectory: rootDirectory)
+        } else {
+            Self.logger.error("\(Self.t) StorageProviding not found")
         }
 
         guard let manager = kernel.resolveProvider((any LLMManaging).self) else {
+            Self.logger.error("\(Self.t) LLMManaging not found")
             return
         }
 
