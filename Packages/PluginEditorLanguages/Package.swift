@@ -8,6 +8,7 @@ let package = Package(
         .library(name: "PluginEditorLanguages", targets: ["PluginEditorLanguages"]),
     ],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../EditorService"),
         .package(path: "../EditorLanguageRuntime"),
@@ -27,6 +28,7 @@ let package = Package(
         .target(
             name: "PluginEditorLanguages",
             dependencies: [
+                "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "EditorLanguageRuntime", package: "EditorLanguageRuntime"),
