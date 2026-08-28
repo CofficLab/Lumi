@@ -4,9 +4,12 @@ import ProviderProject
 import ProviderRootView
 import ProviderSettingView
 import SwiftUI
+import KitSuperLog
+import os
 
 @MainActor
-public final class QuickFileSearchSuperPlugin: SuperPlugin {
+public final class QuickFileSearchSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.quick-file-search", category: "QuickFileSearch")
     public let id = "QuickFileSearch"
     public let order = 50
     public let metadata = PluginMetadata(id: "QuickFileSearch", name: "Quick File Search", description: "Search and open project files with Cmd+P.", category: .editor, stage: .preview, policy: .alwaysOn)
