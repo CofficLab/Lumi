@@ -2,10 +2,12 @@ import EditorContracts
 import EditorService
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderConversationInput
 import ProviderDocsView
 import ProviderProject
+import ProviderRailView
 import SwiftUI
 import KitSuperLog
 import os
@@ -37,6 +39,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private weak var activityBar: (any ActivityBarProviding)?
     private weak var contentView: (any ContentViewProviding)?
+    private weak var railView: (any RailViewProviding)?
 
     public init() {}
 
@@ -84,6 +87,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         guard let contentView = kernel.resolveProvider((any ContentViewProviding).self) else {
             throw KernelCoreError.providerNotRegistered(type: (any ContentViewProviding).self)
         }
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         uninstallContributions()
         let sendSelectionContributor = SendSelectionToConversationContributor(
             conversationInput: kernel.resolveProvider((any ConversationInputProviding).self)
@@ -102,6 +106,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         self.projectObserver = projectObserver
         self.activityBar = activityBar
         self.contentView = contentView
+        self.railView = kernel.resolveProvider((any RailViewProviding).self)
         activityBar.addItems([
             ActivityBarItem(
                 id: Self.activityItemID,
@@ -109,8 +114,12 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "chevron.left.forwardslash.chevron.right",
                 order: order,
                 ownerPluginID: id
-            ) { [weak contentView] activeItemID in
+            ) { [weak contentView, weak railView = self.railView, weak chat] activeItemID in
                 guard activeItemID == Self.activityItemID else { return }
+                // Code Editor 的 Rail 贡献属于项目工作区，激活入口时只显示项目分类。
+                railView?.setVisibleCategories([.project])
+                chat?.setVisible(true)
+                chat?.setContextActive(true)
                 contentView?.setContentView(AnyView(EditorWorkbenchView(
                     viewModel: viewModel,
                     surface: surface
@@ -126,6 +135,9 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         let ownedCurrentContent = activityBar?.activeItemID == Self.activityItemID
         activityBar?.removeItems(ids: [Self.activityItemID])
         if ownedCurrentContent { contentView?.setContentView(nil) }
+        if ownedCurrentContent {
+            railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
         projectObserver?.cancel()
         projectObserver = nil
         viewModel = nil
@@ -133,5 +145,6 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         editor = nil
         activityBar = nil
         contentView = nil
+        railView = nil
     }
 }
