@@ -10,9 +10,12 @@ import ProviderStorage
 import ProviderToolManager
 import ProviderWorkspace
 import SwiftUI
+import KitSuperLog
+import os
 
 @MainActor
-public final class StoryWriterSuperPlugin: SuperPlugin {
+public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.story-writer", category: "StoryWriter")
     public let id = "com.coffic.lumi.plugin.story-writer"
     public let order = 90
     public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.story-writer", name: "Story Writer", description: "A two-pane workspace for crafting stories with AI assistance.", category: .project, stage: .preview, policy: .disabledByDefault)
