@@ -116,8 +116,8 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { [weak contentView, weak railView = self.railView, weak chat] state in
                 guard state == .activated else { return }
-                // Code Editor 的 Rail 贡献属于项目工作区，激活入口时只显示项目分类。
-                railView?.setVisibleCategories([.project])
+                // Code Editor 激活时只显示文件树，避免带出其它项目类 RailView。
+                railView?.setVisibleCategories([.fileTree])
                 chat?.setVisible(true)
                 chat?.setContextActive(true)
                 contentView?.setContentView(AnyView(EditorWorkbenchView(
