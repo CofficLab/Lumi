@@ -8,13 +8,16 @@ import ProviderProject
 import ProviderWorkspace
 import SwiftUI
 import KitTerminalCore
+import KitSuperLog
+import os
 
 /// KernelCore entry point for the legacy terminal workspace.
 ///
 /// It keeps the established terminal session model and project-directory
 /// behavior while using V2 activity/content/workspace contributions.
 @MainActor
-public final class TerminalSuperPlugin: SuperPlugin {
+public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.terminal", category: "Terminal")
     public let id = "com.coffic.lumi.plugin.terminal"
     public let order = 279
     public let metadata = PluginMetadata(
