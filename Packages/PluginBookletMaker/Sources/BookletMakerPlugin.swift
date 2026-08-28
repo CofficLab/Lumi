@@ -76,6 +76,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         }
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         let workspace = kernel.resolveProvider((any ProviderWorkspace.WorkspaceProviding).self)
 
         workspace?.registerContainer(
@@ -121,24 +122,26 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                     order: order,
                     ownerPluginID: id
                 ) { state in
-                    guard state == .activated else { return }
-                    railView?.setVisibleCategories([.design])
-                    contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: self.sharedViewModel)))
-                    workspace?.activateContainer(id: self.id)
+                    if state == .activated {
+                        railView?.setVisibleTabID(Self.railTabID)
+                        contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: self.sharedViewModel)))
+                        workspace?.activateContainer(id: self.id)
+                        toolbar?.addToolbarItems([
+                            ToolbarItem(
+                                id: "\(self.id).title",
+                                title: BookletLocalization.string("Split PDF or Booklet Maker"),
+                                placement: .center,
+                                order: 200
+                            ) {
+                                BookletMakerToolbarTitleView(viewModel: self.sharedViewModel)
+                            },
+                        ])
+                    } else {
+                        toolbar?.removeToolbarItems(ids: ["\(self.id).title"])
+                    }
                 },
             ])
         }
-
-        kernel.resolveProvider((any ToolbarProviding).self)?.addToolbarItems([
-            ToolbarItem(
-                id: "\(id).title",
-                title: BookletLocalization.string("Split PDF or Booklet Maker"),
-                placement: .center,
-                order: 200
-            ) {
-                BookletMakerToolbarTitleView(viewModel: self.sharedViewModel)
-            },
-        ])
     }
 
     // MARK: - Save Panel
