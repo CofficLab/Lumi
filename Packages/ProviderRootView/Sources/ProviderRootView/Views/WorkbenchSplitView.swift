@@ -46,6 +46,7 @@ struct WorkbenchSplitView: View {
     private var mainContent: some View {
         RootMainContentView(
             contentHeaderView: provider.contentHeaderView,
+            isContentHeaderViewHidden: provider.isContentHeaderViewHidden,
             contentView: provider.contentView,
             contentFooterView: provider.contentFooterView,
             isContentViewHidden: provider.isContentViewHidden,

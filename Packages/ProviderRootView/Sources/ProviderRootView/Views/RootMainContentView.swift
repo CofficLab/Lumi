@@ -14,6 +14,7 @@ import ProviderWorkspace
 @MainActor
 struct RootMainContentView: View {
     let contentHeaderView: AnyView?
+    let isContentHeaderViewHidden: Bool
     let contentView: AnyView?
     let contentFooterView: AnyView?
     let isContentViewHidden: Bool
@@ -24,6 +25,7 @@ struct RootMainContentView: View {
 
     init(
         contentHeaderView: AnyView?,
+        isContentHeaderViewHidden: Bool,
         contentView: AnyView?,
         contentFooterView: AnyView?,
         isContentViewHidden: Bool,
@@ -33,6 +35,7 @@ struct RootMainContentView: View {
         workspace: (any WorkspaceProviding)?
     ) {
         self.contentHeaderView = contentHeaderView
+        self.isContentHeaderViewHidden = isContentHeaderViewHidden
         self.contentView = contentView
         self.contentFooterView = contentFooterView
         self.isContentViewHidden = isContentViewHidden
@@ -52,9 +55,9 @@ struct RootMainContentView: View {
 
     @ViewBuilder
     private var contentWithHeaderAndFooter: some View {
-        if contentHeaderView != nil || contentFooterView != nil {
+        if (contentHeaderView != nil && !isContentHeaderViewHidden) || contentFooterView != nil {
             VStack(spacing: 0) {
-                if let contentHeaderView {
+                if let contentHeaderView, !isContentHeaderViewHidden {
                     contentHeaderView
                         .zIndex(1)
                 }
@@ -78,7 +81,7 @@ struct RootMainContentView: View {
     /// 当入口不需要独立的主内容区时（如 ChatPanel，激活时 `contentView` 被置 nil），
     /// 三个插槽均为 nil，布局层据此跳过主内容区，让 trailing pane 独占。
     private var hasMainContent: Bool {
-        contentHeaderView != nil || contentView != nil || contentFooterView != nil
+        (contentHeaderView != nil && !isContentHeaderViewHidden) || contentView != nil || contentFooterView != nil
     }
 
     var body: some View {

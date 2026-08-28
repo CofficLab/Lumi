@@ -30,6 +30,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published var trailingPane: RootTrailingPane?
     @Published public private(set) var overlays: [RootOverlayItem] = []
     @Published public private(set) var isContentViewHidden: Bool = false
+    @Published public private(set) var isContentHeaderViewHidden: Bool = false
     var workspaceProvider: (any WorkspaceProviding)?
     private var workspaceSubscription: AnyCancellable?
 
@@ -99,6 +100,14 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         isContentViewHidden = hidden
         if Self.verbose {
             Self.logger.debug("\(self.t)set content view hidden: \(hidden)")
+        }
+    }
+
+    public func setContentHeaderViewHidden(_ hidden: Bool) {
+        guard isContentHeaderViewHidden != hidden else { return }
+        isContentHeaderViewHidden = hidden
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set content header hidden: \(hidden)")
         }
     }
 

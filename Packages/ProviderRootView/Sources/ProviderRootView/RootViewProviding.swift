@@ -57,6 +57,9 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     /// Header 与主内容视图独立贡献，适合项目文件标签、面包屑等横向内容。
     func setContentHeaderView(_ view: AnyView?)
 
+    var isContentHeaderViewHidden: Bool { get }
+    func setContentHeaderViewHidden(_ hidden: Bool)
+
     /// 注入主内容视图（传 `nil` 表示回退到占位）。
     ///
     /// 宿主通常把 `ContentViewProviding.makeContentView()` 的结果注入进来，
@@ -96,9 +99,11 @@ public protocol RootViewProviding: AnyObject, ObservableObject
 public extension RootViewProviding {
     var overlays: [RootOverlayItem] { [] }
     var isContentViewHidden: Bool { false }
+    var isContentHeaderViewHidden: Bool { false }
     func addOverlays(_ overlays: [RootOverlayItem]) {}
     func removeOverlays(ids: Set<String>) {}
     func setContentViewHidden(_ hidden: Bool) {}
+    func setContentHeaderViewHidden(_ hidden: Bool) {}
     func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?) {}
 }
 

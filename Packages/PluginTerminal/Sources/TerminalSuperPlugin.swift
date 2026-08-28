@@ -5,6 +5,8 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderProject
+import ProviderRailView
+import ProviderRootView
 import SwiftUI
 import KitTerminalCore
 import KitSuperLog
@@ -46,6 +48,8 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let project = kernel.resolveProvider((any ProjectProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
             ActivityBarItem(
                 id: "\(id).entry",
@@ -54,8 +58,14 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
                 order: order,
                 ownerPluginID: id
             ) { activeID in
-                guard activeID == "\(self.id).entry" else { return }
-                content?.setContentView(AnyView(TerminalV2MainView(project: project)))
+                if activeID == "\(self.id).entry" {
+                    rootView?.setRailView(nil)
+                    rootView?.setContentHeaderViewHidden(true)
+                    content?.setContentView(AnyView(TerminalV2MainView(project: project)))
+                } else {
+                    rootView?.setRailView(railView?.makeRailView())
+                    rootView?.setContentHeaderViewHidden(false)
+                }
             },
         ])
     }
@@ -64,7 +74,14 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
         TerminalTabsViewModel.shared.closeAllSessions()
         TerminalTabsViewModel.bottomPanel.closeAllSessions()
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            let rootView = kernel.resolveProvider((any RootViewProviding).self)
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            rootView?.setRailView(railView?.makeRailView())
+            rootView?.setContentHeaderViewHidden(false)
+        }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
