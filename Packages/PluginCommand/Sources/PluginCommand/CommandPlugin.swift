@@ -3,6 +3,8 @@ import Foundation
 import KernelCore
 import ProviderCommand
 import ProviderStorage
+import KitSuperLog
+import os
 
 // MARK: - Command SuperPlugin
 
@@ -11,7 +13,8 @@ import ProviderStorage
 /// 提供 `CommandProviding` 服务的默认实现。
 /// 负责管理所有插件的命令注册和查询。
 @MainActor
-public final class CommandPlugin: SuperPlugin {
+public final class CommandPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.command", category: "Command")
     public let id = "com.coffic.lumi.plugin.command"
     /// Command contributions start at order 1 and above. Install the definitive
     /// provider first so early plugins do not register into the factory fallback

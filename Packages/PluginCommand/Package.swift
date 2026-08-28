@@ -7,6 +7,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [.library(name: "PluginCommand", targets: ["PluginCommand"])],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../ProviderCommand"),
         .package(path: "../ProviderStorage"),
@@ -17,6 +18,7 @@ let package = Package(
         .target(
             name: "PluginCommand",
             dependencies: [
+                "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderCommand", package: "ProviderCommand"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
