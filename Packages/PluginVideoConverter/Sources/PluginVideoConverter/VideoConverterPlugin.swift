@@ -55,9 +55,14 @@ public final class VideoConverterPlugin: SuperPlugin, SuperLog {
                     order: order,
                     ownerPluginID: id
                 ) { state in
-                    guard state == .activated else { return }
-                    contentView?.setContentView(AnyView(VideoConverterMainView()))
-                    rootView?.setRailView(nil)
+                    if state == .activated {
+                        contentView?.setContentView(AnyView(VideoConverterMainView()))
+                        rootView?.setRailView(nil)
+                        rootView?.setContentHeaderViewHidden(true)
+                    } else {
+                        rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setContentHeaderViewHidden(false)
+                    }
                 },
             ])
         } else {
@@ -71,7 +76,9 @@ public final class VideoConverterPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
             let railView = kernel.resolveProvider((any RailViewProviding).self)
-            kernel.resolveProvider((any RootViewProviding).self)?.setRailView(railView?.makeRailView())
+            let rootView = kernel.resolveProvider((any RootViewProviding).self)
+            rootView?.setRailView(railView?.makeRailView())
+            rootView?.setContentHeaderViewHidden(false)
         }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
