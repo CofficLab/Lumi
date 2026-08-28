@@ -12,6 +12,10 @@ import SwiftUI
 /// 重新启用时自动恢复入口。
 @MainActor
 public struct ActivityBarItem: Identifiable {
+    public enum ActivationState: Sendable {
+        case activated
+        case deactivated
+    }
     public let id: String
     public let title: String
     public let systemImage: String
@@ -21,10 +25,11 @@ public struct ActivityBarItem: Identifiable {
     /// 插件管理器据此判断：插件卸载或禁用时移除该入口，重新启用时恢复。
     /// 为 nil 时表示该入口不受插件生命周期管理（如内置欢迎入口）。
     public let ownerPluginID: String?
-    /// ActivityBar 激活项变化时回调全部已注册项。
+    /// 该入口自身的激活状态变化时回调。
     ///
-    /// 插件比较传入 id 与自己的 `id`；命中时再激活自己的主内容。
-    public let onActiveItemChanged: @MainActor (String?) -> Void
+    /// ActivityBar 只向状态发生变化的入口发送通知：切换入口时，先通知旧入口
+    /// `deactivated`，再通知新入口 `activated`。
+    public let onActivationChanged: @MainActor (ActivationState) -> Void
 
     public init(
         id: String,
@@ -32,13 +37,13 @@ public struct ActivityBarItem: Identifiable {
         systemImage: String,
         order: Int = 200,
         ownerPluginID: String? = nil,
-        onActiveItemChanged: @escaping @MainActor (String?) -> Void = { _ in }
+        onActivationChanged: @escaping @MainActor (ActivationState) -> Void = { _ in }
     ) {
         self.id = id
         self.title = title
         self.systemImage = systemImage
         self.order = order
         self.ownerPluginID = ownerPluginID
-        self.onActiveItemChanged = onActiveItemChanged
+        self.onActivationChanged = onActivationChanged
     }
 }

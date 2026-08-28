@@ -49,35 +49,35 @@ struct ProviderActivityBarTests {
         #expect(provider.shouldDisplayActivityBar == true)
     }
 
-    @Test("激活项变化会回调全部已注册入口")
-    func activationNotifiesRegisteredItems() {
+    @Test("激活项变化只通知旧入口和新入口")
+    func activationNotifiesOnlyChangedItems() {
         let provider = DefaultActivityBarProviding()
         var received: [String] = []
         provider.registerItems([
-            ActivityBarItem(id: "a", title: "A", systemImage: "a") { activeID in
-                received.append("a:\(activeID ?? "nil")")
+            ActivityBarItem(id: "a", title: "A", systemImage: "a") { state in
+                received.append("a:\(state == .activated ? "on" : "off")")
             },
-            ActivityBarItem(id: "b", title: "B", systemImage: "b") { activeID in
-                received.append("b:\(activeID ?? "nil")")
+            ActivityBarItem(id: "b", title: "B", systemImage: "b") { state in
+                received.append("b:\(state == .activated ? "on" : "off")")
             },
         ])
 
-        #expect(received == ["a:a", "b:a"])
+        #expect(received == ["a:on"])
 
         provider.activateItem(id: "b")
 
         #expect(provider.activeItemID == "b")
-        #expect(received.suffix(2) == ["a:b", "b:b"])
+        #expect(received.suffix(2) == ["a:off", "b:on"])
     }
 
     @Test("移除当前激活入口会回退并通知剩余入口")
     func removingActiveItemActivatesFallback() {
         let provider = DefaultActivityBarProviding()
-        var bActivations: [String?] = []
+        var bActivations: [ActivityBarItem.ActivationState] = []
         provider.registerItems([
             ActivityBarItem(id: "a", title: "A", systemImage: "a"),
-            ActivityBarItem(id: "b", title: "B", systemImage: "b") { activeID in
-                bActivations.append(activeID)
+            ActivityBarItem(id: "b", title: "B", systemImage: "b") { state in
+                bActivations.append(state)
             },
         ])
         provider.activateItem(id: "b")
@@ -86,7 +86,7 @@ struct ProviderActivityBarTests {
 
         #expect(provider.activeItemID == "a")
         #expect(provider.items.map(\.id) == ["a"])
-        #expect(bActivations.last == "b")
+        #expect(bActivations.last == .deactivated)
     }
 
     @Test("未知入口不会改变当前激活项")

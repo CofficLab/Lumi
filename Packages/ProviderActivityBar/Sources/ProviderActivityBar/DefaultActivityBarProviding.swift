@@ -12,6 +12,7 @@ public final class DefaultActivityBarProviding: ActivityBarProviding, Observable
     public init() {}
 
     public func registerItems(_ items: [ActivityBarItem]) {
+        let previousItems = self.items
         self.items = items.sorted { $0.order < $1.order }
         let nextActiveID: String?
         if let activeItemID, self.items.contains(where: { $0.id == activeItemID }) {
@@ -19,7 +20,7 @@ public final class DefaultActivityBarProviding: ActivityBarProviding, Observable
         } else {
             nextActiveID = self.items.first?.id
         }
-        setActiveItemID(nextActiveID)
+        setActiveItemID(nextActiveID, previousItems: previousItems)
     }
 
     public func activateItem(id: String?) {
@@ -31,11 +32,19 @@ public final class DefaultActivityBarProviding: ActivityBarProviding, Observable
         AnyView(ActivityBarView(provider: self))
     }
 
-    private func setActiveItemID(_ id: String?) {
+    private func setActiveItemID(_ id: String?, previousItems: [ActivityBarItem]? = nil) {
         guard activeItemID != id else { return }
+        let previousID = activeItemID
         activeItemID = id
-        for item in items {
-            item.onActiveItemChanged(id)
+
+        if let previousID,
+           let previousItem = (previousItems ?? items).first(where: { $0.id == previousID }) {
+            previousItem.onActivationChanged(.deactivated)
+        }
+
+        if let id,
+           let nextItem = items.first(where: { $0.id == id }), id != previousID {
+            nextItem.onActivationChanged(.activated)
         }
     }
 }
