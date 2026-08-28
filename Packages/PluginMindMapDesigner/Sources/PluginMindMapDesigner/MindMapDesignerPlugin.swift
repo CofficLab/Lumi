@@ -6,6 +6,8 @@ import ProviderDocsView
 import ProviderRailView
 import ProviderToolManager
 import SwiftUI
+import KitSuperLog
+import os
 
 /// KernelCore 版本的思维导图设计器插件。
 ///
@@ -13,7 +15,8 @@ import SwiftUI
 /// 形态对齐 `PluginAppStorePromoDesigner` / `PluginAppIconDesigner`：
 /// SuperPlugin + SuperAgentTool + Provider 注册表。
 @MainActor
-public final class MindMapDesignerPlugin: SuperPlugin {
+public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.mind-map", category: "MindMapDesigner")
     /// Preserve the legacy plugin identity so enablement and app-scope data
     /// continue to resolve under the same key after the KernelCore migration.
     public let id = "com.coffic.lumi.plugin.mind-map"

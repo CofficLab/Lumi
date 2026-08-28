@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "PluginMindMapDesigner", targets: ["PluginMindMapDesigner"]),
     ],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KernelCore"),
         .package(path: "../KitLocalization"),
@@ -25,6 +26,7 @@ let package = Package(
         .target(
             name: "PluginMindMapDesigner",
             dependencies: [
+                "KitSuperLog",
                 "KitAgentTool",
                 "KernelCore",
                 "KitLocalization",
