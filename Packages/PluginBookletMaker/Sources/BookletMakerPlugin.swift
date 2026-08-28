@@ -120,8 +120,8 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                     systemImage: "doc.on.doc",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
+                ) { state in
+                    guard state == .activated else { return }
                     railView?.setVisibleCategories([.design])
                     contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: self.sharedViewModel)))
                     workspace?.activateContainer(id: self.id)

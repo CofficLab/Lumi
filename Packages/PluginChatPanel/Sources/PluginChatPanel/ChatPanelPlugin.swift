@@ -44,8 +44,8 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             systemImage: "bubble.left.and.bubble.right.fill",
             order: order,
             ownerPluginID: id
-        ) { activeID in
-            let isChatActive = activeID == entryID
+        ) { state in
+            let isChatActive = state == .activated
             chat.setVisible(isChatActive)
             chat.setContextActive(isChatActive)
             rootView.setContentViewHidden(isChatActive)

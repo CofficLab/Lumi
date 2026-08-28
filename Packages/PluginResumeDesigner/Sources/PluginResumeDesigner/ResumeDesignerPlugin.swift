@@ -94,8 +94,8 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                     systemImage: "doc.badge.gearshape",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
+                ) { state in
+                    guard state == .activated else { return }
                     railView?.setVisibleCategories([.design])
                     chat?.setVisible(true)
                     chat?.setContextActive(true)

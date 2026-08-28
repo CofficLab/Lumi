@@ -107,8 +107,8 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                     systemImage: "app.dashed",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
+                ) { state in
+                    guard state == .activated else { return }
                     railView?.setVisibleCategories([.design])
                     IconDocumentStore.shared.reload()
                     contentView?.setContentView(AnyView(DesignerView()))

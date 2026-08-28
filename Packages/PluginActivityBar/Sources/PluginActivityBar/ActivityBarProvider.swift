@@ -56,6 +56,7 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
         if Self.verbose {
             Self.logger.info("\(Self.t)替换入口：\(items.count, privacy: .public) 项")
         }
+        let previousItems = self.items
         self.items = items.sorted { $0.order < $1.order }
 
         // 激活态校正：当前激活项若仍存在则保留，否则回退到首个（无入口时 nil）。
@@ -65,7 +66,7 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
         } else {
             nextActiveID = self.items.first?.id
         }
-        setActiveItemID(nextActiveID)
+        setActiveItemID(nextActiveID, previousItems: previousItems)
 
         // 局部缓存，便于日志/调试观察。
         customItems = self.items
@@ -140,12 +141,20 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
 
     // MARK: - Private
 
-    /// 更新激活态，仅在实际变化时触发 `@Published` 变更与全部已注册项的回调。
-    private func setActiveItemID(_ id: String?) {
+    /// 更新激活态，仅在实际变化时触发 `@Published` 变更，并通知状态发生变化的入口。
+    private func setActiveItemID(_ id: String?, previousItems: [ActivityBarItem]? = nil) {
         guard activeItemID != id else { return }
+        let previousID = activeItemID
         activeItemID = id
-        for item in items {
-            item.onActiveItemChanged(id)
+
+        if let previousID,
+           let previousItem = (previousItems ?? items).first(where: { $0.id == previousID }) {
+            previousItem.onActivationChanged(.deactivated)
+        }
+
+        if let id,
+           let nextItem = items.first(where: { $0.id == id }), id != previousID {
+            nextItem.onActivationChanged(.activated)
         }
     }
 }

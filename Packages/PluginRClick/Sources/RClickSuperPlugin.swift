@@ -60,8 +60,8 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "cursorarrow.click.2",
                 order: order,
                 ownerPluginID: id
-            ) { [activityItemID] activeID in
-                if activeID == activityItemID {
+            ) { [activityItemID] state in
+                if state == .activated {
                     rail?.setVisibleCategories([.general])
                     content?.setContentView(AnyView(RClickSettingsView()))
                 }

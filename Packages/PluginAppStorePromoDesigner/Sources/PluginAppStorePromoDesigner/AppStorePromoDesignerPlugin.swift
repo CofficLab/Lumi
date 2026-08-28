@@ -118,8 +118,8 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                     systemImage: "photo.artframe",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
+                ) { state in
+                    guard state == .activated else { return }
                     railView?.setVisibleCategories([.design])
                     WorkspaceStore.shared.reload()
                     contentView?.setContentView(AnyView(PromoDesignerView()))

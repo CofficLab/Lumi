@@ -114,8 +114,8 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "chevron.left.forwardslash.chevron.right",
                 order: order,
                 ownerPluginID: id
-            ) { [weak contentView, weak railView = self.railView, weak chat] activeItemID in
-                guard activeItemID == Self.activityItemID else { return }
+            ) { [weak contentView, weak railView = self.railView, weak chat] state in
+                guard state == .activated else { return }
                 // Code Editor 的 Rail 贡献属于项目工作区，激活入口时只显示项目分类。
                 railView?.setVisibleCategories([.project])
                 chat?.setVisible(true)

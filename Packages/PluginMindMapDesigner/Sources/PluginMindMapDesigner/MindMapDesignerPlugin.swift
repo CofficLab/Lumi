@@ -80,8 +80,8 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
                     systemImage: "brain.head.profile",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
+                ) { state in
+                    guard state == .activated else { return }
                     railView?.setVisibleCategories([.design])
                     MindMapStore.shared.reload()
                     contentView?.setContentView(AnyView(MindMapDesignerView()))

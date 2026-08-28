@@ -103,8 +103,8 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
                     systemImage: "internaldrive",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
+                ) { state in
+                    guard state == .activated else { return }
                     railView?.setVisibleCategories([.system])
                     contentView?.setContentView(AnyView(
                         DiskManagerView(categoryStore: self.categoryStore, workspace: self.workspace)

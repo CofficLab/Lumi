@@ -57,8 +57,8 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "terminal",
                 order: order,
                 ownerPluginID: id
-            ) { activeID in
-                if activeID == "\(self.id).entry" {
+            ) { state in
+                if state == .activated {
                     rootView?.setRailView(nil)
                     rootView?.setContentHeaderViewHidden(true)
                     content?.setContentView(AnyView(TerminalV2MainView(project: project)))
