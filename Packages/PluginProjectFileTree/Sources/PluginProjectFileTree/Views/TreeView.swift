@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import KitSuperLog
 import os
@@ -14,18 +13,8 @@ public struct TreeView: View, SuperLog {
     public nonisolated static var verbose: Bool { ProjectFileTreePlugin.verbose }
     nonisolated static let logger = ProjectFileTreePlugin.logger
 
-    // 本视图已是窄播：context 用 let（非 @ObservedObject），body 不订阅项目总线，
-    // 只通过下方 .onReceive + guard 把关心的 projectPath 缓存进 @State，
-    // 故项目能力上其他属性的变更不会触发 body 重算。
-    // 未采用 ObservableProjectBox 是因为本视图刷新链路较复杂（NSCollectionView 桥接），
-    // 当前手写去重已足够；如需统一风格可后续迁移。
     let context: FileTreeContext
-
-    /// 空 Publisher：未打开项目（无 ProjectProviding）时兜底，避免 onReceive 需要可选。
-    private let emptyProjectPublisher = ObservableObjectPublisher()
-
-    /// 当前项目路径缓存，用于驱动 SwiftUI 刷新。
-    @State private var projectPath: String
+    @ObservedObject var viewModel: ProjectFileTreeViewModel
 
     /// 当前项目是否需要展示 Swift Package 依赖区域（随项目路径变化时重新计算）。
     /// 缓存为 @State 而非 computed：避免每次 body 重算都触发一次
@@ -41,24 +30,19 @@ public struct TreeView: View, SuperLog {
     /// Swift Package Dependencies 数据源
     @StateObject private var packageStore = PackageDependencyStore()
 
-    public init(context: FileTreeContext) {
+    init(context: FileTreeContext, viewModel: ProjectFileTreeViewModel) {
         self.context = context
-        _projectPath = State(initialValue: context.currentProjectPath ?? "")
-    }
-
-    /// 项目能力的变化发布器（未打开项目时用空发布器兜底）。
-    private var projectWillChange: ObservableObjectPublisher {
-        context.project?.objectWillChange ?? emptyProjectPublisher
+        self.viewModel = viewModel
     }
 
     public var body: some View {
         VStack(spacing: 0) {
-            if projectPath.isEmpty {
+            if viewModel.currentProjectPath.isEmpty {
                 NoProjectView()
             } else {
                 FileTreeNSViewBridge(
                     context: context,
-                    projectRootPath: projectPath,
+                    projectRootPath: viewModel.currentProjectPath,
                     onExpansionChange: { relativePath, isExpanded in
                         handleExpansionChange(relativePath: relativePath, isExpanded: isExpanded)
                     },
@@ -75,8 +59,8 @@ public struct TreeView: View, SuperLog {
         }
         .environmentObject(selectionState)
         .frame(maxHeight: .infinity)
-        .onReceive(projectWillChange) { _ in
-            syncProjectPathIfNeeded()
+        .onChange(of: viewModel.currentProjectPath) { _, newPath in
+            projectPathDidChange(to: newPath)
         }
         .onAppear(perform: onAppear)
         .onDisappear(perform: onDisappear)
@@ -85,7 +69,7 @@ public struct TreeView: View, SuperLog {
     // MARK: - Event Handlers
 
     private func handleExpansionChange(relativePath: String, isExpanded: Bool) {
-        let projectRoot = projectPath
+        let projectRoot = viewModel.currentProjectPath
         if isExpanded {
             FileTreeSettings.shared.addExpandedPath(relativePath, for: projectRoot)
         } else {
@@ -98,11 +82,7 @@ public struct TreeView: View, SuperLog {
         packageStore.refresh()
     }
 
-    private func syncProjectPathIfNeeded() {
-        let newProjectPath = context.currentProjectPath ?? ""
-        guard newProjectPath != projectPath else { return }
-
-        projectPath = newProjectPath
+    private func projectPathDidChange(to newProjectPath: String) {
         recomputeShowPackageDependencies()
         coordinator.stop()
         coordinator.setProjectRootPath(newProjectPath)
@@ -110,12 +90,9 @@ public struct TreeView: View, SuperLog {
     }
 
     private func onAppear() {
-        syncProjectPathIfNeeded()
-        recomputeShowPackageDependencies()
-        coordinator.setProjectRootPath(projectPath)
-        packageStore.setProjectRootPath(projectPath)
+        projectPathDidChange(to: viewModel.currentProjectPath)
         if Self.verbose {
-            Self.logger.info("\(Self.t)出现，项目路径: \(projectPath)")
+            Self.logger.info("\(Self.t)出现，项目路径: \(viewModel.currentProjectPath)")
         }
     }
 

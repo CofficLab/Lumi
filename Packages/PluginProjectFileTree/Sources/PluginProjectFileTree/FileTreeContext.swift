@@ -17,11 +17,6 @@ public final class FileTreeContext {
     /// Toast 提示能力（替代旧版 MagicAlert）。
     public let toast: (any ToastProviding)?
 
-    /// 当前项目路径（nil 表示未打开项目）。
-    public var currentProjectPath: String? {
-        project?.currentProject?.path
-    }
-
     public init(
         project: (any ProjectProviding)?,
         conversationInput: (any ConversationInputProviding)?,

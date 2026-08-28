@@ -49,9 +49,15 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
         policy: .required
     )
 
+    private var viewModel: ProjectFileTreeViewModel?
+    private var projectObserver: ProjectProvidingObserver?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        let viewModel = ProjectFileTreeViewModel()
+        self.viewModel = viewModel
+
         // 通过 Storage service 解析插件目录，供 FileTreeSettings 持久化展开状态。
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             FileTreeSettings.shared.configure(
@@ -65,8 +71,12 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
 
         // 组装文件树上下文（项目 / 对话输入 / Toast 提示）。
         let project = kernel.resolveProvider((any ProjectProviding).self)
+        projectObserver?.cancel()
+        projectObserver = nil
         if project == nil {
             Self.logger.error("\(Self.t) ProjectProviding not found")
+        } else if let project {
+            projectObserver = ProjectProvidingObserver(project: project, viewModel: viewModel)
         }
 
         let conversationInput = kernel.resolveProvider((any ConversationInputProviding).self)
@@ -99,9 +109,16 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
                 systemImage: "square.grid.2x2.fill",
                 order: order
             ) {
-                TreeView(context: context)
+                TreeView(context: context, viewModel: viewModel)
             }
         ])
         railView.activateGroup(id: id)
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        projectObserver?.cancel()
+        projectObserver = nil
+        viewModel = nil
+        kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
     }
 }
