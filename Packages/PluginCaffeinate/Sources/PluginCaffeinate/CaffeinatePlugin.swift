@@ -25,7 +25,6 @@ import SwiftUI
 /// 相比旧版移除：`viewContainers` 主界面（旧版已注释停用）。
 @MainActor
 public final class CaffeinatePlugin: SuperPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.caffeinate", category: "Caffeinate")
     public let id = "Caffeinate"
     public let order = 1
     public let metadata = PluginMetadata(

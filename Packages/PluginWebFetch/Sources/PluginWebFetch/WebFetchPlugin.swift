@@ -11,7 +11,6 @@ import KitSuperLog
 /// 抓取网页），并向 `ToolManagerProviding` 注册 `WebFetchTool`。
 @MainActor
 public final class WebFetchPlugin: SuperPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.web-fetch", category: "WebFetch")
     public let id = "WebFetch"
     public let order = 100
     public let metadata = PluginMetadata(

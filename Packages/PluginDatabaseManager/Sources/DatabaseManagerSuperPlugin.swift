@@ -18,7 +18,6 @@ struct DatabaseManagerPlugin {
 /// DatabaseManager 的 KernelCore 入口，复用既有数据库连接、查询与 SQL 编辑体验。
 @MainActor
 public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.database-manager", category: "DatabaseManager")
     public let id = "com.coffic.lumi.plugin.database-manager"
     public let order = 750
     public let metadata = PluginMetadata(

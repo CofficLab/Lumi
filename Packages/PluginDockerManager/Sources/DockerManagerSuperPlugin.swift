@@ -17,7 +17,6 @@ struct DockerManagerPlugin {
 
 @MainActor
 public final class DockerManagerSuperPlugin: SuperPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.docker-manager", category: "DockerManager")
     public let id = "com.coffic.lumi.plugin.docker-manager"
     public let order = 50
     public let metadata = PluginMetadata(

@@ -11,7 +11,6 @@ import KitSuperLog
 /// 并向 `ToolManagerProviding` 注册 `WebSearchTool`。
 @MainActor
 public final class WebSearchPlugin: SuperPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.web-search", category: "WebSearch")
     public let id = "WebSearch"
     public let order = 101
     public let metadata = PluginMetadata(

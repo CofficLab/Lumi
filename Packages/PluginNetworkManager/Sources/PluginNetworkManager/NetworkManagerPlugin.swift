@@ -26,7 +26,6 @@ import KitSuperLog
 /// - `statusBarItems` → 暂不复刻（新版无 StatusBarProviding）。
 @MainActor
 public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.network-manager", category: "NetworkManager")
     public nonisolated static let verbose = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.network-manager")
 

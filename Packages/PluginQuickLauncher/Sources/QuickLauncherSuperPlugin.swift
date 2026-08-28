@@ -18,7 +18,6 @@ struct QuickLauncherPlugin {
 /// command search, and `?` direct-send behavior from the legacy plugin.
 @MainActor
 public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.quick-launcher", category: "QuickLauncher")
     public let id = "com.coffic.lumi.plugin.quick-launcher"
     public let order = 8
     public let metadata = PluginMetadata(

@@ -26,7 +26,6 @@ import KitSuperLog
 ///   占用且无「容器激活」语义，故不复刻（与 PluginDevice / PluginResumeDesigner 一致）。
 @MainActor
 public final class DiskManagerPlugin: SuperPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.disk-manager", category: "DiskManager")
     public let id = "com.coffic.lumi.plugin.disk-manager"
     public let order = 250
     public let metadata = PluginMetadata(

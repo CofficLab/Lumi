@@ -18,7 +18,6 @@ import SwiftUI
 /// - `titleToolbarItems` 居中标题不复刻（新版无容器激活语义，与 PluginDevice 一致）。
 @MainActor
 public final class HostsManagerPlugin: SuperPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.hosts-manager", category: "HostsManager")
     public let id = "com.coffic.lumi.plugin.hosts-manager"
     public let order = 21
     public let metadata = PluginMetadata(

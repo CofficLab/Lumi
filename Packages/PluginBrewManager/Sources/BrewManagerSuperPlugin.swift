@@ -19,7 +19,6 @@ extension Notification.Name {
 
 @MainActor
 public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.brew-manager", category: "BrewManager")
     public let id = "com.coffic.lumi.plugin.brew-manager"
     public let order = 260
     public let metadata = PluginMetadata(
