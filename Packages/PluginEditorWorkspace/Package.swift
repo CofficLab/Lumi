@@ -10,11 +10,13 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../PluginEditorHost"),
         .package(path: "../EditorContracts"),
         .package(path: "../EditorService"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderProject"),
+        .package(path: "../ProviderPluginControl"),
         .package(path: "../ProviderRailView"),
         .package(path: "../LumiUI"),
     ],
@@ -37,8 +39,15 @@ let package = Package(
             name: "PluginEditorWorkspaceTests",
             dependencies: [
                 "PluginEditorWorkspace",
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "EditorService", package: "EditorService"),
+                .product(name: "PluginEditorHost", package: "PluginEditorHost"),
+                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderPluginControl", package: "ProviderPluginControl"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
             ]
         ),
     ]
