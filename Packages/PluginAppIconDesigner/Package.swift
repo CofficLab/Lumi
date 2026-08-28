@@ -10,6 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KitAgentTool"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
@@ -29,6 +30,7 @@ let package = Package(
             name: "PluginAppIconDesigner",
             dependencies: [
                 "KitAgentTool",
+                "KitSuperLog",
                 "KernelCore",
                 "KitLocalization",
                 "LumiUI",

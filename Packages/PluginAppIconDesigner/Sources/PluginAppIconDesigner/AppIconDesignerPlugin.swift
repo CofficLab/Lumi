@@ -1,5 +1,7 @@
 import KernelCore
 import KitAgentTool
+import KitSuperLog
+import os
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
@@ -10,9 +12,10 @@ import ProviderToolManager
 import ProviderWorkspace
 import SwiftUI
 
-/// KernelCore 版本的 App Icon 设计器插件。
+/// App Icon 设计器插件。
 @MainActor
-public final class AppIconDesignerPlugin: SuperPlugin {
+public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.app-icon-designer", category: "AppIconDesigner")
     public let id = "com.coffic.lumi.plugin.app-icon-designer"
     public let order = 79
     public let metadata = PluginMetadata(
@@ -65,6 +68,8 @@ public final class AppIconDesignerPlugin: SuperPlugin {
             for tool in Self.agentTools {
                 toolManager.add(tool, pluginID: id)
             }
+        } else {
+            Self.logger.error("\(Self.t) ToolManagerProviding not found")
         }
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
@@ -72,33 +77,41 @@ public final class AppIconDesignerPlugin: SuperPlugin {
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
 
-        workspace?.registerContainer(
-            WorkspaceContainer(
-                id: id,
-                title: name,
-                systemImage: "app.dashed",
-                order: order,
-                railVisibility: .alwaysVisible,
-                chatVisibility: .alwaysVisible,
-                panelHeaderVisibility: .unsupported,
-                panelBodyVisibility: .unsupported,
-                panelBottomVisibility: .unsupported
-            ),
-            ownerPluginID: id
-        )
+        if let workspace = workspace {
+            workspace.registerContainer(
+                WorkspaceContainer(
+                    id: id,
+                    title: name,
+                    systemImage: "app.dashed",
+                    order: order,
+                    railVisibility: .alwaysVisible,
+                    chatVisibility: .alwaysVisible,
+                    panelHeaderVisibility: .unsupported,
+                    panelBodyVisibility: .unsupported,
+                    panelBottomVisibility: .unsupported
+                ),
+                ownerPluginID: id
+            )
+        } else {
+            Self.logger.error("\(Self.t) WorkspaceProviding not found")
+        }
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
-        railView?.addTabs([
-            RailTabItem(
-                id: Self.railTabID,
-                groupID: id,
-                title: AppIconDesignerLocalization.string("Icon Documents"),
-                systemImage: "doc.text",
-                order: order
-            ) {
-                AppIconDesignerRailView()
-            },
-        ])
+        if let railView = railView {
+            railView.addTabs([
+                RailTabItem(
+                    id: Self.railTabID,
+                    groupID: id,
+                    title: AppIconDesignerLocalization.string("Icon Documents"),
+                    systemImage: "doc.text",
+                    order: order
+                ) {
+                    AppIconDesignerRailView()
+                },
+            ])
+        } else {
+            Self.logger.error("\(Self.t) RailViewProviding not found")
+        }
 
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
@@ -131,6 +144,8 @@ public final class AppIconDesignerPlugin: SuperPlugin {
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
             docs.addAbout(DocsEntry(id: id, name: name) { DesignerAboutView() })
             docs.addManual(DocsEntry(id: id, name: name) { DesignerManualView() })
+        } else {
+            Self.logger.error("\(Self.t) DocsViewProviding not found")
         }
     }
 
