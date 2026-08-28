@@ -5,9 +5,12 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderToolbar
 import SwiftUI
+import KitSuperLog
+import os
 
 @MainActor
-public final class PortManagerSuperPlugin: SuperPlugin {
+public final class PortManagerSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.port-manager", category: "PortManager")
     public let id = "com.coffic.lumi.plugin.port-manager"
     public let order = 43
     public let metadata = PluginMetadata(
