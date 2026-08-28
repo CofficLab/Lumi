@@ -63,29 +63,50 @@ public final class DefaultProjectProvider: ProjectProviding, SuperLog {
     }
 
     public func updateCurrentFile(_ fileURL: URL?) {
-        guard currentFileURL != fileURL else { return }
-        currentFileURL = fileURL
-        notify(.currentFileChanged(fileURL))
+        let normalizedURL = fileURL?.standardizedFileURL
+        guard currentFileURL != normalizedURL else { return }
+        currentFileURL = normalizedURL
+        notify(.currentFileChanged(normalizedURL))
     }
 
     public func updateOpenFiles(_ fileURLs: [URL]) {
-        guard openFileURLs != fileURLs else { return }
-        openFileURLs = fileURLs
-        notify(.openFilesChanged(fileURLs))
+        var normalizedURLs: [URL] = []
+        for fileURL in fileURLs.map(\.standardizedFileURL) where !normalizedURLs.contains(fileURL) {
+            normalizedURLs.append(fileURL)
+        }
+        guard openFileURLs != normalizedURLs else { return }
+        openFileURLs = normalizedURLs
+        notify(.openFilesChanged(normalizedURLs))
     }
 
     public func closeFile(_ fileURL: URL) {
-        guard openFileURLs.contains(fileURL) else { return }
-        openFileURLs.removeAll { $0 == fileURL }
+        let normalizedURL = fileURL.standardizedFileURL
+        let oldOpenFileURLs = openFileURLs
+        let closedIndex = oldOpenFileURLs.firstIndex(of: normalizedURL)
+        let didCloseCurrentFile = currentFileURL == normalizedURL
+        guard closedIndex != nil || didCloseCurrentFile else { return }
 
-        let didCloseCurrentFile = currentFileURL == fileURL
+        openFileURLs.removeAll { $0 == normalizedURL }
+
         if didCloseCurrentFile {
-            currentFileURL = nil
+            if let closedIndex {
+                if openFileURLs.isEmpty {
+                    currentFileURL = nil
+                } else {
+                    let nextIndex = min(closedIndex, openFileURLs.count - 1)
+                    currentFileURL = openFileURLs[nextIndex]
+                }
+            } else {
+                // 当前文件是未固定的预览项，关闭后回到最后一个固定文件。
+                currentFileURL = openFileURLs.last
+            }
         }
 
-        notify(.openFilesChanged(openFileURLs))
+        if oldOpenFileURLs != openFileURLs {
+            notify(.openFilesChanged(openFileURLs))
+        }
         if didCloseCurrentFile {
-            notify(.currentFileChanged(nil))
+            notify(.currentFileChanged(currentFileURL))
         }
     }
 

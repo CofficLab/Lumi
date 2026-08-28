@@ -28,6 +28,15 @@ public protocol ProjectProviding: ObservableObject where ObjectWillChangePublish
     /// 更新当前文件
     func updateCurrentFile(_ fileURL: URL?)
 
+    /// 以预览方式查看文件；不会将文件固定到打开文件列表。
+    func previewFile(_ fileURL: URL)
+
+    /// 将文件固定到打开文件列表并设为当前文件。
+    func pinFile(_ fileURL: URL)
+
+    /// 激活已打开文件，不改变打开文件列表。
+    func activateFile(_ fileURL: URL)
+
     /// 更新当前项目已打开的文件
     func updateOpenFiles(_ fileURLs: [URL])
 
@@ -57,6 +66,27 @@ public protocol ProjectProviding: ObservableObject where ObjectWillChangePublish
 }
 
 public extension ProjectProviding {
+    /// 默认预览行为：仅切换当前文件。
+    func previewFile(_ fileURL: URL) {
+        updateCurrentFile(fileURL)
+    }
+
+    /// 默认固定行为：追加到打开文件列表后切换当前文件。
+    func pinFile(_ fileURL: URL) {
+        let normalizedURL = fileURL.standardizedFileURL
+        var openFileURLs = openFileURLs.map(\.standardizedFileURL)
+        if !openFileURLs.contains(normalizedURL) {
+            openFileURLs.append(normalizedURL)
+            updateOpenFiles(openFileURLs)
+        }
+        updateCurrentFile(normalizedURL)
+    }
+
+    /// 默认激活行为：仅切换当前文件。
+    func activateFile(_ fileURL: URL) {
+        updateCurrentFile(fileURL)
+    }
+
     /// 轻量项目 Provider 的兼容默认实现。
     ///
     /// 完整实现应覆盖此方法并发出语义事件；默认 no-op 使已有的测试替身和

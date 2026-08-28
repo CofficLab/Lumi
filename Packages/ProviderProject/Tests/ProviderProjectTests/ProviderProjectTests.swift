@@ -96,6 +96,32 @@ struct ProviderProjectTests {
         #expect(provider.currentProject?.name == "Demo")
     }
 
+    @Test("DefaultProjectProvider 支持预览、固定、激活与邻接文件切换")
+    func defaultProviderFileOpeningSemantics() {
+        let provider = DefaultProjectProvider()
+        let first = URL(fileURLWithPath: "/tmp/first.swift")
+        let second = URL(fileURLWithPath: "/tmp/second.swift")
+        let preview = URL(fileURLWithPath: "/tmp/preview.swift")
+
+        provider.updateOpenFiles([first, second])
+        provider.previewFile(preview)
+        #expect(provider.openFileURLs == [first, second])
+        #expect(provider.currentFileURL == preview)
+
+        provider.pinFile(preview)
+        #expect(provider.openFileURLs == [first, second, preview])
+        #expect(provider.currentFileURL == preview)
+
+        provider.activateFile(first)
+        provider.closeFile(first)
+        #expect(provider.openFileURLs == [second, preview])
+        #expect(provider.currentFileURL == second)
+
+        provider.previewFile(URL(fileURLWithPath: "/tmp/unpinned.swift"))
+        provider.closeFile(URL(fileURLWithPath: "/tmp/unpinned.swift"))
+        #expect(provider.currentFileURL == preview)
+    }
+
     @Test("DefaultProjectProvider 发出项目与文件状态事件")
     func defaultProviderEmitsSemanticEvents() async throws {
         let provider = DefaultProjectProvider()
