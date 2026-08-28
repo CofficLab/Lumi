@@ -112,7 +112,6 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
                 TreeView(context: context, viewModel: viewModel)
             }
         ])
-        railView.activateGroup(id: id)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
