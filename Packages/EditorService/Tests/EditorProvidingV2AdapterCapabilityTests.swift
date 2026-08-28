@@ -1,11 +1,11 @@
 #if canImport(XCTest)
+import EditorContracts
 import Foundation
-import KernelLumi
 import LanguageServerProtocol
 import XCTest
 @testable import EditorService
-// 消歧：与 EditorLanguageRuntime 的同名类型区分，贡献包使用 KernelLumi 一侧。
-import struct KernelLumi.EditorLanguageDescriptor
+// 消歧：与 EditorLanguageRuntime 的同名类型区分，贡献包使用中立契约层模型。
+import struct EditorContracts.EditorLanguageDescriptor
 
 /// V2 契约适配器新增能力（诊断/符号/面板/引用/调用层级/工作区搜索）的映射逻辑测试。
 @MainActor

@@ -1,10 +1,10 @@
 #if canImport(XCTest)
+import EditorContracts
 @preconcurrency import EditorSource
 import EditorLanguageRuntime
 import EditorTextView
 import XCTest
 @testable import EditorService
-import KernelLumi
 
 @MainActor
 private final class MockHighlightProvider: HighlightProviding {

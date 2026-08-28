@@ -59,6 +59,7 @@ let package = Package(
             name: "EditorServiceTests",
             dependencies: [
                 "EditorService",
+                .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "EditorKernel", package: "EditorKernel"),
                 .product(name: "EditorSource", package: "EditorSource"),
                 .product(name: "EditorLanguageRuntime", package: "EditorLanguageRuntime"),
