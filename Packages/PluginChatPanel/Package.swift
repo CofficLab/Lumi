@@ -11,7 +11,6 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderRailView"),
-        .package(path: "../ProviderWorkspace"),
         .package(path: "../KitLocalization"),
     ],
     targets: [.target(name: "PluginChatPanel", dependencies: [
@@ -21,7 +20,6 @@ let package = Package(
         .product(name: "ProviderChatSection", package: "ProviderChatSection"),
         .product(name: "ProviderContentView", package: "ProviderContentView"),
         .product(name: "ProviderRailView", package: "ProviderRailView"),
-        .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
     ],
         resources: [.process("Resources/Localizable.xcstrings")]
     )]

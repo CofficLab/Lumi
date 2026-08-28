@@ -3,7 +3,6 @@ import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
 import ProviderRailView
-import ProviderWorkspace
 import KitSuperLog
 import os
 
@@ -32,10 +31,6 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding from kernel")
             return
         }
-        guard let workspace = kernel.resolveProvider((any WorkspaceProviding).self) else {
-            Self.logger.error("\(Self.t)Failed to resolve WorkspaceProviding from kernel")
-            return
-        }
         guard let rail = kernel.resolveProvider((any RailViewProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve RailViewProviding from kernel")
             return
@@ -45,18 +40,6 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             return
         }
         let entryID = "\(id).entry"
-        workspace.registerContainer(.init(
-            id: id,
-            title: LumiPluginLocalization.string("Chat", bundle: .module),
-            systemImage: "bubble.left.and.bubble.right.fill",
-            order: order,
-            supportsProject: true,
-            railVisibility: .visibleByDefault,
-            chatVisibility: .alwaysVisible,
-            panelHeaderVisibility: .unsupported,
-            panelBodyVisibility: .unsupported,
-            panelBottomVisibility: .unsupported
-        ), ownerPluginID: id)
         activityBar.addItems([ActivityBarItem(
             id: entryID,
             title: LumiPluginLocalization.string("Chat", bundle: .module),
@@ -74,8 +57,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
                 rail.activateGroup(id: self.id)
             }
             if isChatActive {
-                workspace.activateContainer(id: self.id)
-                // Chat 容器自带聊天界面，不需要独立的主内容区：
+                // Chat 面板自带聊天界面，不需要独立的主内容区：
                 // 激活时清空 contentView，回退到占位视图。
                 contentView.setContentView(nil)
             }
@@ -86,12 +68,10 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         chat.setVisible(true)
         chat.setContextActive(true)
         rail.activateGroup(id: id)
-        workspace.activateContainer(id: id)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
         kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(false)
-        kernel.resolveProvider((any WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
     }
 }

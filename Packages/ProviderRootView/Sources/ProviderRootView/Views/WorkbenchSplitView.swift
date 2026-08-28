@@ -10,13 +10,13 @@ struct WorkbenchSplitView: View {
     private var containerID: String { provider.containerID }
     private var showsRail: Bool {
         provider.railView != nil
-            && provider.hasActiveContainer
+            && provider.hasActiveContent
             && (workspace?.isRailVisible ?? true)
     }
 
     var body: some View {
         Group {
-            if provider.hasActiveContainer {
+            if provider.hasActiveContent {
                 if showsRail {
                     #if os(macOS)
                     HSplitView {
@@ -36,7 +36,7 @@ struct WorkbenchSplitView: View {
                     mainContent
                 }
             } else {
-                // 与旧版 AppLayoutView 一致：无活跃容器时显示欢迎占位。
+                // 与旧版 AppLayoutView 一致：无活跃内容时显示欢迎占位。
                 RootWelcomeView()
             }
         }
@@ -49,7 +49,6 @@ struct WorkbenchSplitView: View {
             contentView: provider.contentView,
             isContentViewHidden: provider.isContentViewHidden,
             trailingPane: provider.trailingPane,
-            workspaceShowsTrailingPane: workspace?.isChatVisible ?? true,
             trailingWidth: workspace?.chatDivider(for: containerID, layout: .narrow, fallback: 320) ?? 320,
             containerID: containerID,
             workspace: workspace

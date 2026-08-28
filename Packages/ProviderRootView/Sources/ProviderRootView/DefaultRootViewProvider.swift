@@ -10,9 +10,9 @@ import SwiftUI
 /// 的根布局（与旧版 `AppLayoutView` 完全一致）。
 ///
 /// 与旧版 `AppLayoutView` 对齐的行为：
-/// - 主内容未注入、且无活跃容器时显示 `WelcomeView` 风格的欢迎占位；
+/// - 主内容未注入、且无活跃内容时显示 `WelcomeView` 风格的欢迎占位；
 /// - ActivityBar 在存在至少两个入口时显示；
-/// - Rail 仅在存在活跃容器（且容器可见）时显示；
+/// - Rail 仅在存在活跃内容（且容器可见）时显示；
 /// - 根视图应用主题背景、`appThemedAppearance`、`ThemeWindowAppearanceBridge`
 ///   与 `AppThemeVM` 环境对象（复刻旧版主题链）。
 @MainActor
@@ -146,10 +146,17 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
 
     // MARK: - 显示条件
 
-    /// 是否存在活跃容器（旧版 `activeViewContainerID != nil` 且容器可解析）。
-    var hasActiveContainer: Bool {
-        guard let containerID = workspaceProvider?.activeContainerID else { return false }
-        return workspaceProvider?.container(id: containerID) != nil
+    /// 是否存在可渲染的活跃内容。
+    ///
+    /// WorkspaceContainer 是内容插件的可选布局增强，而不是根视图渲染的
+    /// 必要条件。ChatPanel 由 ActivityBar + ChatSection 驱动，因此即使它
+    /// 不注册 WorkspaceContainer，只要 trailing pane 可见也应正常显示。
+    var hasActiveContent: Bool {
+        if let containerID = workspaceProvider?.activeContainerID,
+           workspaceProvider?.container(id: containerID) != nil {
+            return true
+        }
+        return contentHeaderView != nil || contentView != nil || trailingPane?.isVisible == true
     }
 
     /// 当前活跃容器 ID（无容器时回退 "root"）。

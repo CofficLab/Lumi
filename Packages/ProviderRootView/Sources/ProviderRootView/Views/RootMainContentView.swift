@@ -5,11 +5,11 @@ import ProviderWorkspace
 /// 根布局内容区（可选带右侧 trailing pane）。
 ///
 /// 逻辑来自旧版 `AppLayoutView`：
-/// - 当 trailing pane 可见且 workspace 允许时，右侧显示面板（macOS 用 `HSplitView`
+/// - 当 trailing pane 可见时，右侧显示面板（macOS 用 `HSplitView`
 ///   + `appSplitDivider(.trailing)`，拖拽后通过 workspace 同步宽度）；
 /// - 否则只渲染主内容。
 ///
-/// 当主内容与 content header 均未注入时（如 ChatPanel 容器，激活时 `contentView`
+/// 当主内容与 content header 均未注入时（如 ChatPanel，激活时 `contentView`
 /// 被置 nil），跳过主内容区及占位视图，让 trailing pane 独占整个内容区。
 @MainActor
 struct RootMainContentView: View {
@@ -17,7 +17,6 @@ struct RootMainContentView: View {
     let contentView: AnyView?
     let isContentViewHidden: Bool
     @ObservedObject var trailingPane: RootTrailingPane
-    let workspaceShowsTrailingPane: Bool
     let trailingWidth: CGFloat
     let containerID: String
     let workspace: (any WorkspaceProviding)?
@@ -27,7 +26,6 @@ struct RootMainContentView: View {
         contentView: AnyView?,
         isContentViewHidden: Bool,
         trailingPane: RootTrailingPane?,
-        workspaceShowsTrailingPane: Bool,
         trailingWidth: CGFloat,
         containerID: String,
         workspace: (any WorkspaceProviding)?
@@ -35,7 +33,6 @@ struct RootMainContentView: View {
         self.contentHeaderView = contentHeaderView
         self.contentView = contentView
         self.isContentViewHidden = isContentViewHidden
-        self.workspaceShowsTrailingPane = workspaceShowsTrailingPane
         self.trailingWidth = trailingWidth
         self.containerID = containerID
         self.workspace = workspace
@@ -69,7 +66,7 @@ struct RootMainContentView: View {
 
     /// 是否存在有意义的主内容（header 或 content 任一被注入）。
     ///
-    /// 当容器不需要独立的主内容区时（如 ChatPanel，激活时 `contentView` 被置 nil），
+    /// 当入口不需要独立的主内容区时（如 ChatPanel，激活时 `contentView` 被置 nil），
     /// 两者均为 nil，布局层据此跳过主内容区，让 trailing pane 独占。
     private var hasMainContent: Bool {
         contentHeaderView != nil || contentView != nil
@@ -80,11 +77,11 @@ struct RootMainContentView: View {
             if isContentViewHidden {
                 // 主内容区被完全隐藏（如 ChatPanel 调用 setContentViewHidden(true)）：
                 // 不渲染内容区，trailing pane 独占全部空间。
-                if trailingPane.isVisible && workspaceShowsTrailingPane {
+                if trailingPane.isVisible {
                     trailingPane.content
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-            } else if trailingPane.isVisible && workspaceShowsTrailingPane {
+            } else if trailingPane.isVisible {
                 if hasMainContent {
                     // 有主内容：主内容 + trailing pane 并排
                     #if os(macOS)

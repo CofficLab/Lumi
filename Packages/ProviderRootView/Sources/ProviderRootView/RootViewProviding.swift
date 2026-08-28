@@ -1,5 +1,6 @@
 import Combine
 import SwiftUI
+import ProviderChatSection
 import ProviderWorkspace
 
 /// 根视图提供能力协议
@@ -117,6 +118,7 @@ public final class RootTrailingPane: ObservableObject {
     public let content: AnyView
 
     @Published public var isVisible: Bool
+    private var visibilitySubscription: AnyCancellable?
 
     public init(
         id: String,
@@ -132,5 +134,19 @@ public final class RootTrailingPane: ObservableObject {
         self.maxWidth = maxWidth
         self.isVisible = isVisible
         self.content = content
+    }
+
+    /// 将面板显隐状态绑定到 ChatSection Provider。
+    ///
+    /// ChatPanel 通过 `ChatSectionProviding` 响应 ActivityBar 切换；根布局
+    /// 不再要求 ChatPanel 注册 WorkspaceContainer，而是直接观察这个状态。
+    @MainActor
+    public func bindVisibility(to provider: any ChatSectionProviding) {
+        isVisible = provider.isVisible
+        visibilitySubscription = provider.objectWillChange.sink { [weak self, weak provider] _ in
+            Task { @MainActor [weak self, weak provider] in
+                self?.isVisible = provider?.isVisible ?? false
+            }
+        }
     }
 }

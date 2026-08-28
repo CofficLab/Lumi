@@ -53,11 +53,13 @@ public struct DefaultViewFactory: ViewFactory {
             rootView.setContentView(contentView.makeContentView())
         }
         if let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
-            rootView.setTrailingPane(RootTrailingPane(
+            let trailingPane = RootTrailingPane(
                 id: "com.coffic.lumi.workspace.chat",
                 isVisible: chat.isVisible,
                 content: chat.makeChatSectionView()
-            ))
+            )
+            trailingPane.bindVisibility(to: chat)
+            rootView.setTrailingPane(trailingPane)
         }
         if let workspace = kernel.resolveProvider((any WorkspaceProviding).self) {
             rootView.setWorkspaceProvider(workspace)

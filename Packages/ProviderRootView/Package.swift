@@ -17,6 +17,7 @@ let package = Package(
     dependencies: [
         .package(path: "../LumiUI"),
         .package(path: "../KitLocalization"),
+        .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderWorkspace"),
         .package(path: "../KitSuperLog"),
     ],
@@ -26,6 +27,7 @@ let package = Package(
             dependencies: [
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
@@ -36,6 +38,7 @@ let package = Package(
             name: "ProviderRootViewTests",
             dependencies: [
                 "ProviderRootView",
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
             ]
         )

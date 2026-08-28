@@ -1,4 +1,5 @@
 import Combine
+import ProviderChatSection
 import ProviderWorkspace
 import SwiftUI
 import Testing
@@ -32,6 +33,32 @@ struct ProviderRootViewTests {
         let view = provider.makeRootView()
 
         #expect(type(of: view) == AnyView.self)
+    }
+
+    @Test("ChatSection 可见性同步到 trailing pane")
+    func trailingPaneFollowsChatSectionVisibility() async {
+        let chat = DefaultChatSectionProviding()
+        let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
+        pane.bindVisibility(to: chat)
+
+        #expect(pane.isVisible)
+        chat.setVisible(false)
+        await Task.yield()
+        #expect(!pane.isVisible)
+        chat.setVisible(true)
+        await Task.yield()
+        #expect(pane.isVisible)
+    }
+
+    @Test("没有 Workspace container 时可通过 trailing pane 渲染")
+    func visibleTrailingPaneCountsAsActiveContentWithoutWorkspaceContainer() {
+        let provider = DefaultRootViewProvider()
+        let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
+        provider.setTrailingPane(pane)
+
+        #expect(provider.hasActiveContent)
+        pane.isVisible = false
+        #expect(!provider.hasActiveContent)
     }
 
     @Test("注入工具栏后返回根视图")
