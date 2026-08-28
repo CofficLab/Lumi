@@ -32,7 +32,7 @@ struct BookletMakerManualView: View {
 
             ManualSectionHeader(number: 3, title: L("Making a Booklet"))
             ManualStepList(items: [
-                .init(L("Drop an A4 PDF into the Current PDF area, or click to choose one.")),
+                .init(L("Drop a PDF into the Current PDF area, or click to choose one.")),
                 .init(L("Choose the output paper size and the layout, such as Booklet Fold or Simple Pair.")),
                 .init(L("Adjust the margins, gutter, blank-page padding, and cut marks as needed.")),
                 .init(L("Click Export Booklet PDF and choose where to save.")),
@@ -48,7 +48,6 @@ struct BookletMakerManualView: View {
 
             ManualSectionHeader(number: 5, title: L("Notes"))
             ManualBulletList(items: [
-                .init(L("Only A4 PDF files are supported.")),
                 .init(L("Booklet pages are reordered for folding and binding; print a test sheet first.")),
                 .init(L("Choose a new output name to avoid overwriting an existing file.")),
             ])

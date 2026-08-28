@@ -39,8 +39,8 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
     public let order = 880
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.booklet-maker",
-        name: "PDF Tools",
-        description: "Create booklets and split PDF documents by page range.",
+        name: "Booklet Maker",
+        description: "Create print-ready booklets from PDF documents.",
         category: .editor,
         stage: .preview,
         policy: .disabledByDefault
@@ -52,7 +52,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
     /// 配置状态，避免"在侧边栏改了设置但内容区没同步"的问题。
     private let sharedViewModel = BookletMakerViewModel()
 
-    public var name: String { BookletLocalization.string("PDF Tools") }
+    public var name: String { BookletLocalization.string("Booklet Maker") }
 
     public init() {}
 
