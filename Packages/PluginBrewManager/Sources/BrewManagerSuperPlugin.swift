@@ -60,6 +60,7 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
                 if state == .activated {
                     content?.setContentView(AnyView(BrewManagerView()))
                     rootView?.setRailView(nil)
+                    rootView?.setContentHeaderViewHidden(true)
                     toolbar?.addToolbarItems([
                         ToolbarItem(id: refreshItemID, title: LumiPluginLocalization.string("Refresh", bundle: .module), placement: .trailing, order: 260) {
                             AppIconButton(systemImage: "arrow.clockwise") {
@@ -70,6 +71,7 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
                     ])
                 } else {
                     rootView?.setRailView(railView?.makeRailView())
+                    rootView?.setContentHeaderViewHidden(false)
                     toolbar?.removeToolbarItems(ids: [refreshItemID])
                 }
             },
