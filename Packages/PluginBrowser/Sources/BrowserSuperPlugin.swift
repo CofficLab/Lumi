@@ -3,9 +3,12 @@ import Foundation
 import KernelCore
 import ProviderToolManager
 import KitShell
+import KitSuperLog
+import os
 
 @MainActor
-public final class BrowserSuperPlugin: SuperPlugin {
+public final class BrowserSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.browser", category: "Browser")
     public let id = "Browser"
     public let order = 102
     public let metadata = PluginMetadata(
