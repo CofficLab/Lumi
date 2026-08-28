@@ -4,10 +4,13 @@ import ProviderPluginManaging
 import ProviderPromptSuggestion
 import ProviderSettingView
 import SwiftUI
+import KitSuperLog
+import os
 
 /// 插件管理插件
 @MainActor
-public final class PluginPluginManager: SuperPlugin {
+public final class PluginPluginManager: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.plugin-manager", category: "PluginManager")
     public let id = "com.coffic.lumi.plugin.plugin-manager"
     public let order = 90
 
