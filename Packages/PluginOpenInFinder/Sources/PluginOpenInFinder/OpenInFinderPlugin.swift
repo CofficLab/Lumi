@@ -31,7 +31,7 @@ public final class OpenInFinderPlugin: SuperPlugin, SuperLog {
         }
         let project = kernel.resolveProvider((any ProjectProviding).self)
 
-        let tool = OpenInTool(config: .finder, project: project)
+        let tool = OpenInTool(config: OpenInTool.finder, project: project)
         toolManager.add(tool, pluginID: id)
     }
 

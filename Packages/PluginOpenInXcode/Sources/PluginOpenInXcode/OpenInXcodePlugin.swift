@@ -31,7 +31,7 @@ public final class OpenInXcodePlugin: SuperPlugin, SuperLog {
         }
         let project = kernel.resolveProvider((any ProjectProviding).self)
 
-        let tool = OpenInTool(config: .xcode, project: project)
+        let tool = OpenInTool(config: OpenInTool.xcode, project: project)
         toolManager.add(tool, pluginID: id)
     }
 

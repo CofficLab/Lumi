@@ -31,7 +31,7 @@ public final class OpenInVSCodePlugin: SuperPlugin, SuperLog {
         }
         let project = kernel.resolveProvider((any ProjectProviding).self)
 
-        let tool = OpenInTool(config: .vscode, project: project)
+        let tool = OpenInTool(config: OpenInTool.vscode, project: project)
         toolManager.add(tool, pluginID: id)
     }
 

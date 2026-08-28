@@ -31,7 +31,7 @@ public final class OpenInGitOKPlugin: SuperPlugin, SuperLog {
         }
         let project = kernel.resolveProvider((any ProjectProviding).self)
 
-        let tool = OpenInTool(config: .gitOK, project: project)
+        let tool = OpenInTool(config: OpenInTool.gitOK, project: project)
         toolManager.add(tool, pluginID: id)
     }
 

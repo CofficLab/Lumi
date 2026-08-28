@@ -31,7 +31,7 @@ public final class OpenInAntigravityPlugin: SuperPlugin, SuperLog {
         }
         let project = kernel.resolveProvider((any ProjectProviding).self)
 
-        let tool = OpenInTool(config: .antigravity, project: project)
+        let tool = OpenInTool(config: OpenInTool.antigravity, project: project)
         toolManager.add(tool, pluginID: id)
     }
 

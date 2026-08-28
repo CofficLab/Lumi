@@ -31,7 +31,7 @@ public final class OpenInGitHubDesktopPlugin: SuperPlugin, SuperLog {
         }
         let project = kernel.resolveProvider((any ProjectProviding).self)
 
-        let tool = OpenInTool(config: .gitHubDesktop, project: project)
+        let tool = OpenInTool(config: OpenInTool.gitHubDesktop, project: project)
         toolManager.add(tool, pluginID: id)
     }
 
