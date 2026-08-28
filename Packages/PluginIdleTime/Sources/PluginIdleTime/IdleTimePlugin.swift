@@ -5,6 +5,8 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderIdleTime
 import SwiftUI
+import KitSuperLog
+import os
 
 /// 空闲时间插件（KernelCore 版本）。
 ///
@@ -14,7 +16,8 @@ import SwiftUI
 /// - 贡献设置页、关于文档；
 /// - onShutdown 全部撤回。
 @MainActor
-public final class IdleTimePlugin: SuperPlugin {
+public final class IdleTimePlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.idle-time", category: "IdleTime")
     public let id = "com.coffic.lumi.plugin.idle-time"
     public let order = 96
     public let metadata = PluginMetadata(
