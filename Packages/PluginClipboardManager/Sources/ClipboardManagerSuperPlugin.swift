@@ -4,6 +4,7 @@ import ProviderContentView
 import ProviderDocsView
 import SwiftUI
 import os
+import KitSuperLog
 
 enum ClipboardManagerPlugin {
     nonisolated static let verbose = false
@@ -11,7 +12,8 @@ enum ClipboardManagerPlugin {
 }
 
 @MainActor
-public final class ClipboardManagerSuperPlugin: SuperPlugin {
+public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.clipboard-manager", category: "ClipboardManager")
     public let id = "com.coffic.lumi.plugin.clipboard-manager"
     public let order = 270
     public let metadata = PluginMetadata(
