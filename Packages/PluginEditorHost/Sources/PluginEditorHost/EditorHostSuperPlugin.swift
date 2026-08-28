@@ -6,10 +6,13 @@ import EditorSource
 import KernelCore
 import LumiUI
 import SwiftUI
+import KitSuperLog
+import os
 
 /// KernelCore 的编辑器宿主：提供与旧宿主相同的 SourceEditor 语法高亮能力。
 @MainActor
-public final class EditorHostSuperPlugin: SuperPlugin {
+public final class EditorHostSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.editor-host", category: "EditorHost")
     public let id = "com.coffic.lumi.plugin.editor-host"
     public let order = 1
     public let dependencies: [String] = []

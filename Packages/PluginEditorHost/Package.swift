@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [.library(name: "PluginEditorHost", targets: ["PluginEditorHost"])],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../EditorContracts"),
         .package(path: "../EditorService"),
@@ -17,6 +18,7 @@ let package = Package(
         .target(
             name: "PluginEditorHost",
             dependencies: [
+                "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "EditorService", package: "EditorService"),
