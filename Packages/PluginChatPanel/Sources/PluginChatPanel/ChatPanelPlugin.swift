@@ -24,13 +24,16 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
-        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        guard let activityBar = kernel.resolveProvider((any ActivityBarProviding).self),
+              let chat = kernel.resolveProvider((any ChatSectionProviding).self),
+              let workspace = kernel.resolveProvider((any WorkspaceProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ActivityBarProviding, ChatSectionProviding, WorkspaceProviding from kernel")
+            return
+        }
         let rail = kernel.resolveProvider((any RailViewProviding).self)
-        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let entryID = "\(id).entry"
-        workspace?.registerContainer(.init(
+        workspace.registerContainer(.init(
             id: id,
             title: LumiPluginLocalization.string("Chat", bundle: .module),
             systemImage: "bubble.left.and.bubble.right.fill",
@@ -42,7 +45,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             panelBodyVisibility: .unsupported,
             panelBottomVisibility: .unsupported
         ), ownerPluginID: id)
-        activityBar?.addItems([ActivityBarItem(
+        activityBar.addItems([ActivityBarItem(
             id: entryID,
             title: LumiPluginLocalization.string("Chat", bundle: .module),
             systemImage: "bubble.left.and.bubble.right.fill",
@@ -50,8 +53,8 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             ownerPluginID: id
         ) { activeID in
             let isChatActive = activeID == entryID
-            chat?.setVisible(isChatActive)
-            chat?.setContextActive(isChatActive)
+            chat.setVisible(isChatActive)
+            chat.setContextActive(isChatActive)
             // Rail 是跨 ActivityBar 入口共享的区域。ChatPanel 失活时不能
             // 清空其他插件（例如 ProjectFileTree）当前展示的分组；只有
             // ChatPanel 被激活时才切换到自己的 Rail group。
@@ -59,7 +62,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
                 rail?.activateGroup(id: self.id)
             }
             if isChatActive {
-                workspace?.activateContainer(id: self.id)
+                workspace.activateContainer(id: self.id)
                 // Chat 容器自带聊天界面，不需要独立的主内容区：
                 // 激活时清空 contentView，回退到占位视图。
                 contentView?.setContentView(nil)
@@ -67,11 +70,11 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         }])
         // Adding a late plugin must still select Chat on first launch; the
         // legacy app opens directly into the conversation workbench.
-        activityBar?.activateItem(id: entryID)
-        chat?.setVisible(true)
-        chat?.setContextActive(true)
+        activityBar.activateItem(id: entryID)
+        chat.setVisible(true)
+        chat.setContextActive(true)
         rail?.activateGroup(id: id)
-        workspace?.activateContainer(id: id)
+        workspace.activateContainer(id: id)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
