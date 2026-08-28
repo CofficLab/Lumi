@@ -109,7 +109,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     guard state == .activated else { return }
-                    railView?.setVisibleCategories([.design])
+                    railView?.setVisibleTabID(Self.railTabID)
                     IconDocumentStore.shared.reload()
                     contentView?.setContentView(AnyView(DesignerView()))
                     chat?.setVisible(true)
