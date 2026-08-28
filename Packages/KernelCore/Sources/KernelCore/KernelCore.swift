@@ -42,6 +42,13 @@ public final class KernelCoreContainer {
     var activePluginID: String?
     var pluginEnabledStates: [String: Bool] = [:]
 
+    /// 插件启用状态的持久化存储；未注入时仅维护运行时状态。
+    public var stateStore: (any PluginStatePersisting)?
+
+    /// 新插件 ID 到旧插件 ID 的兼容映射。
+    /// 读取时先查新 ID，再回退旧 ID；写入时同步更新两者。
+    public var legacyPluginIDAliases: [String: String] = [:]
+
     /// 插件写入共享 Provider/Host 的贡献，由 Kernel 统一持有和撤回。
     var contributionTokens: [String: [PluginContributionToken]] = [:]
 

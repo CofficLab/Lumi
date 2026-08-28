@@ -42,6 +42,12 @@ import KernelCore
 public struct DefaultProviderFactory: ProviderFactory {
     public init() {}
 
+    /// 旧插件 ID → 新插件 ID 的别名映射。
+    /// 当前插件管理器的新旧 ID 一致，保留显式映射以兼容旧数据格式。
+    static let pluginIDAliases: [String: String] = [
+        "com.coffic.lumi.plugin.plugin-manager": "com.coffic.lumi.plugin.plugin-manager",
+    ]
+
     /// 产出 `StorageProviding` 实现（默认 Application Support 磁盘存储）。
     public func makeStorageProvider() -> any StorageProviding {
         DefaultStorageProvider()
@@ -244,6 +250,14 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 内核生命周期（`start(plugins:)`）与插件装配留在 KernelFactory。
     public func registerProviders(into kernel: KernelCoreContainer) throws {
         try kernel.registerProvider((any StorageProviding).self, makeStorageProvider())
+
+        // 必须在启动插件之前注入，使 registerPlugin 能读取用户的禁用状态。
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            kernel.stateStore = PluginEnabledStateStore(
+                pluginDirectory: storage.pluginDataDirectory(for: "PluginManager")
+            )
+            kernel.legacyPluginIDAliases = Self.pluginIDAliases
+        }
 
         // 主题 Provider：选中主题持久化遵循 Storage 约定
         // （<数据根目录>/ThemeManager/theme-selection.plist）。

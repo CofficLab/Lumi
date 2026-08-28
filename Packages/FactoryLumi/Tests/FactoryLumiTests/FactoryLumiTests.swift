@@ -125,6 +125,14 @@ struct FactoryLumiTests {
         #expect(!resolved!.dataRootDirectory.path.isEmpty)
     }
 
+    @Test("makeKernel 注入插件启用状态持久化")
+    func makeKernelWiresPluginStateStore() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        #expect(kernel.stateStore != nil)
+        #expect(kernel.legacyPluginIDAliases == DefaultProviderFactory.pluginIDAliases)
+    }
+
     @Test("makeKernel 创建内核并注册默认 ProjectProviding")
     func makeKernelRegistersDefaultProjectProviding() throws {
         let kernel = try KernelFactory.makeKernel()

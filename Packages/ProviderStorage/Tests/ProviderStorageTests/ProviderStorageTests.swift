@@ -118,6 +118,66 @@ struct ProviderStorageTests {
         #expect(reloaded.enabledState(pluginID: "com.example.plugin") == false)
     }
 
+    @Test("内核启停状态跨内核实例持久化")
+    func kernelPersistsEnabledStateAcrossInstances() async throws {
+        final class ConfigurablePlugin: SuperPlugin {
+            let id: String
+            let metadata: PluginMetadata
+
+            init(id: String) {
+                self.id = id
+                self.metadata = PluginMetadata(id: id, policy: .enabledByDefault)
+            }
+        }
+
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("KernelPluginStateTests-\(UUID().uuidString)", isDirectory: true)
+        let storage = DefaultStorageProvider(dataRootDirectory: tempRoot)
+        let pluginDirectory = storage.pluginDataDirectory(for: "PluginManager")
+        let pluginID = "com.example.persisted-plugin"
+
+        let kernel = KernelCoreContainer()
+        kernel.stateStore = PluginEnabledStateStore(pluginDirectory: pluginDirectory)
+        try kernel.start(plugins: [ConfigurablePlugin(id: pluginID)])
+        #expect(kernel.isPluginEnabled(id: pluginID))
+
+        try await kernel.disablePlugin(id: pluginID)
+        #expect(!kernel.isPluginEnabled(id: pluginID))
+
+        let reloadedKernel = KernelCoreContainer()
+        reloadedKernel.stateStore = PluginEnabledStateStore(pluginDirectory: pluginDirectory)
+        try reloadedKernel.start(plugins: [ConfigurablePlugin(id: pluginID)])
+        #expect(!reloadedKernel.isPluginEnabled(id: pluginID))
+
+        try await reloadedKernel.enablePlugin(id: pluginID)
+        #expect(reloadedKernel.isPluginEnabled(id: pluginID))
+    }
+
+    @Test("必需插件忽略持久化禁用状态")
+    func requiredPluginIgnoresPersistedDisabledState() throws {
+        final class RequiredPlugin: SuperPlugin {
+            let id = "com.example.required-plugin"
+            let metadata = PluginMetadata(
+                id: "com.example.required-plugin",
+                policy: .required
+            )
+        }
+
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("KernelPluginPolicyTests-\(UUID().uuidString)", isDirectory: true)
+        let storage = DefaultStorageProvider(dataRootDirectory: tempRoot)
+        let store = PluginEnabledStateStore(
+            pluginDirectory: storage.pluginDataDirectory(for: "PluginManager")
+        )
+        store.setEnabled(false, pluginID: "com.example.required-plugin")
+
+        let kernel = KernelCoreContainer()
+        kernel.stateStore = store
+        try kernel.start(plugins: [RequiredPlugin()])
+
+        #expect(kernel.isPluginEnabled(id: "com.example.required-plugin"))
+    }
+
     @Test("删除状态后回落为 nil")
     func removeStateClears() {
         let store = makeStore()
