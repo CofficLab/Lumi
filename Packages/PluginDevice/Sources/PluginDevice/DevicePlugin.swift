@@ -7,10 +7,13 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderWorkspace
 import SwiftUI
+import KitSuperLog
+import os
 
 /// 设备信息插件。
 @MainActor
-public final class DevicePlugin: SuperPlugin {
+public final class DevicePlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.device-info", category: "Device")
     public let id = "com.coffic.lumi.plugin.device-info"
     public let order = 6
     public let metadata = PluginMetadata(
