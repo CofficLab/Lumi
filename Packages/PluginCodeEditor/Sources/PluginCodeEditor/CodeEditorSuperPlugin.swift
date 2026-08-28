@@ -5,6 +5,8 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderProject
+import ProviderRailView
+import ProviderRootView
 import SwiftUI
 import KitSuperLog
 import os
@@ -34,6 +36,8 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private weak var activityBar: (any ActivityBarProviding)?
     private weak var contentView: (any ContentViewProviding)?
+    private weak var rootView: (any RootViewProviding)?
+    private weak var railView: (any RailViewProviding)?
 
     public init() {}
 
@@ -81,6 +85,8 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         guard let contentView = kernel.resolveProvider((any ContentViewProviding).self) else {
             throw KernelCoreError.providerNotRegistered(type: (any ContentViewProviding).self)
         }
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
 
         uninstallContributions()
         let viewModel = CodeEditorViewModel(editor: editor)
@@ -94,6 +100,8 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         self.projectObserver = projectObserver
         self.activityBar = activityBar
         self.contentView = contentView
+        self.rootView = rootView
+        self.railView = railView
 
         activityBar.addItems([
             ActivityBarItem(
@@ -102,8 +110,9 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "chevron.left.forwardslash.chevron.right",
                 order: order,
                 ownerPluginID: id
-            ) { [weak contentView] activeItemID in
+            ) { [weak contentView, weak rootView, weak railView] activeItemID in
                 guard activeItemID == Self.activityItemID else { return }
+                rootView?.setRailView(railView?.makeRailView())
                 contentView?.setContentView(AnyView(EditorWorkbenchView(
                     viewModel: viewModel,
                     surface: surface
@@ -121,5 +130,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         viewModel = nil
         activityBar = nil
         contentView = nil
+        rootView = nil
+        railView = nil
     }
 }
