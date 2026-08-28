@@ -2,6 +2,7 @@ import KitAgentTool
 import KernelCore
 import os
 import ProviderToolManager
+import KitSuperLog
 
 /// Web Fetch 插件（KernelCore 版本）
 ///
@@ -9,7 +10,8 @@ import ProviderToolManager
 /// 纯工具型插件：`onBoot` 解析内核 `NetworkProviding`（供 `WebFetchService`
 /// 抓取网页），并向 `ToolManagerProviding` 注册 `WebFetchTool`。
 @MainActor
-public final class WebFetchPlugin: SuperPlugin {
+public final class WebFetchPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.web-fetch", category: "WebFetch")
     public let id = "WebFetch"
     public let order = 100
     public let metadata = PluginMetadata(
