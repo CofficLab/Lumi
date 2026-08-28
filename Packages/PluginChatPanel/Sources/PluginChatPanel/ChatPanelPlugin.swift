@@ -4,9 +4,12 @@ import ProviderChatSection
 import ProviderContentView
 import ProviderRailView
 import ProviderWorkspace
+import KitSuperLog
+import os
 
 @MainActor
-public final class ChatPanelPlugin: SuperPlugin {
+public final class ChatPanelPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.chat-panel", category: "ChatPanel")
     public let id = "com.coffic.lumi.plugin.chat-panel"
     // Chat is the default workbench, matching the legacy app's initial state.
     public let order = 1

@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [.library(name: "PluginChatPanel", targets: ["PluginChatPanel"])],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"), .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderContentView"),
