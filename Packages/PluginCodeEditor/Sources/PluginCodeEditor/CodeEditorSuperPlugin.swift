@@ -112,7 +112,13 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { [weak contentView, weak rootView, weak railView] activeItemID in
                 guard activeItemID == Self.activityItemID else { return }
-                rootView?.setRailView(railView?.makeRailView())
+
+                if let rootView, let railView {
+                    rootView.setRailView(railView.makeRailView())
+                } else {
+                    Self.logger.error("\(Self.t)CodeEditorSuperPlugin: Failed to set rail view - rootView: \(rootView != nil), railView: \(railView != nil)")
+                }
+
                 contentView?.setContentView(AnyView(EditorWorkbenchView(
                     viewModel: viewModel,
                     surface: surface
