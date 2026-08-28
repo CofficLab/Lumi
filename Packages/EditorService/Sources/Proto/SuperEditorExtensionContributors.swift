@@ -283,7 +283,7 @@ public struct EditorContextMenuItemSuggestion: Identifiable {
     let metadata: EditorContributionMetadata
     let action: () -> Void
 
-    init(
+    public init(
         id: String,
         title: String,
         systemImage: String,

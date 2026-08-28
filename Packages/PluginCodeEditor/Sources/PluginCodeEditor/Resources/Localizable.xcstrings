@@ -21,6 +21,46 @@
           }
         }
       }
+    },
+    "Send to Conversation" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送到对话"
+          }
+        }
+      }
+    },
+    "Selected code" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选中的代码"
+          }
+        }
+      }
+    },
+    "Current File" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前文件"
+          }
+        }
+      }
+    },
+    "Line range" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "行号"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

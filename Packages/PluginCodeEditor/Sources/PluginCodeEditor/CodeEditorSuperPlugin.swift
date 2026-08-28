@@ -3,6 +3,7 @@ import EditorService
 import KernelCore
 import ProviderActivityBar
 import ProviderContentView
+import ProviderConversationInput
 import ProviderDocsView
 import ProviderProject
 import SwiftUI
@@ -31,6 +32,8 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     )
 
     private var viewModel: CodeEditorViewModel?
+    private var editor: EditorService?
+    private var sendSelectionContributor: SendSelectionToConversationContributor?
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private weak var activityBar: (any ActivityBarProviding)?
     private weak var contentView: (any ContentViewProviding)?
@@ -82,6 +85,10 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
             throw KernelCoreError.providerNotRegistered(type: (any ContentViewProviding).self)
         }
         uninstallContributions()
+        let sendSelectionContributor = SendSelectionToConversationContributor(
+            conversationInput: kernel.resolveProvider((any ConversationInputProviding).self)
+        )
+        editor.editorExtensions.registerContextMenuContributor(sendSelectionContributor)
         let viewModel = CodeEditorViewModel(editor: editor)
         viewModel.updateCurrentFile(project.currentFileURL)
         let projectObserver = project.addObserver { [weak viewModel] event in
@@ -90,6 +97,8 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         }
 
         self.viewModel = viewModel
+        self.editor = editor
+        self.sendSelectionContributor = sendSelectionContributor
         self.projectObserver = projectObserver
         self.activityBar = activityBar
         self.contentView = contentView
@@ -111,12 +120,17 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     }
 
     private func uninstallContributions() {
+        editor?.editorExtensions.unregisterContextMenuContributor(
+            id: SendSelectionToConversationContributor.contributorID
+        )
         let ownedCurrentContent = activityBar?.activeItemID == Self.activityItemID
         activityBar?.removeItems(ids: [Self.activityItemID])
         if ownedCurrentContent { contentView?.setContentView(nil) }
         projectObserver?.cancel()
         projectObserver = nil
         viewModel = nil
+        sendSelectionContributor = nil
+        editor = nil
         activityBar = nil
         contentView = nil
     }
