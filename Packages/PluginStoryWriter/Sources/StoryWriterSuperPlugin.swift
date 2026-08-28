@@ -46,7 +46,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
         rail?.addTabs([RailTabItem(id: railID, category: .project, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([ActivityBarItem(id: entryID, title: metadata.name, systemImage: "book.closed.fill", order: order, ownerPluginID: id) { state in
             guard state == .activated else { return }
-            rail?.setVisibleCategories([.project])
+            rail?.setVisibleTabID(self.railID)
             content?.setContentView(AnyView(StoryWriterRootView()))
             workspace?.activateContainer(id: containerID)
         }])
