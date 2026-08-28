@@ -10,7 +10,8 @@ import SwiftUI
 ///
 /// 识别逻辑 `OcrEngine` 基于 macOS Vision，纯本地离线，无内核依赖。
 @MainActor
-public final class OcrPlugin: SuperPlugin {
+public final class OcrPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.ocr", category: "Ocr")
     public let id = "com.coffic.lumi.plugin.ocr"
     public let order = 286
     public let metadata = PluginMetadata(
