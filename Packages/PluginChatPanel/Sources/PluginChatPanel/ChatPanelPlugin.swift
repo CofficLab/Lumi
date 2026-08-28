@@ -2,6 +2,7 @@ import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderRootView
+import ProviderRailView
 import KitSuperLog
 import os
 
@@ -34,6 +35,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve RootViewProviding from kernel")
             return
         }
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
         let entryID = "\(id).entry"
         
         activityBar.addItems([ActivityBarItem(
@@ -47,11 +49,13 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             chat.setVisible(isChatActive)
             chat.setContextActive(isChatActive)
             rootView.setContentViewHidden(isChatActive)
+            railView?.setVisibleCategories(isChatActive ? [.chat] : Set(RailViewCategory.allCases))
         }])
         
         activityBar.activateItem(id: entryID)
         chat.setVisible(true)
         chat.setContextActive(true)
+        railView?.setVisibleCategories([.chat])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -61,6 +65,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(false)
         if wasActive {
             kernel.resolveProvider((any RootViewProviding).self)?.setContentViewHidden(false)
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
     }
 }

@@ -10,6 +10,7 @@ let package = Package(
         .package(path: "../KernelCore"), .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderRootView"),
+        .package(path: "../ProviderRailView"),
         .package(path: "../KitLocalization"),
     ],
     targets: [
@@ -19,6 +20,7 @@ let package = Package(
             .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
             .product(name: "ProviderChatSection", package: "ProviderChatSection"),
             .product(name: "ProviderRootView", package: "ProviderRootView"),
+            .product(name: "ProviderRailView", package: "ProviderRailView"),
         ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
@@ -30,6 +32,7 @@ let package = Package(
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
             ]
         ),
     ]

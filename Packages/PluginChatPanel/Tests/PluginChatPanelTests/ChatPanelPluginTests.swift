@@ -3,6 +3,7 @@ import PluginChatPanel
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderRootView
+import ProviderRailView
 import Testing
 
 @Suite("ChatPanelPlugin")
@@ -15,15 +16,18 @@ struct ChatPanelPluginTests {
         let activityBar = DefaultActivityBarProviding()
         let chat = DefaultChatSectionProviding()
         let rootView = DefaultRootViewProvider()
+        let railView = DefaultRailViewProviding()
         try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any RootViewProviding).self, rootView)
+        try kernel.registerProvider((any RailViewProviding).self, railView)
 
         let plugin = ChatPanelPlugin()
         try plugin.onBoot(kernel: kernel)
 
         #expect(rootView.isContentViewHidden)
         #expect(chat.isVisible)
+        #expect(railView.visibleCategories == [.chat])
 
         let otherEntryID = "test.other.entry"
         activityBar.addItems([ActivityBarItem(
@@ -35,12 +39,15 @@ struct ChatPanelPluginTests {
 
         #expect(!rootView.isContentViewHidden)
         #expect(!chat.isVisible)
+        #expect(railView.visibleCategories == Set(RailViewCategory.allCases))
 
         activityBar.activateItem(id: plugin.id + ".entry")
         #expect(rootView.isContentViewHidden)
+        #expect(railView.visibleCategories == [.chat])
         try plugin.onShutdown(kernel: kernel)
 
         #expect(!rootView.isContentViewHidden)
         #expect(!chat.isVisible)
+        #expect(railView.visibleCategories == Set(RailViewCategory.allCases))
     }
 }
