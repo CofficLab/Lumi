@@ -13,6 +13,8 @@ import ProviderWorkspace
 ///   通常来自 `ActivityBarProviding`）；
 /// - ActivityBar 右侧的侧边栏 Rail（通过 `setRailView(_:)` 注入，
 ///   通常来自 `RailViewProviding`）；
+/// - 内容区顶部的 Header（通过 `setContentHeaderView(_:)` 注入，
+///   例如打开文件标签栏）；
 /// - 内容区（通过 `setContentView(_:)` 注入，通常来自 `ContentViewProviding`）。
 ///
 /// 协议只声明能力，不关心具体实现。
@@ -46,6 +48,11 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     /// 宿主通常把 `RailViewProviding.makeRailView()` 的结果注入进来，
     /// 显示在 ActivityBar 右侧。
     func setRailView(_ view: AnyView?)
+
+    /// 注入主内容区顶部视图（传 `nil` 表示没有 Header）。
+    ///
+    /// Header 与主内容视图独立贡献，适合项目文件标签、面包屑等横向内容。
+    func setContentHeaderView(_ view: AnyView?)
 
     /// 注入主内容视图（传 `nil` 表示回退到占位）。
     ///

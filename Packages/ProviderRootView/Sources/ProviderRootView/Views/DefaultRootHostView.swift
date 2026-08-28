@@ -21,7 +21,12 @@ struct DefaultRootHostView: View {
                     activityBarView
                 }
 
-                WorkbenchSplitView(provider: provider)
+                VStack(spacing: 0) {
+                    if let contentHeaderView = provider.contentHeaderView {
+                        contentHeaderView
+                    }
+                    WorkbenchSplitView(provider: provider)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

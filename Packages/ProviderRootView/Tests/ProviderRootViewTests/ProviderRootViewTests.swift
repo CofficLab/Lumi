@@ -71,6 +71,7 @@ struct ProviderRootViewTests {
         provider.setToolbarView(AnyView(Text("toolbar")))
         provider.setActivityBarView(AnyView(Text("activity bar")))
         provider.setRailView(AnyView(Text("rail")))
+        provider.setContentHeaderView(AnyView(Text("content header")))
         provider.setContentView(AnyView(Text("content")))
         provider.setTrailingPane(RootTrailingPane(id: "chat", content: AnyView(Text("chat"))))
 
@@ -96,6 +97,7 @@ struct ProviderRootViewTests {
             @Published var toolbarView: AnyView?
             @Published var activityBarView: AnyView?
             @Published var railView: AnyView?
+            @Published var contentHeaderView: AnyView?
             @Published var contentView: AnyView?
             @Published var trailingPane: RootTrailingPane?
 
@@ -109,6 +111,10 @@ struct ProviderRootViewTests {
 
             func setRailView(_ view: AnyView?) {
                 railView = view
+            }
+
+            func setContentHeaderView(_ view: AnyView?) {
+                contentHeaderView = view
             }
 
             func setContentView(_ view: AnyView?) {
@@ -125,7 +131,10 @@ struct ProviderRootViewTests {
                     HStack {
                         if let activityBarView { activityBarView }
                         if let railView { railView }
-                        if let contentView { contentView }
+                        VStack {
+                            if let contentHeaderView { contentHeaderView }
+                            if let contentView { contentView }
+                        }
                         Text("custom root")
                     }
                 })
@@ -136,6 +145,7 @@ struct ProviderRootViewTests {
         provider.setToolbarView(AnyView(Text("custom toolbar")))
         provider.setActivityBarView(AnyView(Text("custom activity bar")))
         provider.setRailView(AnyView(Text("custom rail")))
+        provider.setContentHeaderView(AnyView(Text("custom content header")))
         provider.setContentView(AnyView(Text("custom content")))
         provider.setTrailingPane(RootTrailingPane(id: "custom", content: AnyView(Text("custom trailing"))))
 

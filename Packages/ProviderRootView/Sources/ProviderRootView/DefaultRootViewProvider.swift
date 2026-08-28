@@ -5,7 +5,7 @@ import ProviderWorkspace
 import KitSuperLog
 import SwiftUI
 
-/// `RootViewProviding` 的默认实现：持有注入的工具栏、ActivityBar、Rail
+/// `RootViewProviding` 的默认实现：持有注入的工具栏、ActivityBar、Rail、内容 Header
 /// 与主内容视图，组合成「顶部工具栏 + 内容区（左侧 ActivityBar，右侧 Rail）」
 /// 的根布局（与旧版 `AppLayoutView` 完全一致）。
 ///
@@ -24,6 +24,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published var toolbarView: AnyView?
     @Published var activityBarView: AnyView?
     @Published var railView: AnyView?
+    @Published var contentHeaderView: AnyView?
     @Published var contentView: AnyView?
     @Published var trailingPane: RootTrailingPane?
     @Published public private(set) var overlays: [RootOverlayItem] = []
@@ -64,6 +65,14 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         railView = view
         if Self.verbose {
             Self.logger.debug("\(self.t)set rail view: \(view == nil ? "nil" : "injected")")
+        }
+    }
+
+    public func setContentHeaderView(_ view: AnyView?) {
+        guard !isSameView(contentHeaderView, view) else { return }
+        contentHeaderView = view
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set content header view: \(view == nil ? "nil" : "injected")")
         }
     }
 
