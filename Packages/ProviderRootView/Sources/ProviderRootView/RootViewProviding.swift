@@ -17,6 +17,8 @@ import ProviderWorkspace
 /// - 内容区顶部的 Header（通过 `setContentHeaderView(_:)` 注入，
 ///   例如打开文件标签栏）；
 /// - 内容区（通过 `setContentView(_:)` 注入，通常来自 `ContentViewProviding`）。
+/// - 内容区底部的 Footer（通过 `setContentFooterView(_:)` 注入，
+///   例如状态栏或上下文操作栏）。
 ///
 /// 协议只声明能力，不关心具体实现。
 ///
@@ -60,6 +62,11 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     /// 宿主通常把 `ContentViewProviding.makeContentView()` 的结果注入进来，
     /// 显示在内容区（ActivityBar / Rail 右侧）。
     func setContentView(_ view: AnyView?)
+
+    /// 注入主内容区底部视图（传 `nil` 表示没有 Footer）。
+    ///
+    /// Footer 与 Header、主内容视图独立贡献，显示在主内容视图下方。
+    func setContentFooterView(_ view: AnyView?)
 
     /// 主内容区是否完全隐藏（不渲染、不占用空间）。
     ///

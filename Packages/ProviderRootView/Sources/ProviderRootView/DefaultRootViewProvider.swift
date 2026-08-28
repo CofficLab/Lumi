@@ -5,8 +5,8 @@ import ProviderWorkspace
 import KitSuperLog
 import SwiftUI
 
-/// `RootViewProviding` 的默认实现：持有注入的工具栏、ActivityBar、Rail、内容 Header
-/// 与主内容视图，组合成「顶部工具栏 + 内容区（左侧 ActivityBar，右侧 Rail）」
+/// `RootViewProviding` 的默认实现：持有注入的工具栏、ActivityBar、Rail、内容 Header、
+/// 主内容视图与 Footer，组合成「顶部工具栏 + 内容区（左侧 ActivityBar，右侧 Rail）」
 /// 的根布局（与旧版 `AppLayoutView` 完全一致）。
 ///
 /// 与旧版 `AppLayoutView` 对齐的行为：
@@ -26,6 +26,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published var railView: AnyView?
     @Published var contentHeaderView: AnyView?
     @Published var contentView: AnyView?
+    @Published var contentFooterView: AnyView?
     @Published var trailingPane: RootTrailingPane?
     @Published public private(set) var overlays: [RootOverlayItem] = []
     @Published public private(set) var isContentViewHidden: Bool = false
@@ -85,6 +86,14 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         }
     }
 
+    public func setContentFooterView(_ view: AnyView?) {
+        guard !isSameView(contentFooterView, view) else { return }
+        contentFooterView = view
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set content footer view: \(view == nil ? "nil" : "injected")")
+        }
+    }
+
     public func setContentViewHidden(_ hidden: Bool) {
         guard isContentViewHidden != hidden else { return }
         isContentViewHidden = hidden
@@ -137,7 +146,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
 
     public func makeRootView() -> AnyView {
         if Self.verbose {
-            Self.logger.debug("\(self.t)make root view: toolbar=\(self.toolbarView == nil ? "nil" : "set"), activityBar=\(self.activityBarView == nil ? "nil" : "set"), rail=\(self.railView == nil ? "nil" : "set"), content=\(self.contentView == nil ? "nil" : "set"), activeContainer=\(self.containerID)")
+            Self.logger.debug("\(self.t)make root view: toolbar=\(self.toolbarView == nil ? "nil" : "set"), activityBar=\(self.activityBarView == nil ? "nil" : "set"), rail=\(self.railView == nil ? "nil" : "set"), content=\(self.contentView == nil ? "nil" : "set"), footer=\(self.contentFooterView == nil ? "nil" : "set"), activeContainer=\(self.containerID)")
         }
         var root = AnyView(DefaultRootHostView(provider: self))
         for overlay in overlays { root = overlay.wrap(root) }
@@ -156,7 +165,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
            workspaceProvider?.container(id: containerID) != nil {
             return true
         }
-        return contentHeaderView != nil || contentView != nil || trailingPane?.isVisible == true
+        return contentHeaderView != nil || contentView != nil || contentFooterView != nil || trailingPane?.isVisible == true
     }
 
     /// 当前活跃容器 ID（无容器时回退 "root"）。

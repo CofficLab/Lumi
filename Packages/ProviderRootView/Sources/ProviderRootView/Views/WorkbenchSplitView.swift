@@ -47,6 +47,7 @@ struct WorkbenchSplitView: View {
         RootMainContentView(
             contentHeaderView: provider.contentHeaderView,
             contentView: provider.contentView,
+            contentFooterView: provider.contentFooterView,
             isContentViewHidden: provider.isContentViewHidden,
             trailingPane: provider.trailingPane,
             trailingWidth: workspace?.chatDivider(for: containerID, layout: .narrow, fallback: 320) ?? 320,

@@ -100,6 +100,7 @@ struct ProviderRootViewTests {
         provider.setRailView(AnyView(Text("rail")))
         provider.setContentHeaderView(AnyView(Text("content header")))
         provider.setContentView(AnyView(Text("content")))
+        provider.setContentFooterView(AnyView(Text("content footer")))
         provider.setTrailingPane(RootTrailingPane(id: "chat", content: AnyView(Text("chat"))))
 
         let view = provider.makeRootView()
@@ -126,6 +127,7 @@ struct ProviderRootViewTests {
             @Published var railView: AnyView?
             @Published var contentHeaderView: AnyView?
             @Published var contentView: AnyView?
+            @Published var contentFooterView: AnyView?
             @Published var trailingPane: RootTrailingPane?
 
             func setToolbarView(_ view: AnyView?) {
@@ -148,6 +150,10 @@ struct ProviderRootViewTests {
                 contentView = view
             }
 
+            func setContentFooterView(_ view: AnyView?) {
+                contentFooterView = view
+            }
+
             func setTrailingPane(_ pane: RootTrailingPane?) {
                 trailingPane = pane
             }
@@ -161,6 +167,7 @@ struct ProviderRootViewTests {
                         VStack {
                             if let contentHeaderView { contentHeaderView }
                             if let contentView { contentView }
+                            if let contentFooterView { contentFooterView }
                         }
                         Text("custom root")
                     }
@@ -174,9 +181,22 @@ struct ProviderRootViewTests {
         provider.setRailView(AnyView(Text("custom rail")))
         provider.setContentHeaderView(AnyView(Text("custom content header")))
         provider.setContentView(AnyView(Text("custom content")))
+        provider.setContentFooterView(AnyView(Text("custom content footer")))
         provider.setTrailingPane(RootTrailingPane(id: "custom", content: AnyView(Text("custom trailing"))))
 
         #expect(type(of: provider.makeRootView()) == AnyView.self)
+    }
+
+    @Test("Footer 注入后被视为主内容并返回根视图")
+    func contentFooterCountsAsActiveContent() {
+        let provider = DefaultRootViewProvider()
+        provider.setContentFooterView(AnyView(Text("content footer")))
+
+        #expect(provider.hasActiveContent)
+        #expect(type(of: provider.makeRootView()) == AnyView.self)
+
+        provider.setContentFooterView(nil)
+        #expect(!provider.hasActiveContent)
     }
 
     // MARK: - 显示条件（复刻旧版 AppLayoutView）
