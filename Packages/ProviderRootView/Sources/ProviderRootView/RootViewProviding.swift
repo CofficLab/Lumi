@@ -60,6 +60,18 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     /// 显示在内容区（ActivityBar / Rail 右侧）。
     func setContentView(_ view: AnyView?)
 
+    /// 主内容区是否完全隐藏（不渲染、不占用空间）。
+    ///
+    /// 与 `setContentView(nil)` 的区别：后者仍会显示占位视图；
+    /// 隐藏后整个内容区从视图树中移除，trailing pane 可独占全部空间。
+    var isContentViewHidden: Bool { get }
+
+    /// 设置主内容区是否完全隐藏。
+    ///
+    /// 隐藏后内容区不渲染、不占用内存，trailing pane（如 Chat）独占全部空间。
+    /// 适用于 ChatPanel 等不需要主内容区的容器。
+    func setContentViewHidden(_ hidden: Bool)
+
     /// 注入根布局右侧的通用面板（传 `nil` 表示没有右侧面板）。
     ///
     /// 右侧面板不限定为聊天：聊天、检查器、预览等都可以通过这个契约
@@ -75,8 +87,10 @@ public protocol RootViewProviding: AnyObject, ObservableObject
 
 public extension RootViewProviding {
     var overlays: [RootOverlayItem] { [] }
+    var isContentViewHidden: Bool { false }
     func addOverlays(_ overlays: [RootOverlayItem]) {}
     func removeOverlays(ids: Set<String>) {}
+    func setContentViewHidden(_ hidden: Bool) {}
     func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?) {}
 }
 

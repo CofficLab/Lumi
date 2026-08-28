@@ -28,6 +28,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published var contentView: AnyView?
     @Published var trailingPane: RootTrailingPane?
     @Published public private(set) var overlays: [RootOverlayItem] = []
+    @Published public private(set) var isContentViewHidden: Bool = false
     var workspaceProvider: (any WorkspaceProviding)?
     private var workspaceSubscription: AnyCancellable?
 
@@ -81,6 +82,14 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         contentView = view
         if Self.verbose {
             Self.logger.debug("\(self.t)set content view: \(view == nil ? "nil" : "injected")")
+        }
+    }
+
+    public func setContentViewHidden(_ hidden: Bool) {
+        guard isContentViewHidden != hidden else { return }
+        isContentViewHidden = hidden
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set content view hidden: \(hidden)")
         }
     }
 
