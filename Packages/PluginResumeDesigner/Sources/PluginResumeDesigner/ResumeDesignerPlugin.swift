@@ -94,6 +94,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
+                    railView?.setVisibleCategories([.design])
                     WorkspaceStore.shared.reload()
                     contentView?.setContentView(AnyView(DesignerView()))
                 },
@@ -124,7 +125,11 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
             .removeTabs(ids: [Self.railTabID])
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }

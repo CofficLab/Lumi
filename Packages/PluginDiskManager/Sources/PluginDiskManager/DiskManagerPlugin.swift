@@ -105,6 +105,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
+                    railView?.setVisibleCategories([.system])
                     contentView?.setContentView(AnyView(
                         DiskManagerView(categoryStore: self.categoryStore, workspace: self.workspace)
                     ))
@@ -130,7 +131,11 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
             .removeTabs(ids: [Self.railTabID])
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }

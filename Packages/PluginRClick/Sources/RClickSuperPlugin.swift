@@ -62,6 +62,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { [activityItemID] activeID in
                 if activeID == activityItemID {
+                    rail?.setVisibleCategories([.general])
                     content?.setContentView(AnyView(RClickSettingsView()))
                 }
             },
@@ -69,8 +70,13 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: [activityItemID])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == activityItemID
+        activityBar?.removeItems(ids: [activityItemID])
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [railTabID])
+        if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
         RClickPluginRuntimeBridge.dataRootDirectory = nil
     }
 

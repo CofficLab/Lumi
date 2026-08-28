@@ -25,12 +25,17 @@ import SwiftUI
         if let storage = kernel.resolveProvider((any StorageProviding).self) { AppManagerPlugin.pluginDataDirectoryProvider = { storage.pluginDataDirectory(for: "AppManagerPlugin") } }
         let content = kernel.resolveProvider((any ContentViewProviding).self); let rail = kernel.resolveProvider((any RailViewProviding).self); let entry = "\(id).entry"
         rail?.addTabs([RailTabItem(id: AppManagerPlugin.railTabID, category: .system, title: LumiPluginLocalization.string("Apps", bundle: .module), systemImage: "apps.ipad", order: order) { AppRailView(viewModel: self.viewModel) }])
-        if let bar = kernel.resolveProvider((any ActivityBarProviding).self) { bar.addItems([ActivityBarItem(id: entry, title: metadata.name, systemImage: "apps.ipad", order: order, ownerPluginID: id) { if $0 == entry { content?.setContentView(AnyView(AppManagerView(viewModel: self.viewModel))) } }]) } else { content?.setContentView(AnyView(AppManagerView(viewModel: viewModel))) }
+        if let bar = kernel.resolveProvider((any ActivityBarProviding).self) { bar.addItems([ActivityBarItem(id: entry, title: metadata.name, systemImage: "apps.ipad", order: order, ownerPluginID: id) { if $0 == entry { rail?.setVisibleCategories([.system]); content?.setContentView(AnyView(AppManagerView(viewModel: self.viewModel))) } }]) } else { content?.setContentView(AnyView(AppManagerView(viewModel: viewModel))) }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
+        activityBar?.removeItems(ids: ["\(id).entry"])
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [AppManagerPlugin.railTabID])
+        if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

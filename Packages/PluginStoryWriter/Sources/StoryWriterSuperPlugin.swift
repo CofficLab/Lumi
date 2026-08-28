@@ -46,6 +46,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
         rail?.addTabs([RailTabItem(id: railID, category: .project, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([ActivityBarItem(id: entryID, title: metadata.name, systemImage: "book.closed.fill", order: order, ownerPluginID: id) { [entryID] activeID in
             guard activeID == entryID else { return }
+            rail?.setVisibleCategories([.project])
             content?.setContentView(AnyView(StoryWriterRootView()))
             workspace?.activateContainer(id: containerID)
         }])
@@ -59,8 +60,13 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: [entryID])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == entryID
+        activityBar?.removeItems(ids: [entryID])
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [railID])
+        if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
         kernel.resolveProvider((any WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)

@@ -122,6 +122,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { activeItemID in
                     guard activeItemID == entryID else { return }
+                    railView?.setVisibleCategories([.design])
                     contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: self.sharedViewModel)))
                     workspace?.activateContainer(id: self.id)
                 },
@@ -204,9 +205,14 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
+        activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
         kernel.resolveProvider((any ProviderWorkspace.WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
         BookletMakerRuntimeBridge.directoryURL = nil
