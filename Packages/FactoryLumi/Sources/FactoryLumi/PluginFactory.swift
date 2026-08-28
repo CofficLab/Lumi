@@ -115,7 +115,6 @@ import PluginResumeDesigner
 import PluginSettingGeneral
 import PluginSettingView
 import PluginSkill
-import PluginStateMonitor
 import PluginOnboarding
 import PluginThemePack
 import PluginToolManager
@@ -231,7 +230,6 @@ public struct DefaultPluginFactory: PluginFactory {
             GoalTaskSuperPlugin(),
             NettoSuperPlugin(),
             SkillPlugin(),
-            StateMonitorPlugin(),
             OnboardingPlugin(),
             MemoryPlugin(),
             ModelSelectorPlugin(),
