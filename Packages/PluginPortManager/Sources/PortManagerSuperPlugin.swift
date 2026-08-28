@@ -54,6 +54,7 @@ public final class PortManagerSuperPlugin: SuperPlugin, SuperLog {
                 if state == .activated {
                     content?.setContentView(AnyView(PortManagerView()))
                     rootView?.setRailView(nil)
+                    rootView?.setContentHeaderViewHidden(true)
                     toolbar?.addToolbarItems([
                         ToolbarItem(id: titleItemID, title: title, placement: .center, order: 0) {
                             AppToolbarTitleLabel(title: title)
@@ -61,6 +62,7 @@ public final class PortManagerSuperPlugin: SuperPlugin, SuperLog {
                     ])
                 } else {
                     rootView?.setRailView(railView?.makeRailView())
+                    rootView?.setContentHeaderViewHidden(false)
                     toolbar?.removeToolbarItems(ids: [titleItemID])
                 }
             },
