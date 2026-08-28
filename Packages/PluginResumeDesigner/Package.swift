@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "PluginResumeDesigner", targets: ["PluginResumeDesigner"]),
     ],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitHTMLPreview"),
         .package(path: "../KernelCore"),
@@ -28,6 +29,7 @@ let package = Package(
         .target(
             name: "PluginResumeDesigner",
             dependencies: [
+                "KitSuperLog",
                 "KitAgentTool",
                 "KitHTMLPreview",
                 "KernelCore",

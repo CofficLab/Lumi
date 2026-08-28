@@ -7,6 +7,8 @@ import ProviderRailView
 import ProviderToolManager
 import ProviderPromptSuggestion
 import SwiftUI
+import KitSuperLog
+import os
 
 /// KernelCore 版本的 Resume Designer 插件。
 ///
@@ -14,7 +16,8 @@ import SwiftUI
 /// 参考 `PluginAppIconDesigner` 的装配方式：onBoot 注册 Agent 工具、Rail 标签、
 /// ActivityBar 入口与 Docs 文档；onShutdown 全部撤回。
 @MainActor
-public final class ResumeDesignerPlugin: SuperPlugin {
+public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.resume-designer", category: "ResumeDesigner")
     public let id = "com.coffic.lumi.plugin.resume-designer"
     public let order = 81
     public let metadata = PluginMetadata(
