@@ -46,7 +46,10 @@ public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
             databaseRootURL: storage.pluginDataDirectory(for: "GoalTaskPlugin")
         )
 
-        guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else { return }
+        guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            Self.logger.error("\(Self.t) ConversationManaging not found")
+            return
+        }
         let bridge = GoalTaskConversationBridge(conversations)
         conversationBridge = bridge
         goalVM.updateCurrentConversationID(bridge.selectedConversationID)
