@@ -178,7 +178,8 @@ extension AgentLoopManager {
             result,
             toolCallID: toolCall.id,
             assistantMessageID: assistantMessageID,
-            in: conversationID
+            in: conversationID,
+            authorizationState: toolCall.authorizationState.rawValue
         )
         insertToolResultMessage(result, toolCallID: toolCall.id, conversationID: conversationID, turnID: turnID)
 

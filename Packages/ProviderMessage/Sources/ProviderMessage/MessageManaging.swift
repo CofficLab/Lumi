@@ -33,12 +33,14 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
     ///
     /// 对齐旧版 `MessageManaging.updateToolCallResult`。工具调用结果落库由
     /// 单独的 `.tool` 消息承担；此处仅更新 assistant 消息内的展示快照。
+    /// `authorizationState` 非 nil 时，同时更新授权状态并持久化。
     /// 消息或工具调用不存在时静默忽略。
     func updateToolCallResult(
         _ result: MessageToolResult,
         toolCallID: String,
         assistantMessageID: UUID,
-        in conversationID: UUID
+        in conversationID: UUID,
+        authorizationState: String?
     )
 
     // MARK: - Observation
@@ -66,7 +68,15 @@ public extension MessageManaging {
         toolCallID: String,
         assistantMessageID: UUID,
         in conversationID: UUID
-    ) {}
+    ) {
+        updateToolCallResult(
+            result,
+            toolCallID: toolCallID,
+            assistantMessageID: assistantMessageID,
+            in: conversationID,
+            authorizationState: nil
+        )
+    }
 
 
     func addMessageInsertedObserver(

@@ -299,11 +299,13 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
         conversationID: UUID,
         turnID: UUID?
     ) async -> ToolCallResult {
-        let result = await execute(toolCall, conversationID: conversationID, turnID: turnID)
+        var authorizedToolCall = toolCall
+        authorizedToolCall.authorizationState = .userApproved
+        let result = await execute(authorizedToolCall, conversationID: conversationID, turnID: turnID)
         notify(.authorizedCompleted(
             conversationID: conversationID,
             turnID: turnID,
-            toolCall: toolCall,
+            toolCall: authorizedToolCall,
             result: result
         ))
         return result
@@ -314,11 +316,13 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
         conversationID: UUID,
         turnID: UUID?
     ) async -> ToolCallResult {
+        var rejectedToolCall = toolCall
+        rejectedToolCall.authorizationState = .userRejected
         let result = ToolCallResult(content: "Tool execution was rejected by the user.", isError: true)
         notify(.authorizedCompleted(
             conversationID: conversationID,
             turnID: turnID,
-            toolCall: toolCall,
+            toolCall: rejectedToolCall,
             result: result
         ))
         return result

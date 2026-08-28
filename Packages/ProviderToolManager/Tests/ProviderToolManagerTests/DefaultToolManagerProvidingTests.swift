@@ -79,6 +79,47 @@ struct DefaultToolManagerProvidingTests {
         #expect(result.content.contains("disk full"))
     }
 
+    @Test("授权执行事件携带最终授权状态")
+    func authorizedCompletionCarriesDecision() async {
+        let manager = DefaultToolManagerProviding()
+        manager.add(MockTool(name: "read"), pluginID: "p")
+        var approvedState: ToolCallAuthorizationState?
+        let handle = manager.addToolManagerObserver { event in
+            if case let .authorizedCompleted(_, _, toolCall, _) = event {
+                approvedState = toolCall.authorizationState
+            }
+        }
+
+        _ = await manager.executeAuthorized(
+            makeToolCall(name: "read"),
+            conversationID: UUID(),
+            turnID: nil
+        )
+
+        #expect(approvedState == .userApproved)
+        handle.cancel()
+    }
+
+    @Test("拒绝授权事件携带最终授权状态")
+    func rejectedCompletionCarriesDecision() async {
+        let manager = DefaultToolManagerProviding()
+        var rejectedState: ToolCallAuthorizationState?
+        let handle = manager.addToolManagerObserver { event in
+            if case let .authorizedCompleted(_, _, toolCall, _) = event {
+                rejectedState = toolCall.authorizationState
+            }
+        }
+
+        _ = await manager.rejectAuthorized(
+            makeToolCall(name: "read"),
+            conversationID: UUID(),
+            turnID: nil
+        )
+
+        #expect(rejectedState == .userRejected)
+        handle.cancel()
+    }
+
     @Test("批次遇到高风险工具后立即暂停，不执行后续调用")
     func executeBatchStopsAtApproval() async {
         let manager = DefaultToolManagerProviding()

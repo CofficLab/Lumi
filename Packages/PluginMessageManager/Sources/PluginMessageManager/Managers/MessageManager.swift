@@ -360,7 +360,8 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         _ result: MessageToolResult,
         toolCallID: String,
         assistantMessageID: UUID,
-        in conversationID: UUID
+        in conversationID: UUID,
+        authorizationState: String? = nil
     ) {
         if Self.verbose {
             Self.logger.info("\(Self.t)updateToolCallResult begin conversation=\(conversationID.uuidString.prefix(8))…, message=\(assistantMessageID.uuidString.prefix(8))…, toolCall=\(toolCallID), contentChars=\(result.content.count), isError=\(result.isError)")
@@ -381,6 +382,9 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         }
 
         toolCalls[index].result = result
+        if let authorizationState {
+            toolCalls[index].authorizationState = authorizationState
+        }
         message.toolCalls = toolCalls
         if pending.update(id: assistantMessageID, conversationID: conversationID) { pendingMessage in
             pendingMessage.toolCalls = toolCalls
