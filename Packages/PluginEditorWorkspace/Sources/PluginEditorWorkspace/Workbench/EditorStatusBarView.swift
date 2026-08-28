@@ -1,7 +1,14 @@
+import EditorService
 import SwiftUI
 
 struct EditorStatusBarView: View {
-    @ObservedObject var controller: EditorWorkspaceController
+    @ObservedObject private var state: EditorState
+    private let controller: EditorWorkspaceController
+
+    init(controller: EditorWorkspaceController) {
+        self.controller = controller
+        _state = ObservedObject(wrappedValue: controller.editor.state)
+    }
 
     var body: some View {
         HStack(spacing: 14) {
@@ -15,10 +22,10 @@ struct EditorStatusBarView: View {
             }
 
             Spacer()
-            Text("Ln \(controller.editor.editing.cursorLine), Col \(controller.editor.editing.cursorColumn)")
-            Text(controller.editor.state.useSpaces ? "Spaces: \(controller.editor.state.tabWidth)" : "Tab Size: \(controller.editor.state.tabWidth)")
+            Text("Ln \(state.cursorLine), Col \(state.cursorColumn)")
+            Text(state.useSpaces ? "Spaces: \(state.tabWidth)" : "Tab Size: \(state.tabWidth)")
             Text("UTF-8")
-            Text(controller.editor.state.detectedLanguage?.descriptor.displayName ?? "Plain Text")
+            Text(state.detectedLanguage?.descriptor.displayName ?? "Plain Text")
             if !controller.editor.files.isEditable {
                 Label("Read Only", systemImage: "lock")
             }

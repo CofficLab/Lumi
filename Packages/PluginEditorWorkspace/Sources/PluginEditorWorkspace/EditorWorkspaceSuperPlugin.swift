@@ -6,9 +6,12 @@ import ProviderContentView
 import ProviderProject
 import ProviderRailView
 import SwiftUI
+import KitSuperLog
+import os
 
 @MainActor
-public final class EditorWorkspaceSuperPlugin: SuperPlugin {
+public final class EditorWorkspaceSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.editor-workspace", category: "EditorWorkspace")
     public static let pluginID = "com.coffic.lumi.plugin.editor-workspace"
     public static let activityItemID = "\(pluginID).entry"
     public static let explorerTabID = "\(pluginID).explorer"

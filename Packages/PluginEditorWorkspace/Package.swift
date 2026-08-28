@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "PluginEditorWorkspace", targets: ["PluginEditorWorkspace"]),
     ],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../PluginEditorHost"),
         .package(path: "../EditorContracts"),
@@ -24,6 +25,7 @@ let package = Package(
         .target(
             name: "PluginEditorWorkspace",
             dependencies: [
+                "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "EditorService", package: "EditorService"),
