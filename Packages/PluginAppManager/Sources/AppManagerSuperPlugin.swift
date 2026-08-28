@@ -1,4 +1,6 @@
 import KernelCore
+import KitSuperLog
+import os
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
@@ -6,7 +8,8 @@ import ProviderRailView
 import ProviderStorage
 import SwiftUI
 
-@MainActor public final class AppManagerSuperPlugin: SuperPlugin {
+@MainActor public final class AppManagerSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.app-manager", category: "AppManager")
     public let id = "com.coffic.lumi.plugin.app-manager"; public let order = 242
     public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.app-manager", name: "App Manager", description: "Browse installed macOS applications.", category: .system, stage: .preview, policy: .disabledByDefault)
     private let viewModel = AppManagerViewModel(); public init() {}
