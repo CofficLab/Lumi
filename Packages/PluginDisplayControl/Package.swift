@@ -16,6 +16,8 @@ let package = Package(
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
+        .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../LumiUI"),
         .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog")
@@ -28,6 +30,8 @@ let package = Package(
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "KitSuperLog", package: "KitSuperLog")

@@ -1,14 +1,16 @@
 import KernelCore
+import KitSuperLog
+import os
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderMenuBar
+import ProviderRailView
+import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
 import ProviderWorkspace
 import SwiftUI
-import KitSuperLog
-import os
 
 /// 设备信息插件。
 @MainActor
@@ -57,7 +59,8 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         // 2. 注册 ActivityBar 入口；入口被激活时由插件切换自己的主内容，
         //    并隐藏侧边栏 Rail（本插件不贡献 Rail 内容，直接全屏展示主视图）。
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
-        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
             activityBar.addItems([
@@ -67,14 +70,16 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
                     systemImage: "gauge.with.dots.needle.50percent",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    if activeItemID == entryID {
+                ) { state in
+                    if state == .activated {
                         // 本插件被激活：展示主内容并隐藏侧边栏 Rail（全屏展示）。
                         contentView?.setContentView(AnyView(DeviceInfoView()))
-                        workspace?.setRailVisible(false)
+                        rootView?.setRailView(nil)
+                        rootView?.setContentHeaderViewHidden(true)
                     } else {
                         // 切换到其它入口时恢复 Rail 可见性。
-                        workspace?.setRailVisible(true)
+                        rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setContentHeaderViewHidden(false)
                     }
                 },
             ])
@@ -103,7 +108,10 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         activityBar?.removeItems(ids: ["\(id).entry"])
         // 恢复 Rail 可见性（本插件激活时可能已将其隐藏）。
-        kernel.resolveProvider((any WorkspaceProviding).self)?.setRailVisible(true)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        rootView?.setRailView(railView?.makeRailView())
+        rootView?.setContentHeaderViewHidden(false)
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }

@@ -4,6 +4,8 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderToolbar
+import ProviderRailView
+import ProviderRootView
 import SwiftUI
 import KitSuperLog
 import os
@@ -37,6 +39,8 @@ public final class PortManagerSuperPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         let title = metadata.name
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
@@ -46,15 +50,17 @@ public final class PortManagerSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "arrow.up.arrow.down.circle",
                 order: order,
                 ownerPluginID: id
-            ) { [activityItemID, titleItemID] activeID in
-                if activeID == activityItemID {
+            ) { [titleItemID] state in
+                if state == .activated {
                     content?.setContentView(AnyView(PortManagerView()))
+                    rootView?.setRailView(nil)
                     toolbar?.addToolbarItems([
                         ToolbarItem(id: titleItemID, title: title, placement: .center, order: 0) {
                             AppToolbarTitleLabel(title: title)
                         },
                     ])
                 } else {
+                    rootView?.setRailView(railView?.makeRailView())
                     toolbar?.removeToolbarItems(ids: [titleItemID])
                 }
             },

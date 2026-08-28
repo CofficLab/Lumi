@@ -15,6 +15,8 @@ let package = Package(
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
+        .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../KitSuperLog"),
     ],
     targets: [
@@ -27,6 +29,8 @@ let package = Package(
                 "ProviderActivityBar",
                 "ProviderContentView",
                 "ProviderDocsView",
+                "ProviderRailView",
+                "ProviderRootView",
                 "KitSuperLog",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]

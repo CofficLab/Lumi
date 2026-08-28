@@ -3,6 +3,8 @@ import LumiUI
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
+import ProviderRailView
+import ProviderRootView
 import ProviderToolbar
 import SwiftUI
 import os
@@ -43,6 +45,8 @@ public final class DockerManagerSuperPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         let title = metadata.name
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
@@ -52,15 +56,17 @@ public final class DockerManagerSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "shippingbox",
                 order: order,
                 ownerPluginID: id
-            ) { [activityItemID, titleItemID] activeID in
-                if activeID == activityItemID {
+            ) { [titleItemID] state in
+                if state == .activated {
                     content?.setContentView(AnyView(DockerImagesView()))
+                    rootView?.setRailView(nil)
                     toolbar?.addToolbarItems([
                         ToolbarItem(id: titleItemID, title: title, placement: .center, order: 0) {
                             AppToolbarTitleLabel(title: title)
                         },
                     ])
                 } else {
+                    rootView?.setRailView(railView?.makeRailView())
                     toolbar?.removeToolbarItems(ids: [titleItemID])
                 }
             },

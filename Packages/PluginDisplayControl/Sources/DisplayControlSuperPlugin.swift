@@ -2,6 +2,8 @@ import KernelCore
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
+import ProviderRailView
+import ProviderRootView
 import SwiftUI
 import KitSuperLog
 import os
@@ -31,6 +33,8 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let entryID = "\(id).entry"
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             activityBar.addItems([
@@ -40,9 +44,12 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
                     systemImage: "display",
                     order: order,
                     ownerPluginID: id
-                ) {
-                    if $0 == entryID {
+                ) { state in
+                    if state == .activated {
                         content?.setContentView(AnyView(DisplayControlView()))
+                        rootView?.setRailView(nil)
+                    } else {
+                        rootView?.setRailView(railView?.makeRailView())
                     }
                 },
             ])

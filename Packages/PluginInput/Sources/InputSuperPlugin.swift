@@ -3,6 +3,8 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderStorage
+import ProviderRailView
+import ProviderRootView
 import SwiftUI
 import KitSuperLog
 import os
@@ -45,6 +47,8 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
         }
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             activityBar.addItems([
                 ActivityBarItem(
@@ -53,9 +57,12 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
                     systemImage: "keyboard",
                     order: order,
                     ownerPluginID: id
-                ) { [activityItemID] in
-                    if $0 == activityItemID {
+                ) { state in
+                    if state == .activated {
                         content?.setContentView(AnyView(InputSettingsView()))
+                        rootView?.setRailView(nil)
+                    } else {
+                        rootView?.setRailView(railView?.makeRailView())
                     }
                 },
             ])

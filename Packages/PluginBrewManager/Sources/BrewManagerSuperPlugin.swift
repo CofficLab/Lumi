@@ -3,6 +3,8 @@ import LumiUI
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
+import ProviderRailView
+import ProviderRootView
 import ProviderToolbar
 import SwiftUI
 import os
@@ -44,6 +46,8 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
             ActivityBarItem(
@@ -52,9 +56,10 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "mug.fill",
                 order: order,
                 ownerPluginID: id
-            ) { [activityItemID, refreshItemID] activeID in
-                if activeID == activityItemID {
+            ) { [refreshItemID] state in
+                if state == .activated {
                     content?.setContentView(AnyView(BrewManagerView()))
+                    rootView?.setRailView(nil)
                     toolbar?.addToolbarItems([
                         ToolbarItem(id: refreshItemID, title: LumiPluginLocalization.string("Refresh", bundle: .module), placement: .trailing, order: 260) {
                             AppIconButton(systemImage: "arrow.clockwise") {
@@ -64,6 +69,7 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
                         },
                     ])
                 } else {
+                    rootView?.setRailView(railView?.makeRailView())
                     toolbar?.removeToolbarItems(ids: [refreshItemID])
                 }
             },

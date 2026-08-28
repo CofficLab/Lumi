@@ -4,6 +4,8 @@ import os
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
+import ProviderRailView
+import ProviderRootView
 import ProviderStorage
 import SwiftUI
 
@@ -31,13 +33,18 @@ import SwiftUI
     public func onBoot(kernel: KernelCoreContainer) throws {
         ImageToPDFRuntimeBridge.directoryURL = kernel.resolveProvider((any StorageProviding).self)?.pluginDataDirectory(for: "ImageToPDF")
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let entry = "\(id).entry"
 
         if let bar = kernel.resolveProvider((any ActivityBarProviding).self) {
             bar.addItems([
-                ActivityBarItem(id: entry, title: metadata.name, systemImage: "photo.on.rectangle.angled", order: order, ownerPluginID: id) { activeItemID in
-                    if activeItemID == entry {
+                ActivityBarItem(id: entry, title: metadata.name, systemImage: "photo.on.rectangle.angled", order: order, ownerPluginID: id) { state in
+                    if state == .activated {
                         content?.setContentView(AnyView(ImageToPDFMainView()))
+                        rootView?.setRailView(nil)
+                    } else {
+                        rootView?.setRailView(railView?.makeRailView())
                     }
                 },
             ])

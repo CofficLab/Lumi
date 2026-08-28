@@ -2,6 +2,8 @@ import KernelCore
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
+import ProviderRailView
+import ProviderRootView
 import SwiftUI
 import os
 import KitSuperLog
@@ -40,6 +42,8 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
     public func onBoot(kernel: KernelCoreContainer) throws {
         ClipboardMonitor.shared.startMonitoring()
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let entry = "\(id).entry"
 
         if let bar = kernel.resolveProvider((any ActivityBarProviding).self) {
@@ -50,9 +54,12 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
                     systemImage: "doc.on.clipboard",
                     order: order,
                     ownerPluginID: id
-                ) {
-                    if $0 == entry {
+                ) { state in
+                    if state == .activated {
                         content?.setContentView(AnyView(ClipboardHistoryView()))
+                        rootView?.setRailView(nil)
+                    } else {
+                        rootView?.setRailView(railView?.makeRailView())
                     }
                 },
             ])

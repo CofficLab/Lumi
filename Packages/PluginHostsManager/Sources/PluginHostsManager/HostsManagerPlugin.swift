@@ -3,6 +3,8 @@ import os
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
+import ProviderRailView
+import ProviderRootView
 import KitSuperLog
 import SwiftUI
 
@@ -47,6 +49,8 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
 
         // ActivityBar 入口（沿用旧版 viewContainers）。
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
@@ -58,9 +62,13 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
                     systemImage: "list.bullet.rectangle",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
-                    contentView?.setContentView(AnyView(HostsManagerView()))
+                ) { state in
+                    if state == .activated {
+                        contentView?.setContentView(AnyView(HostsManagerView()))
+                        rootView?.setRailView(nil)
+                    } else {
+                        rootView?.setRailView(railView?.makeRailView())
+                    }
                 },
             ])
         } else {
@@ -70,7 +78,12 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailView(railView?.makeRailView())
+        }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
