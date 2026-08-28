@@ -1,4 +1,6 @@
 import KernelCore
+import KitSuperLog
+import os
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
@@ -7,7 +9,8 @@ import ProviderRootView
 import ProviderStorage
 import SwiftUI
 
-@MainActor public final class ImageToPDFSuperPlugin: SuperPlugin {
+@MainActor public final class ImageToPDFSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.image-to-pdf", category: "ImageToPDF")
     public let id = "com.coffic.lumi.plugin.image-to-pdf"; public let order = 875
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.image-to-pdf",
