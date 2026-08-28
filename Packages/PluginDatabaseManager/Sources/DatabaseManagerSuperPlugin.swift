@@ -1,6 +1,7 @@
 import EditorContracts
 import EditorService
 import KernelCore
+import ProviderActivityBar
 import ProviderDocsView
 import ProviderContentView
 import ProviderExternalFile
@@ -49,9 +50,28 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(
             AnyView(DatabaseManagerV2Workspace(viewModel: viewModel))
         )
-        kernel.resolveProvider((any ToolbarProviding).self)?.addToolbarItems([
-            ToolbarItem(id: "\(id).title", title: metadata.name, placement: .center, order: 0) {
-                Text(self.metadata.name).font(.headline)
+        let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
+            ActivityBarItem(
+                id: "\(id).entry",
+                title: metadata.name,
+                systemImage: "cylinder.split.1x2",
+                order: order,
+                ownerPluginID: id
+            ) { state in
+                if state == .activated {
+                    contentView?.setContentView(
+                        AnyView(DatabaseManagerV2Workspace(viewModel: self.viewModel))
+                    )
+                    toolbar?.addToolbarItems([
+                        ToolbarItem(id: "\(self.id).title", title: self.metadata.name, placement: .center, order: 0) {
+                            Text(self.metadata.name).font(.headline)
+                        },
+                    ])
+                } else {
+                    toolbar?.removeToolbarItems(ids: ["\(self.id).title"])
+                }
             },
         ])
         kernel.resolveProvider((any ExternalFileOpening).self)?.registerHandler(pluginID: id) { url in
@@ -65,6 +85,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
         kernel.resolveProvider((any ExternalFileOpening).self)?.unregisterHandlers(pluginID: id)
