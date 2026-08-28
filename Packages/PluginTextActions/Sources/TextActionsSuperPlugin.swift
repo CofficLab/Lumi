@@ -2,10 +2,13 @@ import KernelCore
 import ProviderDocsView
 import ProviderLLMManager
 import ProviderSettingView
+import KitSuperLog
+import os
 
 /// KernelCore lifecycle for the global selected-text action menu.
 @MainActor
-public final class TextActionsSuperPlugin: SuperPlugin {
+public final class TextActionsSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.text-actions", category: "TextActions")
     public let id = "com.coffic.lumi.plugin.text-actions"
     public let order = 275
     public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.text-actions", name: "Text Actions", description: "Show copy, search, and translation actions for selected text in other macOS apps.", category: .system, stage: .preview, policy: .disabledByDefault)
