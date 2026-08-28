@@ -15,7 +15,7 @@ import ProviderProject
 @Test func selectingConversationFollowsItsProjectAndExternalProjectChangeClearsSelection() async throws {
     let kernel = KernelCoreContainer()
     let conversations = DefaultConversationManager()
-    let project = DefaultProjectProviding()
+    let project = DefaultProjectProvider()
     try kernel.registerProvider((any ConversationManaging).self, conversations)
     try kernel.registerProvider((any ProjectProviding).self, project)
 

@@ -44,4 +44,25 @@ public protocol ProjectProviding: ObservableObject where ObjectWillChangePublish
     ///
     /// 拥有项目持久化能力的实现应覆盖此方法以持久化项目列表。
     func synchronizeProjects(_ projects: [ProjectInfo])
+
+    // MARK: - Observation
+
+    /// 注册项目状态观察者。
+    ///
+    /// 回调在主线程同步执行，且执行时对应的 Provider 状态已经更新。观察者
+    /// 不应保存 Provider 的强引用；返回的句柄在释放或显式调用 `cancel()` 后
+    /// 自动停止接收通知。
+    @discardableResult
+    func addObserver(_ callback: @escaping (ProjectProvidingEvent) -> Void) -> any ProjectProvidingObserverHandle
+}
+
+public extension ProjectProviding {
+    /// 轻量项目 Provider 的兼容默认实现。
+    ///
+    /// 完整实现应覆盖此方法并发出语义事件；默认 no-op 使已有的测试替身和
+    /// 外部注入实现可以逐步接入监听能力，同时仍可使用 `objectWillChange`。
+    @discardableResult
+    func addObserver(_ callback: @escaping (ProjectProvidingEvent) -> Void) -> any ProjectProvidingObserverHandle {
+        NoopProjectProvidingObserverHandle()
+    }
 }

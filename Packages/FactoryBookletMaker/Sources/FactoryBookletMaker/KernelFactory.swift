@@ -27,7 +27,7 @@ public enum KernelFactory {
     /// 创建 KernelCore 内核，装配并注册全部默认 Provider：
     /// - `StorageProviding` → `DefaultStorageProvider`（Application Support 磁盘存储）
     /// - `ContentViewProviding` → `DefaultContentViewProviding`（当前内容视图）
-    /// - `ProjectProviding` → `DefaultProjectProviding`
+    /// - `ProjectProviding` → `DefaultProjectProvider`
     /// - `ToastProviding` → `DefaultToastProviding`（no-op）
     /// - `NetworkProviding` → `DefaultNetworkProviding`（URLSession）
     /// - `ToolbarProviding` → `DefaultToolbarProviding`（按 placement 渲染）

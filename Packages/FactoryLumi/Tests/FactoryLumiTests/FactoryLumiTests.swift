@@ -125,7 +125,7 @@ struct FactoryLumiTests {
 
         let resolved: (any ProjectProviding)? = kernel.resolveProvider((any ProjectProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultProjectProviding)
+        #expect(resolved is DefaultProjectProvider)
     }
 
     @Test("makeKernel 创建内核并注册默认 ConversationManaging")
@@ -264,7 +264,7 @@ struct FactoryLumiTests {
         let settingView = factory.makeSettingViewProvider()
 
         #expect(storage is DefaultStorageProvider)
-        #expect(project is DefaultProjectProviding)
+        #expect(project is DefaultProjectProvider)
         #expect(toast is DefaultToastProviding)
         #expect(network is DefaultNetworkProviding)
         #expect(toolbar is DefaultToolbarProviding)
