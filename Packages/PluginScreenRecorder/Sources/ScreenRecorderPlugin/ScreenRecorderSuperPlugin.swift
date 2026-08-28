@@ -5,9 +5,12 @@ import ProviderDocsView
 import ProviderSettingView
 import ProviderStorage
 import ProviderToolManager
+import KitSuperLog
+import os
 
 @MainActor
-public final class ScreenRecorderSuperPlugin: SuperPlugin {
+public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.screen-recorder", category: "ScreenRecorder")
     public let id = "com.coffic.lumi.plugin.screen-recorder"
     public let order = 285
     public let metadata = PluginMetadata(
