@@ -3,9 +3,12 @@ import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import SwiftUI
+import KitSuperLog
+import os
 
 @MainActor
-public final class DisplayControlSuperPlugin: SuperPlugin {
+public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.display-control", category: "DisplayControl")
     public let id = "com.coffic.lumi.plugin.display-control"
     public let order = 210
     public let metadata = PluginMetadata(
