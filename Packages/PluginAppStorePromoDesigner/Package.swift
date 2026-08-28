@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "PluginAppStorePromoDesigner", targets: ["PluginAppStorePromoDesigner"]),
     ],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitAppStorePromo"),
         .package(path: "../KitHTMLPreview"),
@@ -31,6 +32,7 @@ let package = Package(
         .target(
             name: "PluginAppStorePromoDesigner",
             dependencies: [
+                "KitSuperLog",
                 "KitAgentTool",
                 "KitAppStorePromo",
                 "KitHTMLPreview",

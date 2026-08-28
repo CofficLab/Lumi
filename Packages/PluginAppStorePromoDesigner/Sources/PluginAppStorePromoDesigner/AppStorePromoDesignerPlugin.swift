@@ -9,13 +9,16 @@ import ProviderToolManager
 import ProviderPromptSuggestion
 import ProviderWorkspace
 import SwiftUI
+import KitSuperLog
+import os
 
 /// KernelCore 版本的 App Store 促销图设计器插件。
 ///
 /// 由旧版 `Plugins/AppStorePromoDesignerPlugin`（KernelLumi / LumiPlugin）复刻而来，
 /// 形态对齐 `PluginAppIconDesigner`：SuperPlugin + SuperAgentTool + Provider 注册表。
 @MainActor
-public final class AppStorePromoDesignerPlugin: SuperPlugin {
+public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.app-store-promo-designer", category: "AppStorePromoDesigner")
     public let id = "com.coffic.lumi.plugin.app-store-promo-designer"
     public let order = 80
     public let metadata = PluginMetadata(
