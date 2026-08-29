@@ -1,4 +1,7 @@
 import Testing
+import KernelCore
+import ProviderActivityBar
+import ProviderChatSection
 @testable import BrewManagerPlugin
 
 @MainActor
@@ -15,6 +18,24 @@ struct PluginBrewManagerTests {
     @Test
     func v2IdentifiersRemainStable() {
         #expect(BrewManagerSuperPlugin().id.hasSuffix("brew-manager"))
+    }
+
+    @Test
+    func activatingPluginHidesChatSectionAndDeactivatingRestoresIt() throws {
+        let kernel = KernelCoreContainer()
+        let activity = DefaultActivityBarProviding()
+        let chat = DefaultChatSectionProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activity)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+
+        try BrewManagerSuperPlugin().onBoot(kernel: kernel)
+
+        #expect(activity.activeItemID == "com.coffic.lumi.plugin.brew-manager.entry")
+        #expect(!chat.isVisible)
+
+        activity.activateItem(id: nil)
+
+        #expect(chat.isVisible)
     }
 
     @Test

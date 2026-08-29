@@ -9,6 +9,7 @@ import ProviderToolbar
 import SwiftUI
 import os
 import KitSuperLog
+import ProviderChatSection
 
 struct BrewManagerPlugin {
     nonisolated static let verbose = false
@@ -46,6 +47,7 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
@@ -59,6 +61,7 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
             ) { [refreshItemID] state in
                 if state == .activated {
                     content?.setContentView(AnyView(BrewManagerView()))
+                    chat?.setVisible(false)
                     rootView?.setRailView(nil)
                     rootView?.setContentHeaderViewHidden(true)
                     toolbar?.addToolbarItems([
@@ -70,6 +73,7 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
                         },
                     ])
                 } else {
+                    chat?.setVisible(true)
                     rootView?.setRailView(railView?.makeRailView())
                     rootView?.setContentHeaderViewHidden(false)
                     toolbar?.removeToolbarItems(ids: [refreshItemID])
@@ -79,7 +83,12 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: [activityItemID])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == activityItemID
+        activityBar?.removeItems(ids: [activityItemID])
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+        }
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: [refreshItemID])
     }
 
