@@ -1,5 +1,6 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderStorage
@@ -47,6 +48,7 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
         }
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
@@ -60,9 +62,11 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
                 ) { state in
                     if state == .activated {
                         content?.setContentView(AnyView(InputSettingsView()))
+                        chat?.setVisible(false)
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
                     } else {
+                        chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
                         rootView?.setContentHeaderViewHidden(false)
                     }
@@ -74,7 +78,12 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: [activityItemID])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == activityItemID
+        activityBar?.removeItems(ids: [activityItemID])
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+        }
         InputPluginRuntimeBridge.dataRootDirectory = nil
     }
 

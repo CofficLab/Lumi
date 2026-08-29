@@ -9,6 +9,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../ProviderActivityBar"),
+        .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderRailView"),
@@ -24,6 +25,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
@@ -38,7 +40,11 @@ let package = Package(
         ),
         .testTarget(
             name: "InputPluginTests",
-            dependencies: [.target(name: "InputPlugin")],
+            dependencies: [
+                .target(name: "InputPlugin"),
+                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+            ],
             path: "Tests"
         )
     ]

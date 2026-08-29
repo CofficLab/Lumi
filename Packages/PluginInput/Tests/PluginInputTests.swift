@@ -1,5 +1,8 @@
 import Testing
 import Foundation
+import KernelCore
+import ProviderActivityBar
+import ProviderChatSection
 @testable import InputPlugin
 
 @MainActor
@@ -8,6 +11,25 @@ import Foundation
 
     #expect(plugin.id == "com.coffic.lumi.plugin.input-manager")
     #expect(plugin.metadata.policy == .disabledByDefault)
+}
+
+@MainActor
+@Test func activatingPluginHidesChatAndDeactivatingRestoresIt() throws {
+    let kernel = KernelCoreContainer()
+    let activityBar = DefaultActivityBarProviding()
+    let chat = DefaultChatSectionProviding()
+    try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+    try kernel.registerProvider((any ChatSectionProviding).self, chat)
+
+    let plugin = InputSuperPlugin()
+    try plugin.onBoot(kernel: kernel)
+
+    #expect(activityBar.activeItemID == "\(plugin.id).entry")
+    #expect(!chat.isVisible)
+
+    activityBar.activateItem(id: nil)
+
+    #expect(chat.isVisible)
 }
 
 @MainActor
