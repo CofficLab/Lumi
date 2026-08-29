@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginEditorHost",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [.library(name: "PluginEditorHost", targets: ["PluginEditorHost"])],
     dependencies: [
@@ -12,6 +13,7 @@ let package = Package(
         .package(path: "../EditorService"),
         .package(path: "../EditorSource"),
         .package(path: "../EditorLanguageRuntime"),
+        .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
     ],
     targets: [
@@ -24,8 +26,10 @@ let package = Package(
                 .product(name: "EditorService", package: "EditorService"),
                 .product(name: "EditorSource", package: "EditorSource"),
                 .product(name: "EditorLanguageRuntime", package: "EditorLanguageRuntime"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
-            ]
+            ],
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "PluginEditorHostTests",
