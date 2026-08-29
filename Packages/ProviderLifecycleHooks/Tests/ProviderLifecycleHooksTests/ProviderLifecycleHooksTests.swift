@@ -66,4 +66,22 @@ struct DefaultLifecycleHooksProviderTests {
         let result = await provider.runWillSendToLLM(ctx)
         #expect(result.messages == ctx.messages)
     }
+
+    @MainActor
+    @Test("willSendToLLM 注册句柄可以取消单个钩子")
+    func testWillSendToLLMHookCanBeCancelled() async {
+        let provider = DefaultLifecycleHooksProvider()
+        var callCount = 0
+        let handle = provider.addWillSendToLLMHook { context in
+            callCount += 1
+            return context
+        }
+        let context = WillSendToLLMContext(messages: [], conversationID: UUID())
+
+        _ = await provider.runWillSendToLLM(context)
+        handle.cancel()
+        _ = await provider.runWillSendToLLM(context)
+
+        #expect(callCount == 1)
+    }
 }

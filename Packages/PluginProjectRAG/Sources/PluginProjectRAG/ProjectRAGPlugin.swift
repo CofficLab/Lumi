@@ -33,6 +33,7 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
     private var service: RAGService?
     private var schedulerTask: Task<Void, Never>?
     private var llmContextHook: ProjectRAGLLMContextHook?
+    private var llmContextHookHandle: (any LifecycleHookHandle)?
     private var projectLifecycleHook: ProjectRAGProjectLifecycleHook?
 
     public init() {}
@@ -55,7 +56,7 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
         if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
             let contextHook = ProjectRAGLLMContextHook(provider: provider)
             self.llmContextHook = contextHook
-            hooks.addWillSendToLLMHook { [weak contextHook] context in
+            llmContextHookHandle = hooks.addWillSendToLLMHook { [weak contextHook] context in
                 guard let contextHook else { return context }
                 return await contextHook.apply(to: context)
             }
@@ -91,6 +92,8 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
         kernel.unregisterProvider((any ProjectRAGProviding).self)
         schedulerTask?.cancel()
         schedulerTask = nil
+        llmContextHookHandle?.cancel()
+        llmContextHookHandle = nil
         llmContextHook = nil
         projectLifecycleHook?.cancel()
         projectLifecycleHook = nil
