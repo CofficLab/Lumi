@@ -6,6 +6,7 @@ import ProviderChatSection
 import ProviderDocsView
 import ProviderContentView
 import ProviderExternalFile
+import ProviderRootView
 import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
@@ -53,6 +54,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
         )
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
             ActivityBarItem(
@@ -64,6 +66,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
             ) { state in
                 if state == .activated {
                     chat?.setVisible(false)
+                    rootView?.setContentHeaderViewHidden(true)
                     contentView?.setContentView(
                         AnyView(DatabaseManagerV2Workspace(viewModel: self.viewModel))
                     )
@@ -74,6 +77,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                     ])
                 } else {
                     chat?.setVisible(true)
+                    rootView?.setContentHeaderViewHidden(false)
                     toolbar?.removeToolbarItems(ids: ["\(self.id).title"])
                 }
             },
@@ -94,6 +98,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
         }
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
