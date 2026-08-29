@@ -70,7 +70,10 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
             WriteFileTool(workspaceRootProvider: workspaceRootProvider),
             pluginID: Self.toolManagerPluginID
         )
-        add(EditFileTool(), pluginID: Self.toolManagerPluginID)
+        add(
+            EditFileTool(workspaceRootProvider: workspaceRootProvider),
+            pluginID: Self.toolManagerPluginID
+        )
         add(ReadImageTool(), pluginID: Self.toolManagerPluginID)
         add(
             ShellTool(workspaceRootProvider: workspaceRootProvider),

@@ -155,6 +155,28 @@ private struct CountingTool: SuperAgentTool, @unchecked Sendable {
 }
 
 @MainActor
+@Test func editFileToolResolvesRelativePathFromTheCurrentWorkspaceRoot() async throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("lumi-edit-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let fileURL = root.appendingPathComponent("notes/todo.txt")
+    try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try "before".write(to: fileURL, atomically: true, encoding: .utf8)
+
+    let tool = EditFileTool(workspaceRootProvider: { root.path })
+    _ = try await tool.execute(arguments: [
+        "file_path": ToolArgument("notes/todo.txt"),
+        "old_string": ToolArgument("before"),
+        "new_string": ToolArgument("after"),
+    ])
+
+    let edited = try String(contentsOf: fileURL, encoding: .utf8)
+    #expect(edited == "after")
+}
+
+@MainActor
 @Test func toolManagerEventManagerDispatchesAndCancelsObservers() async {
     let manager = ToolManager()
     var eventCount = 0
