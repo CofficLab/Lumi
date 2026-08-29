@@ -162,7 +162,7 @@ import Foundation
         try? FileManager.default.removeItem(at: directory)
     }
 
-    let store = HTTPExchangeStore(directory: directory)
+    let store = HTTPExchangeStore(directory: directory, startsRetentionMaintenance: false)
     store.begin(request: URLRequest(url: URL(string: "https://api.github.com/users/octocat")!))
     store.begin(request: URLRequest(url: URL(string: "https://api.github.com/gists")!))
     store.begin(request: URLRequest(url: URL(string: "https://www.google.com/search?q=lumi")!))
@@ -171,6 +171,48 @@ import Foundation
 
     let domains = store.fetchDomains()
     #expect(domains == ["api.github.com", "www.google.com"])
+}
+
+@MainActor
+@Test func httpExchangeRetentionKeepsOnlyRecentRecordsWithinCountLimit() async throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("HTTPExchangeRetention-\(UUID().uuidString)", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    let store = HTTPExchangeStore(directory: directory)
+    let now = Date()
+    store.begin(
+        request: URLRequest(url: URL(string: "https://example.com/expired")!),
+        startedAt: now.addingTimeInterval(-31 * 24 * 60 * 60)
+    )
+    store.begin(
+        request: URLRequest(url: URL(string: "https://example.com/oldest-recent")!),
+        startedAt: now.addingTimeInterval(-3 * 24 * 60 * 60)
+    )
+    store.begin(
+        request: URLRequest(url: URL(string: "https://example.com/newer")!),
+        startedAt: now.addingTimeInterval(-2 * 24 * 60 * 60)
+    )
+    store.begin(
+        request: URLRequest(url: URL(string: "https://example.com/newest")!),
+        startedAt: now
+    )
+
+    _ = await store.cleanupRetentionNow(
+        now: now,
+        retentionDays: 30,
+        maxRecordCount: 2
+    )
+
+    let reloadedStore = HTTPExchangeStore(directory: directory, startsRetentionMaintenance: false)
+    let remaining = reloadedStore.fetchPage(limit: 10)
+    #expect(remaining.count == 2)
+    #expect(remaining.map(\.requestURL) == [
+        "https://example.com/newest",
+        "https://example.com/newer",
+    ])
 }
 
 @MainActor

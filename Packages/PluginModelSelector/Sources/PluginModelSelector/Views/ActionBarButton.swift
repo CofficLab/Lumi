@@ -10,6 +10,7 @@ import SwiftUI
 struct ActionBarButton: View {
     @LumiTheme private var theme
     @ObservedObject var box: ObservableLLMProviderManagerBox
+    @ObservedObject var usageStore: ProviderUsageStore
 
     @State private var isPopoverPresented = false
 
@@ -43,6 +44,7 @@ struct ActionBarButton: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .top) {
             PopoverContent(
                 box: box,
+                usageStore: usageStore,
                 isPresented: $isPopoverPresented
             )
         }

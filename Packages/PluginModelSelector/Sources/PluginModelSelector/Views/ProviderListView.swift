@@ -4,13 +4,21 @@ import ProviderLLMManager
 import KitLLM
 import SwiftUI
 
-/// 云端 / 本地筛选范围（由旧版复刻，作用于 `LLMProviderInfo.isLocal`）。
+/// 常用 / 云端 / 本地筛选范围。
 enum ProviderScope: String, CaseIterable {
+    case frequent
     case cloud
     case local
 
-    func includes(_ provider: LLMProviderInfo) -> Bool {
-        provider.isLocal == (self == .local)
+    func includes(_ provider: LLMProviderInfo, usageCount: Int = 0) -> Bool {
+        switch self {
+        case .frequent:
+            usageCount > 0
+        case .cloud:
+            !provider.isLocal
+        case .local:
+            provider.isLocal
+        }
     }
 }
 
@@ -20,6 +28,7 @@ enum ProviderScope: String, CaseIterable {
 struct ProviderListView: View {
     @LumiTheme private var theme
     @ObservedObject var box: ObservableLLMProviderManagerBox
+    @ObservedObject var usageStore: ProviderUsageStore
     @Binding var selectedProviderID: String?
     var onClose: (() -> Void)? = nil
 
@@ -52,9 +61,11 @@ struct ProviderListView: View {
 
             AppDivider()
 
-            // 云端/本地筛选
+            // 常用/云端/本地筛选
             HStack(spacing: 8) {
                 Picker("", selection: $selectedScope) {
+                    Text(LumiPluginLocalization.string("Frequent", bundle: .module))
+                        .tag(ProviderScope.frequent)
                     Text(LumiPluginLocalization.string("Cloud", bundle: .module))
                         .tag(ProviderScope.cloud)
                     Text(LumiPluginLocalization.string("Local", bundle: .module))
@@ -62,7 +73,7 @@ struct ProviderListView: View {
                 }
                 .labelsHidden()
                 .pickerStyle(.segmented)
-                .frame(width: 140)
+                .frame(width: 210)
 
                 Spacer(minLength: 8)
             }
@@ -81,19 +92,30 @@ struct ProviderListView: View {
             // Provider items
             if let manager {
                 let providers = filteredProviders(manager)
-                ScrollView {
-                    LazyVStack(spacing: 4) {
-                        ForEach(providers, id: \.id) { info in
-                            ProviderListItem(
-                                info: info,
-                                isSelected: info.id == selectedProviderID,
-                                onSelect: {
-                                    selectedProviderID = info.id
-                                }
-                            )
+                if providers.isEmpty && selectedScope == .frequent && searchText.isEmpty {
+                    AppEmptyState(
+                        icon: "star",
+                        title: LumiPluginLocalization.string("No frequent providers yet", bundle: .module),
+                        description: LumiPluginLocalization.string(
+                            "As you use Lumi, your frequently used providers will appear here.",
+                            bundle: .module
+                        )
+                    )
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 4) {
+                            ForEach(providers, id: \.id) { info in
+                                ProviderListItem(
+                                    info: info,
+                                    isSelected: info.id == selectedProviderID,
+                                    onSelect: {
+                                        selectedProviderID = info.id
+                                    }
+                                )
+                            }
                         }
+                        .padding(8)
                     }
-                    .padding(8)
                 }
             } else {
                 Spacer()
@@ -105,7 +127,7 @@ struct ProviderListView: View {
         }
         .background(theme.background)
         .onAppear {
-            synchronizeScopeWithSelection()
+            prepareInitialScope()
             selectProviderInCurrentScopeIfNeeded()
         }
         .onChange(of: selectedProviderID) { _, _ in
@@ -118,7 +140,16 @@ struct ProviderListView: View {
 
     private func filteredProviders(_ manager: any LLMManaging) -> [LLMProviderInfo] {
         let providers = providers(in: manager).filter(matchesActiveFilters)
-        let sorted = providers.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
+        let sorted: [LLMProviderInfo]
+        if selectedScope == .frequent {
+            sorted = providers.sorted {
+                usageStore.isMoreFrequentlyUsed($0.id, than: $1.id)
+            }
+        } else {
+            sorted = providers.sorted {
+                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+            }
+        }
         if searchText.isEmpty {
             return sorted
         }
@@ -128,9 +159,12 @@ struct ProviderListView: View {
         }
     }
 
-    /// 云端/本地筛选条件
+    /// 常用/云端/本地筛选条件
     private func matchesActiveFilters(_ provider: LLMProviderInfo) -> Bool {
-        selectedScope.includes(provider)
+        selectedScope.includes(
+            provider,
+            usageCount: usageStore.usageCount(for: provider.id)
+        )
     }
 
     private func providers(in manager: any LLMManaging) -> [LLMProviderInfo] {
@@ -138,6 +172,7 @@ struct ProviderListView: View {
     }
 
     private func synchronizeScopeWithSelection() {
+        guard selectedScope != .frequent else { return }
         guard
             let selectedProviderID,
             let manager,
@@ -148,6 +183,19 @@ struct ProviderListView: View {
         let scope: ProviderScope = selectedProvider.isLocal ? .local : .cloud
         if selectedScope != scope {
             selectedScope = scope
+        }
+    }
+
+    private func prepareInitialScope() {
+        let hasAvailableUsage = manager.map { manager in
+            providers(in: manager).contains {
+                usageStore.usageCount(for: $0.id) > 0
+            }
+        } ?? false
+        if hasAvailableUsage {
+            selectedScope = .frequent
+        } else {
+            synchronizeScopeWithSelection()
         }
     }
 

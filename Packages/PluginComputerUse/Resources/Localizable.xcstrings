@@ -216,25 +216,25 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "电脑使用"
+            "value" : "Computer Use"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "电脑使用"
+            "value" : "Computer Use"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "电脑使用"
+            "value" : "Computer Use"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "电脑使用"
+            "value" : "Computer Use"
           }
         }
       }

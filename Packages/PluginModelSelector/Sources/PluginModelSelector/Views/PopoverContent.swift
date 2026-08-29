@@ -7,6 +7,7 @@ import SwiftUI
 struct PopoverContent: View {
     @LumiTheme private var theme
     @ObservedObject var box: ObservableLLMProviderManagerBox
+    @ObservedObject var usageStore: ProviderUsageStore
     @Binding var isPresented: Bool
 
     private var manager: (any LLMManaging)? { box.manager }
@@ -19,6 +20,7 @@ struct PopoverContent: View {
             // Left: Provider List
             ProviderListView(
                 box: box,
+                usageStore: usageStore,
                 selectedProviderID: $selectedProviderID,
                 onClose: { isPresented = false }
             )
@@ -31,7 +33,10 @@ struct PopoverContent: View {
                 box: box,
                 selectedProviderID: selectedProviderID,
                 initialModel: manager?.selectedModel,
-                onSelect: { _, _ in isPresented = false }
+                onSelect: { providerID, _ in
+                    usageStore.recordUse(providerID: providerID)
+                    isPresented = false
+                }
             )
         }
         .frame(width: 780, height: 600)

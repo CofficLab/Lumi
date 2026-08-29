@@ -4,6 +4,7 @@ import KernelCore
 import KitSuperLog
 import ProviderChatSection
 import ProviderLLMManager
+import ProviderStorage
 
 /// Model Selector 插件（KernelCore 体系）。
 ///
@@ -36,6 +37,8 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
+    private var usageStore: ProviderUsageStore?
+
     public init() {}
 
     public var name: String {
@@ -50,6 +53,17 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
             return
         }
 
+        let usageStore: ProviderUsageStore
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            usageStore = ProviderUsageStore(
+                directory: storage.pluginDataDirectory(for: id)
+            )
+        } else {
+            Self.logger.warning("\(Self.t)StorageProviding unavailable; provider usage will not be persisted")
+            usageStore = ProviderUsageStore(directory: nil)
+        }
+        self.usageStore = usageStore
+
         let box = ObservableLLMProviderManagerBox(manager: manager)
 
         // Action Bar 模型选择按钮（沿用旧版 chatSectionActionBarItems .leading）。
@@ -58,7 +72,7 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
                 id: "\(id).action-bar-button",
                 placement: .actionLeading
             ) {
-                ActionBarButton(box: box)
+                ActionBarButton(box: box, usageStore: usageStore)
             },
         ])
     }
