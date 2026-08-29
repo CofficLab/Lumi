@@ -1,5 +1,6 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
@@ -42,6 +43,7 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
     public func onBoot(kernel: KernelCoreContainer) throws {
         ClipboardMonitor.shared.startMonitoring()
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let entry = "\(id).entry"
@@ -57,9 +59,11 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
                 ) { state in
                     if state == .activated {
                         content?.setContentView(AnyView(ClipboardHistoryView()))
+                        chat?.setVisible(false)
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
                     } else {
+                        chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
                         rootView?.setContentHeaderViewHidden(false)
                     }
@@ -72,7 +76,12 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         ClipboardMonitor.shared.stopMonitoring()
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
+        activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+        }
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
