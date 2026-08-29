@@ -26,7 +26,7 @@ let package = Package(
             ],
             path: "Sources/KitFileSystem",
             resources: [
-                .process("Resources")
+                .process("../../Resources")
             ]
         ),
         .testTarget(
