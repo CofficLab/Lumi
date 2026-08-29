@@ -44,8 +44,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         description: "Create print-ready booklets from PDF documents.",
         category: .editor,
         stage: .preview,
-        // BookletMaker 专用宿主只有这一项业务插件，启动时必须可用。
-        policy: .alwaysOn
+        policy: .disabledByDefault
     )
 
     /// 插件级唯一的 BookletMakerViewModel 实例。
