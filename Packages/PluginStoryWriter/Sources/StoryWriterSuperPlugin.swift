@@ -6,6 +6,7 @@ import ProviderContentView
 import ProviderConversationInput
 import ProviderDocsView
 import ProviderRailView
+import ProviderRootView
 import ProviderStorage
 import ProviderToolManager
 import SwiftUI
@@ -18,7 +19,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.story-writer"
     public let order = 90
     public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.story-writer", name: "Story Writer", description: "A two-pane workspace for crafting stories with AI assistance.", category: .project, stage: .preview, policy: .disabledByDefault)
-    private let railID = "com.coffic.lumi.plugin.story-writer.outline"
+    public static let railTabID = "com.coffic.lumi.plugin.story-writer.outline"
     private let entryID = "com.coffic.lumi.plugin.story-writer.entry"
     public init() {}
 
@@ -39,12 +40,19 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let rail = kernel.resolveProvider((any RailViewProviding).self)
-        rail?.addTabs([RailTabItem(id: railID, category: .project, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
+        let root = kernel.resolveProvider((any RootViewProviding).self)
+        rail?.addTabs([RailTabItem(id: Self.railTabID, category: .project, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([ActivityBarItem(id: entryID, title: metadata.name, systemImage: "book.closed.fill", order: order, ownerPluginID: id) { state in
-            guard state == .activated else { return }
-            rail?.setVisibleTabID(self.railID)
-            content?.setContentView(AnyView(StoryWriterRootView()))
+            if state == .activated {
+                root?.setContentHeaderViewHidden(true)
+                rail?.setVisibleTabID(Self.railTabID)
+                content?.setContentView(AnyView(StoryWriterRootView()))
+            } else {
+                root?.setContentHeaderViewHidden(false)
+                rail?.setVisibleCategories(Set(RailViewCategory.allCases))
+            }
         }])
+        root?.setContentHeaderViewHidden(true)
         content?.setContentView(AnyView(StoryWriterRootView()))
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
             docs.addAbout(DocsEntry(id: id, name: metadata.name) { StoryWriterAboutView() })
@@ -58,8 +66,9 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == entryID
         activityBar?.removeItems(ids: [entryID])
-        kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [railID])
+        kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
         if wasActive {
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)

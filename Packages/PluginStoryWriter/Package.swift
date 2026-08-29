@@ -18,6 +18,7 @@ let package = Package(
         .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../KitSuperLog")
@@ -35,6 +36,7 @@ let package = Package(
                 .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "KitSuperLog", package: "KitSuperLog")
@@ -44,7 +46,14 @@ let package = Package(
         ),
         .testTarget(
             name: "StoryWriterPluginTests",
-            dependencies: [.target(name: "StoryWriterPlugin")],
+            dependencies: [
+                .target(name: "StoryWriterPlugin"),
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderContentView", package: "ProviderContentView"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
+            ],
             path: "Tests"
         )
     ]
