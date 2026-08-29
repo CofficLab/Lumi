@@ -33,6 +33,7 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
     private var service: RAGService?
     private var schedulerTask: Task<Void, Never>?
     private var llmContextHook: ProjectRAGLLMContextHook?
+    private var projectLifecycleHook: ProjectRAGProjectLifecycleHook?
 
     public init() {}
 
@@ -58,6 +59,10 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
                 guard let contextHook else { return context }
                 return await contextHook.apply(to: context)
             }
+        }
+
+        if let project {
+            projectLifecycleHook = ProjectRAGProjectLifecycleHook(project: project, service: service)
         }
 
         // Indexing deliberately happens off the boot path: startup remains
@@ -87,6 +92,8 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
         schedulerTask?.cancel()
         schedulerTask = nil
         llmContextHook = nil
+        projectLifecycleHook?.cancel()
+        projectLifecycleHook = nil
         if let service { Task { await service.cancelBackgroundIndexing() } }
         service = nil
         ProjectRAGRuntime.reset()
