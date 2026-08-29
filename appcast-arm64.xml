@@ -3,38 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.17.0</title>
-            <pubDate>Fri, 28 Aug 2026 01:32:32 +0000</pubDate>
-            <sparkle:version>612</sparkle:version>
-            <sparkle:shortVersionString>5.17.0</sparkle:shortVersionString>
+            <title>5.18.0</title>
+            <pubDate>Sat, 29 Aug 2026 05:52:48 +0000</pubDate>
+            <sparkle:version>613</sparkle:version>
+            <sparkle:shortVersionString>5.18.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.17.0</h2>
-<h3>Changes since v5.16.0</h3>
+            <description><![CDATA[<h2>Release v5.18.0</h2>
+<h3>Changes since v5.17.0</h3>
 <ul>
-<li>Add selected conversation observer callback to ProviderConversation; migrate PluginMessageList to callback mechanism</li>
-<li>docs: add lumi v2 zero-difference migration master plan</li>
-<li>docs(agent-loop): add simplification plan to refactor tool execution into ToolManager</li>
-<li>docs(FactoryLumi): add README</li>
-<li>docs(migration): define legacy removal gates</li>
-<li>docs(migration): map consolidated conversation stats</li>
-<li>docs(migration): map v2 turn notifications</li>
-<li>docs(migration): map v2 utility plugins</li>
-<li>docs(migration): record PluginManagerPlugin → PluginPluginManager parityReview migration</li>
-<li>docs(plugin-manager): remove redundant description comment</li>
-<li>docs(PluginConversationManager): simplify plugin doc comment</li>
-<li>docs(PluginDevice): add package README and exclude it from target</li>
-<li>docs(ProviderMessageStreaming): document MainActor isolation contract</li>
-<li>feat: 为 LumiMinimalApp 添加 AppIcon 图标</li>
-<li>feat: add emoji icons to batch execution log messages for better readability</li>
-<li>feat: add generic LLM model download capability</li>
-<li>feat: add ProviderTheme for LumiMinimalApp</li>
-<li>feat: assemble DocsViewProviding and present About/Manual in General settings</li>
-<li>feat: assemble MenuBarProviding and contribute device menu bar</li>
-<li>feat: batch add localization string wrappers and translation resources for plugins &amp; components</li>
+<li>移除授权界面渲染条件判断中的冗余日志</li>
+<li>docs(editor): plan plugin workspace experience</li>
+<li>feat: add AboutView to OpenIn plugins</li>
+<li>feat: add missing AboutView and ManualView for all user-facing plugins</li>
+<li>feat: add OpenInKit shared package for external app integration</li>
+<li>feat: change ImageToPDF plugin policy to required and improve code formatting</li>
+<li>feat: change WebServer plugin policy to required</li>
+<li>feat: create 7 independent OpenIn plugins for external app integration</li>
+<li>feat: hide rail for image to pdf plugin</li>
+<li>feat(chat-panel): filter rail views to chat category</li>
+<li>feat(chat-section): add state observation</li>
+<li>feat(chat): restore image attachment preview</li>
+<li>feat(code-editor): add zh-Hans translations for localizable strings</li>
+<li>feat(code-editor): show project rail and chat section</li>
+<li>feat(conversation-new): manage toolbar button visibility</li>
+<li>feat(editor): add built-in syntax languages</li>
+<li>feat(editor): add lazy project file explorer</li>
+<li>feat(editor): add tabbed workspace plugin</li>
+<li>feat(editor): register workspace plugin stack</li>
+<li>feat(editor): restore host surface contracts</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.17.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.18.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.17.0/Lumi_5.17.0_arm64.dmg" length="40347713" type="application/octet-stream" sparkle:edSignature="yCw3+L/NxvgJhlxiplYUDedE/8R8x1ZDAgQVCik6LGKb8VnxDyJ936EPMOwtpAhjRJEiizhIlGlX1qfKqCyBCw=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.18.0/Lumi_5.18.0_arm64.dmg" length="40480098" type="application/octet-stream" sparkle:edSignature="36RGWMBAtwT11YNvjyg+fdTtzDsuS/ukF7/vCjXRTc57CgS3PeZzjnnbZXjIYB0SvUx+vjwWJP+xVGTiwS+kCg=="/>
         </item>
     </channel>
 </rss>
