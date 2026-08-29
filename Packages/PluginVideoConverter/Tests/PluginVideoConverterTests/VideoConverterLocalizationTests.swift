@@ -47,7 +47,7 @@ struct VideoConverterLocalizationTests {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-            .appendingPathComponent("Sources/PluginVideoConverter/Resources/Localizable.xcstrings")
+            .appendingPathComponent("Resources/Localizable.xcstrings")
         let data = try Data(contentsOf: catalogURL)
         let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
         return try #require(json["strings"] as? [String: Any])
