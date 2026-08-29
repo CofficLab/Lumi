@@ -39,7 +39,9 @@ private final class StubProjectRAGProvider: ProjectRAGProviding {
             ProjectRAGSearchResult(
                 content: "func handleRequest() {}",
                 source: "Sources/Feature.swift",
-                score: 0.9
+                score: 0.9,
+                matchKind: .semantic,
+                lineRange: ProjectRAGLineRange(startLine: 12, endLine: 19)
             ),
         ]
     )
@@ -85,6 +87,7 @@ struct ProjectRAGLLMContextHookTests {
 
         #expect(first.messages.count == context.messages.count + 1)
         #expect(first.messages.first?.role == .system)
+        #expect(first.messages.first?.content.contains("Sources/Feature.swift:12-19") == true)
         #expect(second.messages.count == context.messages.count)
         #expect(other.messages.count == otherContext.messages.count + 1)
         #expect(provider.ensureIndexedCallCount == 2)
