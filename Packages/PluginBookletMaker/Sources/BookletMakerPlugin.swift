@@ -7,6 +7,7 @@ import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
+import ProviderRootView
 import ProviderStorage
 import ProviderToolbar
 import KitSuperLog
@@ -78,6 +79,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         railView?.addTabs([
             RailTabItem(
@@ -109,7 +111,9 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                 ) { state in
                     if state == .activated {
                         chat?.setVisible(false)
+                        railView?.setVisibleCategories([.design])
                         railView?.setVisibleTabID(Self.railTabID)
+                        rootView?.setContentHeaderViewHidden(true)
                         contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: self.sharedViewModel)))
                         toolbar?.addToolbarItems([
                             ToolbarItem(
@@ -123,6 +127,8 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                         ])
                     } else {
                         chat?.setVisible(true)
+                        rootView?.setContentHeaderViewHidden(false)
+                        railView?.setVisibleCategories(Set(RailViewCategory.allCases))
                         toolbar?.removeToolbarItems(ids: ["\(self.id).title"])
                     }
                 },
@@ -201,6 +207,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
