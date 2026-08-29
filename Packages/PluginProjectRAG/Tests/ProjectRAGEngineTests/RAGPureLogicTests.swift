@@ -333,3 +333,36 @@ import Foundation
         #expect(results[0].lineRange == RAGLineRange(startLine: 1, endLine: 1))
     }
 }
+
+@Suite struct RAGSQLiteStoreTests {
+
+    @Test func persistsChunkLineRange() throws {
+        let dbURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-line-range-\(UUID().uuidString).sqlite")
+        defer { try? FileManager.default.removeItem(at: dbURL) }
+
+        let store = try RAGSQLiteStore(dbURL: dbURL)
+        try store.migrate()
+        store.runtimeInfo = RAGRuntimeInfo(vectorBackend: .swiftCosine)
+
+        try store.replaceFileChunks(
+            projectPath: "/project",
+            filePath: "/project/Feature.swift",
+            modifiedTime: 1,
+            contentHash: "hash",
+            chunks: [
+                RAGChunk(
+                    index: 0,
+                    content: "func feature() {}",
+                    lineRange: RAGLineRange(startLine: 4, endLine: 7)
+                ),
+            ],
+            embeddings: [[1, 0]],
+            embeddingDimension: 2
+        )
+
+        let stored = try store.loadChunks(projectPath: "/project")
+        #expect(stored.count == 1)
+        #expect(stored[0].lineRange == RAGLineRange(startLine: 4, endLine: 7))
+    }
+}
