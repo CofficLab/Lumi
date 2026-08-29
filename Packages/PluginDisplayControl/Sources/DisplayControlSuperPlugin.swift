@@ -1,5 +1,6 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
@@ -33,6 +34,7 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let entryID = "\(id).entry"
@@ -47,9 +49,11 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
                 ) { state in
                     if state == .activated {
                         content?.setContentView(AnyView(DisplayControlView()))
+                        chat?.setVisible(false)
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
                     } else {
+                        chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
                         rootView?.setContentHeaderViewHidden(false)
                     }
