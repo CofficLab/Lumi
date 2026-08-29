@@ -22,6 +22,7 @@ let package = Package(
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
@@ -44,6 +45,7 @@ let package = Package(
                 "ProviderDocsView",
                 "ProviderProject",
                 "ProviderRailView",
+                "ProviderRootView",
                 "ProviderStorage",
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
@@ -63,6 +65,7 @@ let package = Package(
                 "ProviderChatSection",
                 "ProviderContentView",
                 "ProviderRailView",
+                "ProviderRootView",
             ]
         ),
     ]

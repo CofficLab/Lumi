@@ -5,6 +5,7 @@ import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
 import ProviderRailView
+import ProviderRootView
 import Testing
 @testable import PluginAppStorePromoDesigner
 
@@ -48,11 +49,13 @@ struct AppStorePromoDesignerPluginTests {
         let activity = DefaultActivityBarProviding()
         let rail = DefaultRailViewProviding()
         let chat = DefaultChatSectionProviding()
+        let rootView = DefaultRootViewProvider()
 
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any ContentViewProviding).self, DefaultContentViewProviding())
         try kernel.registerProvider((any RailViewProviding).self, rail)
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
 
         try kernel.start(plugins: [AppStorePromoDesignerPlugin()])
         try await kernel.enablePlugin(id: AppStorePromoDesignerPlugin().id)
@@ -61,8 +64,11 @@ struct AppStorePromoDesignerPluginTests {
         #expect(rail.activeTabID == AppStorePromoDesignerPlugin.railTabID)
         #expect(chat.isVisible)
         #expect(chat.isContextActive)
+        #expect(rootView.isContentHeaderViewHidden)
 
         try kernel.stop()
+
+        #expect(rootView.isContentHeaderViewHidden == false)
     }
 
     @Test func overwriteExportIsHighRisk() {
