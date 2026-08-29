@@ -26,7 +26,7 @@ final class ProjectRAGLLMContextHook {
             return context
         }
 
-        let queryKey = "\(userMessages.count):\(latestUserMessage.content)"
+        let queryKey = "\(context.conversationID.uuidString):\(userMessages.count):\(latestUserMessage.content)"
         guard !injectedQueryKeys.contains(queryKey) else { return context }
 
         do {

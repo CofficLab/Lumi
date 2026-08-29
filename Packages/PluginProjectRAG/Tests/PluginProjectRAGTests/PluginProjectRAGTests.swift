@@ -75,11 +75,17 @@ struct ProjectRAGLLMContextHookTests {
 
         let first = await hook.apply(to: context)
         let second = await hook.apply(to: context)
+        let otherContext = WillSendToLLMContext(
+            messages: context.messages,
+            conversationID: UUID()
+        )
+        let other = await hook.apply(to: otherContext)
 
         #expect(first.messages.count == context.messages.count + 1)
         #expect(first.messages.first?.role == .system)
         #expect(second.messages.count == context.messages.count)
-        #expect(provider.ensureIndexedCallCount == 1)
+        #expect(other.messages.count == otherContext.messages.count + 1)
+        #expect(provider.ensureIndexedCallCount == 2)
     }
 
     @Test("does not query RAG for casual conversation")
