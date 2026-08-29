@@ -6,7 +6,7 @@ struct WorkbenchSplitView: View {
     @ObservedObject var provider: DefaultRootViewProvider
 
     private var showsRail: Bool {
-        provider.railView != nil
+        provider.railView != nil && provider.isRailViewVisible
     }
 
     var body: some View {

@@ -49,6 +49,23 @@ struct ProviderRootViewTests {
         #expect(pane.isVisible)
     }
 
+    @Test("Rail 可见性绑定到根布局")
+    func railVisibilityFollowsPublisher() async {
+        let provider = DefaultRootViewProvider()
+        let visibility = CurrentValueSubject<Bool, Never>(true)
+
+        provider.bindRailViewVisibility(to: visibility.eraseToAnyPublisher())
+        #expect(provider.isRailViewVisible)
+
+        visibility.send(false)
+        await Task.yield()
+        #expect(!provider.isRailViewVisible)
+
+        visibility.send(true)
+        await Task.yield()
+        #expect(provider.isRailViewVisible)
+    }
+
     @Test("没有容器时可通过 trailing pane 渲染")
     func visibleTrailingPaneCountsAsActiveContentWithoutContainer() {
         let provider = DefaultRootViewProvider()
