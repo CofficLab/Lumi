@@ -45,7 +45,7 @@ let package = Package(
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            resources: [.process("Resources")]
+            resources: [.process("../../Resources")]
         ),
         .testTarget(
             name: "PluginCodeEditorTests",
