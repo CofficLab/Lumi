@@ -35,8 +35,6 @@ struct ProviderListView: View {
     @State private var searchText = ""
     @State private var selectedScope = ProviderScope.cloud
 
-    private var manager: (any LLMManaging)? { box.manager }
-
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -90,8 +88,8 @@ struct ProviderListView: View {
             AppDivider()
 
             // Provider items
-            if let manager {
-                let providers = filteredProviders(manager)
+            if !box.providerInfos.isEmpty {
+                let providers = filteredProviders(box.providerInfos)
                 if providers.isEmpty && selectedScope == .frequent && searchText.isEmpty {
                     AppEmptyState(
                         icon: "star",
@@ -138,15 +136,15 @@ struct ProviderListView: View {
         }
     }
 
-    private func filteredProviders(_ manager: any LLMManaging) -> [LLMProviderInfo] {
-        let providers = providers(in: manager).filter(matchesActiveFilters)
+    private func filteredProviders(_ providers: [LLMProviderInfo]) -> [LLMProviderInfo] {
+        let filtered = providers.filter(matchesActiveFilters)
         let sorted: [LLMProviderInfo]
         if selectedScope == .frequent {
-            sorted = providers.sorted {
+            sorted = filtered.sorted {
                 usageStore.isMoreFrequentlyUsed($0.id, than: $1.id)
             }
         } else {
-            sorted = providers.sorted {
+            sorted = filtered.sorted {
                 $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
             }
         }
@@ -167,16 +165,11 @@ struct ProviderListView: View {
         )
     }
 
-    private func providers(in manager: any LLMManaging) -> [LLMProviderInfo] {
-        manager.allProviders().map { $0.providerInfo }
-    }
-
     private func synchronizeScopeWithSelection() {
         guard selectedScope != .frequent else { return }
         guard
             let selectedProviderID,
-            let manager,
-            let selectedProvider = providers(in: manager).first(where: { $0.id == selectedProviderID })
+            let selectedProvider = box.providerInfos.first(where: { $0.id == selectedProviderID })
         else { return }
 
         // 仅在值变化时写入，避免触发多余的 onChange 链
@@ -187,11 +180,9 @@ struct ProviderListView: View {
     }
 
     private func prepareInitialScope() {
-        let hasAvailableUsage = manager.map { manager in
-            providers(in: manager).contains {
-                usageStore.usageCount(for: $0.id) > 0
-            }
-        } ?? false
+        let hasAvailableUsage = box.providerInfos.contains {
+            usageStore.usageCount(for: $0.id) > 0
+        }
         if hasAvailableUsage {
             selectedScope = .frequent
         } else {
@@ -200,9 +191,7 @@ struct ProviderListView: View {
     }
 
     private func selectProviderInCurrentScopeIfNeeded() {
-        guard let manager else { return }
-
-        let scopedProviders = providers(in: manager).filter(matchesActiveFilters)
+        let scopedProviders = box.providerInfos.filter(matchesActiveFilters)
         if scopedProviders.contains(where: { $0.id == selectedProviderID }) {
             return
         }

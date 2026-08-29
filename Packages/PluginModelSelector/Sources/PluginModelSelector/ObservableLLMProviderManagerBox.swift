@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import KitLLM
 import ProviderLLMManager
 
 /// SwiftUI 友好的内核 `LLMManaging` 包装器。
@@ -8,28 +9,61 @@ import ProviderLLMManager
 /// existentials（`ObservableObject` 要求具体类型，报错
 /// `type 'any LLMManaging' cannot conform to 'ObservableObject'`）。
 ///
-/// 解法与旧版 `KernelLumi.ObservableMessageSendingBox` 一致：用具体类包装
-/// 协议实例，并把它的 `objectWillChange` 桥接到自己的 publisher 上，视图即可：
+/// 本包装器**不桥接 `LLMManaging.objectWillChange`**，而是通过统一的
+/// `addObserver` 监听机制订阅 `LLMManagerEvent`，把状态刷新到自身的
+/// `@Published` 快照上，视图即可：
 /// ```swift
 /// @ObservedObject var box: ObservableLLMProviderManagerBox
-/// box.manager.selectedProviderID
+/// box.selectedProviderID
+/// box.providerInfos
 /// ```
 @MainActor
 public final class ObservableLLMProviderManagerBox: ObservableObject {
-    /// 被包装的 LLM Provider 管理器实例。
+    /// 被包装的 LLM Provider 管理器实例（写操作入口：`select(providerID:model:)` 等）。
     public let manager: any LLMManaging
 
-    /// 把 manager.objectWillChange 转发到 self.objectWillChange。
-    private var cancellable: AnyCancellable?
+    /// 当前选中的供应商 id 快照。
+    @Published public private(set) var selectedProviderID: String?
+
+    /// 当前选中的模型 id 快照。
+    @Published public private(set) var selectedModel: String?
+
+    /// 全部已注册供应商的元数据快照，按注册顺序排列。
+    @Published public private(set) var providerInfos: [LLMProviderInfo] = []
+
+    /// providerID -> 模型 id 列表快照。
+    @Published public private(set) var modelIDs: [String: [String]] = [:]
+
+    private var observer: (any LLMManagerObserverHandle)?
 
     public init(manager: any LLMManaging) {
         self.manager = manager
-        // 协议存在类型擦除：先把 publisher 转成 AnyPublisher 让类型对齐。
-        self.cancellable = manager.objectWillChange
-            .map { _ in () }
-            .eraseToAnyPublisher()
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
+        refresh()
+        // 经统一监听机制收到事件后刷新快照；弱引用避免 box 持有 manager 的
+        // 回调导致循环引用。事件在 manager 状态变更后同步触发，快照始终一致。
+        observer = manager.addObserver { [weak self] _ in
+            self?.refresh()
+        }
+    }
+
+    /// 按 id 查找供应商元数据快照；未注册时返回 `nil`。
+    public func providerInfo(id: String) -> LLMProviderInfo? {
+        providerInfos.first { $0.id == id }
+    }
+
+    /// 指定供应商的模型 id 列表快照；供应商未注册时返回空数组。
+    public func models(for providerID: String) -> [String] {
+        modelIDs[providerID] ?? []
+    }
+
+    private func refresh() {
+        selectedProviderID = manager.selectedProviderID
+        selectedModel = manager.selectedModel
+        providerInfos = manager.allProviders().map { $0.providerInfo }
+        modelIDs = Dictionary(
+            uniqueKeysWithValues: manager.allProviders().map {
+                ($0.providerInfo.id, manager.models(for: $0.providerInfo.id))
             }
+        )
     }
 }

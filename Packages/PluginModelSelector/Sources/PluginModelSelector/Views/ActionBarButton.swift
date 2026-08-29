@@ -14,8 +14,6 @@ struct ActionBarButton: View {
 
     @State private var isPopoverPresented = false
 
-    private var manager: (any LLMManaging)? { box.manager }
-
     var body: some View {
         Button {
             isPopoverPresented.toggle()
@@ -52,16 +50,14 @@ struct ActionBarButton: View {
     }
 
     private var buttonLabel: String {
-        guard let manager else { return "Select Provider" }
-        guard let providerID = manager.selectedProviderID,
-              let provider = manager.provider(id: providerID)
+        guard let providerID = box.selectedProviderID,
+              let info = box.providerInfo(id: providerID)
         else {
             return "Select Provider"
         }
-        let info = provider.providerInfo
         // 当前生效模型：显式选中项 > 供应商默认模型（与内核 `resolveSelected()` 回退一致），
         // 保证按钮始终反映「当前供应商 + 模型」。
-        let model = manager.selectedModel ?? info.defaultModel
+        let model = box.selectedModel ?? info.defaultModel
         let displayModel = info.models.first(where: { $0.id == model })?.displayName ?? model
         return "\(info.displayName) · \(displayModel)"
     }
