@@ -39,7 +39,7 @@ let package = Package(
                 "ProviderToolManager",
                 "KitSuperLog",
             ],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginDiskManagerTests",
