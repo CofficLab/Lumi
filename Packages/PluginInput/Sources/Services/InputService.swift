@@ -34,7 +34,6 @@ public class InputService: ObservableObject, SuperLog {
         }
 
         // Load config
-        settingsStore.migrateLegacyValueIfMissing(forKey: configKey)
         if let data = settingsStore.data(forKey: configKey),
            let decoded = try? JSONDecoder().decode(InputConfig.self, from: data) {
             self.config = decoded

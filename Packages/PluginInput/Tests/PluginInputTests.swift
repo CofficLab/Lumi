@@ -38,13 +38,31 @@ import ProviderChatSection
         .appendingPathComponent("InputPluginLocalStore-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
 
-    let store = InputPluginLocalStore(settingsDirectory: directory)
+    let store = InputPluginLocalStore(pluginDirectory: directory)
     let data = Data("rule-config".utf8)
 
     #expect(store.set(data, forKey: "InputPluginConfig") == true)
 
-    let reloadedStore = InputPluginLocalStore(settingsDirectory: directory)
+    let reloadedStore = InputPluginLocalStore(pluginDirectory: directory)
     #expect(reloadedStore.data(forKey: "InputPluginConfig") == data)
+}
+
+@MainActor
+@Test func localStoreUsesPluginRootWithoutNestedSettingsDirectory() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("InputPluginLocalStore-Root-\(UUID().uuidString)", isDirectory: true)
+    defer {
+        InputPluginRuntimeBridge.dataRootDirectory = nil
+        try? FileManager.default.removeItem(at: root)
+    }
+
+    InputPluginRuntimeBridge.dataRootDirectory = root
+    let store = InputPluginLocalStore()
+    #expect(store.set(Data("rule-config".utf8), forKey: "InputPluginConfig") == true)
+
+    let pluginDirectory = root.appendingPathComponent("InputPlugin", isDirectory: true)
+    #expect(FileManager.default.fileExists(atPath: pluginDirectory.appendingPathComponent("settings.plist").path))
+    #expect(!FileManager.default.fileExists(atPath: pluginDirectory.appendingPathComponent("settings", isDirectory: true).path))
 }
 
 @MainActor
@@ -59,14 +77,14 @@ import ProviderChatSection
     let invalidData = Data("not a plist".utf8)
     try invalidData.write(to: settingsURL)
 
-    let store = InputPluginLocalStore(settingsDirectory: directory)
+    let store = InputPluginLocalStore(pluginDirectory: directory)
     let newData = Data("new config".utf8)
 
     #expect(store.set(newData, forKey: "InputPluginConfig") == true)
     #expect((try? Data(contentsOf: corruptURL)) == invalidData)
     #expect(store.data(forKey: "InputPluginConfig") == newData)
 
-    let reloadedStore = InputPluginLocalStore(settingsDirectory: directory)
+    let reloadedStore = InputPluginLocalStore(pluginDirectory: directory)
     #expect(reloadedStore.data(forKey: "InputPluginConfig") == newData)
 }
 
@@ -80,7 +98,7 @@ import ProviderChatSection
     try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
     try "not a directory".write(to: blockedDirectory, atomically: true, encoding: .utf8)
 
-    let store = InputPluginLocalStore(settingsDirectory: blockedDirectory)
+    let store = InputPluginLocalStore(pluginDirectory: blockedDirectory)
 
     #expect(store.set(Data("rule-config".utf8), forKey: "InputPluginConfig") == false)
     #expect(store.data(forKey: "InputPluginConfig") == nil)
