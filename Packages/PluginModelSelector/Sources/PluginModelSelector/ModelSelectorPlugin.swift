@@ -20,7 +20,7 @@ import ProviderStorage
 /// - `kernel.resolveService((any LLMProviderManaging).self)` → 内核
 ///   `kernel.resolveProvider((any LLMManaging).self)`（FactoryLumi 已装配 `DefaultLLMManager`）；
 /// - 旧版 `.onLumiSelectedRemoteProviderIDDidChange` 等通知订阅 → SwiftUI 友好包装器
-///   `ObservableLLMProviderManagerBox`（桥接 `LLMManaging.objectWillChange`）。
+///   `ObservableLLMProviderManagerBox`（订阅 `LLMManaging.addObserver` 事件）。
 @MainActor
 public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.model-selector", category: "ModelSelector")

@@ -1,4 +1,3 @@
-import Combine
 import ProviderLLMManager
 import Foundation
 import KitLLM
@@ -35,8 +34,8 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
 
     // MARK: - Selection
 
-    @Published public private(set) var selectedProviderID: String?
-    @Published public private(set) var selectedModel: String?
+    public private(set) var selectedProviderID: String?
+    public private(set) var selectedModel: String?
 
     // MARK: - Observation
 
@@ -75,8 +74,8 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
 
     public init() {
         // 启动时恢复持久化的选中；实际生效校验在首次注册后经 ensureValidSelection 完成。
-        _selectedProviderID = Published(initialValue: UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedProviderID))
-        _selectedModel = Published(initialValue: UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModel))
+        selectedProviderID = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedProviderID)
+        selectedModel = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModel)
         if Self.verbose {
             Self.logger.info("\(Self.t)initialized, restored selection: provider=\(self.selectedProviderID ?? "nil", privacy: .public), model=\(self.selectedModel ?? "nil", privacy: .public)")
         }

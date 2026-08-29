@@ -9,9 +9,8 @@ import ProviderLLMManager
 /// existentials（`ObservableObject` 要求具体类型，报错
 /// `type 'any LLMManaging' cannot conform to 'ObservableObject'`）。
 ///
-/// 本包装器**不桥接 `LLMManaging.objectWillChange`**，而是通过统一的
-/// `addObserver` 监听机制订阅 `LLMManagerEvent`，把状态刷新到自身的
-/// `@Published` 快照上，视图即可：
+/// 本包装器通过 `LLMManaging.addObserver(_:)` 订阅 `LLMManagerEvent`，
+/// 把状态刷新到自身的 `@Published` 快照上，视图即可：
 /// ```swift
 /// @ObservedObject var box: ObservableLLMProviderManagerBox
 /// box.selectedProviderID

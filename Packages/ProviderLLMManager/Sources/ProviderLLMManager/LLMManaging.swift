@@ -1,10 +1,9 @@
-import Combine
 import Foundation
 import KitLLM
 
 /// LLM 供应商管理能力
 @MainActor
-public protocol LLMManaging: AnyObject, ObservableObject, SuperLLMProvider where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol LLMManaging: AnyObject, SuperLLMProvider {
     // MARK: - Observation（注册 / 选中状态变化监听）
 
     /// 注册 LLM 供应商/模型状态观察者。
