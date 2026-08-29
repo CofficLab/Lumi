@@ -42,7 +42,7 @@ let package = Package(
             .product(name: "ProviderProject", package: "ProviderProject"),
             .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             .product(name: "KitSuperLog", package: "KitSuperLog"),
-        ], resources: [.process("Resources/Localizable.xcstrings")]),
+        ], resources: [.process("../../Resources/Localizable.xcstrings")]),
         .testTarget(name: "PluginMessageListTests", dependencies: [
             "PluginMessageList",
             .product(name: "ProviderMessage", package: "ProviderMessage"),
