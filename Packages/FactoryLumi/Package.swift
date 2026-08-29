@@ -347,8 +347,9 @@ let package = Package(
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
                 .product(name: "ProviderExternalFile", package: "ProviderExternalFile"),
             ],
-            path: "Sources/FactoryLumi",
-            resources: [.process("../../Resources/Localizable.xcstrings")]
+            path: ".",
+            sources: ["Sources"],
+            resources: [.process("Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "FactoryLumiTests",
