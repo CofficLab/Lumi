@@ -383,6 +383,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             } else {
                 response = try await llmManager.complete(request)
             }
+            try response.validateToolCallArguments()
         } catch {
             streaming.end(conversationID: conversationID)
             await appendError(in: conversationID, error: error, turnID: turnID)
@@ -584,6 +585,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                 } else {
                     response = try await llmManager.complete(request)
                 }
+                try response.validateToolCallArguments()
             } catch {
                 streaming.end(conversationID: conversationID)
                 await appendError(in: conversationID, error: error, turnID: turnID)

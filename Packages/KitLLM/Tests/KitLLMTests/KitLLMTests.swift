@@ -86,6 +86,35 @@ struct KitLLMTests {
         #expect((streamingBody["stream_options"] as? [String: Bool])?["include_usage"] == true)
     }
 
+    @Test("OpenAI adapter 拒绝非法工具参数，避免把坏历史发送给供应商")
+    func openAIAdapterRejectsInvalidToolArguments() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.openai.com/v1")
+        )
+        let malformed = #"{"mode":"choice","options":[{"label":"混合展示"},{"label":"不新增栏"},{"label":"Frequent 内部分"label\": \"Frequent 内部分组\"}]}"#
+        let messages = [LLMMessage(
+            role: .assistant,
+            content: "",
+            toolCalls: [LLMToolCall(id: "call-bad", name: "ask_user", arguments: malformed)]
+        )]
+
+        #expect(throws: LLMToolCallValidationError.self) {
+            _ = try adapter.buildRequestBody(messages: messages, model: "gpt-4", tools: nil, systemPrompt: "")
+        }
+    }
+
+    @Test("LLM 响应在落库前拒绝非法工具参数")
+    func responseRejectsInvalidToolArguments() {
+        let response = LLMResponse(
+            content: "",
+            toolCalls: [LLMToolCall(id: "call-bad", name: "ask_user", arguments: #"{"label": "broken"label}"#)]
+        )
+
+        #expect(throws: LLMToolCallValidationError.self) {
+            try response.validateToolCallArguments()
+        }
+    }
+
     @Test("OpenAI 兼容流式解析器兼容 input/output token 字段")
     func openAIAdapterParsesUsageAliases() throws {
         let adapter = OpenAICompatibleProviderAdapter(
