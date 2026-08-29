@@ -1,6 +1,7 @@
 import KernelCore
 import ProviderContentView
 import ProviderDocsView
+import ProviderRootView
 import SwiftUI
 import KitSuperLog
 import os
@@ -35,10 +36,12 @@ public final class NettoSuperPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(true)
         content?.setContentView(AnyView(NettoDashboardView()))
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
     }
 
