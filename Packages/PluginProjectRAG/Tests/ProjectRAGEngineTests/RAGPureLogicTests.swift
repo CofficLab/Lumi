@@ -149,6 +149,11 @@ import Foundation
     @Test func sourcePathBoostEmptyTerms() {
         #expect(RAGTextUtils.sourcePathBoost(queryTerms: [], filePath: "/x") == 0)
     }
+
+    @Test func sourcePathBoostDoesNotMatchPartialPathToken() {
+        let score = RAGTextUtils.sourcePathBoost(queryTerms: ["auth"], filePath: "/src/author.swift")
+        #expect(score == 0)
+    }
 }
 
 @Suite struct RAGPathUtilsTests {

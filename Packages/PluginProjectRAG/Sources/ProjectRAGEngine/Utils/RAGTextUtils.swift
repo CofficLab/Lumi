@@ -51,8 +51,12 @@ public enum RAGTextUtils {
     /// 计算路径匹配度（查询词在文件路径中的命中率）
     public static func sourcePathBoost(queryTerms: [String], filePath: String) -> Float {
         guard !queryTerms.isEmpty else { return 0 }
-        let lowerPath = filePath.lowercased()
-        let hits = queryTerms.reduce(0) { $0 + (lowerPath.contains($1) ? 1 : 0) }
+        // 路径按目录名、文件名和扩展名拆分后再比较，避免 `auth` 误命中
+        // `author.swift`。路径匹配用于排序，误命中会把不相关文件提前。
+        let pathTokens = Set(tokenize(filePath.lowercased()))
+        let hits = queryTerms.reduce(0) { partial, term in
+            partial + (pathTokens.contains(term.lowercased()) ? 1 : 0)
+        }
         return Float(hits) / Float(queryTerms.count)
     }
 }
