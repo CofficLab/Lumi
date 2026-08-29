@@ -5,8 +5,13 @@ import Foundation
 public struct ListDirectoryTool: SuperAgentTool, @unchecked Sendable {
     public let name = "ls"
     private let maxItems = 500
+    private let workspaceRootProvider: @MainActor @Sendable () -> String?
 
-    public init() {}
+    public init(
+        workspaceRootProvider: @escaping @MainActor @Sendable () -> String? = { nil }
+    ) {
+        self.workspaceRootProvider = workspaceRootProvider
+    }
 
     public func description(for language: LanguagePreference) -> String {
         "List files and directories at a given path. Useful for exploring the project structure."
@@ -19,7 +24,6 @@ public struct ListDirectoryTool: SuperAgentTool, @unchecked Sendable {
                 "path": ["type": "string", "description": "The absolute path to the directory to list"],
                 "recursive": ["type": "boolean", "description": "Whether to list subdirectories recursively. Defaults to false."],
             ],
-            "required": ["path"],
         ]
     }
 
@@ -32,8 +36,15 @@ public struct ListDirectoryTool: SuperAgentTool, @unchecked Sendable {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        guard let path = arguments.stringValue("path") else {
-            throw NSError(domain: "ListDirectoryTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'path' argument"])
+        let explicitPath = arguments.stringValue("path")?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let workspaceRoot = await workspaceRootProvider()?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let path: String
+        if let explicitPath, !explicitPath.isEmpty {
+            path = explicitPath
+        } else if let workspaceRoot, !workspaceRoot.isEmpty {
+            path = workspaceRoot
+        } else {
+            path = FileManager.default.currentDirectoryPath
         }
 
         let recursive = arguments.boolValue("recursive") ?? false

@@ -54,7 +54,10 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
     public func registerBuiltinTools(
         workspaceRootProvider: @escaping @MainActor @Sendable () -> String? = { nil }
     ) {
-        add(ListDirectoryTool(), pluginID: Self.toolManagerPluginID)
+        add(
+            ListDirectoryTool(workspaceRootProvider: workspaceRootProvider),
+            pluginID: Self.toolManagerPluginID
+        )
         add(
             GlobTool(workspaceRootProvider: workspaceRootProvider),
             pluginID: Self.toolManagerPluginID

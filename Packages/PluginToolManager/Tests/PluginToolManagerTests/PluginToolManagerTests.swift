@@ -108,6 +108,18 @@ private struct CountingTool: SuperAgentTool, @unchecked Sendable {
 }
 
 @MainActor
+@Test func listDirectoryToolUsesTheCurrentWorkspaceRootWhenPathIsOmitted() async throws {
+    let packageRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+    let tool = ListDirectoryTool(workspaceRootProvider: { packageRoot.path })
+    let result = try await tool.execute(arguments: [:])
+
+    #expect(result.split(separator: "\n").contains("Package.swift"))
+}
+
+@MainActor
 @Test func toolManagerEventManagerDispatchesAndCancelsObservers() async {
     let manager = ToolManager()
     var eventCount = 0
