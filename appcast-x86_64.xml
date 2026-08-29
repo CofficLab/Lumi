@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.18.0</title>
-            <pubDate>Sat, 29 Aug 2026 05:52:50 +0000</pubDate>
-            <sparkle:version>613</sparkle:version>
-            <sparkle:shortVersionString>5.18.0</sparkle:shortVersionString>
+            <title>5.18.1</title>
+            <pubDate>Sat, 29 Aug 2026 08:16:07 +0000</pubDate>
+            <sparkle:version>614</sparkle:version>
+            <sparkle:shortVersionString>5.18.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.18.0</h2>
-<h3>Changes since v5.17.0</h3>
+            <description><![CDATA[<h2>Release v5.18.1</h2>
+<h3>Changes since v5.18.0</h3>
 <ul>
-<li>移除授权界面渲染条件判断中的冗余日志</li>
-<li>docs(editor): plan plugin workspace experience</li>
-<li>feat: add AboutView to OpenIn plugins</li>
-<li>feat: add missing AboutView and ManualView for all user-facing plugins</li>
-<li>feat: add OpenInKit shared package for external app integration</li>
-<li>feat: change ImageToPDF plugin policy to required and improve code formatting</li>
-<li>feat: change WebServer plugin policy to required</li>
-<li>feat: create 7 independent OpenIn plugins for external app integration</li>
-<li>feat: hide rail for image to pdf plugin</li>
-<li>feat(chat-panel): filter rail views to chat category</li>
-<li>feat(chat-section): add state observation</li>
-<li>feat(chat): restore image attachment preview</li>
-<li>feat(code-editor): add zh-Hans translations for localizable strings</li>
-<li>feat(code-editor): show project rail and chat section</li>
-<li>feat(conversation-new): manage toolbar button visibility</li>
-<li>feat(editor): add built-in syntax languages</li>
-<li>feat(editor): add lazy project file explorer</li>
-<li>feat(editor): add tabbed workspace plugin</li>
-<li>feat(editor): register workspace plugin stack</li>
-<li>feat(editor): restore host surface contracts</li>
+<li>docs: update project README</li>
+<li>feat(PluginActivityBar): persist active item globally</li>
+<li>feat(PluginProjectFiles): hide content header when no files are open</li>
+<li>feat(ProjectsPlugin): persist opened files per project</li>
+<li>fix(FactoryLumi): localize app update menu</li>
+<li>fix(FactoryLumi): resolve package resource bundle</li>
+<li>fix(plugin-input): hide rail and content header when active</li>
+<li>fix(PluginBrewManager): decode formula and cask payloads</li>
+<li>fix(PluginCodeEditor): localize plugin strings</li>
+<li>fix(PluginEditorHost): localize editor states</li>
+<li>refactor(EditorTextView): move resources to package root</li>
+<li>refactor(FactoryLumi): move resources to package root</li>
+<li>refactor(KitFileSystem): move resources to package root</li>
+<li>refactor(OpenInKit): move resources to package root</li>
+<li>refactor(PluginAgentRules): move resources to package root</li>
+<li>refactor(PluginAgentTempStorage): move resources to package root</li>
+<li>refactor(PluginAppIconDesigner): move resources to package root</li>
+<li>refactor(PluginAppStorePromoDesigner): move resources to package root</li>
+<li>refactor(PluginCaffeinate): move resources to package root</li>
+<li>refactor(PluginChatFileAttachment): move resources to package root</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.18.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.18.0/Lumi_5.18.0_x86_64.dmg" length="44945323" type="application/octet-stream" sparkle:edSignature="pE0Wl/kU+nfFj7ca6kKzy43Jz84K8DF3ogIlZZ6nnW8gCwWg4cxVqBeGYxRKl76BJB9thwVQ2glZuAMPxSQICg=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.18.1</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.18.1/Lumi_5.18.1_x86_64.dmg" length="44277473" type="application/octet-stream" sparkle:edSignature="EH0Uy+C23yIhzZ3HTgXzx33ZxdALfM6ZgHgSNQ3J4o0YNl6zspB1aQMzVKU3bRamZ/Mcw3wLTZNasFSQqQquDQ=="/>
         </item>
     </channel>
 </rss>
