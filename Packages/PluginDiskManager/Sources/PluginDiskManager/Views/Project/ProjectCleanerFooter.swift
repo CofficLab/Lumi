@@ -8,7 +8,7 @@ struct ProjectCleanerFooter: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text(PluginDiskManagerLocalization.string("已选择清理"))
+                Text(PluginDiskManagerLocalization.string("Selected for Cleanup"))
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                 Text(viewModel.formatBytes(viewModel.totalSelectedSize))
@@ -22,7 +22,7 @@ struct ProjectCleanerFooter: View {
             Button(action: {
                 showCleanConfirmation = true
             }, label: {
-                Label(title: { Text(viewModel.isCleaning ? PluginDiskManagerLocalization.string("清理中...") : PluginDiskManagerLocalization.string("立即清理")) }, icon: {
+                Label(title: { Text(viewModel.isCleaning ? PluginDiskManagerLocalization.string("Cleaning...") : PluginDiskManagerLocalization.string("Clean Now")) }, icon: {
                     Image(systemName: "trash.fill")
                 })
                 .font(.system(size: 15, weight: .medium))

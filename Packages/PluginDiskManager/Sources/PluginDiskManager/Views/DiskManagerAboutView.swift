@@ -20,12 +20,12 @@ struct DiskManagerAboutView: View {
         LandingHero(
             icon: "internaldrive",
             accent: theme.warning,
-            tagline: L("看清磁盘占用、揪出大文件、一键清理缓存与构建产物,把空间找回来。"),
-            chips: [L("用量概览"), L("大文件扫描"), L("缓存清理")],
+            tagline: L("See disk usage clearly, find large files, and clean caches and build artifacts to reclaim space."),
+            chips: [L("Usage Overview"), L("Large File Scan"), L("Cache Cleanup")],
             metrics: [
-                .init(value: "1键", label: L("Finder 定位")),
-                .init(value: "多类", label: L("清理项")),
-                .init(value: "可视", label: L("目录树"))
+                .init(value: "1-tap", label: L("Finder Locate")),
+                .init(value: "Multi", label: L("Cleanup Items")),
+                .init(value: "Visual", label: L("Directory Tree"))
             ]
         )
         .landingAppear()
@@ -34,12 +34,12 @@ struct DiskManagerAboutView: View {
     // MARK: - 关键指标
 
     private var statsSection: some View {
-        LandingSection(title: L("一眼掌握的磁盘状态"), icon: "chart.pie") {
+        LandingSection(title: L("Disk Status at a Glance"), icon: "chart.pie") {
             LandingStatStrip(accent: theme.warning, metrics: [
-                .init(value: "总/已用", label: L("磁盘概览")),
-                .init(value: "Top N", label: L("大文件排序")),
-                .init(value: "树状", label: L("目录占比")),
-                .init(value: "安全", label: L("清理策略"))
+                .init(value: "Total/Used", label: L("Disk Overview")),
+                .init(value: "Top N", label: L("Large File Ranking")),
+                .init(value: "Tree", label: L("Directory Share")),
+                .init(value: "Safe", label: L("Cleanup Strategy"))
             ])
         }
         .landingAppear(delay: 0.05)
@@ -48,26 +48,26 @@ struct DiskManagerAboutView: View {
     // MARK: - 核心能力
 
     private var capabilitiesSection: some View {
-        LandingSection(title: L("核心能力"), icon: "square.grid.2x2") {
+        LandingSection(title: L("Core Capabilities"), icon: "square.grid.2x2") {
             LandingFeatureGrid(items: [
                 .init(icon: "chart.pie", tint: theme.warning,
-                      title: L("用量概览"),
-                      description: L("一眼查看总容量、已用与可用,掌握空间消耗趋势。")),
+                      title: L("Usage Overview"),
+                      description: L("View total capacity, used and available space at a glance.")),
                 .init(icon: "doc.fill", tint: theme.info,
-                      title: L("大文件扫描"),
-                      description: L("按大小排序找出占地方的文件,便于清理。")),
+                      title: L("Large File Scan"),
+                      description: L("Find large files sorted by size for easy cleanup.")),
                 .init(icon: "rectangle.3.group", tint: theme.primary,
-                      title: L("目录分析"),
-                      description: L("以可交互的树状视图查看各文件夹的占用占比。")),
+                      title: L("Directory Analysis"),
+                      description: L("View folder usage breakdown with an interactive tree view.")),
                 .init(icon: "sparkles", tint: theme.success,
-                      title: L("缓存与构建清理"),
-                      description: L("安全清理 Xcode DerivedData、模拟器、归档等构建产物。")),
+                      title: L("Cache and Build Cleanup"),
+                      description: L("Safely clean Xcode DerivedData, simulators, archives and build artifacts.")),
                 .init(icon: "folder.badge.gearshape", tint: theme.warning,
-                      title: L("项目清理"),
-                      description: L("扫描项目里的 DerivedData、build、CocoaPods 缓存等可删项。")),
+                      title: L("Project Cleanup"),
+                      description: L("Scan DerivedData, build, CocoaPods caches and other cleanable items.")),
                 .init(icon: "magnifyingglass.circle", tint: theme.info,
-                      title: L("Finder 集成"),
-                      description: L("对任意扫描结果一键在 Finder 中定位。"))
+                      title: L("Finder Integration"),
+                      description: L("Locate any scan result in Finder with one click."))
             ])
         }
         .landingAppear(delay: 0.1)
@@ -76,14 +76,14 @@ struct DiskManagerAboutView: View {
     // MARK: - 可清理类别
 
     private var cleanupSection: some View {
-        LandingSection(title: L("可清理的类别"), icon: "trash.circle") {
+        LandingSection(title: L("Cleanable Categories"), icon: "trash.circle") {
             LandingInventory(tint: theme.warning, items: [
-                .init(icon: "server.rack", title: L("系统缓存"), description: L("临时文件")),
-                .init(icon: "hammer", title: "Xcode DerivedData", description: L("构建产物")),
-                .init(icon: "rectangle.stack.badge.play", title: L("旧模拟器"), description: L("iOS Simulator")),
-                .init(icon: "archivebox", title: L("归档"), description: L("Archives")),
-                .init(icon: "shippingbox", title: "CocoaPods", description: L("缓存")),
-                .init(icon: "folder.fill.badge.plus", title: "build", description: L("构建目录"))
+                .init(icon: "server.rack", title: L("System Caches"), description: L("Temporary files")),
+                .init(icon: "hammer", title: "Xcode DerivedData", description: L("Build artifacts")),
+                .init(icon: "rectangle.stack.badge.play", title: L("Old Simulators"), description: L("iOS Simulator")),
+                .init(icon: "archivebox", title: L("Archives"), description: L("Archives")),
+                .init(icon: "shippingbox", title: "CocoaPods", description: L("Cache")),
+                .init(icon: "folder.fill.badge.plus", title: "build", description: L("Build directory"))
             ])
         }
         .landingAppear(delay: 0.15)

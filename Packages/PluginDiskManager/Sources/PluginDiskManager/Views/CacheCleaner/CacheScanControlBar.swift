@@ -9,8 +9,8 @@ struct CacheScanControlBar: View {
         HStack {
             AppButton(
                 viewModel.isScanning
-                    ? PluginDiskManagerLocalization.string("停止扫描")
-                    : PluginDiskManagerLocalization.string("扫描缓存"),
+                    ? PluginDiskManagerLocalization.string("Stop Scanning")
+                    : PluginDiskManagerLocalization.string("Scan System Caches"),
                 systemImage: viewModel.isScanning ? "stop.circle" : "doc.badge.gearshape",
                 style: viewModel.isScanning ? .destructive : .primary,
                 action: {
@@ -24,7 +24,7 @@ struct CacheScanControlBar: View {
 
             Spacer()
 
-            Text(PluginDiskManagerLocalization.string("扫描范围：用户主目录"))
+            Text(PluginDiskManagerLocalization.string("Scan scope: User Home"))
                 .font(.caption)
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }

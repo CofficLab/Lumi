@@ -9,10 +9,10 @@ struct XcodeCleanerFooter: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text("\(PluginDiskManagerLocalization.string("已选择："))\(viewModel.formatBytes(viewModel.selectedSize))")
+                Text("\(PluginDiskManagerLocalization.string("Selected:"))\(viewModel.formatBytes(viewModel.selectedSize))")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
-                Text("\(PluginDiskManagerLocalization.string("总计："))\(viewModel.formatBytes(viewModel.totalSize))")
+                Text("\(PluginDiskManagerLocalization.string("Total:"))\(viewModel.formatBytes(viewModel.totalSize))")
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
             }
@@ -27,7 +27,7 @@ struct XcodeCleanerFooter: View {
                         .multilineTextAlignment(.trailing)
                     if viewModel.isPermissionError {
                         Button(action: openFullDiskAccessSettings) {
-                            Text(PluginDiskManagerLocalization.string("打开系统设置"))
+                            Text(PluginDiskManagerLocalization.string("Open System Settings"))
                         }
                         .buttonStyle(.link)
                         .font(.caption)
@@ -38,7 +38,7 @@ struct XcodeCleanerFooter: View {
             Button(action: {
                 showCleanConfirmation = true
             }, label: {
-                Label(title: { Text(viewModel.isCleaning ? PluginDiskManagerLocalization.string("清理中...") : PluginDiskManagerLocalization.string("立即清理")) }, icon: {
+                Label(title: { Text(viewModel.isCleaning ? PluginDiskManagerLocalization.string("Cleaning...") : PluginDiskManagerLocalization.string("Clean Now")) }, icon: {
                     Image(systemName: "trash.fill")
                 })
                 .font(.system(size: 15, weight: .medium))

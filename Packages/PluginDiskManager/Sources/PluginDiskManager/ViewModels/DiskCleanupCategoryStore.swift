@@ -16,11 +16,11 @@ public enum DiskCleanupCategory: String, CaseIterable, Identifiable, Hashable, S
 
     public var title: String {
         switch self {
-        case .largeFiles:     return NSLocalizedString("Large Files", comment: "")
-        case .directoryTree:  return NSLocalizedString("Directory Analysis", comment: "")
-        case .cacheCleaner:   return NSLocalizedString("System Cleanup", comment: "")
-        case .xcodeCleaner:   return NSLocalizedString("Xcode Cleanup", comment: "")
-        case .projectCleaner: return NSLocalizedString("Project Cleanup", comment: "")
+        case .largeFiles:     return PluginDiskManagerLocalization.string("Large Files")
+        case .directoryTree:  return PluginDiskManagerLocalization.string("Directory Analysis")
+        case .cacheCleaner:   return PluginDiskManagerLocalization.string("System Cleanup")
+        case .xcodeCleaner:   return PluginDiskManagerLocalization.string("Xcode Cleanup")
+        case .projectCleaner: return PluginDiskManagerLocalization.string("Project Cleanup")
         }
     }
 

@@ -51,7 +51,7 @@ struct LargeFileRow: View {
                         .foregroundColor(Color(hex: "0A84FF"))
                 }
                 .buttonStyle(.plain)
-                .help(PluginDiskManagerLocalization.string("在访达中显示"))
+                .help(PluginDiskManagerLocalization.string("Reveal in Finder"))
 
                 Button(action: {
                     showDeleteConfirm = true
@@ -60,12 +60,12 @@ struct LargeFileRow: View {
                         .foregroundColor(Color(hex: "FF453A"))
                 }
                 .buttonStyle(.plain)
-                .help(PluginDiskManagerLocalization.string("删除文件"))
+                .help(PluginDiskManagerLocalization.string("Delete File"))
                 .confirmationDialog(PluginDiskManagerLocalization.string("Are you sure you want to delete this file?"), isPresented: $showDeleteConfirm) {
-                    Button(PluginDiskManagerLocalization.string("删除"), role: .destructive) {
+                    Button(PluginDiskManagerLocalization.string("Delete"), role: .destructive) {
                         viewModel.deleteFile(item)
                     }
-                    Button(PluginDiskManagerLocalization.string("取消"), role: .cancel) {}
+                    Button(PluginDiskManagerLocalization.string("Cancel"), role: .cancel) {}
                 } message: {
                     Text(String(format: PluginDiskManagerLocalization.string("File \"%@\" will be permanently deleted."), item.name))
                 }

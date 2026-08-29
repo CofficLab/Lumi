@@ -9,8 +9,8 @@ struct LargeFilesScanControlBar: View {
         HStack {
             AppButton(
                 viewModel.isScanning
-                    ? PluginDiskManagerLocalization.string("停止扫描")
-                    : PluginDiskManagerLocalization.string("扫描大文件"),
+                    ? PluginDiskManagerLocalization.string("Stop Scanning")
+                    : PluginDiskManagerLocalization.string("Scan Large Files"),
                 systemImage: viewModel.isScanning ? "stop.circle" : "magnifyingglass.circle",
                 style: viewModel.isScanning ? .destructive : .primary,
                 action: {
@@ -24,7 +24,7 @@ struct LargeFilesScanControlBar: View {
 
             Spacer()
 
-            Text(PluginDiskManagerLocalization.string("扫描目录：用户主目录"))
+            Text(PluginDiskManagerLocalization.string("Scan directory: User Home"))
                 .font(.caption)
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }

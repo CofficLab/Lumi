@@ -9,8 +9,8 @@ struct DirectoryTreeScanControlBar: View {
         HStack {
             AppButton(
                 viewModel.isScanning
-                    ? PluginDiskManagerLocalization.string("停止分析")
-                    : PluginDiskManagerLocalization.string("分析目录"),
+                    ? PluginDiskManagerLocalization.string("Stop Analysis")
+                    : PluginDiskManagerLocalization.string("Analyze Directory"),
                 systemImage: viewModel.isScanning ? "stop.circle" : "folder.badge.gear",
                 style: viewModel.isScanning ? .destructive : .primary,
                 action: {
@@ -24,7 +24,7 @@ struct DirectoryTreeScanControlBar: View {
 
             Spacer()
 
-            Text(PluginDiskManagerLocalization.string("扫描目录：用户主目录"))
+            Text(PluginDiskManagerLocalization.string("Scan directory: User Home"))
                 .font(.caption)
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }

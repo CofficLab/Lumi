@@ -22,16 +22,16 @@ struct EmptyProjectView: View {
             }
 
             VStack(spacing: 10) {
-                Text(PluginDiskManagerLocalization.string("未发现可清理的项目"))
+                Text(PluginDiskManagerLocalization.string("No Cleanable Projects Found"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                Text(PluginDiskManagerLocalization.string("已扫描：Code、Projects、Developer 等目录"))
+                Text(PluginDiskManagerLocalization.string("Scanned: Code, Projects, Developer directories"))
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 AppButton(
-                    PluginDiskManagerLocalization.string("重新扫描"),
+                    PluginDiskManagerLocalization.string("Rescan"),
                     systemImage: "arrow.clockwise",
                     style: .primary,
                     action: { Task { await viewModel.scanProjects() } }

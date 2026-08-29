@@ -6,7 +6,7 @@ struct XcodeScanProgressView: View {
     @State private var animate = false
 
     var body: some View {
-        let current = viewModel.scanProgress.isEmpty ? "开发者缓存目录" : viewModel.scanProgress
+        let current = viewModel.scanProgress.isEmpty ? "Developer Caches" : viewModel.scanProgress
         let totalCount = viewModel.itemsByCategory.values.flatMap { $0 }.count
 
         VStack(spacing: 12) {
@@ -42,7 +42,7 @@ struct XcodeScanProgressView: View {
 
             // 进度信息
             VStack(spacing: 6) {
-                Text(PluginDiskManagerLocalization.string("正在扫描 Xcode 缓存"))
+                Text(PluginDiskManagerLocalization.string("Scanning Xcode Caches"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 

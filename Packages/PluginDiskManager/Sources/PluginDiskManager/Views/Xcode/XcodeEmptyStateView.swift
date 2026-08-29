@@ -22,15 +22,15 @@ struct XcodeEmptyStateView: View {
             }
 
             VStack(spacing: 10) {
-                Text(PluginDiskManagerLocalization.string("Xcode 环境很干净！"))
+                Text(PluginDiskManagerLocalization.string("Xcode environment is clean!"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                Text(PluginDiskManagerLocalization.string("没有发现可清理的缓存文件"))
+                Text(PluginDiskManagerLocalization.string("No cleanable cache files found"))
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
-                AppButton(PluginDiskManagerLocalization.string("重新扫描"), systemImage: "arrow.clockwise", style: .primary, action: { Task { await viewModel.scanAll() } })
+                AppButton(PluginDiskManagerLocalization.string("Rescan"), systemImage: "arrow.clockwise", style: .primary, action: { Task { await viewModel.scanAll() } })
             }
         }
         .padding(24)

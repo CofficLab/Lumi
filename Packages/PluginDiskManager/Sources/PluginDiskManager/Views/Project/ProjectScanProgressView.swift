@@ -6,7 +6,7 @@ struct ProjectScanProgressView: View {
     @State private var animate = false
 
     var body: some View {
-        let current = viewModel.scanProgress.isEmpty ? "用户主目录" : viewModel.scanProgress
+        let current = viewModel.scanProgress.isEmpty ? "User Home" : viewModel.scanProgress
         let totalSize = viewModel.projects.reduce(0 as Int64) { $0 + $1.totalSize }
 
         VStack(spacing: 12) {
@@ -34,7 +34,7 @@ struct ProjectScanProgressView: View {
             }
 
             VStack(spacing: 6) {
-                Text(PluginDiskManagerLocalization.string("正在扫描项目"))
+                Text(PluginDiskManagerLocalization.string("Scanning Projects"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
