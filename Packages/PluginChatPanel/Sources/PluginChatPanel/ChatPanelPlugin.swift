@@ -49,12 +49,14 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             chat.setVisible(isChatActive)
             chat.setContextActive(isChatActive)
             rootView.setContentViewHidden(isChatActive)
+            rootView.setContentHeaderViewHidden(!isChatActive)
             railView?.setVisibleCategories(isChatActive ? [.chat] : Set(RailViewCategory.allCases))
         }])
         
         activityBar.activateItem(id: entryID)
         chat.setVisible(true)
         chat.setContextActive(true)
+        rootView.setContentHeaderViewHidden(true)
         railView?.setVisibleCategories([.chat])
     }
 
@@ -65,6 +67,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(false)
         if wasActive {
             kernel.resolveProvider((any RootViewProviding).self)?.setContentViewHidden(false)
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
     }
