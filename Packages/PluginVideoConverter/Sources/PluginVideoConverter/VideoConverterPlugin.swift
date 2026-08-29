@@ -1,5 +1,6 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
@@ -42,6 +43,7 @@ public final class VideoConverterPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         // 1. 在 ActivityBar 注册「视频转换」入口（沿用旧版 ActivityBar 容器入口）
@@ -57,9 +59,11 @@ public final class VideoConverterPlugin: SuperPlugin, SuperLog {
                 ) { state in
                     if state == .activated {
                         contentView?.setContentView(AnyView(VideoConverterMainView()))
+                        chat?.setVisible(false)
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
                     } else {
+                        chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
                         rootView?.setContentHeaderViewHidden(false)
                     }
@@ -75,6 +79,7 @@ public final class VideoConverterPlugin: SuperPlugin, SuperLog {
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             let railView = kernel.resolveProvider((any RailViewProviding).self)
             let rootView = kernel.resolveProvider((any RootViewProviding).self)
             rootView?.setRailView(railView?.makeRailView())

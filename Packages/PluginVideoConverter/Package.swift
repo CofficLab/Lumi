@@ -18,6 +18,7 @@ let package = Package(
         .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderActivityBar"),
+        .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderRailView"),
@@ -32,6 +33,7 @@ let package = Package(
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
@@ -45,7 +47,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginVideoConverterTests",
-            dependencies: ["PluginVideoConverter"]
+            dependencies: [
+                "PluginVideoConverter",
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+            ]
         )
     ]
 )
