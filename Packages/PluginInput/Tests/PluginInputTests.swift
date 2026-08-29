@@ -3,7 +3,11 @@ import Foundation
 import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
+import ProviderContentView
+import ProviderRailView
+import ProviderRootView
 @testable import InputPlugin
+@testable import ProviderRootView
 
 @MainActor
 @Test func packageLoads() async throws {
@@ -14,22 +18,33 @@ import ProviderChatSection
 }
 
 @MainActor
-@Test func activatingPluginHidesChatAndDeactivatingRestoresIt() throws {
+@Test func activatingPluginHidesRailAndContentHeaderAndDeactivatingRestoresThem() throws {
     let kernel = KernelCoreContainer()
     let activityBar = DefaultActivityBarProviding()
     let chat = DefaultChatSectionProviding()
+    let contentView = DefaultContentViewProviding()
+    let railView = DefaultRailViewProviding()
+    let rootView = DefaultRootViewProvider()
+    rootView.setRailView(railView.makeRailView())
     try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
     try kernel.registerProvider((any ChatSectionProviding).self, chat)
+    try kernel.registerProvider((any ContentViewProviding).self, contentView)
+    try kernel.registerProvider((any RailViewProviding).self, railView)
+    try kernel.registerProvider((any RootViewProviding).self, rootView)
 
     let plugin = InputSuperPlugin()
     try plugin.onBoot(kernel: kernel)
 
     #expect(activityBar.activeItemID == "\(plugin.id).entry")
     #expect(!chat.isVisible)
+    #expect(rootView.railView == nil)
+    #expect(rootView.isContentHeaderViewHidden)
 
     activityBar.activateItem(id: nil)
 
     #expect(chat.isVisible)
+    #expect(rootView.railView != nil)
+    #expect(rootView.isContentHeaderViewHidden == false)
 }
 
 @MainActor

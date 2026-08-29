@@ -44,6 +44,9 @@ let package = Package(
                 .target(name: "InputPlugin"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderContentView", package: "ProviderContentView"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
             ],
             path: "Tests"
         )

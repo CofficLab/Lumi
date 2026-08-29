@@ -83,6 +83,10 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: [activityItemID])
         if wasActive {
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailView(
+                kernel.resolveProvider((any RailViewProviding).self)?.makeRailView()
+            )
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
         }
         InputPluginRuntimeBridge.dataRootDirectory = nil
     }
