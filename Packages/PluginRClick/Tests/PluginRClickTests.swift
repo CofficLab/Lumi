@@ -1,5 +1,10 @@
 import Testing
 import Foundation
+import KernelCore
+import ProviderActivityBar
+import ProviderChatSection
+import ProviderRailView
+import ProviderRootView
 @testable import RClickPlugin
 
 @MainActor
@@ -7,6 +12,37 @@ import Foundation
     let plugin = RClickSuperPlugin()
     #expect(plugin.id == "com.coffic.lumi.plugin.rclick")
     #expect(plugin.metadata.policy == .disabledByDefault)
+}
+
+@MainActor
+@Test func activatingPluginHidesChatAndContentHeaderAndScopesRail() throws {
+    let kernel = KernelCoreContainer()
+    let activityBar = DefaultActivityBarProviding()
+    let chat = DefaultChatSectionProviding()
+    let rail = DefaultRailViewProviding(visibleCategories: [.chat])
+    let rootView = DefaultRootViewProvider()
+    try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+    try kernel.registerProvider((any ChatSectionProviding).self, chat)
+    try kernel.registerProvider((any RailViewProviding).self, rail)
+    try kernel.registerProvider((any RootViewProviding).self, rootView)
+
+    activityBar.addItems([ActivityBarItem(id: "chat.entry", title: "Chat", systemImage: "message")])
+
+    let plugin = RClickSuperPlugin()
+    try plugin.onBoot(kernel: kernel)
+    activityBar.activateItem(id: "\(plugin.id).entry")
+
+    #expect(!chat.isVisible)
+    #expect(rail.visibleCategories == [.general])
+    #expect(rail.visibleTabID == "com.coffic.lumi.plugin.rclick.preview")
+    #expect(rail.activeTabID == "com.coffic.lumi.plugin.rclick.preview")
+    #expect(rootView.isContentHeaderViewHidden)
+
+    activityBar.activateItem(id: nil)
+
+    #expect(chat.isVisible)
+    #expect(rail.visibleCategories == Set(RailViewCategory.allCases))
+    #expect(rootView.isContentHeaderViewHidden == false)
 }
 
 @Test func actionTypePersistenceKeepsLegacyHiddenMenuID() throws {

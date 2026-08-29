@@ -1,8 +1,10 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
+import ProviderRootView
 import ProviderStorage
 import SwiftUI
 import KitSuperLog
@@ -40,7 +42,9 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
         }
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let rail = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         rail?.addTabs([
             RailTabItem(
                 id: railTabID,
@@ -60,10 +64,17 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "cursorarrow.click.2",
                 order: order,
                 ownerPluginID: id
-            ) { [activityItemID] state in
+            ) { state in
                 if state == .activated {
+                    rail?.setVisibleCategories([.general])
                     rail?.setVisibleTabID(self.railTabID)
                     content?.setContentView(AnyView(RClickSettingsView()))
+                    chat?.setVisible(false)
+                    rootView?.setContentHeaderViewHidden(true)
+                } else {
+                    chat?.setVisible(true)
+                    rootView?.setContentHeaderViewHidden(false)
+                    rail?.setVisibleCategories(Set(RailViewCategory.allCases))
                 }
             },
         ])
@@ -75,6 +86,8 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: [activityItemID])
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [railTabID])
         if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         RClickPluginRuntimeBridge.dataRootDirectory = nil
