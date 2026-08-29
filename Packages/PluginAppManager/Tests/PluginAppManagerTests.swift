@@ -4,6 +4,7 @@ import SwiftData
 import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
+import ProviderRailView
 @testable import AppManagerPlugin
 
 @MainActor
@@ -19,13 +20,23 @@ struct PluginAppManagerTests {
         let kernel = KernelCoreContainer()
         let activity = DefaultActivityBarProviding()
         let chat = DefaultChatSectionProviding()
+        let rail = DefaultRailViewProviding(visibleCategories: [.chat])
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any RailViewProviding).self, rail)
+
+        activity.addItems([ActivityBarItem(id: "chat.entry", title: "Chat", systemImage: "message")])
 
         try AppManagerSuperPlugin().onBoot(kernel: kernel)
 
-        #expect(activity.activeItemID == "com.coffic.lumi.plugin.app-manager.entry")
+        #expect(activity.activeItemID == "chat.entry")
+
+        activity.activateItem(id: "com.coffic.lumi.plugin.app-manager.entry")
+
         #expect(!chat.isVisible)
+        #expect(rail.visibleCategories == [.system])
+        #expect(rail.visibleTabID == AppManagerPlugin.railTabID)
+        #expect(rail.activeTabID == AppManagerPlugin.railTabID)
 
         activity.activateItem(id: nil)
 
