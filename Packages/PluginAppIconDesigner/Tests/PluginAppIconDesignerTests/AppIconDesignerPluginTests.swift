@@ -5,6 +5,7 @@ import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
 import ProviderRailView
+import ProviderRootView
 import ProviderStorage
 import ProviderToolManager
 import ProviderPromptSuggestion
@@ -37,6 +38,7 @@ struct AppIconDesignerPluginTests {
         let activity = DefaultActivityBarProviding()
         let rail = DefaultRailViewProviding()
         let chat = DefaultChatSectionProviding()
+        let rootView = DefaultRootViewProvider()
         let storage = TestStorage()
 
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
@@ -46,6 +48,7 @@ struct AppIconDesignerPluginTests {
         )
         try kernel.registerProvider((any RailViewProviding).self, rail)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
         try kernel.registerProvider((any StorageProviding).self, storage)
 
         try kernel.start(plugins: [AppIconDesignerPlugin()])
@@ -56,11 +59,13 @@ struct AppIconDesignerPluginTests {
         #expect(rail.activeTabID == AppIconDesignerPlugin.railTabID)
         #expect(chat.isVisible)
         #expect(chat.isContextActive)
+        #expect(rootView.isContentHeaderViewHidden)
 
         try kernel.stop()
 
         #expect(activity.items.isEmpty)
         #expect(rail.tabs.isEmpty)
+        #expect(rootView.isContentHeaderViewHidden == false)
         try? FileManager.default.removeItem(at: storage.dataRootDirectory)
     }
 

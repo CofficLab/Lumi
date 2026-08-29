@@ -8,6 +8,7 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderPromptSuggestion
 import ProviderRailView
+import ProviderRootView
 import ProviderToolManager
 import SwiftUI
 
@@ -80,6 +81,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         if let railView = railView {
@@ -108,12 +110,16 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                     order: order,
                     ownerPluginID: id
                 ) { state in
-                    guard state == .activated else { return }
-                    railView?.setVisibleTabID(Self.railTabID)
-                    IconDocumentStore.shared.reload()
-                    contentView?.setContentView(AnyView(DesignerView()))
-                    chat?.setVisible(true)
-                    chat?.setContextActive(true)
+                    if state == .activated {
+                        rootView?.setContentHeaderViewHidden(true)
+                        railView?.setVisibleTabID(Self.railTabID)
+                        IconDocumentStore.shared.reload()
+                        contentView?.setContentView(AnyView(DesignerView()))
+                        chat?.setVisible(true)
+                        chat?.setContextActive(true)
+                    } else {
+                        rootView?.setContentHeaderViewHidden(false)
+                    }
                 },
             ])
         } else {
@@ -147,6 +153,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         if activityBar == nil || activityBar?.activeItemID == nil {
