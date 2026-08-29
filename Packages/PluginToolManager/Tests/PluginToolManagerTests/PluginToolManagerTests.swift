@@ -81,6 +81,19 @@ private struct CountingTool: SuperAgentTool, @unchecked Sendable {
 }
 
 @MainActor
+@Test func shellToolUsesTheCurrentWorkspaceRoot() async throws {
+    let tool = ShellTool(workspaceRootProvider: { "/tmp" })
+    let result = try await tool.execute(arguments: [
+        "command": ToolArgument("pwd"),
+    ])
+
+    #expect(
+        URL(fileURLWithPath: result).standardizedFileURL.path
+            == URL(fileURLWithPath: "/tmp").standardizedFileURL.path
+    )
+}
+
+@MainActor
 @Test func toolManagerEventManagerDispatchesAndCancelsObservers() async {
     let manager = ToolManager()
     var eventCount = 0

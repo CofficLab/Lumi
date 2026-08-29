@@ -3,6 +3,7 @@ import KernelCore
 import KitAgentTool
 import os
 import ProviderConversation
+import ProviderProject
 import ProviderSettingView
 import ProviderStorage
 import ProviderToolManager
@@ -52,7 +53,10 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
         }
 
         // 2. 注册内置工具。
-        service.registerBuiltinTools()
+        let project = kernel.resolveProvider((any ProjectProviding).self)
+        service.registerBuiltinTools(workspaceRootProvider: { [weak project] in
+            project?.workspaceRoot
+        })
 
         // 3. 替换默认 ToolManagerProviding 实现。
         kernel.unregisterProvider((any ToolManagerProviding).self)

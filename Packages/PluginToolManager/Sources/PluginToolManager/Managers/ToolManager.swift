@@ -51,14 +51,19 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
         eventManager.addObserver(callback)
     }
 
-    public func registerBuiltinTools() {
+    public func registerBuiltinTools(
+        workspaceRootProvider: @escaping @MainActor @Sendable () -> String? = { nil }
+    ) {
         add(ListDirectoryTool(), pluginID: Self.toolManagerPluginID)
         add(GlobTool(), pluginID: Self.toolManagerPluginID)
         add(ReadFileTool(), pluginID: Self.toolManagerPluginID)
         add(WriteFileTool(), pluginID: Self.toolManagerPluginID)
         add(EditFileTool(), pluginID: Self.toolManagerPluginID)
         add(ReadImageTool(), pluginID: Self.toolManagerPluginID)
-        add(ShellTool(), pluginID: Self.toolManagerPluginID)
+        add(
+            ShellTool(workspaceRootProvider: workspaceRootProvider),
+            pluginID: Self.toolManagerPluginID
+        )
     }
 
     public static let toolManagerPluginID = "com.coffic.lumi.plugin.tool-manager"
