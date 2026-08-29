@@ -10,6 +10,7 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderPluginControl
 import ProviderProject
+import ProviderRootView
 import SwiftUI
 import Testing
 
@@ -31,10 +32,12 @@ struct CodeEditorSuperPluginTests {
         let content = TestContentProvider()
         let docs = DefaultDocsViewProviding()
         let project = DefaultProjectProvider()
+        let rootView = DefaultRootViewProvider()
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
         try kernel.registerProvider((any ContentViewProviding).self, content)
         try kernel.registerProvider((any DocsViewProviding).self, docs)
         try kernel.registerProvider((any ProjectProviding).self, project)
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
         let workspace = CodeEditorSuperPlugin()
         try kernel.start(plugins: [EditorHostSuperPlugin(), workspace])
         let control = DefaultPluginControlling(kernel: kernel)
@@ -46,6 +49,7 @@ struct CodeEditorSuperPluginTests {
         #expect(activity.items.filter { $0.id == CodeEditorSuperPlugin.activityItemID }.count == 1)
         activity.activateItem(id: CodeEditorSuperPlugin.activityItemID)
         #expect(content.setCount == 1)
+        #expect(rootView.isContentHeaderViewHidden == false)
 
         let file = FileManager.default.temporaryDirectory
             .appendingPathComponent("CodeEditorPlugin-\(UUID().uuidString).swift")
@@ -61,6 +65,7 @@ struct CodeEditorSuperPluginTests {
         #expect(await control.disablePlugin(id: workspace.id))
         #expect(activity.items.allSatisfy { $0.id != CodeEditorSuperPlugin.activityItemID })
         #expect(content.clearCount == 1)
+        #expect(rootView.isContentHeaderViewHidden)
 
         #expect(await control.enablePlugin(id: workspace.id))
         #expect(activity.items.filter { $0.id == CodeEditorSuperPlugin.activityItemID }.count == 1)

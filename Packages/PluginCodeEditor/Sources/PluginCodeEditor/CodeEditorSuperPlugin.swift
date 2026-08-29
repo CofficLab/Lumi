@@ -8,6 +8,7 @@ import ProviderConversationInput
 import ProviderDocsView
 import ProviderProject
 import ProviderRailView
+import ProviderRootView
 import SwiftUI
 import KitSuperLog
 import os
@@ -40,6 +41,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     private weak var activityBar: (any ActivityBarProviding)?
     private weak var contentView: (any ContentViewProviding)?
     private weak var railView: (any RailViewProviding)?
+    private weak var rootView: (any RootViewProviding)?
 
     public init() {}
 
@@ -107,6 +109,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         self.activityBar = activityBar
         self.contentView = contentView
         self.railView = kernel.resolveProvider((any RailViewProviding).self)
+        self.rootView = kernel.resolveProvider((any RootViewProviding).self)
         activityBar.addItems([
             ActivityBarItem(
                 id: Self.activityItemID,
@@ -114,16 +117,21 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "chevron.left.forwardslash.chevron.right",
                 order: order,
                 ownerPluginID: id
-            ) { [weak contentView, weak railView = self.railView, weak chat] state in
-                guard state == .activated else { return }
-                // Code Editor 激活时只显示文件树，避免带出其它项目类 RailView。
-                railView?.setVisibleCategories([.fileTree])
-                chat?.setVisible(true)
-                chat?.setContextActive(true)
-                contentView?.setContentView(AnyView(EditorWorkbenchView(
-                    viewModel: viewModel,
-                    surface: surface
-                )))
+            ) { [weak contentView, weak railView = self.railView, weak rootView = self.rootView, weak chat] state in
+                if state == .activated {
+                    // Code Editor 是唯一需要显示 ContentHeader 的工作区。
+                    rootView?.setContentHeaderViewHidden(false)
+                    // Code Editor 激活时只显示文件树，避免带出其它项目类 RailView。
+                    railView?.setVisibleCategories([.fileTree])
+                    chat?.setVisible(true)
+                    chat?.setContextActive(true)
+                    contentView?.setContentView(AnyView(EditorWorkbenchView(
+                        viewModel: viewModel,
+                        surface: surface
+                    )))
+                } else {
+                    rootView?.setContentHeaderViewHidden(true)
+                }
             },
         ])
     }
@@ -136,6 +144,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: [Self.activityItemID])
         if ownedCurrentContent { contentView?.setContentView(nil) }
         if ownedCurrentContent {
+            rootView?.setContentHeaderViewHidden(true)
             railView?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         projectObserver?.cancel()
@@ -146,5 +155,6 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         activityBar = nil
         contentView = nil
         railView = nil
+        rootView = nil
     }
 }
