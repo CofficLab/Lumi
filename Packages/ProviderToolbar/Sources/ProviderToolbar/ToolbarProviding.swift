@@ -43,7 +43,16 @@ public extension ToolbarProviding {
         for item in newItems where !merged.contains(where: { $0.id == item.id }) {
             merged.append(item)
         }
-        registerToolbarItems(merged)
+        registerToolbarItems(
+            merged.enumerated()
+                .sorted { lhs, rhs in
+                    if lhs.element.order != rhs.element.order {
+                        return lhs.element.order < rhs.element.order
+                    }
+                    return lhs.offset < rhs.offset
+                }
+                .map(\.element)
+        )
     }
 
     func removeToolbarItems(ids: Set<String>) {
