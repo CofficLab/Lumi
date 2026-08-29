@@ -6,6 +6,7 @@ import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
+import ProviderRootView
 import ProviderToolManager
 import SwiftUI
 import KitSuperLog
@@ -80,6 +81,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
 
         // 2. 注册 Rail 标签。
         //    必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
@@ -107,13 +109,17 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
+                        railView?.setVisibleCategories([.system])
                         railView?.setVisibleTabID(Self.railTabID)
                         chat?.setVisible(false)
+                        rootView?.setContentHeaderViewHidden(true)
                         contentView?.setContentView(AnyView(
                             DiskManagerView(categoryStore: self.categoryStore, workspace: self.workspace)
                         ))
                     } else {
                         chat?.setVisible(true)
+                        rootView?.setContentHeaderViewHidden(false)
+                        railView?.setVisibleCategories(Set(RailViewCategory.allCases))
                     }
                 },
             ])
@@ -141,6 +147,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         if activityBar == nil || activityBar?.activeItemID == nil {

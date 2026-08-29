@@ -3,6 +3,8 @@ import Foundation
 import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
+import ProviderRailView
+import ProviderRootView
 @testable import PluginDiskManager
 
 @MainActor
@@ -32,17 +34,32 @@ struct PluginDiskManagerTests {
         let kernel = KernelCoreContainer()
         let activity = DefaultActivityBarProviding()
         let chat = DefaultChatSectionProviding()
+        let rail = DefaultRailViewProviding(visibleCategories: [.chat])
+        let root = DefaultRootViewProvider()
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any RailViewProviding).self, rail)
+        try kernel.registerProvider((any RootViewProviding).self, root)
+
+        activity.addItems([ActivityBarItem(id: "chat.entry", title: "Chat", systemImage: "message")])
 
         try DiskManagerPlugin().onBoot(kernel: kernel)
 
-        #expect(activity.activeItemID == "com.coffic.lumi.plugin.disk-manager.entry")
+        #expect(activity.activeItemID == "chat.entry")
+
+        activity.activateItem(id: "com.coffic.lumi.plugin.disk-manager.entry")
+
         #expect(!chat.isVisible)
+        #expect(rail.visibleCategories == [.system])
+        #expect(rail.visibleTabID == DiskManagerPlugin.railTabID)
+        #expect(rail.activeTabID == DiskManagerPlugin.railTabID)
+        #expect(root.isContentHeaderViewHidden)
 
         activity.activateItem(id: nil)
 
         #expect(chat.isVisible)
+        #expect(rail.visibleCategories == Set(RailViewCategory.allCases))
+        #expect(root.isContentHeaderViewHidden == false)
     }
 
     @Test
