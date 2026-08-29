@@ -120,6 +120,21 @@ private struct CountingTool: SuperAgentTool, @unchecked Sendable {
 }
 
 @MainActor
+@Test func readFileToolResolvesRelativePathFromTheCurrentWorkspaceRoot() async throws {
+    let packageRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+    let tool = ReadFileTool(workspaceRootProvider: { packageRoot.path })
+    let result = try await tool.execute(arguments: [
+        "path": ToolArgument("Package.swift"),
+        "limit": ToolArgument(20),
+    ])
+
+    #expect(result.contains("name: \"PluginToolManager\""))
+}
+
+@MainActor
 @Test func toolManagerEventManagerDispatchesAndCancelsObservers() async {
     let manager = ToolManager()
     var eventCount = 0

@@ -62,7 +62,10 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
             GlobTool(workspaceRootProvider: workspaceRootProvider),
             pluginID: Self.toolManagerPluginID
         )
-        add(ReadFileTool(), pluginID: Self.toolManagerPluginID)
+        add(
+            ReadFileTool(workspaceRootProvider: workspaceRootProvider),
+            pluginID: Self.toolManagerPluginID
+        )
         add(WriteFileTool(), pluginID: Self.toolManagerPluginID)
         add(EditFileTool(), pluginID: Self.toolManagerPluginID)
         add(ReadImageTool(), pluginID: Self.toolManagerPluginID)
