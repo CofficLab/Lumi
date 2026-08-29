@@ -2,6 +2,7 @@ import KitAgentTool
 import KernelCore
 import os
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
@@ -77,6 +78,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
         }
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
 
         // 2. 注册 Rail 标签。
@@ -104,11 +106,15 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
                     order: order,
                     ownerPluginID: id
                 ) { state in
-                    guard state == .activated else { return }
-                    railView?.setVisibleTabID(Self.railTabID)
-                    contentView?.setContentView(AnyView(
-                        DiskManagerView(categoryStore: self.categoryStore, workspace: self.workspace)
-                    ))
+                    if state == .activated {
+                        railView?.setVisibleTabID(Self.railTabID)
+                        chat?.setVisible(false)
+                        contentView?.setContentView(AnyView(
+                            DiskManagerView(categoryStore: self.categoryStore, workspace: self.workspace)
+                        ))
+                    } else {
+                        chat?.setVisible(true)
+                    }
                 },
             ])
         } else {
@@ -134,6 +140,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         if activityBar == nil || activityBar?.activeItemID == nil {
