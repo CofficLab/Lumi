@@ -19,6 +19,7 @@ import Foundation
         #expect(chunks[0].index == 0)
         #expect(chunks[0].content.contains("line 0"))
         #expect(chunks[0].content.contains("line 9"))
+        #expect(chunks[0].lineRange == RAGLineRange(startLine: 1, endLine: 10))
     }
 
     @Test func chunkProducesOverlapAcrossBlocks() {
@@ -29,6 +30,8 @@ import Foundation
         // Overlap means "line 2"/"line 3" must appear in more than one chunk.
         let mentionsOfLine2 = chunks.filter { $0.content.contains("line 2") }.count
         #expect(mentionsOfLine2 >= 2)
+        #expect(chunks[0].lineRange == RAGLineRange(startLine: 1, endLine: 4))
+        #expect(chunks[1].lineRange == RAGLineRange(startLine: 3, endLine: 6))
     }
 
     @Test func chunkSkipsWhitespaceOnlyBlocks() {
@@ -47,6 +50,7 @@ import Foundation
         // Each chunk's content must not exceed the window (after trim).
         for c in chunks {
             #expect(c.content.count <= 100)
+            #expect(c.lineRange == RAGLineRange(startLine: 1, endLine: 1))
         }
     }
 

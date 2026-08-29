@@ -7,16 +7,6 @@ public enum RAGMatchKind: String, Sendable, Equatable {
     case filesystemLexical
 }
 
-public struct RAGLineRange: Sendable, Equatable {
-    public let startLine: Int
-    public let endLine: Int
-
-    public init(startLine: Int, endLine: Int) {
-        self.startLine = startLine
-        self.endLine = max(startLine, endLine)
-    }
-}
-
 /// RAG 检索结果
 public struct RAGSearchResult: Sendable {
     public let content: String

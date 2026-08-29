@@ -26,7 +26,13 @@ public struct RAGChunker {
             if block.count <= maxCharsPerChunk {
                 let trimmed = block.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmed.isEmpty {
-                    chunks.append(RAGChunk(index: chunkIndex, content: trimmed))
+                    chunks.append(
+                        RAGChunk(
+                            index: chunkIndex,
+                            content: trimmed,
+                            lineRange: RAGLineRange(startLine: start + 1, endLine: end)
+                        )
+                    )
                     chunkIndex += 1
                 }
             } else {
@@ -36,7 +42,19 @@ public struct RAGChunker {
                     let next = block.index(cursor, offsetBy: maxCharsPerChunk, limitedBy: block.endIndex) ?? block.endIndex
                     let segment = String(block[cursor..<next]).trimmingCharacters(in: .whitespacesAndNewlines)
                     if !segment.isEmpty {
-                        chunks.append(RAGChunk(index: chunkIndex, content: segment))
+                        let startLine = start + 1 + block[..<cursor].reduce(into: 0) { count, character in
+                            if character == "\n" { count += 1 }
+                        }
+                        let endLine = startLine + segment.reduce(into: 0) { count, character in
+                            if character == "\n" { count += 1 }
+                        }
+                        chunks.append(
+                            RAGChunk(
+                                index: chunkIndex,
+                                content: segment,
+                                lineRange: RAGLineRange(startLine: startLine, endLine: endLine)
+                            )
+                        )
                         chunkIndex += 1
                     }
                     cursor = next
