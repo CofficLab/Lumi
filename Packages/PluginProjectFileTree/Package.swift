@@ -37,5 +37,15 @@ let package = Package(
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
+        .testTarget(
+            name: "PluginProjectFileTreeTests",
+            dependencies: [
+                .target(name: "PluginProjectFileTree"),
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
+            ],
+            path: "Tests"
+        ),
     ]
 )

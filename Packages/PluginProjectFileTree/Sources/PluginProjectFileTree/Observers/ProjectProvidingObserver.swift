@@ -16,12 +16,17 @@ final class ProjectProvidingObserver: SuperLog {
     private weak var viewModel: ProjectFileTreeViewModel?
     private var observer: (any ProjectProvidingObserverHandle)?
 
-    init(project: any ProjectProviding, viewModel: ProjectFileTreeViewModel) {
+    init(
+        project: any ProjectProviding,
+        viewModel: ProjectFileTreeViewModel,
+        onProjectChange: ((ProjectInfo?) -> Void)? = nil
+    ) {
         self.viewModel = viewModel
         viewModel.updateCurrentProject(project.currentProject)
         observer = project.addObserver { [weak self] event in
             guard case let .currentProjectChanged(project) = event else { return }
             self?.viewModel?.updateCurrentProject(project)
+            onProjectChange?(project)
         }
 
         if Self.verbose {

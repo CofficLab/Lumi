@@ -51,6 +51,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
 
     private var viewModel: ProjectFileTreeViewModel?
     private var projectObserver: ProjectProvidingObserver?
+    private weak var railView: (any RailViewProviding)?
 
     public init() {}
 
@@ -71,14 +72,6 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
 
         // 组装文件树上下文（项目 / 对话输入 / Toast 提示）。
         let project = kernel.resolveProvider((any ProjectProviding).self)
-        projectObserver?.cancel()
-        projectObserver = nil
-        if project == nil {
-            Self.logger.error("\(Self.t) ProjectProviding not found")
-        } else if let project {
-            projectObserver = ProjectProvidingObserver(project: project, viewModel: viewModel)
-        }
-
         let conversationInput = kernel.resolveProvider((any ConversationInputProviding).self)
         if conversationInput == nil {
             Self.logger.error("\(Self.t) ConversationInputProviding not found")
@@ -95,29 +88,68 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
             toast: toast
         )
 
-        // 在 Rail 侧边栏注入 Explorer 标签。
+        projectObserver?.cancel()
+        projectObserver = nil
+        if project == nil {
+            Self.logger.error("\(Self.t) ProjectProviding not found")
+        } else if let project {
+            projectObserver = ProjectProvidingObserver(
+                project: project,
+                viewModel: viewModel,
+                onProjectChange: { [weak self, weak viewModel] project in
+                    guard let self, let viewModel else { return }
+                    self.updateExplorerTabVisibility(
+                        for: project,
+                        context: context,
+                        viewModel: viewModel
+                    )
+                }
+            )
+        }
+
+        // 保存 Rail 引用，后续根据当前项目状态动态显示/隐藏 Explorer 标签。
         guard let railView = kernel.resolveProvider((any RailViewProviding).self) else {
             Self.logger.error("\(Self.t) RailViewProviding not found")
             return
         }
+        self.railView = railView
 
-        railView.addTabs([
-            RailTabItem(
-                id: Self.railTabID,
-                category: .fileTree,
-                title: "Explorer",
-                systemImage: "square.grid.2x2.fill",
-                order: order
-            ) {
-                TreeView(context: context, viewModel: viewModel)
-            }
-        ])
+        updateExplorerTabVisibility(
+            for: project?.currentProject,
+            context: context,
+            viewModel: viewModel
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         projectObserver?.cancel()
         projectObserver = nil
         viewModel = nil
-        kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
+        railView?.removeTabs(ids: [Self.railTabID])
+        railView = nil
+    }
+
+    private func updateExplorerTabVisibility(
+        for project: ProjectInfo?,
+        context: FileTreeContext,
+        viewModel: ProjectFileTreeViewModel
+    ) {
+        guard let railView else { return }
+
+        if project == nil {
+            railView.removeTabs(ids: [Self.railTabID])
+        } else if !railView.tabs.contains(where: { $0.id == Self.railTabID }) {
+            railView.addTabs([
+                RailTabItem(
+                    id: Self.railTabID,
+                    category: .fileTree,
+                    title: "Explorer",
+                    systemImage: "square.grid.2x2.fill",
+                    order: order
+                ) {
+                    TreeView(context: context, viewModel: viewModel)
+                }
+            ])
+        }
     }
 }
