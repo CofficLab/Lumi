@@ -42,7 +42,7 @@ let package = Package(
             ],
             path: "Sources/PluginVideoConverter",
             resources: [
-                .process("Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(

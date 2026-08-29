@@ -45,7 +45,7 @@ struct LargeFilesScanProgressView: View {
 
             // 进度信息
             VStack(spacing: 6) {
-                Text(PluginDiskManagerLocalization.string("正在扫描大文件"))
+                Text(PluginDiskManagerLocalization.string("Scanning Large Files"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 

@@ -26,16 +26,16 @@ struct EmptyLargeFilesView: View {
             }
 
             VStack(spacing: 10) {
-                Text(PluginDiskManagerLocalization.string("暂无大文件"))
+                Text(PluginDiskManagerLocalization.string("No Large Files Found"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                Text(PluginDiskManagerLocalization.string("你可以扫描用户主目录，找到占用空间较大的文件。"))
+                Text(PluginDiskManagerLocalization.string("You can scan the user home directory to find large files."))
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 AppButton(
-                    PluginDiskManagerLocalization.string("开始扫描"),
+                    PluginDiskManagerLocalization.string("Start Scanning"),
                     systemImage: "magnifyingglass.circle",
                     style: .primary,
                     action: { viewModel.startScan() }

@@ -23,7 +23,7 @@ let package = Package(
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
             ],
-            resources: [.process("Resources")]
+            resources: [.process("../../Resources")]
         ),
         .testTarget(
             name: "PluginProjectFilesTests",

@@ -43,7 +43,7 @@ let package = Package(
                 "ProviderStorage",
                 "ProviderToolManager",
             ],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginMindMapDesignerTests",

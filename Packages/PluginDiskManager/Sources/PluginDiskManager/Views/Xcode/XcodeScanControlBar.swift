@@ -9,8 +9,8 @@ struct XcodeScanControlBar: View {
         HStack {
             AppButton(
                 viewModel.isScanning
-                    ? PluginDiskManagerLocalization.string("停止扫描")
-                    : PluginDiskManagerLocalization.string("扫描 Xcode"),
+                    ? PluginDiskManagerLocalization.string("Stop Scanning")
+                    : PluginDiskManagerLocalization.string("Scan Xcode"),
                 systemImage: viewModel.isScanning ? "stop.circle" : "hammer",
                 style: viewModel.isScanning ? .destructive : .primary,
                 action: {
@@ -24,7 +24,7 @@ struct XcodeScanControlBar: View {
 
             Spacer()
 
-            Text(PluginDiskManagerLocalization.string("扫描范围：Xcode 相关缓存目录"))
+            Text(PluginDiskManagerLocalization.string("Scan scope: Xcode-related cache directories"))
                 .font(.caption)
                 .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
         }

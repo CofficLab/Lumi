@@ -39,6 +39,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
 
     private var viewModel: ProjectsViewModel?
     private var projectObserver: ProjectProvidingObserver?
+    private var openedFilesPersistence: ProjectOpenedFilesPersistence?
 
     public init() {}
 
@@ -89,8 +90,10 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
         let viewModel = ProjectsViewModel(store: store, projectProvider: projectProvider)
         self.viewModel = viewModel
         projectObserver?.cancel()
+        openedFilesPersistence?.cancel()
         let projectObserver = ProjectProvidingObserver(project: projectProvider, viewModel: viewModel)
         self.projectObserver = projectObserver
+        self.openedFilesPersistence = ProjectOpenedFilesPersistence(project: projectProvider, store: store)
         ProjectsRuntime.configure(viewModel: viewModel, projectObserver: projectObserver)
 
         // 恢复当前项目必须通过 ProjectProviding 执行，observer 会负责同步 ViewModel。
@@ -187,6 +190,8 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         projectObserver?.cancel()
         projectObserver = nil
+        openedFilesPersistence?.cancel()
+        openedFilesPersistence = nil
         viewModel = nil
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {

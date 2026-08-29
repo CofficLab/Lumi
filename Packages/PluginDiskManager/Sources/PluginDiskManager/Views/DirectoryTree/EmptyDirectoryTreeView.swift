@@ -22,16 +22,16 @@ struct EmptyDirectoryTreeView: View {
             }
 
             VStack(spacing: 10) {
-                Text(PluginDiskManagerLocalization.string("暂无目录数据"))
+                Text(PluginDiskManagerLocalization.string("No Directory Data"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                Text(PluginDiskManagerLocalization.string("点击开始分析，查看目录占用与结构。"))
+                Text(PluginDiskManagerLocalization.string("Click Start Analysis to view directory usage and structure."))
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 AppButton(
-                    PluginDiskManagerLocalization.string("开始分析"),
+                    PluginDiskManagerLocalization.string("Start Analysis"),
                     systemImage: "folder.badge.gear",
                     style: .primary,
                     action: { viewModel.startScan() }

@@ -41,8 +41,9 @@ let package = Package(
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
             ],
-            path: "Sources",
-            exclude: ["EditorTextViewObjC"],
+            path: ".",
+            exclude: ["Sources/EditorTextViewObjC"],
+            sources: ["Sources"],
             resources: [
                 .process("Resources")
             ]

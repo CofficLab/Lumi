@@ -19,6 +19,7 @@ let package = Package(
         .package(path: "../LumiUI"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderPluginManaging"),
+        .package(path: "../ProviderStorage"),
     ],
     targets: [
         .target(
@@ -29,6 +30,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
             ]
         ),
         .testTarget(
@@ -37,6 +39,7 @@ let package = Package(
                 "PluginActivityBar",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
             ]
         ),
     ]

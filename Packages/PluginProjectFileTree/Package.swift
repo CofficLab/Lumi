@@ -35,7 +35,7 @@ let package = Package(
                 "KitLocalization",
                 "LumiUI",
             ],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
     ]
 )

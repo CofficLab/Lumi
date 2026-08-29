@@ -22,7 +22,7 @@ let package = Package(
                 "ProviderProject",
             ],
             path: "Sources/OpenInKit",
-            resources: [.process("Resources")]
+            resources: [.process("../../Resources")]
         ),
     ]
 )

@@ -45,7 +45,7 @@ let package = Package(
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
             ],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginAppIconDesignerTests",

@@ -26,8 +26,8 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     ]
     public let metadata = PluginMetadata(
         id: pluginID,
-        name: "Code Editor",
-        description: "Browse projects and edit source files in a VS Code-style workspace.",
+        name: CodeEditorLocalization.string("Code Editor"),
+        description: CodeEditorLocalization.string("Browse projects and edit source files in a VS Code-style workspace."),
         version: "1.0.0",
         category: .editor,
         stage: .preview,
@@ -113,7 +113,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         activityBar.addItems([
             ActivityBarItem(
                 id: Self.activityItemID,
-                title: "Code Editor",
+                title: CodeEditorLocalization.string("Code Editor"),
                 systemImage: "chevron.left.forwardslash.chevron.right",
                 order: order,
                 ownerPluginID: id

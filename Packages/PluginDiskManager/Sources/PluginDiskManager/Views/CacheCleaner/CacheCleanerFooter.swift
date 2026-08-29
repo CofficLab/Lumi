@@ -8,7 +8,7 @@ struct CacheCleanerFooter: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text("\(PluginDiskManagerLocalization.string("已选择："))\(viewModel.formatBytes(viewModel.totalSelectedSize))")
+                Text("\(PluginDiskManagerLocalization.string("Selected:"))\(viewModel.formatBytes(viewModel.totalSelectedSize))")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
                 Text("\(viewModel.selection.count) \(PluginDiskManagerLocalization.string("items"))")
@@ -22,7 +22,7 @@ struct CacheCleanerFooter: View {
                 showCleanConfirmation = true
             }) {
                 Label {
-                    Text(viewModel.isCleaning ? PluginDiskManagerLocalization.string("清理中...") : PluginDiskManagerLocalization.string("立即清理"))
+                    Text(viewModel.isCleaning ? PluginDiskManagerLocalization.string("Cleaning...") : PluginDiskManagerLocalization.string("Clean Now"))
                 } icon: {
                     Image(systemName: "trash.fill")
                 }

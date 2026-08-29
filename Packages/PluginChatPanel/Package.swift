@@ -22,7 +22,7 @@ let package = Package(
             .product(name: "ProviderRootView", package: "ProviderRootView"),
             .product(name: "ProviderRailView", package: "ProviderRailView"),
         ],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginChatPanelTests",

@@ -26,7 +26,7 @@ let package = Package(
                 "ProviderChatSection",
                 "ProviderConversationInput",
             ],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
     ]
 )

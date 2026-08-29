@@ -122,7 +122,7 @@ public final class SendSelectionToConversationContributor: SuperEditorContextMen
     }
 
     private static func localized(_ key: String) -> String {
-        String(localized: String.LocalizationValue(key), bundle: .module)
+        CodeEditorLocalization.string(key)
     }
 
     private static func localizedLineDescription(for selection: NSRange, in documentText: String) -> String {

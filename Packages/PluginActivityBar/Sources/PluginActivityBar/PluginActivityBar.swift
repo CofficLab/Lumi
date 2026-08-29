@@ -4,6 +4,7 @@ import os
 import ProviderActivityBar
 import KitSuperLog
 import ProviderPluginManaging
+import ProviderStorage
 
 /// ActivityBar 自定义插件（KernelCore 生态）。
 ///
@@ -47,6 +48,10 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
     /// 上一次快照：已注册且启用的插件 id 集合，用于 diff 检测变化。
     private var lastKnownEnabledPluginIDs: Set<String> = []
 
+    private static let storageDirectoryKey = "ActivityBar"
+    private var stateStore: ActivityBarStateStore?
+    private var pendingActiveItemID: String?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -59,13 +64,24 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         let preloadedItems = existingProvider?.items ?? []
         let preloadedActiveItemID = existingProvider?.activeItemID
 
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            let stateStore = ActivityBarStateStore(
+                directory: storage.pluginDataDirectory(for: Self.storageDirectoryKey)
+            )
+            self.stateStore = stateStore
+            self.pendingActiveItemID = stateStore.loadActiveItemID()
+        } else {
+            self.stateStore = nil
+            self.pendingActiveItemID = nil
+        }
+
         // 2. 注销 ProviderFactory 预注册的默认实现（避免 providerAlreadyRegistered）。
         kernel.unregisterProvider((any ActivityBarProviding).self)
 
         // 3. 用旧数据预填新实例，确保 `unregisterProvider` 不会"误伤"已注册入口。
         let provider = ActivityBarProvider(
             preloadedItems: preloadedItems,
-            activeItemID: preloadedActiveItemID
+            activeItemID: pendingActiveItemID ?? preloadedActiveItemID
         )
         self.provider = provider
 
@@ -92,6 +108,10 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         }
         // 预留：业务插件可在此处追加默认入口
         provider.bootstrapBuiltInItems()
+        restorePendingActiveItemIfAvailable(provider)
+        provider.onActiveItemChanged = { [weak self] id in
+            self?.stateStore?.saveActiveItemID(id)
+        }
         if Self.verbose {
             Self.logger.info("\(Self.t)bootstrapped built-in items: \(provider.items.count, privacy: .public) 项")
         }
@@ -113,7 +133,10 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         pluginManagerObserver?.cancel()
         pluginManagerObserver = nil
         pluginManager = nil
+        provider?.onActiveItemChanged = nil
         provider = nil
+        stateStore = nil
+        pendingActiveItemID = nil
         lastKnownEnabledPluginIDs = []
         // 内核会按插件归属自动撤回 onBoot 注册的 Provider，无需手动处理。
     }
@@ -137,11 +160,23 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
             provider.restoreItems(forPluginID: pluginID)
         }
 
+        restorePendingActiveItemIfAvailable(provider)
+
         lastKnownEnabledPluginIDs = currentIDs
     }
 
     /// 获取当前所有已注册且启用的插件 id 集合。
     private func currentEnabledPluginIDs(pluginManager: any PluginManaging) -> Set<String> {
         Set(pluginManager.allPlugins.filter { pluginManager.isEnabled(id: $0.id) }.map(\.id))
+    }
+
+    private func restorePendingActiveItemIfAvailable(_ provider: ActivityBarProvider) {
+        guard let pendingActiveItemID,
+              provider.items.contains(where: { $0.id == pendingActiveItemID }) else {
+            return
+        }
+
+        provider.activateItem(id: pendingActiveItemID)
+        self.pendingActiveItemID = nil
     }
 }

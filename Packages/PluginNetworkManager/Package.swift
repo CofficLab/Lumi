@@ -47,7 +47,7 @@ let package = Package(
                 "KitShell",
                 "KitSuperLog",
             ],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginNetworkManagerTests",

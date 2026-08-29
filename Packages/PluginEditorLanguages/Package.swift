@@ -41,7 +41,7 @@ let package = Package(
                 .product(name: "TreeSitterMarkdown", package: "tree-sitter-markdown"),
                 .product(name: "TreeSitterYAML", package: "tree-sitter-yaml"),
             ],
-            resources: [.copy("Resources")]
+            resources: [.copy("../../Resources")]
         ),
         .testTarget(
             name: "PluginEditorLanguagesTests",

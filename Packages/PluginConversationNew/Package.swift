@@ -23,6 +23,6 @@ let package = Package(
         .product(name: "ProviderToolbar", package: "ProviderToolbar"),
         .product(name: "LumiUI", package: "LumiUI"),
     ],
-        resources: [.process("Resources/Localizable.xcstrings")]
+        resources: [.process("../../Resources/Localizable.xcstrings")]
     )]
 )

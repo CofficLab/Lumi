@@ -18,8 +18,8 @@ public final class EditorHostSuperPlugin: SuperPlugin, SuperLog {
     public let dependencies: [String] = []
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.editor-host",
-        name: "Editor Host",
-        description: "Provides shared source editing and syntax highlighting.",
+        name: EditorHostLocalization.string("Editor Host"),
+        description: EditorHostLocalization.string("Provides shared source editing and syntax highlighting."),
         version: "2.0.0",
         category: .editor,
         stage: .preview,
@@ -70,9 +70,9 @@ public final class EditorHostSuperPlugin: SuperPlugin, SuperLog {
 private struct EditorHostUnavailableView: View {
     var body: some View {
         ContentUnavailableView(
-            "Editor unavailable",
+            EditorHostLocalization.string("Editor unavailable"),
             systemImage: "exclamationmark.triangle",
-            description: Text("The editor service is no longer available.")
+            description: Text(EditorHostLocalization.string("The editor service is no longer available."))
         )
     }
 }

@@ -32,7 +32,7 @@ let package = Package(
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: "Sources/ComputerUsePlugin",
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "ComputerUsePluginTests",

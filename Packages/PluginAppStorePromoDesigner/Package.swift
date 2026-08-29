@@ -51,7 +51,7 @@ let package = Package(
                 "ProviderPromptSuggestion",
                 .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
             ],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginAppStorePromoDesignerTests",

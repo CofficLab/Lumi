@@ -22,16 +22,16 @@ struct EmptyCacheView: View {
             }
 
             VStack(spacing: 10) {
-                Text(PluginDiskManagerLocalization.string("准备就绪"))
+                Text(PluginDiskManagerLocalization.string("Ready to Scan"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
-                Text(PluginDiskManagerLocalization.string("点击开始扫描，分析系统缓存并可一键清理。"))
+                Text(PluginDiskManagerLocalization.string("Click Start Scanning to analyze system caches and clean them."))
                     .font(.caption)
                     .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
 
                 AppButton(
-                    PluginDiskManagerLocalization.string("开始扫描"),
+                    PluginDiskManagerLocalization.string("Start Scanning"),
                     systemImage: "doc.badge.gearshape",
                     style: .primary,
                     action: { viewModel.scan() }

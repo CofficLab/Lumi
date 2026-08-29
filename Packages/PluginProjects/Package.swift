@@ -43,11 +43,14 @@ let package = Package(
                 "ProviderLifecycleHooks",
                 "KitSuperLog",
             ],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginProjectsTests",
-            dependencies: ["PluginProjects"]
+            dependencies: [
+                "PluginProjects",
+                .product(name: "ProviderProject", package: "ProviderProject"),
+            ]
         ),
     ]
 )

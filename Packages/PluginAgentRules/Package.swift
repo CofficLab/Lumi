@@ -30,7 +30,7 @@ let package = Package(
                 "ProviderSettingView",
                 "ProviderToolManager",
             ],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginAgentRulesTests",

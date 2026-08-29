@@ -1,4 +1,5 @@
 import Testing
+import Foundation
 import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
@@ -18,6 +19,33 @@ struct PluginBrewManagerTests {
     @Test
     func v2IdentifiersRemainStable() {
         #expect(BrewManagerSuperPlugin().id.hasSuffix("brew-manager"))
+    }
+
+    @Test
+    func decodesHomebrewFormulaAndCaskInstalledValues() throws {
+        let data = Data(
+            #"""
+            {
+              "formulae": [{
+                "name": "node",
+                "versions": {"stable": "26.7.0"},
+                "installed": [{"version": "26.4.0", "installed_on_request": true}]
+              }],
+              "casks": [{
+                "name": "applite",
+                "token": "applite",
+                "version": "1.2.5",
+                "installed": "1.2.5"
+              }]
+            }
+            """#.utf8
+        )
+
+        let info = try JSONDecoder().decode(BrewInfo.self, from: data)
+
+        #expect(info.formulae.first?.installed?.first?.version == "26.4.0")
+        #expect(info.casks.first?.installed == nil)
+        #expect(info.casks.first?.version == "1.2.5")
     }
 
     @Test

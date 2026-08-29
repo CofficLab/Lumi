@@ -37,7 +37,7 @@ let package = Package(
                 "KitLocalization",
                 "KitMarkdown",
             ],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginMessageRendererTests",

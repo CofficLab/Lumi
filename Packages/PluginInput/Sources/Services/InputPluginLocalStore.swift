@@ -6,32 +6,24 @@ public final class InputPluginLocalStore: SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.input.local-store")
     private let fileManager = FileManager.default
     private let queue = DispatchQueue(label: "InputPluginLocalStore.queue", qos: .userInitiated)
-    private let settingsDirectory: URL
+    private let pluginDirectory: URL
     private let settingsFileURL: URL
     private let corruptSettingsFileURL: URL
 
     public convenience init() {
-        self.init(settingsDirectory: (InputPluginRuntimeBridge.dataRootDirectory ?? InputPluginRuntimeBridge.fallbackRootDirectory)
-            .appendingPathComponent("InputPlugin", isDirectory: true)
-            .appendingPathComponent("settings", isDirectory: true))
+        self.init(pluginDirectory: (InputPluginRuntimeBridge.dataRootDirectory ?? InputPluginRuntimeBridge.fallbackRootDirectory)
+            .appendingPathComponent("InputPlugin", isDirectory: true))
     }
 
-    init(settingsDirectory root: URL) {
-        self.settingsDirectory = root
+    init(pluginDirectory root: URL) {
+        self.pluginDirectory = root
         self.settingsFileURL = root.appendingPathComponent("settings.plist")
         self.corruptSettingsFileURL = root.appendingPathComponent("settings.corrupt.plist")
         do {
-            try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
+            try fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
         } catch {
             Self.logger.error("\(self.t)Create input plugin settings directory failed: \(error.localizedDescription)")
         }
-    }
-
-    @discardableResult
-    public func migrateLegacyValueIfMissing(forKey key: String) -> Bool {
-        guard data(forKey: key) == nil else { return true }
-        guard let legacy = readLegacyObject(forKey: key) else { return true }
-        return set(legacy, forKey: key)
     }
 
     @discardableResult
@@ -76,9 +68,9 @@ public final class InputPluginLocalStore: SuperLog, @unchecked Sendable {
             return false
         }
 
-        let tmp = settingsDirectory.appendingPathComponent("settings.tmp")
+        let tmp = pluginDirectory.appendingPathComponent("settings.tmp")
         do {
-            try fileManager.createDirectory(at: settingsDirectory, withIntermediateDirectories: true)
+            try fileManager.createDirectory(at: pluginDirectory, withIntermediateDirectories: true)
             try data.write(to: tmp, options: .atomic)
             if fileManager.fileExists(atPath: settingsFileURL.path) { _ = try fileManager.replaceItemAt(settingsFileURL, withItemAt: tmp) }
             else { try fileManager.moveItem(at: tmp, to: settingsFileURL) }
@@ -103,19 +95,4 @@ public final class InputPluginLocalStore: SuperLog, @unchecked Sendable {
         }
     }
 
-    private func readLegacyObject(forKey key: String) -> Any? {
-        let legacyDir = (InputPluginRuntimeBridge.dataRootDirectory ?? InputPluginRuntimeBridge.fallbackRootDirectory)
-            .appendingPathComponent("app_settings", isDirectory: true)
-        let legacyFile = legacyDir.appendingPathComponent(sanitize(key) + ".plist")
-        guard fileManager.fileExists(atPath: legacyFile.path),
-              let data = try? Data(contentsOf: legacyFile),
-              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) else { return nil }
-        if let dict = plist as? [String: Any], let dataVal = dict["_data"] as? Data { return dataVal }
-        return plist
-    }
-
-    private func sanitize(_ key: String) -> String {
-        let safe = key.unicodeScalars.map { CharacterSet.alphanumerics.contains($0) || $0 == "_" ? String($0) : "_" }.joined()
-        return safe.isEmpty ? "key" : safe
-    }
 }

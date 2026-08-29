@@ -39,7 +39,7 @@ struct CacheScanProgressView: View {
 
             // 进度信息
             VStack(spacing: 6) {
-                Text(PluginDiskManagerLocalization.string("正在扫描系统缓存"))
+                Text(PluginDiskManagerLocalization.string("Scanning System Caches"))
                     .font(.title3)
                     .foregroundColor(Color.adaptive(light: "1C1C1E", dark: "FFFFFF"))
 
@@ -47,7 +47,7 @@ struct CacheScanProgressView: View {
                     Image(systemName: "folder.badge.gear")
                         .font(.caption)
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
-                    Text(viewModel.scanProgress.isEmpty ? "用户主目录" : viewModel.scanProgress)
+                    Text(viewModel.scanProgress.isEmpty ? "User Home" : viewModel.scanProgress)
                         .font(.caption)
                         .foregroundColor(Color.adaptive(light: "6B6B7B", dark: "EBEBF5"))
                         .lineLimit(1)
@@ -69,7 +69,7 @@ struct CacheScanProgressView: View {
                     }
 
                     Label {
-                        Text(PluginDiskManagerLocalization.string("分类"))
+                        Text(PluginDiskManagerLocalization.string("Categories"))
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(Color(hex: "FF9F0A"))
