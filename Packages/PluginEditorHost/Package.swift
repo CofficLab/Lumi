@@ -29,7 +29,7 @@ let package = Package(
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
-            resources: [.process("Resources")]
+            resources: [.process("../../Resources")]
         ),
         .testTarget(
             name: "PluginEditorHostTests",
