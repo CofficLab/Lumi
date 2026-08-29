@@ -1,6 +1,7 @@
 import KitAgentTool
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
@@ -56,6 +57,7 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
         }
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
@@ -81,10 +83,14 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
                     order: order,
                     ownerPluginID: id
                 ) { state in
-                    guard state == .activated else { return }
-                    railView?.setVisibleTabID(Self.railTabID)
-                    MindMapStore.shared.reload()
-                    contentView?.setContentView(AnyView(MindMapDesignerView()))
+                    if state == .activated {
+                        chat?.setVisible(false)
+                        railView?.setVisibleTabID(Self.railTabID)
+                        MindMapStore.shared.reload()
+                        contentView?.setContentView(AnyView(MindMapDesignerView()))
+                    } else {
+                        chat?.setVisible(true)
+                    }
                 },
             ])
         } else {
@@ -108,6 +114,7 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         if activityBar == nil || activityBar?.activeItemID == nil {
