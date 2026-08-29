@@ -38,7 +38,7 @@ struct ProviderToolbarTests {
     func appendedItemsAreSortedByOrder() {
         let provider = DefaultToolbarProviding()
         provider.registerToolbarItems([
-            ProviderToolbar.ToolbarItem(id: "settings", title: "Settings", order: 100) { Text("Settings") },
+            ProviderToolbar.ToolbarItem(id: "settings", title: "Settings", order: 300) { Text("Settings") },
         ])
 
         provider.addToolbarItems([
@@ -46,7 +46,7 @@ struct ProviderToolbarTests {
             ProviderToolbar.ToolbarItem(id: "new-chat", title: "New Chat", order: 30) { Text("New Chat") },
         ])
 
-        #expect(provider.toolbarItems.map(\.id) == ["new-chat", "settings", "conversation-list"])
+        #expect(provider.toolbarItems.map(\.id) == ["new-chat", "conversation-list", "settings"])
     }
 
     @Test("注入 items 后返回可渲染的工具栏视图")

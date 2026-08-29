@@ -44,7 +44,7 @@ public final class SettingsToolbarPlugin: SuperPlugin, SuperLog {
             id: "settings",
             title: "设置",
             placement: .trailing,
-            order: 100
+            order: 300
         ) {
             AppIconButton(systemImage: "gearshape") {
                 NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
