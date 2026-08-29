@@ -162,7 +162,7 @@ import Foundation
         try? FileManager.default.removeItem(at: directory)
     }
 
-    let store = HTTPExchangeStore(directory: directory)
+    let store = HTTPExchangeStore(directory: directory, startsRetentionMaintenance: false)
     store.begin(request: URLRequest(url: URL(string: "https://api.github.com/users/octocat")!))
     store.begin(request: URLRequest(url: URL(string: "https://api.github.com/gists")!))
     store.begin(request: URLRequest(url: URL(string: "https://www.google.com/search?q=lumi")!))
@@ -206,7 +206,7 @@ import Foundation
         maxRecordCount: 2
     )
 
-    let reloadedStore = HTTPExchangeStore(directory: directory)
+    let reloadedStore = HTTPExchangeStore(directory: directory, startsRetentionMaintenance: false)
     let remaining = reloadedStore.fetchPage(limit: 10)
     #expect(remaining.count == 2)
     #expect(remaining.map(\.requestURL) == [

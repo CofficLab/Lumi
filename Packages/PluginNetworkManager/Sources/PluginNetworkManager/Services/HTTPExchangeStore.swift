@@ -148,7 +148,11 @@ public final class HTTPExchangeStore {
 
     public let directory: URL
 
-    public init(directory: URL) {
+    public convenience init(directory: URL) {
+        self.init(directory: directory, startsRetentionMaintenance: true)
+    }
+
+    init(directory: URL, startsRetentionMaintenance: Bool) {
         self.directory = directory.appendingPathComponent("HTTP", isDirectory: true)
         try? FileManager.default.createDirectory(at: self.directory, withIntermediateDirectories: true)
 
@@ -170,8 +174,10 @@ public final class HTTPExchangeStore {
             NetworkManagerPlugin.logger.error("HTTP exchange SwiftData 初始化失败: \(error.localizedDescription)")
         }
 
-        scheduleRetentionCleanup(immediately: true)
-        startPeriodicRetentionCleanup()
+        if startsRetentionMaintenance {
+            scheduleRetentionCleanup(immediately: true)
+            startPeriodicRetentionCleanup()
+        }
     }
 
     @discardableResult

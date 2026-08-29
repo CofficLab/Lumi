@@ -384,15 +384,23 @@ public struct HTTPExchangeSettingsView: View {
     private func requestTab(for record: HTTPExchangeExportSnapshot) -> some View {
         detailScroll {
             AppSettingsSection(title: LumiPluginLocalization.string("Request", bundle: .module), subtitle: LumiPluginLocalization.string("HTTP request sent by the client", bundle: .module)) {
-                VStack(spacing: 0) {
-                    detailRow(title: LumiPluginLocalization.string("Method", bundle: .module), icon: "arrow.left.arrow.right", value: record.method)
+                AppMetadataCard {
+                    AppMetadataRow(title: LumiPluginLocalization.string("Method", bundle: .module), systemImage: "arrow.left.arrow.right") {
+                        AppTag(record.method, systemImage: "arrow.up.right", style: .accent)
+                    }
                     AppSettingsDivider()
-                    detailRow(title: LumiPluginLocalization.string("URL", bundle: .module), icon: "link", value: record.url, monospace: true)
+                    AppMetadataRow(title: LumiPluginLocalization.string("URL", bundle: .module), systemImage: "link") {
+                        metadataValue(record.url, monospace: true, copyable: true)
+                    }
                     AppSettingsDivider()
-                    detailRow(title: LumiPluginLocalization.string("Started At", bundle: .module), icon: "calendar", value: formattedDate(record.startedAt))
+                    AppMetadataRow(title: LumiPluginLocalization.string("Started At", bundle: .module), systemImage: "calendar") {
+                        metadataValue(formattedDate(record.startedAt))
+                    }
                     if let duration = record.duration {
                         AppSettingsDivider()
-                        detailRow(title: LumiPluginLocalization.string("Duration", bundle: .module), icon: "clock", value: String(format: "%.3f s", duration))
+                        AppMetadataRow(title: LumiPluginLocalization.string("Duration", bundle: .module), systemImage: "clock") {
+                            metadataValue(String(format: "%.3f s", duration))
+                        }
                     }
                 }
             }
@@ -424,19 +432,27 @@ public struct HTTPExchangeSettingsView: View {
     private func responseTab(for record: HTTPExchangeExportSnapshot) -> some View {
         detailScroll {
             AppSettingsSection(title: LumiPluginLocalization.string("Response", bundle: .module), subtitle: LumiPluginLocalization.string("HTTP response received from the server", bundle: .module)) {
-                VStack(spacing: 0) {
-                    detailRow(title: LumiPluginLocalization.string("Status", bundle: .module), icon: "number", value: statusText(for: record))
+                AppMetadataCard {
+                    AppMetadataRow(title: LumiPluginLocalization.string("Status", bundle: .module), systemImage: "number") {
+                        AppTag(statusText(for: record), systemImage: statusIcon(for: record), style: .accent)
+                    }
                     if let responseURL = record.responseURL {
                         AppSettingsDivider()
-                        detailRow(title: LumiPluginLocalization.string("URL", bundle: .module), icon: "link", value: responseURL, monospace: true)
+                        AppMetadataRow(title: LumiPluginLocalization.string("URL", bundle: .module), systemImage: "link") {
+                            metadataValue(responseURL, monospace: true, copyable: true)
+                        }
                     }
                     if let version = record.responseHTTPVersion {
                         AppSettingsDivider()
-                        detailRow(title: LumiPluginLocalization.string("HTTP Version", bundle: .module), icon: "globe", value: version)
+                        AppMetadataRow(title: LumiPluginLocalization.string("HTTP Version", bundle: .module), systemImage: "globe") {
+                            metadataValue(version)
+                        }
                     }
                     if let mimeType = record.responseMIMEType {
                         AppSettingsDivider()
-                        detailRow(title: LumiPluginLocalization.string("MIME Type", bundle: .module), icon: "doc.text", value: mimeType)
+                        AppMetadataRow(title: LumiPluginLocalization.string("MIME Type", bundle: .module), systemImage: "doc.text") {
+                            metadataValue(mimeType)
+                        }
                     }
                 }
             }
@@ -549,17 +565,30 @@ public struct HTTPExchangeSettingsView: View {
         }
     }
 
-    private func detailRow(title: String, icon: String, value: String, monospace: Bool = false) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Label(title, systemImage: icon)
-                .frame(width: 130, alignment: .leading)
-                .foregroundStyle(theme.textSecondary)
+    @ViewBuilder
+    private func metadataValue(_ value: String, monospace: Bool = false, copyable: Bool = false) -> some View {
+        HStack(alignment: .top, spacing: 6) {
             Text(value)
-                .font(monospace ? .system(.callout, design: .monospaced) : .appCaption)
+                .font(monospace ? .appMonoCaption : .appBody)
                 .foregroundStyle(theme.textPrimary)
                 .textSelection(.enabled)
+                .lineLimit(monospace ? 3 : 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+            if copyable {
+                AppIconButton(systemImage: "doc.on.doc", size: .compact) {
+                    LumiPasteboard.copyString(value)
+                }
+                .help(LumiPluginLocalization.string("Copy", bundle: .module))
+            }
         }
+    }
+
+    private func statusIcon(for record: HTTPExchangeExportSnapshot) -> String {
+        if record.responseStatusCode != nil {
+            return "checkmark.circle"
+        }
+        return record.errorDescription == nil ? "clock" : "exclamationmark.triangle"
     }
 
     private func reloadAsync() async {
