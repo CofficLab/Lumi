@@ -6,6 +6,7 @@ import ProviderChatSection
 import ProviderDocsView
 import ProviderContentView
 import ProviderExternalFile
+import ProviderRailView
 import ProviderRootView
 import ProviderToolbar
 import ProviderToolManager
@@ -32,6 +33,8 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
         policy: .disabledByDefault
     )
 
+    public static let railTabID = "com.coffic.lumi.plugin.database-manager.sidebar"
+
     private let viewModel = DatabaseViewModel()
 
     public init() {}
@@ -49,13 +52,22 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
             editor.editorExtensions.registerLanguage(DatabaseSQLLanguageSupport.descriptor)
             editor.editorExtensions.registerGrammarProvider(DatabaseSQLGrammarProvider())
         }
-        kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(
-            AnyView(DatabaseManagerV2Workspace(viewModel: viewModel))
-        )
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        railView?.addTabs([
+            RailTabItem(
+                id: Self.railTabID,
+                category: .project,
+                title: metadata.name,
+                systemImage: "cylinder.split.1x2",
+                order: order
+            ) {
+                SidebarView(viewModel: self.viewModel)
+            },
+        ])
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
             ActivityBarItem(
                 id: "\(id).entry",
@@ -65,6 +77,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { state in
                 if state == .activated {
+                    railView?.setVisibleTabID(Self.railTabID)
                     chat?.setVisible(false)
                     rootView?.setContentHeaderViewHidden(true)
                     contentView?.setContentView(
@@ -76,6 +89,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                         },
                     ])
                 } else {
+                    railView?.setVisibleCategories(Set(RailViewCategory.allCases))
                     chat?.setVisible(true)
                     rootView?.setContentHeaderViewHidden(false)
                     toolbar?.removeToolbarItems(ids: ["\(self.id).title"])
@@ -97,9 +111,11 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
         }
+        kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
         kernel.resolveProvider((any ExternalFileOpening).self)?.unregisterHandlers(pluginID: id)
@@ -133,11 +149,7 @@ private struct DatabaseManagerV2Workspace: View {
     @ObservedObject var viewModel: DatabaseViewModel
 
     var body: some View {
-        HSplitView {
-            SidebarView(viewModel: viewModel)
-                .frame(minWidth: 230, idealWidth: 280, maxWidth: 380)
-            DatabaseWorkspaceView(viewModel: viewModel)
-                .frame(minWidth: 640)
-        }
+        DatabaseWorkspaceView(viewModel: viewModel)
+            .frame(minWidth: 640)
     }
 }
