@@ -20,6 +20,7 @@ let package = Package(
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
     ],
@@ -38,6 +39,7 @@ let package = Package(
                 "ProviderDocsView",
                 "ProviderProject",
                 "ProviderRailView",
+                "ProviderRootView",
                 "ProviderStorage",
                 "ProviderToolManager",
             ],
@@ -51,6 +53,7 @@ let package = Package(
                 "KernelCore",
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
                 "ProviderProject",
                 "ProviderStorage",
             ]
