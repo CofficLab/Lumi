@@ -15,6 +15,7 @@ let package = Package(
         .package(path: "../LumiUI"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderLLMManager"),
+        .package(path: "../ProviderStorage"),
         .package(path: "../KitLLM"),
     ],
     targets: [
@@ -26,6 +27,7 @@ let package = Package(
                 "LumiUI",
                 "ProviderChatSection",
                 "ProviderLLMManager",
+                "ProviderStorage",
                 "KitLLM",
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
