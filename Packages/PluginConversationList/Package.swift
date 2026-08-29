@@ -35,6 +35,6 @@ let package = Package(
         .product(name: "KitAgentTool", package: "KitAgentTool"),
         .product(name: "LumiUI", package: "LumiUI"),
     ],
-        resources: [.process("Resources/Localizable.xcstrings")]
+        resources: [.process("../../Resources/Localizable.xcstrings")]
     )]
 )
