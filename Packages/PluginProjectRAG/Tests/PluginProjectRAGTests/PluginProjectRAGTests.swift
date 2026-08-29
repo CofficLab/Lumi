@@ -1,5 +1,7 @@
+import Foundation
 @testable import PluginProjectRAG
 import KernelCore
+import KitAgentTool
 import KitLLM
 import ProviderLifecycleHooks
 import ProviderProjectRAG
@@ -107,5 +109,30 @@ struct ProjectRAGLLMContextHookTests {
 
         #expect(result.messages == context.messages)
         #expect(provider.ensureIndexedCallCount == 0)
+    }
+}
+
+@Suite("RAGCodeSearchTool")
+@MainActor
+struct RAGCodeSearchToolTests {
+    @Test("includes line evidence in tool output")
+    func includesLineEvidence() async throws {
+        let provider = StubProjectRAGProvider()
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-tool-output-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        ProjectRAGRuntime.configure(provider: provider)
+        defer { ProjectRAGRuntime.reset() }
+
+        let output = try await RAGCodeSearchTool().execute(arguments: [
+            "query": ToolArgument("handleRequest"),
+            "project_path": ToolArgument(projectURL.path),
+        ])
+
+        #expect(output.contains("Sources/Feature.swift:12-19"))
+        #expect(output.contains("evidence: semantic"))
+        #expect(output.contains("func handleRequest() {}"))
     }
 }
