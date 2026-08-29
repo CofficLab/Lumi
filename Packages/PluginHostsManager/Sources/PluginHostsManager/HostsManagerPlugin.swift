@@ -1,6 +1,7 @@
 import KernelCore
 import os
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
@@ -49,6 +50,7 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
 
@@ -65,9 +67,11 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
                 ) { state in
                     if state == .activated {
                         contentView?.setContentView(AnyView(HostsManagerView()))
+                        chat?.setVisible(false)
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
                     } else {
+                        chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
                         rootView?.setContentHeaderViewHidden(false)
                     }
@@ -83,6 +87,7 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             let railView = kernel.resolveProvider((any RailViewProviding).self)
             let rootView = kernel.resolveProvider((any RootViewProviding).self)
             rootView?.setRailView(railView?.makeRailView())

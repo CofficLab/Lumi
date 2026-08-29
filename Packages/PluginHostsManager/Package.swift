@@ -13,6 +13,7 @@ let package = Package(
         .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderActivityBar"),
+        .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderRailView"),
@@ -27,6 +28,7 @@ let package = Package(
                 "KitLocalization",
                 "LumiUI",
                 "ProviderActivityBar",
+                "ProviderChatSection",
                 "ProviderContentView",
                 "ProviderDocsView",
                 "ProviderRailView",
@@ -39,6 +41,11 @@ let package = Package(
             name: "PluginHostsManagerTests",
             dependencies: [
                 "PluginHostsManager",
+                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderContentView", package: "ProviderContentView"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
             ]
         ),
     ]
