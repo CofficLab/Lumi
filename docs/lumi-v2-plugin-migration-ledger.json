@@ -932,7 +932,7 @@
    }
   },
   {
-   "legacyPackage": "ConversationAgentTurnCountPlugin",
+  "legacyPackage": "ConversationAgentTurnCountPlugin",
    "legacyPluginID": "com.coffic.lumi.plugin.conversation-agent-turn-count",
    "legacyClass": "ConversationAgentTurnCountPlugin",
    "legacyCatalogState": "production",
@@ -1011,7 +1011,7 @@
    "order": 86,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": "PluginConversationStats",
+   "newPackage": "PluginConversationCacheHitRate",
    "wave": "P4",
    "owners": [],
    "dependencies": [
@@ -1031,11 +1031,11 @@
    "testFixtures": [],
    "status": "parityReview",
    "evidence": {
-    "packageTests": "swift test --package-path Packages/PluginConversationStats (2026-08-24)",
+    "packageTests": "swift test --package-path Packages/PluginConversationCacheHitRate (2026-08-29)",
     "integrationBuild": null,
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi registers ConversationCacheHitRatePlugin from the consolidated PluginConversationStats package.",
+    "migration": "FactoryLumi registers ConversationCacheHitRatePlugin from the standalone PluginConversationCacheHitRate package.",
     "performance": null
    }
   },
