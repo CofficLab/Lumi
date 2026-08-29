@@ -2,6 +2,7 @@ import KernelCore
 import KitSuperLog
 import os
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
@@ -33,6 +34,7 @@ import SwiftUI
     public func onBoot(kernel: KernelCoreContainer) throws {
         ImageToPDFRuntimeBridge.directoryURL = kernel.resolveProvider((any StorageProviding).self)?.pluginDataDirectory(for: "ImageToPDF")
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let entry = "\(id).entry"
@@ -42,9 +44,11 @@ import SwiftUI
                 ActivityBarItem(id: entry, title: metadata.name, systemImage: "photo.on.rectangle.angled", order: order, ownerPluginID: id) { state in
                     if state == .activated {
                         content?.setContentView(AnyView(ImageToPDFMainView()))
+                        chat?.setVisible(false)
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
                     } else {
+                        chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
                         rootView?.setContentHeaderViewHidden(false)
                     }
@@ -56,6 +60,10 @@ import SwiftUI
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        if activityBar?.activeItemID == "\(id).entry" {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+        }
         ImageToPDFRuntimeBridge.directoryURL = nil
     }
 
