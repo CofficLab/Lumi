@@ -66,7 +66,8 @@ public struct RAGCodeSearchTool: SuperAgentTool {
         }
         return response.results.enumerated().map { index, result in
             let score = String(format: "%.2f", result.score)
-            return "### \(index + 1). `\(result.source)` (score: \(score), evidence: \(result.matchKind.rawValue))\n\n```\n\(result.content)\n```"
+            let lineLabel = result.lineRange.map { ":\($0.startLine)-\($0.endLine)" } ?? ""
+            return "### \(index + 1). `\(result.source)\(lineLabel)` (score: \(score), evidence: \(result.matchKind.rawValue))\n\n```\n\(result.content)\n```"
         }.joined(separator: "\n\n")
     }
 }

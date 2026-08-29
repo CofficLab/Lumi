@@ -70,26 +70,43 @@ public enum ProjectRAGMatchKind: String, Sendable, Equatable {
     case filesystemLexical
 }
 
+public struct ProjectRAGLineRange: Sendable, Equatable {
+    public let startLine: Int
+    public let endLine: Int
+
+    public init(startLine: Int, endLine: Int) {
+        self.startLine = startLine
+        self.endLine = max(startLine, endLine)
+    }
+}
+
 public struct ProjectRAGSearchResult: Sendable, Equatable {
     public let content: String
     public let source: String
     public let score: Float
     public let matchKind: ProjectRAGMatchKind
+    public let lineRange: ProjectRAGLineRange?
 
     public init(
         content: String,
         source: String,
         score: Float,
-        matchKind: ProjectRAGMatchKind
+        matchKind: ProjectRAGMatchKind,
+        lineRange: ProjectRAGLineRange?
     ) {
         self.content = content
         self.source = source
         self.score = score
         self.matchKind = matchKind
+        self.lineRange = lineRange
+    }
+
+    public init(content: String, source: String, score: Float, matchKind: ProjectRAGMatchKind) {
+        self.init(content: content, source: source, score: score, matchKind: matchKind, lineRange: nil)
     }
 
     public init(content: String, source: String, score: Float) {
-        self.init(content: content, source: source, score: score, matchKind: .semantic)
+        self.init(content: content, source: source, score: score, matchKind: .semantic, lineRange: nil)
     }
 }
 

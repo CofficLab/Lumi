@@ -7,6 +7,11 @@ public enum RAGLexicalFileSearcher {
     private static let maxFilesToInspect = 2_000
     private static let contextLineCount = 8
 
+    private struct Snippet {
+        let content: String
+        let lineRange: RAGLineRange
+    }
+
     public static func search(
         query: String,
         projectPath: String,
@@ -16,7 +21,7 @@ public enum RAGLexicalFileSearcher {
         guard !terms.isEmpty else { return [] }
 
         let files = RAGFileScanner.discoverFilesCached(in: projectPath)
-        var matches: [(filePath: String, score: Float, content: String)] = []
+        var matches: [(filePath: String, score: Float, snippet: Snippet)] = []
         matches.reserveCapacity(min(files.count, max(topK, 1)))
 
         for filePath in files.prefix(maxFilesToInspect) {
@@ -39,15 +44,16 @@ public enum RAGLexicalFileSearcher {
             .prefix(max(topK, 1))
             .map {
                 RAGSearchResult(
-                    content: $0.content,
+                    content: $0.snippet.content,
                     source: RAGPathUtils.displayPath(filePath: $0.filePath, projectPath: projectPath),
                     score: $0.score,
-                    matchKind: .filesystemLexical
+                    matchKind: .filesystemLexical,
+                    lineRange: $0.snippet.lineRange
                 )
             }
     }
 
-    private static func makeSnippet(content: String, terms: [String]) -> String {
+    private static func makeSnippet(content: String, terms: [String]) -> Snippet {
         let lines = content.components(separatedBy: "\n")
         let lowerTerms = terms.map { $0.lowercased() }
         let firstMatch = lines.firstIndex { line in
@@ -57,8 +63,12 @@ public enum RAGLexicalFileSearcher {
         let start = max(firstMatch - contextLineCount / 2, 0)
         let end = min(start + contextLineCount, lines.count)
 
-        return lines[start..<end].enumerated()
+        let snippet = lines[start..<end].enumerated()
             .map { "\(start + $0.offset + 1)\t\($0.element)" }
             .joined(separator: "\n")
+        return Snippet(
+            content: snippet,
+            lineRange: RAGLineRange(startLine: start + 1, endLine: max(start + 1, end))
+        )
     }
 }

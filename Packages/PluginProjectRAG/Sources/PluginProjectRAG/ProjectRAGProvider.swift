@@ -51,7 +51,10 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
                     content: $0.content,
                     source: $0.source,
                     score: $0.score,
-                    matchKind: ProjectRAGMatchKind(rawValue: $0.matchKind.rawValue) ?? .semantic
+                    matchKind: ProjectRAGMatchKind(rawValue: $0.matchKind.rawValue) ?? .semantic,
+                    lineRange: $0.lineRange.map {
+                        ProjectRAGLineRange(startLine: $0.startLine, endLine: $0.endLine)
+                    }
                 )
             }
         )

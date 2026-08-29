@@ -52,7 +52,10 @@ final class ProjectRAGLLMContextHook {
                     content: $0.content,
                     source: $0.source,
                     score: $0.score,
-                    matchKind: RAGMatchKind(rawValue: $0.matchKind.rawValue) ?? .semantic
+                    matchKind: RAGMatchKind(rawValue: $0.matchKind.rawValue) ?? .semantic,
+                    lineRange: $0.lineRange.map {
+                        RAGLineRange(startLine: $0.startLine, endLine: $0.endLine)
+                    }
                 )
             }
             let language: RAGLanguagePreference = containsCJK(latestUserMessage.content) ? .chinese : .english
