@@ -51,17 +51,10 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
             throw NSError(domain: "ReadFileTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'path' argument"])
         }
 
-        let expandedPath = (path as NSString).expandingTildeInPath
-        let url: URL
-        if expandedPath.hasPrefix("/") {
-            url = URL(fileURLWithPath: expandedPath)
-        } else if let workspaceRoot = await workspaceRootProvider(),
-                  !workspaceRoot.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let rootURL = URL(fileURLWithPath: workspaceRoot).standardizedFileURL
-            url = URL(fileURLWithPath: expandedPath, relativeTo: rootURL).standardizedFileURL
-        } else {
-            url = URL(fileURLWithPath: expandedPath).standardizedFileURL
-        }
+        let url = WorkspacePathResolver.resolve(
+            path: path,
+            workspaceRoot: await workspaceRootProvider()
+        )
         do {
             let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
             let fileSize = (attributes[.size] as? NSNumber)?.int64Value ?? 0
