@@ -4,7 +4,7 @@ import EditorService
 import Foundation
 import KernelCore
 import PluginEditorHost
-import PluginCodeEditor
+@testable import PluginCodeEditor
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
@@ -23,6 +23,17 @@ struct CodeEditorSuperPluginTests {
         #expect(plugin.dependencies == [
             "com.coffic.lumi.plugin.editor-host"
         ])
+    }
+
+    @Test("本地化资源覆盖元数据与手册文案")
+    func localizationCatalogProvidesSupportedLocales() {
+        let plugin = CodeEditorSuperPlugin()
+        let description = "Browse projects and edit source files in a VS Code-style workspace."
+
+        #expect(plugin.metadata.name == CodeEditorLocalization.string("Code Editor"))
+        #expect(plugin.metadata.description == CodeEditorLocalization.string(description))
+        #expect(!CodeEditorLocalization.string("User Manual").isEmpty)
+        #expect(!CodeEditorLocalization.string("Open a File").isEmpty)
     }
 
     @Test("enabling and disabling installs and removes workspace contributions")

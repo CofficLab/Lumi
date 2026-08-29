@@ -44,7 +44,7 @@ struct CodeEditorAboutView: View {
     }
 
     private func L(_ key: String) -> String {
-        String(localized: String.LocalizationValue(key), bundle: .module)
+        CodeEditorLocalization.string(key)
     }
 }
 

@@ -10,6 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KitSuperLog"),
+        .package(path: "../KitLocalization"),
         .package(path: "../KernelCore"),
         .package(path: "../PluginEditorHost"),
         .package(path: "../EditorContracts"),
@@ -30,6 +31,7 @@ let package = Package(
             name: "PluginCodeEditor",
             dependencies: [
                 "KitSuperLog",
+                "KitLocalization",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "EditorService", package: "EditorService"),

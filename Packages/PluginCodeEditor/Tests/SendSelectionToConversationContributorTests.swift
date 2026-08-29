@@ -1,6 +1,6 @@
 import EditorService
 import Foundation
-import PluginCodeEditor
+@testable import PluginCodeEditor
 import ProviderConversationInput
 import Testing
 
@@ -36,7 +36,7 @@ struct SendSelectionToConversationContributorTests {
         #expect(payload.contains("Sources/Greet.swift"))
         #expect(payload.contains("swift"))
         #expect(payload.contains(selected))
-        #expect(payload.contains("Line range 2"))
+        #expect(payload.contains("\(CodeEditorLocalization.string("Line range")) 2"))
     }
 
     @Test("appends to the conversation input and focuses it")
