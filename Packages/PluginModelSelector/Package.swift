@@ -28,7 +28,7 @@ let package = Package(
                 "ProviderLLMManager",
                 "KitLLM",
             ],
-            resources: [.process("Resources/Localizable.xcstrings")]
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginModelSelectorTests",
