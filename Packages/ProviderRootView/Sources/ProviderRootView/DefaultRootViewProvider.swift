@@ -1,18 +1,16 @@
-import Combine
 import LumiUI
-import os
-import ProviderWorkspace
 import KitSuperLog
+import os
 import SwiftUI
 
-/// `RootViewProviding` 的默认实现：持有注入的工具栏、ActivityBar、Rail
-/// 与主内容视图，组合成「顶部工具栏 + 内容区（左侧 ActivityBar，右侧 Rail）」
+/// `RootViewProviding` 的默认实现：持有注入的工具栏、ActivityBar、Rail、内容 Header、
+/// 主内容视图与 Footer，组合成「顶部工具栏 + 内容区（左侧 ActivityBar，右侧 Rail）」
 /// 的根布局（与旧版 `AppLayoutView` 完全一致）。
 ///
 /// 与旧版 `AppLayoutView` 对齐的行为：
-/// - 主内容未注入、且无活跃容器时显示 `WelcomeView` 风格的欢迎占位；
+/// - 主内容未注入、且无活跃内容时显示 `WelcomeView` 风格的欢迎占位；
 /// - ActivityBar 在存在至少两个入口时显示；
-/// - Rail 仅在存在活跃容器（且容器可见）时显示；
+/// - Rail 由宿主统一注入后常驻显示，不受当前插件容器影响；
 /// - 根视图应用主题背景、`appThemedAppearance`、`ThemeWindowAppearanceBridge`
 ///   与 `AppThemeVM` 环境对象（复刻旧版主题链）。
 @MainActor
@@ -24,12 +22,13 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published var toolbarView: AnyView?
     @Published var activityBarView: AnyView?
     @Published var railView: AnyView?
+    @Published var contentHeaderView: AnyView?
     @Published var contentView: AnyView?
+    @Published var contentFooterView: AnyView?
     @Published var trailingPane: RootTrailingPane?
     @Published public private(set) var overlays: [RootOverlayItem] = []
-    var workspaceProvider: (any WorkspaceProviding)?
-    private var workspaceSubscription: AnyCancellable?
-
+    @Published public private(set) var isContentViewHidden: Bool = false
+    @Published public private(set) var isContentHeaderViewHidden: Bool = false
     public init() {
         if Self.verbose {
             Self.logger.info("\(self.t)DefaultRootViewProviding initialized")
@@ -67,6 +66,14 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         }
     }
 
+    public func setContentHeaderView(_ view: AnyView?) {
+        guard !isSameView(contentHeaderView, view) else { return }
+        contentHeaderView = view
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set content header view: \(view == nil ? "nil" : "injected")")
+        }
+    }
+
     public func setContentView(_ view: AnyView?) {
         guard !isSameView(contentView, view) else { return }
         contentView = view
@@ -75,23 +82,35 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         }
     }
 
+    public func setContentFooterView(_ view: AnyView?) {
+        guard !isSameView(contentFooterView, view) else { return }
+        contentFooterView = view
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set content footer view: \(view == nil ? "nil" : "injected")")
+        }
+    }
+
+    public func setContentViewHidden(_ hidden: Bool) {
+        guard isContentViewHidden != hidden else { return }
+        isContentViewHidden = hidden
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set content view hidden: \(hidden)")
+        }
+    }
+
+    public func setContentHeaderViewHidden(_ hidden: Bool) {
+        guard isContentHeaderViewHidden != hidden else { return }
+        isContentHeaderViewHidden = hidden
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set content header hidden: \(hidden)")
+        }
+    }
+
     public func setTrailingPane(_ pane: RootTrailingPane?) {
         guard pane !== trailingPane else { return }
         trailingPane = pane
         if Self.verbose {
             Self.logger.debug("\(self.t)set trailing pane: \(pane.map { $0.id } ?? "nil")")
-        }
-    }
-
-    public func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?) {
-        guard provider !== workspaceProvider else { return }
-        workspaceProvider = provider
-        workspaceSubscription = provider?.objectWillChange.sink { [weak self] _ in
-            self?.objectWillChange.send()
-        }
-        objectWillChange.send()
-        if Self.verbose {
-            Self.logger.debug("\(self.t)set workspace provider: \(provider == nil ? "nil" : "injected")")
         }
     }
 
@@ -119,7 +138,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
 
     public func makeRootView() -> AnyView {
         if Self.verbose {
-            Self.logger.debug("\(self.t)make root view: toolbar=\(self.toolbarView == nil ? "nil" : "set"), activityBar=\(self.activityBarView == nil ? "nil" : "set"), rail=\(self.railView == nil ? "nil" : "set"), content=\(self.contentView == nil ? "nil" : "set"), activeContainer=\(self.containerID)")
+            Self.logger.debug("\(self.t)make root view: toolbar=\(self.toolbarView == nil ? "nil" : "set"), activityBar=\(self.activityBarView == nil ? "nil" : "set"), rail=\(self.railView == nil ? "nil" : "set"), content=\(self.contentView == nil ? "nil" : "set"), footer=\(self.contentFooterView == nil ? "nil" : "set")")
         }
         var root = AnyView(DefaultRootHostView(provider: self))
         for overlay in overlays { root = overlay.wrap(root) }
@@ -128,14 +147,11 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
 
     // MARK: - 显示条件
 
-    /// 是否存在活跃容器（旧版 `activeViewContainerID != nil` 且容器可解析）。
-    var hasActiveContainer: Bool {
-        guard let containerID = workspaceProvider?.activeContainerID else { return false }
-        return workspaceProvider?.container(id: containerID) != nil
-    }
-
-    /// 当前活跃容器 ID（无容器时回退 "root"）。
-    var containerID: String {
-        workspaceProvider?.activeContainerID ?? "root"
+    /// 是否存在可渲染的活跃内容。
+    ///
+    /// 内容插件的容器状态不是根视图渲染的必要条件。ChatPanel 由
+    /// ActivityBar + ChatSection 驱动，只要 trailing pane 可见就应正常显示。
+    var hasActiveContent: Bool {
+        return contentHeaderView != nil || contentView != nil || contentFooterView != nil || trailingPane?.isVisible == true
     }
 }

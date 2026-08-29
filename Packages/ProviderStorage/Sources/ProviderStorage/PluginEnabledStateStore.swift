@@ -1,4 +1,5 @@
 import Foundation
+import KernelCore
 
 /// 插件启用状态的持久化实现：写入旧版 `PluginManagerPlugin` 的同一数据目录。
 ///
@@ -9,7 +10,7 @@ import Foundation
 /// - 迁移：首次初始化且文件为空时，从旧版内核持有的 UserDefaults key
 ///   `com.coffic.lumi.pluginEnabledOverrides` 迁移，成功后清除该 key。
 @MainActor
-public final class PluginEnabledStateStore {
+public final class PluginEnabledStateStore: PluginStatePersisting {
     private static let filename = "plugin-enabled-overrides.plist"
     private static let legacyDefaultsKey = "com.coffic.lumi.pluginEnabledOverrides"
 

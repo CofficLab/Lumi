@@ -59,6 +59,7 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
                         }
                     }
                     .padding(.leading)
+                    .padding(.trailing)
                 }
 
                 Spacer()

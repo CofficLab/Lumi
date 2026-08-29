@@ -2,6 +2,7 @@ import KitAgentTool
 import KernelCore
 import os
 import ProviderToolManager
+import KitSuperLog
 
 /// Web Search 插件（KernelCore 版本）
 ///
@@ -9,7 +10,7 @@ import ProviderToolManager
 /// 纯工具型插件：`onBoot` 解析内核 `NetworkProviding`（供工具抓取 DuckDuckGo），
 /// 并向 `ToolManagerProviding` 注册 `WebSearchTool`。
 @MainActor
-public final class WebSearchPlugin: SuperPlugin {
+public final class WebSearchPlugin: SuperPlugin, SuperLog {
     public let id = "WebSearch"
     public let order = 101
     public let metadata = PluginMetadata(

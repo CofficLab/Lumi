@@ -4,6 +4,8 @@ import ProviderCommand
 import ProviderDocsView
 import ProviderSettingView
 import SwiftUI
+import KitSuperLog
+import os
 
 /// 设置 - 通用 插件
 ///
@@ -15,7 +17,8 @@ import SwiftUI
 /// 与 `DocsViewProviding`，用 `addEntries(_:)`（追加语义）注册入口，
 /// 不覆盖其他插件贡献的入口。
 @MainActor
-public final class SettingGeneralPlugin: SuperPlugin {
+public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.setting-general", category: "SettingGeneral")
     public let id = "com.coffic.lumi.plugin.setting-general"
     public let order = 100
     public let metadata = PluginMetadata(

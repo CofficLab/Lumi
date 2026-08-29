@@ -10,13 +10,14 @@ import KitSuperLog
 ///   位于截图按钮右侧；
 /// - 点击弹出文件选择器（`.fileImporter`），用户选择任意文件后经
 ///   `ConversationInputProviding.addToConversation(fileURLs:)` 把文件路径文本
-///   插入输入框（与新版「文件以路径文本插入输入框」策略一致——新版
-///   `MessageSendingProviding` 已移除旧版图片/文件挂起池，拖放、粘贴同链路）。
+///   插入输入框（当前文件选择器行为）。聊天输入框中的图片拖放由
+///   `PluginConversationInput` 负责加入 `MessageSendingProviding` 的图片挂起池。
 ///
 /// 与旧版的对应关系：
 /// - `chatSectionActionBarItems(.leading)` → `ChatSectionProviding.addBarItems(.actionLeading)`；
-/// - `kernel.messageSender.addAttachment / addFileAttachment` → 无附件管道，
-///   改用 `ConversationInputProviding.addToConversation(fileURLs:)`。
+/// - 文件选择器的 `kernel.messageSender.addAttachment / addFileAttachment` →
+///   `ConversationInputProviding.addToConversation(fileURLs:)`；
+/// - 图片拖放的附件管线保留在 `PluginConversationInput`，复用当前发送器接口。
 @MainActor
 public final class ChatFileAttachmentPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.chat-file-attachment", category: "ChatFileAttachment")

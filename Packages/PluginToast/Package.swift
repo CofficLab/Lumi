@@ -7,6 +7,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [.library(name: "PluginToast", targets: ["PluginToast"])],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../ProviderToast"),
         .package(path: "../LumiUI"),
@@ -15,6 +16,7 @@ let package = Package(
         .target(
             name: "PluginToast",
             dependencies: [
+                "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderToast", package: "ProviderToast"),
                 .product(name: "LumiUI", package: "LumiUI"),

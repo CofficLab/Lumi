@@ -1,5 +1,5 @@
 import Combine
-import ProviderWorkspace
+import ProviderChatSection
 import SwiftUI
 import Testing
 @testable import ProviderRootView
@@ -32,6 +32,32 @@ struct ProviderRootViewTests {
         let view = provider.makeRootView()
 
         #expect(type(of: view) == AnyView.self)
+    }
+
+    @Test("ChatSection 可见性同步到 trailing pane")
+    func trailingPaneFollowsChatSectionVisibility() async {
+        let chat = DefaultChatSectionProviding()
+        let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
+        pane.bindVisibility(to: chat)
+
+        #expect(pane.isVisible)
+        chat.setVisible(false)
+        await Task.yield()
+        #expect(!pane.isVisible)
+        chat.setVisible(true)
+        await Task.yield()
+        #expect(pane.isVisible)
+    }
+
+    @Test("没有容器时可通过 trailing pane 渲染")
+    func visibleTrailingPaneCountsAsActiveContentWithoutContainer() {
+        let provider = DefaultRootViewProvider()
+        let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
+        provider.setTrailingPane(pane)
+
+        #expect(provider.hasActiveContent)
+        pane.isVisible = false
+        #expect(!provider.hasActiveContent)
     }
 
     @Test("注入工具栏后返回根视图")
@@ -71,7 +97,9 @@ struct ProviderRootViewTests {
         provider.setToolbarView(AnyView(Text("toolbar")))
         provider.setActivityBarView(AnyView(Text("activity bar")))
         provider.setRailView(AnyView(Text("rail")))
+        provider.setContentHeaderView(AnyView(Text("content header")))
         provider.setContentView(AnyView(Text("content")))
+        provider.setContentFooterView(AnyView(Text("content footer")))
         provider.setTrailingPane(RootTrailingPane(id: "chat", content: AnyView(Text("chat"))))
 
         let view = provider.makeRootView()
@@ -96,7 +124,9 @@ struct ProviderRootViewTests {
             @Published var toolbarView: AnyView?
             @Published var activityBarView: AnyView?
             @Published var railView: AnyView?
+            @Published var contentHeaderView: AnyView?
             @Published var contentView: AnyView?
+            @Published var contentFooterView: AnyView?
             @Published var trailingPane: RootTrailingPane?
 
             func setToolbarView(_ view: AnyView?) {
@@ -111,8 +141,16 @@ struct ProviderRootViewTests {
                 railView = view
             }
 
+            func setContentHeaderView(_ view: AnyView?) {
+                contentHeaderView = view
+            }
+
             func setContentView(_ view: AnyView?) {
                 contentView = view
+            }
+
+            func setContentFooterView(_ view: AnyView?) {
+                contentFooterView = view
             }
 
             func setTrailingPane(_ pane: RootTrailingPane?) {
@@ -125,7 +163,11 @@ struct ProviderRootViewTests {
                     HStack {
                         if let activityBarView { activityBarView }
                         if let railView { railView }
-                        if let contentView { contentView }
+                        VStack {
+                            if let contentHeaderView { contentHeaderView }
+                            if let contentView { contentView }
+                            if let contentFooterView { contentFooterView }
+                        }
                         Text("custom root")
                     }
                 })
@@ -136,66 +178,24 @@ struct ProviderRootViewTests {
         provider.setToolbarView(AnyView(Text("custom toolbar")))
         provider.setActivityBarView(AnyView(Text("custom activity bar")))
         provider.setRailView(AnyView(Text("custom rail")))
+        provider.setContentHeaderView(AnyView(Text("custom content header")))
         provider.setContentView(AnyView(Text("custom content")))
+        provider.setContentFooterView(AnyView(Text("custom content footer")))
         provider.setTrailingPane(RootTrailingPane(id: "custom", content: AnyView(Text("custom trailing"))))
 
         #expect(type(of: provider.makeRootView()) == AnyView.self)
     }
 
-    // MARK: - 显示条件（复刻旧版 AppLayoutView）
-
-    /// 构造一个含 N 个容器的 workspace。
-    private func makeWorkspace(containerCount: Int) -> DefaultWorkspaceProviding {
-        let workspace = DefaultWorkspaceProviding(
-            pluginDirectory: FileManager.default.temporaryDirectory
-                .appendingPathComponent("ProviderRootViewTests-\(UUID().uuidString)", isDirectory: true)
-        )
-        for index in 0..<containerCount {
-            workspace.registerContainer(
-                WorkspaceContainer(
-                    id: "container.\(index)",
-                    title: "Container \(index)",
-                    systemImage: "square",
-                    order: index
-                ),
-                ownerPluginID: "test"
-            )
-        }
-        return workspace
-    }
-
-    @Test("ActivityBar 注入后仍返回根视图（容器数 > 1 时显示）")
-    func activityBarVisibleWithMultipleContainers() {
+    @Test("Footer 注入后被视为主内容并返回根视图")
+    func contentFooterCountsAsActiveContent() {
         let provider = DefaultRootViewProvider()
-        provider.setActivityBarView(AnyView(Text("activity bar")))
-        provider.setWorkspaceProvider(makeWorkspace(containerCount: 2))
+        provider.setContentFooterView(AnyView(Text("content footer")))
 
+        #expect(provider.hasActiveContent)
         #expect(type(of: provider.makeRootView()) == AnyView.self)
-    }
 
-    @Test("无活跃容器时返回根视图（Welcome 占位路径）")
-    func welcomePlaceholderWithoutActiveContainer() {
-        let provider = DefaultRootViewProvider()
-        // 有 workspace 但无活跃容器（未注册任何容器）。
-        let workspace = DefaultWorkspaceProviding(
-            pluginDirectory: FileManager.default.temporaryDirectory
-                .appendingPathComponent("ProviderRootViewTests-\(UUID().uuidString)", isDirectory: true)
-        )
-        provider.setWorkspaceProvider(workspace)
-        provider.setContentView(AnyView(Text("content")))
-
-        #expect(type(of: provider.makeRootView()) == AnyView.self)
-    }
-
-    @Test("存在活跃容器时返回带内容区的根视图")
-    func contentShownWithActiveContainer() {
-        let provider = DefaultRootViewProvider()
-        let workspace = makeWorkspace(containerCount: 1)
-        provider.setWorkspaceProvider(workspace)
-        provider.setContentView(AnyView(Text("content")))
-        provider.setRailView(AnyView(Text("rail")))
-
-        #expect(type(of: provider.makeRootView()) == AnyView.self)
+        provider.setContentFooterView(nil)
+        #expect(!provider.hasActiveContent)
     }
 
     // MARK: - 注入守卫（值相同则跳过赋值，避免视图更新期间发布 objectWillChange）
@@ -260,19 +260,4 @@ struct ProviderRootViewTests {
         withExtendedLifetime(cancellable) {}
     }
 
-    @Test("重复注入相同 workspace 实例时跳过（不重复订阅/发布）")
-    func repeatedWorkspaceInjectionSkipsPublish() {
-        let provider = DefaultRootViewProvider()
-        let workspace = makeWorkspace(containerCount: 1)
-        let (count, cancellable) = makeChangeCounter(for: provider)
-
-        provider.setWorkspaceProvider(workspace)
-        let afterFirst = count()
-        provider.setWorkspaceProvider(workspace)
-        let afterSecond = count()
-
-        #expect(afterFirst == 1)
-        #expect(afterSecond == afterFirst)
-        withExtendedLifetime(cancellable) {}
-    }
 }

@@ -4,6 +4,8 @@ import ProviderProject
 import ProviderSettingView
 import ProviderToolManager
 import SwiftUI
+import KitSuperLog
+import os
 
 /// Agent Rules 插件（KernelCore 版本）
 ///
@@ -18,7 +20,8 @@ import SwiftUI
 /// - `settingsTabItems` → `SettingViewProviding.addEntries`（`SettingEntryItem`）；
 /// - `kernel.currentProjectPath` / `kernel.project` → `AgentRulesRuntime` 持有的 `ProjectProviding`。
 @MainActor
-public final class AgentRulesPlugin: SuperPlugin {
+public final class AgentRulesPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.agent-rules", category: "AgentRules")
     public let id = "com.coffic.lumi.plugin.agent-rules"
     public let order = 50
     public let metadata = PluginMetadata(

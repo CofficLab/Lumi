@@ -34,7 +34,6 @@ import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
 import ProviderWebServer
-import ProviderWorkspace
 import ProviderLifecycleHooks
 
 /// 产出各种 Provider 实现的工厂协议。
@@ -119,7 +118,6 @@ public protocol ProviderFactory {
     func makeMessageRenderingProvider() -> any MessageRenderingProviding
     func makeToolCallRenderingProvider() -> any ToolCallRenderingProviding
     func makePromptSuggestionProvider() -> any PromptSuggestionProviding
-    func makeWorkspaceProvider(storage: any StorageProviding) -> any WorkspaceProviding
     func makeOnboardingProvider() -> any OnboardingProviding
     func makeCommandProvider() -> any CommandProviding
     func makeIdleTimeProvider(storage: any StorageProviding) -> any IdleTimeProviding

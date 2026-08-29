@@ -16,8 +16,8 @@ let package = Package(
         .package(path: "../LumiUI"),
         .package(path: "../KitLocalization"),
         .package(path: "../ProviderContentView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../ProviderDocsView"),
-        .package(path: "../ProviderWorkspace"),
         .package(path: "../KitSuperLog")
     ],
     targets: [
@@ -28,8 +28,8 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
-                .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
                 .product(name: "KitSuperLog", package: "KitSuperLog")
             ],
             path: "Sources",

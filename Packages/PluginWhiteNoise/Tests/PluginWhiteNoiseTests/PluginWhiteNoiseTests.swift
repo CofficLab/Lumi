@@ -1,5 +1,6 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import SwiftUI
@@ -22,6 +23,7 @@ struct PluginWhiteNoiseTests {
         try kernel.registerProvider((any DocsViewProviding).self, docs)
 
         let plugin = WhiteNoisePlugin()
+        try plugin.onRegister(kernel: kernel)
         try plugin.onBoot(kernel: kernel)
 
         #expect(activityBar.items.map(\.id) == ["\(plugin.id).entry"])
@@ -40,6 +42,25 @@ struct PluginWhiteNoiseTests {
         #expect(type(of: docs.manualEntries[0].makeView()) == AnyView.self)
     }
 
+    @Test("激活时隐藏 ChatSection，停用时恢复")
+    func activatingPluginHidesChatSectionAndDeactivatingRestoresIt() throws {
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        let chat = DefaultChatSectionProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+
+        let plugin = WhiteNoisePlugin()
+        try plugin.onBoot(kernel: kernel)
+
+        #expect(activityBar.activeItemID == "\(plugin.id).entry")
+        #expect(!chat.isVisible)
+
+        activityBar.activateItem(id: nil)
+
+        #expect(chat.isVisible)
+    }
+
     @Test("onBoot 追加语义不覆盖已有文档")
     func onBootAppendsToExistingDocs() throws {
         let kernel = KernelCoreContainer()
@@ -48,6 +69,7 @@ struct PluginWhiteNoiseTests {
         try kernel.registerProvider((any DocsViewProviding).self, docs)
 
         let plugin = WhiteNoisePlugin()
+        try plugin.onRegister(kernel: kernel)
         try plugin.onBoot(kernel: kernel)
 
         #expect(docs.manualEntries.count == 2)

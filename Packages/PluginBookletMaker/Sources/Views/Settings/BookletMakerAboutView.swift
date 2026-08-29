@@ -21,8 +21,8 @@ struct BookletMakerAboutView: View {
         LandingHero(
             icon: "book.closed",
             accent: theme.info,
-            tagline: L("Turn PDFs into 2-up imposition ready for A4 duplex printing, folding and stapling."),
-            chips: [L("2-up"), L("Duplex"), L("A4")]
+            tagline: L("Booklet pages are reordered for folding and binding; print a test sheet first."),
+            chips: [L("Booklet"), L("Duplex"), L("Booklet Fold")]
         )
         .landingAppear()
     }
@@ -33,17 +33,17 @@ struct BookletMakerAboutView: View {
         LandingSection(title: L("Core Capabilities"), icon: "square.grid.2x2") {
             LandingFeatureGrid(items: [
                 .init(icon: "doc.richtext", tint: theme.primary,
-                      title: L("PDF Import"),
-                      description: L("Load any PDF and lay out its pages two-up.")),
+                      title: L("Booklet Maker"),
+                      description: L("Duplex imposition and binding")),
                 .init(icon: "book.pages", tint: theme.info,
-                      title: L("Imposition"),
-                      description: L("Simple Pair and Booklet Fold layout modes.")),
+                      title: L("Booklet Fold"),
+                      description: L("Booklet pages are reordered for folding and binding; print a test sheet first.")),
                 .init(icon: "printer", tint: theme.success,
-                      title: L("Duplex Ready"),
-                      description: L("Front and back sheets for A4 double-sided printing.")),
+                      title: L("Output paper"),
+                      description: L("Choose the output paper size and the layout, such as Booklet Fold or Simple Pair.")),
                 .init(icon: "scissors", tint: theme.warning,
-                      title: L("Fold & Staple"),
-                      description: L("Order pages so they fold into a stapled booklet."))
+                      title: L("Split PDF"),
+                      description: L("Split after specified pages"))
             ])
         }
         .landingAppear(delay: 0.05)

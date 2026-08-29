@@ -74,12 +74,16 @@ public final class DefaultMessageManager: MessageManaging {
         _ result: MessageToolResult,
         toolCallID: String,
         assistantMessageID: UUID,
-        in conversationID: UUID
+        in conversationID: UUID,
+        authorizationState: String? = nil
     ) {
         guard let index = storage[conversationID]?.firstIndex(where: { $0.id == assistantMessageID }),
               let callIndex = storage[conversationID]?[index].toolCalls?.firstIndex(where: { $0.id == toolCallID })
         else { return }
         storage[conversationID]?[index].toolCalls?[callIndex].result = result
+        if let authorizationState {
+            storage[conversationID]?[index].toolCalls?[callIndex].authorizationState = authorizationState
+        }
     }
 
     public func clearMessages(in conversationID: UUID) {

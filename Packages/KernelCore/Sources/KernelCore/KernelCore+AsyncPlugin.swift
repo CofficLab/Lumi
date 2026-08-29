@@ -115,6 +115,7 @@ public extension KernelCoreContainer {
                 guard isPluginEnabled(id: plugin.id) else { continue }
 
                 activePluginID = plugin.id
+                activePluginLifecyclePhase = .boot
                 if let plugin = plugin as? any AsyncSuperPlugin {
                     try await withLifecycleTimeout(timeout?.boot, phase: "boot", pluginID: plugin.id) {
                         try await plugin.onBootAsync(kernel: self)
@@ -124,6 +125,7 @@ public extension KernelCoreContainer {
                         try plugin.onBoot(kernel: self)
                     }
                 }
+                activePluginLifecyclePhase = nil
                 activePluginID = nil
                 pluginStartOrder.append(plugin.id)
             }
@@ -144,6 +146,7 @@ public extension KernelCoreContainer {
             }
             setLifecycleState(.running)
         } catch {
+            activePluginLifecyclePhase = nil
             activePluginID = nil
             await rollbackAsyncStartup(
                 bootedIDs: bootedIDs,
@@ -236,10 +239,14 @@ public extension KernelCoreContainer {
         }
 
         activePluginID = id
-        defer { activePluginID = nil }
+        defer {
+            activePluginLifecyclePhase = nil
+            activePluginID = nil
+        }
         try await plugin.onDisable(kernel: self)
         cancelContributions(ownedBy: id)
         pluginEnabledStates[id] = false
+        persistEnabledState(false, pluginID: id)
     }
 
     /// 运行时重新启用已注册插件。
@@ -262,7 +269,10 @@ public extension KernelCoreContainer {
         }
 
         activePluginID = id
-        defer { activePluginID = nil }
+        defer {
+            activePluginLifecyclePhase = nil
+            activePluginID = nil
+        }
 
         if pluginStartOrder.contains(id) {
             // 曾经 Boot 过再被禁用：走 onEnable 恢复路径。
@@ -275,11 +285,14 @@ public extension KernelCoreContainer {
         } else {
             // 启动时跳过、从未 Boot：执行完整初始化。
             do {
+                activePluginLifecyclePhase = .boot
                 if let plugin = plugin as? any AsyncSuperPlugin {
                     try await plugin.onBootAsync(kernel: self)
+                    activePluginLifecyclePhase = nil
                     try await plugin.onReadyAsync(kernel: self)
                 } else {
                     try plugin.onBoot(kernel: self)
+                    activePluginLifecyclePhase = nil
                     try plugin.onReady(kernel: self)
                 }
                 pluginStartOrder.append(id)
@@ -289,6 +302,7 @@ public extension KernelCoreContainer {
             }
         }
         pluginEnabledStates[id] = true
+        persistEnabledState(true, pluginID: id)
     }
 
     /// 异步卸载一个插件，兼容同步与异步 Shutdown 实现。

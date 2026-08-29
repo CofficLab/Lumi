@@ -194,11 +194,21 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
         }
     }
 
+    /// 按 id 撤回命令贡献者（插件禁用/卸载时使用）。
+    public func unregisterCommandContributor(id: String) {
+        commandContributors.removeAll { $0.id == id }
+    }
+
     public func registerContextMenuContributor(_ contributor: any SuperEditorContextMenuContributor) {
         if contextMenuContributors.contains(where: { $0.id == contributor.id }) {
             return
         }
         contextMenuContributors.append(contributor)
+    }
+
+    /// 按 id 撤回右键菜单贡献者（插件禁用/卸载时使用）。
+    public func unregisterContextMenuContributor(id: String) {
+        contextMenuContributors.removeAll { $0.id == id }
     }
 
     public func registerGutterDecorationContributor(_ contributor: any SuperEditorGutterDecorationContributor) {

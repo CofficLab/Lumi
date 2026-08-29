@@ -158,8 +158,10 @@ public extension ToolManagerProviding {
         conversationID: UUID,
         turnID: UUID?
     ) async -> ToolCallResult {
+        var authorizedToolCall = toolCall
+        authorizedToolCall.authorizationState = .userApproved
         guard case let .executed(result) = await executeBatch(
-            [toolCall],
+            [authorizedToolCall],
             policy: .autoExecute,
             conversationID: conversationID,
             turnID: turnID
@@ -174,8 +176,10 @@ public extension ToolManagerProviding {
         conversationID: UUID,
         turnID: UUID?
     ) async -> ToolCallResult {
+        var rejectedToolCall = toolCall
+        rejectedToolCall.authorizationState = .userRejected
         guard case let .blocked(reason) = await executeBatch(
-            [toolCall],
+            [rejectedToolCall],
             policy: .blockAll,
             conversationID: conversationID,
             turnID: turnID

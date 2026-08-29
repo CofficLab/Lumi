@@ -17,7 +17,6 @@ let package = Package(
         .package(path: "../ProviderPluginManaging"),
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderToast"),
-        .package(path: "../ProviderWorkspace"),
     ],
     targets: [
         .target(name: "ProviderPromptSuggestion", dependencies: [
@@ -29,9 +28,9 @@ let package = Package(
             .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
             .product(name: "ProviderRailView", package: "ProviderRailView"),
             .product(name: "ProviderToast", package: "ProviderToast"),
-            .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
         ],
-            path: "Sources/ProviderPromptSuggestion",
+            path: ".",
+            sources: ["Sources/ProviderPromptSuggestion"],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
         .testTarget(

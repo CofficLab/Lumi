@@ -1,6 +1,6 @@
 import Combine
 import SwiftUI
-import ProviderWorkspace
+import ProviderChatSection
 
 /// 根视图提供能力协议
 ///
@@ -13,7 +13,11 @@ import ProviderWorkspace
 ///   通常来自 `ActivityBarProviding`）；
 /// - ActivityBar 右侧的侧边栏 Rail（通过 `setRailView(_:)` 注入，
 ///   通常来自 `RailViewProviding`）；
+/// - 内容区顶部的 Header（通过 `setContentHeaderView(_:)` 注入，
+///   例如打开文件标签栏）；
 /// - 内容区（通过 `setContentView(_:)` 注入，通常来自 `ContentViewProviding`）。
+/// - 内容区底部的 Footer（通过 `setContentFooterView(_:)` 注入，
+///   例如状态栏或上下文操作栏）。
 ///
 /// 协议只声明能力，不关心具体实现。
 ///
@@ -47,11 +51,36 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     /// 显示在 ActivityBar 右侧。
     func setRailView(_ view: AnyView?)
 
+    /// 注入主内容区顶部视图（传 `nil` 表示没有 Header）。
+    ///
+    /// Header 与主内容视图独立贡献，适合项目文件标签、面包屑等横向内容。
+    func setContentHeaderView(_ view: AnyView?)
+
+    var isContentHeaderViewHidden: Bool { get }
+    func setContentHeaderViewHidden(_ hidden: Bool)
+
     /// 注入主内容视图（传 `nil` 表示回退到占位）。
     ///
     /// 宿主通常把 `ContentViewProviding.makeContentView()` 的结果注入进来，
     /// 显示在内容区（ActivityBar / Rail 右侧）。
     func setContentView(_ view: AnyView?)
+
+    /// 注入主内容区底部视图（传 `nil` 表示没有 Footer）。
+    ///
+    /// Footer 与 Header、主内容视图独立贡献，显示在主内容视图下方。
+    func setContentFooterView(_ view: AnyView?)
+
+    /// 主内容区是否完全隐藏（不渲染、不占用空间）。
+    ///
+    /// 与 `setContentView(nil)` 的区别：后者仍会显示占位视图；
+    /// 隐藏后整个内容区从视图树中移除，trailing pane 可独占全部空间。
+    var isContentViewHidden: Bool { get }
+
+    /// 设置主内容区是否完全隐藏。
+    ///
+    /// 隐藏后内容区不渲染、不占用内存，trailing pane（如 Chat）独占全部空间。
+    /// 适用于 ChatPanel 等不需要主内容区的容器。
+    func setContentViewHidden(_ hidden: Bool)
 
     /// 注入根布局右侧的通用面板（传 `nil` 表示没有右侧面板）。
     ///
@@ -59,18 +88,18 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     /// 接入根布局。面板的显隐状态和尺寸元数据由 `RootTrailingPane` 持有。
     func setTrailingPane(_ pane: RootTrailingPane?)
 
-    /// 注入工作区状态机，使根 Host 按容器策略控制 Rail/Chat 显隐与持久化宽度。
-    func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?)
-
     /// 返回根布局视图（工具栏 + 内容区，内容区左侧可带 ActivityBar 与 Rail）。
     func makeRootView() -> AnyView
 }
 
 public extension RootViewProviding {
     var overlays: [RootOverlayItem] { [] }
+    var isContentViewHidden: Bool { false }
+    var isContentHeaderViewHidden: Bool { false }
     func addOverlays(_ overlays: [RootOverlayItem]) {}
     func removeOverlays(ids: Set<String>) {}
-    func setWorkspaceProvider(_ provider: (any WorkspaceProviding)?) {}
+    func setContentViewHidden(_ hidden: Bool) {}
+    func setContentHeaderViewHidden(_ hidden: Bool) {}
 }
 
 @MainActor
@@ -96,6 +125,7 @@ public final class RootTrailingPane: ObservableObject {
     public let content: AnyView
 
     @Published public var isVisible: Bool
+    private var visibilitySubscription: AnyCancellable?
 
     public init(
         id: String,
@@ -111,5 +141,19 @@ public final class RootTrailingPane: ObservableObject {
         self.maxWidth = maxWidth
         self.isVisible = isVisible
         self.content = content
+    }
+
+    /// 将面板显隐状态绑定到 ChatSection Provider。
+    ///
+    /// ChatPanel 通过 `ChatSectionProviding` 响应 ActivityBar 切换；根布局
+    /// 直接观察这个状态。
+    @MainActor
+    public func bindVisibility(to provider: any ChatSectionProviding) {
+        isVisible = provider.isVisible
+        visibilitySubscription = provider.objectWillChange.sink { [weak self, weak provider] _ in
+            Task { @MainActor [weak self, weak provider] in
+                self?.isVisible = provider?.isVisible ?? false
+            }
+        }
     }
 }

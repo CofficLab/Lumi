@@ -79,7 +79,6 @@ struct PromptSuggestionExecutorTests {
 
         let activityBarItemID = "plugin.entry"
         let railTabID = "plugin.documents"
-        let containerID = "plugin"
         activityBar.registerItems([
             ActivityBarItem(
                 id: activityBarItemID,
@@ -90,7 +89,7 @@ struct PromptSuggestionExecutorTests {
         railView.registerTabs([
             RailTabItem(
                 id: railTabID,
-                groupID: containerID,
+                category: .project,
                 title: "Documents",
                 systemImage: "doc"
             ) {
@@ -104,15 +103,13 @@ struct PromptSuggestionExecutorTests {
             title: "打开插件",
             action: .activatePluginEntry(
                 activityBarItemID: activityBarItemID,
-                railTabID: railTabID,
-                viewContainerID: containerID
+                railTabID: railTabID
             )
         )
 
         await executor.execute(suggestion)
 
         #expect(activityBar.activeItemID == activityBarItemID)
-        #expect(railView.activeGroupID == containerID)
         #expect(railView.activeTabID == railTabID)
     }
 }

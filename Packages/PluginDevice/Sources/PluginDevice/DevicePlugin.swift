@@ -1,16 +1,20 @@
 import KernelCore
+import KitSuperLog
+import os
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
 import ProviderMenuBar
+import ProviderRailView
+import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
-import ProviderWorkspace
 import SwiftUI
 
 /// 设备信息插件。
 @MainActor
-public final class DevicePlugin: SuperPlugin {
+public final class DevicePlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.device-info", category: "Device")
     public let id = "com.coffic.lumi.plugin.device-info"
     public let order = 6
     public let metadata = PluginMetadata(
@@ -23,6 +27,13 @@ public final class DevicePlugin: SuperPlugin {
     )
 
     public init() {}
+
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: "设备信息") { DeviceInfoAboutView() })
+            docs.addManual(DocsEntry(id: id, name: "设备信息") { DeviceInfoManualView() })
+        }
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 0. 配置 MemoryHistoryService 存储目录
@@ -47,7 +58,8 @@ public final class DevicePlugin: SuperPlugin {
         // 2. 注册 ActivityBar 入口；入口被激活时由插件切换自己的主内容，
         //    并隐藏侧边栏 Rail（本插件不贡献 Rail 内容，直接全屏展示主视图）。
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
-        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
             activityBar.addItems([
@@ -57,14 +69,16 @@ public final class DevicePlugin: SuperPlugin {
                     systemImage: "gauge.with.dots.needle.50percent",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    if activeItemID == entryID {
+                ) { state in
+                    if state == .activated {
                         // 本插件被激活：展示主内容并隐藏侧边栏 Rail（全屏展示）。
                         contentView?.setContentView(AnyView(DeviceInfoView()))
-                        workspace?.setRailVisible(false)
+                        rootView?.setRailView(nil)
+                        rootView?.setContentHeaderViewHidden(true)
                     } else {
                         // 切换到其它入口时恢复 Rail 可见性。
-                        workspace?.setRailVisible(true)
+                        rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setContentHeaderViewHidden(false)
                     }
                 },
             ])
@@ -73,13 +87,7 @@ public final class DevicePlugin: SuperPlugin {
             contentView?.setContentView(AnyView(DeviceInfoView()))
         }
 
-        // 3. 贡献「关于」与「说明书」文档（沿用旧版 pluginAboutView / pluginManualView）
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: "设备信息") { DeviceInfoAboutView() })
-            docs.addManual(DocsEntry(id: id, name: "设备信息") { DeviceInfoManualView() })
-        }
-
-        // 4. 贡献菜单栏内容与弹窗（沿用旧版 menuBarContentItems / menuBarPopupItems）
+        // 3. 贡献菜单栏内容与弹窗（沿用旧版 menuBarContentItems / menuBarPopupItems）
         if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
             menuBar.addContent(MenuBarContentItem(id: "\(id).metrics", title: "设备信息", order: order) {
                 DeviceInfoMenuBarContentView()
@@ -99,15 +107,21 @@ public final class DevicePlugin: SuperPlugin {
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         activityBar?.removeItems(ids: ["\(id).entry"])
         // 恢复 Rail 可见性（本插件激活时可能已将其隐藏）。
-        kernel.resolveProvider((any WorkspaceProviding).self)?.setRailVisible(true)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        rootView?.setRailView(railView?.makeRailView())
+        rootView?.setContentHeaderViewHidden(false)
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         kernel.resolveProvider((any MenuBarProviding).self)?.removeItems(ids: [
             "\(id).metrics",
             "\(id).cpu",
             "\(id).memory",
         ])
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

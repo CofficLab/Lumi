@@ -2,7 +2,9 @@ import os
 import Foundation
 import KernelCore
 import KitSuperLog
+import OpenInKit
 import ProviderProject
+import ProviderDocsView
 import ProviderToolManager
 
 /// 打开外部应用插件（合并版）。
@@ -47,11 +49,25 @@ public final class OpenInPlugin: SuperPlugin, SuperLog {
             OpenInTool(config: OpenInApps.gitOK, project: project),
         ]
         for tool in tools {
-            toolManager.add(tool, pluginID: id)
+        toolManager.add(tool, pluginID: id)
+            DocsEntry(id: id, name: metadata.name) {
+                OpenInKit.OpenInAboutView(displayName: OpenInApps.finder.displayName, systemImage: OpenInApps.finder.systemImage, toolName: OpenInApps.finder.toolName)
+            }
+        )
+            DocsEntry(id: id, name: metadata.name) {
+                OpenInKit.OpenInManualView(displayName: OpenInApps.finder.displayName, toolName: OpenInApps.finder.toolName)
+            }
+        )
         }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id
+    public func onRegister(kernel: KernelCoreContainer) throws {
+            kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
+            kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
+    }
+: id)
         guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding from kernel")
             return

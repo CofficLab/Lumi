@@ -1,8 +1,11 @@
 import KernelCore
 import os
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
+import ProviderRailView
+import ProviderRootView
 import KitSuperLog
 import SwiftUI
 
@@ -17,7 +20,7 @@ import SwiftUI
 /// - `pluginManualView` → `DocsViewProviding.addManual`；
 /// - `titleToolbarItems` 居中标题不复刻（新版无容器激活语义，与 PluginDevice 一致）。
 @MainActor
-public final class HostsManagerPlugin: SuperPlugin {
+public final class HostsManagerPlugin: SuperPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.hosts-manager"
     public let order = 21
     public let metadata = PluginMetadata(
@@ -38,9 +41,18 @@ public final class HostsManagerPlugin: SuperPlugin {
         LumiPluginLocalization.string("Hosts Manager", bundle: .module)
     }
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { HostsManagerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { HostsManagerManualView() })
+        }
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
 
         // ActivityBar 入口（沿用旧版 viewContainers）。
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
@@ -52,28 +64,41 @@ public final class HostsManagerPlugin: SuperPlugin {
                     systemImage: "list.bullet.rectangle",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
-                    contentView?.setContentView(AnyView(HostsManagerView()))
+                ) { state in
+                    if state == .activated {
+                        contentView?.setContentView(AnyView(HostsManagerView()))
+                        chat?.setVisible(false)
+                        rootView?.setRailView(nil)
+                        rootView?.setContentHeaderViewHidden(true)
+                    } else {
+                        chat?.setVisible(true)
+                        rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setContentHeaderViewHidden(false)
+                    }
                 },
             ])
         } else {
             contentView?.setContentView(AnyView(HostsManagerView()))
         }
-
-        // 「说明书」文档（沿用旧版 pluginManualView）。
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addManual(DocsEntry(id: id, name: name) { HostsManagerManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            let rootView = kernel.resolveProvider((any RootViewProviding).self)
+            rootView?.setRailView(railView?.makeRailView())
+            rootView?.setContentHeaderViewHidden(false)
+        }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
-        kernel.resolveProvider((any DocsViewProviding).self)?
-            .removeEntries(id: id)
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

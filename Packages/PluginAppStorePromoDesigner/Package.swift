@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "PluginAppStorePromoDesigner", targets: ["PluginAppStorePromoDesigner"]),
     ],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KitAgentTool"),
         .package(path: "../KitAppStorePromo"),
         .package(path: "../KitHTMLPreview"),
@@ -21,16 +22,17 @@ let package = Package(
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
-        .package(path: "../ProviderWorkspace"),
     ],
     targets: [
         .target(
             name: "PluginAppStorePromoDesigner",
             dependencies: [
+                "KitSuperLog",
                 "KitAgentTool",
                 "KitAppStorePromo",
                 "KitHTMLPreview",
@@ -43,10 +45,10 @@ let package = Package(
                 "ProviderDocsView",
                 "ProviderProject",
                 "ProviderRailView",
+                "ProviderRootView",
                 "ProviderStorage",
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
-                "ProviderWorkspace",
                 .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
@@ -63,7 +65,7 @@ let package = Package(
                 "ProviderChatSection",
                 "ProviderContentView",
                 "ProviderRailView",
-                "ProviderWorkspace",
+                "ProviderRootView",
             ]
         ),
     ]

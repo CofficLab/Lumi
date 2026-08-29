@@ -25,7 +25,7 @@ public final class WebServerPlugin: SuperPlugin, SuperLog {
         description: "为本地工具提供仅回环可访问的 HTTP API。",
         category: .integration,
         stage: .preview,
-        policy: .enabledByDefault
+        policy: .required
     )
 
     private var server: LumiWebServer?

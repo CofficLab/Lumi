@@ -12,8 +12,7 @@ import ProviderProject
 /// 避免视图直接依赖 KernelCoreContainer 或 KernelLumi。
 ///
 /// 设计为 `ObservableObject` class，使 `selectedConversationID` 等可变状态
-/// 可被 SwiftUI 视图通过 `@ObservedObject` 直接观察，无需间接订阅
-/// `objectWillChange` 或轮询协议存在类型属性。
+/// 可被 SwiftUI 视图通过 `@ObservedObject` 直接观察，无需轮询协议存在类型属性。
 @MainActor
 final class ConversationListContext: ObservableObject {
     let conversations: any ConversationManaging

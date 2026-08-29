@@ -1,18 +1,21 @@
 import KernelCore
 import KitAgentTool
+import KitSuperLog
+import os
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderPromptSuggestion
 import ProviderRailView
+import ProviderRootView
 import ProviderToolManager
-import ProviderWorkspace
 import SwiftUI
 
-/// KernelCore 版本的 App Icon 设计器插件。
+/// App Icon 设计器插件。
 @MainActor
-public final class AppIconDesignerPlugin: SuperPlugin {
+public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.app-icon-designer", category: "AppIconDesigner")
     public let id = "com.coffic.lumi.plugin.app-icon-designer"
     public let order = 79
     public let metadata = PluginMetadata(
@@ -40,8 +43,7 @@ public final class AppIconDesignerPlugin: SuperPlugin {
             systemImage: "app.dashed",
             action: .activatePluginEntry(
                 activityBarItemID: "\(id).entry",
-                railTabID: Self.railTabID,
-                viewContainerID: id
+                railTabID: Self.railTabID
             )
         )
     }
@@ -55,6 +57,13 @@ public final class AppIconDesignerPlugin: SuperPlugin {
 
     public func onRegister(kernel: KernelCoreContainer) throws {
         registerPromptSuggestion(kernel: kernel, requiresEnable: !kernel.isPluginEnabled(id: id))
+
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { DesignerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { DesignerManualView() })
+        } else {
+            Self.logger.error("\(Self.t) DocsViewProviding not found")
+        }
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -65,40 +74,31 @@ public final class AppIconDesignerPlugin: SuperPlugin {
             for tool in Self.agentTools {
                 toolManager.add(tool, pluginID: id)
             }
+        } else {
+            Self.logger.error("\(Self.t) ToolManagerProviding not found")
         }
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
-        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
-
-        workspace?.registerContainer(
-            WorkspaceContainer(
-                id: id,
-                title: name,
-                systemImage: "app.dashed",
-                order: order,
-                railVisibility: .alwaysVisible,
-                chatVisibility: .alwaysVisible,
-                panelHeaderVisibility: .unsupported,
-                panelBodyVisibility: .unsupported,
-                panelBottomVisibility: .unsupported
-            ),
-            ownerPluginID: id
-        )
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
-        railView?.addTabs([
-            RailTabItem(
-                id: Self.railTabID,
-                groupID: id,
-                title: AppIconDesignerLocalization.string("Icon Documents"),
-                systemImage: "doc.text",
-                order: order
-            ) {
-                AppIconDesignerRailView()
-            },
-        ])
+        if let railView = railView {
+            railView.addTabs([
+                RailTabItem(
+                    id: Self.railTabID,
+                    category: .design,
+                    title: AppIconDesignerLocalization.string("Icon Documents"),
+                    systemImage: "doc.text",
+                    order: order
+                ) {
+                    AppIconDesignerRailView()
+                },
+            ])
+        } else {
+            Self.logger.error("\(Self.t) RailViewProviding not found")
+        }
 
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
@@ -109,14 +109,17 @@ public final class AppIconDesignerPlugin: SuperPlugin {
                     systemImage: "app.dashed",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
-                    IconDocumentStore.shared.reload()
-                    contentView?.setContentView(AnyView(DesignerView()))
-                    chat?.setVisible(true)
-                    chat?.setContextActive(true)
-                    railView?.activateGroup(id: self.id)
-                    workspace?.activateContainer(id: self.id)
+                ) { state in
+                    if state == .activated {
+                        rootView?.setContentHeaderViewHidden(true)
+                        railView?.setVisibleTabID(Self.railTabID)
+                        IconDocumentStore.shared.reload()
+                        contentView?.setContentView(AnyView(DesignerView()))
+                        chat?.setVisible(true)
+                        chat?.setContextActive(true)
+                    } else {
+                        rootView?.setContentHeaderViewHidden(false)
+                    }
                 },
             ])
         } else {
@@ -124,13 +127,6 @@ public final class AppIconDesignerPlugin: SuperPlugin {
             contentView?.setContentView(AnyView(DesignerView()))
             chat?.setVisible(true)
             chat?.setContextActive(true)
-            railView?.activateGroup(id: id)
-            workspace?.activateContainer(id: id)
-        }
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { DesignerAboutView() })
-            docs.addManual(DocsEntry(id: id, name: name) { DesignerManualView() })
         }
     }
 
@@ -152,16 +148,18 @@ public final class AppIconDesignerPlugin: SuperPlugin {
 
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
-        kernel.resolveProvider((any WorkspaceProviding).self)?
-            .unregisterContainers(ownerPluginID: id)
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
 
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         IconDesignerRuntime.reset()
     }
 
@@ -171,6 +169,7 @@ public final class AppIconDesignerPlugin: SuperPlugin {
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     // MARK: - Agent Tools

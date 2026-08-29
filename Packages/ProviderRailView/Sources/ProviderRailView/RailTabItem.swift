@@ -1,5 +1,15 @@
 import SwiftUI
 
+/// Rail 标签的预定义业务分类。
+public enum RailViewCategory: String, CaseIterable, Hashable, Sendable {
+    case chat
+    case fileTree
+    case project
+    case design
+    case system
+    case general
+}
+
 // MARK: - Rail Tab Item
 
 /// Rail（侧边栏）标签项（由外部注入）。
@@ -9,11 +19,8 @@ import SwiftUI
 @MainActor
 public struct RailTabItem: Identifiable {
     public let id: String
-    /// 标签所属的展示分组。通常使用贡献插件的稳定 id。
-    ///
-    /// ActivityBar 激活某插件后，由插件调用 `activateGroup(id:)`，Rail 只展示
-    /// 该分组的标签；ProviderRailView 不需要依赖 ProviderActivityBar。
-    public let groupID: String
+    /// 标签所属的业务分类，由贡献 RailView 的插件显式指定。
+    public let category: RailViewCategory
     public let title: String
     public let systemImage: String
     public var order: Int
@@ -22,14 +29,14 @@ public struct RailTabItem: Identifiable {
 
     public init<Content: View>(
         id: String,
-        groupID: String = "default",
+        category: RailViewCategory,
         title: String,
         systemImage: String,
         order: Int = 200,
         @ViewBuilder content: @escaping @MainActor () -> Content
     ) {
         self.id = id
-        self.groupID = groupID
+        self.category = category
         self.title = title
         self.systemImage = systemImage
         self.order = order

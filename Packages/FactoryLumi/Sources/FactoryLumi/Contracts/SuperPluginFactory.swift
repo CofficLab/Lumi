@@ -43,6 +43,7 @@ import PluginLLMProviderOpenRouter
 import PluginLLMProviderSettings
 import PluginLLMProviderStepFun
 import PluginLLMProviderSublyx
+import PluginLLMProviderTencent
 import PluginLLMProviderXiaomi
 import PluginLLMProviderXybbz
 import PluginLLMProviderZhipu
@@ -55,7 +56,6 @@ import PluginMessageSender
 import PluginMindMapDesigner
 import PluginModelSelector
 import PluginOcr
-import PluginOpenIn
 import PluginPluginManager
 import PluginProjects
 import PluginResumeDesigner

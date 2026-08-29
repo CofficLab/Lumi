@@ -4,9 +4,12 @@ import KernelCore
 import ProviderProject
 import ProviderToolManager
 import ProviderPromptSuggestion
+import KitSuperLog
+import os
 
 @MainActor
-public final class ProjectOverviewSuperPlugin: SuperPlugin {
+public final class ProjectOverviewSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.project-overview", category: "ProjectOverview")
     public let id = "ProjectOverview"
     public let order = 14
     public let metadata = PluginMetadata(id: "ProjectOverview", name: "Project Overview", description: "Inspect a project's structure, metadata, and Git status.", category: .project, stage: .preview, policy: .alwaysOn)

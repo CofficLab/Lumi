@@ -27,7 +27,7 @@ public final class DefaultToolbarProviding: ToolbarProviding, ObservableObject {
     }
 
     public func makeToolbarView() -> AnyView {
-        AnyView(ToolbarView(items: toolbarItems))
+        AnyView(ToolbarView(provider: self))
     }
 }
 
@@ -35,13 +35,14 @@ public final class DefaultToolbarProviding: ToolbarProviding, ObservableObject {
 private struct ToolbarView: View {
     @LumiTheme private var theme
 
-    let items: [ToolbarItem]
+    @ObservedObject var provider: DefaultToolbarProviding
 
     /// 与旧版 `AppTitleToolbar` 保持一致的尺寸常量。
     private let height: CGFloat = 44
     private let trafficLightReserveWidth: CGFloat = 76
 
     var body: some View {
+        let items = provider.toolbarItems
         let leading = items.filter { $0.placement == .leading }
         let center = items.filter { $0.placement == .center }
         let trailing = items.filter { $0.placement == .trailing }

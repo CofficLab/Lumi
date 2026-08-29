@@ -12,7 +12,9 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../KitSuperLog"),
         .package(path: "../KitAgentTool"),
+        .package(path: "../OpenInKit"),
         .package(path: "../ProviderProject"),
+        .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderToolManager"),
     ],
     targets: [
@@ -21,7 +23,9 @@ let package = Package(
             dependencies: [
                 "KernelCore",
                 "KitAgentTool",
+                "OpenInKit",
                 "ProviderProject",
+                "ProviderDocsView",
                 "ProviderToolManager",
             ],
             path: "Sources/PluginOpenIn"

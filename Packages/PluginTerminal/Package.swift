@@ -16,10 +16,12 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../ProviderActivityBar"),
+        .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderProject"),
-        .package(path: "../ProviderWorkspace"),
+        .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../KitLocalization"),        .package(path: "../LumiUI"),
         .package(path: "../KitSuperLog"),
         .package(url: "https://github.com/migueldeicaza/SwiftTerm", .upToNextMajor(from: "1.5.0")),
@@ -31,10 +33,12 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
-                .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "KitLocalization", package: "KitLocalization"),                .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "SwiftTerm", package: "SwiftTerm"),
@@ -51,6 +55,7 @@ let package = Package(
                 "TerminalPlugin",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
             ],
             path: "Tests"
         )

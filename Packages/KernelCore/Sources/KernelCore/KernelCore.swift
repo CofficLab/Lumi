@@ -1,4 +1,9 @@
 import Foundation
+import os
+
+enum KernelPluginLifecyclePhase {
+    case boot
+}
 
 public enum KernelLifecycleState: String, Sendable {
     case stopped
@@ -21,6 +26,11 @@ public enum KernelLifecycleState: String, Sendable {
 @MainActor
 public final class KernelCoreContainer {
 
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "kernel.provider"
+    )
+
     // MARK: - Provider Registry
 
     /// Provider 注册表：以协议类型的 `ObjectIdentifier` 为 key。
@@ -40,7 +50,15 @@ public final class KernelCoreContainer {
 
     var pluginStartOrder: [String] = []
     var activePluginID: String?
+    var activePluginLifecyclePhase: KernelPluginLifecyclePhase?
     var pluginEnabledStates: [String: Bool] = [:]
+
+    /// 插件启用状态的持久化存储；未注入时仅维护运行时状态。
+    public var stateStore: (any PluginStatePersisting)?
+
+    /// 新插件 ID 到旧插件 ID 的兼容映射。
+    /// 读取时先查新 ID，再回退旧 ID；写入时同步更新两者。
+    public var legacyPluginIDAliases: [String: String] = [:]
 
     /// 插件写入共享 Provider/Host 的贡献，由 Kernel 统一持有和撤回。
     var contributionTokens: [String: [PluginContributionToken]] = [:]

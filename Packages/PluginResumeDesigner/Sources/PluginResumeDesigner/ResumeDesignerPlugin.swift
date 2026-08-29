@@ -1,12 +1,16 @@
 import KitAgentTool
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
+import ProviderRootView
 import ProviderToolManager
 import ProviderPromptSuggestion
 import SwiftUI
+import KitSuperLog
+import os
 
 /// KernelCore 版本的 Resume Designer 插件。
 ///
@@ -14,7 +18,8 @@ import SwiftUI
 /// 参考 `PluginAppIconDesigner` 的装配方式：onBoot 注册 Agent 工具、Rail 标签、
 /// ActivityBar 入口与 Docs 文档；onShutdown 全部撤回。
 @MainActor
-public final class ResumeDesignerPlugin: SuperPlugin {
+public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.resume-designer", category: "ResumeDesigner")
     public let id = "com.coffic.lumi.plugin.resume-designer"
     public let order = 81
     public let metadata = PluginMetadata(
@@ -36,7 +41,7 @@ public final class ResumeDesignerPlugin: SuperPlugin {
     public init() {}
 
     private var promptSuggestion: PromptSuggestion {
-        PromptSuggestion(id: "\(id).create", title: ResumeDesignerLocalization.string("Prompt.Suggestion.Create"), order: order * 1_000, systemImage: "doc.badge.gearshape", action: .activateRailTab(id: Self.railTabID, viewContainerID: id))
+        PromptSuggestion(id: "\(id).create", title: ResumeDesignerLocalization.string("Prompt.Suggestion.Create"), order: order * 1_000, systemImage: "doc.badge.gearshape", action: .activateRailTab(id: Self.railTabID))
     }
 
     private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
@@ -48,6 +53,10 @@ public final class ResumeDesignerPlugin: SuperPlugin {
 
     public func onRegister(kernel: KernelCoreContainer) throws {
         registerPromptSuggestion(kernel: kernel, requiresEnable: !kernel.isPluginEnabled(id: id))
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { DesignerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { DesignerManualView() })
+        }
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -62,12 +71,14 @@ public final class ResumeDesignerPlugin: SuperPlugin {
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
-                groupID: id,
+                category: .design,
                 title: ResumeDesignerLocalization.string("Resumes"),
                 systemImage: "doc.text",
                 order: order
@@ -85,22 +96,22 @@ public final class ResumeDesignerPlugin: SuperPlugin {
                     systemImage: "doc.badge.gearshape",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
-                    WorkspaceStore.shared.reload()
-                    contentView?.setContentView(AnyView(DesignerView()))
-                    railView?.activateGroup(id: self.id)
+                ) { state in
+                    if state == .activated {
+                        rootView?.setContentHeaderViewHidden(true)
+                        railView?.setVisibleTabID(Self.railTabID)
+                        chat?.setVisible(true)
+                        chat?.setContextActive(true)
+                        WorkspaceStore.shared.reload()
+                        contentView?.setContentView(AnyView(DesignerView()))
+                    } else {
+                        rootView?.setContentHeaderViewHidden(false)
+                    }
                 },
             ])
         } else {
             WorkspaceStore.shared.reload()
             contentView?.setContentView(AnyView(DesignerView()))
-            railView?.activateGroup(id: id)
-        }
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { DesignerAboutView() })
-            docs.addManual(DocsEntry(id: id, name: name) { DesignerManualView() })
         }
     }
 
@@ -124,12 +135,16 @@ public final class ResumeDesignerPlugin: SuperPlugin {
             .removeTabs(ids: [Self.railTabID])
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
 
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         ResumeDesignerRuntime.reset()
     }
 
@@ -139,6 +154,7 @@ public final class ResumeDesignerPlugin: SuperPlugin {
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     // MARK: - Agent Tools

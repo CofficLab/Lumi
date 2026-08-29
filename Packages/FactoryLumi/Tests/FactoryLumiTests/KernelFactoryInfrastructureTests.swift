@@ -3,7 +3,7 @@ import KernelCore
 import ProviderPluginControl
 import ProviderPluginManaging
 import ProviderWebServer
-import ProviderWorkspace
+import ProviderChatSection
 import Testing
 
 @Suite("FactoryLumi Infrastructure")
@@ -54,9 +54,8 @@ struct KernelFactoryInfrastructureTests {
         #expect(managing != nil)
         #expect(managing?.pluginCount == kernel.registeredPluginCount)
         #expect(managing?.isRegistered(id: "com.coffic.lumi.plugin.plugin-manager") == true)
-        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
-        #expect(workspace?.activeContainerID == "com.coffic.lumi.plugin.chat-panel")
-        #expect(workspace?.currentContainer?.chatVisibility == .alwaysVisible)
-        #expect(workspace?.currentContainer?.panelBodyVisibility == .unsupported)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        #expect(chat?.isVisible == true)
+        #expect(chat?.isContextActive == true)
     }
 }

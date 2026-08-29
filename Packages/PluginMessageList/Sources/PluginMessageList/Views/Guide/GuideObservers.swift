@@ -13,9 +13,9 @@ final class PromptSuggestionsObserver: ObservableObject {
 @MainActor
 final class ProjectObserver: ObservableObject {
     let project: (any ProjectProviding)?
-    private var cancellable: AnyCancellable?
+    private var projectObserver: (any ProjectProvidingObserverHandle)?
     init(project: (any ProjectProviding)?) {
         self.project = project
-        cancellable = project?.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
+        projectObserver = project?.addObserver { [weak self] _ in self?.objectWillChange.send() }
     }
 }

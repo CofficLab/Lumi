@@ -1,19 +1,73 @@
 import KernelCore
+import KitSuperLog
+import os
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
+import ProviderRailView
+import ProviderRootView
 import ProviderStorage
 import SwiftUI
 
-@MainActor public final class ImageToPDFSuperPlugin: SuperPlugin {
+@MainActor public final class ImageToPDFSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.image-to-pdf", category: "ImageToPDF")
     public let id = "com.coffic.lumi.plugin.image-to-pdf"; public let order = 875
-    public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.image-to-pdf", name: "Image to PDF", description: "Drop image files and convert each one to a single-page PDF.", category: .project, stage: .preview, policy: .disabledByDefault)
+    public let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.image-to-pdf",
+        name: "Image to PDF",
+        description: "Drop image files and convert each one to a single-page PDF.",
+        category: .project,
+        stage: .preview,
+        policy: .disabledByDefault
+    )
+
     public init() {}
+
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { ImageToPDFAboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { ImageToPDFManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         ImageToPDFRuntimeBridge.directoryURL = kernel.resolveProvider((any StorageProviding).self)?.pluginDataDirectory(for: "ImageToPDF")
-        let content = kernel.resolveProvider((any ContentViewProviding).self); let entry = "\(id).entry"
-        if let bar = kernel.resolveProvider((any ActivityBarProviding).self) { bar.addItems([ActivityBarItem(id: entry, title: metadata.name, systemImage: "photo.on.rectangle.angled", order: order, ownerPluginID: id) { if $0 == entry { content?.setContentView(AnyView(ImageToPDFMainView())) } }]) } else { content?.setContentView(AnyView(ImageToPDFMainView())) }
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) { docs.addAbout(DocsEntry(id: id, name: metadata.name) { ImageToPDFAboutView() }); docs.addManual(DocsEntry(id: id, name: metadata.name) { ImageToPDFManualView() }) }
+        let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let entry = "\(id).entry"
+
+        if let bar = kernel.resolveProvider((any ActivityBarProviding).self) {
+            bar.addItems([
+                ActivityBarItem(id: entry, title: metadata.name, systemImage: "photo.on.rectangle.angled", order: order, ownerPluginID: id) { state in
+                    if state == .activated {
+                        content?.setContentView(AnyView(ImageToPDFMainView()))
+                        chat?.setVisible(false)
+                        rootView?.setRailView(nil)
+                        rootView?.setContentHeaderViewHidden(true)
+                    } else {
+                        chat?.setVisible(true)
+                        rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setContentHeaderViewHidden(false)
+                    }
+                },
+            ])
+        } else {
+            content?.setContentView(AnyView(ImageToPDFMainView()))
+        }
     }
-    public func onShutdown(kernel: KernelCoreContainer) throws { kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"]); kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id); ImageToPDFRuntimeBridge.directoryURL = nil }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        if activityBar?.activeItemID == "\(id).entry" {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+        }
+        ImageToPDFRuntimeBridge.directoryURL = nil
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
 }

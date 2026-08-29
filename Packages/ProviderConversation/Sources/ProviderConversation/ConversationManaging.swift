@@ -20,8 +20,8 @@ public protocol SelectedConversationObserverHandle: AnyObject {
 /// 事件总线 / 具体存储实现的依赖，使协议存在类型（`any ConversationManaging`）
 /// 可被 SwiftUI 跨包响应式观察 + Hook 订阅。
 ///
-/// `ObjectWillChangePublisher == ObservableObjectPublisher` 约束与 `ProjectProviding`
-/// 一致，用于让协议存在类型的 `objectWillChange` 可被订阅。
+/// `ObjectWillChangePublisher == ObservableObjectPublisher` 约束用于让协议存在类型的
+/// `objectWillChange` 可被订阅。
 @MainActor
 public protocol ConversationManaging: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 所有对话列表
@@ -122,6 +122,9 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     @discardableResult
     func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle
 
+    /// 将当前实现上注册的观察者迁移到新的实现。
+    func transferObservers(to replacement: any ConversationManaging)
+
     /// 删除对话
     func deleteConversation(id: UUID)
 
@@ -215,6 +218,8 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
 /// Lightweight compatibility defaults for providers and test doubles that do
 /// not need paginated conversation storage.
 public extension ConversationManaging {
+    func transferObservers(to replacement: any ConversationManaging) {}
+
     func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle {
         NoopConversationObserverHandle()
     }

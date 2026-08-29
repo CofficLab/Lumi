@@ -9,6 +9,7 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderToolManager
 import SwiftUI
+import KitSuperLog
 
 /// Network Manager 插件（KernelCore 版本）
 ///
@@ -24,7 +25,7 @@ import SwiftUI
 /// - `pluginAboutView` → `DocsViewProviding.addAbout`；
 /// - `statusBarItems` → 暂不复刻（新版无 StatusBarProviding）。
 @MainActor
-public final class NetworkManagerPlugin: SuperPlugin {
+public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
     public nonisolated static let verbose = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.network-manager")
 
@@ -43,10 +44,16 @@ public final class NetworkManagerPlugin: SuperPlugin {
         LumiPluginLocalization.string("Network Monitor", bundle: .module)
     }
 
-
     private var httpExchangeStore: HTTPExchangeStore?
 
     public init() {}
+
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { NetworkManagerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { NetworkManagerManualView() })
+        }
+    }
 
     // MARK: - SuperPlugin
 
@@ -118,11 +125,6 @@ public final class NetworkManagerPlugin: SuperPlugin {
                 },
             ])
         }
-
-        // 6. 注册文档入口（关于）
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { NetworkManagerAboutView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -140,10 +142,10 @@ public final class NetworkManagerPlugin: SuperPlugin {
         // 撤回设置入口
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
+    }
 
-        // 撤回文档入口
-        kernel.resolveProvider((any DocsViewProviding).self)?
-            .removeEntries(id: id)
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     // MARK: - Agent Tools

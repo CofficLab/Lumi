@@ -5,9 +5,12 @@ import ProviderDocsView
 import ProviderSettingView
 import ProviderStorage
 import ProviderToolManager
+import KitSuperLog
+import os
 
 @MainActor
-public final class ScreenRecorderSuperPlugin: SuperPlugin {
+public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.screen-recorder", category: "ScreenRecorder")
     public let id = "com.coffic.lumi.plugin.screen-recorder"
     public let order = 285
     public let metadata = PluginMetadata(
@@ -20,6 +23,13 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin {
     )
 
     public init() {}
+
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { ScreenRecorderAboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { ScreenRecorderManualView() })
+        }
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let dataDirectory = kernel.resolveProvider((any StorageProviding).self)?
@@ -37,9 +47,6 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin {
                 ScreenRecorderSettingsView()
             },
         ])
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: metadata.name) { ScreenRecorderAboutView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -47,9 +54,12 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin {
         [StartRecordingV2Tool.toolName, StopRecordingV2Tool.toolName, ListRecordableAppsV2Tool.toolName].forEach {
             tools?.remove(id: $0)
         }
+        ScreenRecorderRuntime.reset()
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: ["\(id).settings"])
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
-        ScreenRecorderRuntime.reset()
     }
 }
 

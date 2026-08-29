@@ -1,9 +1,13 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
+import ProviderRootView
 import SwiftUI
+import KitSuperLog
+import os
 
 /// 白噪音播放插件。
 ///
@@ -14,7 +18,8 @@ import SwiftUI
 /// 通过 `SuperPlugin.onBoot(kernel:)` 解析内核中的各 Provider，
 /// 用追加语义注册，不覆盖其他插件的贡献。
 @MainActor
-public final class WhiteNoisePlugin: SuperPlugin {
+public final class WhiteNoisePlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.white-noise", category: "WhiteNoise")
     public let id = "com.coffic.lumi.plugin.white-noise"
     public let order = 261
     public let metadata = PluginMetadata(
@@ -28,10 +33,18 @@ public final class WhiteNoisePlugin: SuperPlugin {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: "白噪音") { WhiteNoiseAboutView() })
+            docs.addManual(DocsEntry(id: id, name: "白噪音") { WhiteNoiseManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
-
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         // 1. 注册 ActivityBar 入口；激活后由插件切换自己的主内容。
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
@@ -42,29 +55,37 @@ public final class WhiteNoisePlugin: SuperPlugin {
                     systemImage: "waveform",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
-                    contentView?.setContentView(AnyView(WhiteNoiseView()))
-                    railView?.activateGroup(id: self.id)
+                ) { state in
+                    if state == .activated {
+                        contentView?.setContentView(AnyView(WhiteNoiseView()))
+                        chat?.setVisible(false)
+                        rootView?.setRailView(nil)
+                        rootView?.setContentHeaderViewHidden(true)
+                    } else {
+                        chat?.setVisible(true)
+                        rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setContentHeaderViewHidden(false)
+                    }
                 },
             ])
         } else {
             contentView?.setContentView(AnyView(WhiteNoiseView()))
         }
-
-        // 2. 贡献「关于」与「说明书」文档（沿用旧版 pluginAboutView / pluginManualView）
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: "白噪音") { WhiteNoiseAboutView() })
-            docs.addManual(DocsEntry(id: id, name: "白噪音") { WhiteNoiseManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+        }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

@@ -5,7 +5,7 @@ import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
 import ProviderRailView
-import ProviderWorkspace
+import ProviderRootView
 import Testing
 @testable import PluginAppStorePromoDesigner
 
@@ -49,31 +49,26 @@ struct AppStorePromoDesignerPluginTests {
         let activity = DefaultActivityBarProviding()
         let rail = DefaultRailViewProviding()
         let chat = DefaultChatSectionProviding()
-        let workspace = DefaultWorkspaceProviding(
-            pluginDirectory: FileManager.default.temporaryDirectory
-                .appendingPathComponent("PluginAppStorePromoDesignerWorkspaceTests-\(UUID().uuidString)")
-        )
+        let rootView = DefaultRootViewProvider()
 
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any ContentViewProviding).self, DefaultContentViewProviding())
         try kernel.registerProvider((any RailViewProviding).self, rail)
-        try kernel.registerProvider((any WorkspaceProviding).self, workspace)
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
 
         try kernel.start(plugins: [AppStorePromoDesignerPlugin()])
         try await kernel.enablePlugin(id: AppStorePromoDesignerPlugin().id)
 
         #expect(activity.activeItemID == "com.coffic.lumi.plugin.app-store-promo-designer.entry")
-        #expect(rail.activeGroupID == AppStorePromoDesignerPlugin().id)
         #expect(rail.activeTabID == AppStorePromoDesignerPlugin.railTabID)
-        #expect(workspace.activeContainerID == AppStorePromoDesignerPlugin().id)
-        #expect(workspace.isChatVisible)
         #expect(chat.isVisible)
         #expect(chat.isContextActive)
+        #expect(rootView.isContentHeaderViewHidden)
 
         try kernel.stop()
 
-        #expect(workspace.containers.isEmpty)
+        #expect(rootView.isContentHeaderViewHidden == false)
     }
 
     @Test func overwriteExportIsHighRisk() {

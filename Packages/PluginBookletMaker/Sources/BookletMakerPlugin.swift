@@ -3,12 +3,13 @@ import KernelCore
 import LumiUI
 import os
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
+import ProviderRootView
 import ProviderStorage
 import ProviderToolbar
-import ProviderWorkspace
 import KitSuperLog
 import SwiftUI
 
@@ -39,11 +40,12 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
     public let order = 880
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.booklet-maker",
-        name: "PDF Tools",
-        description: "Create booklets and split PDF documents by page range.",
+        name: "Booklet Maker",
+        description: "Create print-ready booklets from PDF documents.",
         category: .editor,
         stage: .preview,
-        policy: .disabledByDefault
+        // BookletMaker 专用宿主只有这一项业务插件，启动时必须可用。
+        policy: .alwaysOn
     )
 
     /// 插件级唯一的 BookletMakerViewModel 实例。
@@ -52,11 +54,18 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
     /// 配置状态，避免"在侧边栏改了设置但内容区没同步"的问题。
     private let sharedViewModel = BookletMakerViewModel()
 
-    public var name: String { BookletLocalization.string("PDF Tools") }
+    public var name: String { BookletLocalization.string("Booklet Maker") }
 
     public init() {}
 
     // MARK: - Lifecycle
+
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { BookletMakerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { BookletMakerManualView() })
+        }
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         BookletMakerRuntimeBridge.directoryURL = kernel
@@ -68,27 +77,14 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
             )
         }
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
-        let workspace = kernel.resolveProvider((any ProviderWorkspace.WorkspaceProviding).self)
-
-        workspace?.registerContainer(
-            WorkspaceContainer(
-                id: id,
-                title: name,
-                systemImage: "doc.on.doc",
-                order: order,
-                railVisibility: .alwaysVisible,
-                chatVisibility: .unsupported,
-                panelHeaderVisibility: .unsupported,
-                panelBodyVisibility: .unsupported,
-                panelBottomVisibility: .unsupported
-            ),
-            ownerPluginID: id
-        )
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
-                groupID: id,
+                category: .design,
                 title: name,
                 systemImage: "square.grid.2x2",
                 order: order
@@ -102,9 +98,6 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         ])
 
         contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: sharedViewModel)))
-        railView?.activateGroup(id: id)
-        railView?.activateTab(id: Self.railTabID)
-        workspace?.activateContainer(id: id)
 
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
@@ -115,30 +108,31 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                     systemImage: "doc.on.doc",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
-                    contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: self.sharedViewModel)))
-                    railView?.activateGroup(id: self.id)
-                    railView?.activateTab(id: Self.railTabID)
-                    workspace?.activateContainer(id: self.id)
+                ) { state in
+                    if state == .activated {
+                        chat?.setVisible(false)
+                        railView?.setVisibleCategories([.design])
+                        railView?.setVisibleTabID(Self.railTabID)
+                        rootView?.setContentHeaderViewHidden(true)
+                        contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: self.sharedViewModel)))
+                        toolbar?.addToolbarItems([
+                            ToolbarItem(
+                                id: "\(self.id).title",
+                                title: BookletLocalization.string("Split PDF or Booklet Maker"),
+                                placement: .center,
+                                order: 200
+                            ) {
+                                BookletMakerToolbarTitleView(viewModel: self.sharedViewModel)
+                            },
+                        ])
+                    } else {
+                        chat?.setVisible(true)
+                        rootView?.setContentHeaderViewHidden(false)
+                        railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+                        toolbar?.removeToolbarItems(ids: ["\(self.id).title"])
+                    }
                 },
             ])
-        }
-
-        kernel.resolveProvider((any ToolbarProviding).self)?.addToolbarItems([
-            ToolbarItem(
-                id: "\(id).title",
-                title: BookletLocalization.string("Split PDF or Booklet Maker"),
-                placement: .center,
-                order: 200
-            ) {
-                BookletMakerToolbarTitleView(viewModel: self.sharedViewModel)
-            },
-        ])
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { BookletMakerAboutView() })
-            docs.addManual(DocsEntry(id: id, name: name) { BookletMakerManualView() })
         }
     }
 
@@ -206,12 +200,21 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
+        activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
-        kernel.resolveProvider((any ProviderWorkspace.WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
         BookletMakerRuntimeBridge.directoryURL = nil
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

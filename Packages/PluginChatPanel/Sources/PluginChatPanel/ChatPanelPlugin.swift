@@ -1,12 +1,14 @@
 import KernelCore
 import ProviderActivityBar
 import ProviderChatSection
-import ProviderContentView
+import ProviderRootView
 import ProviderRailView
-import ProviderWorkspace
+import KitSuperLog
+import os
 
 @MainActor
-public final class ChatPanelPlugin: SuperPlugin {
+public final class ChatPanelPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.chat-panel", category: "ChatPanel")
     public let id = "com.coffic.lumi.plugin.chat-panel"
     // Chat is the default workbench, matching the legacy app's initial state.
     public let order = 1
@@ -21,54 +23,52 @@ public final class ChatPanelPlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
-        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
-        let rail = kernel.resolveProvider((any RailViewProviding).self)
-        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
-        let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        guard let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ActivityBarProviding from kernel")
+            return
+        }
+        guard let chat = kernel.resolveProvider((any ChatSectionProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding from kernel")
+            return
+        }
+        guard let rootView = kernel.resolveProvider((any RootViewProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve RootViewProviding from kernel")
+            return
+        }
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
         let entryID = "\(id).entry"
-        workspace?.registerContainer(.init(
-            id: id,
-            title: LumiPluginLocalization.string("Chat", bundle: .module),
-            systemImage: "bubble.left.and.bubble.right.fill",
-            order: order,
-            supportsProject: true,
-            railVisibility: .visibleByDefault,
-            chatVisibility: .alwaysVisible,
-            panelHeaderVisibility: .unsupported,
-            panelBodyVisibility: .unsupported,
-            panelBottomVisibility: .unsupported
-        ), ownerPluginID: id)
-        activityBar?.addItems([ActivityBarItem(
+        
+        activityBar.addItems([ActivityBarItem(
             id: entryID,
             title: LumiPluginLocalization.string("Chat", bundle: .module),
             systemImage: "bubble.left.and.bubble.right.fill",
             order: order,
             ownerPluginID: id
-        ) { activeID in
-            let isChatActive = activeID == entryID
-            chat?.setVisible(isChatActive)
-            chat?.setContextActive(isChatActive)
-            rail?.activateGroup(id: isChatActive ? self.id : nil)
-            if isChatActive {
-                workspace?.activateContainer(id: self.id)
-                // Chat 容器自带聊天界面，不需要独立的主内容区：
-                // 激活时清空 contentView，回退到占位视图。
-                contentView?.setContentView(nil)
-            }
+        ) { state in
+            let isChatActive = state == .activated
+            chat.setVisible(isChatActive)
+            chat.setContextActive(isChatActive)
+            rootView.setContentViewHidden(isChatActive)
+            rootView.setContentHeaderViewHidden(!isChatActive)
+            railView?.setVisibleCategories(isChatActive ? [.chat] : Set(RailViewCategory.allCases))
         }])
-        // Adding a late plugin must still select Chat on first launch; the
-        // legacy app opens directly into the conversation workbench.
-        activityBar?.activateItem(id: entryID)
-        chat?.setVisible(true)
-        chat?.setContextActive(true)
-        rail?.activateGroup(id: id)
-        workspace?.activateContainer(id: id)
+        
+        activityBar.activateItem(id: entryID)
+        chat.setVisible(true)
+        chat.setContextActive(true)
+        rootView.setContentHeaderViewHidden(true)
+        railView?.setVisibleCategories([.chat])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
+        activityBar?.removeItems(ids: ["\(id).entry"])
         kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(false)
-        kernel.resolveProvider((any WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
+        if wasActive {
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentViewHidden(false)
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
     }
 }

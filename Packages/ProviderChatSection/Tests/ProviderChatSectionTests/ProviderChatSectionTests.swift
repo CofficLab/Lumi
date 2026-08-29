@@ -31,6 +31,35 @@ struct ProviderChatSectionTests {
         #expect(provider.barItems.map(\.id) == ["a", "b"])
     }
 
+    @Test("状态变化会发送语义事件，并支持取消监听")
+    func stateChangesNotifyObservers() {
+        let provider = DefaultChatSectionProviding()
+        var events: [String] = []
+        let handle = provider.addObserver { event in
+            switch event {
+            case .itemsChanged: events.append("items")
+            case .barItemsChanged: events.append("bars")
+            case .rootWrappersChanged: events.append("wrappers")
+            case .visibilityChanged: events.append("visibility")
+            case .contextActiveChanged: events.append("context")
+            case .headerVisibilityChanged: events.append("header")
+            }
+        }
+
+        provider.addItems([ChatSectionItem(id: "item") { Text("Item") }])
+        provider.addBarItems([ChatSectionBarItem(id: "bar", placement: .header) { Text("Bar") }])
+        provider.addRootWrappers([ChatSectionRootWrapper(id: "wrapper") { $0 }])
+        provider.setVisible(false)
+        provider.setContextActive(true)
+        provider.setHeaderVisible(false)
+
+        #expect(events == ["items", "bars", "wrappers", "visibility", "context", "header"])
+
+        handle.cancel()
+        provider.setVisible(true)
+        #expect(events == ["items", "bars", "wrappers", "visibility", "context", "header"])
+    }
+
     @Test("显隐和会话上下文状态可独立切换")
     func visibilityAndContextState() {
         let provider = DefaultChatSectionProviding()

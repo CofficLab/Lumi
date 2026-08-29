@@ -1,6 +1,10 @@
 import Foundation
 import Testing
 import SwiftData
+import KernelCore
+import ProviderActivityBar
+import ProviderChatSection
+import ProviderRailView
 @testable import AppManagerPlugin
 
 @MainActor
@@ -12,8 +16,36 @@ struct PluginAppManagerTests {
     }
 
     @Test
+    func activatingPluginHidesChatSectionAndDeactivatingRestoresIt() throws {
+        let kernel = KernelCoreContainer()
+        let activity = DefaultActivityBarProviding()
+        let chat = DefaultChatSectionProviding()
+        let rail = DefaultRailViewProviding(visibleCategories: [.chat])
+        try kernel.registerProvider((any ActivityBarProviding).self, activity)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any RailViewProviding).self, rail)
+
+        activity.addItems([ActivityBarItem(id: "chat.entry", title: "Chat", systemImage: "message")])
+
+        try AppManagerSuperPlugin().onBoot(kernel: kernel)
+
+        #expect(activity.activeItemID == "chat.entry")
+
+        activity.activateItem(id: "com.coffic.lumi.plugin.app-manager.entry")
+
+        #expect(!chat.isVisible)
+        #expect(rail.visibleCategories == [.system])
+        #expect(rail.visibleTabID == AppManagerPlugin.railTabID)
+        #expect(rail.activeTabID == AppManagerPlugin.railTabID)
+
+        activity.activateItem(id: nil)
+
+        #expect(chat.isVisible)
+    }
+
+    @Test
     func localizationCatalogIsPackaged() {
-        #expect(PluginAppManagerLocalization.bundle.url(forResource: "AppManager", withExtension: "xcstrings") != nil)
+        #expect(PluginAppManagerLocalization.bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
         #expect(PluginAppManagerLocalization.string("App Manager").isEmpty == false)
     }
 
@@ -131,7 +163,7 @@ struct PluginAppManagerTests {
         await secondScan.value
 
         #expect(viewModel.isLoading == false)
-        #expect(viewModel.installedApps.map(\.name) == ["Fresh"])
+        #expect(viewModel.installedApps.map(\.displayName) == ["Fresh"])
     }
 
     private static func app(path: String, name: String, size: Int64) -> AppModel {
@@ -178,6 +210,6 @@ private final class FakeAppManagerService: AppManagerServicing, @unchecked Senda
     func openApp(_ app: AppModel) {}
 
     func getAppInfo(_ app: AppModel) -> String {
-        app.name
+        app.displayName
     }
 }

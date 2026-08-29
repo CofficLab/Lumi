@@ -37,7 +37,7 @@ public final class OpenCodeProviderPlugin: SuperPlugin, SuperLog {
         let apiService = VendorAPIService(networkProvider: networkProvider)
         let providers: [any SuperLLMProvider] = [
             GoProvider(apiService: apiService),
-            ZenProvider(apiService: apiService)
+//            ZenProvider(apiService: apiService)
         ]
         for provider in providers {
             if Self.verbose {

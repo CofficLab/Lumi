@@ -3,9 +3,13 @@ import LumiUI
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
+import ProviderRailView
+import ProviderRootView
 import ProviderToolbar
 import SwiftUI
 import os
+import KitSuperLog
+import ProviderChatSection
 
 struct BrewManagerPlugin {
     nonisolated static let verbose = false
@@ -17,7 +21,7 @@ extension Notification.Name {
 }
 
 @MainActor
-public final class BrewManagerSuperPlugin: SuperPlugin {
+public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.brew-manager"
     public let order = 260
     public let metadata = PluginMetadata(
@@ -34,8 +38,18 @@ public final class BrewManagerSuperPlugin: SuperPlugin {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { AboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { BrewManagerManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
             ActivityBarItem(
@@ -44,9 +58,12 @@ public final class BrewManagerSuperPlugin: SuperPlugin {
                 systemImage: "mug.fill",
                 order: order,
                 ownerPluginID: id
-            ) { [activityItemID, refreshItemID] activeID in
-                if activeID == activityItemID {
+            ) { [refreshItemID] state in
+                if state == .activated {
                     content?.setContentView(AnyView(BrewManagerView()))
+                    chat?.setVisible(false)
+                    rootView?.setRailView(nil)
+                    rootView?.setContentHeaderViewHidden(true)
                     toolbar?.addToolbarItems([
                         ToolbarItem(id: refreshItemID, title: LumiPluginLocalization.string("Refresh", bundle: .module), placement: .trailing, order: 260) {
                             AppIconButton(systemImage: "arrow.clockwise") {
@@ -56,20 +73,26 @@ public final class BrewManagerSuperPlugin: SuperPlugin {
                         },
                     ])
                 } else {
+                    chat?.setVisible(true)
+                    rootView?.setRailView(railView?.makeRailView())
+                    rootView?.setContentHeaderViewHidden(false)
                     toolbar?.removeToolbarItems(ids: [refreshItemID])
                 }
             },
         ])
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: metadata.name) { AboutView() })
-            docs.addManual(DocsEntry(id: id, name: metadata.name) { BrewManagerManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: [activityItemID])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == activityItemID
+        activityBar?.removeItems(ids: [activityItemID])
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+        }
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: [refreshItemID])
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

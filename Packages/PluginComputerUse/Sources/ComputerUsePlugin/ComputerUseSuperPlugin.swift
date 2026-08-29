@@ -4,9 +4,12 @@ import KernelCore
 import ProviderMessage
 import ProviderSettingView
 import ProviderToolManager
+import KitSuperLog
+import os
 
 @MainActor
-public final class ComputerUseSuperPlugin: SuperPlugin {
+public final class ComputerUseSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.computer-use", category: "ComputerUse")
     public let id = "com.coffic.lumi.plugin.computer-use"
     public let order = 278
     public let metadata = PluginMetadata(

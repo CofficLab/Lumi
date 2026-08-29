@@ -3,9 +3,12 @@ import LumiUI
 import ProviderActivityBar
 import ProviderContentView
 import ProviderDocsView
+import ProviderRailView
+import ProviderRootView
 import ProviderToolbar
 import SwiftUI
 import os
+import KitSuperLog
 
 struct DockerManagerPlugin {
     let name = "Docker"
@@ -15,7 +18,7 @@ struct DockerManagerPlugin {
 }
 
 @MainActor
-public final class DockerManagerSuperPlugin: SuperPlugin {
+public final class DockerManagerSuperPlugin: SuperPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.docker-manager"
     public let order = 50
     public let metadata = PluginMetadata(
@@ -32,8 +35,18 @@ public final class DockerManagerSuperPlugin: SuperPlugin {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        let title = metadata.name
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: title) { DockerManagerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: title) { DockerManagerManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         let title = metadata.name
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
@@ -43,27 +56,31 @@ public final class DockerManagerSuperPlugin: SuperPlugin {
                 systemImage: "shippingbox",
                 order: order,
                 ownerPluginID: id
-            ) { [activityItemID, titleItemID] activeID in
-                if activeID == activityItemID {
+            ) { [titleItemID] state in
+                if state == .activated {
                     content?.setContentView(AnyView(DockerImagesView()))
+                    rootView?.setRailView(nil)
+                    rootView?.setContentHeaderViewHidden(true)
                     toolbar?.addToolbarItems([
                         ToolbarItem(id: titleItemID, title: title, placement: .center, order: 0) {
                             AppToolbarTitleLabel(title: title)
                         },
                     ])
                 } else {
+                    rootView?.setRailView(railView?.makeRailView())
+                    rootView?.setContentHeaderViewHidden(false)
                     toolbar?.removeToolbarItems(ids: [titleItemID])
                 }
             },
         ])
-        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
-            DocsEntry(id: id, name: title) { DockerManagerManualView() }
-        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: [activityItemID])
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: [titleItemID])
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

@@ -1,6 +1,5 @@
 import Foundation
 import LumiUI
-import ProviderWorkspace
 import SwiftUI
 
 @MainActor

@@ -21,6 +21,7 @@ let package = Package(
         .package(path: "../ProviderCommand"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderSettingView"),
+        .package(path: "../ProviderDocsView"),
     ],
     targets: [
         .target(
@@ -33,6 +34,7 @@ let package = Package(
                 .product(name: "ProviderCommand", package: "ProviderCommand"),
                 .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
             ],
             path: "Sources",
             resources: [

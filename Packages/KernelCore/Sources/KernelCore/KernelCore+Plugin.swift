@@ -9,7 +9,7 @@ extension KernelCoreContainer {
             throw KernelCoreError.pluginAlreadyRegistered(id: plugin.id)
         }
         plugins[plugin.id] = plugin
-        pluginEnabledStates[plugin.id] = plugin.metadata.policy.enabledByDefault
+        pluginEnabledStates[plugin.id] = effectiveEnabledState(for: plugin)
         activePluginID = plugin.id
         do {
             try plugin.onRegister(kernel: self)
@@ -20,6 +20,41 @@ extension KernelCoreContainer {
             plugins.removeValue(forKey: plugin.id)
             pluginEnabledStates.removeValue(forKey: plugin.id)
             throw error
+        }
+    }
+
+    // MARK: - Enable-state persistence
+
+    /// 计算插件的有效启用状态。不可配置的策略始终由策略本身决定，
+    /// 可配置插件才读取用户持久化覆盖。
+    func effectiveEnabledState(for plugin: any SuperPlugin) -> Bool {
+        switch plugin.metadata.policy {
+        case .required, .alwaysOn:
+            return true
+        case .disabled:
+            return false
+        case .enabledByDefault, .disabledByDefault:
+            return storedEnabledState(for: plugin.id) ?? plugin.metadata.policy.enabledByDefault
+        }
+    }
+
+    func storedEnabledState(for pluginID: String) -> Bool? {
+        guard let stateStore else { return nil }
+        if let value = stateStore.enabledState(pluginID: pluginID) {
+            return value
+        }
+        if let legacyID = legacyPluginIDAliases[pluginID] {
+            return stateStore.enabledState(pluginID: legacyID)
+        }
+        return nil
+    }
+
+    /// 写入新 ID，并同步写入旧 ID 别名，保证旧数据和回滚版本兼容。
+    func persistEnabledState(_ enabled: Bool, pluginID: String) {
+        guard let stateStore else { return }
+        stateStore.setEnabled(enabled, pluginID: pluginID)
+        if let legacyID = legacyPluginIDAliases[pluginID], legacyID != pluginID {
+            stateStore.setEnabled(enabled, pluginID: legacyID)
         }
     }
 
@@ -64,7 +99,9 @@ extension KernelCoreContainer {
                 guard isPluginEnabled(id: plugin.id) else { continue }
 
                 activePluginID = plugin.id
+                activePluginLifecyclePhase = .boot
                 try plugin.onBoot(kernel: self)
+                activePluginLifecyclePhase = nil
                 activePluginID = nil
                 pluginStartOrder.append(plugin.id)
             }
@@ -77,6 +114,7 @@ extension KernelCoreContainer {
             }
             setLifecycleState(.running)
         } catch {
+            activePluginLifecyclePhase = nil
             activePluginID = nil
             rollbackStartup(bootedIDs: bootedIDs, attemptedIDs: sorted.map(\.id))
             setLifecycleState(previousState == .running ? .running : .failed)

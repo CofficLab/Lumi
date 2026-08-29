@@ -1,5 +1,6 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import SwiftUI
@@ -15,13 +16,16 @@ struct VideoConverterPluginTests {
     func onBootRegistersEntryContentViewAndDocs() throws {
         let kernel = KernelCoreContainer()
         let activityBar = DefaultActivityBarProviding()
+        let chat = DefaultChatSectionProviding()
         let contentView = DefaultContentViewProviding()
         let docs = DefaultDocsViewProviding()
         try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any ContentViewProviding).self, contentView)
         try kernel.registerProvider((any DocsViewProviding).self, docs)
 
         let plugin = VideoConverterPlugin()
+        try plugin.onRegister(kernel: kernel)
         try plugin.onBoot(kernel: kernel)
 
         // ActivityBar 入口
@@ -30,6 +34,10 @@ struct VideoConverterPluginTests {
         #expect(entry.id == "\(plugin.id).entry")
         #expect(entry.systemImage == "video")
         #expect(activityBar.activeItemID == entry.id)
+        #expect(!chat.isVisible)
+
+        activityBar.activateItem(id: nil)
+        #expect(chat.isVisible)
 
         // 主内容视图
         #expect(type(of: contentView.makeContentView()) == AnyView.self)
@@ -73,9 +81,12 @@ struct VideoConverterPluginTests {
     func startViaKernelBootsPlugin() throws {
         let kernel = KernelCoreContainer()
         let activityBar = DefaultActivityBarProviding()
+        let chat = DefaultChatSectionProviding()
         let contentView = DefaultContentViewProviding()
         let docs = DefaultDocsViewProviding()
+        kernel.stateStore = TestPluginStateStore()
         try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any ContentViewProviding).self, contentView)
         try kernel.registerProvider((any DocsViewProviding).self, docs)
 
@@ -92,9 +103,12 @@ struct VideoConverterPluginTests {
     func onShutdownWithdrawsContributions() throws {
         let kernel = KernelCoreContainer()
         let activityBar = DefaultActivityBarProviding()
+        let chat = DefaultChatSectionProviding()
         let contentView = DefaultContentViewProviding()
         let docs = DefaultDocsViewProviding()
+        kernel.stateStore = TestPluginStateStore()
         try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any ContentViewProviding).self, contentView)
         try kernel.registerProvider((any DocsViewProviding).self, docs)
 
@@ -102,10 +116,12 @@ struct VideoConverterPluginTests {
         try kernel.start(plugins: [plugin])
         #expect(activityBar.items.count == 1)
         #expect(docs.aboutEntries.count == 1)
+        #expect(!chat.isVisible)
 
         try kernel.stop()
 
         #expect(activityBar.items.isEmpty)
+        #expect(chat.isVisible)
         #expect(docs.aboutEntries.isEmpty)
         #expect(docs.manualEntries.isEmpty)
     }
@@ -127,4 +143,11 @@ struct VideoConverterPluginTests {
         let view = VideoConverterManualView()
         #expect(type(of: view) != Never.self)
     }
+}
+
+@MainActor
+private final class TestPluginStateStore: PluginStatePersisting {
+    func enabledState(pluginID: String) -> Bool? { true }
+    func setEnabled(_ enabled: Bool, pluginID: String) {}
+    func removeState(pluginID: String) {}
 }

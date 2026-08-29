@@ -1,15 +1,37 @@
 import AppKit
+import KernelCore
+import ProviderActivityBar
+import ProviderChatSection
 import SwiftData
 import Testing
 @testable import ClipboardManagerPlugin
 
 @MainActor
 @Test func pluginMetadataIsStable() {
-    let plugin = ClipboardManagerPlugin()
+    let plugin = ClipboardManagerSuperPlugin()
 
     #expect(plugin.id == "com.coffic.lumi.plugin.clipboard-manager")
-    #expect(plugin.name.isEmpty == false)
-    #expect(plugin.policy == .optIn)
+    #expect(plugin.metadata.name.isEmpty == false)
+    #expect(plugin.metadata.policy == .disabledByDefault)
+}
+
+@MainActor
+@Test func activatingPluginHidesChatSectionAndDeactivatingRestoresIt() throws {
+    let kernel = KernelCoreContainer()
+    let activityBar = DefaultActivityBarProviding()
+    let chat = DefaultChatSectionProviding()
+    try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+    try kernel.registerProvider((any ChatSectionProviding).self, chat)
+
+    let plugin = ClipboardManagerSuperPlugin()
+    try plugin.onBoot(kernel: kernel)
+
+    #expect(activityBar.activeItemID == "\(plugin.id).entry")
+    #expect(!chat.isVisible)
+
+    activityBar.activateItem(id: nil)
+
+    #expect(chat.isVisible)
 }
 
 @MainActor

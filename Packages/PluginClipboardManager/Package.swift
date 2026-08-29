@@ -14,8 +14,11 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../ProviderActivityBar"),
+        .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
+        .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../LumiUI"),
         .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog")
@@ -26,8 +29,11 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "KitSuperLog", package: "KitSuperLog")

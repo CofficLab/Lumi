@@ -20,10 +20,13 @@ public protocol RailViewProviding: AnyObject, ObservableObject
     /// 当前已注入的全部 Rail tab 项。
     var tabs: [RailTabItem] { get }
 
-    /// 当前展示的标签分组。分组可以暂时没有标签，此时 Rail 应折叠。
-    var activeGroupID: String? { get }
+    /// 当前允许展示的 Rail 分类。空集合表示不展示任何 Rail tab。
+    var visibleCategories: Set<RailViewCategory> { get }
 
-    /// 当前分组内激活的标签。
+    /// 当前允许展示的 Rail tab id。为 nil 时不按 id 限制。
+    var visibleTabID: String? { get }
+
+    /// 当前激活的标签。
     var activeTabID: String? { get }
 
     /// 注入 Rail tab 项（替换当前全部项）。
@@ -35,10 +38,13 @@ public protocol RailViewProviding: AnyObject, ObservableObject
     /// 按 id 撤回插件贡献的标签。
     func removeTabs(ids: Set<String>)
 
-    /// 切换当前展示分组。未知分组合法，表示当前插件没有 Rail 内容。
-    func activateGroup(id: String?)
+    /// 设置当前允许展示的 Rail 分类。
+    func setVisibleCategories(_ categories: Set<RailViewCategory>)
 
-    /// 切换当前分组内的标签；未知或不属于当前分组的 id 将被忽略。
+    /// 设置当前允许展示的 Rail tab id。传入 nil 表示取消 id 限制。
+    func setVisibleTabID(_ id: String?)
+
+    /// 切换标签；未知 id 将被忽略。
     func activateTab(id: String?)
 
     /// 返回 Rail 视图（基于已注入的 tabs 渲染）。
@@ -46,7 +52,9 @@ public protocol RailViewProviding: AnyObject, ObservableObject
 }
 
 public extension RailViewProviding {
-    var activeGroupID: String? { nil }
+    var visibleCategories: Set<RailViewCategory> { Set(RailViewCategory.allCases) }
+
+    var visibleTabID: String? { nil }
 
     var activeTabID: String? { nil }
 
@@ -62,7 +70,9 @@ public extension RailViewProviding {
         registerTabs(tabs.filter { !ids.contains($0.id) })
     }
 
-    func activateGroup(id: String?) {}
+    func setVisibleCategories(_ categories: Set<RailViewCategory>) {}
+
+    func setVisibleTabID(_ id: String?) {}
 
     func activateTab(id: String?) {}
 }

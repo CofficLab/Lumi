@@ -9,13 +9,16 @@ import ProviderStorage
 import SwiftUI
 #if canImport(AppKit)
 import AppKit
+import KitSuperLog
+import os
 #endif
 
 /// V2 activity dashboard. It preserves the legacy heatmap's three time ranges,
 /// daily message intensity, token trend, and persisted range preference while
 /// consuming only KernelCore providers.
 @MainActor
-public final class ActivityHeatmapPlugin: SuperPlugin {
+public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.activity-heatmap", category: "ActivityHeatmap")
     public let id = "com.coffic.activity-heatmap"
     public let order = 9
     public let metadata = PluginMetadata(
@@ -33,9 +36,18 @@ public final class ActivityHeatmapPlugin: SuperPlugin {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else { return }
+        guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
+            Self.logger.error("\(Self.t) SettingViewProviding not found")
+            return
+        }
         let messages = kernel.resolveProvider((any MessageManaging).self)
+        if messages == nil {
+            Self.logger.error("\(Self.t) MessageManaging not found")
+        }
         let idleTime = kernel.resolveProvider((any IdleTimeProviding).self)
+        if idleTime == nil {
+            Self.logger.error("\(Self.t) IdleTimeProviding not found")
+        }
         let directory = kernel.resolveProvider((any StorageProviding).self)?
             .pluginDataDirectory(for: "ActivityHeatmap")
         ActivityHeatmapViewModel.restoreLegacyPeriodIfNeeded(from: directory)
@@ -56,17 +68,29 @@ public final class ActivityHeatmapPlugin: SuperPlugin {
                 )
             },
         ])
-        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
-            DocsEntry(id: id, name: LumiPluginLocalization.string("Activity Heatmap", bundle: .module)) { ActivityHeatmapAboutView() }
-        )
+    }
+
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(
+                DocsEntry(id: id, name: LumiPluginLocalization.string("Activity Heatmap", bundle: .module)) { ActivityHeatmapAboutView() }
+            )
+            docs.addManual(
+                DocsEntry(id: id, name: LumiPluginLocalization.string("Activity Heatmap", bundle: .module)) { ActivityHeatmapManualView() }
+            )
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         cache = nil
         cacheDirectory = nil
     }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
 }
 
 public enum ActivityHeatmapPeriod: Int, CaseIterable, Identifiable, Sendable {

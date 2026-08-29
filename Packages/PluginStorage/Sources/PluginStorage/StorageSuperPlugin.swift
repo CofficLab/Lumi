@@ -1,6 +1,8 @@
 import Foundation
 import KernelCore
 import ProviderStorage
+import KitSuperLog
+import os
 
 // MARK: - Storage SuperPlugin
 
@@ -9,7 +11,8 @@ import ProviderStorage
 /// 创建数据根目录并注册 `StorageService`（`StorageProviding` 实现）。
 /// 路径格式：<Application Support>/<bundleID>/db_<debug|production>_v<majorVersion>
 @MainActor
-public final class StorageSuperPlugin: SuperPlugin {
+public final class StorageSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.storage", category: "Storage")
     public let id = "com.coffic.lumi.plugin.storage"
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.storage",

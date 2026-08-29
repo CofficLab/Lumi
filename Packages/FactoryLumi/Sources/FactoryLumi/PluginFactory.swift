@@ -79,6 +79,7 @@ import PluginLLMProviderOpenRouter
 import PluginLLMProviderSettings
 import PluginLLMProviderStepFun
 import PluginLLMProviderSublyx
+import PluginLLMProviderTencent
 import PluginLLMProviderXiaomi
 import PluginLLMProviderXybbz
 import PluginLLMProviderZhipu
@@ -96,15 +97,25 @@ import PluginMessageSender
 import PluginMindMapDesigner
 import PluginModelSelector
 import PluginOcr
-import PluginOpenIn
+import PluginOpenInAntigravity
+import PluginOpenInCursor
+import PluginOpenInFinder
+import PluginOpenInGitHubDesktop
+import PluginOpenInGitOK
+import PluginOpenInVSCode
+import PluginOpenInXcode
 import PluginPluginManager
 import PluginProjects
+import PluginProjectFileTree
+import PluginProjectFiles
+import PluginEditorHost
+import PluginEditorLanguages
+import PluginCodeEditor
 import PluginProjectRAG
 import PluginResumeDesigner
 import PluginSettingGeneral
 import PluginSettingView
 import PluginSkill
-import PluginStateMonitor
 import PluginOnboarding
 import PluginThemePack
 import PluginToolManager
@@ -130,9 +141,14 @@ public struct DefaultPluginFactory: PluginFactory {
             ToastSuperPlugin(),
             CaffeinatePlugin(),
             SettingGeneralPlugin(),
+            EditorHostSuperPlugin(),
+            EditorLanguagesSuperPlugin(),
             ProjectsPlugin(),
             // 原 LumiApp 显式注入的项目 RAG：保留旧索引数据库和 search_code 工具。
             ProjectRAGSuperPlugin(),
+            // 项目文件树（由旧版 Plugins/ProjectFileTreePlugin 迁移而来）。
+            ProjectFileTreePlugin(),
+            ProjectFilesSuperPlugin(),
             DevicePlugin(),
             HostsManagerPlugin(),
             DiskManagerPlugin(),
@@ -151,6 +167,7 @@ public struct DefaultPluginFactory: PluginFactory {
             // ActivityBar 自定义实现：替换 ProviderFactory 预注册的 DefaultActivityBarProviding，
             // 必须在所有 onBoot 中调用 addItems 的业务插件（如 ResumeDesignerPlugin order=81）之前。
             PluginActivityBar(),
+            CodeEditorSuperPlugin(),
             LogoCofficPlugin(),
             LogoSmartLightPlugin(),
             SettingsToolbarPlugin(),
@@ -177,7 +194,13 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationPendingMessagePlugin(),
             ConversationForkPlugin(),
             AskUserPlugin(),
-            OpenInPlugin(),
+            OpenInFinderPlugin(),
+            OpenInXcodePlugin(),
+            OpenInCursorPlugin(),
+            OpenInVSCodePlugin(),
+            OpenInAntigravityPlugin(),
+            OpenInGitHubDesktopPlugin(),
+            OpenInGitOKPlugin(),
             AgentTurnNotificationPlugin(),
             DebugBadgeSuperPlugin(),
             FileLogPlugin(),
@@ -208,7 +231,6 @@ public struct DefaultPluginFactory: PluginFactory {
             GoalTaskSuperPlugin(),
             NettoSuperPlugin(),
             SkillPlugin(),
-            StateMonitorPlugin(),
             OnboardingPlugin(),
             MemoryPlugin(),
             ModelSelectorPlugin(),
@@ -251,6 +273,7 @@ public struct DefaultPluginFactory: PluginFactory {
             OpenRouterProviderPlugin(),
             StepFunProviderPlugin(),
             SublyxProviderPlugin(),
+            TencentProviderPlugin(),
             XiaomiProviderPlugin(),
             XybbzProviderPlugin(),
             ZhipuProviderPlugin(),

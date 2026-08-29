@@ -10,7 +10,6 @@ import ProviderRootView
 import ProviderSettingView
 import ProviderTheme
 import ProviderToolbar
-import ProviderWorkspace
 import SwiftUI
 
 /// 默认 `ViewFactory` 实现：使用内核已注册的 Provider 组装主视图与设置视图。
@@ -53,14 +52,13 @@ public struct DefaultViewFactory: ViewFactory {
             rootView.setContentView(contentView.makeContentView())
         }
         if let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
-            rootView.setTrailingPane(RootTrailingPane(
+            let trailingPane = RootTrailingPane(
                 id: "com.coffic.lumi.workspace.chat",
                 isVisible: chat.isVisible,
                 content: chat.makeChatSectionView()
-            ))
-        }
-        if let workspace = kernel.resolveProvider((any WorkspaceProviding).self) {
-            rootView.setWorkspaceProvider(workspace)
+            )
+            trailingPane.bindVisibility(to: chat)
+            rootView.setTrailingPane(trailingPane)
         }
         return themed(rootView.makeRootView(), kernel: kernel)
     }

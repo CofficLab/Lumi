@@ -1,8 +1,10 @@
 import KernelCore
 import ProviderContentView
 import ProviderDocsView
-import ProviderWorkspace
+import ProviderRootView
 import SwiftUI
+import KitSuperLog
+import os
 
 /// KernelCore migration of the Netto firewall workspace.
 ///
@@ -10,7 +12,8 @@ import SwiftUI
 /// same disabled policy: it is present for compatibility and diagnostics but
 /// does not publish a workspace until a future host explicitly enables it.
 @MainActor
-public final class NettoSuperPlugin: SuperPlugin {
+public final class NettoSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.netto", category: "Netto")
     public let id = "com.coffic.lumi.plugin.netto"
     public let order = 99
     public let metadata = PluginMetadata(
@@ -24,36 +27,25 @@ public final class NettoSuperPlugin: SuperPlugin {
 
     public init() {}
 
-    public func onBoot(kernel: KernelCoreContainer) throws {
-        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
-        let content = kernel.resolveProvider((any ContentViewProviding).self)
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: "Netto Firewall") { NettoAboutView() })
+            docs.addManual(DocsEntry(id: id, name: "Netto Firewall") { NettoManualView() })
+        }
+    }
 
-        workspace?.registerContainer(
-            WorkspaceContainer(
-                id: id,
-                title: LumiPluginLocalization.string("Netto Firewall", bundle: .module),
-                systemImage: "shield.lefthalf.filled",
-                order: order,
-                railVisibility: .unsupported,
-                chatVisibility: .unsupported,
-                panelHeaderVisibility: .unsupported,
-                panelBodyVisibility: .unsupported,
-                panelBottomVisibility: .unsupported
-            ),
-            ownerPluginID: id
-        )
+    public func onBoot(kernel: KernelCoreContainer) throws {
+        let content = kernel.resolveProvider((any ContentViewProviding).self)
+        kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(true)
         content?.setContentView(AnyView(NettoDashboardView()))
-        kernel.resolveProvider((any DocsViewProviding).self)?.addAbout(
-            DocsEntry(id: id, name: "Netto Firewall") { NettoAboutView() }
-        )
-        kernel.resolveProvider((any DocsViewProviding).self)?.addManual(
-            DocsEntry(id: id, name: "Netto Firewall") { NettoManualView() }
-        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
-        kernel.resolveProvider((any WorkspaceProviding).self)?.unregisterContainers(ownerPluginID: id)
     }
 }

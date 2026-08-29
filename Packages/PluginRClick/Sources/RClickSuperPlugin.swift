@@ -1,13 +1,18 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
+import ProviderRootView
 import ProviderStorage
 import SwiftUI
+import KitSuperLog
+import os
 
 @MainActor
-public final class RClickSuperPlugin: SuperPlugin {
+public final class RClickSuperPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.rclick", category: "RClick")
     public let id = "com.coffic.lumi.plugin.rclick"
     public let order = 50
     public let metadata = PluginMetadata(
@@ -24,17 +29,26 @@ public final class RClickSuperPlugin: SuperPlugin {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: metadata.name) { RClickAboutView() })
+            docs.addManual(DocsEntry(id: id, name: metadata.name) { RClickManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             RClickPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
         }
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let rail = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
         rail?.addTabs([
             RailTabItem(
                 id: railTabID,
-                groupID: id,
+                category: .general,
                 title: LumiPluginLocalization.string("Preview", bundle: .module),
                 systemImage: "eye",
                 order: order
@@ -50,26 +64,36 @@ public final class RClickSuperPlugin: SuperPlugin {
                 systemImage: "cursorarrow.click.2",
                 order: order,
                 ownerPluginID: id
-            ) { [id, activityItemID] activeID in
-                if activeID == activityItemID {
+            ) { state in
+                if state == .activated {
+                    rail?.setVisibleCategories([.general])
+                    rail?.setVisibleTabID(self.railTabID)
                     content?.setContentView(AnyView(RClickSettingsView()))
-                    rail?.activateGroup(id: id)
-                } else if rail?.activeGroupID == id {
-                    rail?.activateGroup(id: nil)
+                    chat?.setVisible(false)
+                    rootView?.setContentHeaderViewHidden(true)
+                } else {
+                    chat?.setVisible(true)
+                    rootView?.setContentHeaderViewHidden(false)
+                    rail?.setVisibleCategories(Set(RailViewCategory.allCases))
                 }
             },
         ])
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: metadata.name) { RClickAboutView() })
-            docs.addManual(DocsEntry(id: id, name: metadata.name) { RClickManualView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: [activityItemID])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == activityItemID
+        activityBar?.removeItems(ids: [activityItemID])
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [railTabID])
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
         RClickPluginRuntimeBridge.dataRootDirectory = nil
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

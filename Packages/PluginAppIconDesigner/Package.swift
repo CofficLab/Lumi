@@ -10,6 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KitAgentTool"),
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
@@ -19,16 +20,17 @@ let package = Package(
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
-        .package(path: "../ProviderWorkspace"),
     ],
     targets: [
         .target(
             name: "PluginAppIconDesigner",
             dependencies: [
                 "KitAgentTool",
+                "KitSuperLog",
                 "KernelCore",
                 "KitLocalization",
                 "LumiUI",
@@ -38,10 +40,10 @@ let package = Package(
                 "ProviderDocsView",
                 "ProviderProject",
                 "ProviderRailView",
+                "ProviderRootView",
                 "ProviderStorage",
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
-                "ProviderWorkspace",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
         ),
@@ -56,9 +58,9 @@ let package = Package(
                 "ProviderContentView",
                 "ProviderProject",
                 "ProviderRailView",
+                "ProviderRootView",
                 "ProviderStorage",
                 "ProviderToolManager",
-                "ProviderWorkspace",
             ]
         ),
     ]

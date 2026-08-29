@@ -11,7 +11,6 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderToast
 import ProviderToolbar
-import ProviderWorkspace
 import Testing
 @testable import FactoryBookletMaker
 
@@ -27,7 +26,7 @@ struct KernelFactoryTests {
     func makeKernelRegistersAllProviders() throws {
         let kernel = try KernelFactory.makeKernel()
 
-        #expect(kernel.registeredProviderCount == 12)
+        #expect(kernel.registeredProviderCount == 11)
         #expect(kernel.resolveProvider((any StorageProviding).self) != nil)
         #expect(kernel.resolveProvider((any ContentViewProviding).self) != nil)
         #expect(kernel.resolveProvider((any DocsViewProviding).self) != nil)
@@ -39,10 +38,6 @@ struct KernelFactoryTests {
         #expect(kernel.resolveProvider((any ActivityBarProviding).self) != nil)
         #expect(kernel.resolveProvider((any RailViewProviding).self) != nil)
         #expect(kernel.resolveProvider((any SettingViewProviding).self) != nil)
-        let workspace = try #require(kernel.resolveProvider((any WorkspaceProviding).self))
-        #expect(workspace.currentContainer?.id == "com.coffic.lumi.plugin.booklet-maker")
-        #expect(workspace.currentContainer?.railVisibility == .alwaysVisible)
-        #expect(workspace.currentContainer?.chatVisibility == .unsupported)
         #expect(kernel.resolveProvider((any RailViewProviding).self)?.tabs.map(\.id)
             == ["booklet-maker.sidebar"])
         #expect(kernel.resolveProvider((any ToolbarProviding).self)?.toolbarItems.map(\.id)

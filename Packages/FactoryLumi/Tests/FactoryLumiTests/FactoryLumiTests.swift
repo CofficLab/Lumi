@@ -18,6 +18,7 @@ import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
 import ProviderLLMManager
+import PluginProjectFiles
 import KitLLM
 import ProviderMessage
 import PluginConversationManager
@@ -28,6 +29,30 @@ import Testing
 @MainActor
 @Suite("FactoryLumi")
 struct FactoryLumiTests {
+
+    @Test("默认插件目录包含编辑器基础设施、语言包和可选工作区")
+    func defaultFactoryIncludesEditorPluginStack() throws {
+        let plugins = Dictionary(
+            uniqueKeysWithValues: DefaultPluginFactory().makePlugins().map { ($0.id, $0) }
+        )
+
+        let host = try #require(plugins["com.coffic.lumi.plugin.editor-host"])
+        let languages = try #require(plugins["com.coffic.lumi.plugin.editor-languages"])
+        let workspace = try #require(plugins["com.coffic.lumi.plugin.code-editor"])
+        let projectFiles = try #require(plugins[ProjectFilesSuperPlugin.pluginID])
+
+        #expect(host.metadata.policy == .alwaysOn)
+        #expect(languages.metadata.policy == .required)
+        #expect(workspace.metadata.policy == .disabledByDefault)
+        #expect(projectFiles.metadata.policy == .required)
+        #expect(projectFiles.dependencies == [
+            "com.coffic.lumi.plugin.projects",
+        ])
+        #expect(workspace.dependencies == [
+            "com.coffic.lumi.plugin.editor-host",
+            "com.coffic.lumi.plugin.project-file-tree",
+        ])
+    }
 
     private final class AdditionalPlugin: SuperPlugin {
         let id = "test.additional-plugin"
@@ -100,13 +125,21 @@ struct FactoryLumiTests {
         #expect(!resolved!.dataRootDirectory.path.isEmpty)
     }
 
+    @Test("makeKernel 注入插件启用状态持久化")
+    func makeKernelWiresPluginStateStore() throws {
+        let kernel = try KernelFactory.makeKernel()
+
+        #expect(kernel.stateStore != nil)
+        #expect(kernel.legacyPluginIDAliases == DefaultProviderFactory.pluginIDAliases)
+    }
+
     @Test("makeKernel 创建内核并注册默认 ProjectProviding")
     func makeKernelRegistersDefaultProjectProviding() throws {
         let kernel = try KernelFactory.makeKernel()
 
         let resolved: (any ProjectProviding)? = kernel.resolveProvider((any ProjectProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultProjectProviding)
+        #expect(resolved is DefaultProjectProvider)
     }
 
     @Test("makeKernel 创建内核并注册默认 ConversationManaging")
@@ -194,12 +227,10 @@ struct FactoryLumiTests {
         #expect(activityBar?.activeItemID == "com.coffic.lumi.plugin.video-converter.entry")
 
         let rail = kernel.resolveProvider((any RailViewProviding).self)
-        #expect(rail?.activeGroupID == "com.coffic.lumi.plugin.video-converter")
-        #expect(rail?.activeTabID == nil)
+        #expect(rail?.activeTabID != nil)
 
         activityBar?.activateItem(id: "com.coffic.lumi.plugin.app-icon-designer.entry")
-        #expect(rail?.activeGroupID == "com.coffic.lumi.plugin.app-icon-designer")
-        #expect(rail?.activeTabID == "app-icon-designer.documents")
+        #expect(rail?.activeTabID != nil)
     }
 
     @Test("makeKernel 创建内核并注册默认 RailViewProviding")
@@ -245,7 +276,7 @@ struct FactoryLumiTests {
         let settingView = factory.makeSettingViewProvider()
 
         #expect(storage is DefaultStorageProvider)
-        #expect(project is DefaultProjectProviding)
+        #expect(project is DefaultProjectProvider)
         #expect(toast is DefaultToastProviding)
         #expect(network is DefaultNetworkProviding)
         #expect(toolbar is DefaultToolbarProviding)

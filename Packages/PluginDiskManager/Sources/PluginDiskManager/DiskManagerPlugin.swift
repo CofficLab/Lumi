@@ -2,11 +2,14 @@ import KitAgentTool
 import KernelCore
 import os
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
+import ProviderRootView
 import ProviderToolManager
 import SwiftUI
+import KitSuperLog
 
 /// Disk Manager 插件（KernelCore 版本）
 ///
@@ -24,7 +27,7 @@ import SwiftUI
 /// - `titleToolbarItems`（居中标题）：新版 `center` placement 已被 `ProjectsPlugin`
 ///   占用且无「容器激活」语义，故不复刻（与 PluginDevice / PluginResumeDesigner 一致）。
 @MainActor
-public final class DiskManagerPlugin: SuperPlugin {
+public final class DiskManagerPlugin: SuperPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.disk-manager"
     public let order = 250
     public let metadata = PluginMetadata(
@@ -43,7 +46,6 @@ public final class DiskManagerPlugin: SuperPlugin {
         PluginDiskManagerLocalization.string("Disk Manager")
     }
 
-
     // MARK: - Logging（兼容旧版 ViewModel 的 DiskManagerPlugin.verbose / logger 引用）
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.disk-manager")
@@ -61,6 +63,13 @@ public final class DiskManagerPlugin: SuperPlugin {
 
     // MARK: - SuperPlugin
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { DiskManagerAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { DiskManagerManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 1. 注册 Agent 工具到 ToolManagerProviding。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
@@ -70,14 +79,16 @@ public final class DiskManagerPlugin: SuperPlugin {
         }
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
 
         // 2. 注册 Rail 标签。
         //    必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
-                groupID: id,
+                category: .system,
                 title: PluginDiskManagerLocalization.string("Cleanup"),
                 systemImage: "list.bullet.indent",
                 order: order
@@ -96,12 +107,20 @@ public final class DiskManagerPlugin: SuperPlugin {
                     systemImage: "internaldrive",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
-                    contentView?.setContentView(AnyView(
-                        DiskManagerView(categoryStore: self.categoryStore, workspace: self.workspace)
-                    ))
-                    railView?.activateGroup(id: self.id)
+                ) { state in
+                    if state == .activated {
+                        railView?.setVisibleCategories([.system])
+                        railView?.setVisibleTabID(Self.railTabID)
+                        chat?.setVisible(false)
+                        rootView?.setContentHeaderViewHidden(true)
+                        contentView?.setContentView(AnyView(
+                            DiskManagerView(categoryStore: self.categoryStore, workspace: self.workspace)
+                        ))
+                    } else {
+                        chat?.setVisible(true)
+                        rootView?.setContentHeaderViewHidden(false)
+                        railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+                    }
                 },
             ])
         } else {
@@ -109,12 +128,6 @@ public final class DiskManagerPlugin: SuperPlugin {
             contentView?.setContentView(AnyView(
                 DiskManagerView(categoryStore: self.categoryStore, workspace: self.workspace)
             ))
-        }
-
-        // 4. 贡献「关于」与「说明书」文档（沿用旧版 pluginAboutView / pluginManualView）。
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { DiskManagerAboutView() })
-            docs.addManual(DocsEntry(id: id, name: name) { DiskManagerManualView() })
         }
     }
 
@@ -130,11 +143,19 @@ public final class DiskManagerPlugin: SuperPlugin {
             .removeTabs(ids: [Self.railTabID])
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
+    }
 
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 

@@ -9,6 +9,7 @@ import SwiftUI
 /// 协议只声明能力，不关心具体实现：
 /// - 外部通过 `registerItems(_:)` 注入 `ActivityBarItem`（图标入口）；
 /// - 实现负责把注入的 items 渲染成 ActivityBar 视图（`makeActivityBarView()`）。
+/// - 入口切换时只通知旧入口失活和新入口激活，不广播给全部入口。
 ///
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any ActivityBarProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。

@@ -2,6 +2,29 @@ import ProviderConversation
 import Combine
 import SwiftUI
 
+/// 聊天分区状态变更事件。
+@MainActor
+public enum ChatSectionProvidingEvent {
+    case itemsChanged([ChatSectionItem])
+    case barItemsChanged([ChatSectionBarItem])
+    case rootWrappersChanged([ChatSectionRootWrapper])
+    case visibilityChanged(Bool)
+    case contextActiveChanged(Bool)
+    case headerVisibilityChanged(Bool)
+}
+
+/// 聊天分区状态观察句柄。
+@MainActor
+public protocol ChatSectionProvidingObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
+public final class NoopChatSectionProvidingObserverHandle: ChatSectionProvidingObserverHandle {
+    public init() {}
+    public func cancel() {}
+}
+
 /// 聊天分区宿主能力协议。
 ///
 /// 对应旧版 KernelLumi 的 `ChatSection` 宿主行为（header / toolbar / 正文
@@ -38,6 +61,10 @@ public protocol ChatSectionProviding: AnyObject, ObservableObject
     func setContextActive(_ active: Bool)
     func setHeaderVisible(_ visible: Bool)
 
+    /// 注册聊天分区状态观察者。回调在状态更新后同步执行。
+    @discardableResult
+    func addObserver(_ callback: @escaping (ChatSectionProvidingEvent) -> Void) -> any ChatSectionProvidingObserverHandle
+
     /// 把 header / toolbar 可见性绑定到会话选择状态：
     /// 无选中会话时自动隐藏（复刻旧版 `ChatView` 的 `selectedConversationID != nil` 判断）。
     ///
@@ -61,4 +88,10 @@ public extension ChatSectionProviding {
     func removeRootWrapper(id: String) {}
 
     func bindConversationSelection(_ conversations: any ConversationManaging) {}
+
+    /// 默认空实现，保持轻量替身和自定义实现兼容。
+    @discardableResult
+    func addObserver(_ callback: @escaping (ChatSectionProvidingEvent) -> Void) -> any ChatSectionProvidingObserverHandle {
+        NoopChatSectionProvidingObserverHandle()
+    }
 }

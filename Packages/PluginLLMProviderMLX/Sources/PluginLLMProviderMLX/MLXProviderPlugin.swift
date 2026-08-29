@@ -2,10 +2,13 @@ import KernelCore
 import KitLLM
 import ProviderLLMManager
 import ProviderStorage
+import KitSuperLog
+import os
 
 /// MLX 本地模型供应商注册插件。
 @MainActor
-public final class MLXProviderPlugin: SuperPlugin {
+public final class MLXProviderPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-provider.mlx", category: "MLXProvider")
     private static let legacyStorageKey = "LLMProviderMLX"
 
     public let id = "com.coffic.lumi.plugin.llm-provider.mlx"
@@ -27,9 +30,12 @@ public final class MLXProviderPlugin: SuperPlugin {
             MLXModelPaths.configure(rootDirectory: rootDirectory)
             MLXDownloadManager.shared.configure(rootDirectory: rootDirectory)
             MLXRuntime.shared.configure(rootDirectory: rootDirectory)
+        } else {
+            Self.logger.error("\(Self.t) StorageProviding not found")
         }
 
         guard let manager = kernel.resolveProvider((any LLMManaging).self) else {
+            Self.logger.error("\(Self.t) LLMManaging not found")
             return
         }
 

@@ -14,6 +14,7 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderToolbar"),
@@ -22,6 +23,7 @@ let package = Package(
         .target(
             name: "PluginToolbarSettings",
             dependencies: [
+                "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),

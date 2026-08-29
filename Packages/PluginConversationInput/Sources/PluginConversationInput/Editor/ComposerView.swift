@@ -1,6 +1,7 @@
 import AppKit
 import LumiUI
 import ProviderConversationInput
+import ProviderMessage
 import ProviderMessageSender
 import SwiftUI
 import UniformTypeIdentifiers
@@ -9,8 +10,7 @@ import UniformTypeIdentifiers
 ///
 /// 由旧版 `ComposerView` 复刻而来；`kernel` 依赖改为注入
 /// 内核的 `ConversationInputProviding` 与 `MessageSendingProviding`。
-/// 图片拖拽不再作为附件上传（新版 `MessageSendingProviding` 无附件管道），
-/// 与其他文件一样以路径文本插入输入框。
+/// 图片拖拽会加入新版发送器的挂起附件池，其他文件仍以路径文本插入输入框。
 struct ComposerView: View {
     @LumiTheme private var theme
 
@@ -46,7 +46,11 @@ struct ComposerView: View {
             onSubmit: onSend,
             onEnter: onSend,
             onFileDrop: { url in
-                insertDroppedFile(url)
+                if ChatInputEditorRules.isChatImageFileURL(url) {
+                    attachImage(url)
+                } else {
+                    insertDroppedFile(url)
+                }
             },
             isFocused: focusedBinding,
             cursorPosition: cursorBinding,
@@ -59,7 +63,7 @@ struct ComposerView: View {
         .appSurface(style: .toolbar, cornerRadius: 0)
     }
 
-    /// 拖放文件：统一以路径文本插入输入框（图片不再作为附件上传）。
+    /// 拖放非图片文件：以路径文本插入输入框。
     private func insertDroppedFile(_ url: URL) {
         guard let input else { return }
         let path = url.path
@@ -69,5 +73,28 @@ struct ComposerView: View {
             input.text += "\n\(path)"
         }
         input.isInputFocused = true
+    }
+
+    /// 将拖入的图片加入发送器挂起池，供下一条消息携带发送。
+    private func attachImage(_ url: URL) {
+        guard let sender else { return }
+
+        let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "image/png"
+        Task { @MainActor in
+            guard let data = await Task.detached(priority: .userInitiated, operation: {
+                try? Data(contentsOf: url)
+            }).value, !data.isEmpty else {
+                return
+            }
+
+            sender.addImageAttachment(
+                UserImageAttachment(
+                    mimeType: mimeType,
+                    base64Data: data.base64EncodedString(),
+                    fileName: url.lastPathComponent
+                )
+            )
+            input?.isInputFocused = true
+        }
     }
 }

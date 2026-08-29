@@ -12,7 +12,6 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderToast
 import ProviderToolbar
-import ProviderWorkspace
 import SwiftUI
 
 /// KernelFactory — 内核工厂。
@@ -27,7 +26,7 @@ public enum KernelFactory {
     /// 创建 KernelCore 内核，装配并注册全部默认 Provider：
     /// - `StorageProviding` → `DefaultStorageProvider`（Application Support 磁盘存储）
     /// - `ContentViewProviding` → `DefaultContentViewProviding`（当前内容视图）
-    /// - `ProjectProviding` → `DefaultProjectProviding`
+    /// - `ProjectProviding` → `DefaultProjectProvider`
     /// - `ToastProviding` → `DefaultToastProviding`（no-op）
     /// - `NetworkProviding` → `DefaultNetworkProviding`（URLSession）
     /// - `ToolbarProviding` → `DefaultToolbarProviding`（按 placement 渲染）
@@ -89,10 +88,6 @@ public enum KernelFactory {
         if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
             rootView.setContentView(contentView.makeContentView())
         }
-        if let workspace = kernel.resolveProvider((any WorkspaceProviding).self) {
-            rootView.setWorkspaceProvider(workspace)
-        }
-
         return rootView.makeRootView()
     }
 

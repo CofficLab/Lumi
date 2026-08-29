@@ -298,7 +298,12 @@ struct MessageManagerPaginationDeleteTests {
         let manager = makeManager(store: store)
         let conversationID = UUID()
 
-        let toolCall = MessageToolCall(id: "call-1", name: "ask_user", arguments: "{}")
+        let toolCall = MessageToolCall(
+            id: "call-1",
+            name: "ask_user",
+            arguments: "{}",
+            authorizationState: "pendingAuthorization"
+        )
         let assistantMsg = Message(
             conversationID: conversationID, role: .assistant,
             content: "ask", createdAt: Date(), toolCalls: [toolCall]
@@ -307,12 +312,20 @@ struct MessageManagerPaginationDeleteTests {
         try await Task.sleep(nanoseconds: 5_000_000)
 
         let result = MessageToolResult(content: "user answered yes", isError: false)
-        manager.updateToolCallResult(result, toolCallID: "call-1", assistantMessageID: assistantMsg.id, in: conversationID)
+        manager.updateToolCallResult(
+            result,
+            toolCallID: "call-1",
+            assistantMessageID: assistantMsg.id,
+            in: conversationID,
+            authorizationState: "userApproved"
+        )
 
         let stored = manager.messages(for: conversationID).first { $0.id == assistantMsg.id }
         #expect(stored?.toolCalls?.first?.result?.content == "user answered yes")
+        #expect(stored?.toolCalls?.first?.authorizationState == "userApproved")
         // 重启后可读（落盘到 toolCallsJson）。
         let fetched = store.fetchMessage(id: assistantMsg.id)
         #expect(fetched?.toolCalls?.first?.result?.content == "user answered yes")
+        #expect(fetched?.toolCalls?.first?.authorizationState == "userApproved")
     }
 }

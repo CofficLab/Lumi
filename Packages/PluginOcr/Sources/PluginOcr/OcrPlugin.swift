@@ -6,15 +6,11 @@ import ProviderToolManager
 import KitSuperLog
 import SwiftUI
 
-/// OCR 文字识别插件（KernelCore 版本）
-///
-/// 由旧版 `Plugins/OcrPlugin`（KernelLumi / LumiPlugin 架构）复刻而来，
-/// 纯工具型插件：`onBoot` 向 `ToolManagerProviding` 注册 `OcrImageTool`，
-/// 并贡献「关于」文档。
+/// OCR 文字识别插件
 ///
 /// 识别逻辑 `OcrEngine` 基于 macOS Vision，纯本地离线，无内核依赖。
 @MainActor
-public final class OcrPlugin: SuperPlugin {
+public final class OcrPlugin: SuperPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.ocr"
     public let order = 286
     public let metadata = PluginMetadata(
@@ -23,7 +19,7 @@ public final class OcrPlugin: SuperPlugin {
         description: "",
         category: .integration,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .required
     )
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.ocr")
@@ -32,6 +28,12 @@ public final class OcrPlugin: SuperPlugin {
 
     public var name: String { OcrLocalization.string("OCR", "OCR 文字识别") }
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { OcrAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { OcrManualView() })
+        }
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 注册 Agent 工具。
@@ -39,11 +41,6 @@ public final class OcrPlugin: SuperPlugin {
             for tool in Self.agentTools {
                 toolManager.add(tool, pluginID: id)
             }
-        }
-
-        // 「关于」文档（沿用旧版 pluginAboutView）。
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { OcrAboutView() })
         }
     }
 
@@ -53,8 +50,10 @@ public final class OcrPlugin: SuperPlugin {
                 toolManager.remove(id: tool.name)
             }
         }
-        kernel.resolveProvider((any DocsViewProviding).self)?
-            .removeEntries(id: id)
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     // MARK: - Agent Tools

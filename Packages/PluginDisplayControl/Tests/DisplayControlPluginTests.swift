@@ -1,4 +1,8 @@
 import Foundation
+import KernelCore
+import ProviderActivityBar
+import ProviderChatSection
+import ProviderContentView
 import Testing
 @testable import DisplayControlPlugin
 
@@ -28,6 +32,28 @@ func pluginPolicy() {
 
 @Test("Plugin iconName is display")
 func pluginIconName() {
+}
+
+@MainActor
+@Test("激活显示器控制时隐藏 ChatSection，离开后恢复")
+func activationHidesChatSection() throws {
+    let kernel = KernelCoreContainer()
+    let activity = DefaultActivityBarProviding()
+    let chat = DefaultChatSectionProviding()
+
+    try kernel.registerProvider((any ActivityBarProviding).self, activity)
+    try kernel.registerProvider((any ChatSectionProviding).self, chat)
+    try kernel.registerProvider((any ContentViewProviding).self, DefaultContentViewProviding())
+
+    let plugin = DisplayControlSuperPlugin()
+    try plugin.onBoot(kernel: kernel)
+
+    #expect(activity.activeItemID == "com.coffic.lumi.plugin.display-control.entry")
+    #expect(!chat.isVisible)
+
+    activity.activateItem(id: nil)
+
+    #expect(chat.isVisible)
 }
 
 @Test("DisplayControlKind has correct cases")

@@ -23,6 +23,13 @@ struct ChatInputEditorViewTests {
         #expect(!state.showsStopButton)
     }
 
+    @Test("common image files are recognized for chat attachment drops")
+    func imageDropRuleRecognizesCommonImages() {
+        #expect(ChatInputEditorRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/photo.PNG")))
+        #expect(ChatInputEditorRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/photo.heic")))
+        #expect(!ChatInputEditorRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/report.pdf")))
+    }
+
     @Test("placeholder does not intercept editor clicks")
     func placeholderAllowsClickThrough() {
         let placeholderLabel = ChatInputPlaceholderLabel(labelWithString: "Placeholder")

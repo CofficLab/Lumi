@@ -14,6 +14,7 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
 
     /// 会话选择绑定订阅：随 Provider 生命周期持有（与内核同生命周期）。
     private var conversationSelectionCancellable: AnyCancellable?
+    private var observers: [WeakObserver] = []
 
     public init() {}
 
@@ -21,42 +22,76 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         var byID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
         for item in newItems { byID[item.id] = item }
         items = byID.values.sorted { $0.order == $1.order ? $0.id < $1.id : $0.order < $1.order }
+        notify(.itemsChanged(items))
     }
 
     public func removeItem(id: String) {
+        let oldCount = items.count
         items.removeAll { $0.id == id }
+        if items.count != oldCount { notify(.itemsChanged(items)) }
     }
 
     public func addBarItems(_ newItems: [ChatSectionBarItem]) {
         var byID = Dictionary(uniqueKeysWithValues: barItems.map { ($0.id, $0) })
         for item in newItems { byID[item.id] = item }
         barItems = byID.values.sorted { $0.order == $1.order ? $0.id < $1.id : $0.order < $1.order }
+        notify(.barItemsChanged(barItems))
     }
 
     public func removeBarItem(id: String) {
+        let oldCount = barItems.count
         barItems.removeAll { $0.id == id }
+        if barItems.count != oldCount { notify(.barItemsChanged(barItems)) }
     }
 
     public func addRootWrappers(_ newWrappers: [ChatSectionRootWrapper]) {
         var byID = Dictionary(uniqueKeysWithValues: rootWrappers.map { ($0.id, $0) })
         for wrapper in newWrappers { byID[wrapper.id] = wrapper }
         rootWrappers = byID.values.sorted { $0.order == $1.order ? $0.id < $1.id : $0.order < $1.order }
+        notify(.rootWrappersChanged(rootWrappers))
     }
 
     public func removeRootWrapper(id: String) {
+        let oldCount = rootWrappers.count
         rootWrappers.removeAll { $0.id == id }
+        if rootWrappers.count != oldCount { notify(.rootWrappersChanged(rootWrappers)) }
     }
 
     public func setVisible(_ visible: Bool) {
+        guard isVisible != visible else { return }
         isVisible = visible
+        notify(.visibilityChanged(visible))
     }
 
     public func setContextActive(_ active: Bool) {
+        guard isContextActive != active else { return }
         isContextActive = active
+        notify(.contextActiveChanged(active))
     }
 
     public func setHeaderVisible(_ visible: Bool) {
+        guard isHeaderVisible != visible else { return }
         isHeaderVisible = visible
+        notify(.headerVisibilityChanged(visible))
+    }
+
+    @discardableResult
+    public func addObserver(_ callback: @escaping (ChatSectionProvidingEvent) -> Void) -> any ChatSectionProvidingObserverHandle {
+        let observer = Observer(owner: self, callback: callback)
+        observers.append(WeakObserver(observer))
+        return observer
+    }
+
+    private func remove(_ observer: Observer) {
+        observers.removeAll { $0.observer === observer }
+    }
+
+    private func notify(_ event: ChatSectionProvidingEvent) {
+        observers.removeAll { $0.observer == nil }
+        let activeObservers = observers
+        for observer in activeObservers {
+            observer.observer?.invoke(event)
+        }
     }
 
     /// 把 header / toolbar 可见性绑定到会话选择状态（复刻旧版 `ChatView` 语义：
@@ -65,15 +100,45 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
     /// 由集成层在插件全部启动、`ConversationManaging` 最终实例确定后调用一次；
     /// 订阅由本 Provider 持有，随内核生命周期存续。
     public func bindConversationSelection(_ conversations: any ConversationManaging) {
-        isHeaderVisible = conversations.selectedConversationID != nil
+        setHeaderVisible(conversations.selectedConversationID != nil)
         conversationSelectionCancellable = conversations.objectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self, weak conversations] _ in
                 MainActor.assumeIsolated {
                     guard let self, let conversations else { return }
-                    self.isHeaderVisible = conversations.selectedConversationID != nil
+                    self.setHeaderVisible(conversations.selectedConversationID != nil)
                 }
             }
+    }
+
+    private final class Observer: ChatSectionProvidingObserverHandle {
+        private weak var owner: DefaultChatSectionProviding?
+        private let callback: (ChatSectionProvidingEvent) -> Void
+        private var cancelled = false
+
+        init(owner: DefaultChatSectionProviding, callback: @escaping (ChatSectionProvidingEvent) -> Void) {
+            self.owner = owner
+            self.callback = callback
+        }
+
+        func cancel() {
+            guard !cancelled else { return }
+            cancelled = true
+            owner?.remove(self)
+        }
+
+        func invoke(_ event: ChatSectionProvidingEvent) {
+            guard !cancelled else { return }
+            callback(event)
+        }
+    }
+
+    private final class WeakObserver {
+        weak var observer: Observer?
+
+        init(_ observer: Observer) {
+            self.observer = observer
+        }
     }
 
     public func makeChatSectionView() -> AnyView {

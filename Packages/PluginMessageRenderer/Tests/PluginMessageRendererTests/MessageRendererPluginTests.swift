@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import KitAgentTool
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering
@@ -17,6 +18,28 @@ struct MessageRendererPluginTests {
         #expect(MessageViewHelpers.formatToolCallArguments("{\"path\":\"/tmp/a\"}")?.contains("\"path\"") == true)
         #expect(MessageViewHelpers.formatToolCallArguments("{}{\"scope\":\"global\"}")?.contains("\"scope\"") == true)
         #expect(MessageViewHelpers.formatToolCallArguments("{}\n{\"path\":\"/tmp/a\"}")?.contains("\"path\"") == true)
+    }
+
+    @Test("已有最终结果的旧 pending 工具调用不重复显示授权")
+    func completedPendingToolCallDoesNotRenderApproval() {
+        let renderer = ToolApprovalRowRenderer()
+        let completed = ToolCall(
+            id: "call-completed",
+            name: "read",
+            arguments: "{}",
+            authorizationState: .pendingAuthorization,
+            result: ToolCallResult(content: "done")
+        )
+        let waiting = ToolCall(
+            id: "call-waiting",
+            name: "read",
+            arguments: "{}",
+            authorizationState: .pendingAuthorization,
+            result: ToolCallResult(content: "approval", awaitingUserResponse: true)
+        )
+
+        #expect(renderer.canRender(toolCall: completed) == false)
+        #expect(renderer.canRender(toolCall: waiting) == true)
     }
 
     private func makeKernel() throws -> KernelCoreContainer {

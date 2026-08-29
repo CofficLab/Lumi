@@ -13,8 +13,11 @@ let package = Package(
         .package(path: "../KitLocalization"),
         .package(path: "../LumiUI"),
         .package(path: "../ProviderActivityBar"),
+        .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
+        .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderRootView"),
         .package(path: "../KitSuperLog"),
     ],
     targets: [
@@ -25,8 +28,11 @@ let package = Package(
                 "KitLocalization",
                 "LumiUI",
                 "ProviderActivityBar",
+                "ProviderChatSection",
                 "ProviderContentView",
                 "ProviderDocsView",
+                "ProviderRailView",
+                "ProviderRootView",
                 "KitSuperLog",
             ],
             resources: [.process("Resources/Localizable.xcstrings")]
@@ -35,6 +41,11 @@ let package = Package(
             name: "PluginHostsManagerTests",
             dependencies: [
                 "PluginHostsManager",
+                .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderContentView", package: "ProviderContentView"),
+                .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
             ]
         ),
     ]

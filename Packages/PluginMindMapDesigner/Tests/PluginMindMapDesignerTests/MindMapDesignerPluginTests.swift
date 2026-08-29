@@ -1,5 +1,8 @@
 import KitAgentTool
 import Foundation
+import KernelCore
+import ProviderActivityBar
+import ProviderChatSection
 import Testing
 @testable import PluginMindMapDesigner
 
@@ -26,6 +29,24 @@ struct MindMapDesignerPluginTests {
             "export_mind_map",
             "import_outline",
         ])
+    }
+
+    @Test func activatingPluginHidesChatSectionAndDeactivatingRestoresIt() throws {
+        let kernel = KernelCoreContainer()
+        let activityBar = DefaultActivityBarProviding()
+        let chat = DefaultChatSectionProviding()
+        try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+
+        let plugin = MindMapDesignerPlugin()
+        try plugin.onBoot(kernel: kernel)
+
+        #expect(activityBar.activeItemID == "\(plugin.id).entry")
+        #expect(!chat.isVisible)
+
+        activityBar.activateItem(id: nil)
+
+        #expect(chat.isVisible)
     }
 
     // MARK: - Markdown codec

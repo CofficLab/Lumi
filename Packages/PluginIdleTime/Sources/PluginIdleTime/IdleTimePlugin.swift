@@ -5,6 +5,8 @@ import ProviderSettingView
 import ProviderStorage
 import ProviderIdleTime
 import SwiftUI
+import KitSuperLog
+import os
 
 /// 空闲时间插件（KernelCore 版本）。
 ///
@@ -14,7 +16,8 @@ import SwiftUI
 /// - 贡献设置页、关于文档；
 /// - onShutdown 全部撤回。
 @MainActor
-public final class IdleTimePlugin: SuperPlugin {
+public final class IdleTimePlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.idle-time", category: "IdleTime")
     public let id = "com.coffic.lumi.plugin.idle-time"
     public let order = 96
     public let metadata = PluginMetadata(
@@ -31,6 +34,13 @@ public final class IdleTimePlugin: SuperPlugin {
     private var provider: (any IdleTimeProviding)?
 
     public init() {}
+
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: LumiPluginLocalization.string("Idle Time", bundle: .module)) { IdleTimeAboutView() })
+            docs.addManual(DocsEntry(id: id, name: LumiPluginLocalization.string("Idle Time", bundle: .module)) { IdleTimeManualView() })
+        }
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 1. 解析 IdleTimeProviding（FactoryLumi 已装配真实 IdleTimeService）。
@@ -56,11 +66,6 @@ public final class IdleTimePlugin: SuperPlugin {
             }
             settings.addEntries([entry])
         }
-
-        // 4. 关于文档。
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: LumiPluginLocalization.string("Idle Time", bundle: .module)) { IdleTimeAboutView() })
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -74,8 +79,10 @@ public final class IdleTimePlugin: SuperPlugin {
 
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
-        kernel.resolveProvider((any DocsViewProviding).self)?
-            .removeEntries(id: id)
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     // MARK: - 事件监听（替代旧版 IdleTimeRootObserver）

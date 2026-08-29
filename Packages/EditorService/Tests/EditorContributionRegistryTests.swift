@@ -1,13 +1,13 @@
 import EditorLanguageRuntime
+import EditorContracts
 import Foundation
-import KernelLumi
 import Testing
 @testable import EditorService
 
-// 消歧：EditorLanguageRuntime 与 KernelLumi 存在同名类型；
-// EditorContributionBundle 的语言模型使用 KernelLumi 一侧。
-import struct KernelLumi.EditorLanguageDescriptor
-import protocol KernelLumi.LanguageGrammarProviding
+// 消歧：EditorLanguageRuntime 与 EditorContracts 存在同名类型；
+// EditorContributionBundle 使用中立契约层模型。
+import struct EditorContracts.EditorLanguageDescriptor
+import protocol EditorContracts.LanguageGrammarProviding
 
 /// `EditorContributionRegistry` 契约测试（重构方案 §21.1：贡献包原子替换、插件撤回）。
 @MainActor

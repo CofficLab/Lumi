@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "PluginActivityHeatmap", targets: ["PluginActivityHeatmap"]),
     ],
     dependencies: [
+        .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../KitLocalization"),
         .package(path: "../ProviderMessage"),
@@ -21,6 +22,7 @@ let package = Package(
         .target(
             name: "PluginActivityHeatmap",
             dependencies: [
+                "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),

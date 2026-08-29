@@ -5,17 +5,20 @@ import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
+import ProviderRootView
 import ProviderToolManager
 import ProviderPromptSuggestion
-import ProviderWorkspace
 import SwiftUI
+import KitSuperLog
+import os
 
 /// KernelCore 版本的 App Store 促销图设计器插件。
 ///
 /// 由旧版 `Plugins/AppStorePromoDesignerPlugin`（KernelLumi / LumiPlugin）复刻而来，
 /// 形态对齐 `PluginAppIconDesigner`：SuperPlugin + SuperAgentTool + Provider 注册表。
 @MainActor
-public final class AppStorePromoDesignerPlugin: SuperPlugin {
+public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
+    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.app-store-promo-designer", category: "AppStorePromoDesigner")
     public let id = "com.coffic.lumi.plugin.app-store-promo-designer"
     public let order = 80
     public let metadata = PluginMetadata(
@@ -43,8 +46,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
             systemImage: "photo.artframe",
             action: .activatePluginEntry(
                 activityBarItemID: "\(id).entry",
-                railTabID: Self.railTabID,
-                viewContainerID: id
+                railTabID: Self.railTabID
             )
         )
     }
@@ -58,6 +60,10 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
 
     public func onRegister(kernel: KernelCoreContainer) throws {
         registerPromptSuggestion(kernel: kernel, requiresEnable: !kernel.isPluginEnabled(id: id))
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: name) { PromoAboutView() })
+            docs.addManual(DocsEntry(id: id, name: name) { PromoManualView() })
+        }
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -73,28 +79,13 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
-        let workspace = kernel.resolveProvider((any WorkspaceProviding).self)
-
-        workspace?.registerContainer(
-            WorkspaceContainer(
-                id: id,
-                title: name,
-                systemImage: "photo.artframe",
-                order: order,
-                railVisibility: .alwaysVisible,
-                chatVisibility: .alwaysVisible,
-                panelHeaderVisibility: .unsupported,
-                panelBodyVisibility: .unsupported,
-                panelBottomVisibility: .unsupported
-            ),
-            ownerPluginID: id
-        )
+        let rootView = kernel.resolveProvider((any RootViewProviding).self)
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
-                groupID: id,
+                category: .design,
                 title: PromoLocalization.string("Promo Tasks"),
                 systemImage: "photo.stack",
                 order: order
@@ -112,14 +103,17 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
                     systemImage: "photo.artframe",
                     order: order,
                     ownerPluginID: id
-                ) { activeItemID in
-                    guard activeItemID == entryID else { return }
-                    WorkspaceStore.shared.reload()
-                    contentView?.setContentView(AnyView(PromoDesignerView()))
-                    chat?.setVisible(true)
-                    chat?.setContextActive(true)
-                    railView?.activateGroup(id: self.id)
-                    workspace?.activateContainer(id: self.id)
+                ) { state in
+                    if state == .activated {
+                        rootView?.setContentHeaderViewHidden(true)
+                        railView?.setVisibleTabID(Self.railTabID)
+                        WorkspaceStore.shared.reload()
+                        contentView?.setContentView(AnyView(PromoDesignerView()))
+                        chat?.setVisible(true)
+                        chat?.setContextActive(true)
+                    } else {
+                        rootView?.setContentHeaderViewHidden(false)
+                    }
                 },
             ])
         } else {
@@ -127,13 +121,6 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
             contentView?.setContentView(AnyView(PromoDesignerView()))
             chat?.setVisible(true)
             chat?.setContextActive(true)
-            railView?.activateGroup(id: id)
-            workspace?.activateContainer(id: id)
-        }
-
-        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            docs.addAbout(DocsEntry(id: id, name: name) { PromoAboutView() })
-            docs.addManual(DocsEntry(id: id, name: name) { PromoManualView() })
         }
     }
 
@@ -155,16 +142,18 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
 
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
-        kernel.resolveProvider((any WorkspaceProviding).self)?
-            .unregisterContainers(ownerPluginID: id)
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
+            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+        }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
 
-        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         PromoDesignerRuntime.reset()
     }
 
@@ -174,6 +163,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin {
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any PromptSuggestionProviding).self)?.unregister(id: promptSuggestion.id)
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
     // MARK: - Agent Tools

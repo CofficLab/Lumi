@@ -1,3 +1,4 @@
+import LumiUI
 import ProviderOnboarding
 import SwiftUI
 
@@ -69,33 +70,55 @@ struct OnboardingSheet: View {
     @Binding var index: Int
     let finish: () -> Void
 
+    @LumiTheme private var theme
+
     var body: some View {
         let safeIndex = min(max(index, 0), max(pages.count - 1, 0))
         VStack(spacing: 0) {
             HStack {
                 Label("Getting started", systemImage: "graduationcap.fill")
-                    .font(.headline)
+                    .font(DesignTokens.Typography.bodyEmphasized)
+                    .foregroundStyle(theme.textSecondary)
                 Spacer()
-                Text("\(safeIndex + 1) of \(pages.count)").foregroundStyle(.secondary)
-                Button("Skip") { finish() }.buttonStyle(.borderless)
+                Text("\(safeIndex + 1) of \(pages.count)")
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundStyle(theme.textTertiary)
+                AppButton("Skip", style: .tonal, size: .small, action: finish)
             }
-            .padding(20)
+            .padding(.horizontal, DesignTokens.Spacing.lg)
+            .padding(.vertical, DesignTokens.Spacing.md + 4)
             Divider()
             if pages.indices.contains(safeIndex) {
-                ScrollView { pages[safeIndex].makeView().padding(28) }
+                ScrollView {
+                    pages[safeIndex].makeView()
+                        .padding(DesignTokens.Spacing.xl)
+                }
             }
             Divider()
             HStack {
-                Button("Back") { index = max(0, safeIndex - 1) }
-                    .disabled(safeIndex == 0)
+                AppButton(
+                    "Back",
+                    systemImage: "chevron.left",
+                    style: .ghost,
+                    size: .small,
+                    action: { index = max(0, safeIndex - 1) }
+                )
+                .disabled(safeIndex == 0)
+
                 Spacer()
-                Button(safeIndex == pages.count - 1 ? "Finish" : "Continue") {
-                    if safeIndex == pages.count - 1 { finish() }
-                    else { index = safeIndex + 1 }
-                }
-                .buttonStyle(.borderedProminent)
+
+                AppButton(
+                    safeIndex == pages.count - 1 ? "Finish" : "Continue",
+                    systemImage: safeIndex == pages.count - 1 ? nil : "chevron.right",
+                    style: .primary,
+                    action: {
+                        if safeIndex == pages.count - 1 { finish() }
+                        else { index = safeIndex + 1 }
+                    }
+                )
             }
-            .padding(20)
+            .padding(.horizontal, DesignTokens.Spacing.lg)
+            .padding(.vertical, DesignTokens.Spacing.md + 4)
         }
         .frame(width: 640, height: 550)
     }

@@ -1,10 +1,12 @@
 import AppKit
 import KernelCore
 import ProviderCommand
+import ProviderDocsView
 import ProviderMessageSender
 import ProviderSettingView
 import SwiftUI
 import os
+import KitSuperLog
 
 struct QuickLauncherPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "QuickLauncherPlugin")
@@ -15,7 +17,7 @@ struct QuickLauncherPlugin {
 /// It preserves the global hotkey, floating panel, persisted source switches,
 /// command search, and `?` direct-send behavior from the legacy plugin.
 @MainActor
-public final class QuickLauncherSuperPlugin: SuperPlugin {
+public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.quick-launcher"
     public let order = 8
     public let metadata = PluginMetadata(
@@ -29,6 +31,14 @@ public final class QuickLauncherSuperPlugin: SuperPlugin {
 
     public init() {}
 
+    public func onRegister(kernel: KernelCoreContainer) throws {
+        let title = metadata.name
+        if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
+            docs.addAbout(DocsEntry(id: id, name: title) { QuickLauncherAboutView() })
+            docs.addManual(DocsEntry(id: id, name: title) { QuickLauncherManualView() })
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
@@ -40,9 +50,7 @@ public final class QuickLauncherSuperPlugin: SuperPlugin {
                 LauncherSettingsView()
             },
         ])
-    }
 
-    public func onReady(kernel: KernelCoreContainer) throws {
         let commands = kernel.resolveProvider((any CommandProviding).self)
         let sender = kernel.resolveProvider((any MessageSendingProviding).self)
 
@@ -91,6 +99,10 @@ public final class QuickLauncherSuperPlugin: SuperPlugin {
         LauncherBridge.askAIHandler = nil
         LauncherBridge.commandGroupsProvider = nil
         LauncherBridge.activateMainWindowHandler = nil
+    }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 }

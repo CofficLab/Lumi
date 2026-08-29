@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import KernelLumi
 @testable import DisplayControlPlugin
 
 @Suite("Display control localization")

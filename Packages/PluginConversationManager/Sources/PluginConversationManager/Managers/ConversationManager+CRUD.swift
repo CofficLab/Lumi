@@ -130,6 +130,18 @@ extension ConversationManager {
         return handle
     }
 
+    public func transferObservers(to replacement: any ConversationManaging) {
+        selectedConversationObservers.removeAll { $0.handle == nil }
+        conversationObservers.removeAll { $0.handle == nil }
+
+        for callback in selectedConversationObservers.compactMap({ $0.handle?.callback }) {
+            _ = replacement.addSelectedConversationObserver(callback)
+        }
+        for callback in conversationObservers.compactMap({ $0.handle?.callback }) {
+            _ = replacement.addConversationObserver(callback)
+        }
+    }
+
     public func deselectConversation() {
         if Self.verbose {
             Self.logger.info("\(Self.t)Deselecting conversation")

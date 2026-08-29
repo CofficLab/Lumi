@@ -24,7 +24,6 @@ let package = Package(
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToast"),
         .package(path: "../ProviderToolbar"),
-        .package(path: "../ProviderWorkspace"),
         .package(name: "PluginBookletMaker", path: "../PluginBookletMaker"),
     ],
     targets: [
@@ -46,7 +45,6 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderToast", package: "ProviderToast"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
-                .product(name: "ProviderWorkspace", package: "ProviderWorkspace"),
                 .product(name: "PluginBookletMaker", package: "PluginBookletMaker"),
             ],
             path: "Sources/FactoryBookletMaker",
