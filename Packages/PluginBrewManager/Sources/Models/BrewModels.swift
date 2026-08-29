@@ -77,6 +77,36 @@ public struct BrewPackageInfo: Codable, Sendable {
         self.token = token
         self.version = version
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case name
+        case full_name
+        case desc
+        case homepage
+        case versions
+        case installed
+        case outdated
+        case token
+        case version
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decode(String.self, forKey: .name)
+        full_name = try container.decodeIfPresent(String.self, forKey: .full_name)
+        desc = try container.decodeIfPresent(String.self, forKey: .desc)
+        homepage = try container.decodeIfPresent(String.self, forKey: .homepage)
+        versions = try container.decodeIfPresent(BrewVersions.self, forKey: .versions)
+
+        // Formulae return an array here, while Homebrew casks return the
+        // installed version as a string. The cask version is already exposed
+        // through `version`, so the string form can safely be ignored.
+        installed = try? container.decode([InstalledVersion].self, forKey: .installed)
+
+        outdated = try container.decodeIfPresent(Bool.self, forKey: .outdated)
+        token = try container.decodeIfPresent(String.self, forKey: .token)
+        version = try container.decodeIfPresent(String.self, forKey: .version)
+    }
 }
 
 public struct BrewVersions: Codable, Sendable {
