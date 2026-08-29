@@ -3,6 +3,7 @@ import KernelCore
 import LumiUI
 import os
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
@@ -75,6 +76,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
             )
         }
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         railView?.addTabs([
@@ -106,6 +108,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
+                        chat?.setVisible(false)
                         railView?.setVisibleTabID(Self.railTabID)
                         contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: self.sharedViewModel)))
                         toolbar?.addToolbarItems([
@@ -119,6 +122,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                             },
                         ])
                     } else {
+                        chat?.setVisible(true)
                         toolbar?.removeToolbarItems(ids: ["\(self.id).title"])
                     }
                 },
@@ -196,6 +200,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
