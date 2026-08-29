@@ -2,10 +2,139 @@ import Foundation
 import SwiftData
 import os
 
+/// Serializes retention work so request recording can remain nonisolated while
+/// cleanup runs against its own background model context.
+private actor HTTPExchangeRetentionCoordinator {
+    private let container: ModelContainer?
+    private var scheduledTask: Task<Void, Never>?
+    private var periodicTask: Task<Void, Never>?
+
+    init(container: ModelContainer?) {
+        self.container = container
+    }
+
+    deinit {
+        scheduledTask?.cancel()
+        periodicTask?.cancel()
+    }
+
+    func scheduleCleanup(
+        immediately: Bool,
+        retentionDays: Int,
+        maxRecordCount: Int,
+        notification: Notification.Name
+    ) {
+        guard scheduledTask == nil else { return }
+
+        scheduledTask = Task { [weak self] in
+            if !immediately {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+            }
+
+            guard let self else { return }
+            let deletedCount = await self.cleanup(
+                now: Date(),
+                retentionDays: retentionDays,
+                maxRecordCount: maxRecordCount
+            )
+            if deletedCount > 0 {
+                NotificationCenter.default.post(name: notification, object: nil)
+            }
+            await self.clearScheduledTask()
+        }
+    }
+
+    func startPeriodicCleanup(
+        retentionDays: Int,
+        maxRecordCount: Int,
+        notification: Notification.Name
+    ) {
+        guard periodicTask == nil else { return }
+
+        periodicTask = Task { [weak self] in
+            while !Task.isCancelled {
+                do {
+                    try await Task.sleep(nanoseconds: 86_400_000_000_000)
+                } catch {
+                    return
+                }
+
+                guard let coordinator = self else { return }
+                let deletedCount = await coordinator.cleanup(
+                    now: Date(),
+                    retentionDays: retentionDays,
+                    maxRecordCount: maxRecordCount
+                )
+                if deletedCount > 0 {
+                    NotificationCenter.default.post(name: notification, object: nil)
+                }
+            }
+        }
+    }
+
+    func cleanup(
+        now: Date,
+        retentionDays: Int,
+        maxRecordCount: Int
+    ) -> Int {
+        guard retentionDays > 0,
+              maxRecordCount > 0,
+              let container,
+              let cutoff = Calendar.current.date(byAdding: .day, value: -retentionDays, to: now) else {
+            return 0
+        }
+
+        let context = ModelContext(container)
+        var recordsToDelete: [HTTPExchangeRecord] = []
+
+        var expiredDescriptor = FetchDescriptor<HTTPExchangeRecord>(
+            predicate: #Predicate<HTTPExchangeRecord> { $0.startedAt < cutoff },
+            sortBy: [SortDescriptor(\.startedAt, order: .forward)]
+        )
+        // Deletion only needs identity and ordering fields. Do not load
+        // request/response bodies from expired records just to delete them.
+        expiredDescriptor.propertiesToFetch = [\.id, \.startedAt]
+        recordsToDelete.append(contentsOf: (try? context.fetch(expiredDescriptor)) ?? [])
+
+        let recentDescriptor = FetchDescriptor<HTTPExchangeRecord>(
+            predicate: #Predicate<HTTPExchangeRecord> { $0.startedAt >= cutoff }
+        )
+        let recentCount = (try? context.fetchCount(recentDescriptor)) ?? 0
+        if recentCount > maxRecordCount {
+            var excessDescriptor = FetchDescriptor<HTTPExchangeRecord>(
+                predicate: #Predicate<HTTPExchangeRecord> { $0.startedAt >= cutoff },
+                sortBy: [SortDescriptor(\.startedAt, order: .forward)]
+            )
+            excessDescriptor.fetchLimit = recentCount - maxRecordCount
+            excessDescriptor.propertiesToFetch = [\.id, \.startedAt]
+            recordsToDelete.append(contentsOf: (try? context.fetch(excessDescriptor)) ?? [])
+        }
+
+        guard !recordsToDelete.isEmpty else { return 0 }
+        for record in recordsToDelete {
+            context.delete(record)
+        }
+
+        do {
+            try context.save()
+            return recordsToDelete.count
+        } catch {
+            NetworkManagerPlugin.logger.error("HTTP exchange retention cleanup failed: \(error.localizedDescription)")
+            return 0
+        }
+    }
+
+    private func clearScheduledTask() {
+        scheduledTask = nil
+    }
+}
+
 /// SwiftData-backed recorder for every HTTP request made by this plugin.
 @MainActor
 public final class HTTPExchangeStore {
     public static let databaseFileName = "http-exchanges.sqlite"
+    public nonisolated static let retentionDays = 30
+    public nonisolated static let maxRecordCount = 10_000
     /// `nonisolated`:后台写入路径(`beginRecord`/`finishRecord`)需要 post 此通知,
     /// 而它是纯常量,可安全地从任意线程引用。
     public nonisolated static let didChangeNotification = Notification.Name("com.coffic.lumi.networkManagerHTTPExchangeDidChange")
@@ -15,6 +144,7 @@ public final class HTTPExchangeStore {
     /// snapshot readers build their own private `ModelContext`.
     private nonisolated let container: ModelContainer?
     private let context: ModelContext?
+    private nonisolated let retentionCoordinator: HTTPExchangeRetentionCoordinator
 
     public let directory: URL
 
@@ -32,11 +162,16 @@ public final class HTTPExchangeStore {
             let container = try ModelContainer(for: schema, configurations: [configuration])
             self.container = container
             self.context = ModelContext(container)
+            self.retentionCoordinator = HTTPExchangeRetentionCoordinator(container: container)
         } catch {
             self.container = nil
             self.context = nil
+            self.retentionCoordinator = HTTPExchangeRetentionCoordinator(container: nil)
             NetworkManagerPlugin.logger.error("HTTP exchange SwiftData 初始化失败: \(error.localizedDescription)")
         }
+
+        scheduleRetentionCleanup(immediately: true)
+        startPeriodicRetentionCleanup()
     }
 
     @discardableResult
@@ -61,6 +196,7 @@ public final class HTTPExchangeStore {
         context.insert(record)
         save(context)
         NotificationCenter.default.post(name: Self.didChangeNotification, object: nil)
+        scheduleRetentionCleanup()
         return record
     }
 
@@ -104,15 +240,17 @@ public final class HTTPExchangeStore {
 
     /// Collect distinct host names from recent records.
     ///
-    /// SwiftData offers no single-column projection, so this walks a bounded
-    /// window of the newest records instead of the full table, keeping the
-    /// cost constant as history grows. Hosts are lowercased so they line up
-    /// with `searchPage`'s `domain` filter.
+    /// This walks a bounded window of the newest records and projects only
+    /// request URLs, keeping the cost constant as history grows. Hosts are
+    /// lowercased so they line up with `searchPage`'s `domain` filter.
     public func fetchDomains(limit: Int = 5_000) -> [String] {
         guard let context = self.context, limit > 0 else { return [] }
         var descriptor = FetchDescriptor<HTTPExchangeRecord>(
             sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
         )
+        // Domain aggregation only needs the request URL. Avoid materializing
+        // request/response bodies for every record in this bounded window.
+        descriptor.propertiesToFetch = [\.requestURL]
         descriptor.fetchLimit = limit
         let records = (try? context.fetch(descriptor)) ?? []
         var domains = Set<String>()
@@ -331,6 +469,7 @@ public final class HTTPExchangeStore {
             return nil
         }
         Self.postDidChange()
+        scheduleRetentionCleanup()
         return id
     }
 
@@ -381,12 +520,56 @@ public final class HTTPExchangeStore {
             return
         }
         Self.postDidChange()
+        scheduleRetentionCleanup()
     }
 
     /// `didChangeNotification` 发送抽成 nonisolated 静态方法,供后台写入路径复用。
     /// `NotificationCenter` 线程安全,可从任意线程 post。
     private nonisolated static func postDidChange() {
         NotificationCenter.default.post(name: didChangeNotification, object: nil)
+    }
+
+    /// Runs retention cleanup immediately. The normal write path uses the
+    /// debounced scheduler below; this entry point is useful for startup,
+    /// manual maintenance, and deterministic tests.
+    @discardableResult
+    public nonisolated func cleanupRetentionNow(
+        now: Date = Date(),
+        retentionDays: Int = HTTPExchangeStore.retentionDays,
+        maxRecordCount: Int = HTTPExchangeStore.maxRecordCount
+    ) async -> Int {
+        let deletedCount = await retentionCoordinator.cleanup(
+            now: now,
+            retentionDays: retentionDays,
+            maxRecordCount: maxRecordCount
+        )
+        if deletedCount > 0 {
+            Self.postDidChange()
+        }
+        return deletedCount
+    }
+
+    private nonisolated func scheduleRetentionCleanup(immediately: Bool = false) {
+        let coordinator = retentionCoordinator
+        Task {
+            await coordinator.scheduleCleanup(
+                immediately: immediately,
+                retentionDays: Self.retentionDays,
+                maxRecordCount: Self.maxRecordCount,
+                notification: Self.didChangeNotification
+            )
+        }
+    }
+
+    private nonisolated func startPeriodicRetentionCleanup() {
+        let coordinator = retentionCoordinator
+        Task {
+            await coordinator.startPeriodicCleanup(
+                retentionDays: Self.retentionDays,
+                maxRecordCount: Self.maxRecordCount,
+                notification: Self.didChangeNotification
+            )
+        }
     }
 
     /// One page of newest exchanges as snapshots.
@@ -430,6 +613,7 @@ public final class HTTPExchangeStore {
         var descriptor = FetchDescriptor<HTTPExchangeRecord>(
             sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
         )
+        descriptor.propertiesToFetch = [\.requestURL]
         descriptor.fetchLimit = limit
         let records = (try? context.fetch(descriptor)) ?? []
         var domains = Set<String>()
@@ -455,12 +639,12 @@ public final class HTTPExchangeStore {
         return records.map(HTTPExchangeExportSnapshot.init(record:))
     }
 
-    /// Recent activity chart, built with a single fetch + in-memory bucketing
-    /// instead of one count query per day.
+    /// Recent activity chart, built with count queries that never materialize
+    /// HTTP exchange bodies.
     ///
-    /// The synchronous `fetchDailyCountSeries` issues N separate `fetchCount`
-    /// queries (one per day); this collapses them into one bounded fetch of
-    /// the window and reuses `HTTPExchangeDailyCountSeries.build` to bucket.
+    /// This deliberately uses one `fetchCount` per day instead of fetching the
+    /// whole 14-day window. HTTP request bodies can be very large, so a normal
+    /// model fetch here can turn a small chart into a multi-gigabyte read.
     nonisolated func loadDailyCountSeries(
         days: Int = 14,
         endingAt date: Date = Date()
@@ -475,17 +659,21 @@ public final class HTTPExchangeStore {
             return HTTPExchangeDailyCountSeries(points: [])
         }
 
-        let descriptor = FetchDescriptor<HTTPExchangeRecord>(
-            predicate: #Predicate<HTTPExchangeRecord> { $0.startedAt >= firstDay },
-            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
-        )
-        let records = (try? context.fetch(descriptor)) ?? []
-        return HTTPExchangeDailyCountSeries.build(
-            records: records,
-            calendar: calendar,
-            days: days,
-            endingAt: date
-        )
+        let points = (0..<days).compactMap { offset -> HTTPExchangeDailyCountPoint? in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: firstDay),
+                  let nextDay = calendar.date(byAdding: .day, value: 1, to: day) else {
+                return nil
+            }
+
+            let descriptor = FetchDescriptor<HTTPExchangeRecord>(
+                predicate: #Predicate<HTTPExchangeRecord> {
+                    $0.startedAt >= day && $0.startedAt < nextDay
+                }
+            )
+            let count = (try? context.fetchCount(descriptor)) ?? 0
+            return HTTPExchangeDailyCountPoint(day: day, count: count)
+        }
+        return HTTPExchangeDailyCountSeries(points: points)
     }
 
     public func finish(
@@ -523,6 +711,7 @@ public final class HTTPExchangeStore {
         }
         save(context)
         NotificationCenter.default.post(name: Self.didChangeNotification, object: nil)
+        scheduleRetentionCleanup()
     }
 
     private func save(_ context: ModelContext) {

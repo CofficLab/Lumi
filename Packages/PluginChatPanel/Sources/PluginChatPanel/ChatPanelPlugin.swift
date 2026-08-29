@@ -50,14 +50,14 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             chat.setContextActive(isChatActive)
             rootView.setContentViewHidden(isChatActive)
             rootView.setContentHeaderViewHidden(!isChatActive)
-            railView?.setVisibleCategories(isChatActive ? [.chat] : Set(RailViewCategory.allCases))
+            railView?.setVisibleCategories(isChatActive ? [.chat, .fileTree] : Set(RailViewCategory.allCases))
         }])
         
         activityBar.activateItem(id: entryID)
         chat.setVisible(true)
         chat.setContextActive(true)
         rootView.setContentHeaderViewHidden(true)
-        railView?.setVisibleCategories([.chat])
+        railView?.setVisibleCategories([.chat, .fileTree])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
