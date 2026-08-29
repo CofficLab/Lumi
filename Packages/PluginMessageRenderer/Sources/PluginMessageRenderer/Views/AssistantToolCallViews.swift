@@ -193,9 +193,10 @@ struct ToolCallRowView: View {
     let message: Message
     let toolCall: MessageToolCall
     let verbosity: ResponseVerbosity
-    /// 是否显示执行时长与参数/结果按钮。
+    /// 是否显示参数/结果按钮。
     /// - 旧路径(ToolCallRowsView):V1 false / V2·V3 true。
-    /// - V1 可折叠步骤组展开态:强制 `true`,让用户在 brief 下也能查看耗时与结果。
+    /// - V1 可折叠步骤组展开态:强制 `true`,让用户在 brief 下也能查看结果。
+    /// - 执行耗时不再作为行内独立元素,统一在「调用结果」popover 内容区顶部展示。
     let showsDetails: Bool
     @Binding var parameterPopoverToolCallID: String?
     @Binding var resultPopoverToolCallID: String?
@@ -249,14 +250,8 @@ struct ToolCallRowView: View {
 
             Spacer(minLength: 12)
 
-            // V2/V3 显示执行时长
-            if showsDetails, let duration = toolCall.result?.duration {
-                Text(MessageViewHelpers.formatDuration(duration))
-                    .font(.appMicro)
-                    .foregroundColor(theme.textSecondary)
-            }
-
-            // V2/V3 显示参数和结果按钮
+            // V2/V3 显示参数和结果按钮。
+            // 执行耗时不再单独显示，统一整合进「调用结果」popover 的内容区顶部。
             if showsDetails {
                 parameterButton
 
@@ -477,6 +472,11 @@ private struct ToolCallResultView: View {
             LoadingToolSectionView()
         } else if let result {
             VStack(alignment: .leading, spacing: 8) {
+                // 执行耗时整合在此:行内不再单独显示,打开结果 popover 即可看到。
+                if let duration = result.duration {
+                    ToolDurationRowView(duration: duration, isError: visualState.isFailure)
+                }
+
                 if visualState.isFailure {
                     ToolFailureNoticeView()
                 }
@@ -508,6 +508,36 @@ private struct ToolCallResultView: View {
     }
 }
 
+// MARK: - ToolDurationRowView
+
+/// 结果 popover 顶部的执行耗时行。
+///
+/// 工具调用行内不再单独显示耗时,统一在此展示,便于用户快速了解该工具的执行时间。
+private struct ToolDurationRowView: View {
+    @LumiTheme private var theme
+
+    let duration: TimeInterval
+    var isError = false
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "clock")
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+
+            Text(LumiPluginLocalization.string("执行耗时", bundle: .module))
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+
+            Text(MessageViewHelpers.formatDuration(duration))
+                .font(.appCaptionEmphasized)
+                .foregroundColor(isError ? theme.error : theme.textPrimary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .toolSubtleCard()
+    }
+}
+
 // MARK: - ToolCallResultLazyPopover
 
 /// 结果按钮弹层:不在打开前持有数据。打开时先展示 loading,再去 kernel 查询该工具调用结果,
@@ -515,6 +545,8 @@ private struct ToolCallResultView: View {
 ///
 /// `fallbackResult` 仅用于在 kernel 查询返回 nil(如结果尚未持久化、store 不可用)时,
 /// 复用行内已解析的结果作为兜底,避免空面板。
+///
+/// 工具执行耗时从行内移除后,统一在此 popover 内容区顶部展示(见 `ToolCallResultView`)。
 private struct ToolCallResultLazyPopover: View {
     let kernel: KernelCoreContainer
     let toolCallID: String
