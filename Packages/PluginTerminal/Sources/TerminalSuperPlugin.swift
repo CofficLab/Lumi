@@ -2,6 +2,7 @@ import Combine
 import KernelCore
 import LumiUI
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderProject
@@ -47,6 +48,7 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
         }
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let project = kernel.resolveProvider((any ProjectProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
@@ -59,10 +61,12 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { state in
                 if state == .activated {
+                    chat?.setVisible(false)
                     rootView?.setRailView(nil)
                     rootView?.setContentHeaderViewHidden(true)
                     content?.setContentView(AnyView(TerminalV2MainView(project: project)))
                 } else {
+                    chat?.setVisible(true)
                     rootView?.setRailView(railView?.makeRailView())
                     rootView?.setContentHeaderViewHidden(false)
                 }
@@ -77,6 +81,7 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             let rootView = kernel.resolveProvider((any RootViewProviding).self)
             let railView = kernel.resolveProvider((any RailViewProviding).self)
             rootView?.setRailView(railView?.makeRailView())
