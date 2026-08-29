@@ -30,7 +30,7 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
     }
 
     public var isInitialized: Bool { service.isInitialized }
-    public var currentProjectPath: String? { project?.currentProject?.path }
+    public var currentProjectPath: String? { project?.workspaceRoot }
 
     public func search(
         query: String,

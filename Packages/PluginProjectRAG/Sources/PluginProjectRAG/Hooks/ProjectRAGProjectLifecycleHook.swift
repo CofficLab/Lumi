@@ -13,9 +13,9 @@ final class ProjectRAGProjectLifecycleHook {
 
     init(project: any ProjectProviding, service: RAGService) {
         self.service = service
-        observer = project.addObserver { [service] event in
-            guard case let .currentProjectChanged(projectInfo) = event,
-                  let path = projectInfo?.path,
+        observer = project.addObserver { [weak project, service] event in
+            guard case .currentProjectChanged = event,
+                  let path = project?.workspaceRoot,
                   !path.isEmpty else {
                 return
             }

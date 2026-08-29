@@ -10,6 +10,12 @@ public protocol ProjectProviding: AnyObject {
     /// 当前打开的项目
     var currentProject: ProjectInfo? { get }
 
+    /// 当前工作区根目录。
+    ///
+    /// 默认实现使用当前项目路径；支持多根工作区的实现可以覆盖这个值，
+    /// 让检索、终端和其他项目能力共享同一个边界。
+    var workspaceRoot: String? { get }
+
     /// 当前项目已打开的文件
     var openFileURLs: [URL] { get }
 
@@ -63,6 +69,14 @@ public protocol ProjectProviding: AnyObject {
 }
 
 public extension ProjectProviding {
+    var workspaceRoot: String? {
+        guard let path = currentProject?.path.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty else {
+            return nil
+        }
+        return path
+    }
+
     /// 默认预览行为：仅切换当前文件。
     func previewFile(_ fileURL: URL) {
         updateCurrentFile(fileURL)
