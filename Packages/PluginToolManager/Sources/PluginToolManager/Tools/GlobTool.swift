@@ -4,8 +4,13 @@ import Foundation
 /// Glob 文件匹配。
 public struct GlobTool: SuperAgentTool, @unchecked Sendable {
     public let name = "glob"
+    private let workspaceRootProvider: @MainActor @Sendable () -> String?
 
-    public init() {}
+    public init(
+        workspaceRootProvider: @escaping @MainActor @Sendable () -> String? = { nil }
+    ) {
+        self.workspaceRootProvider = workspaceRootProvider
+    }
 
     public func description(for language: LanguagePreference) -> String {
         "Find files matching a glob pattern under a directory."
@@ -33,8 +38,16 @@ public struct GlobTool: SuperAgentTool, @unchecked Sendable {
         guard let pattern = arguments.stringValue("pattern"), !pattern.isEmpty else {
             return "Error: Missing 'pattern' argument"
         }
-        let rootPath = arguments.stringValue("path")
-            ?? FileManager.default.currentDirectoryPath
+        let explicitPath = arguments.stringValue("path")?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let workspaceRoot = await workspaceRootProvider()?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let rootPath: String
+        if let explicitPath, !explicitPath.isEmpty {
+            rootPath = explicitPath
+        } else if let workspaceRoot, !workspaceRoot.isEmpty {
+            rootPath = workspaceRoot
+        } else {
+            rootPath = FileManager.default.currentDirectoryPath
+        }
         guard !rootPath.isEmpty else {
             return "Error: No search path available; provide an absolute 'path'"
         }

@@ -94,6 +94,20 @@ private struct CountingTool: SuperAgentTool, @unchecked Sendable {
 }
 
 @MainActor
+@Test func globToolUsesTheCurrentWorkspaceRootWhenPathIsOmitted() async throws {
+    let packageRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+    let tool = GlobTool(workspaceRootProvider: { packageRoot.path })
+    let result = try await tool.execute(arguments: [
+        "pattern": ToolArgument("Package.swift"),
+    ])
+
+    #expect(result == "Package.swift")
+}
+
+@MainActor
 @Test func toolManagerEventManagerDispatchesAndCancelsObservers() async {
     let manager = ToolManager()
     var eventCount = 0

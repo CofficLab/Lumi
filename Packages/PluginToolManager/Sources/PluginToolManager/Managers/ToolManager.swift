@@ -55,7 +55,10 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
         workspaceRootProvider: @escaping @MainActor @Sendable () -> String? = { nil }
     ) {
         add(ListDirectoryTool(), pluginID: Self.toolManagerPluginID)
-        add(GlobTool(), pluginID: Self.toolManagerPluginID)
+        add(
+            GlobTool(workspaceRootProvider: workspaceRootProvider),
+            pluginID: Self.toolManagerPluginID
+        )
         add(ReadFileTool(), pluginID: Self.toolManagerPluginID)
         add(WriteFileTool(), pluginID: Self.toolManagerPluginID)
         add(EditFileTool(), pluginID: Self.toolManagerPluginID)
