@@ -23,6 +23,9 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
     /// 隐藏缓存：按插件 id 存储被隐藏的入口，以便插件重新启用时恢复。
     private var hiddenItemCache: [String: [ActivityBarItem]] = [:]
 
+    /// 入口被显式激活后的回调，由 PluginActivityBar 用于持久化全局激活态。
+    var onActiveItemChanged: ((String?) -> Void)?
+
     public init() {}
 
     /// 用一组已存在的内容（即将被替换的旧 `DefaultActivityBarProviding` 数据）
@@ -98,7 +101,11 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
             Self.logger.info("\(Self.t)activate: \(id ?? "nil", privacy: .public)")
         }
         guard id == nil || items.contains(where: { $0.id == id }) else { return }
+        let previousID = activeItemID
         setActiveItemID(id)
+        if previousID != activeItemID {
+            onActiveItemChanged?(activeItemID)
+        }
     }
 
     /// 返回 ActivityBar 视图（基于本类自渲染的竖直入口栏）。

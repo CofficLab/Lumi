@@ -2,6 +2,7 @@ import Testing
 import SwiftUI
 import KernelCore
 import ProviderActivityBar
+import ProviderStorage
 @testable import PluginActivityBar
 
 /// PluginActivityBar 单元测试。
@@ -171,5 +172,56 @@ struct PluginActivityBarTests {
 
         let custom = try #require(kernel.resolveProvider((any ActivityBarProviding).self) as? ActivityBarProvider)
         #expect(custom.items.contains(where: { $0.id == "legacy.chat" }))
+    }
+
+    @Test("PluginActivityBar 恢复并保存全局激活入口")
+    func persistsGlobalActiveItem() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PluginActivityBarTests-\(UUID().uuidString)")
+        let storage = TestStorageProvider(dataRootDirectory: directory)
+        let stateStore = ActivityBarStateStore(
+            directory: storage.pluginDataDirectory(for: "ActivityBar")
+        )
+        stateStore.saveActiveItemID("preferred")
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let kernel = KernelCoreContainer()
+        try kernel.registerProvider((any StorageProviding).self, storage)
+        try kernel.registerProvider((any ActivityBarProviding).self, DefaultActivityBarProviding())
+
+        let plugin = PluginActivityBar()
+        try plugin.onBoot(kernel: kernel)
+        let provider = try #require(kernel.resolveProvider((any ActivityBarProviding).self) as? ActivityBarProvider)
+        provider.addItems([
+            ActivityBarItem(id: "other", title: "Other", systemImage: "o", order: 100),
+            ActivityBarItem(id: "preferred", title: "Preferred", systemImage: "p", order: 200),
+        ])
+
+        try plugin.onReady(kernel: kernel)
+        #expect(provider.activeItemID == "preferred")
+
+        provider.activateItem(id: "other")
+        #expect(stateStore.loadActiveItemID() == "other")
+    }
+}
+
+@MainActor
+private final class TestStorageProvider: StorageProviding {
+    let dataRootDirectory: URL
+
+    init(dataRootDirectory: URL) {
+        self.dataRootDirectory = dataRootDirectory
+    }
+
+    func pluginDataDirectory(for pluginID: String) -> URL {
+        let directory = dataRootDirectory.appendingPathComponent(pluginID, isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
+    func coreDataDirectory() -> URL {
+        let directory = dataRootDirectory.appendingPathComponent("Core", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
     }
 }
