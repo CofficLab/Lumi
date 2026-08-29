@@ -2,6 +2,7 @@ import EditorContracts
 import EditorService
 import KernelCore
 import ProviderActivityBar
+import ProviderChatSection
 import ProviderDocsView
 import ProviderContentView
 import ProviderExternalFile
@@ -51,6 +52,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
             AnyView(DatabaseManagerV2Workspace(viewModel: viewModel))
         )
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
             ActivityBarItem(
@@ -61,6 +63,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { state in
                 if state == .activated {
+                    chat?.setVisible(false)
                     contentView?.setContentView(
                         AnyView(DatabaseManagerV2Workspace(viewModel: self.viewModel))
                     )
@@ -70,6 +73,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                         },
                     ])
                 } else {
+                    chat?.setVisible(true)
                     toolbar?.removeToolbarItems(ids: ["\(self.id).title"])
                 }
             },
@@ -85,7 +89,12 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
+        activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+        }
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
         kernel.resolveProvider((any ExternalFileOpening).self)?.unregisterHandlers(pluginID: id)
