@@ -42,7 +42,7 @@ let package = Package(
             ],
             path: "Sources/PluginWhiteNoise",
             resources: [
-                .process("Resources/Localizable.xcstrings")
+                .process("../../Resources/Localizable.xcstrings")
             ]
         ),
         .testTarget(
