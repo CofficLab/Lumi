@@ -22,6 +22,9 @@ public protocol ProjectRAGProviding: AnyObject, Sendable {
     var isInitialized: Bool { get }
     var currentProjectPath: String? { get }
 
+    /// 判断指定项目是否正在索引，供首次查询避免重复启动前台索引。
+    func isIndexing(projectPath: String) -> Bool
+
     @discardableResult
     func addProjectRAGObserver(_ callback: @escaping (ProjectRAGEvent) -> Void) -> any ProjectRAGObserverHandle
 
@@ -37,6 +40,8 @@ public protocol ProjectRAGProviding: AnyObject, Sendable {
 }
 
 public extension ProjectRAGProviding {
+    func isIndexing(projectPath: String) -> Bool { false }
+
     @discardableResult
     func addProjectRAGObserver(_ callback: @escaping (ProjectRAGEvent) -> Void) -> any ProjectRAGObserverHandle {
         NoopProjectRAGObserverHandle()

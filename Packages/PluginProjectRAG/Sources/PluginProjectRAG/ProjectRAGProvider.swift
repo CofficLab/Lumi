@@ -32,6 +32,10 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
     public var isInitialized: Bool { service.isInitialized }
     public var currentProjectPath: String? { project?.workspaceRoot }
 
+    public func isIndexing(projectPath: String) -> Bool {
+        RAGService.isIndexing(projectPath: projectPath)
+    }
+
     public func search(
         query: String,
         projectPath: String?,

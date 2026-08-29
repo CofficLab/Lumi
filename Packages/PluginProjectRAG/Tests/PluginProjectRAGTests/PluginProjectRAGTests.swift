@@ -32,6 +32,7 @@ private final class StubProjectRAGProvider: ProjectRAGProviding {
     let currentProjectPath: String? = "/tmp/Lumi"
     let isInitialized = true
     var ensureIndexedCallCount = 0
+    var lastEnsureIndexedBackground: Bool?
     var response = ProjectRAGResponse(
         query: "",
         results: [
@@ -54,6 +55,7 @@ private final class StubProjectRAGProvider: ProjectRAGProviding {
 
     func ensureIndexed(projectPath: String, force: Bool, background: Bool) async throws {
         ensureIndexedCallCount += 1
+        lastEnsureIndexedBackground = background
     }
 
     func indexStatus(projectPath: String) async throws -> ProjectRAGIndexStatus? {
@@ -86,6 +88,7 @@ struct ProjectRAGLLMContextHookTests {
         #expect(second.messages.count == context.messages.count)
         #expect(other.messages.count == otherContext.messages.count + 1)
         #expect(provider.ensureIndexedCallCount == 2)
+        #expect(provider.lastEnsureIndexedBackground == false)
     }
 
     @Test("does not query RAG for casual conversation")
