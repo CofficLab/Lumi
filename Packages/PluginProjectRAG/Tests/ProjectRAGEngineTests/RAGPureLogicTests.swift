@@ -298,3 +298,27 @@ import Foundation
         #expect(direct == cached)
     }
 }
+
+@Suite struct RAGLexicalFileSearcherTests {
+
+    @Test func findsMatchingSourceWithoutAnIndex() throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-lexical-search-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let sourceURL = projectURL.appendingPathComponent("Sources/RequestHandler.swift")
+        try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "func handleRequest() {}".write(to: sourceURL, atomically: true, encoding: .utf8)
+
+        let results = try RAGLexicalFileSearcher.search(
+            query: "handleRequest",
+            projectPath: projectURL.path,
+            topK: 3
+        )
+
+        #expect(results.count == 1)
+        #expect(results[0].source == "Sources/RequestHandler.swift")
+        #expect(results[0].content.contains("handleRequest"))
+    }
+}
