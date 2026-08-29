@@ -6,6 +6,7 @@ import ProviderIdleTime
 import ProviderStorage
 import ProviderToolManager
 import ProviderProjectRAG
+import ProviderLifecycleHooks
 import KitSuperLog
 import os
 
@@ -31,6 +32,7 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
 
     private var service: RAGService?
     private var schedulerTask: Task<Void, Never>?
+    private var llmContextHook: ProjectRAGLLMContextHook?
 
     public init() {}
 
@@ -48,6 +50,15 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
         try kernel.registerProvider((any ProjectRAGProviding).self, provider)
         kernel.resolveProvider((any ToolManagerProviding).self)?
             .add(RAGCodeSearchTool(), pluginID: id)
+
+        if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
+            let contextHook = ProjectRAGLLMContextHook(provider: provider)
+            self.llmContextHook = contextHook
+            hooks.addWillSendToLLMHook { [weak contextHook] context in
+                guard let contextHook else { return context }
+                return await contextHook.apply(to: context)
+            }
+        }
 
         // Indexing deliberately happens off the boot path: startup remains
         // responsive and RAGService deduplicates concurrent index requests.
@@ -75,6 +86,7 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
         kernel.unregisterProvider((any ProjectRAGProviding).self)
         schedulerTask?.cancel()
         schedulerTask = nil
+        llmContextHook = nil
         if let service { Task { await service.cancelBackgroundIndexing() } }
         service = nil
         ProjectRAGRuntime.reset()
