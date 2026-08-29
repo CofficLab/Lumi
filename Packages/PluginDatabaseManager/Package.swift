@@ -70,7 +70,7 @@ let package = Package(
             exclude: ["TreeSitterSQL"],
             resources: [
                 .process("../Resources/Localizable.xcstrings"),
-                .copy("Resources/tree-sitter-sql")
+                .copy("../Resources/tree-sitter-sql")
             ]
         ),
         .target(
