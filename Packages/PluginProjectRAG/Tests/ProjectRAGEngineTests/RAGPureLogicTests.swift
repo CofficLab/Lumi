@@ -214,10 +214,12 @@ import Foundation
         #expect(RAGIntentAnalyzer.shouldUseRAG(for: "can you explain the module?") == true)
     }
 
-    @Test func shouldUseRAGEnglishTriggerMatchesSubstring() {
-        // Documented heuristic: "how" is a trigger word and matches as a
-        // substring, so "how are you" trips RAG even in casual messages.
-        #expect(RAGIntentAnalyzer.shouldUseRAG(for: "hello, how are you today") == true)
+    @Test func shouldNotUseRAGForCasualQuestion() {
+        #expect(RAGIntentAnalyzer.shouldUseRAG(for: "hello, how are you today") == false)
+    }
+
+    @Test func shouldNotUseRAGForEnglishSubstring() {
+        #expect(RAGIntentAnalyzer.shouldUseRAG(for: "the prefix is valid") == false)
     }
 
     @Test func shouldUseRAGRejectsPlainStatement() {

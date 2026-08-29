@@ -24,7 +24,7 @@ public struct RAGIntentAnalyzer {
 
     /// 英文高意图触发词
     private static let ragTriggersEN = [
-        "project", "code", "file", "files", "implementation", "implement", "where", "how", "why",
+        "project", "code", "file", "files", "implementation", "implement",
         "function", "method", "class", "module", "folder", "directory", "path", "api",
         "bug", "error", "issue", "fix", "refactor", "stack trace", "exception",
     ]
@@ -63,8 +63,8 @@ public struct RAGIntentAnalyzer {
             return true
         }
 
-        // 检查英文触发词
-        if ragTriggersEN.contains(where: { lowercased.contains($0) }) {
+        // 检查英文触发词。使用单词边界，避免 "fix" 命中 "prefix" 之类的普通文本。
+        if ragTriggersEN.contains(where: { containsWholeEnglishTrigger($0, in: lowercased) }) {
             return true
         }
 
@@ -88,6 +88,14 @@ public struct RAGIntentAnalyzer {
     }
 
     // MARK: - 私有辅助方法
+
+    private static func containsWholeEnglishTrigger(_ trigger: String, in message: String) -> Bool {
+        let escapedTrigger = NSRegularExpression.escapedPattern(for: trigger)
+        let pattern = "(?<![A-Za-z0-9])\(escapedTrigger)(?![A-Za-z0-9])"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return false }
+        let range = NSRange(location: 0, length: (message as NSString).length)
+        return regex.firstMatch(in: message, range: range) != nil
+    }
 
     /// 检查是否包含文件或路径引用
     private static func hasFileOrPathReference(_ message: String) -> Bool {
