@@ -99,7 +99,9 @@ extension KernelCoreContainer {
                 guard isPluginEnabled(id: plugin.id) else { continue }
 
                 activePluginID = plugin.id
+                activePluginLifecyclePhase = .boot
                 try plugin.onBoot(kernel: self)
+                activePluginLifecyclePhase = nil
                 activePluginID = nil
                 pluginStartOrder.append(plugin.id)
             }
@@ -112,6 +114,7 @@ extension KernelCoreContainer {
             }
             setLifecycleState(.running)
         } catch {
+            activePluginLifecyclePhase = nil
             activePluginID = nil
             rollbackStartup(bootedIDs: bootedIDs, attemptedIDs: sorted.map(\.id))
             setLifecycleState(previousState == .running ? .running : .failed)

@@ -31,10 +31,18 @@ extension KernelCoreContainer {
 
     /// 解析 Provider 实现；未注册时返回 nil。
     ///
-    /// 消费方应 `guard let provider = core.resolveProvider(SomeProviding.self) else { return }`
-    /// 或使用可选链静默跳过，保证在未提供实现的精简宿主中 no-op。
+    /// 在插件 `onBoot` 阶段解析不到 Provider 时，Kernel 会输出包含插件 ID
+    /// 和 Provider 类型的 error 日志；返回值仍为 nil，由消费方决定是否降级。
     public func resolveProvider<T>(_ type: T.Type = T.self) -> T? {
-        providers[ObjectIdentifier(type)] as? T
+        guard let provider = providers[ObjectIdentifier(type)] as? T else {
+            if let pluginID = activePluginID, activePluginLifecyclePhase == .boot {
+                Self.logger.error(
+                    "Plugin '\(pluginID, privacy: .public)' could not resolve provider '\(String(reflecting: type), privacy: .public)' during onBoot"
+                )
+            }
+            return nil
+        }
+        return provider
     }
 
     /// 指定 Provider 类型是否已注册（装配前的依赖校验用）。
