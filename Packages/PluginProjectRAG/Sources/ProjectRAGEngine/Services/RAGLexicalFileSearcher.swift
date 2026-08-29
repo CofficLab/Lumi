@@ -41,7 +41,8 @@ public enum RAGLexicalFileSearcher {
                 RAGSearchResult(
                     content: $0.content,
                     source: RAGPathUtils.displayPath(filePath: $0.filePath, projectPath: projectPath),
-                    score: $0.score
+                    score: $0.score,
+                    matchKind: .filesystemLexical
                 )
             }
     }

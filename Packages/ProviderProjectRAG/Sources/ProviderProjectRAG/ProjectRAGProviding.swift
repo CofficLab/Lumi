@@ -64,15 +64,32 @@ public extension ProjectRAGProviding {
     }
 }
 
+public enum ProjectRAGMatchKind: String, Sendable, Equatable {
+    case semantic
+    case indexedLexical
+    case filesystemLexical
+}
+
 public struct ProjectRAGSearchResult: Sendable, Equatable {
     public let content: String
     public let source: String
     public let score: Float
+    public let matchKind: ProjectRAGMatchKind
 
-    public init(content: String, source: String, score: Float) {
+    public init(
+        content: String,
+        source: String,
+        score: Float,
+        matchKind: ProjectRAGMatchKind
+    ) {
         self.content = content
         self.source = source
         self.score = score
+        self.matchKind = matchKind
+    }
+
+    public init(content: String, source: String, score: Float) {
+        self.init(content: content, source: source, score: score, matchKind: .semantic)
     }
 }
 

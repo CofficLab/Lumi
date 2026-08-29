@@ -61,7 +61,7 @@ public enum RAGContextBuilder {
             let clipped = clip(result.content, maxChars: min(3000, budget))
             if clipped.isEmpty { continue }
 
-            prompt += "\n\(template.snippetLabel(index + 1)) \(template.sourceLabel)：\(result.source)\n"
+            prompt += "\n\(template.snippetLabel(index + 1)) \(template.sourceLabel)：\(result.source) [evidence: \(result.matchKind.rawValue)]\n"
             prompt += "\(clipped)\n"
             usedChars += clipped.count
             includedCount += 1

@@ -47,7 +47,12 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
         return ProjectRAGResponse(
             query: response.query,
             results: response.results.map {
-                ProjectRAGSearchResult(content: $0.content, source: $0.source, score: $0.score)
+                ProjectRAGSearchResult(
+                    content: $0.content,
+                    source: $0.source,
+                    score: $0.score,
+                    matchKind: ProjectRAGMatchKind(rawValue: $0.matchKind.rawValue) ?? .semantic
+                )
             }
         )
     }

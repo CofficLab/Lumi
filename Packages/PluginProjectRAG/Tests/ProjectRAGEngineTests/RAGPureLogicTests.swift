@@ -325,5 +325,6 @@ import Foundation
         #expect(results.count == 1)
         #expect(results[0].source == "Sources/RequestHandler.swift")
         #expect(results[0].content.contains("handleRequest"))
+        #expect(results[0].matchKind == .filesystemLexical)
     }
 }

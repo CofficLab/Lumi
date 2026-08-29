@@ -48,7 +48,12 @@ final class ProjectRAGLLMContextHook {
             guard !response.results.isEmpty else { return context }
 
             let results = response.results.map {
-                RAGSearchResult(content: $0.content, source: $0.source, score: $0.score)
+                RAGSearchResult(
+                    content: $0.content,
+                    source: $0.source,
+                    score: $0.score,
+                    matchKind: RAGMatchKind(rawValue: $0.matchKind.rawValue) ?? .semantic
+                )
             }
             let language: RAGLanguagePreference = containsCJK(latestUserMessage.content) ? .chinese : .english
             let prompt = RAGContextBuilder.buildPrompt(
