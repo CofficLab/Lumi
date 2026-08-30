@@ -17,6 +17,11 @@ public enum RAGFilePathSearcher {
         let queryTerms = RAGTextUtils.tokenize(query.lowercased())
         guard !queryTerms.isEmpty else { return [] }
 
+        let directMatches = directPathMatches(query: query, projectPath: projectPath)
+        if !directMatches.isEmpty {
+            return directMatches.prefix(max(topK, 1)).map { $0 }
+        }
+
         let matches = RAGFileScanner.discoverFilesCached(in: projectPath).compactMap { filePath -> RAGSearchResult? in
             let source = RAGPathUtils.displayPath(filePath: filePath, projectPath: projectPath)
             let score = RAGTextUtils.sourcePathBoost(queryTerms: queryTerms, filePath: source)
@@ -38,6 +43,53 @@ public enum RAGFilePathSearcher {
             }
             .prefix(max(topK, 1))
             .map { $0 }
+    }
+
+    private static func directPathMatches(query: String, projectPath: String) -> [RAGSearchResult] {
+        let projectRoot = RAGPathUtils.normalizeProjectPath(projectPath)
+        guard !projectRoot.isEmpty else { return [] }
+
+        let candidates = pathCandidates(in: query)
+        return candidates.compactMap { candidate in
+            let fileURL: URL
+            if candidate.hasPrefix("/") {
+                fileURL = URL(fileURLWithPath: candidate)
+            } else {
+                fileURL = URL(fileURLWithPath: projectRoot).appendingPathComponent(candidate)
+            }
+
+            let filePath = fileURL.standardizedFileURL.path
+            let projectPrefix = projectRoot == "/" ? "/" : projectRoot + "/"
+            guard filePath.hasPrefix(projectPrefix),
+                  !RAGFileScanner.shouldSkipPath(filePath),
+                  RAGFileScanner.allowedExtensions.contains(fileURL.pathExtension.lowercased()),
+                  let values = try? fileURL.resourceValues(forKeys: [.isRegularFileKey]),
+                  values.isRegularFile == true else {
+                return nil
+            }
+
+            let source = RAGPathUtils.displayPath(filePath: filePath, projectPath: projectRoot)
+            return RAGSearchResult(
+                content: source,
+                source: source,
+                score: 1,
+                matchKind: .filesystemPath,
+                lineRange: nil
+            )
+        }
+    }
+
+    private static func pathCandidates(in query: String) -> [String] {
+        guard let regex = try? NSRegularExpression(pattern: #"[A-Za-z0-9_./-]+"#) else { return [] }
+        let nsQuery = query as NSString
+        let range = NSRange(location: 0, length: nsQuery.length)
+        return regex.matches(in: query, range: range).compactMap { match in
+            let candidate = nsQuery.substring(with: match.range)
+            let lowercased = candidate.lowercased()
+            let hasExtension = codeFileExtensions.contains { lowercased.hasSuffix(".\($0)") }
+            guard candidate.contains("/") || hasExtension else { return nil }
+            return candidate
+        }
     }
 
     private static func hasPathHint(_ query: String) -> Bool {
