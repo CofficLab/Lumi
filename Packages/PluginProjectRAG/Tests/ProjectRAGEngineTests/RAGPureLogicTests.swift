@@ -357,6 +357,36 @@ import Foundation
 
         #expect(results.map(\.source) == ["Sources/Visible.swift"])
     }
+
+    @Test func includesContextAroundRipgrepMatch() throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-lexical-context-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let sourceURL = projectURL.appendingPathComponent("Sources/Context.swift")
+        try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try """
+        line one
+        line two
+        line three
+        let contextToken = true
+        line five
+        line six
+        line seven
+        """.write(to: sourceURL, atomically: true, encoding: .utf8)
+
+        let results = try RAGLexicalFileSearcher.search(
+            query: "contextToken",
+            projectPath: projectURL.path,
+            topK: 3
+        )
+
+        #expect(results.count == 1)
+        #expect(results[0].lineRange == RAGLineRange(startLine: 1, endLine: 7))
+        #expect(results[0].content.contains("1\tline one"))
+        #expect(results[0].content.contains("7\tline seven"))
+    }
 }
 
 @Suite struct RAGSQLiteStoreTests {

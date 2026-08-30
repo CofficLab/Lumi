@@ -75,6 +75,7 @@ public enum RAGLexicalFileSearcher {
             "--color", "never",
             "--max-count", "3",
             "--max-filesize", "1500K",
+            "--context", "3",
         ]
         for fileExtension in RAGFileScanner.allowedExtensions {
             arguments.append(contentsOf: ["--glob", "*.\(fileExtension)"])
@@ -106,15 +107,16 @@ public enum RAGLexicalFileSearcher {
         struct Match {
             let filePath: String
             let lineNumber: Int
-            let line: String
             let score: Float
         }
         var bestByFile: [String: Match] = [:]
+        var linesByFile: [String: [Int: String]] = [:]
         let queryTerms = terms.map { $0.lowercased() }
 
         for rawLine in String(decoding: output, as: UTF8.self).split(separator: "\n") {
             guard let event = try? JSONSerialization.jsonObject(with: Data(rawLine.utf8)) as? [String: Any],
-                  event["type"] as? String == "match",
+                  let eventType = event["type"] as? String,
+                  eventType == "match" || eventType == "context",
                   let data = event["data"] as? [String: Any],
                   let path = (data["path"] as? [String: Any])?["text"] as? String,
                   let lineNumber = data["line_number"] as? Int,
@@ -128,13 +130,15 @@ public enum RAGLexicalFileSearcher {
             }
 
             let cleanLine = line.trimmingCharacters(in: .newlines)
+            linesByFile[path, default: [:]][lineNumber] = cleanLine
+            guard eventType == "match" else { continue }
+
             let contentScore = RAGTextUtils.lexicalBoost(query: query, content: cleanLine)
             let pathScore = RAGTextUtils.sourcePathBoost(queryTerms: queryTerms, filePath: path)
             let score = contentScore * 0.85 + pathScore * 0.15
             let candidate = Match(
                 filePath: path,
                 lineNumber: lineNumber,
-                line: cleanLine,
                 score: score
             )
             if let current = bestByFile[path], current.score >= candidate.score { continue }
@@ -147,13 +151,20 @@ public enum RAGLexicalFileSearcher {
                 return $0.filePath < $1.filePath
             }
             .prefix(max(topK, 1))
-            .map {
-                RAGSearchResult(
-                    content: "\($0.lineNumber)\t\($0.line)",
-                    source: RAGPathUtils.displayPath(filePath: $0.filePath, projectPath: projectPath),
-                    score: $0.score,
+            .map { match in
+                let contextLines = linesByFile[match.filePath, default: [:]]
+                    .filter { abs($0.key - match.lineNumber) <= 3 }
+                    .sorted { $0.key < $1.key }
+                let startLine = contextLines.first?.key ?? match.lineNumber
+                let endLine = contextLines.last?.key ?? match.lineNumber
+                return RAGSearchResult(
+                    content: contextLines
+                        .map { "\($0.key)\t\($0.value)" }
+                        .joined(separator: "\n"),
+                    source: RAGPathUtils.displayPath(filePath: match.filePath, projectPath: projectPath),
+                    score: match.score,
                     matchKind: .filesystemLexical,
-                    lineRange: RAGLineRange(startLine: $0.lineNumber, endLine: $0.lineNumber)
+                    lineRange: RAGLineRange(startLine: startLine, endLine: endLine)
                 )
             }
     }
