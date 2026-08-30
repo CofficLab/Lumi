@@ -1,6 +1,19 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%lld requests in this conversation" : {
+
+    },
+    "Average cache hit rate: %@ (%lld requests)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Average cache hit rate: %1$@ (%2$lld requests)"
+          }
+        }
+      }
+    },
     "Cache Hit Rate" : {
       "localizations" : {
         "en" : {
@@ -64,6 +77,9 @@
           }
         }
       }
+    },
+    "命中率 = 每条请求从缓存读取的 tokens ÷ 总输入 tokens 的算术平均。缓存命中越高，重复上下文计费越低、响应越快。" : {
+
     }
   },
   "version" : "1.0"
