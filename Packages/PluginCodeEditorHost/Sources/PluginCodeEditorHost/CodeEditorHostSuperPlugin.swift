@@ -11,15 +11,15 @@ import os
 
 /// KernelCore 的编辑器宿主：提供与旧宿主相同的 SourceEditor 语法高亮能力。
 @MainActor
-public final class EditorHostSuperPlugin: SuperPlugin, SuperLog {
+public final class CodeEditorHostSuperPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.editor-host", category: "EditorHost")
     public let id = "com.coffic.lumi.plugin.editor-host"
     public let order = 1
     public let dependencies: [String] = []
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.editor-host",
-        name: EditorHostLocalization.string("Editor Host"),
-        description: EditorHostLocalization.string("Provides shared source editing and syntax highlighting."),
+        name: CodeEditorHostLocalization.string("Editor Host"),
+        description: CodeEditorHostLocalization.string("Provides shared source editing and syntax highlighting."),
         version: "2.0.0",
         category: .editor,
         stage: .preview,
@@ -70,9 +70,9 @@ public final class EditorHostSuperPlugin: SuperPlugin, SuperLog {
 private struct EditorHostUnavailableView: View {
     var body: some View {
         ContentUnavailableView(
-            EditorHostLocalization.string("Editor unavailable"),
+            CodeEditorHostLocalization.string("Editor unavailable"),
             systemImage: "exclamationmark.triangle",
-            description: Text(EditorHostLocalization.string("The editor service is no longer available."))
+            description: Text(CodeEditorHostLocalization.string("The editor service is no longer available."))
         )
     }
 }

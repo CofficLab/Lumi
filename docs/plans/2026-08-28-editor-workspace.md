@@ -4,7 +4,7 @@
 
 **Goal:** Deliver a user-toggleable Lumi code workspace with Activity Bar entry, project file explorer, tabbed source editing, syntax highlighting, save/auto-save, restoration, and verified error handling.
 
-**Architecture:** Keep `PluginEditorHost` as required editor infrastructure and add a disabled-by-default `PluginCodeEditor` for visible workbench contributions. Reuse `EditorService` as the source of truth for buffers and sessions, mirror session state through `ProjectProviding`, reuse `PluginProjectFileTree` for the canonical explorer, and register language grammars through a separate language-support target.
+**Architecture:** Keep `PluginCodeEditorHost` as required editor infrastructure and add a disabled-by-default `PluginCodeEditor` for visible workbench contributions. Reuse `EditorService` as the source of truth for buffers and sessions, mirror session state through `ProjectProviding`, reuse `PluginProjectFileTree` for the canonical explorer, and register language grammars through a separate language-support target.
 
 **Tech Stack:** Swift 6, SwiftUI/AppKit, KernelCore plugin lifecycle, ProviderActivityBar, ProviderRailView, ProviderContentView, ProviderProject, EditorService, EditorSource, EditorLanguageRuntime, Tree-sitter, Swift Testing/XCTest.
 
@@ -13,15 +13,15 @@
 ### Task 1: Restore the full Editor Host contract
 
 **Files:**
-- Modify: `Packages/PluginEditorHost/Package.swift`
-- Modify: `Packages/PluginEditorHost/Sources/PluginEditorHost/EditorHostSuperPlugin.swift`
-- Create: `Packages/PluginEditorHost/Sources/PluginEditorHost/EditorSurfaceView.swift`
-- Test: `Packages/PluginEditorHost/Tests/PluginEditorHostTests/EditorHostSuperPluginTests.swift`
+- Modify: `Packages/PluginCodeEditorHost/Package.swift`
+- Modify: `Packages/PluginCodeEditorHost/Sources/PluginCodeEditorHost/CodeEditorHostSuperPlugin.swift`
+- Create: `Packages/PluginCodeEditorHost/Sources/PluginCodeEditorHost/EditorSurfaceView.swift`
+- Test: `Packages/PluginCodeEditorHost/Tests/PluginCodeEditorHostTests/CodeEditorHostSuperPluginTests.swift`
 
 **Steps:**
 
 1. Add failing tests asserting that boot registers `EditorService`, `EditorProvidingV2`, `EditorSurfaceProviding`, and `EditorEmbeddedEditorProviding` as the same host scope.
-2. Run `swift test --package-path Packages/PluginEditorHost` and verify the new contract assertions fail.
+2. Run `swift test --package-path Packages/PluginCodeEditorHost` and verify the new contract assertions fail.
 3. Restore the standard `SourceEditor` surface and coordinators from the historical host implementation.
 4. Construct `EditorContributionRegistry` and `EditorProvidingV2Adapter`, inject the surface factory, and register protocol-facing providers.
 5. Keep registration idempotent and make unavailable-service states explicit.
@@ -97,11 +97,11 @@
 ### Task 6: Add built-in language support
 
 **Files:**
-- Create: `Packages/PluginEditorLanguages/Package.swift`
-- Create: `Packages/PluginEditorLanguages/Sources/PluginEditorLanguages/EditorLanguagesSuperPlugin.swift`
-- Create: `Packages/PluginEditorLanguages/Sources/PluginEditorLanguages/Languages/*.swift`
-- Create: `Packages/PluginEditorLanguages/Sources/PluginEditorLanguages/Resources/tree-sitter-*/highlights.scm`
-- Test: `Packages/PluginEditorLanguages/Tests/EditorLanguagesTests.swift`
+- Create: `Packages/PluginCodeEditorLanguages/Package.swift`
+- Create: `Packages/PluginCodeEditorLanguages/Sources/PluginCodeEditorLanguages/CodeEditorLanguagesSuperPlugin.swift`
+- Create: `Packages/PluginCodeEditorLanguages/Sources/PluginCodeEditorLanguages/Languages/*.swift`
+- Create: `Packages/PluginCodeEditorLanguages/Sources/PluginCodeEditorLanguages/Resources/tree-sitter-*/highlights.scm`
+- Test: `Packages/PluginCodeEditorLanguages/Tests/CodeEditorLanguagesTests.swift`
 
 **Steps:**
 
@@ -138,7 +138,7 @@
 **Steps:**
 
 1. Replace stale `KernelLumi` test imports with current `EditorContracts`/runtime types and run the full EditorService suite.
-2. Run `swift test` for EditorLanguageRuntime, EditorSource, EditorKernel, EditorService, PluginEditorHost, PluginEditorLanguages, PluginCodeEditor, and FactoryLumi.
+2. Run `swift test` for EditorLanguageRuntime, EditorSource, EditorKernel, EditorService, PluginCodeEditorHost, PluginCodeEditorLanguages, PluginCodeEditor, and FactoryLumi.
 3. Build the Lumi Debug scheme with code signing disabled and treat warnings separately from errors.
 4. Launch the app and execute the documented smoke flow: enable plugin, activate editor, open project, expand folders, open two language fixtures, edit, Cmd-S, verify disk, auto-save, external conflict, close/reopen, restore tabs.
 5. Capture screenshots of Explorer, highlighted editor with dirty tab, and save/conflict state for visual review.

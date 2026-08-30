@@ -1,7 +1,7 @@
 import DatabaseManagerPlugin
 import FactoryLumi
 import KernelCore
-import PluginEditorHost
+import PluginCodeEditorHost
 import ProviderExternalFile
 import SwiftUI
 
@@ -33,7 +33,7 @@ public enum FactoryDatabaseManager {
 private struct DedicatedPluginFactory: PluginFactory {
     func makePlugins() -> [any SuperPlugin] {
         [
-            DedicatedAlwaysOnPlugin(EditorHostSuperPlugin()),
+            DedicatedAlwaysOnPlugin(CodeEditorHostSuperPlugin()),
             DedicatedAlwaysOnPlugin(DatabaseManagerSuperPlugin()),
         ]
     }

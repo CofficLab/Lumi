@@ -1,15 +1,15 @@
 import EditorContracts
 import EditorService
 import KernelCore
-import PluginEditorHost
+import PluginCodeEditorHost
 import Testing
 
 @MainActor
-struct EditorHostSuperPluginTests {
+struct CodeEditorHostSuperPluginTests {
     @Test("registers the shared editor service and every host capability")
     func registersEditorServices() throws {
         let kernel = KernelCoreContainer()
-        try kernel.start(plugins: [EditorHostSuperPlugin()])
+        try kernel.start(plugins: [CodeEditorHostSuperPlugin()])
 
         _ = try #require(kernel.resolveProvider(EditorService.self))
         let editor = try #require(kernel.resolveProvider(EditorProvidingV2.self))
@@ -22,7 +22,7 @@ struct EditorHostSuperPluginTests {
     @Test("removes every editor capability during shutdown")
     func removesEditorServices() throws {
         let kernel = KernelCoreContainer()
-        try kernel.start(plugins: [EditorHostSuperPlugin()])
+        try kernel.start(plugins: [CodeEditorHostSuperPlugin()])
 
         try kernel.stop()
 

@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "PluginEditorLanguages",
+    name: "PluginCodeEditorLanguages",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "PluginEditorLanguages", targets: ["PluginEditorLanguages"]),
+        .library(name: "PluginCodeEditorLanguages", targets: ["PluginCodeEditorLanguages"]),
     ],
     dependencies: [
         .package(path: "../KitSuperLog"),
@@ -26,7 +26,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "PluginEditorLanguages",
+            name: "PluginCodeEditorLanguages",
             dependencies: [
                 "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
@@ -44,9 +44,9 @@ let package = Package(
             resources: [.copy("../../Resources")]
         ),
         .testTarget(
-            name: "PluginEditorLanguagesTests",
+            name: "PluginCodeEditorLanguagesTests",
             dependencies: [
-                "PluginEditorLanguages",
+                "PluginCodeEditorLanguages",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "EditorService", package: "EditorService"),
             ]

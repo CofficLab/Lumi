@@ -14,7 +14,7 @@ import KitSuperLog
 import os
 
 @MainActor
-public final class EditorLanguagesSuperPlugin: SuperPlugin, SuperLog {
+public final class CodeEditorLanguagesSuperPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.editor-languages", category: "EditorLanguages")
     public static let pluginID = "com.coffic.lumi.plugin.editor-languages"
 

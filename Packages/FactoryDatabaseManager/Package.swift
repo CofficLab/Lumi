@@ -8,7 +8,7 @@ let package = Package(
     dependencies: [
         .package(path: "../FactoryLumi"),
         .package(path: "../KernelCore"),
-        .package(path: "../PluginEditorHost"),
+        .package(path: "../PluginCodeEditorHost"),
         .package(name: "PluginDatabaseManager", path: "../PluginDatabaseManager"),
         .package(path: "../ProviderExternalFile"),
     ],
@@ -18,7 +18,7 @@ let package = Package(
             dependencies: [
                 .product(name: "FactoryLumi", package: "FactoryLumi"),
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "PluginEditorHost", package: "PluginEditorHost"),
+                .product(name: "PluginCodeEditorHost", package: "PluginCodeEditorHost"),
                 .product(name: "PluginDatabaseManager", package: "PluginDatabaseManager"),
                 .product(name: "ProviderExternalFile", package: "ProviderExternalFile"),
             ]
