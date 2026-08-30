@@ -387,6 +387,20 @@ import Foundation
         #expect(results[0].content.contains("1\tline one"))
         #expect(results[0].content.contains("7\tline seven"))
     }
+
+    @Test func returnsNoResultsForMissingProject() throws {
+        let missingProjectPath = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-missing-\(UUID().uuidString)", isDirectory: true)
+            .path
+
+        let results = try RAGLexicalFileSearcher.search(
+            query: "missingProjectToken",
+            projectPath: missingProjectPath,
+            topK: 3
+        )
+
+        #expect(results.isEmpty)
+    }
 }
 
 @Suite struct RAGSQLiteStoreTests {

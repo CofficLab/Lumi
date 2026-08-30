@@ -90,7 +90,7 @@ public enum RAGLexicalFileSearcher {
         process.executableURL = executable
         process.arguments = arguments
         process.standardOutput = outputPipe
-        process.standardError = Pipe()
+        process.standardError = FileHandle.nullDevice
 
         do {
             try process.run()
