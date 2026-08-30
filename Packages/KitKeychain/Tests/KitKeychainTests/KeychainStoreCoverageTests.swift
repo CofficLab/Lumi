@@ -112,6 +112,15 @@ final class KeychainStoreCoverageTests: XCTestCase {
         XCTAssertEqual(backend.writtenData, [])
     }
 
+    func testWriteFailureDoesNotDeleteExistingValueFirst() {
+        let backend = RecordingKeychainBackend(writeResult: errSecAuthFailed)
+        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+
+        XCTAssertThrowsError(try store.setReportingErrors("replacement", forKey: "account"))
+        XCTAssertEqual(backend.writeCount, 1)
+        XCTAssertEqual(backend.deleteCount, 0)
+    }
+
     func testRemoveThrowsDeleteFailure() {
         let backend = StubKeychainBackend(
             readResult: KeychainResult(status: errSecItemNotFound, data: nil),
@@ -244,8 +253,11 @@ private final class RecordingKeychainBackend: KeychainBackend, @unchecked Sendab
     private var storedWriteCount = 0
     private var storedReadCount = 0
 
-    init(readData: Data? = nil) {
+    private let writeResult: OSStatus
+
+    init(readData: Data? = nil, writeResult: OSStatus = errSecSuccess) {
         self.readData = readData
+        self.writeResult = writeResult
     }
 
     var writtenData: [Data] { lock.withLock { storedWrittenData } }
@@ -266,7 +278,7 @@ private final class RecordingKeychainBackend: KeychainBackend, @unchecked Sendab
             storedWriteCount += 1
             storedWrittenData.append(data)
         }
-        return KeychainResult(status: errSecSuccess, data: data)
+        return KeychainResult(status: writeResult, data: data)
     }
 
     func delete(service: String, account: String) -> KeychainResult {
