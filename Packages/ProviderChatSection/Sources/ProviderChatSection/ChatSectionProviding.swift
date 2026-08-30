@@ -10,6 +10,7 @@ public enum ChatSectionProvidingEvent {
     case rootWrappersChanged([ChatSectionRootWrapper])
     case visibilityChanged(Bool)
     case contextActiveChanged(Bool)
+    case activeContextChanged(ChatContext?)
     case headerVisibilityChanged(Bool)
 }
 
@@ -39,6 +40,9 @@ public protocol ChatSectionProviding: AnyObject, ObservableObject
     /// 聊天上下文是否激活（激活时才显示 header / toolbar）。
     var isContextActive: Bool { get }
 
+    /// 当前激活的聊天工作台上下文。`nil` 表示没有插件工作台上下文。
+    var activeContext: ChatContext? { get }
+
     /// header / toolbar 是否显示。
     ///
     /// 复刻旧版 `ChatView` 语义：即使容器激活，没有选中会话时也隐藏
@@ -59,6 +63,7 @@ public protocol ChatSectionProviding: AnyObject, ObservableObject
 
     func setVisible(_ visible: Bool)
     func setContextActive(_ active: Bool)
+    func setActiveContext(_ context: ChatContext?)
     func setHeaderVisible(_ visible: Bool)
 
     /// 注册聊天分区状态观察者。回调在状态更新后同步执行。
@@ -81,7 +86,11 @@ public extension ChatSectionProviding {
     /// 默认跟随上下文激活；自定义实现可在需要时覆盖。
     var isHeaderVisible: Bool { isContextActive }
 
+    var activeContext: ChatContext? { nil }
+
     func setHeaderVisible(_ visible: Bool) {}
+
+    func setActiveContext(_ context: ChatContext?) {}
 
     func addRootWrappers(_ wrappers: [ChatSectionRootWrapper]) {}
 

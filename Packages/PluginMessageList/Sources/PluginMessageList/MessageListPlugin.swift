@@ -52,6 +52,7 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
             promptSuggestionExecutor: kernel.resolveProvider((any PromptSuggestionExecuting).self),
             project: kernel.resolveProvider((any ProjectProviding).self),
             toolbar: kernel.resolveProvider((any ToolbarProviding).self),
+            chat: chat,
         )
         chat.addItems([ChatSectionItem(id: id, order: 100, fillsRemainingHeight: true) {
             ListView(services: services)

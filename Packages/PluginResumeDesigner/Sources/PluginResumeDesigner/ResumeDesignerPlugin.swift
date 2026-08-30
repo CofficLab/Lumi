@@ -42,7 +42,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     private var promptSuggestion: PromptSuggestion {
-        PromptSuggestion(id: "\(id).create", title: ResumeDesignerLocalization.string("Prompt.Suggestion.Create"), order: order * 1_000, systemImage: "doc.badge.gearshape", action: .activateRailTab(id: Self.railTabID))
+        PromptSuggestion(id: "\(id).create", title: ResumeDesignerLocalization.string("Prompt.Suggestion.Create"), order: order * 1_000, systemImage: "doc.badge.gearshape", action: .activateRailTab(id: Self.railTabID), scope: .launcherAndContext(id))
     }
 
     private func registerPromptSuggestion(kernel: KernelCoreContainer, requiresEnable: Bool) {
@@ -73,6 +73,12 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        let chatContext = ChatContext(
+            id: id,
+            title: name,
+            subtitle: metadata.description.isEmpty ? nil : metadata.description,
+            systemImage: "doc.badge.gearshape"
+        )
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
 
@@ -99,23 +105,28 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                     order: order,
                     ownerPluginID: id
                 ) { state in
-                    if state == .activated {
+            if state == .activated {
                         toolbar?.setVisibleCategories([.global, .chat, .design])
                         rootView?.setContentHeaderViewHidden(true)
                         railView?.setVisibleTabID(Self.railTabID)
-                        chat?.setVisible(true)
-                        chat?.setContextActive(true)
+                chat?.setVisible(true)
+                chat?.setContextActive(true)
+                chat?.setActiveContext(chatContext)
                         WorkspaceStore.shared.reload()
                         contentView?.setContentView(AnyView(DesignerView()))
-                    } else {
-                        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
-                        rootView?.setContentHeaderViewHidden(false)
-                    }
+            } else {
+                toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
+                rootView?.setContentHeaderViewHidden(false)
+                chat?.setActiveContext(nil)
+            }
                 },
             ])
         } else {
             WorkspaceStore.shared.reload()
             contentView?.setContentView(AnyView(DesignerView()))
+            chat?.setVisible(true)
+            chat?.setContextActive(true)
+            chat?.setActiveContext(chatContext)
         }
     }
 
@@ -140,6 +151,9 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setActiveContext(nil)
+        }
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)

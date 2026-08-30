@@ -41,6 +41,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private weak var activityBar: (any ActivityBarProviding)?
     private weak var contentView: (any ContentViewProviding)?
+    private weak var chat: (any ChatSectionProviding)?
     private weak var railView: (any RailViewProviding)?
     private weak var rootView: (any RootViewProviding)?
 
@@ -91,6 +92,12 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
             throw KernelCoreError.providerNotRegistered(type: (any ContentViewProviding).self)
         }
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        let chatContext = ChatContext(
+            id: id,
+            title: metadata.name,
+            subtitle: metadata.description.isEmpty ? nil : metadata.description,
+            systemImage: "chevron.left.forwardslash.chevron.right"
+        )
         uninstallContributions()
         let sendSelectionContributor = SendSelectionToConversationContributor(
             conversationInput: kernel.resolveProvider((any ConversationInputProviding).self)
@@ -109,6 +116,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         self.projectObserver = projectObserver
         self.activityBar = activityBar
         self.contentView = contentView
+        self.chat = chat
         self.railView = kernel.resolveProvider((any RailViewProviding).self)
         self.rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
@@ -128,6 +136,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                     railView?.setVisibleCategories([.fileTree])
                     chat?.setVisible(true)
                     chat?.setContextActive(true)
+                    chat?.setActiveContext(chatContext)
                     contentView?.setContentView(AnyView(EditorWorkbenchView(
                         viewModel: viewModel,
                         surface: surface
@@ -135,6 +144,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                 } else {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     rootView?.setContentHeaderViewHidden(true)
+                    chat?.setActiveContext(nil)
                 }
             },
         ])
@@ -145,6 +155,9 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
             id: SendSelectionToConversationContributor.contributorID
         )
         let ownedCurrentContent = activityBar?.activeItemID == Self.activityItemID
+        if ownedCurrentContent {
+            chat?.setActiveContext(nil)
+        }
         activityBar?.removeItems(ids: [Self.activityItemID])
         if ownedCurrentContent { contentView?.setContentView(nil) }
         if ownedCurrentContent {
@@ -158,6 +171,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         editor = nil
         activityBar = nil
         contentView = nil
+        chat = nil
         railView = nil
         rootView = nil
     }

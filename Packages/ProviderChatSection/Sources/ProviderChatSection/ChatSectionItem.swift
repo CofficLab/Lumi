@@ -1,5 +1,53 @@
 import SwiftUI
 
+/// Stable identity for the currently visible chat workbench.
+///
+/// The chat shell is shared by many plugins, so a boolean such as
+/// `isContextActive` is not enough to decide which plugin contribution should
+/// be rendered. Plugins should use their own stable id here and never depend
+/// on another plugin's implementation details.
+@MainActor
+public struct ChatContext: Identifiable, Equatable, Hashable, Sendable {
+    public let id: String
+    public let title: String
+    public let subtitle: String?
+    public let systemImage: String?
+
+    public init(
+        id: String,
+        title: String,
+        subtitle: String? = nil,
+        systemImage: String? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.subtitle = subtitle
+        self.systemImage = systemImage
+    }
+
+    /// The default chat workbench. Plugin launch suggestions remain available
+    /// in this context so users can enter a plugin-specific workflow from chat.
+    public static let defaultChat = ChatContext(
+        id: "com.coffic.lumi.chat.default",
+        title: "Chat",
+        systemImage: "bubble.left.and.bubble.right"
+    )
+}
+
+public enum ChatSectionScope: Equatable, Sendable {
+    case global
+    case context(String)
+
+    public func matches(_ context: ChatContext?) -> Bool {
+        switch self {
+        case .global:
+            return true
+        case let .context(id):
+            return context?.id == id
+        }
+    }
+}
+
 public enum ChatSectionPlacement: Sendable {
     case stack
     case bottomFixed
@@ -9,6 +57,7 @@ public enum ChatSectionPlacement: Sendable {
 public struct ChatSectionItem: Identifiable, Sendable {
     public let id: String
     public var order: Int
+    public let scope: ChatSectionScope
     public let placement: ChatSectionPlacement
     public let fillsRemainingHeight: Bool
     public let showsTrailingDivider: Bool
@@ -17,6 +66,7 @@ public struct ChatSectionItem: Identifiable, Sendable {
     public init<Content: View>(
         id: String,
         order: Int = 200,
+        scope: ChatSectionScope = .global,
         placement: ChatSectionPlacement = .stack,
         fillsRemainingHeight: Bool = false,
         showsTrailingDivider: Bool = true,
@@ -24,6 +74,7 @@ public struct ChatSectionItem: Identifiable, Sendable {
     ) {
         self.id = id
         self.order = order
+        self.scope = scope
         self.placement = placement
         self.fillsRemainingHeight = fillsRemainingHeight
         self.showsTrailingDivider = showsTrailingDivider
@@ -43,17 +94,20 @@ public enum ChatSectionBarPlacement: Sendable {
 public struct ChatSectionBarItem: Identifiable, Sendable {
     public let id: String
     public var order: Int
+    public let scope: ChatSectionScope
     public let placement: ChatSectionBarPlacement
     public let makeView: @MainActor @Sendable () -> AnyView
 
     public init<Content: View>(
         id: String,
         order: Int = 200,
+        scope: ChatSectionScope = .global,
         placement: ChatSectionBarPlacement,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id
         self.order = order
+        self.scope = scope
         self.placement = placement
         self.makeView = { AnyView(content()) }
     }
@@ -69,15 +123,18 @@ public struct ChatSectionBarItem: Identifiable, Sendable {
 public struct ChatSectionRootWrapper: Identifiable, Sendable {
     public let id: String
     public var order: Int
+    public let scope: ChatSectionScope
     public let wrap: @MainActor @Sendable (AnyView) -> AnyView
 
     public init(
         id: String,
         order: Int = 200,
+        scope: ChatSectionScope = .global,
         wrap: @escaping @MainActor @Sendable (AnyView) -> AnyView
     ) {
         self.id = id
         self.order = order
+        self.scope = scope
         self.wrap = wrap
     }
 }

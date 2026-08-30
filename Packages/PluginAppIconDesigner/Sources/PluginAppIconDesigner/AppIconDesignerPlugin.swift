@@ -45,7 +45,8 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             action: .activatePluginEntry(
                 activityBarItemID: "\(id).entry",
                 railTabID: Self.railTabID
-            )
+            ),
+            scope: .launcherAndContext(id)
         )
     }
 
@@ -81,6 +82,12 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        let chatContext = ChatContext(
+            id: id,
+            title: name,
+            subtitle: metadata.description.isEmpty ? nil : metadata.description,
+            systemImage: "app.dashed"
+        )
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
@@ -120,9 +127,11 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                         contentView?.setContentView(AnyView(DesignerView()))
                         chat?.setVisible(true)
                         chat?.setContextActive(true)
+                        chat?.setActiveContext(chatContext)
                     } else {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         rootView?.setContentHeaderViewHidden(false)
+                        chat?.setActiveContext(nil)
                     }
                 },
             ])
@@ -131,6 +140,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             contentView?.setContentView(AnyView(DesignerView()))
             chat?.setVisible(true)
             chat?.setContextActive(true)
+            chat?.setActiveContext(chatContext)
         }
     }
 
@@ -155,6 +165,9 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setActiveContext(nil)
+        }
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)

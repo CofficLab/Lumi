@@ -7,6 +7,7 @@ import SwiftUI
 public final class DefaultChatSectionProviding: ChatSectionProviding, ObservableObject {
     @Published public private(set) var isVisible: Bool = true
     @Published public private(set) var isContextActive: Bool = false
+    @Published public private(set) var activeContext: ChatContext? = .defaultChat
     @Published public private(set) var isHeaderVisible: Bool = true
     @Published public private(set) var items: [ChatSectionItem] = []
     @Published public private(set) var barItems: [ChatSectionBarItem] = []
@@ -67,6 +68,12 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         guard isContextActive != active else { return }
         isContextActive = active
         notify(.contextActiveChanged(active))
+    }
+
+    public func setActiveContext(_ context: ChatContext?) {
+        guard activeContext != context else { return }
+        activeContext = context
+        notify(.activeContextChanged(context))
     }
 
     public func setHeaderVisible(_ visible: Bool) {
@@ -166,19 +173,27 @@ public struct ChatSectionHostView: View {
     }
 
     private var stackItems: [ChatSectionItem] {
-        provider.items.filter { $0.placement == .stack }
+        provider.items.filter {
+            $0.placement == .stack && $0.scope.matches(provider.activeContext)
+        }
     }
 
     private var bottomItems: [ChatSectionItem] {
-        provider.items.filter { $0.placement == .bottomFixed }
+        provider.items.filter {
+            $0.placement == .bottomFixed && $0.scope.matches(provider.activeContext)
+        }
     }
 
     private func bars(_ placement: ChatSectionBarPlacement) -> [ChatSectionBarItem] {
-        provider.barItems.filter { $0.placement == placement }
+        provider.barItems.filter {
+            $0.placement == placement && $0.scope.matches(provider.activeContext)
+        }
     }
 
     private var orderedRootWrappers: [ChatSectionRootWrapper] {
-        provider.rootWrappers.sorted { $0.order == $1.order ? $0.id < $1.id : $0.order < $1.order }
+        provider.rootWrappers
+            .filter { $0.scope.matches(provider.activeContext) }
+            .sorted { $0.order == $1.order ? $0.id < $1.id : $0.order < $1.order }
     }
 
     public var body: some View {

@@ -51,6 +51,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             toolbar?.setVisibleCategories(isChatActive ? [.global, .chat, .project] : Set(ToolbarItemCategory.allCases))
             chat.setVisible(isChatActive)
             chat.setContextActive(isChatActive)
+            chat.setActiveContext(isChatActive ? .defaultChat : nil)
             rootView.setContentViewHidden(isChatActive)
             rootView.setContentHeaderViewHidden(!isChatActive)
             railView?.setVisibleCategories(isChatActive ? [.chat, .fileTree] : Set(RailViewCategory.allCases))
@@ -59,6 +60,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         activityBar.activateItem(id: entryID)
         chat.setVisible(true)
         chat.setContextActive(true)
+        chat.setActiveContext(.defaultChat)
         rootView.setContentHeaderViewHidden(true)
         railView?.setVisibleCategories([.chat, .fileTree])
     }
