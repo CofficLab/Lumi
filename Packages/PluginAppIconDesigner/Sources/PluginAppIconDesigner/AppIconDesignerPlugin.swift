@@ -9,6 +9,7 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderPromptSuggestion
 import ProviderRailView
+import ProviderStorage
 import ProviderRootView
 import ProviderToolManager
 import SwiftUI
@@ -111,6 +112,16 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
 
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
+            let pluginID = id
+            let railWidthStore = kernel
+                .resolveProvider((any StorageProviding).self)
+                .map { storage in
+                    FileRailViewWidthStore(
+                        fileURL: storage
+                            .pluginDataDirectory(for: pluginID)
+                            .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                    )
+                }
             activityBar.addItems([
                 ActivityBarItem(
                     id: entryID,
@@ -123,6 +134,11 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                         toolbar?.setVisibleCategories([.global, .chat, .design])
                         rootView?.setContentHeaderViewHidden(true)
                         railView?.setVisibleTabID(Self.railTabID)
+                        railView?.activateWidthProfile(
+                            ownerID: pluginID,
+                            recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
+                            store: railWidthStore
+                        )
                         IconDocumentStore.shared.reload()
                         contentView?.setContentView(AnyView(DesignerView()))
                         chat?.setVisible(true)
@@ -132,6 +148,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         rootView?.setContentHeaderViewHidden(false)
                         chat?.setActiveContext(nil)
+                        railView?.deactivateWidthProfile(ownerID: pluginID)
                     }
                 },
             ])
@@ -141,6 +158,19 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             chat?.setVisible(true)
             chat?.setContextActive(true)
             chat?.setActiveContext(chatContext)
+            railView?.activateWidthProfile(
+                ownerID: id,
+                recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
+                store: kernel
+                    .resolveProvider((any StorageProviding).self)
+                    .map { storage in
+                        FileRailViewWidthStore(
+                            fileURL: storage
+                                .pluginDataDirectory(for: id)
+                                .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                        )
+                    }
+            )
         }
     }
 
@@ -170,6 +200,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
         }
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }

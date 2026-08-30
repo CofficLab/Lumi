@@ -1,5 +1,6 @@
 import Combine
 import ProviderChatSection
+import ProviderRailView
 import SwiftUI
 import Testing
 @testable import ProviderRootView
@@ -64,6 +65,27 @@ struct ProviderRootViewTests {
         visibility.send(true)
         await Task.yield()
         #expect(provider.isRailViewVisible)
+    }
+
+    @Test("Rail 宽度绑定并转发用户拖拽回调")
+    func railWidthFollowsPublisherAndForwardsResize() async {
+        let provider = DefaultRootViewProvider()
+        let width = CurrentValueSubject<RailViewWidth, Never>(.standard)
+        var resizedWidth: CGFloat?
+
+        provider.bindRailViewWidth(
+            to: width.eraseToAnyPublisher(),
+            onResize: { resizedWidth = $0 }
+        )
+        #expect(provider.railWidth == .standard)
+
+        let customWidth = RailViewWidth(minWidth: 240, idealWidth: 360, maxWidth: 480)
+        width.send(customWidth)
+        await Task.yield()
+        #expect(provider.railWidth == customWidth)
+
+        provider.saveRailViewWidth(420)
+        #expect(resizedWidth == 420)
     }
 
     @Test("没有容器时可通过 trailing pane 渲染")

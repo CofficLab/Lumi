@@ -9,6 +9,7 @@ import ProviderDocsView
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import ProviderStorage
 import ProviderToolbar
 import SwiftUI
 import KitSuperLog
@@ -120,6 +121,16 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         self.railView = kernel.resolveProvider((any RailViewProviding).self)
         self.rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let pluginID = id
+        let railWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileRailViewWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: pluginID)
+                        .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                )
+            }
         activityBar.addItems([
             ActivityBarItem(
                 id: Self.activityItemID,
@@ -134,6 +145,11 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                     rootView?.setContentHeaderViewHidden(false)
                     // Code Editor 激活时只显示文件树，避免带出其它项目类 RailView。
                     railView?.setVisibleCategories([.fileTree])
+                        railView?.activateWidthProfile(
+                            ownerID: pluginID,
+                            recommended: RailViewWidth(minWidth: 240, idealWidth: 300, maxWidth: 440),
+                            store: railWidthStore
+                        )
                     chat?.setVisible(true)
                     chat?.setContextActive(true)
                     chat?.setActiveContext(chatContext)
@@ -145,6 +161,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     rootView?.setContentHeaderViewHidden(true)
                     chat?.setActiveContext(nil)
+                    railView?.deactivateWidthProfile(ownerID: pluginID)
                 }
             },
         ])
@@ -157,6 +174,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         let ownedCurrentContent = activityBar?.activeItemID == Self.activityItemID
         if ownedCurrentContent {
             chat?.setActiveContext(nil)
+            railView?.deactivateWidthProfile(ownerID: id)
         }
         activityBar?.removeItems(ids: [Self.activityItemID])
         if ownedCurrentContent { contentView?.setContentView(nil) }

@@ -8,6 +8,7 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import ProviderRootView
+import ProviderStorage
 import ProviderToolManager
 import SwiftUI
 import KitSuperLog
@@ -84,6 +85,16 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let pluginID = id
+        let railWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileRailViewWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: pluginID)
+                        .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                )
+            }
 
         // 2. 注册 Rail 标签。
         //    必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
@@ -114,6 +125,11 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
                         toolbar?.setVisibleCategories([.global, .system])
                         railView?.setVisibleCategories([.system])
                         railView?.setVisibleTabID(Self.railTabID)
+                        railView?.activateWidthProfile(
+                            ownerID: pluginID,
+                            recommended: RailViewWidth(minWidth: 240, idealWidth: 300, maxWidth: 440),
+                            store: railWidthStore
+                        )
                         chat?.setVisible(false)
                         rootView?.setContentHeaderViewHidden(true)
                         contentView?.setContentView(AnyView(
@@ -124,6 +140,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
                         chat?.setVisible(true)
                         rootView?.setContentHeaderViewHidden(false)
                         railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+                        railView?.deactivateWidthProfile(ownerID: pluginID)
                     }
                 },
             ])
@@ -150,6 +167,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))

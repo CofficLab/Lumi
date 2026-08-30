@@ -1,6 +1,7 @@
 import Combine
 import SwiftUI
 import ProviderChatSection
+import ProviderRailView
 
 /// 根视图提供能力协议
 ///
@@ -60,6 +61,15 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     /// 绑定 Rail provider 的可见状态，使 tab 过滤或增删能同步到根布局。
     func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>)
 
+    /// 当前 Rail 的有效宽度。
+    var railWidth: RailViewWidth { get }
+
+    /// 绑定 Rail provider 的宽度，并接收用户拖拽完成后的宽度。
+    func bindRailViewWidth(
+        to publisher: AnyPublisher<RailViewWidth, Never>,
+        onResize: @escaping @MainActor (CGFloat) -> Void
+    )
+
     /// 注入主内容区顶部视图（传 `nil` 表示没有 Header）。
     ///
     /// Header 与主内容视图独立贡献，适合项目文件标签、面包屑等横向内容。
@@ -112,6 +122,11 @@ public extension RootViewProviding {
     func setContentHeaderViewHidden(_ hidden: Bool) {}
     func setRailViewVisible(_ visible: Bool) {}
     func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>) {}
+    var railWidth: RailViewWidth { .standard }
+    func bindRailViewWidth(
+        to publisher: AnyPublisher<RailViewWidth, Never>,
+        onResize: @escaping @MainActor (CGFloat) -> Void
+    ) {}
 }
 
 @MainActor

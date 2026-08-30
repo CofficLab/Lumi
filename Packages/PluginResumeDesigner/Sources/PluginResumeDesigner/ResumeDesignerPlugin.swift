@@ -6,6 +6,7 @@ import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
+import ProviderStorage
 import ProviderRootView
 import ProviderToolManager
 import ProviderPromptSuggestion
@@ -81,6 +82,15 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
         )
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let railWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileRailViewWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: id)
+                        .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                )
+            }
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         railView?.addTabs([
@@ -97,6 +107,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
 
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
+            let pluginID = id
             activityBar.addItems([
                 ActivityBarItem(
                     id: entryID,
@@ -109,6 +120,11 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                         toolbar?.setVisibleCategories([.global, .chat, .design])
                         rootView?.setContentHeaderViewHidden(true)
                         railView?.setVisibleTabID(Self.railTabID)
+                        railView?.activateWidthProfile(
+                            ownerID: pluginID,
+                            recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
+                            store: railWidthStore
+                        )
                 chat?.setVisible(true)
                 chat?.setContextActive(true)
                 chat?.setActiveContext(chatContext)
@@ -118,6 +134,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                 toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                 rootView?.setContentHeaderViewHidden(false)
                 chat?.setActiveContext(nil)
+                railView?.deactivateWidthProfile(ownerID: pluginID)
             }
                 },
             ])
@@ -127,6 +144,11 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
             chat?.setVisible(true)
             chat?.setContextActive(true)
             chat?.setActiveContext(chatContext)
+            railView?.activateWidthProfile(
+                ownerID: id,
+                recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
+                store: railWidthStore
+            )
         }
     }
 
@@ -156,6 +178,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
         }
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }

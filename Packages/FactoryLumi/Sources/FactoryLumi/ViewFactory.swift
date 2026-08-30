@@ -49,6 +49,10 @@ public struct DefaultViewFactory: ViewFactory {
             rootView.setRailView(rail.makeRailView())
             rootView.setRailViewVisible(rail.hasVisibleTabs)
             rootView.bindRailViewVisibility(to: rail.railVisibilityPublisher)
+            rootView.bindRailViewWidth(
+                to: rail.railWidthPublisher,
+                onResize: rail.saveCurrentWidth
+            )
         }
         if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
             rootView.setContentView(contentView.makeContentView())

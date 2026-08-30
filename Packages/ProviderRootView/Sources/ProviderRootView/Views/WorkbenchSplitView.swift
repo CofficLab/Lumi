@@ -15,8 +15,16 @@ struct WorkbenchSplitView: View {
                 #if os(macOS)
                 HSplitView {
                     provider.railView!
-                        .frame(minWidth: 180, idealWidth: 240, maxWidth: 400)
-                        .appSplitDivider(.trailing, initialPosition: 240, onResize: nil)
+                        .frame(
+                            minWidth: provider.railWidth.minWidth,
+                            idealWidth: provider.railWidth.idealWidth,
+                            maxWidth: provider.railWidth.maxWidth
+                        )
+                        .appSplitDivider(
+                            .trailing,
+                            initialPosition: provider.railWidth.idealWidth,
+                            onResize: provider.saveRailViewWidth
+                        )
                     provider.hasActiveContent ? AnyView(mainContent) : AnyView(RootWelcomeView())
                 }
                 #else

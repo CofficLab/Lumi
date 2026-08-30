@@ -43,17 +43,33 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
         let rail = kernel.resolveProvider((any RailViewProviding).self)
         let root = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let pluginID = id
+        let railWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileRailViewWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: pluginID)
+                        .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                )
+            }
         rail?.addTabs([RailTabItem(id: Self.railTabID, category: .project, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([ActivityBarItem(id: entryID, title: metadata.name, systemImage: "book.closed.fill", order: order, ownerPluginID: id) { state in
             if state == .activated {
                 toolbar?.setVisibleCategories([.global, .project])
                 root?.setContentHeaderViewHidden(true)
                 rail?.setVisibleTabID(Self.railTabID)
+                rail?.activateWidthProfile(
+                    ownerID: pluginID,
+                    recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
+                    store: railWidthStore
+                )
                 content?.setContentView(AnyView(StoryWriterRootView()))
             } else {
                 toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                 root?.setContentHeaderViewHidden(false)
                 rail?.setVisibleCategories(Set(RailViewCategory.allCases))
+                rail?.deactivateWidthProfile(ownerID: pluginID)
             }
         }])
         root?.setContentHeaderViewHidden(true)
@@ -72,6 +88,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: [entryID])
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
         if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }

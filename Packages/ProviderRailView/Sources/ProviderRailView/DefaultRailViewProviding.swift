@@ -13,14 +13,26 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
     @Published public private(set) var visibleTabID: String?
     @Published public private(set) var activeTabID: String?
     @Published public private(set) var hasVisibleTabs = false
+    @Published public private(set) var railWidth: RailViewWidth
+
+    private let defaultWidthStore: (any RailViewWidthStoring)?
+    private var activeWidthStore: (any RailViewWidthStoring)?
+    private var activeWidthOwnerID: String?
 
     public var railVisibilityPublisher: AnyPublisher<Bool, Never> {
         $hasVisibleTabs.eraseToAnyPublisher()
     }
 
-    public init(visibleCategories: Set<RailViewCategory> = Set(RailViewCategory.allCases), visibleTabID: String? = nil) {
+    public init(
+        visibleCategories: Set<RailViewCategory> = Set(RailViewCategory.allCases),
+        visibleTabID: String? = nil,
+        widthStore: (any RailViewWidthStoring)? = nil
+    ) {
         self.visibleCategories = visibleCategories
         self.visibleTabID = visibleTabID
+        self.railWidth = .standard
+        self.defaultWidthStore = widthStore
+        self.activeWidthStore = nil
     }
 
     public func registerTabs(_ tabs: [RailTabItem]) {
@@ -53,6 +65,41 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         visibleTabID = id
         reconcileActiveTab()
         updateVisibleTabState()
+    }
+
+    public func activateWidthProfile(
+        ownerID: String,
+        recommended: RailViewWidth,
+        store: (any RailViewWidthStoring)?
+    ) {
+        guard !ownerID.isEmpty else { return }
+        activeWidthOwnerID = ownerID
+        let activeWidthStore = store ?? defaultWidthStore
+        self.activeWidthStore = activeWidthStore
+        let restoredWidth = activeWidthStore?.loadWidth(ownerID: ownerID) ?? recommended.idealWidth
+        let resolvedWidth = recommended.withIdealWidth(recommended.clamped(restoredWidth))
+        if railWidth != resolvedWidth {
+            railWidth = resolvedWidth
+        }
+    }
+
+    public func deactivateWidthProfile(ownerID: String) {
+        guard activeWidthOwnerID == ownerID else { return }
+        activeWidthOwnerID = nil
+        activeWidthStore = nil
+        if railWidth != .standard {
+            railWidth = .standard
+        }
+    }
+
+    public func saveCurrentWidth(_ width: CGFloat) {
+        guard let activeWidthOwnerID else { return }
+        let resolvedWidth = railWidth.clamped(width)
+        activeWidthStore?.saveWidth(resolvedWidth, ownerID: activeWidthOwnerID)
+        let updatedWidth = railWidth.withIdealWidth(resolvedWidth)
+        if railWidth != updatedWidth {
+            railWidth = updatedWidth
+        }
     }
 
     public func makeRailView() -> AnyView {

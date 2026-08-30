@@ -8,6 +8,7 @@ import ProviderContentView
 import ProviderExternalFile
 import ProviderRailView
 import ProviderRootView
+import ProviderStorage
 import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
@@ -57,6 +58,16 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let pluginID = id
+        let railWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileRailViewWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: pluginID)
+                        .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                )
+            }
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
@@ -79,6 +90,11 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                 if state == .activated {
                     toolbar?.setVisibleCategories([.global, .project])
                     railView?.setVisibleTabID(Self.railTabID)
+                    railView?.activateWidthProfile(
+                        ownerID: pluginID,
+                        recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
+                        store: railWidthStore
+                    )
                     chat?.setVisible(false)
                     rootView?.setContentHeaderViewHidden(true)
                     contentView?.setContentView(
@@ -92,6 +108,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                 } else {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+                    railView?.deactivateWidthProfile(ownerID: pluginID)
                     chat?.setVisible(true)
                     rootView?.setContentHeaderViewHidden(false)
                     toolbar?.removeToolbarItems(ids: ["\(self.id).title"])
@@ -113,6 +130,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
