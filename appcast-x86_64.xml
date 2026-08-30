@@ -3,37 +3,24 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.18.3</title>
-            <pubDate>Sun, 30 Aug 2026 04:02:23 +0000</pubDate>
-            <sparkle:version>616</sparkle:version>
-            <sparkle:shortVersionString>5.18.3</sparkle:shortVersionString>
+            <title>5.18.4</title>
+            <pubDate>Sun, 30 Aug 2026 16:23:22 +0000</pubDate>
+            <sparkle:version>617</sparkle:version>
+            <sparkle:shortVersionString>5.18.4</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.18.3</h2>
-<h3>Changes since v5.18.2</h3>
+            <description><![CDATA[<h2>Release v5.18.4</h2>
+<h3>Changes since v5.18.3</h3>
 <ul>
-<li>docs(project-rag): document code navigation gaps</li>
-<li>feat(lifecycle-hooks): support cancellable registrations</li>
-<li>feat(message-list): hide project toolbar in empty state</li>
-<li>feat(PluginLLMManager): emit LLMManagerEvent from CustomLLMManager</li>
-<li>feat(project-rag): accelerate lexical search with ripgrep</li>
-<li>feat(project-rag): add explicit path search</li>
-<li>feat(project-rag): add lexical search fallback</li>
-<li>feat(project-rag): expose search evidence kind</li>
-<li>feat(project-rag): include lexical context</li>
-<li>feat(project-rag): include lexical line ranges</li>
-<li>feat(project-rag): index restored projects in background</li>
-<li>feat(project-rag): inject code context before llm</li>
-<li>feat(project-rag): merge lexical navigation evidence</li>
-<li>feat(project-rag): persist chunk line ranges</li>
-<li>feat(project-rag): track chunk line ranges</li>
-<li>feat(project): expose shared workspace root</li>
-<li>feat(ProviderLLMManager): add typed observer for LLMManaging state changes</li>
-<li>feat(tool-manager): resolve relative file reads in workspace</li>
-<li>feat(tool-manager): resolve workspace-relative edits</li>
-<li>feat(tool-manager): resolve workspace-relative writes</li>
+<li>feat(chat-section): add plugin-aware chat contexts</li>
+<li>feat(chat): persist plugin chat section widths</li>
+<li>feat(rail): persist plugin rail widths</li>
+<li>feat(terminal): sync rail view visibility with visible tabs</li>
+<li>fix: make API key keychain reads resilient</li>
+<li>fix(chat-screenshot): show captured images in chat preview</li>
+<li>refactor(code-editor): rename editor plugin packages</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.18.3</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.18.3/Lumi_5.18.3_x86_64.dmg" length="44430452" type="application/octet-stream" sparkle:edSignature="7qktW4k4UjHkgansAub5HvnfkF+yYpQdML/Cza78WIgBdrAKk3DVKiwwvIQjnY7G54nJowqhNLVlWF5GM7HEAQ=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.18.4</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.18.4/Lumi_5.18.4_x86_64.dmg" length="43837009" type="application/octet-stream" sparkle:edSignature="I7W66Tm4v9ykqo0vanQqcjcR//eURIRwGv6LPE/O11XJ/mq1SIF6VDOuRVWLqG3Jc+LQFxk+xag7tEDxW9QdDw=="/>
         </item>
     </channel>
 </rss>
