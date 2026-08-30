@@ -22,7 +22,9 @@ public enum RAGFilePathSearcher {
             return directMatches.prefix(max(topK, 1)).map { $0 }
         }
 
-        let matches = RAGFileScanner.discoverFilesCached(in: projectPath).compactMap { filePath -> RAGSearchResult? in
+        let filePaths = try searchWithRipgrep(projectPath: projectPath)
+            ?? RAGFileScanner.discoverFilesCached(in: projectPath)
+        let matches = filePaths.compactMap { filePath -> RAGSearchResult? in
             let source = RAGPathUtils.displayPath(filePath: filePath, projectPath: projectPath)
             let score = RAGTextUtils.sourcePathBoost(queryTerms: queryTerms, filePath: source)
             guard score > 0 else { return nil }
@@ -43,6 +45,78 @@ public enum RAGFilePathSearcher {
             }
             .prefix(max(topK, 1))
             .map { $0 }
+    }
+
+    /// 优先让 ripgrep 枚举路径；返回 nil 表示工具不可用或执行失败，调用方再回退到文件扫描。
+    private static func searchWithRipgrep(projectPath: String) throws -> [String]? {
+        guard let executable = ripgrepExecutable() else { return nil }
+
+        var arguments = [
+            "--files",
+            "--no-ignore",
+            "--color", "never",
+        ]
+        for fileExtension in RAGFileScanner.allowedExtensions {
+            arguments.append(contentsOf: ["--glob", "*.\(fileExtension)"])
+        }
+        for directory in RAGFileScanner.grepExcludeDirPatterns {
+            arguments.append(contentsOf: ["--glob", "!\(directory)/**"])
+        }
+        arguments.append(projectPath)
+
+        let outputPipe = Pipe()
+        let process = Process()
+        process.executableURL = executable
+        process.arguments = arguments
+        process.standardOutput = outputPipe
+        process.standardError = FileHandle.nullDevice
+
+        do {
+            try process.run()
+        } catch {
+            return nil
+        }
+        let output = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        try Task.checkCancellation()
+
+        guard process.terminationStatus == 0 || process.terminationStatus == 1 else { return nil }
+        let projectRoot = RAGPathUtils.normalizeProjectPath(projectPath)
+        return String(decoding: output, as: UTF8.self)
+            .split(separator: "\n")
+            .map { rawPath in
+                let path = String(rawPath)
+                if path.hasPrefix("/") { return RAGPathUtils.normalizeProjectPath(path) }
+                return URL(fileURLWithPath: projectRoot)
+                    .appendingPathComponent(path)
+                    .standardizedFileURL
+                    .path
+            }
+            .filter { filePath in
+                let fileURL = URL(fileURLWithPath: filePath)
+                guard filePath.hasPrefix(projectRoot == "/" ? "/" : projectRoot + "/"),
+                      !RAGFileScanner.shouldSkipPath(filePath),
+                      RAGFileScanner.allowedExtensions.contains(fileURL.pathExtension.lowercased()),
+                      let values = try? fileURL.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
+                      values.isRegularFile == true else {
+                    return false
+                }
+                return values.fileSize.map { $0 <= RAGFileScanner.defaultMaxFileSizeBytes } ?? true
+            }
+    }
+
+    private static func ripgrepExecutable() -> URL? {
+        let pathEntries = ProcessInfo.processInfo.environment["PATH"]?
+            .split(separator: ":")
+            .map(String.init) ?? []
+        let candidates = pathEntries.map { "\($0)/rg" } + [
+            "/opt/homebrew/bin/rg",
+            "/usr/local/bin/rg",
+            "/usr/bin/rg",
+        ]
+        return candidates.lazy
+            .map { URL(fileURLWithPath: $0) }
+            .first { FileManager.default.isExecutableFile(atPath: $0.path) }
     }
 
     private static func directPathMatches(query: String, projectPath: String) -> [RAGSearchResult] {

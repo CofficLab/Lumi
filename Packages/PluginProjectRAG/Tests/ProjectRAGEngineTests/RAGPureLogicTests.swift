@@ -447,6 +447,25 @@ import Foundation
         #expect(results.map(\.source) == ["Sources/RequestHandler.swift"])
     }
 
+    @Test func findsFilenameWithFastPathEnumeration() throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-path-filename-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let sourceURL = projectURL.appendingPathComponent("Sources/RequestHandler.swift")
+        try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "let unrelatedValue = true".write(to: sourceURL, atomically: true, encoding: .utf8)
+
+        let results = try RAGFilePathSearcher.search(
+            query: "RequestHandler.swift",
+            projectPath: projectURL.path,
+            topK: 3
+        )
+
+        #expect(results.map(\.source) == ["Sources/RequestHandler.swift"])
+    }
+
     @Test func doesNotScanPathsForOrdinaryQueries() throws {
         let projectURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("rag-path-gate-\(UUID().uuidString)", isDirectory: true)
