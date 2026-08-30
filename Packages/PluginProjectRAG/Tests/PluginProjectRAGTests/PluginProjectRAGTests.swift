@@ -180,4 +180,26 @@ struct CodeNavigationCoordinatorTests {
         #expect(provider.lastEnsureIndexedBackground == false)
         #expect(provider.searchCallCount == 1)
     }
+
+    @Test("merges semantic and exact file evidence")
+    func mergesSemanticAndExactFileEvidence() async throws {
+        let provider = StubProjectRAGProvider()
+        let coordinator = CodeNavigationCoordinator(provider: provider)
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-coordinator-\(UUID().uuidString)", isDirectory: true)
+        let sourceURL = projectURL.appendingPathComponent("Sources/Router.swift")
+        try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "func routeRequest() {}".write(to: sourceURL, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let response = try await coordinator.search(
+            query: "routeRequest",
+            projectPath: projectURL.path,
+            topK: 8
+        )
+
+        #expect(response.results.contains { result in
+            result.source == "Sources/Router.swift" && result.matchKind == .filesystemLexical
+        })
+    }
 }
