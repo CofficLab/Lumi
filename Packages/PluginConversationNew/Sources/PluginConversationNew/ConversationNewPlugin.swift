@@ -42,6 +42,7 @@ public final class ConversationNewPlugin: SuperPlugin, SuperLog {
         let toolbarItemID = "\(id).new-chat"
         let syncToolbarItem: @MainActor () -> Void = { [weak toolbar, weak conversations, weak chat] in
             guard let toolbar, let conversations, let chat else { return }
+            // 无选中会话时由 MessageList 的空视图承载创建入口，工具栏不重复显示。
             let shouldShow = chat.isVisible && conversations.selectedConversationID != nil
             let isShown = toolbar.toolbarItems.contains { $0.id == toolbarItemID }
             if shouldShow, !isShown {

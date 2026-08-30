@@ -113,7 +113,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
-                        toolbar?.setVisibleCategories([.global, .design])
+                        toolbar?.setVisibleCategories([.global, .chat, .design])
                         rootView?.setContentHeaderViewHidden(true)
                         railView?.setVisibleTabID(Self.railTabID)
                         IconDocumentStore.shared.reload()

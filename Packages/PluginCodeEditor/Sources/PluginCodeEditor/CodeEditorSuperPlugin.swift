@@ -121,7 +121,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { [weak contentView, weak railView = self.railView, weak rootView = self.rootView, weak chat] state in
                 if state == .activated {
-                    toolbar?.setVisibleCategories([.global, .project, .editor])
+                    toolbar?.setVisibleCategories([.global, .chat, .project, .editor])
                     // Code Editor 是唯一需要显示 ContentHeader 的工作区。
                     rootView?.setContentHeaderViewHidden(false)
                     // Code Editor 激活时只显示文件树，避免带出其它项目类 RailView。
