@@ -12,6 +12,7 @@ import ProviderMessageSender
 import ProviderMessageStreaming
 import ProviderPromptSuggestion
 import ProviderProject
+import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
 
@@ -50,6 +51,7 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
             promptSuggestions: kernel.resolveProvider((any PromptSuggestionProviding).self),
             promptSuggestionExecutor: kernel.resolveProvider((any PromptSuggestionExecuting).self),
             project: kernel.resolveProvider((any ProjectProviding).self),
+            toolbar: kernel.resolveProvider((any ToolbarProviding).self),
         )
         chat.addItems([ChatSectionItem(id: id, order: 100, fillsRemainingHeight: true) {
             ListView(services: services)

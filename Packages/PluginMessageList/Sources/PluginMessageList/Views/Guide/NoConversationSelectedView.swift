@@ -9,6 +9,7 @@ struct NoConversationSelectedView: View {
     let services: MessageListServices
     @StateObject private var promptObserver: PromptSuggestionsObserver
     @StateObject private var projectObserver: ProjectObserver
+    @StateObject private var toolbarCoordinator: NoConversationSelectedToolbarCoordinator
     @State private var importingFolder = false
     @State private var projectError: String?
 
@@ -16,6 +17,10 @@ struct NoConversationSelectedView: View {
         self.services = services
         _promptObserver = StateObject(wrappedValue: PromptSuggestionsObserver(services: services))
         _projectObserver = StateObject(wrappedValue: ProjectObserver(project: services.project))
+        _toolbarCoordinator = StateObject(wrappedValue: NoConversationSelectedToolbarCoordinator(
+            project: services.project,
+            toolbar: services.toolbar
+        ))
     }
 
     private var project: ProjectInfo? { projectObserver.project?.currentProject }
@@ -32,6 +37,12 @@ struct NoConversationSelectedView: View {
             if !suggestions.isEmpty { PromptSuggestionFlow(suggestions: suggestions, services: services) { importingFolder = true } }
         }
         .padding(32).frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            toolbarCoordinator.activate()
+        }
+        .onDisappear {
+            toolbarCoordinator.deactivate()
+        }
         .fileImporter(isPresented: $importingFolder, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
             guard case .success(let urls) = result, let url = urls.first else { return }
             Task { @MainActor in do { try await services.project?.openProject(at: url.path) } catch { projectError = error.localizedDescription } }

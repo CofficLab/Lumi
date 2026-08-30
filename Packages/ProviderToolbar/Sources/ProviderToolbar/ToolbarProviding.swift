@@ -43,6 +43,13 @@ public protocol ToolbarProviding: AnyObject, ObservableObject
     /// 设置当前允许展示的工具栏分类。
     func setVisibleCategories(_ categories: Set<ToolbarItemCategory>)
 
+    /// 为指定来源设置临时隐藏的工具栏分类。
+    ///
+    /// 该请求叠加在 `setVisibleCategories(_:)` 的工作区上下文之上，多个来源
+    /// 的隐藏分类取并集。传入空集合表示清除该来源的隐藏请求。
+    /// `source` 由调用方自行保证稳定且唯一，例如插件 ID 加功能名。
+    func setHiddenCategories(_ categories: Set<ToolbarItemCategory>, for source: String)
+
     /// 返回工具栏视图（基于已注入的 items 渲染）。
     func makeToolbarView() -> AnyView
 }
@@ -57,6 +64,8 @@ public extension ToolbarProviding {
     }
 
     func setVisibleCategories(_ categories: Set<ToolbarItemCategory>) {}
+
+    func setHiddenCategories(_ categories: Set<ToolbarItemCategory>, for source: String) {}
 
     /// 追加语义的默认实现：合入已有项并按 `order` 排序（同 id 去重，保留先注册者）。
     func addToolbarItems(_ newItems: [ToolbarItem]) {

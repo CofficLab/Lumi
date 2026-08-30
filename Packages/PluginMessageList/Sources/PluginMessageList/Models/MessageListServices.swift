@@ -9,6 +9,7 @@ import ProviderMessageSender
 import ProviderMessageStreaming
 import ProviderPromptSuggestion
 import ProviderProject
+import ProviderToolbar
 import ProviderToolManager
 
 /// 新版 PluginMessageList 的服务容器。
@@ -29,6 +30,7 @@ struct MessageListServices {
     let promptSuggestions: (any PromptSuggestionProviding)?
     let promptSuggestionExecutor: (any PromptSuggestionExecuting)?
     let project: (any ProjectProviding)?
+    let toolbar: (any ToolbarProviding)?
 
     var selectedConversationID: UUID? {
         conversations?.selectedConversationID

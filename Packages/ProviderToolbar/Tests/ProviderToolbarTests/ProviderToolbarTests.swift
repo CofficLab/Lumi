@@ -130,4 +130,38 @@ struct ProviderToolbarTests {
         #expect(provider.visibleCategories == Set(ToolbarItemCategory.allCases))
         #expect(provider.visibleToolbarItems.map(\.id) == ["global", "project"])
     }
+
+    @Test("临时隐藏分类不会覆盖 ActivityBar 的基础分类")
+    func temporaryHiddenCategoriesOverlayBaseCategories() {
+        let provider = DefaultToolbarProviding()
+        provider.setVisibleCategories([.global, .chat, .project])
+
+        provider.setHiddenCategories([.project], for: "message-list.empty-state")
+
+        #expect(provider.visibleCategories == [.global, .chat])
+        provider.setVisibleCategories([.global, .project])
+        #expect(provider.visibleCategories == [.global])
+    }
+
+    @Test("清除指定来源后恢复被隐藏的分类")
+    func clearingTemporaryHiddenCategoriesRestoresCategories() {
+        let provider = DefaultToolbarProviding()
+        provider.setVisibleCategories([.global, .chat, .project])
+        provider.setHiddenCategories([.project], for: "message-list.empty-state")
+        provider.setHiddenCategories([], for: "message-list.empty-state")
+
+        #expect(provider.visibleCategories == [.global, .chat, .project])
+    }
+
+    @Test("多个隐藏来源取分类并集，清除一个来源不会影响其他来源")
+    func hiddenCategoriesFromMultipleSourcesAreUnioned() {
+        let provider = DefaultToolbarProviding()
+        provider.setVisibleCategories([.global, .chat, .project, .system])
+        provider.setHiddenCategories([.project], for: "message-list.empty-state")
+        provider.setHiddenCategories([.system], for: "another-feature")
+
+        #expect(provider.visibleCategories == [.global, .chat])
+        provider.setHiddenCategories([], for: "message-list.empty-state")
+        #expect(provider.visibleCategories == [.global, .chat, .project])
+    }
 }

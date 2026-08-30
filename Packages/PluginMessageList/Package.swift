@@ -21,6 +21,7 @@ let package = Package(
         .package(path: "../ProviderMessageStreaming"),
         .package(path: "../ProviderPromptSuggestion"),
         .package(path: "../ProviderProject"),
+        .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../KitSuperLog"),
     ],
@@ -40,6 +41,7 @@ let package = Package(
             .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
             .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
             .product(name: "ProviderProject", package: "ProviderProject"),
+            .product(name: "ProviderToolbar", package: "ProviderToolbar"),
             .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             .product(name: "KitSuperLog", package: "KitSuperLog"),
         ], resources: [.process("../../Resources/Localizable.xcstrings")]),
@@ -47,6 +49,8 @@ let package = Package(
             "PluginMessageList",
             .product(name: "ProviderMessage", package: "ProviderMessage"),
             .product(name: "ProviderConversation", package: "ProviderConversation"),
+            .product(name: "ProviderProject", package: "ProviderProject"),
+            .product(name: "ProviderToolbar", package: "ProviderToolbar"),
         ]),
     ]
 )
