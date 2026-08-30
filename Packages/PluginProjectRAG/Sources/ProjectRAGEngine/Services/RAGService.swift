@@ -445,9 +445,13 @@ public actor RAGService: SuperLog {
         } else {
             results = semanticResults
         }
+        let deduplicatedResults = RAGResultDeduplicator.deduplicate(
+            results,
+            limit: max(topK, 1)
+        )
         let retrieveDuration = (CFAbsoluteTimeGetCurrent() - retrieveStart) * 1000
         if Self.verbose {
-            Self.logger.info("\(Self.t)⏱️ retriever.retrieve 耗时：\(RAGUtils.formatDuration(retrieveDuration))，结果数：\(results.count)")
+            Self.logger.info("\(Self.t)⏱️ retriever.retrieve 耗时：\(RAGUtils.formatDuration(retrieveDuration))，结果数：\(deduplicatedResults.count)")
         }
 
         let totalDuration = (CFAbsoluteTimeGetCurrent() - start) * 1000
@@ -459,7 +463,7 @@ public actor RAGService: SuperLog {
             Self.logger.warning("\(Self.t)⚠️ retrieve 总耗时过长：\(RAGUtils.formatDuration(totalDuration)) (>300ms) [embed=\(RAGUtils.formatDuration(embedDuration)), retriever=\(RAGUtils.formatDuration(retrieveDuration))]")
         }
 
-        return RAGResponse(query: query, results: results)
+        return RAGResponse(query: query, results: deduplicatedResults)
     }
 
     public func getIndexStatus(projectPath: String) async throws -> RAGIndexStatus? {

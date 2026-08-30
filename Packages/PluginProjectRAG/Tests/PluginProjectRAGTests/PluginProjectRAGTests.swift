@@ -123,10 +123,7 @@ struct RAGCodeSearchToolTests {
         try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: projectURL) }
 
-        ProjectRAGRuntime.configure(provider: provider)
-        defer { ProjectRAGRuntime.reset() }
-
-        let output = try await RAGCodeSearchTool().execute(arguments: [
+        let output = try await RAGCodeSearchTool(provider: provider).execute(arguments: [
             "query": ToolArgument("handleRequest"),
             "project_path": ToolArgument(projectURL.path),
         ])

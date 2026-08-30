@@ -366,3 +366,50 @@ import Foundation
         #expect(stored[0].lineRange == RAGLineRange(startLine: 4, endLine: 7))
     }
 }
+
+@Suite struct RAGResultDeduplicatorTests {
+
+    @Test func removesOnlyIdenticalEvidence() {
+        let results = [
+            RAGSearchResult(
+                content: "func load() {}",
+                source: "Feature.swift",
+                score: 0.9,
+                matchKind: .semantic,
+                lineRange: RAGLineRange(startLine: 4, endLine: 6)
+            ),
+            RAGSearchResult(
+                content: "func load() {}",
+                source: "Feature.swift",
+                score: 0.8,
+                matchKind: .indexedLexical,
+                lineRange: RAGLineRange(startLine: 4, endLine: 6)
+            ),
+            RAGSearchResult(
+                content: "func save() {}",
+                source: "Feature.swift",
+                score: 0.7,
+                matchKind: .semantic,
+                lineRange: RAGLineRange(startLine: 8, endLine: 10)
+            ),
+        ]
+
+        let unique = RAGResultDeduplicator.deduplicate(results)
+
+        #expect(unique.count == 2)
+        #expect(unique[0].score == 0.9)
+        #expect(unique[1].content == "func save() {}")
+    }
+
+    @Test func appliesResultLimitAfterDeduplication() {
+        let results = [
+            RAGSearchResult(content: "same", source: "A.swift", score: 1),
+            RAGSearchResult(content: "same", source: "A.swift", score: 0.9),
+            RAGSearchResult(content: "other", source: "B.swift", score: 0.8),
+        ]
+
+        let unique = RAGResultDeduplicator.deduplicate(results, limit: 2)
+
+        #expect(unique.map(\.content) == ["same", "other"])
+    }
+}

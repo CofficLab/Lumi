@@ -7,8 +7,11 @@ import ProviderProjectRAG
 public struct RAGCodeSearchTool: SuperAgentTool {
     public static let toolName = "search_code"
     public let name = Self.toolName
+    private let providerOverride: (any ProjectRAGProviding)?
 
-    public init() {}
+    public init(provider: (any ProjectRAGProviding)? = nil) {
+        self.providerOverride = provider
+    }
 
     public func description(for language: LanguagePreference) -> String {
         "Search semantic code snippets in the current project or an explicitly supplied project path."
@@ -48,7 +51,13 @@ public struct RAGCodeSearchTool: SuperAgentTool {
         guard FileManager.default.fileExists(atPath: projectPath) else {
             return "## Code Search\n\nProject path does not exist: `\(projectPath)`"
         }
-        guard let provider = await MainActor.run(body: { ProjectRAGRuntime.provider }) else {
+        let provider: (any ProjectRAGProviding)?
+        if let providerOverride {
+            provider = providerOverride
+        } else {
+            provider = await MainActor.run(body: { ProjectRAGRuntime.provider })
+        }
+        guard let provider else {
             return "## Code Search\n\nProject RAG is not available."
         }
 
