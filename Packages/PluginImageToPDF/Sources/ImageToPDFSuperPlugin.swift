@@ -2,6 +2,7 @@ import KernelCore
 import KitSuperLog
 import os
 import ProviderActivityBar
+import ProviderToolbar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
@@ -37,17 +38,20 @@ import SwiftUI
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         let entry = "\(id).entry"
 
         if let bar = kernel.resolveProvider((any ActivityBarProviding).self) {
             bar.addItems([
                 ActivityBarItem(id: entry, title: metadata.name, systemImage: "photo.on.rectangle.angled", order: order, ownerPluginID: id) { state in
                     if state == .activated {
+                        toolbar?.setVisibleCategories([.global, .general])
                         content?.setContentView(AnyView(ImageToPDFMainView()))
                         chat?.setVisible(false)
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
                     } else {
+                        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
                         rootView?.setContentHeaderViewHidden(false)

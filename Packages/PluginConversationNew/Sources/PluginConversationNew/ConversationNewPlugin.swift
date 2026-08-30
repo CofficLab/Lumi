@@ -46,7 +46,7 @@ public final class ConversationNewPlugin: SuperPlugin, SuperLog {
             let isShown = toolbar.toolbarItems.contains { $0.id == toolbarItemID }
             if shouldShow, !isShown {
                 toolbar.addToolbarItems([
-                    ToolbarItem(id: toolbarItemID, title: LumiPluginLocalization.string("New Chat", bundle: .module), placement: .trailing, order: 30) {
+                    ToolbarItem(id: toolbarItemID, title: LumiPluginLocalization.string("New Chat", bundle: .module), placement: .trailing, category: .chat, order: 30) {
                         NewChatButton(kernel: kernel)
                     },
                 ])

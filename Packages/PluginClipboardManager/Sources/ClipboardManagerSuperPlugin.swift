@@ -1,5 +1,6 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderToolbar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
@@ -46,6 +47,7 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         let entry = "\(id).entry"
 
         if let bar = kernel.resolveProvider((any ActivityBarProviding).self) {
@@ -58,11 +60,13 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
+                        toolbar?.setVisibleCategories([.global, .system])
                         content?.setContentView(AnyView(ClipboardHistoryView()))
                         chat?.setVisible(false)
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
                     } else {
+                        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
                         rootView?.setContentHeaderViewHidden(false)

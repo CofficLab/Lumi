@@ -2,6 +2,7 @@ import KitAgentTool
 import KernelCore
 import os
 import ProviderActivityBar
+import ProviderToolbar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
@@ -82,6 +83,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
 
         // 2. 注册 Rail 标签。
         //    必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
@@ -109,6 +111,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
+                        toolbar?.setVisibleCategories([.global, .system])
                         railView?.setVisibleCategories([.system])
                         railView?.setVisibleTabID(Self.railTabID)
                         chat?.setVisible(false)
@@ -117,6 +120,7 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
                             DiskManagerView(categoryStore: self.categoryStore, workspace: self.workspace)
                         ))
                     } else {
+                        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setContentHeaderViewHidden(false)
                         railView?.setVisibleCategories(Set(RailViewCategory.allCases))

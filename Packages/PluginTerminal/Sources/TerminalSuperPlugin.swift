@@ -7,6 +7,7 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderProject
 import ProviderRailView
+import ProviderToolbar
 import ProviderRootView
 import SwiftUI
 import KitTerminalCore
@@ -52,6 +53,7 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
         let project = kernel.resolveProvider((any ProjectProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
             ActivityBarItem(
                 id: "\(id).entry",
@@ -61,11 +63,13 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { state in
                 if state == .activated {
+                    toolbar?.setVisibleCategories([.global, .project])
                     chat?.setVisible(false)
                     rootView?.setRailView(nil)
                     rootView?.setContentHeaderViewHidden(true)
                     content?.setContentView(AnyView(TerminalV2MainView(project: project)))
                 } else {
+                    toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     chat?.setVisible(true)
                     rootView?.setRailView(railView?.makeRailView())
                     rootView?.setContentHeaderViewHidden(false)

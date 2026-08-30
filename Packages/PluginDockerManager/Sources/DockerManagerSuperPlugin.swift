@@ -58,15 +58,17 @@ public final class DockerManagerSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { [titleItemID] state in
                 if state == .activated {
+                    toolbar?.setVisibleCategories([.global, .system])
                     content?.setContentView(AnyView(DockerImagesView()))
                     rootView?.setRailView(nil)
                     rootView?.setContentHeaderViewHidden(true)
                     toolbar?.addToolbarItems([
-                        ToolbarItem(id: titleItemID, title: title, placement: .center, order: 0) {
+                        ToolbarItem(id: titleItemID, title: title, placement: .center, category: .system, order: 0) {
                             AppToolbarTitleLabel(title: title)
                         },
                     ])
                 } else {
+                    toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     rootView?.setRailView(railView?.makeRailView())
                     rootView?.setContentHeaderViewHidden(false)
                     toolbar?.removeToolbarItems(ids: [titleItemID])

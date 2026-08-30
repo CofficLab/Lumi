@@ -9,6 +9,7 @@ import ProviderDocsView
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import ProviderToolbar
 import SwiftUI
 import KitSuperLog
 import os
@@ -110,6 +111,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         self.contentView = contentView
         self.railView = kernel.resolveProvider((any RailViewProviding).self)
         self.rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         activityBar.addItems([
             ActivityBarItem(
                 id: Self.activityItemID,
@@ -119,6 +121,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { [weak contentView, weak railView = self.railView, weak rootView = self.rootView, weak chat] state in
                 if state == .activated {
+                    toolbar?.setVisibleCategories([.global, .project, .editor])
                     // Code Editor 是唯一需要显示 ContentHeader 的工作区。
                     rootView?.setContentHeaderViewHidden(false)
                     // Code Editor 激活时只显示文件树，避免带出其它项目类 RailView。
@@ -130,6 +133,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                         surface: surface
                     )))
                 } else {
+                    toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     rootView?.setContentHeaderViewHidden(true)
                 }
             },

@@ -2,6 +2,7 @@ import KitAgentTool
 import Foundation
 import KernelCore
 import ProviderActivityBar
+import ProviderToolbar
 import ProviderContentView
 import ProviderConversationInput
 import ProviderDocsView
@@ -41,13 +42,16 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let rail = kernel.resolveProvider((any RailViewProviding).self)
         let root = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         rail?.addTabs([RailTabItem(id: Self.railTabID, category: .project, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([ActivityBarItem(id: entryID, title: metadata.name, systemImage: "book.closed.fill", order: order, ownerPluginID: id) { state in
             if state == .activated {
+                toolbar?.setVisibleCategories([.global, .project])
                 root?.setContentHeaderViewHidden(true)
                 rail?.setVisibleTabID(Self.railTabID)
                 content?.setContentView(AnyView(StoryWriterRootView()))
             } else {
+                toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                 root?.setContentHeaderViewHidden(false)
                 rail?.setVisibleCategories(Set(RailViewCategory.allCases))
             }

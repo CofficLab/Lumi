@@ -44,6 +44,7 @@ public final class SettingsToolbarPlugin: SuperPlugin, SuperLog {
             id: "settings",
             title: "设置",
             placement: .trailing,
+            category: .global,
             order: 300
         ) {
             AppIconButton(systemImage: "gearshape") {

@@ -17,6 +17,7 @@ struct ProviderToolbarTests {
         #expect(item.id == "run")
         #expect(item.title == "Run")
         #expect(item.placement == .leading)
+        #expect(item.category == .global)
         #expect(item.order == 200)
     }
 
@@ -93,5 +94,40 @@ struct ProviderToolbarTests {
 
         #expect(provider.toolbarItems.count == 1)
         #expect(type(of: provider.makeToolbarView()) == AnyView.self)
+    }
+
+    @Test("ToolbarItem 默认属于 global 分类")
+    func toolbarItemDefaultsToGlobalCategory() {
+        let item = ProviderToolbar.ToolbarItem(id: "legacy", title: "Legacy") { Text("Legacy") }
+
+        #expect(item.category == .global)
+    }
+
+    @Test("DefaultToolbarProviding 按可见分类过滤工具栏项")
+    func filtersToolbarItemsByVisibleCategories() {
+        let provider = DefaultToolbarProviding()
+        provider.registerToolbarItems([
+            ProviderToolbar.ToolbarItem(id: "global", title: "Global", category: .global) { Text("Global") },
+            ProviderToolbar.ToolbarItem(id: "project", title: "Project", category: .project) { Text("Project") },
+            ProviderToolbar.ToolbarItem(id: "chat", title: "Chat", category: .chat) { Text("Chat") },
+        ])
+
+        provider.setVisibleCategories([.global, .project])
+
+        #expect(provider.visibleCategories == [.global, .project])
+        #expect(provider.visibleToolbarItems.map(\.id) == ["global", "project"])
+        #expect(provider.toolbarItems.map(\.id) == ["global", "project", "chat"])
+    }
+
+    @Test("默认可见分类保持所有工具栏项可见")
+    func allCategoriesAreVisibleByDefault() {
+        let provider = DefaultToolbarProviding()
+        provider.registerToolbarItems([
+            ProviderToolbar.ToolbarItem(id: "global", title: "Global") { Text("Global") },
+            ProviderToolbar.ToolbarItem(id: "project", title: "Project", category: .project) { Text("Project") },
+        ])
+
+        #expect(provider.visibleCategories == Set(ToolbarItemCategory.allCases))
+        #expect(provider.visibleToolbarItems.map(\.id) == ["global", "project"])
     }
 }

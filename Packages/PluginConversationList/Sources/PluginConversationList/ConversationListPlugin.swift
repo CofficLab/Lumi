@@ -88,6 +88,7 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
                 id: "\(id).conversation-list",
                 title: LumiPluginLocalization.string("Chats", bundle: .module),
                 placement: .trailing,
+                category: .chat,
                 order: 200
             ) { [self] in
                 ToolbarButton(

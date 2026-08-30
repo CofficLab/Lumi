@@ -1,5 +1,6 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderToolbar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
@@ -45,6 +46,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let rail = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         rail?.addTabs([
             RailTabItem(
                 id: railTabID,
@@ -66,12 +68,14 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { state in
                 if state == .activated {
+                    toolbar?.setVisibleCategories([.global, .general])
                     rail?.setVisibleCategories([.general])
                     rail?.setVisibleTabID(self.railTabID)
                     content?.setContentView(AnyView(RClickSettingsView()))
                     chat?.setVisible(false)
                     rootView?.setContentHeaderViewHidden(true)
                 } else {
+                    toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     chat?.setVisible(true)
                     rootView?.setContentHeaderViewHidden(false)
                     rail?.setVisibleCategories(Set(RailViewCategory.allCases))

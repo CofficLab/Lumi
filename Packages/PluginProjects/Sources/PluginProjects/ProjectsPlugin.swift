@@ -147,6 +147,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
                     id: "\(id).toolbar",
                     title: LumiPluginLocalization.string("Projects", bundle: .module),
                     placement: .center,
+                    category: .project,
                     order: 0
                 ) {
                     ControlView(viewModel: viewModel)

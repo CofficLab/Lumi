@@ -19,11 +19,19 @@ import AppKit
 @MainActor
 public final class DefaultToolbarProviding: ToolbarProviding, ObservableObject {
     @Published public private(set) var toolbarItems: [ToolbarItem] = []
+    @Published public private(set) var visibleCategories: Set<ToolbarItemCategory>
 
-    public init() {}
+    public init(visibleCategories: Set<ToolbarItemCategory> = Set(ToolbarItemCategory.allCases)) {
+        self.visibleCategories = visibleCategories
+    }
 
     public func registerToolbarItems(_ items: [ToolbarItem]) {
         toolbarItems = items
+    }
+
+    public func setVisibleCategories(_ categories: Set<ToolbarItemCategory>) {
+        guard visibleCategories != categories else { return }
+        visibleCategories = categories
     }
 
     public func makeToolbarView() -> AnyView {
@@ -42,7 +50,7 @@ private struct ToolbarView: View {
     private let trafficLightReserveWidth: CGFloat = 76
 
     var body: some View {
-        let items = provider.toolbarItems
+        let items = provider.visibleToolbarItems
         let leading = items.filter { $0.placement == .leading }
         let center = items.filter { $0.placement == .center }
         let trailing = items.filter { $0.placement == .trailing }

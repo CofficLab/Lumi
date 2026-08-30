@@ -1,6 +1,7 @@
 import KitAgentTool
 import KernelCore
 import ProviderActivityBar
+import ProviderToolbar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
@@ -61,6 +62,7 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         railView?.addTabs([
@@ -86,12 +88,14 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
+                        toolbar?.setVisibleCategories([.global, .design])
                         rootView?.setContentHeaderViewHidden(true)
                         chat?.setVisible(false)
                         railView?.setVisibleTabID(Self.railTabID)
                         MindMapStore.shared.reload()
                         contentView?.setContentView(AnyView(MindMapDesignerView()))
                     } else {
+                        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         rootView?.setContentHeaderViewHidden(false)
                         chat?.setVisible(true)
                     }

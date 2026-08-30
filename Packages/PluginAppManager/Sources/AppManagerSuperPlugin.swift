@@ -2,6 +2,7 @@ import KernelCore
 import KitSuperLog
 import os
 import ProviderActivityBar
+import ProviderToolbar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
@@ -25,9 +26,9 @@ import SwiftUI
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         if let storage = kernel.resolveProvider((any StorageProviding).self) { AppManagerPlugin.pluginDataDirectoryProvider = { storage.pluginDataDirectory(for: "AppManagerPlugin") } }
-        let content = kernel.resolveProvider((any ContentViewProviding).self); let chat = kernel.resolveProvider((any ChatSectionProviding).self); let rail = kernel.resolveProvider((any RailViewProviding).self); let root = kernel.resolveProvider((any RootViewProviding).self); let entry = "\(id).entry"
+        let content = kernel.resolveProvider((any ContentViewProviding).self); let chat = kernel.resolveProvider((any ChatSectionProviding).self); let rail = kernel.resolveProvider((any RailViewProviding).self); let root = kernel.resolveProvider((any RootViewProviding).self); let toolbar = kernel.resolveProvider((any ToolbarProviding).self); let entry = "\(id).entry"
         rail?.addTabs([RailTabItem(id: AppManagerPlugin.railTabID, category: .system, title: LumiPluginLocalization.string("Apps", bundle: .module), systemImage: "apps.ipad", order: order) { AppRailView(viewModel: self.viewModel) }])
-        if let bar = kernel.resolveProvider((any ActivityBarProviding).self) { bar.addItems([ActivityBarItem(id: entry, title: metadata.name, systemImage: "apps.ipad", order: order, ownerPluginID: id) { state in if state == .activated { root?.setContentHeaderViewHidden(true); rail?.setVisibleCategories([.system]); rail?.setVisibleTabID(AppManagerPlugin.railTabID); content?.setContentView(AnyView(AppManagerView(viewModel: self.viewModel))); chat?.setVisible(false) } else { root?.setContentHeaderViewHidden(false); chat?.setVisible(true) } }]) } else { root?.setContentHeaderViewHidden(true); content?.setContentView(AnyView(AppManagerView(viewModel: viewModel))) }
+        if let bar = kernel.resolveProvider((any ActivityBarProviding).self) { bar.addItems([ActivityBarItem(id: entry, title: metadata.name, systemImage: "apps.ipad", order: order, ownerPluginID: id) { state in if state == .activated { toolbar?.setVisibleCategories([.global, .system]); root?.setContentHeaderViewHidden(true); rail?.setVisibleCategories([.system]); rail?.setVisibleTabID(AppManagerPlugin.railTabID); content?.setContentView(AnyView(AppManagerView(viewModel: self.viewModel))); chat?.setVisible(false) } else { toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases)); root?.setContentHeaderViewHidden(false); chat?.setVisible(true) } }]) } else { content?.setContentView(AnyView(AppManagerView(viewModel: viewModel))) }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

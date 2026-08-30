@@ -77,6 +77,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { state in
                 if state == .activated {
+                    toolbar?.setVisibleCategories([.global, .project])
                     railView?.setVisibleTabID(Self.railTabID)
                     chat?.setVisible(false)
                     rootView?.setContentHeaderViewHidden(true)
@@ -84,11 +85,12 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                         AnyView(DatabaseManagerV2Workspace(viewModel: self.viewModel))
                     )
                     toolbar?.addToolbarItems([
-                        ToolbarItem(id: "\(self.id).title", title: self.metadata.name, placement: .center, order: 0) {
+                        ToolbarItem(id: "\(self.id).title", title: self.metadata.name, placement: .center, category: .project, order: 0) {
                             Text(self.metadata.name).font(.headline)
                         },
                     ])
                 } else {
+                    toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     railView?.setVisibleCategories(Set(RailViewCategory.allCases))
                     chat?.setVisible(true)
                     rootView?.setContentHeaderViewHidden(false)

@@ -109,6 +109,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
+                        toolbar?.setVisibleCategories([.global, .design])
                         chat?.setVisible(false)
                         railView?.setVisibleCategories([.design])
                         railView?.setVisibleTabID(Self.railTabID)
@@ -119,12 +120,14 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                                 id: "\(self.id).title",
                                 title: BookletLocalization.string("Split PDF or Booklet Maker"),
                                 placement: .center,
+                                category: .design,
                                 order: 200
                             ) {
                                 BookletMakerToolbarTitleView(viewModel: self.sharedViewModel)
                             },
                         ])
                     } else {
+                        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setContentHeaderViewHidden(false)
                         railView?.setVisibleCategories(Set(RailViewCategory.allCases))
