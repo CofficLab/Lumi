@@ -64,4 +64,14 @@ struct ChatScreenshotCropTests {
         #expect(cropped != nil)
         #expect(cropped!.height == 50)
     }
+
+    @MainActor
+    @Test func screenshotAttachmentContainsEncodedJpeg() throws {
+        let image = makeImage(width: 40, height: 20)
+        let attachment = try ScreenshotFileWriter.makeAttachment(image)
+
+        #expect(attachment.mimeType == "image/jpeg")
+        #expect(attachment.fileName?.hasSuffix(".jpg") == true)
+        #expect(Data(base64Encoded: attachment.base64Data)?.isEmpty == false)
+    }
 }

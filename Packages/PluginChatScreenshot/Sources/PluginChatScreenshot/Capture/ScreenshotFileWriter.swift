@@ -1,13 +1,13 @@
 import CoreGraphics
 import Foundation
 import ImageIO
+import ProviderMessage
 import UniformTypeIdentifiers
 
-/// 截图落盘工具：CGImage → 长边缩放 → JPEG → 写入插件数据目录。
+/// 截图编码工具：CGImage → 长边缩放 → JPEG。
 ///
-/// 由旧版 `ScreenCaptureImageProcessor`（产出 `LumiImageAttachment`）改造而来：
-/// 新版 `MessageSendingProviding` 无附件挂起池，截图统一保存为 JPEG 文件后，
-/// 以文件路径文本插入输入框。
+/// 截图附件与输入框拖入图片使用同一个 `UserImageAttachment` 挂起池，
+/// 因此编码后的图片可以直接在输入框上方预览并随消息发送。
 ///
 /// 设计：
 /// - 长边最大 1920px（典型 4K/Retina 截图可缩到 ~3-5MB → JPEG 后 ~300-500KB）；
@@ -24,6 +24,19 @@ public enum ScreenshotFileWriter {
 
     /// JPEG 质量（0..1）
     public static let jpegQuality: CGFloat = 0.85
+
+    /// 将截图编码为可加入发送器挂起池的图片附件。
+    public static func makeAttachment(_ image: CGImage) throws -> UserImageAttachment {
+        let scaled = downscale(image, maxDimension: maxDimension)
+        guard let jpegData = encodeJPEG(scaled, quality: jpegQuality) else {
+            throw WriteError.encodeFailed
+        }
+        return UserImageAttachment(
+            mimeType: "image/jpeg",
+            base64Data: jpegData.base64EncodedString(),
+            fileName: makeFileName(ext: "jpg")
+        )
+    }
 
     /// 缩放 + JPEG 编码后写入 `directory`，返回生成的图片文件 URL。
     public static func write(_ image: CGImage, to directory: URL) throws -> URL {

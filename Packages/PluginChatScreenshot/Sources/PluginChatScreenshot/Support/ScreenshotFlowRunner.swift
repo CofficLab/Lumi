@@ -1,11 +1,10 @@
 import CoreGraphics
-import Foundation
 import KernelCore
 import os
-import ProviderConversationInput
-import ProviderStorage
+import ProviderMessage
+import ProviderMessageSender
 
-/// 截图流程编排：权限检查 → 全屏抓取 → 遮罩拖选 → 落盘 → 插入输入框。
+/// 截图流程编排：权限检查 → 全屏抓取 → 遮罩拖选 → 编码 → 加入图片预览。
 ///
 /// 由旧版 `ChatScreenshotPlugin.handleCaptureTrigger` 复刻而来，职责与 UI 解耦，
 /// 便于按钮视图与后续命令入口复用同一流程。
@@ -38,20 +37,19 @@ enum ScreenshotFlowRunner {
 
     // MARK: - 私有
 
-    /// 裁剪结果保存为 JPEG 文件，并把文件路径插入输入框。
+    /// 将裁剪结果编码为图片附件，加入发送器挂起池供输入框预览。
     private static func insert(kernel: KernelCoreContainer, image: CGImage) {
-        guard let storage = kernel.resolveProvider((any StorageProviding).self),
-              let input = kernel.resolveProvider((any ConversationInputProviding).self) else {
-            logger.error("Failed to resolve StorageProviding, ConversationInputProviding from kernel")
+        guard let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
+            logger.error("Failed to resolve MessageSendingProviding from kernel")
             return
         }
-        let directory = storage.pluginDataDirectory(for: "ChatScreenshot")
+
         do {
-            let url = try ScreenshotFileWriter.write(image, to: directory)
-            input.addToConversation(fileURLs: [url])
-            logger.info("截图完成 ➡️ 已插入输入框: \(url.lastPathComponent, privacy: .public)")
+            let attachment = try ScreenshotFileWriter.makeAttachment(image)
+            sender.addImageAttachment(attachment)
+            logger.info("截图完成 ➡️ 已加入图片预览: \(attachment.fileName ?? "screenshot", privacy: .public)")
         } catch {
-            logger.error("截图落盘失败: \(error.localizedDescription, privacy: .public)")
+            logger.error("截图编码失败: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
