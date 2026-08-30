@@ -10,10 +10,12 @@ import ProviderProjectRAG
 @MainActor
 final class ProjectRAGLLMContextHook {
     private let provider: any ProjectRAGProviding
+    private let searchMemory: ProjectRAGSearchMemory?
     private var injectedQueryKeys: Set<String> = []
 
-    init(provider: any ProjectRAGProviding) {
+    init(provider: any ProjectRAGProviding, searchMemory: ProjectRAGSearchMemory? = nil) {
         self.provider = provider
+        self.searchMemory = searchMemory
     }
 
     func apply(to context: WillSendToLLMContext) async -> WillSendToLLMContext {
@@ -46,6 +48,7 @@ final class ProjectRAGLLMContextHook {
                 topK: 8
             )
             guard !response.results.isEmpty else { return context }
+            searchMemory?.recordAutomaticSearch(query: latestUserMessage.content, projectPath: projectPath)
 
             let results = response.results.map {
                 RAGSearchResult(

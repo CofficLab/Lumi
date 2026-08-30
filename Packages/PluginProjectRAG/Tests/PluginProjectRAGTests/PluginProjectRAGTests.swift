@@ -31,10 +31,11 @@ struct ProjectRAGSuperPluginTests {
 
 @MainActor
 private final class StubProjectRAGProvider: ProjectRAGProviding {
-    let currentProjectPath: String? = "/tmp/Lumi"
+    var currentProjectPath: String? = "/tmp/Lumi"
     let isInitialized = true
     var ensureIndexedCallCount = 0
     var lastEnsureIndexedBackground: Bool?
+    var searchCallCount = 0
     var response = ProjectRAGResponse(
         query: "",
         results: [
@@ -54,7 +55,8 @@ private final class StubProjectRAGProvider: ProjectRAGProviding {
     }
 
     func search(query: String, projectPath: String?, topK: Int) async throws -> ProjectRAGResponse {
-        response
+        searchCallCount += 1
+        return response
     }
 
     func ensureIndexed(projectPath: String, force: Bool, background: Bool) async throws {
@@ -131,5 +133,30 @@ struct RAGCodeSearchToolTests {
         #expect(output.contains("Sources/Feature.swift:12-19"))
         #expect(output.contains("evidence: semantic"))
         #expect(output.contains("func handleRequest() {}"))
+    }
+
+    @Test("suppresses an immediate duplicate after automatic injection")
+    func suppressesImmediateDuplicate() async throws {
+        let provider = StubProjectRAGProvider()
+        let searchMemory = ProjectRAGSearchMemory()
+        let hook = ProjectRAGLLMContextHook(provider: provider, searchMemory: searchMemory)
+        let context = WillSendToLLMContext(
+            messages: [LLMMessage(role: .user, content: "这个项目的代码怎么实现请求处理")],
+            conversationID: UUID()
+        )
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-tool-dedup-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+        provider.currentProjectPath = projectURL.path
+
+        _ = await hook.apply(to: context)
+        let output = try await RAGCodeSearchTool(provider: provider, searchMemory: searchMemory).execute(arguments: [
+            "query": ToolArgument("这个项目的代码怎么实现请求处理"),
+            "project_path": ToolArgument(projectURL.path),
+        ])
+
+        #expect(output.contains("already injected"))
+        #expect(provider.searchCallCount == 1)
     }
 }

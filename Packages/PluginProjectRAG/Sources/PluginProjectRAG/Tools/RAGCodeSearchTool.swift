@@ -8,9 +8,15 @@ public struct RAGCodeSearchTool: SuperAgentTool {
     public static let toolName = "search_code"
     public let name = Self.toolName
     private let providerOverride: (any ProjectRAGProviding)?
+    private let searchMemory: ProjectRAGSearchMemory?
 
     public init(provider: (any ProjectRAGProviding)? = nil) {
+        self.init(provider: provider, searchMemory: nil)
+    }
+
+    init(provider: (any ProjectRAGProviding)? = nil, searchMemory: ProjectRAGSearchMemory?) {
         self.providerOverride = provider
+        self.searchMemory = searchMemory
     }
 
     public func description(for language: LanguagePreference) -> String {
@@ -59,6 +65,10 @@ public struct RAGCodeSearchTool: SuperAgentTool {
         }
         guard let provider else {
             return "## Code Search\n\nProject RAG is not available."
+        }
+        if let searchMemory,
+           await searchMemory.consumeRecentAutomaticSearch(query: query, projectPath: projectPath) {
+            return "## Code Search\n\nThe matching project evidence was already injected into the current LLM context; no duplicate results were returned."
         }
 
         let topK = min(max((arguments["top_k"]?.value as? Int) ?? 8, 1), 20)

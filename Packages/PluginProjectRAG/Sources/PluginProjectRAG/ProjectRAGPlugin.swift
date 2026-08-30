@@ -35,6 +35,7 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
     private var llmContextHook: ProjectRAGLLMContextHook?
     private var llmContextHookHandle: (any LifecycleHookHandle)?
     private var projectLifecycleHook: ProjectRAGProjectLifecycleHook?
+    private var searchMemory: ProjectRAGSearchMemory?
 
     public init() {}
 
@@ -50,11 +51,13 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
         let provider = ProjectRAGProvider(service: service, project: project)
         ProjectRAGRuntime.configure(provider: provider)
         try kernel.registerProvider((any ProjectRAGProviding).self, provider)
+        let searchMemory = ProjectRAGSearchMemory()
+        self.searchMemory = searchMemory
         kernel.resolveProvider((any ToolManagerProviding).self)?
-            .add(RAGCodeSearchTool(), pluginID: id)
+            .add(RAGCodeSearchTool(searchMemory: searchMemory), pluginID: id)
 
         if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
-            let contextHook = ProjectRAGLLMContextHook(provider: provider)
+            let contextHook = ProjectRAGLLMContextHook(provider: provider, searchMemory: searchMemory)
             self.llmContextHook = contextHook
             llmContextHookHandle = hooks.addWillSendToLLMHook { [weak contextHook] context in
                 guard let contextHook else { return context }
@@ -97,6 +100,7 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
         llmContextHook = nil
         projectLifecycleHook?.cancel()
         projectLifecycleHook = nil
+        searchMemory = nil
         if let service { Task { await service.cancelBackgroundIndexing() } }
         service = nil
         ProjectRAGRuntime.reset()
