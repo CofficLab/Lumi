@@ -10,11 +10,13 @@ import ProviderProjectRAG
 @MainActor
 final class ProjectRAGLLMContextHook {
     private let provider: any ProjectRAGProviding
+    private let coordinator: CodeNavigationCoordinator
     private let searchMemory: ProjectRAGSearchMemory?
     private var injectedQueryKeys: Set<String> = []
 
     init(provider: any ProjectRAGProviding, searchMemory: ProjectRAGSearchMemory? = nil) {
         self.provider = provider
+        self.coordinator = CodeNavigationCoordinator(provider: provider)
         self.searchMemory = searchMemory
     }
 
@@ -32,17 +34,7 @@ final class ProjectRAGLLMContextHook {
         guard !injectedQueryKeys.contains(queryKey) else { return context }
 
         do {
-            let hasIndex = try await provider.indexStatus(projectPath: projectPath) != nil
-            if !hasIndex && !provider.isIndexing(projectPath: projectPath) {
-                // 没有可用索引时，首次请求需要先建立一份索引，避免把
-                // “索引尚未完成”误当成“没有相关代码”。
-                try await provider.ensureIndexed(projectPath: projectPath, force: false, background: false)
-            } else {
-                // 已有旧索引时立即查询，同时在后台刷新；已有后台任务则由
-                // Provider 内部去重。
-                try await provider.ensureIndexed(projectPath: projectPath, force: false, background: true)
-            }
-            let response = try await provider.search(
+            let response = try await coordinator.search(
                 query: latestUserMessage.content,
                 projectPath: projectPath,
                 topK: 8

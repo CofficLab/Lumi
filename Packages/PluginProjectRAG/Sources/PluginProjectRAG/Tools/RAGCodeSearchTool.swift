@@ -72,14 +72,11 @@ public struct RAGCodeSearchTool: SuperAgentTool {
         }
 
         let topK = min(max((arguments["top_k"]?.value as? Int) ?? 8, 1), 20)
-        let hasIndex = try await provider.indexStatus(projectPath: projectPath) != nil
-        let isIndexing = await provider.isIndexing(projectPath: projectPath)
-        if !hasIndex && !isIndexing {
-            try await provider.ensureIndexed(projectPath: projectPath, force: false, background: false)
-        } else {
-            try await provider.ensureIndexed(projectPath: projectPath, force: false, background: true)
-        }
-        let response = try await provider.search(query: query, projectPath: projectPath, topK: topK)
+        let response = try await CodeNavigationCoordinator(provider: provider).search(
+            query: query,
+            projectPath: projectPath,
+            topK: topK
+        )
         guard !response.results.isEmpty else {
             return "## Code Search\n\nNo indexed code matched `\(query)`. Indexing may still be in progress."
         }

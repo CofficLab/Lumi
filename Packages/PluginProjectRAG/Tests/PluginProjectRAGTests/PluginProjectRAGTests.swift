@@ -160,3 +160,24 @@ struct RAGCodeSearchToolTests {
         #expect(provider.searchCallCount == 1)
     }
 }
+
+@Suite("CodeNavigationCoordinator")
+@MainActor
+struct CodeNavigationCoordinatorTests {
+    @Test("indexes a missing project before searching")
+    func indexesMissingProjectBeforeSearching() async throws {
+        let provider = StubProjectRAGProvider()
+        let coordinator = CodeNavigationCoordinator(provider: provider)
+
+        let response = try await coordinator.search(
+            query: "handleRequest",
+            projectPath: "/tmp/Lumi",
+            topK: 8
+        )
+
+        #expect(response.results.count == 1)
+        #expect(provider.ensureIndexedCallCount == 1)
+        #expect(provider.lastEnsureIndexedBackground == false)
+        #expect(provider.searchCallCount == 1)
+    }
+}
