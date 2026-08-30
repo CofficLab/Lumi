@@ -146,29 +146,36 @@ public struct RootOverlayItem: Identifiable {
 @MainActor
 public final class RootTrailingPane: ObservableObject {
     public let id: String
-    public let minWidth: CGFloat
-    public let idealWidth: CGFloat
-    public let maxWidth: CGFloat
+    @Published public private(set) var width: ChatSectionWidth
     public let content: AnyView
 
     @Published public var isVisible: Bool
     private var visibilitySubscription: AnyCancellable?
+    private var widthSubscription: AnyCancellable?
+    private var widthResizeHandler: (@MainActor (CGFloat) -> Void)?
 
     public init(
         id: String,
         minWidth: CGFloat = 280,
         idealWidth: CGFloat = 320,
         maxWidth: CGFloat = .infinity,
+        width: ChatSectionWidth? = nil,
         isVisible: Bool = true,
         content: AnyView
     ) {
         self.id = id
-        self.minWidth = minWidth
-        self.idealWidth = idealWidth
-        self.maxWidth = maxWidth
+        self.width = width ?? ChatSectionWidth(
+            minWidth: minWidth,
+            idealWidth: idealWidth,
+            maxWidth: maxWidth
+        )
         self.isVisible = isVisible
         self.content = content
     }
+
+    public var minWidth: CGFloat { width.minWidth }
+    public var idealWidth: CGFloat { width.idealWidth }
+    public var maxWidth: CGFloat { width.maxWidth }
 
     /// 将面板显隐状态绑定到 ChatSection Provider。
     ///
@@ -182,5 +189,25 @@ public final class RootTrailingPane: ObservableObject {
                 self?.isVisible = provider?.isVisible ?? false
             }
         }
+    }
+
+    /// 将面板宽度绑定到 ChatSection provider，并接收用户拖拽完成后的宽度。
+    @MainActor
+    public func bindWidth(
+        to publisher: AnyPublisher<ChatSectionWidth, Never>,
+        onResize: @escaping @MainActor (CGFloat) -> Void
+    ) {
+        widthResizeHandler = onResize
+        widthSubscription = publisher.sink { [weak self] width in
+            Task { @MainActor [weak self] in
+                self?.width = width
+            }
+        }
+    }
+
+    /// 转发用户拖拽后的面板宽度。
+    @MainActor
+    public func saveWidth(_ width: CGFloat) {
+        widthResizeHandler?(width)
     }
 }

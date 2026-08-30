@@ -146,6 +146,73 @@ struct ProviderChatSectionTests {
         #expect(provider.isHeaderVisible == true)
     }
 
+    @Test("首次激活使用推荐宽度，拖拽后按插件 ID 恢复")
+    func widthProfileRestoresSavedWidth() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProviderChatSectionTests-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("chat-section-width.plist")
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let recommended = ChatSectionWidth(minWidth: 280, idealWidth: 360, maxWidth: 520)
+        let firstProvider = DefaultChatSectionProviding(
+            widthStore: FileChatSectionWidthStore(fileURL: fileURL)
+        )
+
+        firstProvider.activateWidthProfile(ownerID: "plugin.resume", recommended: recommended)
+        #expect(firstProvider.chatSectionWidth.idealWidth == 360)
+
+        firstProvider.saveCurrentWidth(440)
+        let secondProvider = DefaultChatSectionProviding(
+            widthStore: FileChatSectionWidthStore(fileURL: fileURL)
+        )
+        secondProvider.activateWidthProfile(ownerID: "plugin.resume", recommended: recommended)
+
+        #expect(secondProvider.chatSectionWidth.idealWidth == 440)
+    }
+
+    @Test("没有磁盘值时使用推荐宽度，保存值超出新范围时被限制")
+    func widthProfileUsesRecommendationAndClampsRestoredValue() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProviderChatSectionTests-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("chat-section-width.plist")
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = FileChatSectionWidthStore(fileURL: fileURL)
+        let provider = DefaultChatSectionProviding(widthStore: store)
+        let recommended = ChatSectionWidth(minWidth: 280, idealWidth: 360, maxWidth: 520)
+
+        provider.activateWidthProfile(ownerID: "plugin.new", recommended: recommended)
+        #expect(provider.chatSectionWidth.idealWidth == 360)
+
+        provider.saveCurrentWidth(500)
+        let reloaded = DefaultChatSectionProviding(
+            widthStore: FileChatSectionWidthStore(fileURL: fileURL)
+        )
+        reloaded.activateWidthProfile(
+            ownerID: "plugin.new",
+            recommended: ChatSectionWidth(minWidth: 300, idealWidth: 340, maxWidth: 400)
+        )
+
+        #expect(reloaded.chatSectionWidth.idealWidth == 400)
+    }
+
+    @Test("旧插件释放宽度时不会覆盖新插件")
+    func staleDeactivationDoesNotResetCurrentProfile() {
+        let provider = DefaultChatSectionProviding()
+        provider.activateWidthProfile(
+            ownerID: "plugin.first",
+            recommended: ChatSectionWidth(minWidth: 280, idealWidth: 320, maxWidth: 440)
+        )
+        provider.activateWidthProfile(
+            ownerID: "plugin.second",
+            recommended: ChatSectionWidth(minWidth: 300, idealWidth: 380, maxWidth: 520)
+        )
+
+        provider.deactivateWidthProfile(ownerID: "plugin.first")
+
+        #expect(provider.chatSectionWidth.idealWidth == 380)
+    }
+
     private func waitForMainRunloop() async {
         // Combine sink 通过 receive(on: .main) 异步投递，让出若干次主线程执行机会。
         for _ in 0..<5 {

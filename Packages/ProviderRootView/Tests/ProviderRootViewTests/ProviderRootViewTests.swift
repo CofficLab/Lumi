@@ -50,6 +50,29 @@ struct ProviderRootViewTests {
         #expect(pane.isVisible)
     }
 
+    @Test("ChatSection 宽度绑定到 trailing pane 并转发用户拖拽")
+    func trailingPaneFollowsChatSectionWidthAndForwardsResize() async {
+        let chat = DefaultChatSectionProviding()
+        let pane = RootTrailingPane(
+            id: "chat",
+            width: chat.chatSectionWidth,
+            content: AnyView(Text("chat"))
+        )
+        var resizedWidth: CGFloat?
+        pane.bindWidth(
+            to: chat.chatSectionWidthPublisher,
+            onResize: { resizedWidth = $0 }
+        )
+
+        let customWidth = ChatSectionWidth(minWidth: 280, idealWidth: 400, maxWidth: 560)
+        chat.activateWidthProfile(ownerID: "plugin.chat", recommended: customWidth)
+        await Task.yield()
+        #expect(pane.width == customWidth)
+
+        pane.saveWidth(460)
+        #expect(resizedWidth == 460)
+    }
+
     @Test("Rail 可见性绑定到根布局")
     func railVisibilityFollowsPublisher() async {
         let provider = DefaultRootViewProvider()

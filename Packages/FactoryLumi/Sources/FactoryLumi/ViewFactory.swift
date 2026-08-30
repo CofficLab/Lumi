@@ -60,10 +60,15 @@ public struct DefaultViewFactory: ViewFactory {
         if let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
             let trailingPane = RootTrailingPane(
                 id: "com.coffic.lumi.workspace.chat",
+                width: chat.chatSectionWidth,
                 isVisible: chat.isVisible,
                 content: chat.makeChatSectionView()
             )
             trailingPane.bindVisibility(to: chat)
+            trailingPane.bindWidth(
+                to: chat.chatSectionWidthPublisher,
+                onResize: chat.saveCurrentWidth
+            )
             rootView.setTrailingPane(trailingPane)
         }
         return themed(rootView.makeRootView(), kernel: kernel)

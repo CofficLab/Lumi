@@ -131,6 +131,15 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                         .appendingPathComponent("rail-view-width.plist", isDirectory: false)
                 )
             }
+        let chatWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileChatSectionWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: pluginID)
+                        .appendingPathComponent("chat-section-width.plist", isDirectory: false)
+                )
+            }
         activityBar.addItems([
             ActivityBarItem(
                 id: Self.activityItemID,
@@ -153,6 +162,11 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                     chat?.setVisible(true)
                     chat?.setContextActive(true)
                     chat?.setActiveContext(chatContext)
+                    chat?.activateWidthProfile(
+                        ownerID: pluginID,
+                        recommended: ChatSectionWidth(minWidth: 300, idealWidth: 360, maxWidth: 560),
+                        store: chatWidthStore
+                    )
                     contentView?.setContentView(AnyView(EditorWorkbenchView(
                         viewModel: viewModel,
                         surface: surface
@@ -161,6 +175,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     rootView?.setContentHeaderViewHidden(true)
                     chat?.setActiveContext(nil)
+                    chat?.deactivateWidthProfile(ownerID: pluginID)
                     railView?.deactivateWidthProfile(ownerID: pluginID)
                 }
             },
@@ -174,6 +189,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         let ownedCurrentContent = activityBar?.activeItemID == Self.activityItemID
         if ownedCurrentContent {
             chat?.setActiveContext(nil)
+            chat?.deactivateWidthProfile(ownerID: id)
             railView?.deactivateWidthProfile(ownerID: id)
         }
         activityBar?.removeItems(ids: [Self.activityItemID])

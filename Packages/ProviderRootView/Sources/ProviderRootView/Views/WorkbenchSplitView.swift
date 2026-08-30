@@ -51,8 +51,7 @@ struct WorkbenchSplitView: View {
             contentView: provider.contentView,
             contentFooterView: provider.contentFooterView,
             isContentViewHidden: provider.isContentViewHidden,
-            trailingPane: provider.trailingPane,
-            trailingWidth: 320
+            trailingPane: provider.trailingPane
         )
     }
 }

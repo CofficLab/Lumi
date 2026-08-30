@@ -50,6 +50,15 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
                         .appendingPathComponent("rail-view-width.plist", isDirectory: false)
                 )
             }
+        let chatWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileChatSectionWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: pluginID)
+                        .appendingPathComponent("chat-section-width.plist", isDirectory: false)
+                )
+            }
         
         activityBar.addItems([ActivityBarItem(
             id: entryID,
@@ -64,12 +73,18 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             chat.setContextActive(isChatActive)
             chat.setActiveContext(isChatActive ? .defaultChat : nil)
             if isChatActive {
+                chat.activateWidthProfile(
+                    ownerID: pluginID,
+                    recommended: .standard,
+                    store: chatWidthStore
+                )
                 railView?.activateWidthProfile(
                     ownerID: pluginID,
                     recommended: .standard,
                     store: railWidthStore
                 )
             } else {
+                chat.deactivateWidthProfile(ownerID: pluginID)
                 railView?.deactivateWidthProfile(ownerID: pluginID)
             }
             rootView.setContentViewHidden(isChatActive)
@@ -81,6 +96,11 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         chat.setVisible(true)
         chat.setContextActive(true)
         chat.setActiveContext(.defaultChat)
+        chat.activateWidthProfile(
+            ownerID: id,
+            recommended: .standard,
+            store: chatWidthStore
+        )
         railView?.activateWidthProfile(
             ownerID: id,
             recommended: .standard,
@@ -96,6 +116,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: ["\(id).entry"])
         kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(false)
         if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentViewHidden(false)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)

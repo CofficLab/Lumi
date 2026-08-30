@@ -3,6 +3,7 @@ import Foundation
 import KernelCore
 import ProviderActivityBar
 import ProviderToolbar
+import ProviderChatSection
 import ProviderContentView
 import ProviderConversationInput
 import ProviderDocsView
@@ -41,6 +42,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let rail = kernel.resolveProvider((any RailViewProviding).self)
+        let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let root = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         let pluginID = id
@@ -51,6 +53,15 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
                     fileURL: storage
                         .pluginDataDirectory(for: pluginID)
                         .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                )
+            }
+        let chatWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileChatSectionWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: pluginID)
+                        .appendingPathComponent("chat-section-width.plist", isDirectory: false)
                 )
             }
         rail?.addTabs([RailTabItem(id: Self.railTabID, category: .project, title: LumiPluginLocalization.string("Story Outline", bundle: .module), systemImage: "list.bullet.rectangle.portrait", order: order) { StoryOutlineRootView() }])
@@ -64,11 +75,17 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
                     recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
                     store: railWidthStore
                 )
+                chat?.activateWidthProfile(
+                    ownerID: pluginID,
+                    recommended: ChatSectionWidth(minWidth: 300, idealWidth: 360, maxWidth: 560),
+                    store: chatWidthStore
+                )
                 content?.setContentView(AnyView(StoryWriterRootView()))
             } else {
                 toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                 root?.setContentHeaderViewHidden(false)
                 rail?.setVisibleCategories(Set(RailViewCategory.allCases))
+                chat?.deactivateWidthProfile(ownerID: pluginID)
                 rail?.deactivateWidthProfile(ownerID: pluginID)
             }
         }])
@@ -88,6 +105,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: [entryID])
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
         if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
