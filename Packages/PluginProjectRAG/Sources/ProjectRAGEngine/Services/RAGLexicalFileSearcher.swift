@@ -121,6 +121,11 @@ public enum RAGLexicalFileSearcher {
                   let line = (data["lines"] as? [String: Any])?["text"] as? String else {
                 continue
             }
+            let fileExtension = URL(fileURLWithPath: path).pathExtension.lowercased()
+            guard RAGFileScanner.allowedExtensions.contains(fileExtension),
+                  !RAGFileScanner.shouldSkipPath(path) else {
+                continue
+            }
 
             let cleanLine = line.trimmingCharacters(in: .newlines)
             let contentScore = RAGTextUtils.lexicalBoost(query: query, content: cleanLine)

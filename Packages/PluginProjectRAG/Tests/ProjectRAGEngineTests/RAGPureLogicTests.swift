@@ -332,6 +332,31 @@ import Foundation
         #expect(results[0].matchKind == .filesystemLexical)
         #expect(results[0].lineRange == RAGLineRange(startLine: 1, endLine: 1))
     }
+
+    @Test func respectsSearchFileFilters() throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-lexical-filters-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let query = "filterBoundaryToken"
+        let visibleURL = projectURL.appendingPathComponent("Sources/Visible.swift")
+        let generatedURL = projectURL.appendingPathComponent("build/Generated.swift")
+        let notesURL = projectURL.appendingPathComponent("Notes.log")
+        try FileManager.default.createDirectory(at: visibleURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: generatedURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "let value = \(query)".write(to: visibleURL, atomically: true, encoding: .utf8)
+        try "let value = \(query)".write(to: generatedURL, atomically: true, encoding: .utf8)
+        try query.write(to: notesURL, atomically: true, encoding: .utf8)
+
+        let results = try RAGLexicalFileSearcher.search(
+            query: query,
+            projectPath: projectURL.path,
+            topK: 10
+        )
+
+        #expect(results.map(\.source) == ["Sources/Visible.swift"])
+    }
 }
 
 @Suite struct RAGSQLiteStoreTests {
