@@ -29,6 +29,15 @@ public protocol RailViewProviding: AnyObject, ObservableObject
     /// 当前激活的标签。
     var activeTabID: String? { get }
 
+    /// 当前是否存在可见的 Rail tab。
+    ///
+    /// 根布局使用此状态决定是否为 Rail 保留空间；它只反映可见 tab，
+    /// 不要求上层了解具体的 tab 分类或过滤规则。
+    var hasVisibleTabs: Bool { get }
+
+    /// 可见 tab 状态变化发布器。
+    var railVisibilityPublisher: AnyPublisher<Bool, Never> { get }
+
     /// 注入 Rail tab 项（替换当前全部项）。
     func registerTabs(_ tabs: [RailTabItem])
 
@@ -57,6 +66,12 @@ public extension RailViewProviding {
     var visibleTabID: String? { nil }
 
     var activeTabID: String? { nil }
+
+    var hasVisibleTabs: Bool { !tabs.isEmpty }
+
+    var railVisibilityPublisher: AnyPublisher<Bool, Never> {
+        Just(hasVisibleTabs).eraseToAnyPublisher()
+    }
 
     func addTabs(_ newTabs: [RailTabItem]) {
         var merged = tabs

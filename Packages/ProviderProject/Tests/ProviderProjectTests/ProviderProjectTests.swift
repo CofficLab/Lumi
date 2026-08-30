@@ -50,9 +50,11 @@ struct ProviderProjectTests {
 
         let resolved: any ProjectProviding = provider
         #expect(resolved.currentProject?.name == "Lumi")
+        #expect(resolved.workspaceRoot == "/Users/me/Code/Lumi")
 
         await provider.closeProject()
         #expect(resolved.currentProject == nil)
+        #expect(resolved.workspaceRoot == nil)
     }
 
     @Test("Mock 实现可操作文件状态")

@@ -60,12 +60,13 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { [refreshItemID] state in
                 if state == .activated {
+                    toolbar?.setVisibleCategories([.global, .system])
                     content?.setContentView(AnyView(BrewManagerView()))
                     chat?.setVisible(false)
                     rootView?.setRailView(nil)
                     rootView?.setContentHeaderViewHidden(true)
                     toolbar?.addToolbarItems([
-                        ToolbarItem(id: refreshItemID, title: LumiPluginLocalization.string("Refresh", bundle: .module), placement: .trailing, order: 260) {
+                        ToolbarItem(id: refreshItemID, title: LumiPluginLocalization.string("Refresh", bundle: .module), placement: .trailing, category: .system, order: 260) {
                             AppIconButton(systemImage: "arrow.clockwise") {
                                 NotificationCenter.default.post(name: .brewManagerRefreshRequested, object: nil)
                             }
@@ -73,6 +74,7 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
                         },
                     ])
                 } else {
+                    toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     chat?.setVisible(true)
                     rootView?.setRailView(railView?.makeRailView())
                     rootView?.setContentHeaderViewHidden(false)

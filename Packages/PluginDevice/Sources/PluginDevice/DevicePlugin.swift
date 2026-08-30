@@ -2,6 +2,7 @@ import KernelCore
 import KitSuperLog
 import os
 import ProviderActivityBar
+import ProviderToolbar
 import ProviderContentView
 import ProviderDocsView
 import ProviderMenuBar
@@ -60,6 +61,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
             activityBar.addItems([
@@ -71,11 +73,13 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
+                        toolbar?.setVisibleCategories([.global, .system])
                         // 本插件被激活：展示主内容并隐藏侧边栏 Rail（全屏展示）。
                         contentView?.setContentView(AnyView(DeviceInfoView()))
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
                     } else {
+                        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         // 切换到其它入口时恢复 Rail 可见性。
                         rootView?.setRailView(railView?.makeRailView())
                         rootView?.setContentHeaderViewHidden(false)

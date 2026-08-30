@@ -7,8 +7,17 @@ import ProviderProjectRAG
 public struct RAGCodeSearchTool: SuperAgentTool {
     public static let toolName = "search_code"
     public let name = Self.toolName
+    private let providerOverride: (any ProjectRAGProviding)?
+    private let searchMemory: ProjectRAGSearchMemory?
 
-    public init() {}
+    public init(provider: (any ProjectRAGProviding)? = nil) {
+        self.init(provider: provider, searchMemory: nil)
+    }
+
+    init(provider: (any ProjectRAGProviding)? = nil, searchMemory: ProjectRAGSearchMemory?) {
+        self.providerOverride = provider
+        self.searchMemory = searchMemory
+    }
 
     public func description(for language: LanguagePreference) -> String {
         "Search semantic code snippets in the current project or an explicitly supplied project path."
@@ -48,19 +57,33 @@ public struct RAGCodeSearchTool: SuperAgentTool {
         guard FileManager.default.fileExists(atPath: projectPath) else {
             return "## Code Search\n\nProject path does not exist: `\(projectPath)`"
         }
-        guard let provider = await MainActor.run(body: { ProjectRAGRuntime.provider }) else {
+        let provider: (any ProjectRAGProviding)?
+        if let providerOverride {
+            provider = providerOverride
+        } else {
+            provider = await MainActor.run(body: { ProjectRAGRuntime.provider })
+        }
+        guard let provider else {
             return "## Code Search\n\nProject RAG is not available."
+        }
+        if let searchMemory,
+           await searchMemory.consumeRecentAutomaticSearch(query: query, projectPath: projectPath) {
+            return "## Code Search\n\nThe matching project evidence was already injected into the current LLM context; no duplicate results were returned."
         }
 
         let topK = min(max((arguments["top_k"]?.value as? Int) ?? 8, 1), 20)
-        try await provider.ensureIndexed(projectPath: projectPath, force: false, background: true)
-        let response = try await provider.search(query: query, projectPath: projectPath, topK: topK)
+        let response = try await CodeNavigationCoordinator(provider: provider).search(
+            query: query,
+            projectPath: projectPath,
+            topK: topK
+        )
         guard !response.results.isEmpty else {
             return "## Code Search\n\nNo indexed code matched `\(query)`. Indexing may still be in progress."
         }
         return response.results.enumerated().map { index, result in
             let score = String(format: "%.2f", result.score)
-            return "### \(index + 1). `\(result.source)` (score: \(score))\n\n```\n\(result.content)\n```"
+            let lineLabel = result.lineRange.map { ":\($0.startLine)-\($0.endLine)" } ?? ""
+            return "### \(index + 1). `\(result.source)\(lineLabel)` (score: \(score), evidence: \(result.matchKind.rawValue))\n\n```\n\(result.content)\n```"
         }.joined(separator: "\n\n")
     }
 }

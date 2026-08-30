@@ -43,6 +43,7 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
         tools: [any LLMToolSchemaProviding]?,
         systemPrompt: String
     ) throws -> [String: Any] {
+        try validateToolCallArguments(in: messages)
         // 合并所有 system 消息
         let systemParts = messages
             .filter { $0.role == .system }
@@ -68,6 +69,14 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
         }
 
         return body
+    }
+
+    private func validateToolCallArguments(in messages: [LLMMessage]) throws {
+        for message in messages {
+            for toolCall in message.toolCalls ?? [] {
+                try toolCall.validateArguments()
+            }
+        }
     }
 
     /// 构建流式请求体

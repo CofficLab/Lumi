@@ -81,6 +81,102 @@ private struct CountingTool: SuperAgentTool, @unchecked Sendable {
 }
 
 @MainActor
+@Test func shellToolUsesTheCurrentWorkspaceRoot() async throws {
+    let tool = ShellTool(workspaceRootProvider: { "/tmp" })
+    let result = try await tool.execute(arguments: [
+        "command": ToolArgument("pwd"),
+    ])
+
+    #expect(
+        URL(fileURLWithPath: result).standardizedFileURL.path
+            == URL(fileURLWithPath: "/tmp").standardizedFileURL.path
+    )
+}
+
+@MainActor
+@Test func globToolUsesTheCurrentWorkspaceRootWhenPathIsOmitted() async throws {
+    let packageRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+    let tool = GlobTool(workspaceRootProvider: { packageRoot.path })
+    let result = try await tool.execute(arguments: [
+        "pattern": ToolArgument("Package.swift"),
+    ])
+
+    #expect(result == "Package.swift")
+}
+
+@MainActor
+@Test func listDirectoryToolUsesTheCurrentWorkspaceRootWhenPathIsOmitted() async throws {
+    let packageRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+    let tool = ListDirectoryTool(workspaceRootProvider: { packageRoot.path })
+    let result = try await tool.execute(arguments: [:])
+
+    #expect(result.split(separator: "\n").contains("Package.swift"))
+}
+
+@MainActor
+@Test func readFileToolResolvesRelativePathFromTheCurrentWorkspaceRoot() async throws {
+    let packageRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+    let tool = ReadFileTool(workspaceRootProvider: { packageRoot.path })
+    let result = try await tool.execute(arguments: [
+        "path": ToolArgument("Package.swift"),
+        "limit": ToolArgument(20),
+    ])
+
+    #expect(result.contains("name: \"PluginToolManager\""))
+}
+
+@MainActor
+@Test func writeFileToolResolvesRelativePathFromTheCurrentWorkspaceRoot() async throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("lumi-write-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let tool = WriteFileTool(workspaceRootProvider: { root.path })
+    _ = try await tool.execute(arguments: [
+        "path": ToolArgument("notes/todo.txt"),
+        "content": ToolArgument("hello workspace"),
+    ])
+
+    let written = try String(
+        contentsOf: root.appendingPathComponent("notes/todo.txt"),
+        encoding: .utf8
+    )
+    #expect(written == "hello workspace")
+}
+
+@MainActor
+@Test func editFileToolResolvesRelativePathFromTheCurrentWorkspaceRoot() async throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("lumi-edit-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let fileURL = root.appendingPathComponent("notes/todo.txt")
+    try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try "before".write(to: fileURL, atomically: true, encoding: .utf8)
+
+    let tool = EditFileTool(workspaceRootProvider: { root.path })
+    _ = try await tool.execute(arguments: [
+        "file_path": ToolArgument("notes/todo.txt"),
+        "old_string": ToolArgument("before"),
+        "new_string": ToolArgument("after"),
+    ])
+
+    let edited = try String(contentsOf: fileURL, encoding: .utf8)
+    #expect(edited == "after")
+}
+
+@MainActor
 @Test func toolManagerEventManagerDispatchesAndCancelsObservers() async {
     let manager = ToolManager()
     var eventCount = 0

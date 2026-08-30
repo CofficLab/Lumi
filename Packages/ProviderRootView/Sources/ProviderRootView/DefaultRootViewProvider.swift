@@ -1,3 +1,4 @@
+import Combine
 import LumiUI
 import KitSuperLog
 import os
@@ -26,9 +27,12 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published var contentView: AnyView?
     @Published var contentFooterView: AnyView?
     @Published var trailingPane: RootTrailingPane?
+    @Published public private(set) var isRailViewVisible = true
     @Published public private(set) var overlays: [RootOverlayItem] = []
     @Published public private(set) var isContentViewHidden: Bool = false
     @Published public private(set) var isContentHeaderViewHidden: Bool = false
+    private var railVisibilitySubscription: AnyCancellable?
+    private var lastRailViewVisibility = true
     public init() {
         if Self.verbose {
             Self.logger.info("\(self.t)DefaultRootViewProviding initialized")
@@ -60,9 +64,33 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
 
     public func setRailView(_ view: AnyView?) {
         guard !isSameView(railView, view) else { return }
+        if view == nil {
+            // `setRailView(nil)` can be a temporary host-level replacement. Keep
+            // the provider's latest visibility so restoring the Rail view does
+            // not show an empty area while its tabs are still hidden.
+            if isRailViewVisible {
+                isRailViewVisible = false
+            }
+        } else if railView == nil {
+            setRailViewVisible(lastRailViewVisibility)
+        }
         railView = view
         if Self.verbose {
             Self.logger.debug("\(self.t)set rail view: \(view == nil ? "nil" : "injected")")
+        }
+    }
+
+    public func setRailViewVisible(_ visible: Bool) {
+        guard isRailViewVisible != visible else { return }
+        isRailViewVisible = visible
+        lastRailViewVisibility = visible
+    }
+
+    public func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>) {
+        railVisibilitySubscription = publisher.sink { [weak self] visible in
+            Task { @MainActor [weak self] in
+                self?.setRailViewVisible(visible)
+            }
         }
     }
 

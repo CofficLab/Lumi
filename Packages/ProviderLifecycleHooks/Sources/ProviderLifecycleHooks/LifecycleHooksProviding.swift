@@ -137,6 +137,12 @@ public typealias TurnFinishedHook = @MainActor @Sendable (TurnLifecycleContext) 
 public typealias WillExecuteToolHook = @MainActor @Sendable (ToolExecutionContext) async -> Void
 public typealias DidExecuteToolHook = @MainActor @Sendable (ToolExecutionContext) async -> Void
 
+/// 生命周期 Hook 的可取消注册句柄。
+@MainActor
+public protocol LifecycleHookHandle: AnyObject {
+    func cancel()
+}
+
 // MARK: - Provider 协议
 
 /// 生命周期钩子管理器协议。
@@ -157,7 +163,8 @@ public protocol LifecycleHooksProviding: AnyObject, ObservableObject {
     /// 注册 `willSendToLLM` 可变钩子。
     ///
     /// 多个钩子按注册顺序串行执行，后一个拿到前一个的结果。
-    func addWillSendToLLMHook(_ hook: @escaping WillSendToLLMHook)
+    @discardableResult
+    func addWillSendToLLMHook(_ hook: @escaping WillSendToLLMHook) -> any LifecycleHookHandle
 
     /// 注册 `didReceiveLLMResponse` 只读钩子。
     func addDidReceiveLLMResponseHook(_ hook: @escaping DidReceiveLLMResponseHook)

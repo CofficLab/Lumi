@@ -17,26 +17,19 @@ struct ModelListView: View {
 
     @State private var searchText = ""
 
-    private var manager: (any LLMManaging)? { box.manager }
-
     /// 当前选中供应商的显示名称
     private var selectedProviderDisplayName: String? {
-        guard let providerID = selectedProviderID,
-              let provider = manager?.provider(id: providerID)
-        else {
-            return nil
-        }
-        return provider.providerInfo.displayName
+        box.providerInfo(id: selectedProviderID ?? "")?.displayName
     }
 
     /// 当前选中供应商的模型元数据字典（id → LLMModelInfo）
     private var selectedProviderModelInfos: [String: LLMModelInfo] {
         guard let providerID = selectedProviderID,
-              let provider = manager?.provider(id: providerID)
+              let info = box.providerInfo(id: providerID)
         else {
             return [:]
         }
-        return Dictionary(uniqueKeysWithValues: provider.providerInfo.models.map { ($0.id, $0) })
+        return Dictionary(uniqueKeysWithValues: info.models.map { ($0.id, $0) })
     }
 
     var body: some View {
@@ -61,8 +54,8 @@ struct ModelListView: View {
             AppDivider()
 
             // Model items
-            if let providerID = selectedProviderID, let manager {
-                let models = manager.models(for: providerID)
+            if let providerID = selectedProviderID {
+                let models = box.models(for: providerID)
                 let filteredModels = searchText.isEmpty ? models : models.filter {
                     $0.localizedCaseInsensitiveContains(searchText)
                 }
@@ -82,7 +75,7 @@ struct ModelListView: View {
                                 modelInfo: modelInfo,
                                 onSelect: {
                                     onSelect?(providerID, model)
-                                    manager.select(providerID: providerID, model: model)
+                                    box.manager.select(providerID: providerID, model: model)
                                 }
                             )
                         }

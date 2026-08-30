@@ -190,4 +190,123 @@ struct DefaultLLMProviderManagerProvidingTests {
         #expect(manager.providerID == "llm-provider-manager")
         #expect(manager.providerID == DefaultLLMProviderManagerProviding.managerProviderID)
     }
+
+    // MARK: - Observation
+
+    @Test("注册/覆盖/注销投递 providersChanged 事件，首次注册与清空选中态均带 selectionChanged")
+    func observersReceiveProviderChanges() throws {
+        let manager = DefaultLLMProviderManagerProviding()
+        var events: [LLMManagerEvent] = []
+        let handle = manager.addObserver { events.append($0) }
+
+        // 首次注册：providersChanged(a, added) + selectionChanged(a, model-a)
+        try manager.register(MockManagedProvider(id: "a"))
+        #expect(events.count == 2)
+        guard case .providersChanged(let id, let reason) = events[0] else {
+            Issue.record("Expected providersChanged, got \(events[0])")
+            return
+        }
+        #expect(id == "a")
+        #expect(reason == .added)
+
+        // 覆盖注册：providersChanged(a, replaced)；选中态未变，无 selectionChanged。
+        events.removeAll()
+        try manager.register(MockManagedProvider(id: "a", displayName: "new"))
+        #expect(events.count == 1)
+        guard case .providersChanged(_, let replaceReason) = events[0] else {
+            Issue.record("Expected providersChanged, got \(events[0])")
+            return
+        }
+        #expect(replaceReason == .replaced)
+
+        // 注销：providersChanged(a, removed) + selectionChanged(nil, nil)（清空选中态）。
+        events.removeAll()
+        manager.unregister(id: "a")
+        #expect(events.count == 2)
+        guard case .providersChanged(let removedID, let removeReason) = events[0] else {
+            Issue.record("Expected providersChanged, got \(events[0])")
+            return
+        }
+        #expect(removedID == "a")
+        #expect(removeReason == .removed)
+        guard case .selectionChanged(let clearedProvider, let clearedModel) = events[1] else {
+            Issue.record("Expected selectionChanged, got \(events[1])")
+            return
+        }
+        #expect(clearedProvider == nil)
+        #expect(clearedModel == nil)
+
+        handle.cancel()
+    }
+
+    @Test("注销不存在的 id 不投递 providersChanged")
+    func unregisterUnknownDoesNotNotify() throws {
+        let manager = DefaultLLMProviderManagerProviding()
+        var eventCount = 0
+        let handle = manager.addObserver { _ in eventCount += 1 }
+
+        manager.unregister(id: "missing")
+        #expect(eventCount == 0)
+
+        handle.cancel()
+    }
+
+    @Test("首次注册自动选中并投递 selectionChanged")
+    func firstRegistrationNotifiesSelection() throws {
+        let manager = DefaultLLMProviderManagerProviding()
+        var events: [LLMManagerEvent] = []
+        let handle = manager.addObserver { events.append($0) }
+
+        try manager.register(MockManagedProvider(id: "a", models: ["m1"], defaultModel: "m1"))
+        #expect(events.count == 2)
+        guard case .selectionChanged(let providerID, let model) = events[1] else {
+            Issue.record("Expected selectionChanged, got \(events[1])")
+            return
+        }
+        #expect(providerID == "a")
+        #expect(model == "m1")
+
+        handle.cancel()
+    }
+
+    @Test("select 切换供应商时投递 selectionChanged，重复选中不投递")
+    func selectNotifiesOnlyOnChange() throws {
+        let manager = DefaultLLMProviderManagerProviding()
+        try manager.register(MockManagedProvider(id: "a", models: ["a1", "a2"], defaultModel: "a1"))
+        var events: [LLMManagerEvent] = []
+        let handle = manager.addObserver { events.append($0) }
+
+        // 首次注册已带 selectionChanged；此处清空后测 select 行为。
+        events.removeAll()
+
+        manager.select(providerID: "a", model: "a1")
+        #expect(events.isEmpty, "相同选中值不应重复投递")
+
+        manager.select(providerID: "a", model: "a2")
+        guard case .selectionChanged(let firstID, let firstModel) = events[0] else {
+            Issue.record("Expected selectionChanged, got \(events[0])")
+            return
+        }
+        #expect(firstID == "a")
+        #expect(firstModel == "a2")
+
+        events.removeAll()
+        try manager.register(MockManagedProvider(id: "b", models: ["b1"], defaultModel: "b1"))
+        manager.select(providerID: "b", model: "b1")
+
+        #expect(events.count == 2)
+        guard case .providersChanged(let providerID, _) = events[0] else {
+            Issue.record("Expected providersChanged, got \(events[0])")
+            return
+        }
+        #expect(providerID == "b")
+        guard case .selectionChanged(let selID, let selModel) = events[1] else {
+            Issue.record("Expected selectionChanged, got \(events[1])")
+            return
+        }
+        #expect(selID == "b")
+        #expect(selModel == "b1")
+
+        handle.cancel()
+    }
 }

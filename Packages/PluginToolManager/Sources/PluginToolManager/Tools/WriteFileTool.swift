@@ -4,8 +4,13 @@ import Foundation
 /// 写入文件。
 public struct WriteFileTool: SuperAgentTool, @unchecked Sendable {
     public let name = "write_file"
+    private let workspaceRootProvider: @MainActor @Sendable () -> String?
 
-    public init() {}
+    public init(
+        workspaceRootProvider: @escaping @MainActor @Sendable () -> String? = { nil }
+    ) {
+        self.workspaceRootProvider = workspaceRootProvider
+    }
 
     public func description(for language: LanguagePreference) -> String {
         "Write UTF-8 text content to a file."
@@ -15,7 +20,7 @@ public struct WriteFileTool: SuperAgentTool, @unchecked Sendable {
         [
             "type": "object",
             "properties": [
-                "path": ["type": "string", "description": "Absolute path to the file"],
+                "path": ["type": "string", "description": "Absolute or workspace-relative path to the file"],
                 "content": ["type": "string", "description": "UTF-8 text content to write"],
             ],
             "required": ["path", "content"],
@@ -36,7 +41,10 @@ public struct WriteFileTool: SuperAgentTool, @unchecked Sendable {
             throw NSError(domain: "WriteFileTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing path or content"])
         }
 
-        let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+        let url = WorkspacePathResolver.resolve(
+            path: path,
+            workspaceRoot: await workspaceRootProvider()
+        )
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try content.write(to: url, atomically: true, encoding: .utf8)
         return "Wrote \(content.count) characters to \(path)"

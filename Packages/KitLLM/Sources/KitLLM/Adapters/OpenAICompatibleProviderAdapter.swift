@@ -26,6 +26,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         tools: [any LLMToolSchemaProviding]?,
         systemPrompt: String
     ) throws -> [String: Any] {
+        try validateToolCallArguments(in: messages)
         var conversationMessages = transformMessages(messages)
 
         if !systemPrompt.isEmpty,
@@ -50,6 +51,14 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         }
 
         return body
+    }
+
+    private func validateToolCallArguments(in messages: [LLMMessage]) throws {
+        for message in messages {
+            for toolCall in message.toolCalls ?? [] {
+                try toolCall.validateArguments()
+            }
+        }
     }
 
     public func buildStreamingRequestBody(

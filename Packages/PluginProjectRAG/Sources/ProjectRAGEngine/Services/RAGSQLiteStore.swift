@@ -30,6 +30,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
     func migrate() throws {
         try execute(RAGSQL.createFilesTable)
         try execute(RAGSQL.createChunksTable)
+        try addChunkLineRangeColumnsIfNeeded()
         try execute(RAGSQL.createChunksProjectIndex)
         try execute(RAGSQL.createChunksFileIndex)
         try execute(RAGSQL.createIndexStateTable)
@@ -104,13 +105,20 @@ final class RAGSQLiteStore: @unchecked Sendable {
                 sqlite3_bind_text(insertStmt, 4, (chunk.content as NSString).utf8String, -1, nil)
                 sqlite3_bind_text(insertStmt, 5, (contentHash as NSString).utf8String, -1, nil)
                 sqlite3_bind_double(insertStmt, 6, modifiedTime)
+                if let lineRange = chunk.lineRange {
+                    sqlite3_bind_int64(insertStmt, 7, Int64(lineRange.startLine))
+                    sqlite3_bind_int64(insertStmt, 8, Int64(lineRange.endLine))
+                } else {
+                    sqlite3_bind_null(insertStmt, 7)
+                    sqlite3_bind_null(insertStmt, 8)
+                }
 
                 let embeddingData = embedding.toData()
                 _ = embeddingData.withUnsafeBytes { buffer in
-                    sqlite3_bind_blob(insertStmt, 7, buffer.baseAddress, Int32(embeddingData.count), nil)
+                    sqlite3_bind_blob(insertStmt, 9, buffer.baseAddress, Int32(embeddingData.count), nil)
                 }
-                sqlite3_bind_int64(insertStmt, 8, Int64(embeddingDimension))
-                sqlite3_bind_double(insertStmt, 9, createdAt)
+                sqlite3_bind_int64(insertStmt, 10, Int64(embeddingDimension))
+                sqlite3_bind_double(insertStmt, 11, createdAt)
 
                 guard sqlite3_step(insertStmt) == SQLITE_DONE else {
                     throw dbError("insert rag_chunks failed")
@@ -212,7 +220,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
     }
 
     func loadChunks(projectPath: String?, limit: Int? = nil) throws -> [RAGStoredChunk] {
-        var sql = "SELECT id, content, file_path, embedding FROM rag_chunks"
+        var sql = "SELECT id, content, file_path, start_line, end_line, embedding FROM rag_chunks"
         if projectPath != nil {
             sql += " WHERE project_path = ?"
         }
@@ -237,17 +245,26 @@ final class RAGSQLiteStore: @unchecked Sendable {
             guard
                 let contentPtr = sqlite3_column_text(statement, 1),
                 let filePathPtr = sqlite3_column_text(statement, 2),
-                let embeddingPtr = sqlite3_column_blob(statement, 3)
+                let embeddingPtr = sqlite3_column_blob(statement, 5)
             else { continue }
 
             let id = sqlite3_column_int64(statement, 0)
             let content = String(cString: contentPtr)
             let filePath = String(cString: filePathPtr)
-            let bytes = Int(sqlite3_column_bytes(statement, 3))
+            let bytes = Int(sqlite3_column_bytes(statement, 5))
             let data = Data(bytes: embeddingPtr, count: bytes)
             let embedding = [Float](data: data)
+            let lineRange = readLineRange(statement: statement, startColumn: 3, endColumn: 4)
 
-            chunks.append(RAGStoredChunk(id: id, content: content, filePath: filePath, embedding: embedding))
+            chunks.append(
+                RAGStoredChunk(
+                    id: id,
+                    content: content,
+                    filePath: filePath,
+                    embedding: embedding,
+                    lineRange: lineRange
+                )
+            )
         }
 
         return chunks
@@ -284,7 +301,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
         }
 
         let sql = """
-        SELECT id, content, file_path, embedding
+        SELECT id, content, file_path, start_line, end_line, embedding
         FROM rag_chunks
         WHERE \(whereParts.joined(separator: " AND "))
         ORDER BY id DESC
@@ -396,7 +413,7 @@ final class RAGSQLiteStore: @unchecked Sendable {
         guard !chunkIDs.isEmpty else { return [] }
         let placeholders = Array(repeating: "?", count: chunkIDs.count).joined(separator: ", ")
         var sql = """
-        SELECT id, content, file_path, embedding
+        SELECT id, content, file_path, start_line, end_line, embedding
         FROM rag_chunks
         WHERE id IN (\(placeholders))
         """
@@ -425,16 +442,23 @@ final class RAGSQLiteStore: @unchecked Sendable {
             guard
                 let contentPtr = sqlite3_column_text(statement, 1),
                 let filePathPtr = sqlite3_column_text(statement, 2),
-                let embeddingPtr = sqlite3_column_blob(statement, 3)
+                let embeddingPtr = sqlite3_column_blob(statement, 5)
             else { continue }
 
             let id = sqlite3_column_int64(statement, 0)
             let content = String(cString: contentPtr)
             let filePath = String(cString: filePathPtr)
-            let bytes = Int(sqlite3_column_bytes(statement, 3))
+            let bytes = Int(sqlite3_column_bytes(statement, 5))
             let data = Data(bytes: embeddingPtr, count: bytes)
             let embedding = [Float](data: data)
-            byID[id] = RAGStoredChunk(id: id, content: content, filePath: filePath, embedding: embedding)
+            let lineRange = readLineRange(statement: statement, startColumn: 3, endColumn: 4)
+            byID[id] = RAGStoredChunk(
+                id: id,
+                content: content,
+                filePath: filePath,
+                embedding: embedding,
+                lineRange: lineRange
+            )
         }
 
         return chunkIDs.compactMap { byID[$0] }
@@ -460,6 +484,43 @@ final class RAGSQLiteStore: @unchecked Sendable {
             throw RAGError.dbError(message)
         }
         db = pointer
+    }
+
+    private func addChunkLineRangeColumnsIfNeeded() throws {
+        let sql = "PRAGMA table_info(rag_chunks);"
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw dbError("prepare rag_chunks schema inspection failed")
+        }
+        defer { sqlite3_finalize(statement) }
+
+        var columns = Set<String>()
+        while sqlite3_step(statement) == SQLITE_ROW {
+            guard let namePtr = sqlite3_column_text(statement, 1) else { continue }
+            columns.insert(String(cString: namePtr))
+        }
+
+        if !columns.contains("start_line") {
+            try execute("ALTER TABLE rag_chunks ADD COLUMN start_line INTEGER;")
+        }
+        if !columns.contains("end_line") {
+            try execute("ALTER TABLE rag_chunks ADD COLUMN end_line INTEGER;")
+        }
+    }
+
+    private func readLineRange(
+        statement: OpaquePointer?,
+        startColumn: Int32,
+        endColumn: Int32
+    ) -> RAGLineRange? {
+        guard sqlite3_column_type(statement, startColumn) != SQLITE_NULL,
+              sqlite3_column_type(statement, endColumn) != SQLITE_NULL else {
+            return nil
+        }
+        return RAGLineRange(
+            startLine: Int(sqlite3_column_int64(statement, startColumn)),
+            endLine: Int(sqlite3_column_int64(statement, endColumn))
+        )
     }
 
     private func execute(_ sql: String) throws {
@@ -528,16 +589,25 @@ final class RAGSQLiteStore: @unchecked Sendable {
             guard
                 let contentPtr = sqlite3_column_text(statement, 1),
                 let filePathPtr = sqlite3_column_text(statement, 2),
-                let embeddingPtr = sqlite3_column_blob(statement, 3)
+                let embeddingPtr = sqlite3_column_blob(statement, 5)
             else { continue }
 
             let id = sqlite3_column_int64(statement, 0)
             let content = String(cString: contentPtr)
             let filePath = String(cString: filePathPtr)
-            let bytes = Int(sqlite3_column_bytes(statement, 3))
+            let bytes = Int(sqlite3_column_bytes(statement, 5))
             let data = Data(bytes: embeddingPtr, count: bytes)
             let embedding = [Float](data: data)
-            rows.append(RAGStoredChunk(id: id, content: content, filePath: filePath, embedding: embedding))
+            let lineRange = readLineRange(statement: statement, startColumn: 3, endColumn: 4)
+            rows.append(
+                RAGStoredChunk(
+                    id: id,
+                    content: content,
+                    filePath: filePath,
+                    embedding: embedding,
+                    lineRange: lineRange
+                )
+            )
         }
         return rows
     }

@@ -12,7 +12,12 @@ public final class DefaultLifecycleHooksProvider: LifecycleHooksProviding {
 
     // MARK: - Hook Storage
 
-    private var willSendToLLMHooks: [WillSendToLLMHook] = []
+    private struct RegisteredWillSendToLLMHook {
+        let id: UUID
+        let hook: WillSendToLLMHook
+    }
+
+    private var willSendToLLMHooks: [RegisteredWillSendToLLMHook] = []
     private var didReceiveLLMResponseHooks: [DidReceiveLLMResponseHook] = []
     private var turnStartedHooks: [TurnStartedHook] = []
     private var turnFinishedHooks: [TurnFinishedHook] = []
@@ -23,9 +28,15 @@ public final class DefaultLifecycleHooksProvider: LifecycleHooksProviding {
 
     // MARK: - Registration
 
-    public func addWillSendToLLMHook(_ hook: @escaping WillSendToLLMHook) {
-        willSendToLLMHooks.append(hook)
+    @discardableResult
+    public func addWillSendToLLMHook(_ hook: @escaping WillSendToLLMHook) -> any LifecycleHookHandle {
+        let id = UUID()
+        willSendToLLMHooks.append(RegisteredWillSendToLLMHook(id: id, hook: hook))
         revision += 1
+        return DefaultLifecycleHookHandle { [weak self] in
+            self?.willSendToLLMHooks.removeAll { $0.id == id }
+            self?.revision += 1
+        }
     }
 
     public func addDidReceiveLLMResponseHook(_ hook: @escaping DidReceiveLLMResponseHook) {
@@ -62,8 +73,8 @@ public final class DefaultLifecycleHooksProvider: LifecycleHooksProviding {
     /// （不吞异常，保证已完成的修改不丢失）。
     public func runWillSendToLLM(_ context: WillSendToLLMContext) async -> WillSendToLLMContext {
         var current = context
-        for hook in willSendToLLMHooks {
-            current = await hook(current)
+        for registeredHook in willSendToLLMHooks {
+            current = await registeredHook.hook(current)
         }
         return current
     }
@@ -101,5 +112,21 @@ public final class DefaultLifecycleHooksProvider: LifecycleHooksProviding {
         for hook in didExecuteToolHooks {
             await hook(context)
         }
+    }
+}
+
+@MainActor
+private final class DefaultLifecycleHookHandle: LifecycleHookHandle {
+    private let cancellation: @MainActor () -> Void
+    private var isCancelled = false
+
+    init(cancellation: @escaping @MainActor () -> Void) {
+        self.cancellation = cancellation
+    }
+
+    func cancel() {
+        guard !isCancelled else { return }
+        isCancelled = true
+        cancellation()
     }
 }

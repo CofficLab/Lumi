@@ -52,6 +52,34 @@ public struct LLMToolCall: Codable, Sendable, Equatable {
         self.name = name
         self.arguments = arguments
     }
+
+    /// 校验兼容协议要求的函数参数字符串。
+    ///
+    /// `arguments` 在外层请求中是字符串，但其内容仍必须是 JSON 对象。
+    /// 只验证外层请求能被 JSONSerialization 编码，会让畸形参数穿透到
+    /// 上游，最终由供应商返回 HTTP 400。
+    public func validateArguments() throws {
+        guard let data = arguments.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data),
+              object is [String: Any] else {
+            throw LLMToolCallValidationError.invalidArguments(
+                toolCallID: id,
+                toolName: name
+            )
+        }
+    }
+}
+
+/// LLM 返回了无法回传给兼容协议供应商的工具参数。
+public enum LLMToolCallValidationError: Error, LocalizedError, Sendable, Equatable {
+    case invalidArguments(toolCallID: String, toolName: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case let .invalidArguments(toolCallID, toolName):
+            return "工具调用 \(toolName)（\(toolCallID)）的 arguments 不是有效 JSON 对象"
+        }
+    }
 }
 
 /// 工具 schema 描述。
@@ -142,6 +170,13 @@ public struct LLMResponse: Sendable, Equatable {
         self.rawResponseJSON = rawResponseJSON
         self.rawStreamEventsJSON = rawStreamEventsJSON
         self.stopReason = stopReason
+    }
+
+    /// 在 AgentLoop 落库或执行工具前校验模型返回的所有工具调用。
+    public func validateToolCallArguments() throws {
+        for toolCall in toolCalls ?? [] {
+            try toolCall.validateArguments()
+        }
     }
 }
 

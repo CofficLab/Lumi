@@ -51,6 +51,15 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     /// 显示在 ActivityBar 右侧。
     func setRailView(_ view: AnyView?)
 
+    /// Rail 是否有可见内容。为 false 时根布局不为 Rail 保留空间。
+    var isRailViewVisible: Bool { get }
+
+    /// 设置 Rail 区域显隐。
+    func setRailViewVisible(_ visible: Bool)
+
+    /// 绑定 Rail provider 的可见状态，使 tab 过滤或增删能同步到根布局。
+    func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>)
+
     /// 注入主内容区顶部视图（传 `nil` 表示没有 Header）。
     ///
     /// Header 与主内容视图独立贡献，适合项目文件标签、面包屑等横向内容。
@@ -96,10 +105,13 @@ public extension RootViewProviding {
     var overlays: [RootOverlayItem] { [] }
     var isContentViewHidden: Bool { false }
     var isContentHeaderViewHidden: Bool { false }
+    var isRailViewVisible: Bool { true }
     func addOverlays(_ overlays: [RootOverlayItem]) {}
     func removeOverlays(ids: Set<String>) {}
     func setContentViewHidden(_ hidden: Bool) {}
     func setContentHeaderViewHidden(_ hidden: Bool) {}
+    func setRailViewVisible(_ visible: Bool) {}
+    func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>) {}
 }
 
 @MainActor

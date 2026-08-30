@@ -7,8 +7,13 @@ public struct EditFileTool: SuperAgentTool, @unchecked Sendable {
     public let name = "edit_file"
 
     private let editor = WorkspaceFileEditor()
+    private let workspaceRootProvider: @MainActor @Sendable () -> String?
 
-    public init() {}
+    public init(
+        workspaceRootProvider: @escaping @MainActor @Sendable () -> String? = { nil }
+    ) {
+        self.workspaceRootProvider = workspaceRootProvider
+    }
 
     public func description(for language: LanguagePreference) -> String {
         "Perform exact string replacements in a file."
@@ -18,7 +23,7 @@ public struct EditFileTool: SuperAgentTool, @unchecked Sendable {
         [
             "type": "object",
             "properties": [
-                "file_path": ["type": "string", "description": "The absolute path to the file to modify"],
+                "file_path": ["type": "string", "description": "The absolute or workspace-relative path to the file to modify"],
                 "old_string": ["type": "string", "description": "The text to replace"],
                 "new_string": ["type": "string", "description": "The text to replace it with"],
                 "replace_all": ["type": "boolean", "description": "Replace all occurrences of old_string (default false)"],
@@ -48,10 +53,14 @@ public struct EditFileTool: SuperAgentTool, @unchecked Sendable {
         }
 
         let replaceAll = arguments.boolValue("replace_all") ?? false
+        let resolvedFilePath = WorkspacePathResolver.resolve(
+            path: filePath,
+            workspaceRoot: await workspaceRootProvider()
+        ).path
 
         do {
             let outcome = try editor.edit(
-                filePath: filePath,
+                filePath: resolvedFilePath,
                 oldString: oldString,
                 newString: newString,
                 replaceAll: replaceAll

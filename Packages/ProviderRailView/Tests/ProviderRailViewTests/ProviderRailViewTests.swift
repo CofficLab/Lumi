@@ -78,6 +78,21 @@ struct ProviderRailViewTests {
         #expect(provider.activeTabID == nil)
     }
 
+    @Test("没有可见 tab 时 Rail 不占用内容")
+    func visibleTabStateFollowsFiltering() {
+        let provider = DefaultRailViewProviding()
+
+        #expect(!provider.hasVisibleTabs)
+
+        provider.registerTabs([
+            RailTabItem(id: "chat", category: .chat, title: "Chat", systemImage: "message") { Text("Chat") },
+        ])
+        #expect(provider.hasVisibleTabs)
+
+        provider.setVisibleCategories([])
+        #expect(!provider.hasVisibleTabs)
+    }
+
     @Test("只展示指定 id 的标签")
     func filtersTabsByVisibleID() {
         let provider = DefaultRailViewProviding()

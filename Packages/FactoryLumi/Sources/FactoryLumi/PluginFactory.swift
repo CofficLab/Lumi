@@ -42,6 +42,7 @@ import PluginChatFileAttachment
 import PluginChatPanel
 import PluginChatScreenshot
 import PluginConversationBehavior
+import PluginConversationCacheHitRate
 import PluginConversationFork
 import PluginConversationInput
 import PluginConversationList
@@ -183,10 +184,10 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationVerbosityPlugin(),
             ConversationLanguagePlugin(),
             ConversationReasoningPlugin(),
-            // 会话统计：消息计数 / 缓存命中率 / 上下文用量
+            // 会话统计：消息计数 / 上下文用量
             ConversationMessageCountPlugin(),
-            ConversationCacheHitRatePlugin(),
             ConversationContextSizePlugin(),
+            ConversationCacheHitRatePlugin(),
             ConversationSpeedPlugin(),
             ConversationAgentTurnCountPlugin(),
             ConversationTitlePlugin(),

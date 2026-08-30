@@ -8,6 +8,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"), .package(path: "../ProviderActivityBar"),
+        .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderRailView"),
@@ -18,6 +19,7 @@ let package = Package(
             .product(name: "KernelCore", package: "KernelCore"),
             .product(name: "KitLocalization", package: "KitLocalization"),
             .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+            .product(name: "ProviderToolbar", package: "ProviderToolbar"),
             .product(name: "ProviderChatSection", package: "ProviderChatSection"),
             .product(name: "ProviderRootView", package: "ProviderRootView"),
             .product(name: "ProviderRailView", package: "ProviderRailView"),

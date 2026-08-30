@@ -30,7 +30,11 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
     }
 
     public var isInitialized: Bool { service.isInitialized }
-    public var currentProjectPath: String? { project?.currentProject?.path }
+    public var currentProjectPath: String? { project?.workspaceRoot }
+
+    public func isIndexing(projectPath: String) -> Bool {
+        RAGService.isIndexing(projectPath: projectPath)
+    }
 
     public func search(
         query: String,
@@ -43,7 +47,15 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
         return ProjectRAGResponse(
             query: response.query,
             results: response.results.map {
-                ProjectRAGSearchResult(content: $0.content, source: $0.source, score: $0.score)
+                ProjectRAGSearchResult(
+                    content: $0.content,
+                    source: $0.source,
+                    score: $0.score,
+                    matchKind: ProjectRAGMatchKind(rawValue: $0.matchKind.rawValue) ?? .semantic,
+                    lineRange: $0.lineRange.map {
+                        ProjectRAGLineRange(startLine: $0.startLine, endLine: $0.endLine)
+                    }
+                )
             }
         )
     }

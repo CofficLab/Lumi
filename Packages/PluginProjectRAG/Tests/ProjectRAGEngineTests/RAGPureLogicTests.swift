@@ -19,6 +19,7 @@ import Foundation
         #expect(chunks[0].index == 0)
         #expect(chunks[0].content.contains("line 0"))
         #expect(chunks[0].content.contains("line 9"))
+        #expect(chunks[0].lineRange == RAGLineRange(startLine: 1, endLine: 10))
     }
 
     @Test func chunkProducesOverlapAcrossBlocks() {
@@ -29,6 +30,8 @@ import Foundation
         // Overlap means "line 2"/"line 3" must appear in more than one chunk.
         let mentionsOfLine2 = chunks.filter { $0.content.contains("line 2") }.count
         #expect(mentionsOfLine2 >= 2)
+        #expect(chunks[0].lineRange == RAGLineRange(startLine: 1, endLine: 4))
+        #expect(chunks[1].lineRange == RAGLineRange(startLine: 3, endLine: 6))
     }
 
     @Test func chunkSkipsWhitespaceOnlyBlocks() {
@@ -47,6 +50,7 @@ import Foundation
         // Each chunk's content must not exceed the window (after trim).
         for c in chunks {
             #expect(c.content.count <= 100)
+            #expect(c.lineRange == RAGLineRange(startLine: 1, endLine: 1))
         }
     }
 
@@ -149,6 +153,11 @@ import Foundation
     @Test func sourcePathBoostEmptyTerms() {
         #expect(RAGTextUtils.sourcePathBoost(queryTerms: [], filePath: "/x") == 0)
     }
+
+    @Test func sourcePathBoostDoesNotMatchPartialPathToken() {
+        let score = RAGTextUtils.sourcePathBoost(queryTerms: ["auth"], filePath: "/src/author.swift")
+        #expect(score == 0)
+    }
 }
 
 @Suite struct RAGPathUtilsTests {
@@ -214,10 +223,12 @@ import Foundation
         #expect(RAGIntentAnalyzer.shouldUseRAG(for: "can you explain the module?") == true)
     }
 
-    @Test func shouldUseRAGEnglishTriggerMatchesSubstring() {
-        // Documented heuristic: "how" is a trigger word and matches as a
-        // substring, so "how are you" trips RAG even in casual messages.
-        #expect(RAGIntentAnalyzer.shouldUseRAG(for: "hello, how are you today") == true)
+    @Test func shouldNotUseRAGForCasualQuestion() {
+        #expect(RAGIntentAnalyzer.shouldUseRAG(for: "hello, how are you today") == false)
+    }
+
+    @Test func shouldNotUseRAGForEnglishSubstring() {
+        #expect(RAGIntentAnalyzer.shouldUseRAG(for: "the prefix is valid") == false)
     }
 
     @Test func shouldUseRAGRejectsPlainStatement() {
@@ -294,5 +305,263 @@ import Foundation
 
         #expect(!direct.isEmpty)
         #expect(direct == cached)
+    }
+}
+
+@Suite struct RAGLexicalFileSearcherTests {
+
+    @Test func findsMatchingSourceWithoutAnIndex() throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-lexical-search-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let sourceURL = projectURL.appendingPathComponent("Sources/RequestHandler.swift")
+        try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "func handleRequest() {}".write(to: sourceURL, atomically: true, encoding: .utf8)
+
+        let results = try RAGLexicalFileSearcher.search(
+            query: "handleRequest",
+            projectPath: projectURL.path,
+            topK: 3
+        )
+
+        #expect(results.count == 1)
+        #expect(results[0].source == "Sources/RequestHandler.swift")
+        #expect(results[0].content.contains("handleRequest"))
+        #expect(results[0].matchKind == .filesystemLexical)
+        #expect(results[0].lineRange == RAGLineRange(startLine: 1, endLine: 1))
+    }
+
+    @Test func respectsSearchFileFilters() throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-lexical-filters-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let query = "filterBoundaryToken"
+        let visibleURL = projectURL.appendingPathComponent("Sources/Visible.swift")
+        let generatedURL = projectURL.appendingPathComponent("build/Generated.swift")
+        let notesURL = projectURL.appendingPathComponent("Notes.log")
+        try FileManager.default.createDirectory(at: visibleURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: generatedURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "let value = \(query)".write(to: visibleURL, atomically: true, encoding: .utf8)
+        try "let value = \(query)".write(to: generatedURL, atomically: true, encoding: .utf8)
+        try query.write(to: notesURL, atomically: true, encoding: .utf8)
+
+        let results = try RAGLexicalFileSearcher.search(
+            query: query,
+            projectPath: projectURL.path,
+            topK: 10
+        )
+
+        #expect(results.map(\.source) == ["Sources/Visible.swift"])
+    }
+
+    @Test func includesContextAroundRipgrepMatch() throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-lexical-context-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let sourceURL = projectURL.appendingPathComponent("Sources/Context.swift")
+        try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try """
+        line one
+        line two
+        line three
+        let contextToken = true
+        line five
+        line six
+        line seven
+        """.write(to: sourceURL, atomically: true, encoding: .utf8)
+
+        let results = try RAGLexicalFileSearcher.search(
+            query: "contextToken",
+            projectPath: projectURL.path,
+            topK: 3
+        )
+
+        #expect(results.count == 1)
+        #expect(results[0].lineRange == RAGLineRange(startLine: 1, endLine: 7))
+        #expect(results[0].content.contains("1\tline one"))
+        #expect(results[0].content.contains("7\tline seven"))
+    }
+
+    @Test func returnsNoResultsForMissingProject() throws {
+        let missingProjectPath = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-missing-\(UUID().uuidString)", isDirectory: true)
+            .path
+
+        let results = try RAGLexicalFileSearcher.search(
+            query: "missingProjectToken",
+            projectPath: missingProjectPath,
+            topK: 3
+        )
+
+        #expect(results.isEmpty)
+    }
+}
+
+@Suite struct RAGFilePathSearcherTests {
+
+    @Test func findsExplicitFilePathWithoutReadingContent() throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-path-search-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let sourceURL = projectURL.appendingPathComponent("Sources/RequestHandler.swift")
+        try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "let unrelatedValue = true".write(to: sourceURL, atomically: true, encoding: .utf8)
+
+        let results = try RAGFilePathSearcher.search(
+            query: "Sources/RequestHandler.swift",
+            projectPath: projectURL.path,
+            topK: 3
+        )
+
+        #expect(results.count == 1)
+        #expect(results[0].source == "Sources/RequestHandler.swift")
+        #expect(results[0].content == "Sources/RequestHandler.swift")
+        #expect(results[0].matchKind == .filesystemPath)
+        #expect(results[0].lineRange == nil)
+    }
+
+    @Test func extractsExplicitPathFromNaturalLanguage() throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-path-extraction-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let sourceURL = projectURL.appendingPathComponent("Sources/RequestHandler.swift")
+        try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "let unrelatedValue = true".write(to: sourceURL, atomically: true, encoding: .utf8)
+
+        let results = try RAGFilePathSearcher.search(
+            query: "请查看 Sources/RequestHandler.swift 的实现",
+            projectPath: projectURL.path,
+            topK: 3
+        )
+
+        #expect(results.map(\.source) == ["Sources/RequestHandler.swift"])
+    }
+
+    @Test func findsFilenameWithFastPathEnumeration() throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-path-filename-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let sourceURL = projectURL.appendingPathComponent("Sources/RequestHandler.swift")
+        try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "let unrelatedValue = true".write(to: sourceURL, atomically: true, encoding: .utf8)
+
+        let results = try RAGFilePathSearcher.search(
+            query: "RequestHandler.swift",
+            projectPath: projectURL.path,
+            topK: 3
+        )
+
+        #expect(results.map(\.source) == ["Sources/RequestHandler.swift"])
+    }
+
+    @Test func doesNotScanPathsForOrdinaryQueries() throws {
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-path-gate-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let sourceURL = projectURL.appendingPathComponent("Sources/RequestHandler.swift")
+        try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "let unrelatedValue = true".write(to: sourceURL, atomically: true, encoding: .utf8)
+
+        let results = try RAGFilePathSearcher.search(
+            query: "RequestHandler",
+            projectPath: projectURL.path,
+            topK: 3
+        )
+
+        #expect(results.isEmpty)
+    }
+}
+
+@Suite struct RAGSQLiteStoreTests {
+
+    @Test func persistsChunkLineRange() throws {
+        let dbURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-line-range-\(UUID().uuidString).sqlite")
+        defer { try? FileManager.default.removeItem(at: dbURL) }
+
+        let store = try RAGSQLiteStore(dbURL: dbURL)
+        try store.migrate()
+        store.runtimeInfo = RAGRuntimeInfo(vectorBackend: .swiftCosine)
+
+        try store.replaceFileChunks(
+            projectPath: "/project",
+            filePath: "/project/Feature.swift",
+            modifiedTime: 1,
+            contentHash: "hash",
+            chunks: [
+                RAGChunk(
+                    index: 0,
+                    content: "func feature() {}",
+                    lineRange: RAGLineRange(startLine: 4, endLine: 7)
+                ),
+            ],
+            embeddings: [[1, 0]],
+            embeddingDimension: 2
+        )
+
+        let stored = try store.loadChunks(projectPath: "/project")
+        #expect(stored.count == 1)
+        #expect(stored[0].lineRange == RAGLineRange(startLine: 4, endLine: 7))
+    }
+}
+
+@Suite struct RAGResultDeduplicatorTests {
+
+    @Test func removesOnlyIdenticalEvidence() {
+        let results = [
+            RAGSearchResult(
+                content: "func load() {}",
+                source: "Feature.swift",
+                score: 0.9,
+                matchKind: .semantic,
+                lineRange: RAGLineRange(startLine: 4, endLine: 6)
+            ),
+            RAGSearchResult(
+                content: "func load() {}",
+                source: "Feature.swift",
+                score: 0.8,
+                matchKind: .indexedLexical,
+                lineRange: RAGLineRange(startLine: 4, endLine: 6)
+            ),
+            RAGSearchResult(
+                content: "func save() {}",
+                source: "Feature.swift",
+                score: 0.7,
+                matchKind: .semantic,
+                lineRange: RAGLineRange(startLine: 8, endLine: 10)
+            ),
+        ]
+
+        let unique = RAGResultDeduplicator.deduplicate(results)
+
+        #expect(unique.count == 2)
+        #expect(unique[0].score == 0.9)
+        #expect(unique[1].content == "func save() {}")
+    }
+
+    @Test func appliesResultLimitAfterDeduplication() {
+        let results = [
+            RAGSearchResult(content: "same", source: "A.swift", score: 1),
+            RAGSearchResult(content: "same", source: "A.swift", score: 0.9),
+            RAGSearchResult(content: "other", source: "B.swift", score: 0.8),
+        ]
+
+        let unique = RAGResultDeduplicator.deduplicate(results, limit: 2)
+
+        #expect(unique.map(\.content) == ["same", "other"])
     }
 }

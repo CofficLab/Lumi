@@ -3,6 +3,7 @@ import ProviderActivityBar
 import ProviderChatSection
 import ProviderRootView
 import ProviderRailView
+import ProviderToolbar
 import KitSuperLog
 import os
 
@@ -36,6 +37,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             return
         }
         let railView = kernel.resolveProvider((any RailViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         let entryID = "\(id).entry"
         
         activityBar.addItems([ActivityBarItem(
@@ -46,6 +48,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             ownerPluginID: id
         ) { state in
             let isChatActive = state == .activated
+            toolbar?.setVisibleCategories(isChatActive ? [.global, .chat, .project] : Set(ToolbarItemCategory.allCases))
             chat.setVisible(isChatActive)
             chat.setContextActive(isChatActive)
             rootView.setContentViewHidden(isChatActive)

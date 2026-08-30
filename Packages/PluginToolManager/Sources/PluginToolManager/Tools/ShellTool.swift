@@ -10,9 +10,14 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
         "rm", "rmdir", "mv", "sudo", "kill", "killall", "chmod", "chown", "dd", "shutdown", "reboot"
     ]
     private let commandTimeout: TimeInterval
+    private let workspaceRootProvider: @MainActor @Sendable () -> String?
 
-    public init(commandTimeout: TimeInterval = 120) {
+    public init(
+        commandTimeout: TimeInterval = 120,
+        workspaceRootProvider: @escaping @MainActor @Sendable () -> String? = { nil }
+    ) {
         self.commandTimeout = commandTimeout
+        self.workspaceRootProvider = workspaceRootProvider
     }
 
     public func description(for language: LanguagePreference) -> String {
@@ -56,8 +61,12 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
 
         let timeout = TimeInterval(arguments.intValue("timeout") ?? Int(commandTimeout))
 
+        let workspaceRoot = await workspaceRootProvider()?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         let options = ShellOptions(
-            workingDirectory: FileManager.default.homeDirectoryForCurrentUser.path,
+            workingDirectory: workspaceRoot?.isEmpty == false
+                ? workspaceRoot
+                : FileManager.default.homeDirectoryForCurrentUser.path,
             timeout: timeout,
             throwsOnError: false
         )

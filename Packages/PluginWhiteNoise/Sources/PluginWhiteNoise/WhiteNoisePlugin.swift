@@ -1,5 +1,6 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderToolbar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
@@ -45,6 +46,7 @@ public final class WhiteNoisePlugin: SuperPlugin, SuperLog {
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         // 1. 注册 ActivityBar 入口；激活后由插件切换自己的主内容。
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
@@ -57,11 +59,13 @@ public final class WhiteNoisePlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
+                        toolbar?.setVisibleCategories([.global, .general])
                         contentView?.setContentView(AnyView(WhiteNoiseView()))
                         chat?.setVisible(false)
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
                     } else {
+                        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
                         rootView?.setContentHeaderViewHidden(false)

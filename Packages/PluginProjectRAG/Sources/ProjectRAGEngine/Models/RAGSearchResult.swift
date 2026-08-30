@@ -1,15 +1,41 @@
 import Foundation
 
+/// 检索结果的证据来源。
+public enum RAGMatchKind: String, Sendable, Equatable {
+    case semantic
+    case indexedLexical
+    case filesystemLexical
+    case filesystemPath
+}
+
 /// RAG 检索结果
 public struct RAGSearchResult: Sendable {
     public let content: String
     public let source: String
     public let score: Float
+    public let matchKind: RAGMatchKind
+    public let lineRange: RAGLineRange?
 
-    public init(content: String, source: String, score: Float) {
+    public init(
+        content: String,
+        source: String,
+        score: Float,
+        matchKind: RAGMatchKind,
+        lineRange: RAGLineRange?
+    ) {
         self.content = content
         self.source = source
         self.score = score
+        self.matchKind = matchKind
+        self.lineRange = lineRange
+    }
+
+    public init(content: String, source: String, score: Float, matchKind: RAGMatchKind) {
+        self.init(content: content, source: source, score: score, matchKind: matchKind, lineRange: nil)
+    }
+
+    public init(content: String, source: String, score: Float) {
+        self.init(content: content, source: source, score: score, matchKind: .semantic, lineRange: nil)
     }
 }
 

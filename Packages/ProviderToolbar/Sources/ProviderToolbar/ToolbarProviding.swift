@@ -19,6 +19,14 @@ public protocol ToolbarProviding: AnyObject, ObservableObject
     /// 当前已注入的全部工具栏项。
     var toolbarItems: [ToolbarItem] { get }
 
+    /// 当前允许展示的工具栏分类。
+    ///
+    /// `.global` 项通常应由工作区始终保留；空集合表示不展示任何项。
+    var visibleCategories: Set<ToolbarItemCategory> { get }
+
+    /// 当前经过分类过滤后的工具栏项。
+    var visibleToolbarItems: [ToolbarItem] { get }
+
     /// 注入工具栏项（替换当前全部项）。
     ///
     /// 实现应保存 items，并在 `makeToolbarView()` 中按 `placement` 渲染。
@@ -32,11 +40,33 @@ public protocol ToolbarProviding: AnyObject, ObservableObject
     /// 按 id 撤回插件贡献的工具栏项。
     func removeToolbarItems(ids: Set<String>)
 
+    /// 设置当前允许展示的工具栏分类。
+    func setVisibleCategories(_ categories: Set<ToolbarItemCategory>)
+
+    /// 为指定来源设置临时隐藏的工具栏分类。
+    ///
+    /// 该请求叠加在 `setVisibleCategories(_:)` 的工作区上下文之上，多个来源
+    /// 的隐藏分类取并集。传入空集合表示清除该来源的隐藏请求。
+    /// `source` 由调用方自行保证稳定且唯一，例如插件 ID 加功能名。
+    func setHiddenCategories(_ categories: Set<ToolbarItemCategory>, for source: String)
+
     /// 返回工具栏视图（基于已注入的 items 渲染）。
     func makeToolbarView() -> AnyView
 }
 
 public extension ToolbarProviding {
+    var visibleCategories: Set<ToolbarItemCategory> {
+        Set(ToolbarItemCategory.allCases)
+    }
+
+    var visibleToolbarItems: [ToolbarItem] {
+        toolbarItems.filter { visibleCategories.contains($0.category) }
+    }
+
+    func setVisibleCategories(_ categories: Set<ToolbarItemCategory>) {}
+
+    func setHiddenCategories(_ categories: Set<ToolbarItemCategory>, for source: String) {}
+
     /// 追加语义的默认实现：合入已有项并按 `order` 排序（同 id 去重，保留先注册者）。
     func addToolbarItems(_ newItems: [ToolbarItem]) {
         var merged = toolbarItems

@@ -24,6 +24,8 @@ enum RAGSQL {
         content TEXT NOT NULL,
         content_hash TEXT NOT NULL,
         mtime REAL NOT NULL,
+        start_line INTEGER,
+        end_line INTEGER,
         embedding BLOB NOT NULL,
         dimension INTEGER NOT NULL,
         created_at REAL NOT NULL
@@ -70,15 +72,15 @@ enum RAGSQL {
 
     static let insertChunk = """
     INSERT INTO rag_chunks
-    (project_path, file_path, chunk_index, content, content_hash, mtime, embedding, dimension, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+    (project_path, file_path, chunk_index, content, content_hash, mtime, start_line, end_line, embedding, dimension, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     """
 
     static let deleteChunksByFile = "DELETE FROM rag_chunks WHERE project_path = ? AND file_path = ?;"
     static let fetchChunkIDsByFile = "SELECT id FROM rag_chunks WHERE project_path = ? AND file_path = ?;"
 
     static let selectChunksBase = """
-    SELECT id, content, file_path, embedding
+    SELECT id, content, file_path, start_line, end_line, embedding
     FROM rag_chunks
     """
 

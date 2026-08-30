@@ -8,8 +8,13 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
     private static let maxWholeFileBytes: Int64 = 10 * 1024 * 1024
     private static let defaultLineLimit = 250
     private static let maxLineLimit = 250
+    private let workspaceRootProvider: @MainActor @Sendable () -> String?
 
-    public init() {}
+    public init(
+        workspaceRootProvider: @escaping @MainActor @Sendable () -> String? = { nil }
+    ) {
+        self.workspaceRootProvider = workspaceRootProvider
+    }
 
     public func description(for language: LanguagePreference) -> String {
         "Read UTF-8 text from a file by line range. Large files should be read in chunks with offset and limit."
@@ -19,7 +24,7 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
         [
             "type": "object",
             "properties": [
-                "path": ["type": "string", "description": "The absolute path to the UTF-8 text file to read"],
+                "path": ["type": "string", "description": "The absolute or workspace-relative path to the UTF-8 text file to read"],
                 "offset": ["type": "integer", "description": "1-based line number to start reading from. Negative values count backwards from the end (e.g. -1 is the last line)."],
                 "limit": ["type": "integer", "description": "Maximum number of lines to return. Defaults to 250 and is capped at 250 per request."],
             ],
@@ -46,7 +51,10 @@ public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
             throw NSError(domain: "ReadFileTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'path' argument"])
         }
 
-        let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+        let url = WorkspacePathResolver.resolve(
+            path: path,
+            workspaceRoot: await workspaceRootProvider()
+        )
         do {
             let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
             let fileSize = (attributes[.size] as? NSNumber)?.int64Value ?? 0

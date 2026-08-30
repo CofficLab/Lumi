@@ -3,6 +3,7 @@ import KitAgentTool
 import KitSuperLog
 import os
 import ProviderActivityBar
+import ProviderToolbar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
@@ -82,6 +83,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         if let railView = railView {
@@ -111,6 +113,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
+                        toolbar?.setVisibleCategories([.global, .chat, .design])
                         rootView?.setContentHeaderViewHidden(true)
                         railView?.setVisibleTabID(Self.railTabID)
                         IconDocumentStore.shared.reload()
@@ -118,6 +121,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                         chat?.setVisible(true)
                         chat?.setContextActive(true)
                     } else {
+                        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         rootView?.setContentHeaderViewHidden(false)
                     }
                 },

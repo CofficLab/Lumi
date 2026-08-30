@@ -2,7 +2,7 @@ import ProviderConversation
 import ProviderMessage
 import SwiftUI
 
-/// 缓存命中率工具栏视图
+/// 缓存命中率工具栏视图。
 struct CacheHitRateToolbarView: View {
     let conversations: any ConversationManaging
     let messages: any MessageManaging
@@ -11,7 +11,6 @@ struct CacheHitRateToolbarView: View {
     @State private var stats = CacheHitRateStats.empty
     @State private var isPopoverPresented = false
 
-    // 观察者令牌
     @State private var conversationObserver: (any SelectedConversationObserverHandle)?
     @State private var messageObserver: (any MessageInsertedObserverHandle)?
 
@@ -63,7 +62,6 @@ struct CacheHitRateToolbarView: View {
         }
     }
 
-    /// 命中率语义色：>=70% 绿，40%..<70% 橙，<40% 红
     private var percentColor: Color {
         switch stats.averageHitRate {
         case 0.7...: return .green.opacity(0.85)
@@ -80,8 +78,6 @@ struct CacheHitRateToolbarView: View {
         stats = CacheHitRateStats.compute(messages: messages.messages(for: conversationID))
     }
 }
-
-// MARK: - Popover
 
 private struct CacheHitRatePopover: View {
     let stats: CacheHitRateStats

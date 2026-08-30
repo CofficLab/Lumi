@@ -10,8 +10,6 @@ struct PopoverContent: View {
     @ObservedObject var usageStore: ProviderUsageStore
     @Binding var isPresented: Bool
 
-    private var manager: (any LLMManaging)? { box.manager }
-
     /// 当前选中的供应商（初始来自内核 `LLMManaging`）。
     @State private var selectedProviderID: String?
 
@@ -32,7 +30,7 @@ struct PopoverContent: View {
             ModelListView(
                 box: box,
                 selectedProviderID: selectedProviderID,
-                initialModel: manager?.selectedModel,
+                initialModel: box.selectedModel,
                 onSelect: { providerID, _ in
                     usageStore.recordUse(providerID: providerID)
                     isPresented = false
@@ -43,8 +41,8 @@ struct PopoverContent: View {
         .onAppear {
             // Use initial selection if available
             if selectedProviderID == nil {
-                selectedProviderID = manager?.selectedProviderID
-                    ?? manager?.allProviders().first.map { $0.providerInfo.id }
+                selectedProviderID = box.selectedProviderID
+                    ?? box.providerInfos.first.map { $0.id }
             }
         }
     }

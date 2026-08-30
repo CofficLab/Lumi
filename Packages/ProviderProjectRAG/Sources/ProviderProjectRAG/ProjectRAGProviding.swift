@@ -22,6 +22,9 @@ public protocol ProjectRAGProviding: AnyObject, Sendable {
     var isInitialized: Bool { get }
     var currentProjectPath: String? { get }
 
+    /// 判断指定项目是否正在索引，供首次查询避免重复启动前台索引。
+    func isIndexing(projectPath: String) -> Bool
+
     @discardableResult
     func addProjectRAGObserver(_ callback: @escaping (ProjectRAGEvent) -> Void) -> any ProjectRAGObserverHandle
 
@@ -37,6 +40,8 @@ public protocol ProjectRAGProviding: AnyObject, Sendable {
 }
 
 public extension ProjectRAGProviding {
+    func isIndexing(projectPath: String) -> Bool { false }
+
     @discardableResult
     func addProjectRAGObserver(_ callback: @escaping (ProjectRAGEvent) -> Void) -> any ProjectRAGObserverHandle {
         NoopProjectRAGObserverHandle()
@@ -59,15 +64,50 @@ public extension ProjectRAGProviding {
     }
 }
 
+public enum ProjectRAGMatchKind: String, Sendable, Equatable {
+    case semantic
+    case indexedLexical
+    case filesystemLexical
+    case filesystemPath
+}
+
+public struct ProjectRAGLineRange: Sendable, Equatable {
+    public let startLine: Int
+    public let endLine: Int
+
+    public init(startLine: Int, endLine: Int) {
+        self.startLine = startLine
+        self.endLine = max(startLine, endLine)
+    }
+}
+
 public struct ProjectRAGSearchResult: Sendable, Equatable {
     public let content: String
     public let source: String
     public let score: Float
+    public let matchKind: ProjectRAGMatchKind
+    public let lineRange: ProjectRAGLineRange?
 
-    public init(content: String, source: String, score: Float) {
+    public init(
+        content: String,
+        source: String,
+        score: Float,
+        matchKind: ProjectRAGMatchKind,
+        lineRange: ProjectRAGLineRange?
+    ) {
         self.content = content
         self.source = source
         self.score = score
+        self.matchKind = matchKind
+        self.lineRange = lineRange
+    }
+
+    public init(content: String, source: String, score: Float, matchKind: ProjectRAGMatchKind) {
+        self.init(content: content, source: source, score: score, matchKind: matchKind, lineRange: nil)
+    }
+
+    public init(content: String, source: String, score: Float) {
+        self.init(content: content, source: source, score: score, matchKind: .semantic, lineRange: nil)
     }
 }
 

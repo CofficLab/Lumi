@@ -305,6 +305,11 @@ extension AgentLoopManager {
                 }
             }
 
+            // 模型返回的 tool-call arguments 必须在落库前是 JSON 对象。
+            // 否则坏的 assistant tool call 会进入历史，并在下一轮请求时触发
+            // 上游的 HTTP 400。
+            try response.validateToolCallArguments()
+
             let timing = timingRecorder.finish()
 
             if Self.verbose {

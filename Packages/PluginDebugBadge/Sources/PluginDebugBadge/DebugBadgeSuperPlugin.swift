@@ -42,6 +42,7 @@ public final class DebugBadgeSuperPlugin: SuperPlugin, SuperLog {
                     id: "\(id).badge",
                     title: LumiPluginLocalization.string("Running a Debug build", bundle: .module),
                     placement: .leading,
+                    category: .global,
                     order: 900
                 ) {
                     DebugBadgeView()

@@ -19,11 +19,42 @@ import AppKit
 @MainActor
 public final class DefaultToolbarProviding: ToolbarProviding, ObservableObject {
     @Published public private(set) var toolbarItems: [ToolbarItem] = []
+    @Published public private(set) var visibleCategories: Set<ToolbarItemCategory>
 
-    public init() {}
+    private var baseVisibleCategories: Set<ToolbarItemCategory>
+    private var hiddenCategoriesBySource: [String: Set<ToolbarItemCategory>] = [:]
+
+    public init(visibleCategories: Set<ToolbarItemCategory> = Set(ToolbarItemCategory.allCases)) {
+        self.visibleCategories = visibleCategories
+        self.baseVisibleCategories = visibleCategories
+    }
 
     public func registerToolbarItems(_ items: [ToolbarItem]) {
         toolbarItems = items
+    }
+
+    public func setVisibleCategories(_ categories: Set<ToolbarItemCategory>) {
+        guard baseVisibleCategories != categories else { return }
+        baseVisibleCategories = categories
+        refreshVisibleCategories()
+    }
+
+    public func setHiddenCategories(_ categories: Set<ToolbarItemCategory>, for source: String) {
+        if categories.isEmpty {
+            hiddenCategoriesBySource.removeValue(forKey: source)
+        } else {
+            hiddenCategoriesBySource[source] = categories
+        }
+        refreshVisibleCategories()
+    }
+
+    private func refreshVisibleCategories() {
+        let hiddenCategories = hiddenCategoriesBySource.values.reduce(into: Set<ToolbarItemCategory>()) {
+            $0.formUnion($1)
+        }
+        let effectiveCategories = baseVisibleCategories.subtracting(hiddenCategories)
+        guard visibleCategories != effectiveCategories else { return }
+        visibleCategories = effectiveCategories
     }
 
     public func makeToolbarView() -> AnyView {
@@ -42,7 +73,7 @@ private struct ToolbarView: View {
     private let trafficLightReserveWidth: CGFloat = 76
 
     var body: some View {
-        let items = provider.toolbarItems
+        let items = provider.visibleToolbarItems
         let leading = items.filter { $0.placement == .leading }
         let center = items.filter { $0.placement == .center }
         let trailing = items.filter { $0.placement == .trailing }

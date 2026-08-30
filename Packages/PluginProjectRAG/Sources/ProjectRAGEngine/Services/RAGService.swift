@@ -425,16 +425,33 @@ public actor RAGService: SuperLog {
 
         // 检索耗时
         let retrieveStart = CFAbsoluteTimeGetCurrent()
-        let results = try retriever.retrieve(
+        let semanticResults = try retriever.retrieve(
             queryEmbedding: queryEmbedding,
             query: trimmed,
             projectPath: normalizedProjectPath,
             topK: max(topK, 1)
         )
         try Task.checkCancellation()
+        let results: [RAGSearchResult]
+        if semanticResults.isEmpty,
+           let normalizedProjectPath,
+           !normalizedProjectPath.isEmpty {
+            // 索引尚未完成或语义后端没有候选时，先用文件级词法搜索提供证据。
+            results = try RAGLexicalFileSearcher.search(
+                query: trimmed,
+                projectPath: normalizedProjectPath,
+                topK: max(topK, 1)
+            )
+        } else {
+            results = semanticResults
+        }
+        let deduplicatedResults = RAGResultDeduplicator.deduplicate(
+            results,
+            limit: max(topK, 1)
+        )
         let retrieveDuration = (CFAbsoluteTimeGetCurrent() - retrieveStart) * 1000
         if Self.verbose {
-            Self.logger.info("\(Self.t)⏱️ retriever.retrieve 耗时：\(RAGUtils.formatDuration(retrieveDuration))，结果数：\(results.count)")
+            Self.logger.info("\(Self.t)⏱️ retriever.retrieve 耗时：\(RAGUtils.formatDuration(retrieveDuration))，结果数：\(deduplicatedResults.count)")
         }
 
         let totalDuration = (CFAbsoluteTimeGetCurrent() - start) * 1000
@@ -446,7 +463,7 @@ public actor RAGService: SuperLog {
             Self.logger.warning("\(Self.t)⚠️ retrieve 总耗时过长：\(RAGUtils.formatDuration(totalDuration)) (>300ms) [embed=\(RAGUtils.formatDuration(embedDuration)), retriever=\(RAGUtils.formatDuration(retrieveDuration))]")
         }
 
-        return RAGResponse(query: query, results: results)
+        return RAGResponse(query: query, results: deduplicatedResults)
     }
 
     public func getIndexStatus(projectPath: String) async throws -> RAGIndexStatus? {

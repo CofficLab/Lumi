@@ -1,3 +1,4 @@
+import Combine
 import LumiUI
 import SwiftUI
 
@@ -11,6 +12,11 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
     @Published public private(set) var visibleCategories: Set<RailViewCategory>
     @Published public private(set) var visibleTabID: String?
     @Published public private(set) var activeTabID: String?
+    @Published public private(set) var hasVisibleTabs = false
+
+    public var railVisibilityPublisher: AnyPublisher<Bool, Never> {
+        $hasVisibleTabs.eraseToAnyPublisher()
+    }
 
     public init(visibleCategories: Set<RailViewCategory> = Set(RailViewCategory.allCases), visibleTabID: String? = nil) {
         self.visibleCategories = visibleCategories
@@ -20,6 +26,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
     public func registerTabs(_ tabs: [RailTabItem]) {
         self.tabs = tabs.sorted { $0.order < $1.order }
         reconcileActiveTab()
+        updateVisibleTabState()
     }
 
     public func activateTab(id: String?) {
@@ -38,12 +45,14 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         // 必须清除上一个插件留下的 tab id，否则可能把分类内所有 tab 都过滤掉。
         visibleTabID = nil
         reconcileActiveTab()
+        updateVisibleTabState()
     }
 
     public func setVisibleTabID(_ id: String?) {
         guard visibleTabID != id else { return }
         visibleTabID = id
         reconcileActiveTab()
+        updateVisibleTabState()
     }
 
     public func makeRailView() -> AnyView {
@@ -55,6 +64,10 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
             visibleCategories.contains(tab.category)
                 && (visibleTabID == nil || tab.id == visibleTabID)
         }
+    }
+
+    private func updateVisibleTabState() {
+        hasVisibleTabs = !visibleTabs.isEmpty
     }
 
     private func reconcileActiveTab() {
@@ -78,7 +91,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
 /// - 标签栏复用 `AppToolbarContainer`（height 40、`.panel` 背景、
 ///   上下 8 / 左右 10 内边距）+ `AppTabBar(showText: false)`（图标式），
 ///   并带 `borderBottom` + `shadowMd`；仅在 tab 数量大于一个时显示；
-/// - 内容区直接渲染激活 tab 视图（`.id` 保持切换动画），无内容时透明占位；
+/// - 内容区直接渲染激活 tab 视图（`.id` 保持切换动画），无内容时不渲染视图；
 /// - 整栏 `minWidth 200`、背景 `theme.surface`。
 private struct RailView: View {
     @ObservedObject var provider: DefaultRailViewProviding
@@ -87,43 +100,45 @@ private struct RailView: View {
     var body: some View {
         let visibleTabs = provider.visibleTabs
 
-        VStack(spacing: 0) {
-            // 标签栏：仅在 tab 数量大于一个时显示（复刻旧版 showsTabBar）。
-            if let firstTab = visibleTabs.first, visibleTabs.count > 1 {
-                AppToolbarContainer(
-                    height: 40,
-                    backgroundStyle: .panel,
-                    padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
-                ) {
-                    AppTabBar(
-                        tabs: visibleTabs.map {
-                            AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id)
-                        },
-                        selectedTab: Binding(
-                            get: { provider.activeTabID ?? firstTab.id },
-                            set: { provider.activateTab(id: $0) }
-                        ),
-                        showText: false
-                    )
+        if visibleTabs.isEmpty {
+            EmptyView()
+        } else {
+            VStack(spacing: 0) {
+                // 标签栏：仅在 tab 数量大于一个时显示（复刻旧版 showsTabBar）。
+                if let firstTab = visibleTabs.first, visibleTabs.count > 1 {
+                    AppToolbarContainer(
+                        height: 40,
+                        backgroundStyle: .panel,
+                        padding: EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10)
+                    ) {
+                        AppTabBar(
+                            tabs: visibleTabs.map {
+                                AppTabBar.Tab(title: $0.title, icon: $0.systemImage, id: $0.id)
+                            },
+                            selectedTab: Binding(
+                                get: { provider.activeTabID ?? firstTab.id },
+                                set: { provider.activateTab(id: $0) }
+                            ),
+                            showText: false
+                        )
+                    }
+                    .borderBottom()
+                    .shadowMd()
                 }
-                .borderBottom()
-                .shadowMd()
-            }
 
-            // 内容区：激活 tab 视图；未命中时回退首个 tab；无任何 tab 时透明占位。
-            if let active = visibleTabs.first(where: { $0.id == provider.activeTabID }) {
-                active.makeView()
-                    .id(active.id)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let first = visibleTabs.first {
-                first.makeView()
-                    .id(first.id)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                Color.clear
+                // 内容区：激活 tab 视图；未命中时回退首个 tab。
+                if let active = visibleTabs.first(where: { $0.id == provider.activeTabID }) {
+                    active.makeView()
+                        .id(active.id)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let first = visibleTabs.first {
+                    first.makeView()
+                        .id(first.id)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
+            .frame(minWidth: 200, maxWidth: .infinity, maxHeight: .infinity)
+            .background(theme.surface)
         }
-        .frame(minWidth: 200, maxWidth: .infinity, maxHeight: .infinity)
-        .background(theme.surface)
     }
 }

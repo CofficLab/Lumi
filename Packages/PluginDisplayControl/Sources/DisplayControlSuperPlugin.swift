@@ -1,5 +1,6 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderToolbar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
@@ -37,6 +38,7 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         let entryID = "\(id).entry"
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             activityBar.addItems([
@@ -48,11 +50,13 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
+                        toolbar?.setVisibleCategories([.global, .system])
                         content?.setContentView(AnyView(DisplayControlView()))
                         chat?.setVisible(false)
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
                     } else {
+                        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
                         rootView?.setContentHeaderViewHidden(false)

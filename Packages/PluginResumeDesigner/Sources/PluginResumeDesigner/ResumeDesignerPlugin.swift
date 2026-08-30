@@ -1,6 +1,7 @@
 import KitAgentTool
 import KernelCore
 import ProviderActivityBar
+import ProviderToolbar
 import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
@@ -73,6 +74,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         railView?.addTabs([
@@ -98,6 +100,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
+                        toolbar?.setVisibleCategories([.global, .chat, .design])
                         rootView?.setContentHeaderViewHidden(true)
                         railView?.setVisibleTabID(Self.railTabID)
                         chat?.setVisible(true)
@@ -105,6 +108,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                         WorkspaceStore.shared.reload()
                         contentView?.setContentView(AnyView(DesignerView()))
                     } else {
+                        toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         rootView?.setContentHeaderViewHidden(false)
                     }
                 },

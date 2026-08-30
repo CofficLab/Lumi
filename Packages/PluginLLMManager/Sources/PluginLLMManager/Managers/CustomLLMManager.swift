@@ -1,4 +1,3 @@
-import Combine
 import ProviderLLMManager
 import Foundation
 import KitLLM
@@ -35,8 +34,29 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
 
     // MARK: - Selection
 
-    @Published public private(set) var selectedProviderID: String?
-    @Published public private(set) var selectedModel: String?
+    public private(set) var selectedProviderID: String?
+    public private(set) var selectedModel: String?
+
+    // MARK: - Observation
+
+    private var observers: [UUID: (LLMManagerEvent) -> Void] = [:]
+
+    @discardableResult
+    public func addObserver(
+        _ callback: @escaping (LLMManagerEvent) -> Void
+    ) -> any LLMManagerObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return DefaultLLMManagerObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
+    private func notify(_ event: LLMManagerEvent) {
+        for callback in observers.values {
+            callback(event)
+        }
+    }
 
     // MARK: - UserDefaults Keys
 
@@ -54,8 +74,8 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
 
     public init() {
         // 启动时恢复持久化的选中；实际生效校验在首次注册后经 ensureValidSelection 完成。
-        _selectedProviderID = Published(initialValue: UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedProviderID))
-        _selectedModel = Published(initialValue: UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModel))
+        selectedProviderID = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedProviderID)
+        selectedModel = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModel)
         if Self.verbose {
             Self.logger.info("\(Self.t)initialized, restored selection: provider=\(self.selectedProviderID ?? "nil", privacy: .public), model=\(self.selectedModel ?? "nil", privacy: .public)")
         }
@@ -87,6 +107,7 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
         if Self.verbose {
             Self.logger.info("\(Self.t)registered provider: \(id, privacy: .public), total=\(self.providers.count)\(isNew ? "" : self.r("replaced existing"))")
         }
+        notify(.providersChanged(providerID: id, reason: isNew ? .added : .replaced))
         ensureValidSelection()
     }
 
@@ -101,6 +122,7 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
         if Self.verbose {
             Self.logger.info("\(Self.t)unregistered provider: \(id, privacy: .public), total=\(self.providers.count)")
         }
+        notify(.providersChanged(providerID: id, reason: .removed))
         ensureValidSelection()
     }
 
@@ -117,9 +139,11 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
             }
             return
         }
+        var didChange = false
         if selectedProviderID != providerID {
             selectedProviderID = providerID
             UserDefaults.standard.set(providerID, forKey: UserDefaultsKeys.selectedProviderID)
+            didChange = true
         }
         if selectedModel != model {
             selectedModel = model
@@ -128,9 +152,13 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
             } else {
                 UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedModel)
             }
+            didChange = true
         }
         if Self.verbose {
             Self.logger.info("\(Self.t)selected: provider=\(providerID, privacy: .public), model=\(model ?? "nil", privacy: .public)")
+        }
+        if didChange {
+            notify(.selectionChanged(providerID: providerID, model: model))
         }
     }
 
@@ -283,6 +311,7 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
                 selectedModel = nil
                 UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedProviderID)
                 UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedModel)
+                notify(.selectionChanged(providerID: nil, model: nil))
                 if Self.verbose {
                     Self.logger.warning("\(Self.t)no providers left, cleared selection")
                 }
@@ -319,8 +348,11 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
             }
             changed = true
         }
-        if changed, Self.verbose {
-            Self.logger.info("\(Self.t)selection auto-corrected: provider=\(newProviderID, privacy: .public), model=\(newModel ?? "nil", privacy: .public)")
+        if changed {
+            notify(.selectionChanged(providerID: selectedProviderID, model: selectedModel))
+            if Self.verbose {
+                Self.logger.info("\(Self.t)selection auto-corrected: provider=\(newProviderID, privacy: .public), model=\(newModel ?? "nil", privacy: .public)")
+            }
         }
     }
 }

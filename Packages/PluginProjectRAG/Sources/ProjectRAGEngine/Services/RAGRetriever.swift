@@ -121,7 +121,9 @@ public struct RAGRetriever: SuperLog {
             return RAGSearchResult(
                 content: $0.0.content,
                 source: sourcePath,
-                score: $0.1
+                score: $0.1,
+                matchKind: usedFallback ? .indexedLexical : .semantic,
+                lineRange: $0.0.lineRange
             )
         }
 

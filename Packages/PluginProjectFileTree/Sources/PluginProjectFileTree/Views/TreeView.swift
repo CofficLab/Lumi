@@ -38,7 +38,7 @@ public struct TreeView: View, SuperLog {
     public var body: some View {
         VStack(spacing: 0) {
             if viewModel.currentProjectPath.isEmpty {
-                NoProjectView()
+                EmptyView()
             } else {
                 FileTreeNSViewBridge(
                     context: context,
