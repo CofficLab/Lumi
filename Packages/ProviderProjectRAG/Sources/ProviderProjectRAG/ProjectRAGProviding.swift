@@ -68,6 +68,7 @@ public enum ProjectRAGMatchKind: String, Sendable, Equatable {
     case semantic
     case indexedLexical
     case filesystemLexical
+    case filesystemPath
 }
 
 public struct ProjectRAGLineRange: Sendable, Equatable {

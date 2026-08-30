@@ -5,6 +5,7 @@ public enum RAGMatchKind: String, Sendable, Equatable {
     case semantic
     case indexedLexical
     case filesystemLexical
+    case filesystemPath
 }
 
 /// RAG 检索结果

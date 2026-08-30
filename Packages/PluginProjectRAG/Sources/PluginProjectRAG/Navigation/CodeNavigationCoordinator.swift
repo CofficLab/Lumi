@@ -24,19 +24,19 @@ struct CodeNavigationCoordinator: Sendable {
             projectPath: projectPath,
             topK: topK
         )) ?? []
+        let pathResults = (try? RAGFilePathSearcher.search(
+            query: query,
+            projectPath: projectPath,
+            topK: topK
+        )) ?? []
         let response = try await semanticResponse
 
         var merged = response.results
         merged.append(contentsOf: lexicalResults.map {
-            ProjectRAGSearchResult(
-                content: $0.content,
-                source: $0.source,
-                score: $0.score,
-                matchKind: ProjectRAGMatchKind(rawValue: $0.matchKind.rawValue) ?? .filesystemLexical,
-                lineRange: $0.lineRange.map {
-                    ProjectRAGLineRange(startLine: $0.startLine, endLine: $0.endLine)
-                }
-            )
+            makeProviderResult($0)
+        })
+        merged.append(contentsOf: pathResults.map {
+            makeProviderResult($0)
         })
 
         return ProjectRAGResponse(
@@ -76,5 +76,17 @@ struct CodeNavigationCoordinator: Sendable {
             }
             .prefix(max(limit, 1))
             .map { $0 }
+    }
+
+    private func makeProviderResult(_ result: RAGSearchResult) -> ProjectRAGSearchResult {
+        ProjectRAGSearchResult(
+            content: result.content,
+            source: result.source,
+            score: result.score,
+            matchKind: ProjectRAGMatchKind(rawValue: result.matchKind.rawValue) ?? .filesystemLexical,
+            lineRange: result.lineRange.map {
+                ProjectRAGLineRange(startLine: $0.startLine, endLine: $0.endLine)
+            }
+        )
     }
 }

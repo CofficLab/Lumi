@@ -202,4 +202,26 @@ struct CodeNavigationCoordinatorTests {
             result.source == "Sources/Router.swift" && result.matchKind == .filesystemLexical
         })
     }
+
+    @Test("merges explicit file path evidence")
+    func mergesExplicitFilePathEvidence() async throws {
+        let provider = StubProjectRAGProvider()
+        let coordinator = CodeNavigationCoordinator(provider: provider)
+        let projectURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rag-coordinator-path-\(UUID().uuidString)", isDirectory: true)
+        let sourceURL = projectURL.appendingPathComponent("Sources/Router.swift")
+        try FileManager.default.createDirectory(at: sourceURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "let unrelatedValue = true".write(to: sourceURL, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: projectURL) }
+
+        let response = try await coordinator.search(
+            query: "Sources/Router.swift",
+            projectPath: projectURL.path,
+            topK: 8
+        )
+
+        #expect(response.results.contains { result in
+            result.source == "Sources/Router.swift" && result.matchKind == .filesystemPath
+        })
+    }
 }
