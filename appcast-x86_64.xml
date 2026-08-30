@@ -3,23 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.18.2</title>
-            <pubDate>Sat, 29 Aug 2026 14:24:33 +0000</pubDate>
-            <sparkle:version>615</sparkle:version>
-            <sparkle:shortVersionString>5.18.2</sparkle:shortVersionString>
+            <title>5.18.3</title>
+            <pubDate>Sun, 30 Aug 2026 04:02:23 +0000</pubDate>
+            <sparkle:version>616</sparkle:version>
+            <sparkle:shortVersionString>5.18.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.18.2</h2>
-<h3>Changes since v5.18.1</h3>
+            <description><![CDATA[<h2>Release v5.18.3</h2>
+<h3>Changes since v5.18.2</h3>
 <ul>
-<li>feat(http-log): polish detail metadata presentation</li>
-<li>feat(model-selector): add frequent provider history</li>
-<li>fix: add HTTP log retention and restore file tree access</li>
-<li>fix(plugin-computer-use): preserve original name in localization</li>
-<li>fix(toolbar): sort trailing items by order</li>
-<li>refactor(PluginToolbarSettings): update settings toolbar item order to 300</li>
+<li>docs(project-rag): document code navigation gaps</li>
+<li>feat(lifecycle-hooks): support cancellable registrations</li>
+<li>feat(message-list): hide project toolbar in empty state</li>
+<li>feat(PluginLLMManager): emit LLMManagerEvent from CustomLLMManager</li>
+<li>feat(project-rag): accelerate lexical search with ripgrep</li>
+<li>feat(project-rag): add explicit path search</li>
+<li>feat(project-rag): add lexical search fallback</li>
+<li>feat(project-rag): expose search evidence kind</li>
+<li>feat(project-rag): include lexical context</li>
+<li>feat(project-rag): include lexical line ranges</li>
+<li>feat(project-rag): index restored projects in background</li>
+<li>feat(project-rag): inject code context before llm</li>
+<li>feat(project-rag): merge lexical navigation evidence</li>
+<li>feat(project-rag): persist chunk line ranges</li>
+<li>feat(project-rag): track chunk line ranges</li>
+<li>feat(project): expose shared workspace root</li>
+<li>feat(ProviderLLMManager): add typed observer for LLMManaging state changes</li>
+<li>feat(tool-manager): resolve relative file reads in workspace</li>
+<li>feat(tool-manager): resolve workspace-relative edits</li>
+<li>feat(tool-manager): resolve workspace-relative writes</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.18.2</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.18.2/Lumi_5.18.2_x86_64.dmg" length="45285562" type="application/octet-stream" sparkle:edSignature="HFsf3Bk+yG/CWHOvHcXTetvEDrF8+U1h2mTBLWkoCU2Rv5ZQa6BJixFLY5veFJAUW2FZMOFZzkViEUoczCr/Dg=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.18.3</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.18.3/Lumi_5.18.3_x86_64.dmg" length="44430452" type="application/octet-stream" sparkle:edSignature="7qktW4k4UjHkgansAub5HvnfkF+yYpQdML/Cza78WIgBdrAKk3DVKiwwvIQjnY7G54nJowqhNLVlWF5GM7HEAQ=="/>
         </item>
     </channel>
 </rss>
