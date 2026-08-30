@@ -42,6 +42,7 @@ struct ProviderChatSectionTests {
             case .rootWrappersChanged: events.append("wrappers")
             case .visibilityChanged: events.append("visibility")
             case .contextActiveChanged: events.append("context")
+            case .activeContextChanged: events.append("active-context")
             case .headerVisibilityChanged: events.append("header")
             }
         }
@@ -51,13 +52,35 @@ struct ProviderChatSectionTests {
         provider.addRootWrappers([ChatSectionRootWrapper(id: "wrapper") { $0 }])
         provider.setVisible(false)
         provider.setContextActive(true)
+        provider.setActiveContext(ChatContext(id: "plugin.story", title: "Story"))
         provider.setHeaderVisible(false)
 
-        #expect(events == ["items", "bars", "wrappers", "visibility", "context", "header"])
+        #expect(events == ["items", "bars", "wrappers", "visibility", "context", "active-context", "header"])
 
         handle.cancel()
         provider.setVisible(true)
-        #expect(events == ["items", "bars", "wrappers", "visibility", "context", "header"])
+        #expect(events == ["items", "bars", "wrappers", "visibility", "context", "active-context", "header"])
+    }
+
+    @Test("贡献作用域只匹配当前聊天上下文")
+    func contributionScopeMatchesContext() {
+        let context = ChatContext(id: "plugin.story", title: "Story")
+
+        #expect(ChatSectionScope.global.matches(nil))
+        #expect(ChatSectionScope.global.matches(context))
+        #expect(ChatSectionScope.context(context.id).matches(context))
+        #expect(!ChatSectionScope.context(context.id).matches(nil))
+        #expect(!ChatSectionScope.context(context.id).matches(ChatContext.defaultChat))
+    }
+
+    @Test("可切换当前聊天上下文")
+    func activeContextCanChange() {
+        let provider = DefaultChatSectionProviding()
+        let context = ChatContext(id: "plugin.story", title: "Story")
+
+        provider.setActiveContext(context)
+
+        #expect(provider.activeContext == context)
     }
 
     @Test("显隐和会话上下文状态可独立切换")
@@ -123,6 +146,73 @@ struct ProviderChatSectionTests {
         #expect(provider.isHeaderVisible == true)
     }
 
+    @Test("首次激活使用推荐宽度，拖拽后按插件 ID 恢复")
+    func widthProfileRestoresSavedWidth() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProviderChatSectionTests-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("chat-section-width.plist")
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let recommended = ChatSectionWidth(minWidth: 280, idealWidth: 360, maxWidth: 520)
+        let firstProvider = DefaultChatSectionProviding(
+            widthStore: FileChatSectionWidthStore(fileURL: fileURL)
+        )
+
+        firstProvider.activateWidthProfile(ownerID: "plugin.resume", recommended: recommended)
+        #expect(firstProvider.chatSectionWidth.idealWidth == 360)
+
+        firstProvider.saveCurrentWidth(440)
+        let secondProvider = DefaultChatSectionProviding(
+            widthStore: FileChatSectionWidthStore(fileURL: fileURL)
+        )
+        secondProvider.activateWidthProfile(ownerID: "plugin.resume", recommended: recommended)
+
+        #expect(secondProvider.chatSectionWidth.idealWidth == 440)
+    }
+
+    @Test("没有磁盘值时使用推荐宽度，保存值超出新范围时被限制")
+    func widthProfileUsesRecommendationAndClampsRestoredValue() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProviderChatSectionTests-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("chat-section-width.plist")
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = FileChatSectionWidthStore(fileURL: fileURL)
+        let provider = DefaultChatSectionProviding(widthStore: store)
+        let recommended = ChatSectionWidth(minWidth: 280, idealWidth: 360, maxWidth: 520)
+
+        provider.activateWidthProfile(ownerID: "plugin.new", recommended: recommended)
+        #expect(provider.chatSectionWidth.idealWidth == 360)
+
+        provider.saveCurrentWidth(500)
+        let reloaded = DefaultChatSectionProviding(
+            widthStore: FileChatSectionWidthStore(fileURL: fileURL)
+        )
+        reloaded.activateWidthProfile(
+            ownerID: "plugin.new",
+            recommended: ChatSectionWidth(minWidth: 300, idealWidth: 340, maxWidth: 400)
+        )
+
+        #expect(reloaded.chatSectionWidth.idealWidth == 400)
+    }
+
+    @Test("旧插件释放宽度时不会覆盖新插件")
+    func staleDeactivationDoesNotResetCurrentProfile() {
+        let provider = DefaultChatSectionProviding()
+        provider.activateWidthProfile(
+            ownerID: "plugin.first",
+            recommended: ChatSectionWidth(minWidth: 280, idealWidth: 320, maxWidth: 440)
+        )
+        provider.activateWidthProfile(
+            ownerID: "plugin.second",
+            recommended: ChatSectionWidth(minWidth: 300, idealWidth: 380, maxWidth: 520)
+        )
+
+        provider.deactivateWidthProfile(ownerID: "plugin.first")
+
+        #expect(provider.chatSectionWidth.idealWidth == 380)
+    }
+
     private func waitForMainRunloop() async {
         // Combine sink 通过 receive(on: .main) 异步投递，让出若干次主线程执行机会。
         for _ in 0..<5 {
@@ -135,17 +225,18 @@ struct ProviderChatSectionTests {
 /// 最小 `ConversationManaging` 实现：仅测试需要的选中状态，其余返回默认值。
 @MainActor
 private final class MockConversationManaging: ConversationManaging {
-    @Published var conversations: [LumiConversationSummary] = []
+    @Published var conversations: [ConversationSummary] = []
     @Published var selectedConversationID: UUID?
 
     var currentTitle: String { "Mock" }
     var dataDirectory: URL { URL(fileURLWithPath: "/tmp/mock-conversations") }
-    var globalVerbosity: LumiResponseVerbosity = .standard
-    var globalReasoningEffort: LumiReasoningEffort?
-    var globalAutomationLevel: LumiAutomationLevel = .chat
-    var globalLanguage: LumiConversationLanguage = .chinese
+    var globalVerbosity: ResponseVerbosity = .standard
+    var globalReasoningEffort: ReasoningEffort?
+    var globalAutomationLevel: AutomationLevel = .chat
+    var globalLanguage: ConversationLanguage = .chinese
 
     func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID { UUID() }
+    func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?, parentConversationID: UUID?) throws -> UUID { UUID() }
     func selectConversation(id: UUID) { selectedConversationID = id }
     func deselectConversation() { selectedConversationID = nil }
     func deleteConversation(id: UUID) {}
@@ -158,18 +249,18 @@ private final class MockConversationManaging: ConversationManaging {
     func providerID(for conversationID: UUID?) -> String? { nil }
     func modelName(for conversationID: UUID?) -> String? { nil }
     func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
-    func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity) { globalVerbosity = verbosity }
-    func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
-    func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { globalVerbosity }
-    func setGlobalReasoningEffort(_ reasoningEffort: LumiReasoningEffort?) { globalReasoningEffort = reasoningEffort }
-    func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { globalReasoningEffort ?? .high }
-    func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? { globalReasoningEffort }
-    func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) { globalReasoningEffort = reasoningEffort }
+    func setGlobalVerbosity(_ verbosity: ResponseVerbosity) { globalVerbosity = verbosity }
+    func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {}
+    func verbosity(for conversationID: UUID?) -> ResponseVerbosity { globalVerbosity }
+    func setGlobalReasoningEffort(_ reasoningEffort: ReasoningEffort?) { globalReasoningEffort = reasoningEffort }
+    func reasoningEffort(for conversationID: UUID?) -> ReasoningEffort { globalReasoningEffort ?? .high }
+    func reasoningEffortOptional(for conversationID: UUID?) -> ReasoningEffort? { globalReasoningEffort }
+    func setReasoningEffort(_ reasoningEffort: ReasoningEffort, for conversationID: UUID?) { globalReasoningEffort = reasoningEffort }
     func clearReasoningEffort(for conversationID: UUID?) { globalReasoningEffort = nil }
-    func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel) { globalAutomationLevel = automationLevel }
-    func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel { globalAutomationLevel }
-    func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
-    func setGlobalLanguage(_ language: LumiConversationLanguage) { globalLanguage = language }
-    func language(for conversationID: UUID?) -> LumiConversationLanguage { globalLanguage }
-    func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}
+    func setGlobalAutomationLevel(_ automationLevel: AutomationLevel) { globalAutomationLevel = automationLevel }
+    func automationLevel(for conversationID: UUID?) -> AutomationLevel { globalAutomationLevel }
+    func setAutomationLevel(_ automationLevel: AutomationLevel, for conversationID: UUID?) {}
+    func setGlobalLanguage(_ language: ConversationLanguage) { globalLanguage = language }
+    func language(for conversationID: UUID?) -> ConversationLanguage { globalLanguage }
+    func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?) {}
 }

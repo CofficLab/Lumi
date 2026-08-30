@@ -14,7 +14,7 @@ The initial built-in language set is Swift, JavaScript/TypeScript, JSON, Markdow
 
 The implementation uses two plugins with different lifecycles:
 
-- `PluginEditorHost` is required infrastructure. It remains UI-neutral and owns the single `EditorService`, the V2 editor contract adapter, the standard source-editor surface, and the embedded editor provider used by feature plugins.
+- `PluginCodeEditorHost` is required infrastructure. It remains UI-neutral and owns the single `EditorService`, the V2 editor contract adapter, the standard source-editor surface, and the embedded editor provider used by feature plugins.
 - `PluginCodeEditor` is user-facing and `disabledByDefault`. Its `onBoot` registers one Activity Bar item. Activating the Activity Bar item installs the editor workbench into `ContentViewProviding` and activates the canonical `PluginProjectFileTree` Rail group. `onShutdown` removes every contribution and clears the content only when the editor owns it.
 
 `FactoryLumi` includes both plugins. The host boots before language and workspace plugins. Enabling or disabling the workspace therefore changes only visible workspace contributions and does not invalidate embedded editors used elsewhere.

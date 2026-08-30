@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import ProviderAgentLoop
+import ProviderChatSection
 import ProviderConversation
 import ProviderConversationState
 import ProviderMessage
@@ -31,9 +32,14 @@ struct MessageListServices {
     let promptSuggestionExecutor: (any PromptSuggestionExecuting)?
     let project: (any ProjectProviding)?
     let toolbar: (any ToolbarProviding)?
+    let chat: (any ChatSectionProviding)?
 
     var selectedConversationID: UUID? {
         conversations?.selectedConversationID
+    }
+
+    var activeChatContext: ChatContext? {
+        chat?.activeContext
     }
 
     func verbosity(for conversationID: UUID?) -> ResponseVerbosity {

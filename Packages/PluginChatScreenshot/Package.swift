@@ -14,8 +14,8 @@ let package = Package(
         .package(path: "../LumiUI"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderCommand"),
-        .package(path: "../ProviderConversationInput"),
-        .package(path: "../ProviderStorage"),
+        .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderMessageSender"),
         .package(path: "../KitSuperLog"),
     ],
     targets: [
@@ -27,8 +27,8 @@ let package = Package(
                 "LumiUI",
                 "ProviderChatSection",
                 "ProviderCommand",
-                "ProviderConversationInput",
-                "ProviderStorage",
+                "ProviderMessage",
+                "ProviderMessageSender",
                 "KitSuperLog",
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]

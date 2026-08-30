@@ -33,17 +33,29 @@ public struct SystemKeychainBackend: KeychainBackend {
     /// 触发 `EXC_BREAKPOINT`。统一移到专用 GCD 串行队列执行以规避。
     private static let queue = DispatchQueue(label: "com.coffic.lumi.keychain")
 
-    public init() {}
+    private let useDataProtectionKeychain: Bool
+
+    public init(useDataProtectionKeychain: Bool = false) {
+        self.useDataProtectionKeychain = useDataProtectionKeychain
+    }
+
+    private func baseQuery(service: String, account: String) -> [String: Any] {
+        var query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        if useDataProtectionKeychain {
+            query[kSecUseDataProtectionKeychain as String] = true
+        }
+        return query
+    }
 
     public func read(service: String, account: String) -> KeychainResult {
         Self.queue.sync {
-            let query: [String: Any] = [
-                kSecClass as String: kSecClassGenericPassword,
-                kSecAttrService as String: service,
-                kSecAttrAccount as String: account,
-                kSecReturnData as String: true,
-                kSecMatchLimit as String: kSecMatchLimitOne
-            ]
+            var query = baseQuery(service: service, account: account)
+            query[kSecReturnData as String] = true
+            query[kSecMatchLimit as String] = kSecMatchLimitOne
 
             var result: AnyObject?
             let status = SecItemCopyMatching(query as CFDictionary, &result)
@@ -57,11 +69,7 @@ public struct SystemKeychainBackend: KeychainBackend {
 
     public func write(_ data: Data, service: String, account: String) -> KeychainResult {
         Self.queue.sync {
-            let lookupQuery: [String: Any] = [
-                kSecClass as String: kSecClassGenericPassword,
-                kSecAttrService as String: service,
-                kSecAttrAccount as String: account
-            ]
+            let lookupQuery = baseQuery(service: service, account: account)
 
             let updateStatus = SecItemUpdate(
                 lookupQuery as CFDictionary,
@@ -74,13 +82,9 @@ public struct SystemKeychainBackend: KeychainBackend {
                 return KeychainResult(status: updateStatus, data: nil)
             }
 
-            let query: [String: Any] = [
-                kSecClass as String: kSecClassGenericPassword,
-                kSecAttrService as String: service,
-                kSecAttrAccount as String: account,
-                kSecValueData as String: data,
-                kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked
-            ]
+            var query = baseQuery(service: service, account: account)
+            query[kSecValueData as String] = data
+            query[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlocked
 
             let status = SecItemAdd(query as CFDictionary, nil)
             return KeychainResult(status: status, data: data)
@@ -89,11 +93,7 @@ public struct SystemKeychainBackend: KeychainBackend {
 
     public func delete(service: String, account: String) -> KeychainResult {
         Self.queue.sync {
-            let query: [String: Any] = [
-                kSecClass as String: kSecClassGenericPassword,
-                kSecAttrService as String: service,
-                kSecAttrAccount as String: account
-            ]
+            let query = baseQuery(service: service, account: account)
 
             let status = SecItemDelete(query as CFDictionary)
             return KeychainResult(status: status, data: nil)

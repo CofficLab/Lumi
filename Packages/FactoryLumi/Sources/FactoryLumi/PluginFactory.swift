@@ -109,8 +109,8 @@ import PluginPluginManager
 import PluginProjects
 import PluginProjectFileTree
 import PluginProjectFiles
-import PluginEditorHost
-import PluginEditorLanguages
+import PluginCodeEditorHost
+import PluginCodeEditorLanguages
 import PluginCodeEditor
 import PluginProjectRAG
 import PluginResumeDesigner
@@ -142,8 +142,8 @@ public struct DefaultPluginFactory: PluginFactory {
             ToastSuperPlugin(),
             CaffeinatePlugin(),
             SettingGeneralPlugin(),
-            EditorHostSuperPlugin(),
-            EditorLanguagesSuperPlugin(),
+            CodeEditorHostSuperPlugin(),
+            CodeEditorLanguagesSuperPlugin(),
             ProjectsPlugin(),
             // 原 LumiApp 显式注入的项目 RAG：保留旧索引数据库和 search_code 工具。
             ProjectRAGSuperPlugin(),

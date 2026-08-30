@@ -3,7 +3,7 @@ import EditorContracts
 import EditorService
 import Foundation
 import KernelCore
-import PluginEditorHost
+import PluginCodeEditorHost
 @testable import PluginCodeEditor
 import ProviderActivityBar
 import ProviderContentView
@@ -50,7 +50,7 @@ struct CodeEditorSuperPluginTests {
         try kernel.registerProvider((any ProjectProviding).self, project)
         try kernel.registerProvider((any RootViewProviding).self, rootView)
         let workspace = CodeEditorSuperPlugin()
-        try kernel.start(plugins: [EditorHostSuperPlugin(), workspace])
+        try kernel.start(plugins: [CodeEditorHostSuperPlugin(), workspace])
         let control = DefaultPluginControlling(kernel: kernel)
 
         #expect(docs.aboutEntries.map(\.id) == [workspace.id])

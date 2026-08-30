@@ -18,13 +18,16 @@ public final class KeychainStore: @unchecked Sendable {
 
     public init(
         service: String,
-        backend: any KeychainBackend = SystemKeychainBackend(),
+        useDataProtectionKeychain: Bool = false,
+        backend: (any KeychainBackend)? = nil,
         sleeper: @escaping (UInt64) -> Void = { nanoseconds in
             Thread.sleep(forTimeInterval: TimeInterval(nanoseconds) / 1_000_000_000)
         }
     ) {
         self.service = service
-        self.backend = backend
+        self.backend = backend ?? SystemKeychainBackend(
+            useDataProtectionKeychain: useDataProtectionKeychain
+        )
         self.sleeper = sleeper
     }
 
@@ -140,7 +143,9 @@ public final class KeychainStore: @unchecked Sendable {
         if let legacyUserDefaultsValue = UserDefaults.standard.string(forKey: key)?
             .trimmingCharacters(in: .whitespacesAndNewlines),
            !legacyUserDefaultsValue.isEmpty {
-            set(legacyUserDefaultsValue, forKey: key)
+            // Remove the legacy value only after the Keychain write succeeds.
+            // Otherwise a transient Keychain failure would lose the only copy.
+            try setReportingErrors(legacyUserDefaultsValue, forKey: key)
             UserDefaults.standard.removeObject(forKey: key)
             return legacyUserDefaultsValue
         }

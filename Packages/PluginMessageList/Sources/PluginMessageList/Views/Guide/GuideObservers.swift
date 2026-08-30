@@ -1,4 +1,5 @@
 import Combine
+import ProviderChatSection
 import ProviderProject
 import SwiftUI
 
@@ -18,4 +19,19 @@ final class ProjectObserver: ObservableObject {
         self.project = project
         projectObserver = project?.addObserver { [weak self] _ in self?.objectWillChange.send() }
     }
+}
+
+@MainActor
+final class ChatContextObserver: ObservableObject {
+    @Published private(set) var context: ChatContext?
+    private var observer: (any ChatSectionProvidingObserverHandle)?
+
+    init(chat: (any ChatSectionProviding)?) {
+        context = chat?.activeContext
+        observer = chat?.addObserver { [weak self] event in
+            guard case let .activeContextChanged(context) = event else { return }
+            self?.context = context
+        }
+    }
+
 }

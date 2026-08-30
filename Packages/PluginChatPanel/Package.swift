@@ -12,6 +12,7 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderStorage"),
         .package(path: "../KitLocalization"),
     ],
     targets: [
@@ -23,6 +24,7 @@ let package = Package(
             .product(name: "ProviderChatSection", package: "ProviderChatSection"),
             .product(name: "ProviderRootView", package: "ProviderRootView"),
             .product(name: "ProviderRailView", package: "ProviderRailView"),
+            .product(name: "ProviderStorage", package: "ProviderStorage"),
         ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),

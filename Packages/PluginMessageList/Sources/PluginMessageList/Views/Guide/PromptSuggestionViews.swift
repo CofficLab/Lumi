@@ -54,9 +54,34 @@ private struct PromptSuggestionChip: View {
 }
 
 @MainActor
-func visibleSuggestions(_ all: [PromptSuggestion], hasProject: Bool) -> [PromptSuggestion] {
+func visibleSuggestions(
+    _ all: [PromptSuggestion],
+    hasProject: Bool,
+    contextID: String? = nil
+) -> [PromptSuggestion] {
     all.filter {
-        switch $0.visibility { case .always: true; case .onlyWithProject: hasProject; case .onlyWithoutProject: !hasProject }
+        let visibilityMatches: Bool
+        switch $0.visibility {
+        case .always: visibilityMatches = true
+        case .onlyWithProject: visibilityMatches = hasProject
+        case .onlyWithoutProject: visibilityMatches = !hasProject
+        }
+
+        let scopeMatches: Bool
+        switch $0.scope {
+        case .global:
+            scopeMatches = true
+        case .launcher:
+            scopeMatches = contextID == nil || contextID == "com.coffic.lumi.chat.default"
+        case let .context(expectedContextID):
+            scopeMatches = expectedContextID == contextID
+        case let .launcherAndContext(expectedContextID):
+            scopeMatches = contextID == nil
+                || contextID == "com.coffic.lumi.chat.default"
+                || contextID == expectedContextID
+        }
+
+        return visibilityMatches && scopeMatches
     }
 }
 

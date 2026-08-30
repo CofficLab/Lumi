@@ -1,4 +1,5 @@
 import LumiUI
+import ProviderChatSection
 import ProviderProject
 import ProviderPromptSuggestion
 import SwiftUI
@@ -8,6 +9,7 @@ struct NoConversationSelectedView: View {
     @LumiTheme private var theme
     let services: MessageListServices
     @StateObject private var promptObserver: PromptSuggestionsObserver
+    @StateObject private var contextObserver: ChatContextObserver
     @StateObject private var projectObserver: ProjectObserver
     @StateObject private var toolbarCoordinator: NoConversationSelectedToolbarCoordinator
     @State private var importingFolder = false
@@ -16,6 +18,7 @@ struct NoConversationSelectedView: View {
     init(services: MessageListServices) {
         self.services = services
         _promptObserver = StateObject(wrappedValue: PromptSuggestionsObserver(services: services))
+        _contextObserver = StateObject(wrappedValue: ChatContextObserver(chat: services.chat))
         _projectObserver = StateObject(wrappedValue: ProjectObserver(project: services.project))
         _toolbarCoordinator = StateObject(wrappedValue: NoConversationSelectedToolbarCoordinator(
             project: services.project,
@@ -25,13 +28,31 @@ struct NoConversationSelectedView: View {
 
     private var project: ProjectInfo? { projectObserver.project?.currentProject }
     private var suggestions: [PromptSuggestion] {
-        visibleSuggestions(services.promptSuggestions?.allSuggestions ?? [], hasProject: project != nil)
+        visibleSuggestions(
+            services.promptSuggestions?.allSuggestions ?? [],
+            hasProject: project != nil,
+            contextID: contextObserver.context?.id
+        )
     }
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: "square.and.pencil").font(.system(size: 48, weight: .light)).foregroundColor(theme.textSecondary.opacity(0.5))
-            if let project { projectTitle(project) } else {
+            Image(systemName: contextObserver.context?.systemImage ?? "square.and.pencil")
+                .font(.system(size: 48, weight: .light))
+                .foregroundColor(theme.textSecondary.opacity(0.5))
+            if let context = contextObserver.context,
+               context.id != ChatContext.defaultChat.id {
+                Text(context.title)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(theme.textPrimary)
+                if let subtitle = context.subtitle {
+                    Text(subtitle)
+                        .foregroundStyle(theme.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+            } else if let project {
+                projectTitle(project)
+            } else {
                 Text(LumiPluginLocalization.string("How can I help you today?")).font(.system(size: 18, weight: .semibold)).foregroundStyle(theme.textPrimary)
             }
             if !suggestions.isEmpty { PromptSuggestionFlow(suggestions: suggestions, services: services) { importingFolder = true } }

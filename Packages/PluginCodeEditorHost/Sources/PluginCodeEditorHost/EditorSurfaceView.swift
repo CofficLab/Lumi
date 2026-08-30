@@ -39,13 +39,13 @@ struct EditorSurfaceView: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if state.isFileLoadInProgress {
-                ProgressView(EditorHostLocalization.string("Opening file…"))
+                ProgressView(CodeEditorHostLocalization.string("Opening file…"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ContentUnavailableView(
-                    EditorHostLocalization.string("No file open"),
+                    CodeEditorHostLocalization.string("No file open"),
                     systemImage: "doc.text",
-                    description: Text(EditorHostLocalization.string("Select a file from the Explorer to begin editing."))
+                    description: Text(CodeEditorHostLocalization.string("Select a file from the Explorer to begin editing."))
                 )
             }
         }

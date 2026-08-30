@@ -6,6 +6,7 @@ import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
+import ProviderStorage
 import ProviderRootView
 import ProviderToolManager
 import ProviderPromptSuggestion
@@ -48,7 +49,8 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
             action: .activatePluginEntry(
                 activityBarItemID: "\(id).entry",
                 railTabID: Self.railTabID
-            )
+            ),
+            scope: .launcherAndContext(id)
         )
     }
 
@@ -79,9 +81,24 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        let chatContext = ChatContext(
+            id: id,
+            title: name,
+            subtitle: metadata.description.isEmpty ? nil : metadata.description,
+            systemImage: "photo.artframe"
+        )
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let chatWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileChatSectionWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: id)
+                        .appendingPathComponent("chat-section-width.plist", isDirectory: false)
+                )
+            }
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         railView?.addTabs([
@@ -98,6 +115,16 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
 
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
+            let pluginID = id
+            let railWidthStore = kernel
+                .resolveProvider((any StorageProviding).self)
+                .map { storage in
+                    FileRailViewWidthStore(
+                        fileURL: storage
+                            .pluginDataDirectory(for: pluginID)
+                            .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                    )
+                }
             activityBar.addItems([
                 ActivityBarItem(
                     id: entryID,
@@ -110,13 +137,27 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                         toolbar?.setVisibleCategories([.global, .chat, .design])
                         rootView?.setContentHeaderViewHidden(true)
                         railView?.setVisibleTabID(Self.railTabID)
+                        railView?.activateWidthProfile(
+                            ownerID: pluginID,
+                            recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
+                            store: railWidthStore
+                        )
                         WorkspaceStore.shared.reload()
                         contentView?.setContentView(AnyView(PromoDesignerView()))
                         chat?.setVisible(true)
                         chat?.setContextActive(true)
+                        chat?.setActiveContext(chatContext)
+                        chat?.activateWidthProfile(
+                            ownerID: pluginID,
+                            recommended: ChatSectionWidth(minWidth: 300, idealWidth: 360, maxWidth: 560),
+                            store: chatWidthStore
+                        )
                     } else {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         rootView?.setContentHeaderViewHidden(false)
+                        chat?.setActiveContext(nil)
+                        chat?.deactivateWidthProfile(ownerID: pluginID)
+                        railView?.deactivateWidthProfile(ownerID: pluginID)
                     }
                 },
             ])
@@ -125,6 +166,25 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
             contentView?.setContentView(AnyView(PromoDesignerView()))
             chat?.setVisible(true)
             chat?.setContextActive(true)
+            chat?.setActiveContext(chatContext)
+            chat?.activateWidthProfile(
+                ownerID: id,
+                recommended: ChatSectionWidth(minWidth: 300, idealWidth: 360, maxWidth: 560),
+                store: chatWidthStore
+            )
+            railView?.activateWidthProfile(
+                ownerID: id,
+                recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
+                store: kernel
+                    .resolveProvider((any StorageProviding).self)
+                    .map { storage in
+                        FileRailViewWidthStore(
+                            fileURL: storage
+                                .pluginDataDirectory(for: id)
+                                .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                        )
+                    }
+            )
         }
     }
 
@@ -149,8 +209,13 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"
+        if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setActiveContext(nil)
+        }
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any ChatSectionProviding).self)?.deactivateWidthProfile(ownerID: id)
+            kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }

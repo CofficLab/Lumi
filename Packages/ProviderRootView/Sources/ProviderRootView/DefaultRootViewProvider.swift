@@ -2,6 +2,7 @@ import Combine
 import LumiUI
 import KitSuperLog
 import os
+import ProviderRailView
 import SwiftUI
 
 /// `RootViewProviding` 的默认实现：持有注入的工具栏、ActivityBar、Rail、内容 Header、
@@ -28,10 +29,13 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published var contentFooterView: AnyView?
     @Published var trailingPane: RootTrailingPane?
     @Published public private(set) var isRailViewVisible = true
+    @Published public private(set) var railWidth: RailViewWidth = .standard
     @Published public private(set) var overlays: [RootOverlayItem] = []
     @Published public private(set) var isContentViewHidden: Bool = false
     @Published public private(set) var isContentHeaderViewHidden: Bool = false
     private var railVisibilitySubscription: AnyCancellable?
+    private var railWidthSubscription: AnyCancellable?
+    private var railWidthResizeHandler: (@MainActor (CGFloat) -> Void)?
     private var lastRailViewVisibility = true
     public init() {
         if Self.verbose {
@@ -92,6 +96,22 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
                 self?.setRailViewVisible(visible)
             }
         }
+    }
+
+    public func bindRailViewWidth(
+        to publisher: AnyPublisher<RailViewWidth, Never>,
+        onResize: @escaping @MainActor (CGFloat) -> Void
+    ) {
+        railWidthResizeHandler = onResize
+        railWidthSubscription = publisher.sink { [weak self] width in
+            Task { @MainActor [weak self] in
+                self?.railWidth = width
+            }
+        }
+    }
+
+    func saveRailViewWidth(_ width: CGFloat) {
+        railWidthResizeHandler?(width)
     }
 
     public func setContentHeaderView(_ view: AnyView?) {

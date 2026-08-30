@@ -7,7 +7,9 @@ import SwiftUI
 public final class DefaultChatSectionProviding: ChatSectionProviding, ObservableObject {
     @Published public private(set) var isVisible: Bool = true
     @Published public private(set) var isContextActive: Bool = false
+    @Published public private(set) var activeContext: ChatContext? = .defaultChat
     @Published public private(set) var isHeaderVisible: Bool = true
+    @Published public private(set) var chatSectionWidth: ChatSectionWidth
     @Published public private(set) var items: [ChatSectionItem] = []
     @Published public private(set) var barItems: [ChatSectionBarItem] = []
     @Published public private(set) var rootWrappers: [ChatSectionRootWrapper] = []
@@ -15,8 +17,15 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
     /// 会话选择绑定订阅：随 Provider 生命周期持有（与内核同生命周期）。
     private var conversationSelectionCancellable: AnyCancellable?
     private var observers: [WeakObserver] = []
+    private let defaultWidthStore: (any ChatSectionWidthStoring)?
+    private var activeWidthStore: (any ChatSectionWidthStoring)?
+    private var activeWidthOwnerID: String?
 
-    public init() {}
+    public init(widthStore: (any ChatSectionWidthStoring)? = nil) {
+        self.chatSectionWidth = .standard
+        self.defaultWidthStore = widthStore
+        self.activeWidthStore = nil
+    }
 
     public func addItems(_ newItems: [ChatSectionItem]) {
         var byID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
@@ -69,10 +78,55 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         notify(.contextActiveChanged(active))
     }
 
+    public func setActiveContext(_ context: ChatContext?) {
+        guard activeContext != context else { return }
+        activeContext = context
+        notify(.activeContextChanged(context))
+    }
+
     public func setHeaderVisible(_ visible: Bool) {
         guard isHeaderVisible != visible else { return }
         isHeaderVisible = visible
         notify(.headerVisibilityChanged(visible))
+    }
+
+    public var chatSectionWidthPublisher: AnyPublisher<ChatSectionWidth, Never> {
+        $chatSectionWidth.eraseToAnyPublisher()
+    }
+
+    public func activateWidthProfile(
+        ownerID: String,
+        recommended: ChatSectionWidth,
+        store: (any ChatSectionWidthStoring)?
+    ) {
+        guard !ownerID.isEmpty else { return }
+        activeWidthOwnerID = ownerID
+        let activeWidthStore = store ?? defaultWidthStore
+        self.activeWidthStore = activeWidthStore
+        let restoredWidth = activeWidthStore?.loadWidth(ownerID: ownerID) ?? recommended.idealWidth
+        let resolvedWidth = recommended.withIdealWidth(recommended.clamped(restoredWidth))
+        if chatSectionWidth != resolvedWidth {
+            chatSectionWidth = resolvedWidth
+        }
+    }
+
+    public func deactivateWidthProfile(ownerID: String) {
+        guard activeWidthOwnerID == ownerID else { return }
+        activeWidthOwnerID = nil
+        activeWidthStore = nil
+        if chatSectionWidth != .standard {
+            chatSectionWidth = .standard
+        }
+    }
+
+    public func saveCurrentWidth(_ width: CGFloat) {
+        guard let activeWidthOwnerID else { return }
+        let resolvedWidth = chatSectionWidth.clamped(width)
+        activeWidthStore?.saveWidth(resolvedWidth, ownerID: activeWidthOwnerID)
+        let updatedWidth = chatSectionWidth.withIdealWidth(resolvedWidth)
+        if chatSectionWidth != updatedWidth {
+            chatSectionWidth = updatedWidth
+        }
     }
 
     @discardableResult
@@ -166,19 +220,27 @@ public struct ChatSectionHostView: View {
     }
 
     private var stackItems: [ChatSectionItem] {
-        provider.items.filter { $0.placement == .stack }
+        provider.items.filter {
+            $0.placement == .stack && $0.scope.matches(provider.activeContext)
+        }
     }
 
     private var bottomItems: [ChatSectionItem] {
-        provider.items.filter { $0.placement == .bottomFixed }
+        provider.items.filter {
+            $0.placement == .bottomFixed && $0.scope.matches(provider.activeContext)
+        }
     }
 
     private func bars(_ placement: ChatSectionBarPlacement) -> [ChatSectionBarItem] {
-        provider.barItems.filter { $0.placement == placement }
+        provider.barItems.filter {
+            $0.placement == placement && $0.scope.matches(provider.activeContext)
+        }
     }
 
     private var orderedRootWrappers: [ChatSectionRootWrapper] {
-        provider.rootWrappers.sorted { $0.order == $1.order ? $0.id < $1.id : $0.order < $1.order }
+        provider.rootWrappers
+            .filter { $0.scope.matches(provider.activeContext) }
+            .sorted { $0.order == $1.order ? $0.id < $1.id : $0.order < $1.order }
     }
 
     public var body: some View {

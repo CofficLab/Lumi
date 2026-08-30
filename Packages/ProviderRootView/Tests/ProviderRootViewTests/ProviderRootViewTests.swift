@@ -1,5 +1,6 @@
 import Combine
 import ProviderChatSection
+import ProviderRailView
 import SwiftUI
 import Testing
 @testable import ProviderRootView
@@ -49,6 +50,29 @@ struct ProviderRootViewTests {
         #expect(pane.isVisible)
     }
 
+    @Test("ChatSection 宽度绑定到 trailing pane 并转发用户拖拽")
+    func trailingPaneFollowsChatSectionWidthAndForwardsResize() async {
+        let chat = DefaultChatSectionProviding()
+        let pane = RootTrailingPane(
+            id: "chat",
+            width: chat.chatSectionWidth,
+            content: AnyView(Text("chat"))
+        )
+        var resizedWidth: CGFloat?
+        pane.bindWidth(
+            to: chat.chatSectionWidthPublisher,
+            onResize: { resizedWidth = $0 }
+        )
+
+        let customWidth = ChatSectionWidth(minWidth: 280, idealWidth: 400, maxWidth: 560)
+        chat.activateWidthProfile(ownerID: "plugin.chat", recommended: customWidth)
+        await Task.yield()
+        #expect(pane.width == customWidth)
+
+        pane.saveWidth(460)
+        #expect(resizedWidth == 460)
+    }
+
     @Test("Rail 可见性绑定到根布局")
     func railVisibilityFollowsPublisher() async {
         let provider = DefaultRootViewProvider()
@@ -64,6 +88,27 @@ struct ProviderRootViewTests {
         visibility.send(true)
         await Task.yield()
         #expect(provider.isRailViewVisible)
+    }
+
+    @Test("Rail 宽度绑定并转发用户拖拽回调")
+    func railWidthFollowsPublisherAndForwardsResize() async {
+        let provider = DefaultRootViewProvider()
+        let width = CurrentValueSubject<RailViewWidth, Never>(.standard)
+        var resizedWidth: CGFloat?
+
+        provider.bindRailViewWidth(
+            to: width.eraseToAnyPublisher(),
+            onResize: { resizedWidth = $0 }
+        )
+        #expect(provider.railWidth == .standard)
+
+        let customWidth = RailViewWidth(minWidth: 240, idealWidth: 360, maxWidth: 480)
+        width.send(customWidth)
+        await Task.yield()
+        #expect(provider.railWidth == customWidth)
+
+        provider.saveRailViewWidth(420)
+        #expect(resizedWidth == 420)
     }
 
     @Test("没有容器时可通过 trailing pane 渲染")

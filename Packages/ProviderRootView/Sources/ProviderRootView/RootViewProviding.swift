@@ -1,6 +1,7 @@
 import Combine
 import SwiftUI
 import ProviderChatSection
+import ProviderRailView
 
 /// 根视图提供能力协议
 ///
@@ -60,6 +61,15 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     /// 绑定 Rail provider 的可见状态，使 tab 过滤或增删能同步到根布局。
     func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>)
 
+    /// 当前 Rail 的有效宽度。
+    var railWidth: RailViewWidth { get }
+
+    /// 绑定 Rail provider 的宽度，并接收用户拖拽完成后的宽度。
+    func bindRailViewWidth(
+        to publisher: AnyPublisher<RailViewWidth, Never>,
+        onResize: @escaping @MainActor (CGFloat) -> Void
+    )
+
     /// 注入主内容区顶部视图（传 `nil` 表示没有 Header）。
     ///
     /// Header 与主内容视图独立贡献，适合项目文件标签、面包屑等横向内容。
@@ -112,6 +122,11 @@ public extension RootViewProviding {
     func setContentHeaderViewHidden(_ hidden: Bool) {}
     func setRailViewVisible(_ visible: Bool) {}
     func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>) {}
+    var railWidth: RailViewWidth { .standard }
+    func bindRailViewWidth(
+        to publisher: AnyPublisher<RailViewWidth, Never>,
+        onResize: @escaping @MainActor (CGFloat) -> Void
+    ) {}
 }
 
 @MainActor
@@ -131,29 +146,36 @@ public struct RootOverlayItem: Identifiable {
 @MainActor
 public final class RootTrailingPane: ObservableObject {
     public let id: String
-    public let minWidth: CGFloat
-    public let idealWidth: CGFloat
-    public let maxWidth: CGFloat
+    @Published public private(set) var width: ChatSectionWidth
     public let content: AnyView
 
     @Published public var isVisible: Bool
     private var visibilitySubscription: AnyCancellable?
+    private var widthSubscription: AnyCancellable?
+    private var widthResizeHandler: (@MainActor (CGFloat) -> Void)?
 
     public init(
         id: String,
         minWidth: CGFloat = 280,
         idealWidth: CGFloat = 320,
         maxWidth: CGFloat = .infinity,
+        width: ChatSectionWidth? = nil,
         isVisible: Bool = true,
         content: AnyView
     ) {
         self.id = id
-        self.minWidth = minWidth
-        self.idealWidth = idealWidth
-        self.maxWidth = maxWidth
+        self.width = width ?? ChatSectionWidth(
+            minWidth: minWidth,
+            idealWidth: idealWidth,
+            maxWidth: maxWidth
+        )
         self.isVisible = isVisible
         self.content = content
     }
+
+    public var minWidth: CGFloat { width.minWidth }
+    public var idealWidth: CGFloat { width.idealWidth }
+    public var maxWidth: CGFloat { width.maxWidth }
 
     /// 将面板显隐状态绑定到 ChatSection Provider。
     ///
@@ -167,5 +189,25 @@ public final class RootTrailingPane: ObservableObject {
                 self?.isVisible = provider?.isVisible ?? false
             }
         }
+    }
+
+    /// 将面板宽度绑定到 ChatSection provider，并接收用户拖拽完成后的宽度。
+    @MainActor
+    public func bindWidth(
+        to publisher: AnyPublisher<ChatSectionWidth, Never>,
+        onResize: @escaping @MainActor (CGFloat) -> Void
+    ) {
+        widthResizeHandler = onResize
+        widthSubscription = publisher.sink { [weak self] width in
+            Task { @MainActor [weak self] in
+                self?.width = width
+            }
+        }
+    }
+
+    /// 转发用户拖拽后的面板宽度。
+    @MainActor
+    public func saveWidth(_ width: CGFloat) {
+        widthResizeHandler?(width)
     }
 }

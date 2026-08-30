@@ -18,22 +18,19 @@ struct RootMainContentView: View {
     let contentFooterView: AnyView?
     let isContentViewHidden: Bool
     @ObservedObject var trailingPane: RootTrailingPane
-    let trailingWidth: CGFloat
     init(
         contentHeaderView: AnyView?,
         isContentHeaderViewHidden: Bool,
         contentView: AnyView?,
         contentFooterView: AnyView?,
         isContentViewHidden: Bool,
-        trailingPane: RootTrailingPane?,
-        trailingWidth: CGFloat
+        trailingPane: RootTrailingPane?
     ) {
         self.contentHeaderView = contentHeaderView
         self.isContentHeaderViewHidden = isContentHeaderViewHidden
         self.contentView = contentView
         self.contentFooterView = contentFooterView
         self.isContentViewHidden = isContentViewHidden
-        self.trailingWidth = trailingWidth
         _trailingPane = ObservedObject(wrappedValue: trailingPane ?? RootTrailingPane(
             id: "root.empty",
             isVisible: false,
@@ -92,11 +89,15 @@ struct RootMainContentView: View {
                     HSplitView {
                         contentWithHeaderAndFooter
                             .frame(minWidth: 280, maxWidth: .infinity, maxHeight: .infinity)
-                            .appSplitDivider(.trailing, initialPosition: trailingWidth, onResize: nil)
+                            .appSplitDivider(
+                                .trailing,
+                                initialPosition: trailingPane.width.idealWidth,
+                                onResize: trailingPane.saveWidth
+                            )
                         trailingPane.content
                             .frame(
                                 minWidth: trailingPane.minWidth,
-                                idealWidth: trailingWidth,
+                                idealWidth: trailingPane.idealWidth,
                                 maxWidth: trailingPane.maxWidth,
                                 maxHeight: .infinity
                             )
@@ -106,7 +107,7 @@ struct RootMainContentView: View {
                         contentWithHeaderAndFooter
                         Divider()
                         trailingPane.content
-                            .frame(minWidth: trailingPane.minWidth, idealWidth: trailingPane.idealWidth)
+                            .frame(minWidth: trailingPane.minWidth, idealWidth: trailingPane.idealWidth, maxWidth: trailingPane.maxWidth)
                     }
                     #endif
                 } else {

@@ -1,4 +1,5 @@
 import LumiUI
+import ProviderChatSection
 import ProviderPromptSuggestion
 import SwiftUI
 import UniformTypeIdentifiers
@@ -7,21 +8,41 @@ struct MessageEmptyStateView: View {
     @LumiTheme private var theme
     let services: MessageListServices
     @StateObject private var promptObserver: PromptSuggestionsObserver
+    @StateObject private var contextObserver: ChatContextObserver
     @State private var importingFolder = false
     @State private var projectError: String?
 
-    init(services: MessageListServices) { self.services = services; _promptObserver = StateObject(wrappedValue: PromptSuggestionsObserver(services: services)) }
+    init(services: MessageListServices) {
+        self.services = services
+        _promptObserver = StateObject(wrappedValue: PromptSuggestionsObserver(services: services))
+        _contextObserver = StateObject(wrappedValue: ChatContextObserver(chat: services.chat))
+    }
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: "bubble.left.and.bubble.right").font(.system(size: 48, weight: .light)).foregroundColor(theme.primary.opacity(0.75))
-            Text(LumiPluginLocalization.string("Start chatting with Lumi"))
+            Image(systemName: contextObserver.context?.systemImage ?? "bubble.left.and.bubble.right")
+                .font(.system(size: 48, weight: .light))
+                .foregroundColor(theme.primary.opacity(0.75))
+            Text(contextObserver.context?.id == ChatContext.defaultChat.id
+                ? LumiPluginLocalization.string("Start chatting with Lumi")
+                : (contextObserver.context?.title ?? LumiPluginLocalization.string("Start chatting with Lumi")))
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(theme.textPrimary)
-            Text(LumiPluginLocalization.string("Pick an example, or type your question below."))
-                .foregroundStyle(theme.textSecondary)
-                .multilineTextAlignment(.center)
-            let suggestions = visibleSuggestions(services.promptSuggestions?.allSuggestions ?? [], hasProject: services.project?.currentProject != nil)
+            if let subtitle = contextObserver.context?.subtitle,
+               contextObserver.context?.id != ChatContext.defaultChat.id {
+                Text(subtitle)
+                    .foregroundStyle(theme.textSecondary)
+                    .multilineTextAlignment(.center)
+            } else {
+                Text(LumiPluginLocalization.string("Pick an example, or type your question below."))
+                    .foregroundStyle(theme.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+            let suggestions = visibleSuggestions(
+                services.promptSuggestions?.allSuggestions ?? [],
+                hasProject: services.project?.currentProject != nil,
+                contextID: contextObserver.context?.id
+            )
             if !suggestions.isEmpty { PromptSuggestionFlow(suggestions: suggestions, services: services) { importingFolder = true }.padding(.top, 8) }
         }
         .padding(32).frame(maxWidth: .infinity, maxHeight: .infinity)

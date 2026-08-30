@@ -15,6 +15,7 @@ struct ProviderAPIKeyMissingView: View {
     let manager: any LLMManaging
 
     @State private var apiKey: String = ""
+    @State private var keyIsReadable = false
     @State private var isAPIKeyVisible = false
     @State private var saveError: String?
     @State private var didSaveAPIKey = false
@@ -46,7 +47,11 @@ struct ProviderAPIKeyMissingView: View {
                     .font(.appCallout)
                     .foregroundStyle(theme.primary)
 
-                Text(String(format: "%@ API Key required", providerName))
+                Text(
+                    keyIsReadable
+                        ? String(format: "%@ API Key available", providerName)
+                        : String(format: "%@ API Key required", providerName)
+                )
                     .font(.appCallout)
                     .fontWeight(.semibold)
                     .foregroundStyle(theme.textPrimary)
@@ -54,7 +59,14 @@ struct ProviderAPIKeyMissingView: View {
                 Spacer(minLength: 8)
             }
 
-            Text(LumiPluginLocalization.string("Enter an API Key here, then resend your message.", bundle: .module))
+            Text(
+                LumiPluginLocalization.string(
+                    keyIsReadable
+                        ? "The API Key is readable again. Resend the message to continue."
+                        : "Enter an API Key here, then resend your message.",
+                    bundle: .module
+                )
+            )
                 .font(.appCaption)
                 .foregroundStyle(theme.textSecondary)
 
@@ -92,7 +104,7 @@ struct ProviderAPIKeyMissingView: View {
                 .help(isAPIKeyVisible ? "Hide API Key" : "Show API Key")
             }
 
-            if provider != nil {
+            if provider != nil, !keyIsReadable {
                 HStack(spacing: 8) {
                     AppButton(
                         LumiPluginLocalization.string("Save API Key", bundle: .module),
@@ -147,7 +159,9 @@ struct ProviderAPIKeyMissingView: View {
                 .strokeBorder(theme.divider, lineWidth: 1)
         }
         .onAppear {
-            apiKey = provider?.getApiKey() ?? ""
+            let value = provider?.getApiKey() ?? ""
+            apiKey = value
+            keyIsReadable = !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
     }
 
@@ -155,6 +169,7 @@ struct ProviderAPIKeyMissingView: View {
         guard let provider else { return }
         provider.setApiKey(apiKey)
         apiKey = provider.getApiKey()
+        keyIsReadable = !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         saveError = nil
         didSaveAPIKey = true
     }

@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "PluginEditorHost",
+    name: "PluginCodeEditorHost",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
-    products: [.library(name: "PluginEditorHost", targets: ["PluginEditorHost"])],
+    products: [.library(name: "PluginCodeEditorHost", targets: ["PluginCodeEditorHost"])],
     dependencies: [
         .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
@@ -18,7 +18,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "PluginEditorHost",
+            name: "PluginCodeEditorHost",
             dependencies: [
                 "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
@@ -32,9 +32,9 @@ let package = Package(
             resources: [.process("../../Resources")]
         ),
         .testTarget(
-            name: "PluginEditorHostTests",
+            name: "PluginCodeEditorHostTests",
             dependencies: [
-                "PluginEditorHost",
+                "PluginCodeEditorHost",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "EditorService", package: "EditorService"),

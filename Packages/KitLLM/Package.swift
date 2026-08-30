@@ -7,9 +7,17 @@ let package = Package(
     products: [
         .library(name: "KitLLM", targets: ["KitLLM"]),
     ],
-    dependencies: [],
+    dependencies: [
+        .package(path: "../KitKeychain"),
+    ],
     targets: [
-        .target(name: "KitLLM", path: "Sources/KitLLM"),
+        .target(
+            name: "KitLLM",
+            dependencies: [
+                .product(name: "KitKeychain", package: "KitKeychain"),
+            ],
+            path: "Sources/KitLLM"
+        ),
         .testTarget(name: "KitLLMTests", dependencies: ["KitLLM"], path: "Tests/KitLLMTests"),
     ]
 )

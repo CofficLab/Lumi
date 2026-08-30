@@ -7,6 +7,7 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import ProviderRootView
+import ProviderStorage
 import ProviderToolManager
 import SwiftUI
 import KitSuperLog
@@ -63,6 +64,16 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let pluginID = id
+        let railWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileRailViewWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: pluginID)
+                        .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                )
+            }
 
         // 必须先注册 Rail，再注册 ActivityBar，确保首次激活回调能找到贡献。
         railView?.addTabs([
@@ -92,12 +103,18 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
                         rootView?.setContentHeaderViewHidden(true)
                         chat?.setVisible(false)
                         railView?.setVisibleTabID(Self.railTabID)
+                        railView?.activateWidthProfile(
+                            ownerID: pluginID,
+                            recommended: RailViewWidth(minWidth: 240, idealWidth: 300, maxWidth: 440),
+                            store: railWidthStore
+                        )
                         MindMapStore.shared.reload()
                         contentView?.setContentView(AnyView(MindMapDesignerView()))
                     } else {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         rootView?.setContentHeaderViewHidden(false)
                         chat?.setVisible(true)
+                        railView?.deactivateWidthProfile(ownerID: pluginID)
                     }
                 },
             ])
@@ -122,6 +139,7 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))

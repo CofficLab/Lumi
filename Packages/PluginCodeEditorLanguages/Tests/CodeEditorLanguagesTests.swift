@@ -1,23 +1,23 @@
 import EditorService
 import Foundation
 import KernelCore
-import PluginEditorLanguages
+import PluginCodeEditorLanguages
 import Testing
 
 @Suite(.serialized)
 @MainActor
-struct EditorLanguagesTests {
+struct CodeEditorLanguagesTests {
     @Test("registers descriptors and compilable highlight grammars")
     func registersLanguages() throws {
         LanguageRegistry.shared.reset()
         let kernel = KernelCoreContainer()
         let editor = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
         try kernel.registerProvider(EditorService.self, editor)
-        let plugin = EditorLanguagesSuperPlugin()
+        let plugin = CodeEditorLanguagesSuperPlugin()
 
         try plugin.onBoot(kernel: kernel)
 
-        for descriptor in EditorLanguagesSuperPlugin.descriptors {
+        for descriptor in CodeEditorLanguagesSuperPlugin.descriptors {
             let context = try #require(LanguageRegistry.shared.context(for: descriptor.languageId))
             #expect(
                 LanguageRegistry.shared.treeSitterLanguage(for: context) != nil,
@@ -36,7 +36,7 @@ struct EditorLanguagesTests {
         let kernel = KernelCoreContainer()
         let editor = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
         try kernel.registerProvider(EditorService.self, editor)
-        let plugin = EditorLanguagesSuperPlugin()
+        let plugin = CodeEditorLanguagesSuperPlugin()
         try plugin.onBoot(kernel: kernel)
 
         let expectations: [(String, String)] = [

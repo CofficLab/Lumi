@@ -9,6 +9,7 @@ import ProviderDocsView
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import ProviderStorage
 import ProviderToolbar
 import SwiftUI
 import KitSuperLog
@@ -41,6 +42,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private weak var activityBar: (any ActivityBarProviding)?
     private weak var contentView: (any ContentViewProviding)?
+    private weak var chat: (any ChatSectionProviding)?
     private weak var railView: (any RailViewProviding)?
     private weak var rootView: (any RootViewProviding)?
 
@@ -91,6 +93,12 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
             throw KernelCoreError.providerNotRegistered(type: (any ContentViewProviding).self)
         }
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
+        let chatContext = ChatContext(
+            id: id,
+            title: metadata.name,
+            subtitle: metadata.description.isEmpty ? nil : metadata.description,
+            systemImage: "chevron.left.forwardslash.chevron.right"
+        )
         uninstallContributions()
         let sendSelectionContributor = SendSelectionToConversationContributor(
             conversationInput: kernel.resolveProvider((any ConversationInputProviding).self)
@@ -109,9 +117,29 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         self.projectObserver = projectObserver
         self.activityBar = activityBar
         self.contentView = contentView
+        self.chat = chat
         self.railView = kernel.resolveProvider((any RailViewProviding).self)
         self.rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let pluginID = id
+        let railWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileRailViewWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: pluginID)
+                        .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                )
+            }
+        let chatWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileChatSectionWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: pluginID)
+                        .appendingPathComponent("chat-section-width.plist", isDirectory: false)
+                )
+            }
         activityBar.addItems([
             ActivityBarItem(
                 id: Self.activityItemID,
@@ -126,8 +154,19 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                     rootView?.setContentHeaderViewHidden(false)
                     // Code Editor 激活时只显示文件树，避免带出其它项目类 RailView。
                     railView?.setVisibleCategories([.fileTree])
+                        railView?.activateWidthProfile(
+                            ownerID: pluginID,
+                            recommended: RailViewWidth(minWidth: 240, idealWidth: 300, maxWidth: 440),
+                            store: railWidthStore
+                        )
                     chat?.setVisible(true)
                     chat?.setContextActive(true)
+                    chat?.setActiveContext(chatContext)
+                    chat?.activateWidthProfile(
+                        ownerID: pluginID,
+                        recommended: ChatSectionWidth(minWidth: 300, idealWidth: 360, maxWidth: 560),
+                        store: chatWidthStore
+                    )
                     contentView?.setContentView(AnyView(EditorWorkbenchView(
                         viewModel: viewModel,
                         surface: surface
@@ -135,6 +174,9 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                 } else {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     rootView?.setContentHeaderViewHidden(true)
+                    chat?.setActiveContext(nil)
+                    chat?.deactivateWidthProfile(ownerID: pluginID)
+                    railView?.deactivateWidthProfile(ownerID: pluginID)
                 }
             },
         ])
@@ -145,6 +187,11 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
             id: SendSelectionToConversationContributor.contributorID
         )
         let ownedCurrentContent = activityBar?.activeItemID == Self.activityItemID
+        if ownedCurrentContent {
+            chat?.setActiveContext(nil)
+            chat?.deactivateWidthProfile(ownerID: id)
+            railView?.deactivateWidthProfile(ownerID: id)
+        }
         activityBar?.removeItems(ids: [Self.activityItemID])
         if ownedCurrentContent { contentView?.setContentView(nil) }
         if ownedCurrentContent {
@@ -158,6 +205,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         editor = nil
         activityBar = nil
         contentView = nil
+        chat = nil
         railView = nil
         rootView = nil
     }

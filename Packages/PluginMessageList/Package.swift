@@ -49,6 +49,8 @@ let package = Package(
             "PluginMessageList",
             .product(name: "ProviderMessage", package: "ProviderMessage"),
             .product(name: "ProviderConversation", package: "ProviderConversation"),
+            .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+            .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
             .product(name: "ProviderProject", package: "ProviderProject"),
             .product(name: "ProviderToolbar", package: "ProviderToolbar"),
         ]),

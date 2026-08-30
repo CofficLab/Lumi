@@ -47,6 +47,16 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
         let rail = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let pluginID = id
+        let railWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileRailViewWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: pluginID)
+                        .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                )
+            }
         rail?.addTabs([
             RailTabItem(
                 id: railTabID,
@@ -71,6 +81,11 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                     toolbar?.setVisibleCategories([.global, .general])
                     rail?.setVisibleCategories([.general])
                     rail?.setVisibleTabID(self.railTabID)
+                    rail?.activateWidthProfile(
+                        ownerID: pluginID,
+                        recommended: RailViewWidth(minWidth: 240, idealWidth: 280, maxWidth: 400),
+                        store: railWidthStore
+                    )
                     content?.setContentView(AnyView(RClickSettingsView()))
                     chat?.setVisible(false)
                     rootView?.setContentHeaderViewHidden(true)
@@ -79,6 +94,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                     chat?.setVisible(true)
                     rootView?.setContentHeaderViewHidden(false)
                     rail?.setVisibleCategories(Set(RailViewCategory.allCases))
+                    rail?.deactivateWidthProfile(ownerID: pluginID)
                 }
             },
         ])
@@ -90,6 +106,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
         activityBar?.removeItems(ids: [activityItemID])
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [railTabID])
         if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))

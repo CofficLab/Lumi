@@ -1,3 +1,4 @@
+import Foundation
 import Combine
 import SwiftUI
 import Testing
@@ -197,5 +198,74 @@ struct ProviderRailViewTests {
 
         #expect(provider.tabs.count == 1)
         #expect(type(of: provider.makeRailView()) == AnyView.self)
+    }
+
+    @Test("首次激活使用推荐宽度，拖拽后按插件 ID 恢复")
+    func widthProfileRestoresSavedWidth() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProviderRailViewTests-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("rail-view-widths.plist")
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let recommended = RailViewWidth(minWidth: 240, idealWidth: 320, maxWidth: 480)
+        let firstProvider = DefaultRailViewProviding(
+            widthStore: FileRailViewWidthStore(fileURL: fileURL)
+        )
+
+        firstProvider.activateWidthProfile(ownerID: "plugin.resume", recommended: recommended)
+        #expect(firstProvider.railWidth.idealWidth == 320)
+
+        firstProvider.saveCurrentWidth(400)
+        #expect(firstProvider.railWidth.idealWidth == 400)
+
+        let secondProvider = DefaultRailViewProviding(
+            widthStore: FileRailViewWidthStore(fileURL: fileURL)
+        )
+        secondProvider.activateWidthProfile(ownerID: "plugin.resume", recommended: recommended)
+
+        #expect(secondProvider.railWidth.idealWidth == 400)
+    }
+
+    @Test("没有磁盘值时使用推荐宽度，保存值超出新范围时被限制")
+    func widthProfileUsesRecommendationAndClampsRestoredValue() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProviderRailViewTests-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("rail-view-widths.plist")
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = FileRailViewWidthStore(fileURL: fileURL)
+        let provider = DefaultRailViewProviding(widthStore: store)
+        let recommended = RailViewWidth(minWidth: 240, idealWidth: 340, maxWidth: 480)
+
+        provider.activateWidthProfile(ownerID: "plugin.new", recommended: recommended)
+        #expect(provider.railWidth.idealWidth == 340)
+
+        provider.saveCurrentWidth(470)
+        let reloaded = DefaultRailViewProviding(
+            widthStore: FileRailViewWidthStore(fileURL: fileURL)
+        )
+        reloaded.activateWidthProfile(
+            ownerID: "plugin.new",
+            recommended: RailViewWidth(minWidth: 260, idealWidth: 300, maxWidth: 360)
+        )
+
+        #expect(reloaded.railWidth.idealWidth == 360)
+    }
+
+    @Test("旧插件释放宽度时不会覆盖新插件")
+    func staleDeactivationDoesNotResetCurrentProfile() {
+        let provider = DefaultRailViewProviding()
+        provider.activateWidthProfile(
+            ownerID: "plugin.first",
+            recommended: RailViewWidth(minWidth: 200, idealWidth: 300, maxWidth: 400)
+        )
+        provider.activateWidthProfile(
+            ownerID: "plugin.second",
+            recommended: RailViewWidth(minWidth: 240, idealWidth: 360, maxWidth: 500)
+        )
+
+        provider.deactivateWidthProfile(ownerID: "plugin.first")
+
+        #expect(provider.railWidth.idealWidth == 360)
     }
 }

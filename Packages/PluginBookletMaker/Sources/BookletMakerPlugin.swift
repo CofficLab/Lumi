@@ -80,6 +80,15 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let railWidthStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileRailViewWidthStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: id)
+                        .appendingPathComponent("rail-view-width.plist", isDirectory: false)
+                )
+            }
         railView?.addTabs([
             RailTabItem(
                 id: Self.railTabID,
@@ -100,6 +109,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
 
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             let entryID = "\(id).entry"
+            let pluginID = id
             activityBar.addItems([
                 ActivityBarItem(
                     id: entryID,
@@ -113,6 +123,11 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                         chat?.setVisible(false)
                         railView?.setVisibleCategories([.design])
                         railView?.setVisibleTabID(Self.railTabID)
+                        railView?.activateWidthProfile(
+                            ownerID: pluginID,
+                            recommended: RailViewWidth(minWidth: 260, idealWidth: 300, maxWidth: 420),
+                            store: railWidthStore
+                        )
                         rootView?.setContentHeaderViewHidden(true)
                         contentView?.setContentView(AnyView(BookletMakerMainView(viewModel: self.sharedViewModel)))
                         toolbar?.addToolbarItems([
@@ -131,6 +146,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
                         chat?.setVisible(true)
                         rootView?.setContentHeaderViewHidden(false)
                         railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+                        railView?.deactivateWidthProfile(ownerID: pluginID)
                         toolbar?.removeToolbarItems(ids: ["\(self.id).title"])
                     }
                 },
@@ -208,6 +224,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
         activityBar?.removeItems(ids: ["\(id).entry"])
         if wasActive {
+            kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
