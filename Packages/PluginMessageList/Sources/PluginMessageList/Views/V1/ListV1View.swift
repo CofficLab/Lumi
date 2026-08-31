@@ -63,7 +63,7 @@ struct ListV1View: View {
             selectedObserverToken = services.addSelectedConversationObserver { newID in
                 atBottomBox.value = true
                 verbosity = services.verbosity(for: newID)
-                Task { @MainActor in
+                Task(priority: .userInitiated) { @MainActor in
                     await turnViewModel.activate(conversationID: newID)
                 }
             }

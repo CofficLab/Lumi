@@ -16,6 +16,7 @@ final class SpeedConversationObserver: SuperLog {
     private let messages: any MessageManaging
     private let viewModel: ConversationSpeedViewModel
     private var observer: (any SelectedConversationObserverHandle)?
+    private var refreshTask: Task<Void, Never>?
 
     init(
         conversations: any ConversationManaging,
@@ -26,27 +27,45 @@ final class SpeedConversationObserver: SuperLog {
         self.messages = messages
         self.viewModel = viewModel
 
-        refresh()
+        scheduleRefresh(for: conversations.selectedConversationID)
         observer = conversations.addSelectedConversationObserver { [weak self] conversationID in
             self?.selectedConversationDidChange(to: conversationID)
         }
     }
 
     func cancel() {
+        refreshTask?.cancel()
+        refreshTask = nil
         observer?.cancel()
         observer = nil
     }
 
     private func selectedConversationDidChange(to conversationID: UUID?) {
         if conversationID == nil {
+            refreshTask?.cancel()
             viewModel.selectConversation(nil, messages: [])
             return
         }
-        refresh(conversationID: conversationID)
+        scheduleRefresh(for: conversationID)
     }
 
-    private func refresh() {
-        refresh(conversationID: conversations.selectedConversationID)
+    /// 速度只用于工具栏展示，不能阻塞会话切换时 MessageList 的首屏读取。
+    /// `messages(for:)` 目前仍是 MainActor API，因此这里采用低优先级 + 让出一拍，
+    /// 并在执行前确认目标会话仍然有效。
+    private func scheduleRefresh(for conversationID: UUID?) {
+        refreshTask?.cancel()
+        guard let conversationID else {
+            viewModel.selectConversation(nil, messages: [])
+            return
+        }
+
+        refreshTask = Task(priority: .utility) { @MainActor [weak self] in
+            await Task.yield()
+            guard !Task.isCancelled,
+                  let self,
+                  self.conversations.selectedConversationID == conversationID else { return }
+            self.refresh(conversationID: conversationID)
+        }
     }
 
     private func refresh(conversationID: UUID?) {

@@ -61,7 +61,7 @@ struct ListV3View: View {
         .onAppear {
             selectedObserverToken = services.addSelectedConversationObserver { newID in
                 atBottomBox.value = true
-                Task { @MainActor in
+                Task(priority: .userInitiated) { @MainActor in
                     await viewModel.activate(conversationID: newID)
                 }
             }

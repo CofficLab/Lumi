@@ -42,21 +42,25 @@ struct MessageCountToolbarView: View {
         }
         .task {
             selectedConversationID = conversations.selectedConversationID
-            refreshCount()
             // 注册会话切换观察
             conversationObserver = conversations.addSelectedConversationObserver { newID in
                 selectedConversationID = newID
-                refreshCount()
             }
             // 注册消息插入观察
             messageObserver = messages.addMessageInsertedObserver { _, conversationID in
                 // 只关心当前会话的消息变更
                 if conversationID == selectedConversationID || selectedConversationID == nil {
-                    refreshCount()
+                    Task(priority: .utility) { @MainActor in
+                        await Task.yield()
+                        guard !Task.isCancelled else { return }
+                        refreshCount()
+                    }
                 }
             }
         }
-        .onChange(of: selectedConversationID) { _, _ in
+        .task(id: selectedConversationID) {
+            await Task.yield()
+            guard !Task.isCancelled else { return }
             refreshCount()
         }
     }

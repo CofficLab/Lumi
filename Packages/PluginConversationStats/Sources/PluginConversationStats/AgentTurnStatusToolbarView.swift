@@ -46,15 +46,15 @@ struct AgentTurnStatusToolbarView: View {
         }
         .task {
             selectedConversationID = conversations.selectedConversationID
-            updateRunningState()
             conversationObserver = conversations.addSelectedConversationObserver { newID in
                 selectedConversationID = newID
-                updateRunningState()
             }
             // Poll the agent loop state periodically via conversation's objectWillChange
             // (the AgentLoop is ObservableObject, so we can observe it)
         }
-        .onChange(of: selectedConversationID) { _, _ in
+        .task(id: selectedConversationID) {
+            await Task.yield()
+            guard !Task.isCancelled else { return }
             updateRunningState()
         }
         // Observe agent loop state changes via timer (AgentLoop doesn't expose
