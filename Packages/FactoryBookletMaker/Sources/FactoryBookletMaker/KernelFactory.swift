@@ -7,6 +7,7 @@ import ProviderNetwork
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
+import ProviderSettingView
 import ProviderStorage
 import ProviderToast
 import ProviderToolbar
@@ -81,5 +82,15 @@ public enum KernelFactory {
             rootView.setContentView(contentView.makeContentView())
         }
         return rootView.makeRootView()
+    }
+
+    // MARK: - Settings View Assembly
+
+    /// 使用既有内核组装设置视图，避免设置窗口启动第二份插件状态。
+    public static func makeSettingsView(kernel: KernelCoreContainer) throws -> AnyView {
+        guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
+            return AnyView(Text(LumiPluginLocalization.string("SettingViewProviding not registered", bundle: .module)))
+        }
+        return settings.makeSettingView()
     }
 }
