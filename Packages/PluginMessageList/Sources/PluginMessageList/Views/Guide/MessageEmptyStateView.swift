@@ -19,33 +19,56 @@ struct MessageEmptyStateView: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: contextObserver.context?.systemImage ?? "bubble.left.and.bubble.right")
-                .font(.system(size: 48, weight: .light))
-                .foregroundColor(theme.primary.opacity(0.75))
-            Text(contextObserver.context?.id == ChatContext.defaultChat.id
-                ? LumiPluginLocalization.string("Start chatting with Lumi")
-                : (contextObserver.context?.title ?? LumiPluginLocalization.string("Start chatting with Lumi")))
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(theme.textPrimary)
-            if let subtitle = contextObserver.context?.subtitle,
-               contextObserver.context?.id != ChatContext.defaultChat.id {
-                Text(subtitle)
-                    .foregroundStyle(theme.textSecondary)
-                    .multilineTextAlignment(.center)
-            } else {
-                Text(LumiPluginLocalization.string("Pick an example, or type your question below."))
-                    .foregroundStyle(theme.textSecondary)
-                    .multilineTextAlignment(.center)
+        GeometryReader { proxy in
+            ZStack {
+                EmptyStateAtmosphere()
+
+                ScrollView(.vertical) {
+                    VStack(spacing: 0) {
+                        EmptyStateHeroIcon(systemImage: contextObserver.context?.systemImage ?? "bubble.left.and.bubble.right")
+                            .padding(.bottom, 18)
+
+                        Text(contextObserver.context?.id == ChatContext.defaultChat.id
+                            ? LumiPluginLocalization.string("Start chatting with Lumi")
+                            : (contextObserver.context?.title ?? LumiPluginLocalization.string("Start chatting with Lumi")))
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(theme.textPrimary)
+                            .multilineTextAlignment(.center)
+
+                        if let subtitle = contextObserver.context?.subtitle,
+                           contextObserver.context?.id != ChatContext.defaultChat.id {
+                            Text(subtitle)
+                                .font(.system(size: 13))
+                                .foregroundStyle(theme.textSecondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 8)
+                        } else {
+                            Text(LumiPluginLocalization.string("Pick an example, or type your question below."))
+                                .font(.system(size: 13))
+                                .foregroundStyle(theme.textSecondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 8)
+                        }
+
+                        let suggestions = visibleSuggestions(
+                            services.promptSuggestions?.allSuggestions ?? [],
+                            hasProject: services.project?.currentProject != nil,
+                            contextID: contextObserver.context?.id
+                        )
+                        if !suggestions.isEmpty {
+                            PromptSuggestionFlow(suggestions: suggestions, services: services) { importingFolder = true }
+                                .padding(.top, 24)
+                        }
+                    }
+                    .frame(maxWidth: 620)
+                    .frame(maxWidth: .infinity, minHeight: max(320, proxy.size.height - 24))
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 36)
+                    .offset(y: -min(24, proxy.size.height * 0.06))
+                }
+                .scrollIndicators(.hidden)
             }
-            let suggestions = visibleSuggestions(
-                services.promptSuggestions?.allSuggestions ?? [],
-                hasProject: services.project?.currentProject != nil,
-                contextID: contextObserver.context?.id
-            )
-            if !suggestions.isEmpty { PromptSuggestionFlow(suggestions: suggestions, services: services) { importingFolder = true }.padding(.top, 8) }
         }
-        .padding(32).frame(maxWidth: .infinity, maxHeight: .infinity)
         .fileImporter(isPresented: $importingFolder, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
             guard case .success(let urls) = result, let url = urls.first else { return }
             Task { @MainActor in

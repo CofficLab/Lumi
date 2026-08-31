@@ -20,12 +20,11 @@ struct PromptSuggestionFlow: View {
 
     var body: some View {
         FlowLayout(spacing: 8) {
-            ForEach(Array(suggestions.enumerated()), id: \.element.id) { index, suggestion in
+            ForEach(Array(suggestions.enumerated()), id: \.element.id) { _, suggestion in
                 Button { handlePromptTap(suggestion, services: services, pickFolder: pickFolder) } label: {
                     PromptSuggestionChip(suggestion: suggestion)
                 }
                 .buttonStyle(.plain)
-                .landingAppear(delay: Double(index) * 0.04)
             }
         }
         .frame(maxWidth: 520)
@@ -34,22 +33,43 @@ struct PromptSuggestionFlow: View {
 
 private struct PromptSuggestionChip: View {
     @LumiTheme private var theme
-    @LumiMotionPreferenceReader private var motionPreference
     let suggestion: PromptSuggestion
     @State private var hovered = false
 
     var body: some View {
         HStack(spacing: 6) {
-            if let image = suggestion.systemImage { Image(systemName: image).font(.system(size: 12, weight: .medium)) }
-            Text(suggestion.title).font(.appCaption).lineLimit(1)
+            if let image = suggestion.systemImage {
+                Image(systemName: image)
+                    .font(.system(size: 12, weight: .medium))
+                    .frame(width: 15)
+            }
+            Text(suggestion.title)
+                .font(.appCaption)
+                .lineLimit(1)
         }
         .foregroundStyle(suggestion.style == .additive ? theme.textSecondary : theme.textPrimary)
-        .padding(.horizontal, 12).padding(.vertical, 7)
-        .background(Capsule().fill(suggestion.style == .additive ? .clear : theme.primary.opacity(hovered ? 0.22 : 0.12)))
-        .overlay { Capsule().strokeBorder(hovered ? theme.primary.opacity(0.4) : theme.primary.opacity(suggestion.style == .additive ? 0.35 : 0.22), style: StrokeStyle(lineWidth: 1, dash: suggestion.style == .additive ? [4, 3] : [])) }
-        .scaleEffect(hovered && motionPreference.allowsMotion ? LumiMotion.hoverScale : 1)
-        .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: hovered)
-        .onHover { value in LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) { hovered = value } }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background {
+            Capsule(style: .continuous)
+                .fill(suggestion.style == .additive
+                    ? theme.surface.opacity(0.5)
+                    : theme.primary.opacity(hovered ? 0.2 : 0.12))
+        }
+        .overlay {
+            Capsule(style: .continuous)
+                .strokeBorder(
+                    hovered ? theme.primary.opacity(0.48) : theme.primary.opacity(suggestion.style == .additive ? 0.38 : 0.24),
+                    style: StrokeStyle(lineWidth: 1, dash: suggestion.style == .additive ? [4, 3] : [])
+                )
+        }
+        .shadow(
+            color: suggestion.style == .additive ? .clear : theme.primary.opacity(hovered ? 0.14 : 0.055),
+            radius: hovered ? 10 : 6,
+            y: hovered ? 3 : 1
+        )
+        .contentShape(Capsule(style: .continuous))
+        .onHover { hovered = $0 }
     }
 }
 

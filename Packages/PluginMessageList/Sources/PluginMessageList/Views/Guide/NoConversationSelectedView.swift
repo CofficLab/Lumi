@@ -36,28 +36,51 @@ struct NoConversationSelectedView: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: contextObserver.context?.systemImage ?? "square.and.pencil")
-                .font(.system(size: 48, weight: .light))
-                .foregroundColor(theme.textSecondary.opacity(0.5))
-            if let context = contextObserver.context,
-               context.id != ChatContext.defaultChat.id {
-                Text(context.title)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(theme.textPrimary)
-                if let subtitle = context.subtitle {
-                    Text(subtitle)
-                        .foregroundStyle(theme.textSecondary)
-                        .multilineTextAlignment(.center)
+        GeometryReader { proxy in
+            ZStack {
+                EmptyStateAtmosphere()
+
+                ScrollView(.vertical) {
+                    VStack(spacing: 0) {
+                        EmptyStateHeroIcon(systemImage: contextObserver.context?.systemImage ?? "square.and.pencil")
+                            .padding(.bottom, 18)
+
+                        if let context = contextObserver.context,
+                           context.id != ChatContext.defaultChat.id {
+                            Text(context.title)
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(theme.textPrimary)
+                                .multilineTextAlignment(.center)
+                            if let subtitle = context.subtitle {
+                                Text(subtitle)
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(theme.textSecondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.top, 8)
+                            }
+                        } else if let project {
+                            projectTitle(project)
+                        } else {
+                            Text(LumiPluginLocalization.string("How can I help you today?"))
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(theme.textPrimary)
+                                .multilineTextAlignment(.center)
+                        }
+
+                        if !suggestions.isEmpty {
+                            PromptSuggestionFlow(suggestions: suggestions, services: services) { importingFolder = true }
+                                .padding(.top, 24)
+                        }
+                    }
+                    .frame(maxWidth: 620)
+                    .frame(maxWidth: .infinity, minHeight: max(320, proxy.size.height - 24))
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 36)
+                    .offset(y: -min(24, proxy.size.height * 0.06))
                 }
-            } else if let project {
-                projectTitle(project)
-            } else {
-                Text(LumiPluginLocalization.string("How can I help you today?")).font(.system(size: 18, weight: .semibold)).foregroundStyle(theme.textPrimary)
+                .scrollIndicators(.hidden)
             }
-            if !suggestions.isEmpty { PromptSuggestionFlow(suggestions: suggestions, services: services) { importingFolder = true } }
         }
-        .padding(32).frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             toolbarCoordinator.activate()
         }
