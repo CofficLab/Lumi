@@ -63,16 +63,15 @@ public struct HTTPExchangeSettingsView: View {
     private let store: HTTPExchangeStore
     @LumiTheme private var theme
 
-    @State private var records: [HTTPExchangeExportSnapshot] = []
-    /// Lookup index rebuilt whenever `records` changes, so selecting the
-    /// detail record is O(1) instead of a linear scan on every redraw.
-    @State private var recordsByID: [UUID: HTTPExchangeExportSnapshot] = [:]
+    @State private var records: [HTTPExchangeListSnapshot] = []
     @State private var isLoading = true
-    @State private var isReloading = false
     @State private var isLoadingMore = false
     @State private var hasMoreRecords = true
+    @State private var nextPageCursor: Date?
     @State private var totalRecordCount: Int?
     @State private var selectedRecordID: UUID?
+    @State private var selectedDetail: HTTPExchangeExportSnapshot?
+    @State private var reloadGeneration = 0
     @State private var selectedFilter: LogFilter = .all
     @State private var selectedDomain: String?
     @State private var selectedTimeRange: TimeRangeFilter = .all
@@ -84,41 +83,6 @@ public struct HTTPExchangeSettingsView: View {
 
     public init(store: HTTPExchangeStore) {
         self.store = store
-    }
-
-    private var selectedRecord: HTTPExchangeExportSnapshot? {
-        guard let selectedRecordID else { return nil }
-        return recordsByID[selectedRecordID]
-    }
-
-    private var filteredRecords: [HTTPExchangeExportSnapshot] {
-        records.filter { record in
-            matchesStatusFilter(record) && matchesDomain(record) && matchesTimeRange(record)
-        }
-    }
-
-    private func matchesStatusFilter(_ record: HTTPExchangeExportSnapshot) -> Bool {
-        switch selectedFilter {
-        case .all:
-            return true
-        case .normal:
-            guard let statusCode = record.responseStatusCode else { return false }
-            return (200..<300).contains(statusCode)
-        case .abnormal:
-            guard let statusCode = record.responseStatusCode else { return true }
-            return !(200..<300).contains(statusCode)
-        }
-    }
-
-    private func matchesDomain(_ record: HTTPExchangeExportSnapshot) -> Bool {
-        guard let selectedDomain else { return true }
-        guard let host = URL(string: record.url)?.host?.lowercased() else { return false }
-        return host == selectedDomain
-    }
-
-    private func matchesTimeRange(_ record: HTTPExchangeExportSnapshot) -> Bool {
-        guard let cutOff = selectedTimeRange.cutOff() else { return true }
-        return record.startedAt >= cutOff
     }
 
     public var body: some View {
@@ -169,6 +133,9 @@ public struct HTTPExchangeSettingsView: View {
             await reloadAsync()
         }
         .onChange(of: selectedDomain) { _, _ in
+            Task { await reloadAsync() }
+        }
+        .onChange(of: selectedFilter) { _, _ in
             Task { await reloadAsync() }
         }
         .onChange(of: selectedTimeRange) { _, _ in
@@ -225,7 +192,7 @@ public struct HTTPExchangeSettingsView: View {
             timeRangeFilter
             AppDivider()
 
-            if isLoading && filteredRecords.isEmpty {
+            if isLoading && records.isEmpty {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.small)
@@ -234,7 +201,7 @@ public struct HTTPExchangeSettingsView: View {
                         .foregroundStyle(theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if filteredRecords.isEmpty {
+            } else if records.isEmpty {
                 AppEmptyState(
                     icon: "arrow.up.arrow.down.circle",
                     title: LumiPluginLocalization.string("No matching HTTP exchanges", bundle: .module)
@@ -243,10 +210,10 @@ public struct HTTPExchangeSettingsView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 4) {
-                        ForEach(filteredRecords) { record in
+                        ForEach(records) { record in
                             recordRow(record)
                                 .onAppear {
-                                    if selectedFilter == .all, selectedDomain == nil, selectedTimeRange == .all, record.id == records.last?.id {
+                                    if record.id == records.last?.id {
                                         Task { await loadMoreAsync() }
                                     }
                                 }
@@ -276,9 +243,8 @@ public struct HTTPExchangeSettingsView: View {
                 set: { newValue in
                     guard let filter = LogFilter(rawValue: newValue), filter != selectedFilter else { return }
                     selectedFilter = filter
-                    if !filteredRecords.contains(where: { $0.id == selectedRecordID }) {
-                        selectedRecordID = filteredRecords.first?.id
-                    }
+                    selectedRecordID = nil
+                    selectedDetail = nil
                 }
             )
         )
@@ -335,10 +301,11 @@ public struct HTTPExchangeSettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func recordRow(_ record: HTTPExchangeExportSnapshot) -> some View {
+    private func recordRow(_ record: HTTPExchangeListSnapshot) -> some View {
         let isSelected = selectedRecordID == record.id
         return AppListRow(isSelected: isSelected, action: {
             selectedRecordID = record.id
+            selectedDetail = nil
         }) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -364,20 +331,34 @@ public struct HTTPExchangeSettingsView: View {
 
     @ViewBuilder
     private var detailPane: some View {
-        if let selectedRecord {
-            HTTPExchangeDetailView(recordID: selectedRecord.id) {
-                requestTab(for: selectedRecord)
-            } response: {
-                responseTab(for: selectedRecord)
-            } export: {
-                export(record: selectedRecord)
+        Group {
+            if let selectedDetail {
+                HTTPExchangeDetailView(recordID: selectedDetail.id) {
+                    requestTab(for: selectedDetail)
+                } response: {
+                    responseTab(for: selectedDetail)
+                } export: {
+                    export(record: selectedDetail)
+                }
+            } else if selectedRecordID != nil {
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(LumiPluginLocalization.string("Loading...", bundle: .module))
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                AppEmptyState(
+                    icon: "doc.text.magnifyingglass",
+                    title: LumiPluginLocalization.string("Select an HTTP exchange", bundle: .module)
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-        } else {
-            AppEmptyState(
-                icon: "doc.text.magnifyingglass",
-                title: LumiPluginLocalization.string("Select an HTTP exchange", bundle: .module)
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .task(id: selectedRecordID) {
+            await loadSelectedDetailAsync()
         }
     }
 
@@ -592,129 +573,113 @@ public struct HTTPExchangeSettingsView: View {
     }
 
     private func reloadAsync() async {
-        guard !isReloading else { return }
-        isReloading = true
+        reloadGeneration += 1
+        let generation = reloadGeneration
         isLoading = true
-        defer {
-            isReloading = false
-            isLoading = false
-        }
 
-        // Snapshot the filter inputs on the main actor, then move every database
-        // read onto a background task. Each reader builds its own private
-        // `ModelContext` from the shared container, so none of this touches the
-        // main thread — the spinner keeps spinning while data loads.
-        let isPagedMode = selectedFilter == .all && selectedDomain == nil && selectedTimeRange == .all
+        // Snapshot all query inputs on the main actor. The list query returns
+        // metadata only; detail bodies and secondary statistics are loaded
+        // independently after the first page is visible.
+        let status = statusFilter
+        let domain = selectedDomain
+        let startedAtAfter = selectedTimeRange.cutOff()
         let pageSize = self.pageSize
-        let selectedFilter = self.selectedFilter
-        let selectedDomain = self.selectedDomain
         let store = self.store
 
-        let loadedRecords: [HTTPExchangeExportSnapshot]
-        let total: Int
-        let series: HTTPExchangeDailyCountSeries
-        let domainOptions: [String]
+        let page = await Task.detached(priority: .userInitiated) {
+            store.loadListPage(
+                limit: pageSize,
+                status: status,
+                domain: domain,
+                startedAtAfter: startedAtAfter
+            )
+        }.value
 
-        if isPagedMode {
-            // Page + count + chart + domains all run off the main actor; the
-            // chart and domain queries overlap via `async let`.
-            async let page = Task.detached(priority: .userInitiated) {
-                store.loadSnapshotPage(limit: pageSize)
-            }.value
-            async let count = Task.detached(priority: .userInitiated) {
-                store.loadSnapshotCount()
-            }.value
-            async let seriesResult = Task.detached(priority: .userInitiated) {
-                store.loadDailyCountSeries()
-            }.value
-            async let domainsResult = Task.detached(priority: .userInitiated) {
-                store.loadRecentDomains()
-            }.value
+        guard generation == reloadGeneration else { return }
 
-            loadedRecords = await page
-            total = await count
-            series = await seriesResult
-            domainOptions = await domainsResult
-        } else {
-            // Filtered mode: fetch all snapshots once (off the main actor), then
-            // apply the status/domain/time filters in memory on the same task.
-            // The filter predicates are captured as plain closures (value
-            // captures of `Sendable` inputs) so they run on the background task
-            // without hopping back to the main actor.
-            let statusPredicate: (HTTPExchangeExportSnapshot) -> Bool = { snapshot in
-                switch selectedFilter {
-                case .all:
-                    return true
-                case .normal:
-                    guard let statusCode = snapshot.responseStatusCode else { return false }
-                    return (200..<300).contains(statusCode)
-                case .abnormal:
-                    guard let statusCode = snapshot.responseStatusCode else { return true }
-                    return !(200..<300).contains(statusCode)
-                }
-            }
-            let domainPredicate: (HTTPExchangeExportSnapshot) -> Bool = { snapshot in
-                guard let selectedDomain else { return true }
-                guard let host = URL(string: snapshot.url)?.host?.lowercased() else { return false }
-                return host == selectedDomain
-            }
-            async let allSnapshots = Task.detached(priority: .userInitiated) {
-                store.loadAllSnapshots()
-            }.value
-            async let seriesResult = Task.detached(priority: .userInitiated) {
-                store.loadDailyCountSeries()
-            }.value
-            async let domainsResult = Task.detached(priority: .userInitiated) {
-                store.loadRecentDomains()
-            }.value
-
-            let snapshots = await allSnapshots
-            let matching = snapshots.filter { snapshot in
-                statusPredicate(snapshot) && domainPredicate(snapshot)
-            }
-            loadedRecords = matching
-            total = matching.count
-            series = await seriesResult
-            domainOptions = await domainsResult
+        records = page.records
+        nextPageCursor = page.nextCursor
+        hasMoreRecords = page.hasMore
+        if selectedRecordID == nil || !records.contains(where: { $0.id == selectedRecordID }) {
+            selectedRecordID = records.first?.id
+            selectedDetail = nil
         }
+        isLoading = false
 
-        records = loadedRecords
-        recordsByID = Dictionary(uniqueKeysWithValues: loadedRecords.map { ($0.id, $0) })
-        totalRecordCount = total
-        dailyCountSeries = series
-        domains = domainOptions
-        hasMoreRecords = isPagedMode && loadedRecords.count == pageSize
-        let currentSelectionStillPresent = selectedRecordID.flatMap { recordsByID[$0] } != nil
-        if !currentSelectionStillPresent {
-            selectedRecordID = filteredRecords.first?.id
+        // These values are useful but not required to render the first page.
+        // Run them after the list is on screen and discard stale results when a
+        // filter changes while they are still running.
+        Task { [store] in
+            async let count = Task.detached(priority: .utility) {
+                store.loadListCount(status: status, domain: domain, startedAtAfter: startedAtAfter)
+            }.value
+            async let series = Task.detached(priority: .utility) {
+                store.loadDailyCountSeries()
+            }.value
+            async let domains = Task.detached(priority: .utility) {
+                store.loadRecentDomains()
+            }.value
+
+            let loadedCount = await count
+            let loadedSeries = await series
+            let loadedDomains = await domains
+            guard generation == self.reloadGeneration else { return }
+            self.totalRecordCount = loadedCount
+            self.dailyCountSeries = loadedSeries
+            self.domains = loadedDomains
         }
     }
 
     private func loadMoreAsync() async {
-        guard selectedFilter == .all,
-              selectedDomain == nil,
-              selectedTimeRange == .all,
-              !isLoading,
+        guard !isLoading,
               !isLoadingMore,
               hasMoreRecords,
-              let last = records.last else { return }
+              let cursor = nextPageCursor else { return }
 
         isLoadingMore = true
         defer { isLoadingMore = false }
 
-        // Load the next page off the main actor.
         let pageSize = self.pageSize
-        let cursor = last.startedAt
+        let status = statusFilter
+        let domain = selectedDomain
+        let startedAtAfter = selectedTimeRange.cutOff()
         let store = self.store
         let page = await Task.detached(priority: .userInitiated) {
-            store.loadSnapshotPage(limit: pageSize, beforeStartedAt: cursor)
+            store.loadListPage(
+                limit: pageSize,
+                beforeStartedAt: cursor,
+                status: status,
+                domain: domain,
+                startedAtAfter: startedAtAfter
+            )
         }.value
 
-        records.append(contentsOf: page)
-        for snapshot in page {
-            recordsByID[snapshot.id] = snapshot
+        records.append(contentsOf: page.records)
+        nextPageCursor = page.nextCursor
+        hasMoreRecords = page.hasMore
+    }
+
+    private var statusFilter: HTTPExchangeStatusFilter {
+        switch selectedFilter {
+        case .all: .all
+        case .normal: .normal
+        case .abnormal: .abnormal
         }
-        hasMoreRecords = page.count == pageSize
+    }
+
+    private func loadSelectedDetailAsync() async {
+        guard let id = selectedRecordID else {
+            selectedDetail = nil
+            return
+        }
+
+        let store = self.store
+        let detail = await Task.detached(priority: .userInitiated) {
+            store.loadSnapshot(id: id)
+        }.value
+
+        guard selectedRecordID == id else { return }
+        selectedDetail = detail
     }
 
     private var totalCountLabel: String {
@@ -729,7 +694,19 @@ public struct HTTPExchangeSettingsView: View {
         return record.errorDescription == nil ? LumiPluginLocalization.string("Pending", bundle: .module) : LumiPluginLocalization.string("Error", bundle: .module)
     }
 
+    private func statusText(for record: HTTPExchangeListSnapshot) -> String {
+        if let statusCode = record.responseStatusCode { return String(statusCode) }
+        return record.errorDescription == nil ? LumiPluginLocalization.string("Pending", bundle: .module) : LumiPluginLocalization.string("Error", bundle: .module)
+    }
+
     private func statusColor(for record: HTTPExchangeExportSnapshot) -> Color {
+        guard let statusCode = record.responseStatusCode else {
+            return record.errorDescription == nil ? theme.textSecondary : .red
+        }
+        return (200..<300).contains(statusCode) ? .green : .orange
+    }
+
+    private func statusColor(for record: HTTPExchangeListSnapshot) -> Color {
         guard let statusCode = record.responseStatusCode else {
             return record.errorDescription == nil ? theme.textSecondary : .red
         }
@@ -767,12 +744,6 @@ public struct HTTPExchangeSettingsView: View {
     /// on a background task so large batches don't block the UI; progress is
     /// reported to the status bar via `HTTPExportProgress`.
     private func exportFilteredLogs() {
-        let recordsToExport = filteredRecords
-        guard !recordsToExport.isEmpty else {
-            exportErrorMessage = LumiPluginLocalization.string("No matching HTTP exchanges", bundle: .module)
-            return
-        }
-
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
@@ -783,25 +754,45 @@ public struct HTTPExchangeSettingsView: View {
 
         guard panel.runModal() == .OK, let directory = panel.url else { return }
 
-        // `filteredRecords` are already snapshots, so no re-snapshot is needed.
-        let snapshots = recordsToExport
-        HTTPExportProgress.shared.begin(total: snapshots.count)
+        let status = statusFilter
+        let domain = selectedDomain
+        let startedAtAfter = selectedTimeRange.cutOff()
+        let store = self.store
 
-        Task.detached(priority: .userInitiated) {
-            do {
-                for (index, snapshot) in snapshots.enumerated() {
-                    let document = HTTPExchangeExportFormatter.document(for: snapshot)
-                    let fileName = HTTPExchangeExportFormatter.exportFileName(for: snapshot, index: index)
-                    try document.write(
-                        to: directory.appendingPathComponent(fileName),
-                        atomically: true,
-                        encoding: .utf8
-                    )
-                    await MainActor.run { HTTPExportProgress.shared.advance() }
+        // Export is an explicit user action, so it may load full bodies. The
+        // normal list/detail path never does this for more than one record.
+        Task { [store] in
+            let snapshots = await Task.detached(priority: .userInitiated) {
+                let summaries = store.loadAllListRecords(
+                    status: status,
+                    domain: domain,
+                    startedAtAfter: startedAtAfter
+                )
+                return summaries.compactMap { store.loadSnapshot(id: $0.id) }
+            }.value
+
+            guard !snapshots.isEmpty else {
+                self.exportErrorMessage = LumiPluginLocalization.string("No matching HTTP exchanges", bundle: .module)
+                return
+            }
+
+            HTTPExportProgress.shared.begin(total: snapshots.count)
+            Task.detached(priority: .userInitiated) {
+                do {
+                    for (index, snapshot) in snapshots.enumerated() {
+                        let document = HTTPExchangeExportFormatter.document(for: snapshot)
+                        let fileName = HTTPExchangeExportFormatter.exportFileName(for: snapshot, index: index)
+                        try document.write(
+                            to: directory.appendingPathComponent(fileName),
+                            atomically: true,
+                            encoding: .utf8
+                        )
+                        await MainActor.run { HTTPExportProgress.shared.advance() }
+                    }
+                    await MainActor.run { HTTPExportProgress.shared.finish() }
+                } catch {
+                    await MainActor.run { HTTPExportProgress.shared.fail(message: error.localizedDescription) }
                 }
-                await MainActor.run { HTTPExportProgress.shared.finish() }
-            } catch {
-                await MainActor.run { HTTPExportProgress.shared.fail(message: error.localizedDescription) }
             }
         }
     }
