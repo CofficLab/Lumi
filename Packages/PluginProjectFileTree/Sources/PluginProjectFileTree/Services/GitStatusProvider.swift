@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import KitSuperLog
 import os
@@ -115,6 +116,55 @@ public struct GitStatusSnapshot: Sendable, Equatable {
 
 // MARK: - Provider
 
+/// Collects process output without allowing a child process to block on a full pipe.
+///
+/// The collector continues draining after the retained-output limit is reached so the
+/// child process can still exit normally. The limit protects the file-tree refresh from
+/// retaining an unbounded amount of Git output for an unusually large repository.
+private final class ProcessOutputCollector: @unchecked Sendable {
+    private let lock = NSLock()
+    private let maximumBytes: Int
+    private var data = Data()
+    private var truncated = false
+
+    init(maximumBytes: Int) {
+        self.maximumBytes = maximumBytes
+    }
+
+    func append(_ newData: Data) {
+        guard !newData.isEmpty else { return }
+
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard data.count < maximumBytes else {
+            truncated = true
+            return
+        }
+
+        let remaining = maximumBytes - data.count
+        if newData.count <= remaining {
+            data.append(newData)
+        } else {
+            data.append(newData.prefix(remaining))
+            truncated = true
+        }
+    }
+
+    var isTruncated: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return truncated
+    }
+
+    func string() -> String {
+        lock.lock()
+        let result = String(data: data, encoding: .utf8) ?? ""
+        lock.unlock()
+        return result
+    }
+}
+
 /// 文件树 Git 状态提供器
 ///
 /// 负责在后台线程执行 Git status 查询，构建轻量 snapshot 供 UI 层只读使用。
@@ -124,6 +174,19 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
     public nonisolated static let emoji = "🌳"
     public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = ProjectFileTreePlugin.logger
+
+    private static let outputChunkSize = 64 * 1024
+    private static let maximumCapturedOutputBytes = 8 * 1024 * 1024
+    private static let timeoutExitCode: Int32 = -2
+    private static let truncatedOutputExitCode: Int32 = -3
+    private let commandTimeout: TimeInterval
+
+    /// - Parameter commandTimeout: Maximum duration for each Git subprocess.
+    ///   A finite default is required because this provider is used by background
+    ///   refresh tasks and must never wait indefinitely on a broken repository.
+    public init(commandTimeout: TimeInterval = 15) {
+        self.commandTimeout = max(0.1, commandTimeout)
+    }
 
     // MARK: - Public
 
@@ -294,18 +357,85 @@ public final class GitStatusProvider: @unchecked Sendable, SuperLog {
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = ["git"] + arguments
         process.currentDirectoryURL = URL(fileURLWithPath: directory)
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = Pipe()
+        let stdoutPipe = Pipe()
+        let stderrPipe = Pipe()
+        process.standardOutput = stdoutPipe
+        process.standardError = stderrPipe
+
         do {
             try process.run()
-            process.waitUntilExit()
         } catch {
             return (-1, "")
         }
-        let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(data: data, encoding: .utf8) ?? ""
-        return (process.terminationStatus, output)
+
+        // Drain both pipes while the process is running. Waiting for exit before
+        // reading either pipe deadlocks as soon as Git writes more than the pipe
+        // buffer can hold.
+        let stdoutCollector = ProcessOutputCollector(maximumBytes: Self.maximumCapturedOutputBytes)
+        let stderrCollector = ProcessOutputCollector(maximumBytes: Self.maximumCapturedOutputBytes)
+        let drainGroup = DispatchGroup()
+        Self.drain(stdoutPipe.fileHandleForReading, into: stdoutCollector, group: drainGroup)
+        Self.drain(stderrPipe.fileHandleForReading, into: stderrCollector, group: drainGroup)
+
+        let deadline = Date().addingTimeInterval(commandTimeout)
+        var timedOut = false
+        while process.isRunning {
+            if Date() >= deadline {
+                timedOut = true
+                terminate(process)
+                break
+            }
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+
+        // Ensure the process has fully exited before waiting for EOF on either
+        // pipe. terminate(_:) force-kills it if SIGTERM is ignored.
+        process.waitUntilExit()
+        drainGroup.wait()
+
+        if timedOut {
+            Self.logger.warning("Git command timed out after \(self.commandTimeout)s: \(arguments.joined(separator: " "))")
+            return (Self.timeoutExitCode, "")
+        }
+
+        if stdoutCollector.isTruncated || stderrCollector.isTruncated {
+            Self.logger.warning("Git command output exceeded \(Self.maximumCapturedOutputBytes) bytes: \(arguments.joined(separator: " "))")
+            return (Self.truncatedOutputExitCode, stdoutCollector.string())
+        }
+
+        return (process.terminationStatus, stdoutCollector.string())
+    }
+
+    /// Drain one pipe on a separate queue while the Git process is running.
+    private static func drain(
+        _ fileHandle: FileHandle,
+        into collector: ProcessOutputCollector,
+        group: DispatchGroup
+    ) {
+        group.enter()
+        DispatchQueue.global(qos: .utility).async {
+            defer { group.leave() }
+            while true {
+                let data = fileHandle.readData(ofLength: Self.outputChunkSize)
+                if data.isEmpty { break }
+                collector.append(data)
+            }
+        }
+    }
+
+    /// Stop a Git subprocess after the timeout, escalating to SIGKILL if needed.
+    private func terminate(_ process: Process) {
+        guard process.isRunning else { return }
+
+        process.terminate()
+        let graceDeadline = Date().addingTimeInterval(1)
+        while process.isRunning && Date() < graceDeadline {
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+
+        if process.isRunning, process.processIdentifier > 0 {
+            kill(process.processIdentifier, SIGKILL)
+        }
     }
 
     /// Git status 查询错误。
