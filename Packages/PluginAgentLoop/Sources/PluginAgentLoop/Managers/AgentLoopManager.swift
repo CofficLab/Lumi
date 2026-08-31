@@ -37,6 +37,7 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
 
     /// 每会话的回合运行时上下文。替代原先 8 个散落的字典/集合。
     var runtimes: [UUID: TurnRuntime] = [:]
+    var resumingConversations: Set<UUID> = []
     var completionWaiters: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
     private var agentLoopObservers: [UUID: (AgentLoopEvent) -> Void] = [:]
 
