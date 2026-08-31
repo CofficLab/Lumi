@@ -83,6 +83,36 @@ struct ProviderMessageSenderTests {
         #expect(sender.pendingFileAttachments.isEmpty)
     }
 
+    @Test("仅附件也可以发送，且正文保持为空")
+    func sendsAttachmentOnlyMessage() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        loop.responseContent = "ok"
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+        let file = UserFileAttachment(
+            fileName: "design.txt",
+            mimeType: "text/plain",
+            textContent: "design notes"
+        )
+
+        try await sender.sendMessage(
+            "",
+            imageAttachments: [],
+            fileAttachments: [file],
+            conversationID: nil
+        )
+
+        let id = try #require(conversations.selectedConversationID)
+        let userMessage = try #require(messages.messages(for: id).first { $0.role == .user })
+        #expect(userMessage.content.isEmpty)
+        #expect(UserAttachmentMetadata.decodeFileAttachments(from: userMessage.metadata) == [file])
+    }
+
     @Test("同一会话发送中时新消息进入 pending 队列，回合结束后依次发出")
     func queuesWhileSending() async throws {
         let conversations = DefaultConversationManager()

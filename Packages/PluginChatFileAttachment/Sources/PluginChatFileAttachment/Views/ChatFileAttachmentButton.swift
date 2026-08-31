@@ -1,6 +1,8 @@
 import KernelCore
 import LumiUI
 import ProviderConversationInput
+import ProviderMessage
+import ProviderMessageSender
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -40,8 +42,30 @@ struct ChatFileAttachmentButton: View {
     private func handle(_ result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
-            kernel.resolveProvider((any ConversationInputProviding).self)?
-                .addToConversation(fileURLs: urls)
+            guard let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
+                return
+            }
+
+            for url in urls {
+                let hasSecurityScopedAccess = url.startAccessingSecurityScopedResource()
+                Task { @MainActor in
+                    defer {
+                        if hasSecurityScopedAccess {
+                            url.stopAccessingSecurityScopedResource()
+                        }
+                    }
+
+                    do {
+                        let attachment = try await Task.detached(priority: .userInitiated) {
+                            try UserFileAttachmentLoader.load(from: url)
+                        }.value
+                        sender.addFileAttachment(attachment)
+                    } catch {
+                        kernel.resolveProvider((any ConversationInputProviding).self)?.errorMessage =
+                            error.localizedDescription
+                    }
+                }
+            }
         case .failure:
             // 用户取消或读取失败时静默
             break

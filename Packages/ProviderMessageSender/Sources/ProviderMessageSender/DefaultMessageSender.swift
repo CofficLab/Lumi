@@ -156,7 +156,8 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         conversationID: UUID?
     ) async throws {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
+        let hasAttachments = !imageAttachments.isEmpty || !fileAttachments.isEmpty
+        guard !trimmed.isEmpty || hasAttachments else {
             if Self.verbose {
                 Self.logger.debug("\(Self.t)sendMessage ignored: empty content after trim")
             }

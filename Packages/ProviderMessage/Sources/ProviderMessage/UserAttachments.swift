@@ -1,4 +1,5 @@
 import Foundation
+import UniformTypeIdentifiers
 
 // MARK: - User attachments（发送挂起池 + 消息 metadata）
 
@@ -48,6 +49,25 @@ public struct UserFileAttachment: Identifiable, Codable, Equatable, Sendable {
         self.mimeType = mimeType
         self.base64Data = base64Data
         self.textContent = textContent
+    }
+}
+
+/// 将本地文件转换为可随用户消息发送的附件。
+///
+/// 附件同时保留原始字节和可识别的 UTF-8 文本：前者保证二进制文件可传递，
+/// 后者便于文本文件被模型直接理解。文件路径只用于读取，不会写入消息正文。
+public enum UserFileAttachmentLoader {
+    public static func load(from url: URL) throws -> UserFileAttachment {
+        let data = try Data(contentsOf: url, options: [.mappedIfSafe])
+        let mimeType = UTType(filenameExtension: url.pathExtension.lowercased())?.preferredMIMEType
+            ?? "application/octet-stream"
+
+        return UserFileAttachment(
+            fileName: url.lastPathComponent,
+            mimeType: mimeType,
+            base64Data: data.base64EncodedString(),
+            textContent: String(data: data, encoding: .utf8)
+        )
     }
 }
 

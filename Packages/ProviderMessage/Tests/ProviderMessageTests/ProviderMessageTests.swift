@@ -64,4 +64,34 @@ struct ProviderMessageTests {
         #expect(observed.first?.0 == first.id)
         #expect(observed.first?.1 == conversationID)
     }
+
+    @Test("本地文本文件转换为附件时不污染消息正文")
+    func loadsTextFileAsAttachment() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-attachment-\(UUID().uuidString).txt")
+        let data = Data("hello attachment".utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+        try data.write(to: url)
+
+        let attachment = try UserFileAttachmentLoader.load(from: url)
+
+        #expect(attachment.fileName == url.lastPathComponent)
+        #expect(attachment.mimeType == "text/plain")
+        #expect(attachment.textContent == "hello attachment")
+        #expect(Data(base64Encoded: attachment.base64Data ?? "") == data)
+    }
+
+    @Test("二进制文件保留字节并不伪装成文本")
+    func loadsBinaryFileAsAttachment() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-attachment-\(UUID().uuidString).bin")
+        let data = Data([0x00, 0xFF, 0x10, 0x80])
+        defer { try? FileManager.default.removeItem(at: url) }
+        try data.write(to: url)
+
+        let attachment = try UserFileAttachmentLoader.load(from: url)
+
+        #expect(attachment.textContent == nil)
+        #expect(Data(base64Encoded: attachment.base64Data ?? "") == data)
+    }
 }

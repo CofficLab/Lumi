@@ -44,7 +44,10 @@ final class SendActionBarViewModel: SuperLog {
         self.conversationState = conversationState
         self.state = SendActionBarState(
             isSending: conversationState.state(for: conversations.selectedConversationID ?? UUID()).isSending,
-            canSend: !input.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            canSend: Self.canSend(
+                text: input.text,
+                hasAttachments: !sender.pendingImageAttachments.isEmpty || !sender.pendingFileAttachments.isEmpty
+            )
         )
         conversationStateObserver = conversationState.addConversationStateObserver { [weak self] _ in
             self?.refreshConversationState()
@@ -57,7 +60,17 @@ final class SendActionBarViewModel: SuperLog {
     // MARK: - State updates
 
     func updateInputText(_ text: String) {
-        state.canSend = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        state.canSend = Self.canSend(
+            text: text,
+            hasAttachments: !sender.pendingImageAttachments.isEmpty || !sender.pendingFileAttachments.isEmpty
+        )
+    }
+
+    func updateAttachments() {
+        state.canSend = Self.canSend(
+            text: input.text,
+            hasAttachments: !sender.pendingImageAttachments.isEmpty || !sender.pendingFileAttachments.isEmpty
+        )
     }
 
     private func refreshConversationState() {
@@ -86,7 +99,8 @@ final class SendActionBarViewModel: SuperLog {
     /// Send the current input text. Clears the input field on success.
     func send() {
         let trimmed = input.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        let hasAttachments = !sender.pendingImageAttachments.isEmpty || !sender.pendingFileAttachments.isEmpty
+        guard !trimmed.isEmpty || hasAttachments else { return }
 
         Self.logger.info("\(self.t)sending message, length=\(trimmed.count)")
         input.text = ""
@@ -101,5 +115,9 @@ final class SendActionBarViewModel: SuperLog {
                 input.errorMessage = error.localizedDescription
             }
         }
+    }
+
+    private static func canSend(text: String, hasAttachments: Bool) -> Bool {
+        hasAttachments || !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
