@@ -1,4 +1,3 @@
-import FactoryLumi
 import KernelCore
 import SwiftUI
 
@@ -12,7 +11,7 @@ public enum FactoryBookletMaker {
         try KernelFactory.makeMainView(kernel: kernel)
     }
 
-    /// 使用已装配的内核组装设置视图，供专用 App 的原生 `Settings` scene 使用。
+    /// 使用已装配的内核组装设置视图，供专用 App 的 `Window` scene 使用。
     public static func makeSettingsView(kernel: KernelCoreContainer) throws -> AnyView {
         try KernelFactory.makeSettingsView(kernel: kernel)
     }
