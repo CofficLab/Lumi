@@ -74,7 +74,7 @@ struct DefaultFactoryTests {
     func defaultPluginsIncludeBookletMaker() {
         let plugins = DefaultPluginFactory().makePlugins()
         #expect(plugins.map(\.id) == ["com.coffic.lumi.plugin.booklet-maker"])
-        #expect(plugins.first?.metadata.policy == .alwaysOn)
+        #expect(plugins.first?.metadata.policy == .required)
     }
 }
 

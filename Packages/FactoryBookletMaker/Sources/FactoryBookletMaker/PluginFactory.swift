@@ -21,6 +21,6 @@ public struct DefaultPluginFactory: PluginFactory {
 
     /// 产出 BookletMaker 专用宿主的默认插件。
     public func makePlugins() -> [any SuperPlugin] {
-        [BookletMakerPlugin()]
+        [BookletMakerPlugin(policy: .required)]
     }
 }

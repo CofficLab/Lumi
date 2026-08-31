@@ -39,3 +39,10 @@ import Testing
     #expect(rail.visibleCategories == Set(RailViewCategory.allCases))
     #expect(root.isContentHeaderViewHidden == false)
 }
+
+@MainActor
+@Test func policyCanBeConfiguredPerHost() {
+    #expect(BookletMakerPlugin().metadata.policy == .disabledByDefault)
+    #expect(BookletMakerPlugin(policy: .required).metadata.policy == .required)
+    #expect(BookletMakerPlugin(policy: .alwaysOn).metadata.policy == .alwaysOn)
+}
