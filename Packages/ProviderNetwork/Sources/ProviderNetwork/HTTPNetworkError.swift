@@ -31,8 +31,38 @@ public struct HTTPNetworkError: Error, LocalizedError, Sendable {
 
     public var errorDescription: String? {
         if let statusCode {
+            if let responseMessage {
+                return "HTTP error \(statusCode) for '\(url.absoluteString)': \(responseMessage)"
+            }
             return "HTTP error \(statusCode) for '\(url.absoluteString)'"
         }
         return "Network request to '\(url.absoluteString)' failed: \(underlyingDescription ?? "unknown error")"
+    }
+
+    /// Extract the actionable message from common JSON error envelopes without
+    /// exposing the complete response body in a user-facing error.
+    private var responseMessage: String? {
+        guard let body, !body.isEmpty else { return nil }
+
+        if let object = try? JSONSerialization.jsonObject(with: body) as? [String: Any] {
+            if let error = object["error"] as? [String: Any],
+               let message = error["message"] as? String,
+               !message.isEmpty {
+                return message
+            }
+            if let message = object["message"] as? String, !message.isEmpty {
+                return message
+            }
+            if let detail = object["detail"] as? String, !detail.isEmpty {
+                return detail
+            }
+        }
+
+        guard let text = String(data: body, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !text.isEmpty else {
+            return nil
+        }
+        return String(text.prefix(2_000))
     }
 }

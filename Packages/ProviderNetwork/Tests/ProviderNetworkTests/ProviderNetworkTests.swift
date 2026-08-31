@@ -61,6 +61,23 @@ struct ProviderNetworkTests {
         #expect(error.errorDescription?.contains("404") == true)
     }
 
+    @Test("HTTP 错误展示服务端 JSON message")
+    func httpErrorIncludesServerMessage() throws {
+        let url = URL(string: "https://example.com/v1/chat/completions")!
+        let body = Data(#"{"error":{"message":"上下文长度超过模型上限","type":"invalid_request_error"}}"#.utf8)
+        let error = HTTPNetworkError(url: url, statusCode: 400, body: body)
+
+        #expect(error.localizedDescription == "HTTP error 400 for 'https://example.com/v1/chat/completions': 上下文长度超过模型上限")
+    }
+
+    @Test("非 JSON HTTP 错误保留响应文本")
+    func httpErrorIncludesPlainTextBody() throws {
+        let url = URL(string: "https://example.com")!
+        let error = HTTPNetworkError(url: url, statusCode: 502, body: Data("upstream unavailable".utf8))
+
+        #expect(error.localizedDescription.contains("upstream unavailable"))
+    }
+
     @Test("get 请求返回 mock 响应")
     func getReturnsMockResponse() async throws {
         MockURLProtocol.handler = { request in
