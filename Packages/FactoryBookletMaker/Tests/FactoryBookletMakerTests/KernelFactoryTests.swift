@@ -63,19 +63,6 @@ struct KernelFactoryTests {
         let view = try KernelFactory.makeMainView()
         _ = view // AnyView 装配成功即视为通过（不崩溃、不返回占位 Text）
     }
-
-    @Test("makeSettingsView 返回非空设置视图")
-    func makeSettingsViewReturnsView() throws {
-        let view = try KernelFactory.makeSettingsView()
-        _ = view
-    }
-
-    @Test("共享内核可同时组装主窗口与设置窗口")
-    func sharedKernelAssemblesBothViews() throws {
-        let kernel = try KernelFactory.makeKernel()
-        _ = try KernelFactory.makeMainView(kernel: kernel)
-        _ = try KernelFactory.makeSettingsView(kernel: kernel)
-    }
 }
 
 /// 工厂默认实现的测试：专用宿主必须装配 BookletMaker 插件。

@@ -1,74 +1,75 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "RootViewProviding not registered": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RootViewProviding not registered"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "RootViewProviding not registered" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RootViewProviding not registered"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RootViewProviding 未注册"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RootViewProviding 未注册"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RootViewProviding 未注册"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RootViewProviding 未注册"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RootViewProviding 未注册"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RootViewProviding 未注册"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RootViewProviding 未注册"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RootViewProviding 未注册"
           }
         }
       }
     },
-    "SettingViewProviding not registered": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SettingViewProviding not registered"
+    "SettingViewProviding not registered" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SettingViewProviding not registered"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SettingViewProviding 未注册"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SettingViewProviding 未注册"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SettingViewProviding 未注册"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SettingViewProviding 未注册"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SettingViewProviding 未注册"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SettingViewProviding 未注册"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SettingViewProviding 未注册"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SettingViewProviding 未注册"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }
