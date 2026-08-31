@@ -27,9 +27,11 @@ struct DefaultRootHostView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.background)
         .appThemedAppearance()
+        #if os(macOS)
         .background {
             ThemeWindowAppearanceBridge()
         }
+        #endif
         .environmentObject(AppThemeVM.shared)
         #if os(macOS)
             .ignoresSafeArea()

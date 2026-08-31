@@ -1,26 +1,61 @@
-import BookletMakerPlugin
-import Foundation
 import KernelCore
+import BookletMakerPlugin
 
-/// 产出各种插件的工厂协议。
+#if os(macOS)
+import PluginActivityBar
+import PluginCommand
+import PluginLogoCoffic
+import PluginLogoManager
+import PluginSettingView
+import PluginStorage
+import PluginThemePack
+#endif
+
+/// BookletMaker 的专用插件目录。
 ///
-/// 集中管理插件的构造；`KernelFactory.makeKernel` 通过它产出插件并
-/// 用 `kernel.start(plugins:)` 启动。宿主可实现该协议覆盖插件列表。
-@MainActor
-public protocol PluginFactory {
-    /// 产出要启动的全部插件。
-    ///
-    /// 各插件在 `onBoot` 中解析内核已有 Provider 并注册自己的贡献。
-    func makePlugins() -> [any SuperPlugin]
-}
-
-/// 默认 `PluginFactory` 实现：产出默认插件。
+/// 只装配 BookletMaker 工作流和宿主 UI 所需的基础插件。Lumi 的 LLM、Agent、
+/// 项目、聊天、开发工具和其他实验性插件不会进入这个应用的进程。
 @MainActor
 public struct DefaultPluginFactory: PluginFactory {
     public init() {}
 
-    /// 产出 BookletMaker 专用宿主的默认插件。
     public func makePlugins() -> [any SuperPlugin] {
-        [BookletMakerPlugin()]
+        #if os(iOS)
+        return [BookletMakerPlugin(policy: .required)]
+        #else
+        [
+            // 基础服务必须先于业务插件启动。
+            try! StorageSuperPlugin(),
+            CommandPlugin(),
+            PluginSettingView(),
+            PluginLogoManager(),
+            PluginActivityBar(),
+            LogoCofficPlugin(),
+            ThemePackPlugin(),
+            // BookletMaker 是此宿主的核心能力，不能被用户关闭。
+            BookletMakerPlugin(policy: .required),
+        ]
+        #endif
+    }
+}
+
+/// 在专用宿主需要时，按显式 allow-list 选择插件。
+@MainActor
+public struct SelectedPluginFactory: PluginFactory {
+    private let base: any PluginFactory
+    public let allowedPluginIDs: Set<String>
+
+    public init(allowedPluginIDs: Set<String>) {
+        self.allowedPluginIDs = allowedPluginIDs
+        self.base = DefaultPluginFactory()
+    }
+
+    public init(allowedPluginIDs: Set<String>, base: any PluginFactory) {
+        self.allowedPluginIDs = allowedPluginIDs
+        self.base = base
+    }
+
+    public func makePlugins() -> [any SuperPlugin] {
+        base.makePlugins().filter { allowedPluginIDs.contains($0.id) }
     }
 }

@@ -40,11 +40,13 @@ struct FactoryLumiTests {
         let languages = try #require(plugins["com.coffic.lumi.plugin.editor-languages"])
         let workspace = try #require(plugins["com.coffic.lumi.plugin.code-editor"])
         let projectFiles = try #require(plugins[ProjectFilesSuperPlugin.pluginID])
+        let bookletMaker = try #require(plugins["com.coffic.lumi.plugin.booklet-maker"])
 
         #expect(host.metadata.policy == .alwaysOn)
         #expect(languages.metadata.policy == .required)
         #expect(workspace.metadata.policy == .disabledByDefault)
         #expect(projectFiles.metadata.policy == .required)
+        #expect(bookletMaker.metadata.policy == .disabledByDefault)
         #expect(projectFiles.dependencies == [
             "com.coffic.lumi.plugin.projects",
         ])

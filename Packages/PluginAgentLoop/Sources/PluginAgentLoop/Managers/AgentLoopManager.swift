@@ -5,6 +5,7 @@ import os
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderLifecycleHooks
+import ProviderLLMContext
 import ProviderLLMManager
 import ProviderMessage
 import ProviderMessageStreaming
@@ -29,12 +30,14 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
     let toolManager: any ToolManagerProviding
     let streaming: any MessageStreamingProviding
     let conversations: any ConversationManaging
+    let contextProvider: any LLMContextProviding
     var lifecycleHooks: (any LifecycleHooksProviding)?
 
     // MARK: - FSM State (single source of truth)
 
     /// 每会话的回合运行时上下文。替代原先 8 个散落的字典/集合。
     var runtimes: [UUID: TurnRuntime] = [:]
+    var resumingConversations: Set<UUID> = []
     var completionWaiters: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
     private var agentLoopObservers: [UUID: (AgentLoopEvent) -> Void] = [:]
 
@@ -46,13 +49,15 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
         llmManager: any LLMManaging,
         toolManager: any ToolManagerProviding,
         streaming: any MessageStreamingProviding,
-        conversations: any ConversationManaging
+        conversations: any ConversationManaging,
+        contextProvider: any LLMContextProviding
     ) {
         self.messages = messages
         self.llmManager = llmManager
         self.toolManager = toolManager
         self.streaming = streaming
         self.conversations = conversations
+        self.contextProvider = contextProvider
     }
 
     public func addAgentLoopObserver(

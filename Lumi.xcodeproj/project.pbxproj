@@ -13,6 +13,7 @@
 		CD2AFB000000000000000001 /* FactoryCADDesigner in Frameworks */ = {isa = PBXBuildFile; productRef = CD2AFD000000000000000001 /* FactoryCADDesigner */; };
 		DB2AFB000000000000000001 /* FactoryDatabaseManager in Frameworks */ = {isa = PBXBuildFile; productRef = DB2AFD000000000000000001 /* FactoryDatabaseManager */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
+		F5D870C830458510006C38DD /* PluginLLMProviderCodex in Frameworks */ = {isa = PBXBuildFile; productRef = LC2AFD000000000000000001 /* PluginLLMProviderCodex */; };
 		F5FL20000000000000B001 /* FactoryLumi in Frameworks */ = {isa = PBXBuildFile; productRef = F5FL200000000000000001 /* FactoryLumi */; };
 		LF000000000000000014 /* LumiFinder.appex in Embed PlugIns */ = {isa = PBXBuildFile; fileRef = LF000000000000000001 /* LumiFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		LF000000000000000015 /* KitSuperLog in Frameworks */ = {isa = PBXBuildFile; productRef = LF000000000000000016 /* KitSuperLog */; };
@@ -196,6 +197,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F5D870C830458510006C38DD /* PluginLLMProviderCodex in Frameworks */,
 				0B7F9C3C30306DC5001526F4 /* AppUpdatePlugin in Frameworks */,
 				F5FL20000000000000B001 /* FactoryLumi in Frameworks */,
 			);
@@ -772,10 +774,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FactoryDatabaseManager;
 		};
-		LC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/PluginLLMProviderCodex;
-		};
 		F5CBA1A03020000000425FF6 /* XCLocalSwiftPackageReference "Packages/PluginAppUpdate" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/PluginAppUpdate;
@@ -783,6 +781,10 @@
 		FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FactoryLumi;
+		};
+		LC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PluginLLMProviderCodex;
 		};
 		LF000000000000000017 /* XCLocalSwiftPackageReference "Packages/KitSuperLog" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -824,6 +826,11 @@
 			package = FL20000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryLumi" */;
 			productName = FactoryLumi;
 		};
+		LC2AFD000000000000000001 /* PluginLLMProviderCodex */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = LC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */;
+			productName = PluginLLMProviderCodex;
+		};
 		LF000000000000000016 /* KitSuperLog */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = KitSuperLog;
@@ -831,11 +838,6 @@
 		LF000000000000000019 /* KitLocalization */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = KitLocalization;
-		};
-		LC2AFD000000000000000001 /* PluginLLMProviderCodex */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = LC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */;
-			productName = PluginLLMProviderCodex;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

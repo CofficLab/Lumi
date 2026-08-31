@@ -24,10 +24,14 @@ private struct ContentHostView: View {
     @ObservedObject var provider: DefaultContentViewProviding
 
     var body: some View {
-        if let contentView = provider.contentView {
-            contentView
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        Group {
+            if let contentView = provider.contentView {
+                contentView
+            } else {
+                ContentPlaceholderView()
+            }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -38,9 +42,13 @@ private struct ContentPlaceholderView: View {
             Image(systemName: "macwindow")
                 .font(.system(size: 32))
                 .foregroundStyle(.secondary)
-            Text(LumiPluginLocalization.string("No Content", bundle: .module))
+            Text(LumiPluginLocalization.string("No plugin view registered", bundle: .module))
                 .font(.headline)
                 .foregroundStyle(.secondary)
+            Text(LumiPluginLocalization.string("A plugin must register a main content view for this workspace.", bundle: .module))
+                .font(.subheadline)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

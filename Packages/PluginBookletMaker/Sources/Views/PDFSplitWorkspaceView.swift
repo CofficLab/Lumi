@@ -3,6 +3,8 @@ import SwiftUI
 
 /// Visual split editor for the shared current PDF.
 struct PDFSplitWorkspaceView: View {
+    @LumiTheme private var theme
+
     @ObservedObject var viewModel: BookletMakerViewModel
 
     var body: some View {
@@ -20,27 +22,27 @@ struct PDFSplitWorkspaceView: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(BookletLocalization.string("Split PDF"))
-                    .font(.title2.weight(.semibold))
+                    .font(DesignTokens.Typography.title2)
                 Text(BookletLocalization.string(
                     "Click a gap between pages to add or remove a cut point."
                 ))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(DesignTokens.Typography.subheadline)
+                .foregroundStyle(theme.textSecondary)
             }
             Spacer()
             Text(BookletLocalization.string(
                 "%lld pages",
                 Int64(viewModel.currentDocument.pageCount)
             ))
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(.secondary)
+            .font(DesignTokens.Typography.subheadline)
+            .foregroundStyle(theme.textSecondary)
         }
     }
 
     private var pageStrip: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(BookletLocalization.string("Page Sequence"))
-                .font(.headline)
+                .font(DesignTokens.Typography.title3)
 
             ScrollView(.horizontal) {
                 LazyHStack(spacing: 0) {
@@ -54,9 +56,10 @@ struct PDFSplitWorkspaceView: View {
                 .padding(12)
             }
             .frame(height: 205)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.lumiControlBackground)
+            .appSurface(
+                style: .subtle,
+                cornerRadius: DesignTokens.Radius.md,
+                borderColor: theme.appSubtleBorder
             )
         }
     }
@@ -70,7 +73,7 @@ struct PDFSplitWorkspaceView: View {
             .frame(width: 105, height: 155)
 
             Text("\(page)")
-                .font(.caption2.weight(.semibold))
+                .font(DesignTokens.Typography.caption2)
                 .padding(.horizontal, 5)
                 .padding(.vertical, 3)
                 .foregroundStyle(.white)
@@ -108,13 +111,13 @@ struct PDFSplitWorkspaceView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(BookletLocalization.string("Split Result"))
-                    .font(.headline)
+                    .font(DesignTokens.Typography.title3)
                 Text(BookletLocalization.string(
                     "%lld PDF files will be generated",
                     Int64(viewModel.splitSegments.count)
                 ))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(DesignTokens.Typography.subheadline)
+                .foregroundStyle(theme.textSecondary)
             }
             Spacer()
             if viewModel.splitCutPoints.isEmpty {
@@ -122,8 +125,8 @@ struct PDFSplitWorkspaceView: View {
                     BookletLocalization.string("Add at least one cut point"),
                     systemImage: "info.circle"
                 )
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(DesignTokens.Typography.caption1)
+                .foregroundStyle(theme.textSecondary)
             }
         }
     }
@@ -148,30 +151,28 @@ struct PDFSplitWorkspaceView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Image(systemName: "pencil")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    TextField(
-                        BookletLocalization.string("Output file name"),
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundStyle(theme.textSecondary)
+                    AppInputField(
+                        LocalizedStringKey(BookletLocalization.string("Output file name")),
                         text: Binding(
                             get: { viewModel.splitFileNameStem(for: segment) },
                             set: { viewModel.renameSplitOutputStem(segment, to: $0) }
                         )
                     )
-                    .textFieldStyle(.roundedBorder)
-                    .font(.subheadline.weight(.semibold))
                     .accessibilityLabel(BookletLocalization.string(
                         "Rename output PDF %lld",
                         Int64(segment.index)
                     ))
                     Text(BookletLocalization.string(".pdf"))
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .font(DesignTokens.Typography.subheadline)
+                        .foregroundStyle(theme.textSecondary)
                 }
 
                 if let message = viewModel.splitFileNameValidationMessage(for: segment) {
                     Text(message)
-                        .font(.caption2)
-                        .foregroundStyle(.red)
+                        .font(DesignTokens.Typography.caption2)
+                        .foregroundStyle(theme.error)
                 }
 
                 Text(BookletLocalization.string(
@@ -179,29 +180,22 @@ struct PDFSplitWorkspaceView: View {
                     Int64(segment.startPage),
                     Int64(segment.endPage)
                 ))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(DesignTokens.Typography.caption1)
+                .foregroundStyle(theme.textSecondary)
             }
 
             Spacer()
 
-            Text(BookletLocalization.string(
+            AppTag(BookletLocalization.string(
                 "%lld pages",
                 Int64(segment.pageCount)
             ))
-            .font(.caption.weight(.medium))
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
-            .background(Color.secondary.opacity(0.12), in: Capsule())
         }
         .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color.lumiControlBackground)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.secondary.opacity(0.15))
+        .appSurface(
+            style: .listRow,
+            cornerRadius: DesignTokens.Radius.md,
+            borderColor: theme.appSubtleBorder
         )
     }
 }

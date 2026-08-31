@@ -6,6 +6,7 @@ import os
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderLifecycleHooks
+import ProviderLLMContext
 import ProviderLLMManager
 import ProviderMessage
 import ProviderMessageStreaming
@@ -65,6 +66,10 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.emoji)ConversationManaging not found, skip AgentLoop replacement")
             return
         }
+        guard let contextProvider = kernel.resolveProvider((any LLMContextProviding).self) else {
+            Self.logger.error("\(Self.emoji)LLMContextProviding not found, skip AgentLoop replacement")
+            return
+        }
 
         // 2. 创建自定义实现
         let agentLoop = AgentLoopManager(
@@ -72,7 +77,8 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
             llmManager: llmManager,
             toolManager: toolManager,
             streaming: streaming,
-            conversations: conversations
+            conversations: conversations,
+            contextProvider: contextProvider
         )
         agentLoop.setLifecycleHooks(kernel.resolveProvider((any LifecycleHooksProviding).self))
 

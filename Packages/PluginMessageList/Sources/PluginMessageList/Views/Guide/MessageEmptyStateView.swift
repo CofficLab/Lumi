@@ -18,6 +18,17 @@ struct MessageEmptyStateView: View {
         _contextObserver = StateObject(wrappedValue: ChatContextObserver(chat: services.chat))
     }
 
+    private var emptyStateTitle: String {
+        let context = contextObserver.context
+        if context?.id == ChatContext.defaultChat.id {
+            return LumiPluginLocalization.string("Start chatting with Lumi")
+        }
+        if let title = context?.title {
+            return String(format: LumiPluginLocalization.string("For 「%@」, what can I help you with?"), title)
+        }
+        return LumiPluginLocalization.string("Start chatting with Lumi")
+    }
+
     var body: some View {
         GeometryReader { proxy in
             ZStack {
@@ -28,9 +39,7 @@ struct MessageEmptyStateView: View {
                         EmptyStateHeroIcon(systemImage: contextObserver.context?.systemImage ?? "bubble.left.and.bubble.right")
                             .padding(.bottom, 18)
 
-                        Text(contextObserver.context?.id == ChatContext.defaultChat.id
-                            ? LumiPluginLocalization.string("Start chatting with Lumi")
-                            : (contextObserver.context?.title ?? LumiPluginLocalization.string("Start chatting with Lumi")))
+                        Text(emptyStateTitle)
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundStyle(theme.textPrimary)
                             .multilineTextAlignment(.center)

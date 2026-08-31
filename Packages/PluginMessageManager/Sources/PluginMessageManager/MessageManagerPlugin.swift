@@ -18,8 +18,8 @@ import KitSuperLog
 ///   替换默认实现 —— 必须早于消费方插件（`AgentLoop` 回合写消息、
 ///   `MessageSender` 发送、`MessageList` 渲染，order 均 > 10）的 `onBoot`，
 ///   本插件 order=8（紧随 ConversationManagerPlugin order=7）。
-/// - 写路径采用 write-behind + read-your-writes：user/error 立即落盘，
-///   assistant/tool 后台串行落盘，status 纯内存不落盘。
+/// - 写路径采用 write-behind + read-your-writes：user/assistant/tool 后台串行落盘，
+///   error 立即落盘，status 纯内存不落盘。
 ///
 /// 容错：数据库初始化失败时不替换默认实现（保留内存版），仅记日志，不阻塞内核启动。
 @MainActor

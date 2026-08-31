@@ -13,8 +13,7 @@ struct BookletPreviewStrip: View {
     var body: some View {
         if !viewModel.thumbnails.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
-                Text(BookletLocalization.string("Preview"))
-                    .font(.headline)
+                AppSectionLabel(BookletLocalization.string("Preview"))
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 12) {
                         ForEach(viewModel.thumbnails, id: \.sheetIndex) { thumb in
@@ -35,39 +34,49 @@ struct BookletPreviewStrip: View {
 // MARK: - Thumbnail Card
 
 private struct ThumbnailCard: View {
+    @LumiTheme private var theme
 
     let thumbnail: BookletThumbnailer.Thumbnail
     let isSelected: Bool
     let onTap: () -> Void
 
     var body: some View {
-        VStack(spacing: 4) {
-            Group {
-                if let image = LumiPlatformImage(lumiContentsOf: thumbnail.fileURL) {
-                    Image(lumiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(maxHeight: 160)
-                        .background(Color.white)
-                } else {
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(width: 200, height: 160)
-                        .overlay(
-                            Image(systemName: "photo")
-                                .foregroundStyle(.secondary)
-                        )
+        AppCard(
+            style: .subtle,
+            cornerRadius: DesignTokens.Radius.sm,
+            padding: DesignTokens.Spacing.compactPadding,
+            showShadow: false
+        ) {
+            VStack(spacing: 4) {
+                Group {
+                    if let image = LumiPlatformImage(lumiContentsOf: thumbnail.fileURL) {
+                        Image(lumiImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(maxHeight: 160)
+                            .background(Color.white)
+                    } else {
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                            .fill(theme.textSecondary.opacity(0.12))
+                            .frame(width: 200, height: 160)
+                            .overlay(
+                                Image(systemName: "photo")
+                                    .foregroundStyle(theme.textSecondary)
+                            )
+                    }
                 }
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(isSelected ? Color.accentColor : Color.gray.opacity(0.3),
-                            lineWidth: isSelected ? 2 : 1)
-            )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                        .stroke(
+                            isSelected ? theme.primary : theme.appSubtleBorder,
+                            lineWidth: isSelected ? 2 : 1
+                        )
+                )
 
-            Text(BookletLocalization.string("Sheet number %lld", thumbnail.sheetIndex + 1))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                Text(BookletLocalization.string("Sheet number %lld", thumbnail.sheetIndex + 1))
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundStyle(theme.textSecondary)
+            }
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onTap)

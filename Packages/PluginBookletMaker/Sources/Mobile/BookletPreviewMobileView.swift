@@ -1,4 +1,5 @@
 #if os(iOS)
+import LumiUI
 import SwiftUI
 
 struct BookletPreviewMobileView: View {
@@ -14,13 +15,14 @@ struct BookletPreviewMobileView: View {
 
     @ObservedObject var viewModel: BookletMakerViewModel
     @State private var stage: Stage = .imposed
+    @LumiTheme private var theme
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker(BookletLocalization.string("Preview"), selection: $stage) {
-                ForEach(Stage.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
+            AppSegmentedControl(
+                Stage.allCases.map(\.title),
+                selection: stageSelection
+            )
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
 
@@ -31,7 +33,7 @@ struct BookletPreviewMobileView: View {
                 }
             }
         }
-        .background(Color(uiColor: .systemGroupedBackground))
+        .appSurface(style: .panel, cornerRadius: 0)
     }
 
     private var originalPages: some View {
@@ -57,19 +59,21 @@ struct BookletPreviewMobileView: View {
 
     private var imposedSheets: some View {
         VStack(spacing: 0) {
-            HStack {
-                Label(
-                    BookletLocalization.string("%lld sheets", Int64(viewModel.expectedSheetCount)),
-                    systemImage: "rectangle.stack"
-                )
-                Spacer()
-                Text(BookletLocalization.string(
-                    "%lld print sides",
-                    Int64(viewModel.expectedOutputPageCount)
-                ))
+            AppCard(style: .subtle, cornerRadius: DesignTokens.Radius.sm, showShadow: false) {
+                HStack {
+                    Label(
+                        BookletLocalization.string("%lld sheets", Int64(viewModel.expectedSheetCount)),
+                        systemImage: "rectangle.stack"
+                    )
+                    Spacer()
+                    Text(BookletLocalization.string(
+                        "%lld print sides",
+                        Int64(viewModel.expectedOutputPageCount)
+                    ))
+                }
+                .font(DesignTokens.Typography.subheadline)
+                .foregroundStyle(theme.textSecondary)
             }
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(.secondary)
             .padding(.horizontal, 20)
             .padding(.bottom, 8)
 
@@ -79,6 +83,16 @@ struct BookletPreviewMobileView: View {
             )
             .padding(20)
         }
+    }
+
+    private var stageSelection: Binding<Int> {
+        Binding(
+            get: { Stage.allCases.firstIndex(of: stage) ?? 0 },
+            set: { index in
+                guard Stage.allCases.indices.contains(index) else { return }
+                stage = Stage.allCases[index]
+            }
+        )
     }
 }
 #endif

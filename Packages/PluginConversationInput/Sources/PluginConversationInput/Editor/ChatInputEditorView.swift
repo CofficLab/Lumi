@@ -94,6 +94,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         textView.imageDragHoverHandler = { [weak coordinator = context.coordinator] hovering in
             guard let coordinator else { return }
             DispatchQueue.main.async {
+                guard coordinator.isActive else { return }
                 if coordinator.parent.isImageDragHovering != hovering {
                     coordinator.parent.isImageDragHovering = hovering
                 }
@@ -117,6 +118,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         textView.textContainerInset = NSSize(width: 4, height: 4)
 
         scrollView.documentView = textView
+        context.coordinator.attach(to: textView)
 
         let placeholderLabel = ChatInputPlaceholderLabel(labelWithString: placeholder)
         placeholderLabel.tag = Self.placeholderLabelTag
@@ -131,11 +133,16 @@ public struct ChatInputEditorView: NSViewRepresentable {
             placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: 7),
         ])
 
-        DispatchQueue.main.async {
-            updateHeight(for: textView)
+        DispatchQueue.main.async { [weak coordinator = context.coordinator, weak textView] in
+            guard let coordinator, let textView, coordinator.accepts(textView) else { return }
+            coordinator.updateHeightNow(for: textView)
         }
 
         return scrollView
+    }
+
+    public static func dismantleNSView(_ nsView: NSScrollView, coordinator: Coordinator) {
+        coordinator.invalidate()
     }
 
     public func updateNSView(_ nsView: NSScrollView, context: Context) {
@@ -169,10 +176,9 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
         if textChanged || cursorBindingChanged {
             let position = ChatInputEditorRules.swiftToUTF16Index(cursorPosition, in: text)
-            DispatchQueue.main.async {
-                if let tv = nsView.documentView as? EditorTextView {
-                    tv.setSelectedRange(NSRange(location: position, length: 0))
-                }
+            DispatchQueue.main.async { [weak coordinator = context.coordinator, weak textView] in
+                guard let coordinator, let textView, coordinator.accepts(textView) else { return }
+                textView.setSelectedRange(NSRange(location: position, length: 0))
             }
             if textChanged {
                 context.coordinator.scheduleHeightUpdate(for: textView, immediately: true)
@@ -196,12 +202,13 @@ public struct ChatInputEditorView: NSViewRepresentable {
         placeholderLabel.isHidden = !textView.string.isEmpty || textView.hasMarkedText()
     }
 
-    private func updateHeight(for textView: NSTextView) {
+    private func updateHeight(for textView: NSTextView, coordinator: Coordinator) {
 #if DEBUG
         os_signpost(.event, log: chatInputPerformanceLog, name: "Height Measurement")
 #endif
-        let layoutManager = textView.layoutManager!
-        let textContainer = textView.textContainer!
+        guard coordinator.accepts(textView),
+              let layoutManager = textView.layoutManager,
+              let textContainer = textView.textContainer else { return }
         layoutManager.ensureLayout(for: textContainer)
 
         let usedRect = layoutManager.usedRect(for: textContainer)
@@ -214,9 +221,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
         }
 
         if height != newHeight {
-            DispatchQueue.main.async {
-                self.height = newHeight
-            }
+            coordinator.scheduleHeightBindingUpdate(newHeight)
         }
     }
 
@@ -256,19 +261,44 @@ extension ChatInputEditorView {
         var parent: ChatInputEditorView
         var lastSyncedCursorPosition: Int?
         private var pendingHeightWorkItem: DispatchWorkItem?
+        private var pendingHeightBindingWorkItem: DispatchWorkItem?
         private var heightScheduleID = UUID()
+        private weak var representedTextView: NSTextView?
+        private(set) var isActive = true
 
         init(_ parent: ChatInputEditorView) {
             self.parent = parent
         }
 
         deinit {
+            invalidate()
+        }
+
+        func attach(to textView: NSTextView) {
+            representedTextView = textView
+            isActive = true
+        }
+
+        func accepts(_ textView: NSTextView) -> Bool {
+            isActive && representedTextView === textView
+        }
+
+        func invalidate() {
+            guard isActive || pendingHeightWorkItem != nil || pendingHeightBindingWorkItem != nil else { return }
+            isActive = false
+            representedTextView = nil
             pendingHeightWorkItem?.cancel()
+            pendingHeightWorkItem = nil
+            pendingHeightBindingWorkItem?.cancel()
+            pendingHeightBindingWorkItem = nil
+            heightScheduleID = UUID()
         }
 
         @MainActor
         func scheduleHeightUpdate(for textView: NSTextView, immediately: Bool = false) {
+            guard accepts(textView) else { return }
             pendingHeightWorkItem?.cancel()
+            pendingHeightBindingWorkItem?.cancel()
             heightScheduleID = UUID()
             let scheduleID = heightScheduleID
 
@@ -286,7 +316,7 @@ extension ChatInputEditorView {
                 return
             }
             if immediately {
-                parent.updateHeight(for: textView)
+                updateHeightNow(for: textView)
                 return
             }
 
@@ -294,14 +324,36 @@ extension ChatInputEditorView {
                 guard let self,
                       let textView,
                       self.heightScheduleID == scheduleID else { return }
-                self.parent.updateHeight(for: textView)
+                self.updateHeightNow(for: textView)
             }
             pendingHeightWorkItem = workItem
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.016, execute: workItem)
         }
 
+        @MainActor
+        func updateHeightNow(for textView: NSTextView) {
+            guard accepts(textView) else { return }
+            parent.updateHeight(for: textView, coordinator: self)
+        }
+
+        @MainActor
+        func scheduleHeightBindingUpdate(_ height: CGFloat) {
+            guard isActive else { return }
+            pendingHeightBindingWorkItem?.cancel()
+            let scheduleID = heightScheduleID
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self,
+                      self.isActive,
+                      self.heightScheduleID == scheduleID else { return }
+                self.parent.height = height
+            }
+            pendingHeightBindingWorkItem = workItem
+            DispatchQueue.main.async(execute: workItem)
+        }
+
         public func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
+            guard accepts(textView) else { return }
 
             // Marked text is intentionally kept out of the SwiftUI binding,
             // but it still counts as visible editor content for the placeholder.

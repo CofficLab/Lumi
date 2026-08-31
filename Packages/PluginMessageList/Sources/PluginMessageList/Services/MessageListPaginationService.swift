@@ -4,9 +4,8 @@ import ProviderMessage
 /// Message Timeline Pagination Service
 ///
 /// 封装消息时间线的"消息窗口管理"策略（沉淀自旧版同名服务）。
-/// 与旧版不同：新版 `MessageManaging` 没有 `messagePage` / `hasEarlierMessages`
-/// 分页 API，因此这里改为对 `messages(for:)` 返回的全量数组做内存切片分页
-/// （数据本身就在内存中，切片开销可忽略）。
+/// 通过 `MessageManaging` 的分页 API 获取窗口数据，存储层可以在查询阶段
+/// 限制返回数量，避免长会话每次刷新都物化全部消息。
 ///
 /// 与旧版一致：取数前先**剔除独立的 `.tool` 结果行**（旧版 `messagePage` 默认
 /// `includesToolMessages=false`，工具结果消息从不进入 UI 分页窗口；工具信息由
@@ -28,18 +27,6 @@ struct MessageListPaginationService {
         self.maxRetainedCount = maxRetainedCount
     }
 
-    /// 取某会话的展示窗口数据：剔除独立的 `.tool` 结果行（对齐旧版
-    /// `messagePage(includesToolMessages: false)` 语义），再按时间升序。
-    private func displayMessages(
-        for conversationID: UUID,
-        messageManager: any MessageManaging
-    ) -> [Message] {
-        let regularMessages = messageManager.messages(for: conversationID)
-            .filter { $0.role != .tool }
-            .sorted(by: messageOrdering)
-        return regularMessages
-    }
-
     /// 加载首屏（最近一页）+ 是否还有更早消息。
     func loadFirstPage(
         conversationID: UUID,
@@ -48,9 +35,14 @@ struct MessageListPaginationService {
         guard let messageManager else {
             return LoadFirstPageResult(messages: [], hasEarlierMessages: false)
         }
-        let all = displayMessages(for: conversationID, messageManager: messageManager)
-        let safePage = Array(all.suffix(pageSize))
-        let hasEarlier = all.count > safePage.count
+        let page = messageManager.messagePage(
+            for: conversationID,
+            limit: pageSize + 1,
+            beforeMessageID: nil,
+            includesToolMessages: false
+        )
+        let safePage = Array(page.suffix(pageSize))
+        let hasEarlier = page.count > pageSize
         return LoadFirstPageResult(messages: safePage, hasEarlierMessages: hasEarlier)
     }
 
@@ -66,11 +58,18 @@ struct MessageListPaginationService {
         guard hasEarlier,
               let currentFirstID,
               let messageManager else { return nil }
-        let all = displayMessages(for: conversationID, messageManager: messageManager)
-        guard let currentIndex = all.firstIndex(where: { $0.id == currentFirstID }) else { return nil }
-        let earlier = Array(all[max(0, currentIndex - pageSize)..<currentIndex])
+        let earlier = messageManager.messagePage(
+            for: conversationID,
+            limit: pageSize,
+            beforeMessageID: currentFirstID,
+            includesToolMessages: false
+        )
         guard !earlier.isEmpty else { return nil }
-        let stillHasEarlier = max(0, currentIndex - pageSize) > 0
+        let stillHasEarlier = messageManager.hasEarlierMessages(
+            for: conversationID,
+            beforeMessageID: earlier.first?.id,
+            includesToolMessages: false
+        )
         return LoadEarlierResult(
             anchorID: currentFirstID,
             earlier: earlier,
@@ -88,8 +87,12 @@ struct MessageListPaginationService {
         current: [Message]
     ) -> RefreshTailResult? {
         guard let messageManager else { return nil }
-        let all = displayMessages(for: conversationID, messageManager: messageManager)
-        let latestPage = Array(all.suffix(pageSize))
+        let latestPage = messageManager.messagePage(
+            for: conversationID,
+            limit: pageSize,
+            beforeMessageID: nil,
+            includesToolMessages: false
+        )
         guard !latestPage.isEmpty else { return nil }
 
         let latestIDs = Set(latestPage.map(\.id))
@@ -102,7 +105,11 @@ struct MessageListPaginationService {
             // 从无到有：直接把最近一页铺上，并补查 hasEarlier。
             return RefreshTailResult(
                 merged: latestPage,
-                hasEarlierMessages: all.count > latestPage.count
+                hasEarlierMessages: messageManager.hasEarlierMessages(
+                    for: conversationID,
+                    beforeMessageID: latestPage.first?.id,
+                    includesToolMessages: false
+                )
             )
         }
         // 无重叠且当前有内容：用户在翻历史，不要强行覆盖。

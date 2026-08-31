@@ -6,6 +6,8 @@ import UniformTypeIdentifiers
 
 /// 拖放区域视图，用于接收用户拖入或选择的 PDF 文件
 struct BookletDropZoneView: View {
+    @LumiTheme private var theme
+
     @ObservedObject var viewModel: BookletMakerViewModel
 
     @State private var isTargeted: Bool = false
@@ -23,20 +25,15 @@ struct BookletDropZoneView: View {
             fileInfo
 
             if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                AppErrorBanner(message: LocalizedStringKey(errorMessage))
             }
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.lumiControlBackground)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(isTargeted ? Color.accentColor : Color.secondary.opacity(0.2), lineWidth: isTargeted ? 2 : 1)
+        .appSurface(
+            style: .subtle,
+            cornerRadius: DesignTokens.Radius.md,
+            borderColor: isTargeted ? theme.primary : theme.appSubtleBorder,
+            lineWidth: isTargeted ? 2 : 1
         )
         .onDrop(of: [.fileURL], isTargeted: $isTargeted) { providers in
             handleDrop(providers: providers)
@@ -56,15 +53,15 @@ struct BookletDropZoneView: View {
         VStack(spacing: 8) {
             Image(systemName: "doc.badge.plus")
                 .font(.system(size: 32))
-                .foregroundColor(.secondary)
+                .foregroundStyle(theme.textSecondary)
 
             Text(BookletLocalization.string("Drop a PDF here or click to choose one"))
-                .font(.headline)
-                .foregroundColor(.secondary)
+                .font(DesignTokens.Typography.bodyEmphasized)
+                .foregroundStyle(theme.textSecondary)
 
             Text(BookletLocalization.string("Supports A4 PDF files"))
-                .font(.caption)
-                .foregroundColor(.secondary.opacity(0.7))
+                .font(DesignTokens.Typography.caption1)
+                .foregroundStyle(theme.textTertiary)
         }
         .contentShape(Rectangle())
         .onTapGesture {
@@ -75,13 +72,13 @@ struct BookletDropZoneView: View {
     private var fileInfo: some View {
         HStack {
             Image(systemName: viewModel.currentDocument.isDemo ? "doc.text.fill" : "doc.fill")
-                .foregroundColor(.blue)
+                .foregroundStyle(theme.primary)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(viewModel.currentDocument.isDemo
                      ? BookletLocalization.string("Built-in demo PDF")
                      : viewModel.currentDocument.url.lastPathComponent)
-                    .font(.subheadline)
+                    .font(DesignTokens.Typography.subheadline)
                     .fontWeight(.medium)
                     .lineLimit(1)
 
@@ -89,29 +86,22 @@ struct BookletDropZoneView: View {
                     "%lld pages",
                     Int64(viewModel.currentDocument.pageCount)
                 ))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundStyle(theme.textSecondary)
             }
 
             Spacer()
 
             if viewModel.hasUserInput {
-                Button(action: {
+                AppButton(systemImage: "xmark.circle.fill", action: {
                     viewModel.clear()
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
+                })
                 .help(BookletLocalization.string("Return to built-in demo PDF"))
             }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.lumiTextBackground)
-        )
+        .appSurface(style: .listRow, cornerRadius: DesignTokens.Radius.sm)
     }
 
     // MARK: - Actions

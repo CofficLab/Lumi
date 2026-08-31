@@ -23,7 +23,10 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
         } detail: {
             detail
         }
-        .frame(minWidth: 720, minHeight: 520)
+        // The appearance page contains a second split view (theme list + preview)
+        // whose usable width is larger than the legacy 720pt settings window.
+        // Keep the host window from laying out that content outside both edges.
+        .frame(minWidth: 960, minHeight: 520)
         .background(theme.background)
         .appThemedAppearance()
         .onAppear(perform: selectFirstEntryIfNeeded)

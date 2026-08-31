@@ -33,6 +33,7 @@ import ProviderPluginManaging
 import ProviderWebServer
 import ProviderExternalFile
 import ProviderLifecycleHooks
+import ProviderLLMContext
 import ProviderLLMManager
 import KernelCore
 
@@ -271,6 +272,14 @@ public struct DefaultProviderFactory: ProviderFactory {
 
         let messages = makeMessageProvider()
         try kernel.registerProvider((any MessageManaging).self, messages)
+
+        // 上下文 Provider 是 AgentLoop 获取 LLM 消息的唯一入口。
+        // 目前先注册透传实现，后续由上下文压缩插件替换为摘要实现；
+        // 这样插件缺失时仍保持原有完整历史行为。
+        try kernel.registerProvider(
+            (any LLMContextProviding).self,
+            PassthroughLLMContextProvider(messages: messages)
+        )
 
         let llmProvider = makeLLMProvider()
         try kernel.registerProvider((any SuperLLMProvider).self, llmProvider)

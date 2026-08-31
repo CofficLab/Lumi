@@ -224,7 +224,9 @@ extension AgentLoopManager {
     /// 执行一次 LLM 流式请求，落库 assistant 消息。
     func performLLMRequest(conversationID: UUID, turnID: UUID) async -> LLMRequestResult {
         if Self.verbose { Self.logger.info("\(Self.t)LLM request begin conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
-        let history = messages.messages(for: conversationID)
+        // 由上下文 Provider 统一决定发送完整历史还是压缩后的上下文。
+        // AgentLoop 不读取全量历史，也不感知具体压缩策略。
+        let history = await contextProvider.messagesForLLM(in: conversationID)
 
         // 计算工具 schema
         let automationLevel = conversations.automationLevel(for: conversationID)

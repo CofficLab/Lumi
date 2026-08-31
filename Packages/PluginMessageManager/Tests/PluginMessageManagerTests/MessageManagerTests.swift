@@ -8,7 +8,7 @@ import Testing
 ///
 /// 锁定 `MessageManager` 参考 ChatGPT 策略的写入语义:
 /// - insert 后 UI 立即能从读路径看到消息(read-your-writes),不等落盘;
-/// - user 消息立即同步落盘,assistant 消息后台落盘;
+/// - user / assistant 消息后台落盘;
 /// - 后台落盘完成后,消息仍在读路径可见(磁盘已有)。
 @MainActor
 @Suite("MessageManager Write-Behind")
@@ -45,10 +45,20 @@ struct MessageManagerWriteBehindTests {
         let page = manager.messagePage(for: conversationID, limit: 10, beforeMessageID: nil, includesToolMessages: false)
         #expect(page.count == 1)
         #expect(page.first?.content == "hello")
+
+        var persisted = false
+        for _ in 0..<100 {
+            if store.fetchMessages(conversationId: conversationID).contains(where: { $0.id == msg.id }) {
+                persisted = true
+                break
+            }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(persisted)
     }
 
-    @Test("user 消息立即同步落盘")
-    func userMessagePersistedEagerly() async throws {
+    @Test("user 消息立即可读并最终后台落盘")
+    func userMessagePersistedInBackground() async throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
         let manager = makeManager(store: store)
@@ -60,8 +70,45 @@ struct MessageManagerWriteBehindTests {
         )
         manager.insertMessage(msg, to: conversationID)
 
-        // user 消息同步落盘:绕过 manager,直接查 store 也能立即查到。
-        #expect(store.fetchMessages(conversationId: conversationID).count == 1)
+        // user 消息先进入 pending:绕过 manager 的读路径暂时不要求立即可见。
+        let page = manager.messagePage(
+            for: conversationID,
+            limit: 10,
+            beforeMessageID: nil,
+            includesToolMessages: false
+        )
+        #expect(page.count == 1)
+        #expect(page.first?.content == "hi")
+
+        var persisted = false
+        for _ in 0..<100 {
+            if store.fetchMessages(conversationId: conversationID).contains(where: { $0.id == msg.id }) {
+                persisted = true
+                break
+            }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(persisted)
+    }
+
+    @Test("LLM 历史读取包含磁盘与 pending 消息")
+    func llmHistoryIncludesPendingMessages() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+
+        let message = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "context",
+            createdAt: Date()
+        )
+        manager.insertMessage(message, to: conversationID)
+
+        let history = await manager.messagesForLLM(in: conversationID)
+
+        #expect(history.map(\.content) == ["context"])
     }
 
     @Test("响应元数据字段可完整往返数据库")
@@ -113,6 +160,7 @@ struct MessageManagerWriteBehindTests {
             object: nil,
             queue: nil
         ) { notification in
+            guard notification.userInfo?["messageID"] as? UUID == msg.id else { return }
             received.conversationID = notification.userInfo?["conversationID"] as? UUID
             received.messageID = notification.userInfo?["messageID"] as? UUID
             received.role = notification.userInfo?["role"] as? String
@@ -121,7 +169,19 @@ struct MessageManagerWriteBehindTests {
 
         manager.insertMessage(msg, to: conversationID)
 
-        #expect(store.fetchMessages(conversationId: conversationID).contains { $0.id == msg.id })
+        var notified = false
+        for _ in 0..<100 {
+            if store.fetchMessages(conversationId: conversationID).contains(where: { $0.id == msg.id })
+                && received.conversationID == conversationID
+                && received.messageID == msg.id
+                && received.role == MessageRole.user.rawValue {
+                notified = true
+                break
+            }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        #expect(notified)
         #expect(received.conversationID == conversationID)
         #expect(received.messageID == msg.id)
         #expect(received.role == MessageRole.user.rawValue)
@@ -169,7 +229,7 @@ struct MessageManagerWriteBehindTests {
     }
 
     @Test("活动聚合包含持久化与待落盘消息")
-    func dailyActivityAggregates() throws {
+    func dailyActivityAggregates() async throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
         let manager = makeManager(store: store)
@@ -189,6 +249,18 @@ struct MessageManagerWriteBehindTests {
 
         #expect(manager.dailyMessageCounts(since: day)[day] == 2)
         #expect(manager.dailyTokenCounts(since: day)[day] == 17)
+
+        // 后台写入完成后再清理临时数据库，避免测试结束时队列仍在写入。
+        var persisted = false
+        for _ in 0..<100 {
+            if store.fetchMessages(conversationId: firstConversation).count == 1,
+               store.fetchMessages(conversationId: secondConversation).count == 1 {
+                persisted = true
+                break
+            }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(persisted)
     }
 
     private func expectationCapture() -> SavedNotificationCapture {

@@ -1,20 +1,20 @@
 import KernelCore
 import ProviderActivityBar
+import ProviderCommand
 import ProviderContentView
 import ProviderDocsView
-import ProviderNetwork
-import ProviderPluginManaging
-import ProviderProject
+import ProviderLogo
 import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
-import ProviderToast
+import ProviderTheme
 import ProviderToolbar
+import PluginSettingView
 import Testing
 @testable import FactoryBookletMaker
 
-/// KernelFactory 装配逻辑的测试：makeKernel 注册全部默认 Provider，
+/// KernelFactory 装配逻辑的测试：makeKernel 注册 BookletMaker 所需 Provider，
 /// 主视图与设置视图组装不崩溃。
 @Suite("KernelFactory")
 @MainActor
@@ -22,26 +22,31 @@ struct KernelFactoryTests {
 
     // MARK: - makeKernel
 
-    @Test("makeKernel 注册全部默认 Provider")
+    @Test("makeKernel 注册 BookletMaker 所需 Provider")
     func makeKernelRegistersAllProviders() throws {
         let kernel = try KernelFactory.makeKernel()
 
         #expect(kernel.registeredProviderCount == 11)
         #expect(kernel.resolveProvider((any StorageProviding).self) != nil)
+        #expect(kernel.resolveProvider((any ThemeProviding).self) != nil)
+        #expect(kernel.resolveProvider((any CommandProviding).self) != nil)
         #expect(kernel.resolveProvider((any ContentViewProviding).self) != nil)
         #expect(kernel.resolveProvider((any DocsViewProviding).self) != nil)
-        #expect(kernel.resolveProvider((any ProjectProviding).self) != nil)
-        #expect(kernel.resolveProvider((any ToastProviding).self) != nil)
-        #expect(kernel.resolveProvider((any NetworkProviding).self) != nil)
+        #expect(kernel.resolveProvider((any LogoProviding).self) != nil)
         #expect(kernel.resolveProvider((any ToolbarProviding).self) != nil)
         #expect(kernel.resolveProvider((any RootViewProviding).self) != nil)
         #expect(kernel.resolveProvider((any ActivityBarProviding).self) != nil)
         #expect(kernel.resolveProvider((any RailViewProviding).self) != nil)
-        #expect(kernel.resolveProvider((any SettingViewProviding).self) != nil)
-        #expect(kernel.resolveProvider((any RailViewProviding).self)?.tabs.map(\.id)
-            == ["booklet-maker.sidebar"])
-        #expect(kernel.resolveProvider((any ToolbarProviding).self)?.toolbarItems.map(\.id)
-            == ["com.coffic.lumi.plugin.booklet-maker.title"])
+        let settings = kernel.resolveProvider((any SettingViewProviding).self)
+        #expect(settings != nil)
+        #expect(settings is SettingViewManager)
+        let themes = kernel.resolveProvider((any ThemeProviding).self)
+        #expect(themes?.themes.count == 22)
+        #expect(themes?.themes.contains(where: { $0.id == "dracula" }) == true)
+        #expect(settings?.entries.contains(where: { $0.id == "appearance" }) == true)
+        #expect(kernel.resolveProvider((any RailViewProviding).self)?.tabs.contains(where: {
+            $0.id == "booklet-maker.sidebar"
+        }) == true)
     }
 
     @Test("makeKernel 每次产出全新容器，互不共享 Provider")
@@ -86,128 +91,13 @@ struct DefaultFactoryTests {
     @Test("DefaultPluginFactory 产出 BookletMaker 插件")
     func defaultPluginsIncludeBookletMaker() {
         let plugins = DefaultPluginFactory().makePlugins()
-        #expect(plugins.map(\.id) == ["com.coffic.lumi.plugin.booklet-maker"])
-        #expect(plugins.first?.metadata.policy == .alwaysOn)
-    }
-}
-
-// MARK: - PluginManaging Filtering Tests
-
-/// 用于测试的 mock PluginManaging：可指定哪些插件 ID 应当被过滤掉。
-@MainActor
-private final class MockPluginManaging: PluginManaging {
-    var disabledIDs: Set<String>
-
-    init(disabledIDs: Set<String> = []) {
-        self.disabledIDs = disabledIDs
-    }
-
-    // MARK: - PluginControlling
-
-    var lastErrorDescription: String?
-
-    func enablePlugin(id: String) async -> Bool {
-        disabledIDs.remove(id)
-        return true
-    }
-
-    func disablePlugin(id: String) async -> Bool {
-        disabledIDs.insert(id)
-        return true
-    }
-
-    func isEnabled(id: String) -> Bool {
-        !disabledIDs.contains(id)
-    }
-
-    // MARK: - PluginManaging
-
-    var allPlugins: [any SuperPlugin] { [] }
-    var configurablePlugins: [any SuperPlugin] { [] }
-    var pluginCount: Int { 0 }
-    var enabledCount: Int { 0 }
-
-    func plugin(id: String) -> (any SuperPlugin)? { nil }
-    func isRegistered(id: String) -> Bool { false }
-    func unloadPlugin(id: String) throws {}
-    func reloadPlugin(id: String) throws {}
-
-    func enabledPlugins(from candidates: [any SuperPlugin]) -> [any SuperPlugin] {
-        candidates.filter { plugin in
-            guard plugin.metadata.policy.isConfigurable else { return true }
-            return isEnabled(id: plugin.id)
-        }
-    }
-
-    @discardableResult
-    func addPluginObserver(_ callback: @escaping (PluginManagingEvent) -> Void) -> any PluginManagingObserverHandle {
-        MockObserverHandle()
-    }
-}
-
-@MainActor
-private final class MockObserverHandle: PluginManagingObserverHandle {
-    func cancel() {}
-}
-
-/// 用于测试的 mock 插件。
-@MainActor
-private final class MockPlugin: SuperPlugin {
-    let id: String
-    let metadata: PluginMetadata
-
-    init(id: String, policy: PluginEnablePolicy = .enabledByDefault) {
-        self.id = id
-        self.metadata = PluginMetadata(id: id, policy: policy)
-    }
-}
-
-@Suite("PluginManaging Filtering")
-@MainActor
-struct PluginManagingFilteringTests {
-
-    @Test("enabledPlugins 保留不可配置插件（required）")
-    func keepsRequiredPlugins() {
-        let manager = MockPluginManaging(disabledIDs: ["required-plugin"])
-        let required = MockPlugin(id: "required-plugin", policy: .required)
-        let result = manager.enabledPlugins(from: [required])
-        #expect(result.count == 1)
-        #expect(result.first?.id == "required-plugin")
-    }
-
-    @Test("enabledPlugins 保留不可配置插件（alwaysOn）")
-    func keepsAlwaysOnPlugins() {
-        let manager = MockPluginManaging(disabledIDs: ["always-on-plugin"])
-        let alwaysOn = MockPlugin(id: "always-on-plugin", policy: .alwaysOn)
-        let result = manager.enabledPlugins(from: [alwaysOn])
-        #expect(result.count == 1)
-        #expect(result.first?.id == "always-on-plugin")
-    }
-
-    @Test("enabledPlugins 过滤掉用户禁用的可配置插件")
-    func filtersDisabledConfigurablePlugins() {
-        let manager = MockPluginManaging(disabledIDs: ["disabled-plugin"])
-        let enabled = MockPlugin(id: "enabled-plugin", policy: .enabledByDefault)
-        let disabled = MockPlugin(id: "disabled-plugin", policy: .enabledByDefault)
-        let result = manager.enabledPlugins(from: [enabled, disabled])
-        #expect(result.count == 1)
-        #expect(result.first?.id == "enabled-plugin")
-    }
-
-    @Test("enabledPlugins 保持原始顺序")
-    func preservesOrder() {
-        let manager = MockPluginManaging(disabledIDs: [])
-        let a = MockPlugin(id: "a", policy: .enabledByDefault)
-        let b = MockPlugin(id: "b", policy: .enabledByDefault)
-        let c = MockPlugin(id: "c", policy: .enabledByDefault)
-        let result = manager.enabledPlugins(from: [a, b, c])
-        #expect(result.map(\.id) == ["a", "b", "c"])
-    }
-
-    @Test("enabledPlugins 空列表返回空")
-    func emptyCandidatesReturnsEmpty() {
-        let manager = MockPluginManaging()
-        let result = manager.enabledPlugins(from: [])
-        #expect(result.isEmpty)
+        #expect(plugins.count == 8)
+        #expect(plugins.contains(where: { $0.id == "com.coffic.lumi.plugin.setting-view" }))
+        #expect(plugins.contains(where: { $0.id == "com.coffic.lumi.plugin.logo-manager" }))
+        #expect(plugins.contains(where: { $0.id == "com.coffic.lumi.plugin.theme-pack" }))
+        #expect(!plugins.contains(where: { $0.id.contains("activity-heatmap") }))
+        #expect(!plugins.contains(where: { $0.id.contains("llm") }))
+        let bookletMaker = plugins.first(where: { $0.id == "com.coffic.lumi.plugin.booklet-maker" })
+        #expect(bookletMaker?.metadata.policy == .required)
     }
 }

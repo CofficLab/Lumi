@@ -4,6 +4,8 @@ import SwiftUI
 /// Shared rail for the PDF toolbox. The current document is global while
 /// every tool owns an independent settings section and primary action.
 struct BookletMakerRailView: View {
+    @LumiTheme private var theme
+
     @ObservedObject var viewModel: BookletMakerViewModel
     let onExportBooklet: () -> Void
     let onExportSplit: () -> Void
@@ -14,12 +16,12 @@ struct BookletMakerRailView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     toolPicker
 
-                    Divider()
+                    AppDivider()
 
                     railTitle(BookletLocalization.string("Current PDF"))
                     BookletDropZoneView(viewModel: viewModel)
 
-                    Divider()
+                    AppDivider()
 
                     switch viewModel.selectedTool {
                     case .booklet:
@@ -31,7 +33,7 @@ struct BookletMakerRailView: View {
                 .padding()
             }
 
-            Divider()
+            AppDivider()
             if viewModel.isBusy {
                 BookletProgressView(viewModel: viewModel)
                     .padding(.horizontal)
@@ -48,10 +50,13 @@ struct BookletMakerRailView: View {
             railTitle(BookletLocalization.string("PDF Tools"))
 
             ForEach(PDFTool.displayOrder) { tool in
-                Button {
-                    viewModel.selectedTool = tool
-                    viewModel.errorMessage = nil
-                } label: {
+                AppListRow(
+                    isSelected: viewModel.selectedTool == tool,
+                    action: {
+                        viewModel.selectedTool = tool
+                        viewModel.errorMessage = nil
+                    }
+                ) {
                     HStack(spacing: 10) {
                         Image(systemName: tool.systemImage)
                             .font(.system(size: 17, weight: .medium))
@@ -59,66 +64,43 @@ struct BookletMakerRailView: View {
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(tool.title)
-                                .font(.subheadline.weight(.semibold))
+                                .font(DesignTokens.Typography.subheadline)
+                                .fontWeight(.semibold)
                             Text(tool.subtitle)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(DesignTokens.Typography.caption1)
+                                .foregroundStyle(theme.textSecondary)
                                 .lineLimit(1)
                         }
 
                         Spacer(minLength: 4)
                         Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
+                            .font(DesignTokens.Typography.caption1)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(theme.textTertiary)
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 9)
-                    .contentShape(Rectangle())
-                    .background(
-                        RoundedRectangle(cornerRadius: 9)
-                            .fill(viewModel.selectedTool == tool
-                                  ? Color.accentColor.opacity(0.15)
-                                  : Color.lumiControlBackground)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 9)
-                            .stroke(viewModel.selectedTool == tool
-                                    ? Color.accentColor
-                                    : Color.secondary.opacity(0.15))
-                    )
+                    .foregroundStyle(theme.textPrimary)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
 
     private var bookletSettings: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            railTitle(BookletLocalization.string("Booklet Settings"))
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(BookletLocalization.string("Output paper"))
-                    .font(.subheadline)
-                Picker("", selection: $viewModel.settings.outputPaper) {
-                    ForEach(PaperSize.allCases) { size in
-                        Text(size.displayName).tag(size)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
+        AppSettingSection(title: BookletLocalization.string("Booklet Settings")) {
+            AppSettingRow(title: BookletLocalization.string("Output paper")) {
+                AppSegmentedControl(
+                    PaperSize.allCases.map(\.displayName),
+                    selection: paperSizeSelection
+                )
             }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(BookletLocalization.string("Layout"))
-                    .font(.subheadline)
-                Picker("", selection: $viewModel.settings.layout) {
-                    Text(BookletLocalization.string("Booklet Fold"))
-                        .tag(LayoutMode.bookletFold)
-                    Text(BookletLocalization.string("Simple Pair"))
-                        .tag(LayoutMode.simplePair)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
+            AppSettingRow(title: BookletLocalization.string("Layout")) {
+                AppSegmentedControl(
+                    [
+                        BookletLocalization.string("Booklet Fold"),
+                        BookletLocalization.string("Simple Pair")
+                    ],
+                    selection: layoutSelection
+                )
             }
 
             settingSlider(
@@ -130,92 +112,84 @@ struct BookletMakerRailView: View {
                 value: $viewModel.settings.gutterMM
             )
 
-            Toggle(BookletLocalization.string("Pad with blank page"),
-                   isOn: paddingBinding)
-                .font(.subheadline)
-                .disabled(viewModel.settings.layout == .bookletFold)
-            Toggle(BookletLocalization.string("Add cut marks"),
-                   isOn: $viewModel.settings.addCutMarks)
-                .font(.subheadline)
+            AppSettingRow(title: BookletLocalization.string("Pad with blank page")) {
+                Toggle("", isOn: paddingBinding)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .disabled(viewModel.settings.layout == .bookletFold)
+            }
+            AppSettingToggleRow(
+                BookletLocalization.string("Add cut marks"),
+                isOn: $viewModel.settings.addCutMarks
+            )
         }
     }
 
     private var splitSettings: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            railTitle(BookletLocalization.string("Split Settings"))
-
-            VStack(alignment: .leading, spacing: 5) {
-                Text(BookletLocalization.string("Split after these pages"))
-                    .font(.subheadline)
-                TextField(
-                    BookletLocalization.string("For example: 20, 50, 80"),
+        AppSettingSection(title: BookletLocalization.string("Split Settings")) {
+            AppSettingRow(
+                title: BookletLocalization.string("Split after these pages"),
+                description: BookletLocalization.string(
+                    "Enter page numbers separated by commas or spaces."
+                )
+            ) {
+                AppInputField(
+                    LocalizedStringKey(BookletLocalization.string("For example: 20, 50, 80")),
                     text: $viewModel.splitCutPointsText
                 )
-                .textFieldStyle(.roundedBorder)
-
-                Text(BookletLocalization.string(
-                    "Enter page numbers separated by commas or spaces."
-                ))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-                if let message = viewModel.splitValidationMessage {
-                    Label(message, systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                } else if let message = viewModel.splitFileNameValidationMessage {
-                    Label(message, systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(BookletLocalization.string("Split Result"))
-                        .font(.subheadline.weight(.medium))
-                    Spacer()
-                    Text(BookletLocalization.string(
-                        "%lld PDF files",
-                        Int64(viewModel.splitSegments.count)
-                    ))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                }
+            if let message = viewModel.splitValidationMessage ?? viewModel.splitFileNameValidationMessage {
+                AppErrorBanner(message: LocalizedStringKey(message))
+            }
 
-                ForEach(Array(viewModel.splitSegments.prefix(6))) { segment in
+            AppCard(
+                style: .subtle,
+                cornerRadius: DesignTokens.Radius.sm,
+                padding: DesignTokens.Spacing.compactPadding,
+                showShadow: false
+            ) {
+                VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("\(segment.index).")
-                            .foregroundStyle(.secondary)
-                        Text(BookletLocalization.string(
-                            "Split pages %lld–%lld",
-                            Int64(segment.startPage),
-                            Int64(segment.endPage)
-                        ))
+                        Text(BookletLocalization.string("Split Result"))
+                            .font(DesignTokens.Typography.bodyEmphasized)
                         Spacer()
-                        Text(BookletLocalization.string(
-                            "%lld pages",
-                            Int64(segment.pageCount)
+                        AppTag(BookletLocalization.string(
+                            "%lld PDF files",
+                            Int64(viewModel.splitSegments.count)
                         ))
-                        .foregroundStyle(.secondary)
                     }
-                    .font(.caption)
-                }
 
-                if viewModel.splitSegments.count > 6 {
-                    Text(BookletLocalization.string(
-                        "And %lld more…",
-                        Int64(viewModel.splitSegments.count - 6)
-                    ))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    ForEach(Array(viewModel.splitSegments.prefix(6))) { segment in
+                        HStack {
+                            Text("\(segment.index).")
+                                .foregroundStyle(theme.textSecondary)
+                            Text(BookletLocalization.string(
+                                "Split pages %lld–%lld",
+                                Int64(segment.startPage),
+                                Int64(segment.endPage)
+                            ))
+                            Spacer()
+                            Text(BookletLocalization.string(
+                                "%lld pages",
+                                Int64(segment.pageCount)
+                            ))
+                            .foregroundStyle(theme.textSecondary)
+                        }
+                        .font(DesignTokens.Typography.caption1)
+                    }
+
+                    if viewModel.splitSegments.count > 6 {
+                        Text(BookletLocalization.string(
+                            "And %lld more…",
+                            Int64(viewModel.splitSegments.count - 6)
+                        ))
+                        .font(DesignTokens.Typography.caption1)
+                        .foregroundStyle(theme.textSecondary)
+                    }
                 }
             }
-            .padding(9)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.lumiControlBackground)
-            )
 
             if !viewModel.lastSplitOutputURLs.isEmpty {
                 Label(
@@ -225,30 +199,24 @@ struct BookletMakerRailView: View {
                     ),
                     systemImage: "checkmark.circle.fill"
                 )
-                .font(.caption)
-                .foregroundStyle(.green)
+                .font(DesignTokens.Typography.caption1)
+                .foregroundStyle(theme.success)
             }
         }
     }
 
     private var primaryAction: some View {
-        Button(action: primaryActionHandler) {
-            HStack {
-                Spacer()
-                if viewModel.isBusy {
-                    Image(systemName: "xmark.circle")
-                } else {
-                    Image(systemName: viewModel.selectedTool == .booklet
-                          ? "square.and.arrow.down"
-                          : "scissors")
-                }
-                Text(primaryActionTitle)
-                    .fontWeight(.semibold)
-                Spacer()
-            }
-            .padding(.vertical, 6)
-        }
-        .buttonStyle(.borderedProminent)
+        AppButton(
+            primaryActionTitle,
+            systemImage: viewModel.isBusy
+                ? "xmark.circle"
+                : (viewModel.selectedTool == .booklet
+                    ? "square.and.arrow.down"
+                    : "scissors"),
+            style: .primary,
+            fillsWidth: true,
+            action: primaryActionHandler
+        )
         .disabled(!viewModel.isBusy && !viewModel.canExport)
     }
 
@@ -283,21 +251,39 @@ struct BookletMakerRailView: View {
 
     private func railTitle(_ title: String) -> some View {
         Text(title)
-            .font(.headline)
+            .font(DesignTokens.Typography.title3)
+            .foregroundStyle(theme.textPrimary)
     }
 
     private func settingSlider(title: String,
                                value: Binding<Double>) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(title).font(.subheadline)
+                Text(title).font(DesignTokens.Typography.subheadline)
                 Spacer()
                 Text(BookletLocalization.string("%lld mm", Int(value.wrappedValue)))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(DesignTokens.Typography.caption1)
+                    .foregroundStyle(theme.textSecondary)
             }
             Slider(value: value, in: 0 ... 30, step: 1)
         }
+    }
+
+    private var paperSizeSelection: Binding<Int> {
+        Binding(
+            get: { PaperSize.allCases.firstIndex(of: viewModel.settings.outputPaper) ?? 0 },
+            set: { index in
+                guard PaperSize.allCases.indices.contains(index) else { return }
+                viewModel.settings.outputPaper = PaperSize.allCases[index]
+            }
+        )
+    }
+
+    private var layoutSelection: Binding<Int> {
+        Binding(
+            get: { viewModel.settings.layout == .bookletFold ? 0 : 1 },
+            set: { viewModel.settings.layout = $0 == 0 ? .bookletFold : .simplePair }
+        )
     }
 
     private var paddingBinding: Binding<Bool> {

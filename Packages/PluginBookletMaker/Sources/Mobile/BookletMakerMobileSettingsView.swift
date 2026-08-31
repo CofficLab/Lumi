@@ -1,7 +1,10 @@
 #if os(iOS)
+import LumiUI
 import SwiftUI
 
 struct BookletMakerMobileSettingsView: View {
+    @LumiTheme private var theme
+
     @ObservedObject var viewModel: BookletMakerViewModel
 
     var body: some View {
@@ -17,17 +20,22 @@ struct BookletMakerMobileSettingsView: View {
     private var bookletSettings: some View {
         Group {
             settingSection(BookletLocalization.string("Output")) {
-                Picker(BookletLocalization.string("Output paper"),
-                       selection: $viewModel.settings.outputPaper) {
-                    ForEach(PaperSize.allCases) { Text($0.displayName).tag($0) }
+                AppSettingRow(title: BookletLocalization.string("Output paper")) {
+                    AppSegmentedControl(
+                        PaperSize.allCases.map(\.displayName),
+                        selection: paperSizeSelection
+                    )
                 }
-                .pickerStyle(.segmented)
 
-                Picker(BookletLocalization.string("Layout"), selection: $viewModel.settings.layout) {
-                    Text(BookletLocalization.string("Booklet Fold")).tag(LayoutMode.bookletFold)
-                    Text(BookletLocalization.string("Simple Pair")).tag(LayoutMode.simplePair)
+                AppSettingRow(title: BookletLocalization.string("Layout")) {
+                    AppSegmentedControl(
+                        [
+                            BookletLocalization.string("Booklet Fold"),
+                            BookletLocalization.string("Simple Pair")
+                        ],
+                        selection: layoutSelection
+                    )
                 }
-                .pickerStyle(.segmented)
             }
 
             settingSection(BookletLocalization.string("Spacing")) {
@@ -38,10 +46,16 @@ struct BookletMakerMobileSettingsView: View {
             }
 
             settingSection(BookletLocalization.string("Print Options")) {
-                Toggle(BookletLocalization.string("Pad with blank page"), isOn: paddingBinding)
-                    .disabled(viewModel.settings.layout == .bookletFold)
-                Toggle(BookletLocalization.string("Add cut marks"),
-                       isOn: $viewModel.settings.addCutMarks)
+                AppSettingRow(title: BookletLocalization.string("Pad with blank page")) {
+                    Toggle("", isOn: paddingBinding)
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                        .disabled(viewModel.settings.layout == .bookletFold)
+                }
+                AppSettingToggleRow(
+                    BookletLocalization.string("Add cut marks"),
+                    isOn: $viewModel.settings.addCutMarks
+                )
             }
         }
     }
@@ -49,25 +63,26 @@ struct BookletMakerMobileSettingsView: View {
     private var splitSettings: some View {
         Group {
             settingSection(BookletLocalization.string("Cut Points")) {
-                TextField(BookletLocalization.string("For example: 20, 50, 80"),
-                          text: $viewModel.splitCutPointsText)
-                    .textFieldStyle(.roundedBorder)
+                AppInputField(
+                    LocalizedStringKey(BookletLocalization.string("For example: 20, 50, 80")),
+                    text: $viewModel.splitCutPointsText
+                )
                     .keyboardType(.numbersAndPunctuation)
                 Text(BookletLocalization.string("You can also tap the gaps between page previews."))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(DesignTokens.Typography.footnote)
+                    .foregroundStyle(theme.textSecondary)
                 if let message = viewModel.splitValidationMessage {
-                    Label(message, systemImage: "exclamationmark.triangle.fill")
-                        .font(.footnote)
-                        .foregroundStyle(.red)
+                    AppErrorBanner(message: LocalizedStringKey(message))
                 }
             }
 
             settingSection(BookletLocalization.string("Result")) {
-                LabeledContent(BookletLocalization.string("Files"),
-                               value: "\(viewModel.splitSegments.count)")
-                LabeledContent(BookletLocalization.string("Pages"),
-                               value: "\(viewModel.currentDocument.pageCount)")
+                AppSettingRow(title: BookletLocalization.string("Files")) {
+                    AppTag("\(viewModel.splitSegments.count)", style: .accent)
+                }
+                AppSettingRow(title: BookletLocalization.string("Pages")) {
+                    AppTag("\(viewModel.currentDocument.pageCount)")
+                }
             }
         }
     }
@@ -76,21 +91,18 @@ struct BookletMakerMobileSettingsView: View {
         _ title: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(title).font(.headline)
+        AppSettingSection(title: title) {
             content()
         }
-        .padding(16)
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private func measurementSlider(_ title: String, value: Binding<Double>) -> some View {
-        VStack(spacing: 8) {
-            LabeledContent(
-                title,
-                value: BookletLocalization.string("%lld mm", Int64(value.wrappedValue))
-            )
+        AppSettingRow(
+            title: title,
+            description: BookletLocalization.string("%lld mm", Int64(value.wrappedValue))
+        ) {
             Slider(value: value, in: 0 ... 30, step: 1)
+                .frame(minWidth: 130)
         }
     }
 
@@ -98,6 +110,23 @@ struct BookletMakerMobileSettingsView: View {
         Binding(
             get: { viewModel.settings.layout == .bookletFold || viewModel.settings.padBlankPage },
             set: { viewModel.settings.padBlankPage = $0 }
+        )
+    }
+
+    private var paperSizeSelection: Binding<Int> {
+        Binding(
+            get: { PaperSize.allCases.firstIndex(of: viewModel.settings.outputPaper) ?? 0 },
+            set: { index in
+                guard PaperSize.allCases.indices.contains(index) else { return }
+                viewModel.settings.outputPaper = PaperSize.allCases[index]
+            }
+        )
+    }
+
+    private var layoutSelection: Binding<Int> {
+        Binding(
+            get: { viewModel.settings.layout == .bookletFold ? 0 : 1 },
+            set: { viewModel.settings.layout = $0 == 0 ? .bookletFold : .simplePair }
         )
     }
 }

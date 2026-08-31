@@ -33,6 +33,7 @@ struct ProjectRAGSuperPluginTests {
 private final class StubProjectRAGProvider: ProjectRAGProviding {
     var currentProjectPath: String? = "/tmp/Lumi"
     let isInitialized = true
+    var indexing = false
     var ensureIndexedCallCount = 0
     var lastEnsureIndexedBackground: Bool?
     var searchCallCount = 0
@@ -52,6 +53,10 @@ private final class StubProjectRAGProvider: ProjectRAGProviding {
     @discardableResult
     func addProjectRAGObserver(_ callback: @escaping (ProjectRAGEvent) -> Void) -> any ProjectRAGObserverHandle {
         NoopProjectRAGObserverHandle()
+    }
+
+    func isIndexing(projectPath: String) -> Bool {
+        indexing
     }
 
     func search(query: String, projectPath: String?, topK: Int) async throws -> ProjectRAGResponse {
@@ -112,6 +117,23 @@ struct ProjectRAGLLMContextHookTests {
         #expect(result.messages == context.messages)
         #expect(provider.ensureIndexedCallCount == 0)
     }
+
+    @Test("does not wait for RAG while the project is indexing")
+    func skipsIndexingProject() async {
+        let provider = StubProjectRAGProvider()
+        provider.indexing = true
+        let hook = ProjectRAGLLMContextHook(provider: provider)
+        let context = WillSendToLLMContext(
+            messages: [LLMMessage(role: .user, content: "了解这个项目的代码")],
+            conversationID: UUID()
+        )
+
+        let result = await hook.apply(to: context)
+
+        #expect(result.messages == context.messages)
+        #expect(provider.ensureIndexedCallCount == 0)
+        #expect(provider.searchCallCount == 0)
+    }
 }
 
 @Suite("RAGCodeSearchTool")
@@ -164,6 +186,24 @@ struct RAGCodeSearchToolTests {
 @Suite("CodeNavigationCoordinator")
 @MainActor
 struct CodeNavigationCoordinatorTests {
+    @Test("does not enqueue semantic search while indexing")
+    func skipsSemanticSearchDuringIndexing() async throws {
+        let provider = StubProjectRAGProvider()
+        provider.indexing = true
+        let coordinator = CodeNavigationCoordinator(provider: provider)
+
+        let response = try await coordinator.search(
+            query: "了解这个项目的代码",
+            projectPath: "/tmp/Lumi",
+            topK: 8
+        )
+
+        #expect(response.query == "了解这个项目的代码")
+        #expect(response.results.isEmpty)
+        #expect(provider.ensureIndexedCallCount == 0)
+        #expect(provider.searchCallCount == 0)
+    }
+
     @Test("indexes a missing project before searching")
     func indexesMissingProjectBeforeSearching() async throws {
         let provider = StubProjectRAGProvider()

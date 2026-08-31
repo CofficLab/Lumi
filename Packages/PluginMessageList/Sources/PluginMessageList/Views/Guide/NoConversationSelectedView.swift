@@ -47,7 +47,7 @@ struct NoConversationSelectedView: View {
 
                         if let context = contextObserver.context,
                            context.id != ChatContext.defaultChat.id {
-                            Text(context.title)
+                            Text(String(format: LumiPluginLocalization.string("For 「%@」, what can I help you with?"), context.title))
                                 .font(.system(size: 20, weight: .semibold))
                                 .foregroundStyle(theme.textPrimary)
                                 .multilineTextAlignment(.center)
@@ -99,7 +99,7 @@ struct NoConversationSelectedView: View {
     @ViewBuilder
     private func projectTitle(_ project: ProjectInfo) -> some View {
         HStack(spacing: 0) {
-            Text(LumiPluginLocalization.string("How can I help with "))
+            Text(LumiPluginLocalization.string("For 「"))
                 .foregroundStyle(theme.textPrimary)
             Menu {
                 ForEach(projectObserver.project?.projects ?? [], id: \.path) { item in
@@ -112,7 +112,7 @@ struct NoConversationSelectedView: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize(horizontal: true, vertical: false)
-            Text(LumiPluginLocalization.string("?"))
+            Text(LumiPluginLocalization.string("」, what can I help you with?"))
                 .foregroundStyle(theme.textPrimary)
         }.font(.system(size: 18, weight: .semibold))
     }

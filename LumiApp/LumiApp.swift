@@ -117,7 +117,7 @@ struct LumiApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         // Preserve the legacy `AppBootstrap.defaultSettingsWindowSize`.
-        .defaultSize(width: 780, height: 600)
+        .defaultSize(width: 1000, height: 600)
     }
 
     /// 与旧版 `MenuBarManagerPlugin.showMainWindow()` 保持相同行为：从状态栏

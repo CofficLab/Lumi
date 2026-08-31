@@ -32,20 +32,15 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
 
     // MARK: - Identity
 
-    public let id = "com.coffic.lumi.plugin.booklet-maker"
+    public nonisolated static let pluginID = "com.coffic.lumi.plugin.booklet-maker"
+
+    public let id: String
 
     /// 本插件 rail 面板的稳定标识（注册为 `PanelRailTabItem.id`）。
     public nonisolated static let railTabID = "booklet-maker.sidebar"
 
     public let order = 880
-    public let metadata = PluginMetadata(
-        id: "com.coffic.lumi.plugin.booklet-maker",
-        name: "Booklet Maker",
-        description: "Create print-ready booklets from PDF documents.",
-        category: .editor,
-        stage: .preview,
-        policy: .disabledByDefault
-    )
+    public let metadata: PluginMetadata
 
     /// 插件级唯一的 BookletMakerViewModel 实例。
     /// 通过 `viewContainers` 和 `panelRailTabItems` 同时注入，
@@ -55,7 +50,19 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
 
     public var name: String { BookletLocalization.string("Booklet Maker") }
 
-    public init() {}
+    /// - Parameter policy: 启用策略由宿主决定。Lumi 默认将本插件作为可选功能，
+    ///   BookletMaker 专用宿主则以 `.required` 装配它。
+    public init(policy: PluginEnablePolicy = .disabledByDefault) {
+        id = Self.pluginID
+        metadata = PluginMetadata(
+            id: Self.pluginID,
+            name: "Booklet Maker",
+            description: "Create print-ready booklets from PDF documents.",
+            category: .editor,
+            stage: .preview,
+            policy: policy
+        )
+    }
 
     // MARK: - Lifecycle
 
