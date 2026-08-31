@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -97,7 +98,111 @@
         }
       }
     },
+    "For 「" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For 「"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对于 「"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對於 「"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對於 「"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對於 「"
+          }
+        }
+      }
+    },
+    "For 「」, what can I help you with?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For 「」, what can I help you with?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对于 「」，我可以帮你做什么"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對於 「」，我可以幫你做什麼"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對於 「」，我可以幫你做什麼"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對於 「」，我可以幫你做什麼"
+          }
+        }
+      }
+    },
+    "For 「%@」, what can I help you with?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For 「%@」, what can I help you with?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对于 「%@」，我可以帮你做什么"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對於 「%@」，我可以幫你做什麼"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對於 「%@」，我可以幫你做什麼"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對於 「%@」，我可以幫你做什麼"
+          }
+        }
+      }
+    },
     "How can I help with " : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
