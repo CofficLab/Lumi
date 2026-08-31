@@ -21,7 +21,8 @@ public func makeSettingView<Provider: SettingViewProviding & ObservableObject>(
 ///   （`AppSettingsDetailPane`）
 /// - 窗口背景为主题氛围深色（`theme.background`）、强制主题明暗外观、
 ///   同步 AppKit 窗口外观（与旧版完全一致）
-/// - 最小尺寸 720 × 520，空状态与旧版一致（gearshape + "Select a tab"）
+/// - 最小尺寸 960 × 520，确保外观页的主题列表与预览区完整可见
+/// - 空状态与旧版一致（gearshape + "Select a tab"）
 ///
 /// 泛型 `Provider` 支持任意 `SettingViewProviding & ObservableObject` 实现，
 /// 使 `PluginSettingView` 等自定义 Provider 也可复用同一视图。
@@ -35,7 +36,7 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
 
     var body: some View {
         AppSettingsSidebarShell { sidebar } detail: { detail }
-            .frame(minWidth: 720, minHeight: 520)
+            .frame(minWidth: 960, minHeight: 520)
             .background(theme.background)
             .appThemedAppearance()
             .onAppear(perform: selectFirstEntryIfNeeded)

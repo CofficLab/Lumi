@@ -54,7 +54,7 @@ struct BookletMakerApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
-        .defaultSize(width: 780, height: 600)
+        .defaultSize(width: 1000, height: 600)
     }
 }
 
