@@ -18,6 +18,7 @@ let package = Package(
         .package(name: "ProviderMessageStreaming", path: "../ProviderMessageStreaming"),
         .package(name: "ProviderConversation", path: "../ProviderConversation"),
         .package(name: "ProviderLifecycleHooks", path: "../ProviderLifecycleHooks"),
+        .package(name: "ProviderLLMContext", path: "../ProviderLLMContext"),
         .package(name: "KitAgentTool", path: "../KitAgentTool"),
     ],
     targets: [
@@ -34,6 +35,7 @@ let package = Package(
                 .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
+                .product(name: "ProviderLLMContext", package: "ProviderLLMContext"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
             ]
         ),

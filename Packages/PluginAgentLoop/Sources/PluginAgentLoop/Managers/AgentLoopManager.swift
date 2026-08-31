@@ -5,6 +5,7 @@ import os
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderLifecycleHooks
+import ProviderLLMContext
 import ProviderLLMManager
 import ProviderMessage
 import ProviderMessageStreaming
@@ -29,6 +30,7 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
     let toolManager: any ToolManagerProviding
     let streaming: any MessageStreamingProviding
     let conversations: any ConversationManaging
+    let contextProvider: any LLMContextProviding
     var lifecycleHooks: (any LifecycleHooksProviding)?
 
     // MARK: - FSM State (single source of truth)
@@ -46,13 +48,15 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
         llmManager: any LLMManaging,
         toolManager: any ToolManagerProviding,
         streaming: any MessageStreamingProviding,
-        conversations: any ConversationManaging
+        conversations: any ConversationManaging,
+        contextProvider: any LLMContextProviding
     ) {
         self.messages = messages
         self.llmManager = llmManager
         self.toolManager = toolManager
         self.streaming = streaming
         self.conversations = conversations
+        self.contextProvider = contextProvider
     }
 
     public func addAgentLoopObserver(

@@ -175,6 +175,7 @@ let package = Package(
         .package(path: "../ProviderOnboarding"),
         .package(path: "../ProviderWebServer"),
         .package(path: "../ProviderLifecycleHooks"),
+        .package(path: "../ProviderLLMContext"),
         .package(path: "../ProviderExternalFile"),
     ],
     targets: [
@@ -347,6 +348,7 @@ let package = Package(
                 .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
                 .product(name: "ProviderWebServer", package: "ProviderWebServer"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
+                .product(name: "ProviderLLMContext", package: "ProviderLLMContext"),
                 .product(name: "ProviderExternalFile", package: "ProviderExternalFile"),
             ],
             path: ".",
