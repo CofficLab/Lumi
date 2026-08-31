@@ -7,6 +7,7 @@ import ProviderLifecycleHooks
 import ProviderLLMContext
 import ProviderLLMManager
 import ProviderMessage
+import ProviderStorage
 
 /// 为 App 提供 LLM 上下文准备能力的独立插件。
 @MainActor
@@ -39,10 +40,23 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
             return
         }
 
+        let summaryStore: ContextSummaryStore?
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            let directory = storage.pluginDataDirectory(for: id)
+            summaryStore = try? ContextSummaryStore(directory: directory)
+            if summaryStore == nil {
+                Self.logger.error("\(Self.t)上下文摘要数据库初始化失败，改用内存摘要")
+            }
+        } else {
+            summaryStore = nil
+            Self.logger.error("\(Self.t)缺少 StorageProviding，摘要不会持久化")
+        }
+
         let provider = LLMContextProvider(
             messages: messages,
             conversations: conversations,
-            llmProvider: llmProvider
+            llmProvider: llmProvider,
+            summaryStore: summaryStore
         )
         self.provider = provider
 

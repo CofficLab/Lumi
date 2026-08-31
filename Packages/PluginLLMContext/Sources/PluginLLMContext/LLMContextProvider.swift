@@ -33,24 +33,29 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         let text: String
         let coveredThroughMessageID: UUID
         let sourceLastMessageID: UUID
+        let providerID: String?
         let modelName: String?
     }
 
     private let messages: any MessageManaging
     private let conversations: any ConversationManaging
     private let llmProvider: any LLMManaging
+    private let summaryStore: ContextSummaryStore?
     private var summaries: [UUID: SummarySnapshot] = [:]
+    private var loadedSummaryIDs: Set<UUID> = []
     private var summaryTasks: [UUID: Task<Void, Never>] = [:]
     private var isActive = true
 
     init(
         messages: any MessageManaging,
         conversations: any ConversationManaging,
-        llmProvider: any LLMManaging
+        llmProvider: any LLMManaging,
+        summaryStore: ContextSummaryStore? = nil
     ) {
         self.messages = messages
         self.conversations = conversations
         self.llmProvider = llmProvider
+        self.summaryStore = summaryStore
     }
 
     func messagesForLLM(in conversationID: UUID) async -> [Message] {
@@ -58,6 +63,8 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         guard history.count > Self.compactionMessageThreshold else {
             return history
         }
+
+        await loadPersistedSummaryIfNeeded(for: conversationID)
 
         guard let snapshot = summaries[conversationID],
               let compacted = compactedHistory(history, snapshot: snapshot) else {
@@ -95,6 +102,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         summaryTasks.values.forEach { $0.cancel() }
         summaryTasks.removeAll()
         summaries.removeAll()
+        loadedSummaryIDs.removeAll()
     }
 
     // MARK: - Summary generation
@@ -108,7 +116,18 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             return
         }
 
+        let providerID = llmProvider.selectedProviderID
         let modelName = conversations.modelName(for: conversationID)
+
+        // The existing snapshot remains valid while its bounded tail is small.
+        // This prevents regenerating a summary after every completed turn.
+        if let snapshot = summaries[conversationID],
+           snapshot.providerID == providerID,
+           snapshot.modelName == modelName,
+           compactedHistory(history, snapshot: snapshot)?.count ?? .max <= Self.compactionMessageThreshold {
+            return
+        }
+
         let request = LLMRequest(
             conversationID: conversationID,
             messages: [
@@ -131,12 +150,52 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                 text: summary,
                 coveredThroughMessageID: source.coveredThroughMessageID,
                 sourceLastMessageID: source.sourceLastMessageID,
+                providerID: providerID,
                 modelName: modelName
             )
+
+            let record = ContextSummaryRecord(
+                conversationID: conversationID,
+                text: summary,
+                coveredThroughMessageID: source.coveredThroughMessageID,
+                sourceLastMessageID: source.sourceLastMessageID,
+                providerID: providerID,
+                modelName: modelName,
+                sourceMessageCount: latest.count,
+                updatedAt: Date()
+            )
+            do {
+                try await summaryStore?.save(record)
+            } catch {
+                if Self.verbose {
+                    Self.logger.error("摘要保存失败：\(error.localizedDescription, privacy: .public)")
+                }
+            }
         } catch {
             // 前台请求不依赖摘要；失败时保留旧摘要或继续使用完整历史。
             if Self.verbose {
                 Self.logger.error("摘要生成失败：\(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    private func loadPersistedSummaryIfNeeded(for conversationID: UUID) async {
+        guard !loadedSummaryIDs.contains(conversationID) else { return }
+        loadedSummaryIDs.insert(conversationID)
+        guard let summaryStore else { return }
+
+        do {
+            guard let record = try await summaryStore.load(conversationID: conversationID) else { return }
+            summaries[conversationID] = SummarySnapshot(
+                text: record.text,
+                coveredThroughMessageID: record.coveredThroughMessageID,
+                sourceLastMessageID: record.sourceLastMessageID,
+                providerID: record.providerID,
+                modelName: record.modelName
+            )
+        } catch {
+            if Self.verbose {
+                Self.logger.error("摘要加载失败：\(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -179,6 +238,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         snapshot: SummarySnapshot
     ) -> [Message]? {
         guard conversations.modelName(for: history.first?.conversationID) == snapshot.modelName,
+              llmProvider.selectedProviderID == snapshot.providerID,
               let coveredIndex = history.firstIndex(where: { $0.id == snapshot.coveredThroughMessageID }) else {
             return nil
         }

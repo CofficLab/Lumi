@@ -17,6 +17,7 @@ let package = Package(
         .package(path: "../ProviderLLMContext"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderStorage"),
     ],
     targets: [
         .target(
@@ -30,6 +31,7 @@ let package = Package(
                 "ProviderLLMContext",
                 "ProviderLLMManager",
                 "ProviderMessage",
+                "ProviderStorage",
             ],
             path: "Sources/PluginLLMContext"
         ),

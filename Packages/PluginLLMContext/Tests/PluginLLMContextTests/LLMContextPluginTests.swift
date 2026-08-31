@@ -101,6 +101,60 @@ struct LLMContextPluginTests {
 
         #expect(Bool(false), "后台摘要未在测试窗口内生成")
     }
+
+    @Test("重新创建 Provider 后复用磁盘摘要")
+    func persistedSummarySurvivesProviderRecreation() async throws {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider()
+        try llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LLMContextStoreTests-\(UUID().uuidString)", isDirectory: true)
+        let store = try ContextSummaryStore(directory: directory)
+        let conversationID = UUID()
+        for index in 0...LLMContextProvider.compactionMessageThreshold {
+            messages.insertMessage(
+                Message(conversationID: conversationID, role: .user, content: "消息 \(index)"),
+                to: conversationID
+            )
+        }
+
+        let firstProvider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm,
+            summaryStore: store
+        )
+        _ = await firstProvider.messagesForLLM(in: conversationID)
+
+        for _ in 0..<12 {
+            try await Task.sleep(nanoseconds: 100_000_000)
+            let result = await firstProvider.messagesForLLM(in: conversationID)
+            if result.contains(where: { $0.metadata["llmContext"] == "summary" }) {
+                break
+            }
+        }
+
+        #expect(FileManager.default.fileExists(
+            atPath: directory.appendingPathComponent(ContextSummaryStore.databaseFileName).path
+        ))
+        #expect(summaryProvider.completeCalls == 1)
+
+        let secondProvider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm,
+            summaryStore: store
+        )
+        let restored = await secondProvider.messagesForLLM(in: conversationID)
+
+        #expect(restored.contains { $0.metadata["llmContext"] == "summary" })
+        #expect(restored.contains { $0.content.contains("摘要结果") })
+        #expect(summaryProvider.completeCalls == 1)
+    }
 }
 
 @MainActor
