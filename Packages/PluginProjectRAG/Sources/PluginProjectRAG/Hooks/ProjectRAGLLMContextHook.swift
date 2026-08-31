@@ -30,6 +30,11 @@ final class ProjectRAGLLMContextHook {
             return context
         }
 
+        // The background index shares the RAG service actor with retrieval.
+        // Do not make the main LLM request wait for a first-time project index;
+        // the next turn can inject semantic context after indexing completes.
+        guard !provider.isIndexing(projectPath: projectPath) else { return context }
+
         let queryKey = "\(context.conversationID.uuidString):\(userMessages.count):\(latestUserMessage.content)"
         guard !injectedQueryKeys.contains(queryKey) else { return context }
 

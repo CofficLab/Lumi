@@ -14,6 +14,18 @@ struct CodeNavigationCoordinator: Sendable {
     }
 
     func search(query: String, projectPath: String, topK: Int) async throws -> ProjectRAGResponse {
+        // RAGService performs indexing synchronously inside its actor. Starting a
+        // semantic search while that work is active would enqueue the search
+        // behind the entire index and block the caller (including the main LLM
+        // request's lifecycle hook) until indexing completes.
+        //
+        // Return immediately instead. Callers can still explain that indexing
+        // is in progress, and the next request will use semantic results once
+        // the background index has finished.
+        guard !(await provider.isIndexing(projectPath: projectPath)) else {
+            return ProjectRAGResponse(query: query, results: [])
+        }
+
         async let semanticResponse = searchProjectRAG(
             query: query,
             projectPath: projectPath,
@@ -50,12 +62,24 @@ struct CodeNavigationCoordinator: Sendable {
         projectPath: String,
         topK: Int
     ) async throws -> ProjectRAGResponse {
+        // Re-check after the caller's initial guard to cover the small window in
+        // which background indexing starts while the request is being prepared.
+        guard !(await provider.isIndexing(projectPath: projectPath)) else {
+            return ProjectRAGResponse(query: query, results: [])
+        }
+
         let hasIndex = try await provider.indexStatus(projectPath: projectPath) != nil
         let isIndexing = await provider.isIndexing(projectPath: projectPath)
         if !hasIndex && !isIndexing {
             try await provider.ensureIndexed(projectPath: projectPath, force: false, background: false)
         } else {
             try await provider.ensureIndexed(projectPath: projectPath, force: false, background: true)
+        }
+
+        // Indexing may have started while index readiness was checked. Do not
+        // enqueue the semantic search behind it.
+        guard !(await provider.isIndexing(projectPath: projectPath)) else {
+            return ProjectRAGResponse(query: query, results: [])
         }
         return try await provider.search(query: query, projectPath: projectPath, topK: topK)
     }
