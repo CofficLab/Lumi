@@ -92,6 +92,7 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
                     LLMModelInfo(id: "qwen3.6-plus", displayName: "Qwen3.6 Plus", contextWindowSize: 1000000),
                 ],
                 websiteURL: URL(string: "https://opencode.ai/docs/zh-cn/go/")!,
+                providerType: .cloudService,
                 apiFormat: .openAI,
                 apiKeyStorageKey: "DevAssistant_ApiKey_OpenCodeGo"
             ),

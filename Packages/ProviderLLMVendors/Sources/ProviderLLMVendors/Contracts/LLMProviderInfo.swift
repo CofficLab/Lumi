@@ -8,6 +8,29 @@ public enum LLMProviderAPIFormat: String, Sendable, Equatable, CaseIterable {
     case responses
 }
 
+/// 供应商的服务类型。
+public enum LLMProviderType: String, Sendable, Equatable, CaseIterable {
+    case cloudService
+    case relay
+    case local
+
+    public var displayName: String {
+        switch self {
+        case .cloudService: return "云服务商"
+        case .relay: return "中转站"
+        case .local: return "本地"
+        }
+    }
+
+    public var systemImage: String {
+        switch self {
+        case .cloudService: return "cloud"
+        case .relay: return "arrow.triangle.branch"
+        case .local: return "cpu"
+        }
+    }
+}
+
 /// LLM 供应商的模型元数据（KernelCore 体系，不依赖 KernelLumi）。
 ///
 /// 对应旧版 `LumiModelInfo`：由各 LLM Provider 插件在注册时随 `LLMProviderInfo`
@@ -72,6 +95,9 @@ public struct LLMProviderInfo: Sendable, Equatable {
     /// 是否为本地模型（无需 API Key / 网络）。
     public let isLocal: Bool
 
+    /// 供应商类型；未显式指定时根据 `isLocal` 推导。
+    public let providerType: LLMProviderType
+
     /// 供应商官网（设置页「访问官网」等场景）。
     public let websiteURL: URL?
 
@@ -89,6 +115,7 @@ public struct LLMProviderInfo: Sendable, Equatable {
         models: [LLMModelInfo],
         isLocal: Bool = false,
         websiteURL: URL? = nil,
+        providerType: LLMProviderType? = nil,
         apiFormat: LLMProviderAPIFormat = .openAI,
         apiKeyStorageKey: String = ""
     ) {
@@ -98,6 +125,7 @@ public struct LLMProviderInfo: Sendable, Equatable {
         self.defaultModel = defaultModel
         self.models = models
         self.isLocal = isLocal
+        self.providerType = providerType ?? (isLocal ? .local : .cloudService)
         self.websiteURL = websiteURL
         self.apiFormat = apiFormat
         self.apiKeyStorageKey = apiKeyStorageKey

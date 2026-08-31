@@ -70,9 +70,7 @@ public struct ProviderDetailView: View {
                     .foregroundStyle(theme.primary)
                 Text(info.displayName)
                     .font(.appTitle)
-                if isLocal {
-                    AppTag("本地", systemImage: "cpu")
-                }
+                AppTag(info.providerType.displayName, systemImage: info.providerType.systemImage)
                 Spacer()
                 if let url = info.websiteURL {
                     Link(destination: url) {

@@ -17,6 +17,7 @@ public final class HappyCodeProvider: VendorLLMProvider {
                     LLMModelInfo(id: "gpt-5.5", contextWindowSize: 1_000_000, supportsVision: true),
                 ],
                 websiteURL: URL(string: "https://happycode.vip")!,
+                providerType: .relay,
                 apiFormat: .openAI,
                 apiKeyStorageKey: "DevAssistant_ApiKey_HappyCode"
             ),

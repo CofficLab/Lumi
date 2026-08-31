@@ -27,6 +27,7 @@ public final class HyperAPIProvider: VendorLLMProvider {
                     LLMModelInfo(id: "gpt-5.1-codex", contextWindowSize: 400_000, supportsVision: true),
                 ],
                 websiteURL: URL(string: "https://hyperapi.cc")!,
+                providerType: .relay,
                 apiFormat: .openAI,
                 apiKeyStorageKey: "DevAssistant_ApiKey_HyperAPI"
             ),

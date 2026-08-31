@@ -125,10 +125,13 @@ struct ProviderSettingsPageContent: View {
                     .frame(width: 22, height: 22)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(info.displayName)
-                        .font(.appCaptionEmphasized)
-                        .foregroundStyle(theme.textPrimary)
-                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Text(info.displayName)
+                            .font(.appCaptionEmphasized)
+                            .foregroundStyle(theme.textPrimary)
+                            .lineLimit(1)
+                        AppTag(info.providerType.displayName, systemImage: info.providerType.systemImage)
+                    }
                     Text(info.description.isEmpty ? info.id : info.description)
                         .font(.appMicro)
                         .foregroundStyle(theme.textSecondary)

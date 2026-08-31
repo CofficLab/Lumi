@@ -29,6 +29,7 @@ public final class MegaLLMProvider: VendorLLMProvider {
                     LLMModelInfo(id: "newclaude-opus-4-6", contextWindowSize: 200_000, supportsVision: true),
                 ],
                 websiteURL: URL(string: "https://megallm.io")!,
+                providerType: .relay,
                 apiFormat: .openAI,
                 apiKeyStorageKey: "DevAssistant_ApiKey_MegaLLM"
             ),

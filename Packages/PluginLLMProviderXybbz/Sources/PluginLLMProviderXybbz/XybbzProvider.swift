@@ -18,6 +18,7 @@ public final class XybbzProvider: VendorLLMProvider {
                     LLMModelInfo(id: "gpt-5.4", contextWindowSize: 1_000_000, supportsVision: true),
                 ],
                 websiteURL: URL(string: "https://xybbz.xyz")!,
+                providerType: .relay,
                 apiFormat: .openAI,
                 apiKeyStorageKey: "DevAssistant_ApiKey_Xybbz"
             ),
