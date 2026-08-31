@@ -3,38 +3,24 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.19.1</title>
-            <pubDate>Mon, 31 Aug 2026 11:04:58 +0000</pubDate>
-            <sparkle:version>619</sparkle:version>
-            <sparkle:shortVersionString>5.19.1</sparkle:shortVersionString>
+            <title>5.19.2</title>
+            <pubDate>Mon, 31 Aug 2026 15:17:21 +0000</pubDate>
+            <sparkle:version>620</sparkle:version>
+            <sparkle:shortVersionString>5.19.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.19.1</h2>
-<h3>Changes since v5.19.0</h3>
+            <description><![CDATA[<h2>Release v5.19.2</h2>
+<h3>Changes since v5.19.1</h3>
 <ul>
-<li>docs(context): add llm context provider plan</li>
-<li>feat(booklet-maker): configure plugin policy per host</li>
-<li>feat(booklet-maker): restore settings window</li>
-<li>feat(booklet-maker): specialize plugin composition</li>
-<li>feat(context): add background summary provider</li>
-<li>feat(context): persist conversation summaries</li>
-<li>feat(context): route llm history through provider</li>
-<li>feat(message-list): change empty state text to show project-specific prompt</li>
-<li>feat(message-list): change empty state text to show project-specific prompt with localization support</li>
-<li>fix: prevent git status pipe deadlocks</li>
-<li>fix(agent-loop): allow chat to continue past ask_user</li>
-<li>fix(app-icon-designer): align host composition and settings layout</li>
-<li>fix(booklet-maker): support unified multiplatform app</li>
-<li>fix(chat): cancel editor bindings during teardown</li>
-<li>fix(content-view): show empty state when no plugin view is registered</li>
-<li>fix(lumi): link codex provider product</li>
-<li>fix(rag): avoid blocking chat during indexing</li>
-<li>fix(rag): avoid cross-project indexing stalls</li>
-<li>perf(chat): load llm history off main actor</li>
-<li>perf(chat): persist user messages off main thread</li>
+<li>fix(agent-loop): preserve image attachments through lifecycle hooks</li>
+<li>fix(network): expose upstream HTTP error reason</li>
+<li>fix(network): optimize HTTP exchange log loading</li>
+<li>fix(plugin-message-list): add missing zh-Hans translation for empty state subtitle</li>
+<li>refactor(message-renderer): hide tool call controls until hover or popover open</li>
+<li>refactor(project): colocate Xcode configs with app targets</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.19.1</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.19.2</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.19.1/Lumi_5.19.1_arm64.dmg" length="40809055" type="application/octet-stream" sparkle:edSignature="KGbR/nPXG6LgGZhO3YeOuBnsTvDANIz9hiDoKNDvlOF21zaPOieHIYr4/5gvJbDCXgjqnpk2QSZNoqAuRZW+AA=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.19.2/Lumi_5.19.2_arm64.dmg" length="40814142" type="application/octet-stream" sparkle:edSignature="uMq93QETJca1FkarIr3yew0/YruVWSpTDe3DlOpvmH7ilUeX9W6CkC/Uh1OfnQwViPEGaknKxcdE7kgF2WSoAg=="/>
         </item>
     </channel>
 </rss>
