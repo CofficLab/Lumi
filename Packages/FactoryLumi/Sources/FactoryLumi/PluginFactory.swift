@@ -94,6 +94,7 @@ import PluginMessageList
 import PluginMessageManager
 import PluginMessageRenderer
 import PluginAgentLoop
+import PluginLLMContext
 import PluginMessageSender
 import PluginMindMapDesigner
 import PluginModelSelector
@@ -242,6 +243,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationNewPlugin(),
             ConversationManagerPlugin(),
             MessageManagerPlugin(),
+            LLMContextPlugin(),
             PluginAgentLoop(),
             MessageSenderPlugin(),
             PluginPluginManager(),
