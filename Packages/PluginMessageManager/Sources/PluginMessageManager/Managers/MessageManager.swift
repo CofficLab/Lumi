@@ -260,10 +260,10 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         notifyMessageInsertedObservers(messageToInsert, conversationID: conversationID)
 
         // 2) 按 role 分流落盘:
-        //    - user / error:立即同步落盘(用户输入与错误不可丢);
-        //    - assistant / tool:后台串行落盘(丢了可重发/重算,且不阻塞 UI)。
-        let shouldPersistEagerly = messageToInsert.role == .user
-            || messageToInsert.role == .error
+        //    - error:立即落盘，保留错误诊断的既有语义;
+        //    - user / assistant / tool:后台串行落盘。消息已经在 pending
+        //      buffer 中对 UI 和 AgentLoop 可见，不能让磁盘 I/O 阻塞发送主线程。
+        let shouldPersistEagerly = messageToInsert.role == .error
         if shouldPersistEagerly {
             persistNow(messageToInsert, conversationID: conversationID)
         } else {
@@ -295,6 +295,14 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
                 try store.insertMessage(message)
                 // dequeuePending 是 nonisolated + 锁保护,可在本队列直接调用。
                 self?.dequeuePending(id: message.id, conversationID: conversationID)
+                if message.role == .user {
+                    Task { @MainActor [weak self] in
+                        self?.postMessageSavedNotification(
+                            message: message,
+                            conversationID: conversationID
+                        )
+                    }
+                }
             } catch {
                 if Self.verbose {
                     Self.logger.error("\(Self.t)Failed to persist message in background: \(error)")
@@ -337,7 +345,11 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             Self.logger.info("\(Self.t)deleteMessage ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(id.uuidString.prefix(8))…")
         }
         pending.dequeue(id: id, conversationID: conversationID)
-        _ = store?.deleteMessage(id: id)
+        // 用户消息现在可能仍在后台插入队列中。同步排空同一队列，
+        // 避免 delete 先执行、随后 insert 又把消息复活。
+        persistQueue.sync {
+            _ = store?.deleteMessage(id: id)
+        }
         notifyMessagesDidChange(conversationID: conversationID)
     }
 
