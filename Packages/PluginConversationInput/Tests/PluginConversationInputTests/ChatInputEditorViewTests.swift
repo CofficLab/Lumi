@@ -55,6 +55,7 @@ struct ChatInputEditorViewTests {
         )
         let coordinator = view.makeCoordinator()
         let textView = MarkedTextTestView()
+        coordinator.attach(to: textView)
         let placeholderLabel = NSTextField(labelWithString: "Placeholder")
         placeholderLabel.tag = ChatInputEditorView.placeholderLabelTag
         textView.addSubview(placeholderLabel)
@@ -98,6 +99,36 @@ struct ChatInputEditorViewTests {
         #expect(!textView.isIMEComposing)
     }
 
+    @Test("dismantling the editor cancels deferred bindings")
+    func dismantlingEditorCancelsDeferredBinding() async {
+        var draft = ""
+        var height: CGFloat = ChatInputEditorView.minHeight
+        var focused = false
+        var cursor = 0
+        var dragging = false
+
+        let view = ChatInputEditorView(
+            text: Binding(get: { draft }, set: { draft = $0 }),
+            height: Binding(get: { height }, set: { height = $0 }),
+            onSubmit: {},
+            isFocused: Binding(get: { focused }, set: { focused = $0 }),
+            cursorPosition: Binding(get: { cursor }, set: { cursor = $0 }),
+            isImageDragHovering: Binding(get: { dragging }, set: { dragging = $0 })
+        )
+        let coordinator = view.makeCoordinator()
+        let textView = MarkedTextTestView()
+        coordinator.attach(to: textView)
+
+        #expect(coordinator.isActive)
+        coordinator.scheduleHeightBindingUpdate(ChatInputEditorView.maxHeight)
+        ChatInputEditorView.dismantleNSView(NSScrollView(), coordinator: coordinator)
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(!coordinator.isActive)
+        #expect(!coordinator.accepts(textView))
+        #expect(height == ChatInputEditorView.minHeight)
+    }
+
     @Test("Return publishes the current committed editor text before sending")
     func returnPublishesDraftBeforeSubmit() {
         var draft = ""
@@ -117,6 +148,7 @@ struct ChatInputEditorViewTests {
         )
         let coordinator = view.makeCoordinator()
         let textView = MarkedTextTestView()
+        coordinator.attach(to: textView)
         textView.string = "你"
         textView.setSelectedRange(NSRange(location: 1, length: 0))
 
