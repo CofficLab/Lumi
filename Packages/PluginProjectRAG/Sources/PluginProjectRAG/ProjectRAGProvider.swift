@@ -33,7 +33,10 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
     public var currentProjectPath: String? { project?.workspaceRoot }
 
     public func isIndexing(projectPath: String) -> Bool {
-        RAGService.isIndexing(projectPath: projectPath)
+        // RAGService serializes indexing and retrieval through one actor. An
+        // index for another project blocks retrieval just as much as an index
+        // for this project, so callers must treat the state as process-wide.
+        RAGService.isAnyIndexing() || RAGService.isIndexing(projectPath: projectPath)
     }
 
     public func search(
@@ -41,6 +44,13 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
         projectPath: String?,
         topK: Int
     ) async throws -> ProjectRAGResponse {
+        // Do not enter the RAG actor while any project is being indexed. The
+        // actor serializes retrieval behind indexing, so this fast path keeps
+        // the LLM request independent of background indexing even if the
+        // state changes after CodeNavigationCoordinator's initial check.
+        guard !RAGService.isAnyIndexing() else {
+            return ProjectRAGResponse(query: query, results: [])
+        }
         let path = normalizedProjectPath(projectPath)
         try await service.initialize()
         let response = try await service.retrieve(query: query, projectPath: path, topK: topK)
@@ -61,6 +71,9 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
     }
 
     public func ensureIndexed(projectPath: String, force: Bool, background: Bool) async throws {
+        // A concurrent index is already making progress. Waiting for it here
+        // would put the current LLM request behind an unrelated project.
+        guard !RAGService.isAnyIndexing() else { return }
         notify(.indexingStarted(projectPath))
         try await service.initialize()
         notify(.initialized)
@@ -74,6 +87,10 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
     }
 
     public func indexStatus(projectPath: String) async throws -> ProjectRAGIndexStatus? {
+        // `indexStatus` is actor-isolated in RAGService. Avoid enqueueing this
+        // read behind a long-running index; the caller will retry after the
+        // background work completes.
+        guard !RAGService.isAnyIndexing() else { return nil }
         try await service.initialize()
         guard let status = try await service.getIndexStatus(projectPath: projectPath) else { return nil }
         return ProjectRAGIndexStatus(
