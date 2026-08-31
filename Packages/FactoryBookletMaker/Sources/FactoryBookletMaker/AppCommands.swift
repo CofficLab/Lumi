@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 import Combine
 import KernelCore
@@ -283,3 +284,4 @@ private extension CommandModifiers {
         return result
     }
 }
+#endif

@@ -134,7 +134,7 @@ struct PDFSplitMobileView: View {
                             set: { viewModel.renameSplitOutputStem(segment, to: $0) }
                         )
                     )
-                    Text(LumiPluginLocalization.string(".pdf", bundle: .module))
+                    Text(".pdf")
                         .foregroundStyle(theme.textSecondary)
                 }
 

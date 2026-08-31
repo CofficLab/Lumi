@@ -1,14 +1,17 @@
 import Foundation
 import KernelCore
 import LumiUI
-import ProviderActivityBar
 import ProviderContentView
-import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderTheme
 import ProviderToolbar
 import SwiftUI
+
+#if os(macOS)
+import ProviderActivityBar
+import ProviderRailView
+#endif
 
 /// 默认 `ViewFactory` 实现：使用内核已注册的 Provider 组装主视图与设置视图。
 ///
@@ -40,6 +43,7 @@ public struct DefaultViewFactory: ViewFactory {
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
             rootView.setToolbarView(toolbar.makeToolbarView())
         }
+        #if os(macOS)
         if let activityBar = kernel.resolveProvider((any ActivityBarProviding).self) {
             rootView.setActivityBarView(activityBar.makeActivityBarView())
         }
@@ -52,6 +56,7 @@ public struct DefaultViewFactory: ViewFactory {
                 onResize: rail.saveCurrentWidth
             )
         }
+        #endif
         if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
             rootView.setContentView(contentView.makeContentView())
         }
@@ -165,7 +170,11 @@ private struct ThemeHostingView<Content: View>: View {
     /// 窗口背景色：主题的氛围中色（medium），无主题时回退系统窗口背景。
     private var backgroundColor: Color {
         guard let selected = theme.selectedTheme else {
+            #if os(macOS)
             return Color(nsColor: .windowBackgroundColor)
+            #else
+            return Color(uiColor: .systemBackground)
+            #endif
         }
 
         let colorScheme: ColorScheme

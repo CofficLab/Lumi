@@ -1,15 +1,18 @@
 import KernelCore
-import ProviderActivityBar
-import ProviderCommand
 import ProviderContentView
 import ProviderDocsView
-import ProviderLogo
-import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
 import ProviderTheme
 import ProviderToolbar
+
+#if os(macOS)
+import ProviderActivityBar
+import ProviderCommand
+import ProviderLogo
+import ProviderRailView
+#endif
 
 /// BookletMaker 的最小 Provider 装配。
 @MainActor
@@ -32,10 +35,6 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultDocsViewProviding()
     }
 
-    public func makeLogoProvider() -> any LogoProviding {
-        DefaultLogoProviding()
-    }
-
     public func makeToolbarProvider() -> any ToolbarProviding {
         DefaultToolbarProviding()
     }
@@ -44,20 +43,8 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultRootViewProvider()
     }
 
-    public func makeActivityBarProvider() -> any ActivityBarProviding {
-        DefaultActivityBarProviding()
-    }
-
-    public func makeRailViewProvider() -> any RailViewProviding {
-        DefaultRailViewProviding()
-    }
-
     public func makeSettingViewProvider() -> any SettingViewProviding {
         DefaultSettingViewProviding()
-    }
-
-    public func makeCommandProvider() -> any CommandProviding {
-        DefaultCommandProviding()
     }
 
     public func registerProviders(into kernel: KernelCoreContainer) throws {
@@ -80,12 +67,35 @@ public struct DefaultProviderFactory: ProviderFactory {
 
         try kernel.registerProvider((any ContentViewProviding).self, makeContentViewProvider())
         try kernel.registerProvider((any DocsViewProviding).self, makeDocsViewProvider())
-        try kernel.registerProvider((any LogoProviding).self, makeLogoProvider())
         try kernel.registerProvider((any ToolbarProviding).self, makeToolbarProvider())
         try kernel.registerProvider((any RootViewProviding).self, makeRootViewProvider())
+        try kernel.registerProvider((any SettingViewProviding).self, makeSettingViewProvider())
+
+        #if os(macOS)
+        try kernel.registerProvider((any LogoProviding).self, makeLogoProvider())
         try kernel.registerProvider((any ActivityBarProviding).self, makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, makeRailViewProvider())
-        try kernel.registerProvider((any SettingViewProviding).self, makeSettingViewProvider())
         try kernel.registerProvider((any CommandProviding).self, makeCommandProvider())
+        #endif
     }
 }
+
+#if os(macOS)
+extension DefaultProviderFactory {
+    public func makeLogoProvider() -> any LogoProviding {
+        DefaultLogoProviding()
+    }
+
+    public func makeActivityBarProvider() -> any ActivityBarProviding {
+        DefaultActivityBarProviding()
+    }
+
+    public func makeRailViewProvider() -> any RailViewProviding {
+        DefaultRailViewProviding()
+    }
+
+    public func makeCommandProvider() -> any CommandProviding {
+        DefaultCommandProviding()
+    }
+}
+#endif

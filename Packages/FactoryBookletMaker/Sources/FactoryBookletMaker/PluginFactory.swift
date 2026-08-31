@@ -1,12 +1,15 @@
 import KernelCore
-import PluginActivityBar
 import BookletMakerPlugin
+
+#if os(macOS)
+import PluginActivityBar
 import PluginCommand
 import PluginLogoCoffic
 import PluginLogoManager
 import PluginSettingView
 import PluginStorage
 import PluginThemePack
+#endif
 
 /// BookletMaker 的专用插件目录。
 ///
@@ -17,6 +20,9 @@ public struct DefaultPluginFactory: PluginFactory {
     public init() {}
 
     public func makePlugins() -> [any SuperPlugin] {
+        #if os(iOS)
+        return [BookletMakerPlugin(policy: .required)]
+        #else
         [
             // 基础服务必须先于业务插件启动。
             try! StorageSuperPlugin(),
@@ -29,6 +35,7 @@ public struct DefaultPluginFactory: PluginFactory {
             // BookletMaker 是此宿主的核心能力，不能被用户关闭。
             BookletMakerPlugin(policy: .required),
         ]
+        #endif
     }
 }
 

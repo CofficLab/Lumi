@@ -1,6 +1,10 @@
 import KernelCore
 import SwiftUI
 
+#if os(iOS)
+import BookletMakerPlugin
+#endif
+
 @MainActor
 public enum FactoryBookletMaker {
     public static func makeKernel() throws -> KernelCoreContainer {
@@ -15,4 +19,11 @@ public enum FactoryBookletMaker {
     public static func makeSettingsView(kernel: KernelCoreContainer) throws -> AnyView {
         try KernelFactory.makeSettingsView(kernel: kernel)
     }
+
+    #if os(iOS)
+    /// iOS 使用小册子插件提供的移动端业务 façade；窗口导航与文件导入由 App 负责。
+    public static func makeMobileFeature() -> BookletMakerMobileFeature {
+        BookletMakerMobileFeature()
+    }
+    #endif
 }

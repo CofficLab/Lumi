@@ -26,8 +26,8 @@ PRODUCT_NAME = BookletMaker
 // 缺失时系统会把进程语言协商成开发语言 en，Locale.preferredLanguages 也随之只剩 en，
 // 导致 SPM 插件 bundle 里的中文资源永远不会被选中（中文系统下界面仍是英文）。
 INFOPLIST_FILE[sdk=macosx*] = BookletMakerApp/BookletMaker-Info.plist
-INFOPLIST_FILE[sdk=iphoneos*] = BookletMakeriOSApp/BookletMaker-iOS-Info.plist
-INFOPLIST_FILE[sdk=iphonesimulator*] = BookletMakeriOSApp/BookletMaker-iOS-Info.plist
+INFOPLIST_FILE[sdk=iphoneos*] = BookletMakerApp/BookletMaker-iOS-Info.plist
+INFOPLIST_FILE[sdk=iphonesimulator*] = BookletMakerApp/BookletMaker-iOS-Info.plist
 INFOPLIST_KEY_LSApplicationCategoryType[sdk=macosx*] = public.app-category.utilities
 INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*] = YES
 INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*] = YES
