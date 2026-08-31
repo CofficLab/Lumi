@@ -3,25 +3,25 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.18.4</title>
-            <pubDate>Sun, 30 Aug 2026 16:23:20 +0000</pubDate>
-            <sparkle:version>617</sparkle:version>
-            <sparkle:shortVersionString>5.18.4</sparkle:shortVersionString>
+            <title>5.19.0</title>
+            <pubDate>Mon, 31 Aug 2026 03:56:43 +0000</pubDate>
+            <sparkle:version>618</sparkle:version>
+            <sparkle:shortVersionString>5.19.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.18.4</h2>
-<h3>Changes since v5.18.3</h3>
+            <description><![CDATA[<h2>Release v5.19.0</h2>
+<h3>Changes since v5.18.4</h3>
 <ul>
-<li>feat(chat-section): add plugin-aware chat contexts</li>
-<li>feat(chat): persist plugin chat section widths</li>
-<li>feat(rail): persist plugin rail widths</li>
-<li>feat(terminal): sync rail view visibility with visible tabs</li>
-<li>fix: make API key keychain reads resilient</li>
-<li>fix(chat-screenshot): show captured images in chat preview</li>
-<li>refactor(code-editor): rename editor plugin packages</li>
+<li>feat: classify LLM providers in model selector</li>
+<li>feat(chat): add capability motifs to empty state</li>
+<li>feat(chat): polish empty state design</li>
+<li>fix: deep-link browse plugins to plugin manager</li>
+<li>fix: keep chat file attachments out of message input</li>
+<li>fix(projects): present folder importer from host window</li>
+<li>perf(chat): prioritize message list on conversation switch</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.18.4</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.19.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.18.4/Lumi_5.18.4_arm64.dmg" length="40609850" type="application/octet-stream" sparkle:edSignature="B8UxtFmjyXCETa1TnWdGzX/hr5GvP2CzsqWzIFEOe4kFtoo1toPKCNflM2ClECtwgezoIeTlUR2KSjZ+JClbCA=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.19.0/Lumi_5.19.0_arm64.dmg" length="40761586" type="application/octet-stream" sparkle:edSignature="aY59YFLZMLlnlqdFzsW80B7ieKzYPcYgZScRVEuiBQ+FZphTJkbb/QZVM2/yPjXkXlpCh6ZbPwGfrBoqt7+cCw=="/>
         </item>
     </channel>
 </rss>
