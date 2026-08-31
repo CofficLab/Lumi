@@ -14,6 +14,20 @@ public protocol MessageInsertedObserverHandle: AnyObject {
 @MainActor
 public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     func messages(for conversationID: UUID) -> [Message]
+    /// 返回指定会话的一页消息，结果按时间升序排列。
+    /// `beforeMessageID == nil` 时返回最新一页；否则返回游标之前的一页。
+    func messagePage(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) -> [Message]
+    /// 判断游标之前是否还有消息。传入 nil 时使用实现的默认探测窗口。
+    func hasEarlierMessages(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) -> Bool
     func message(id: UUID, in conversationID: UUID) -> Message?
     func lastMessage(in conversationID: UUID) -> Message?
     func messageCount(for conversationID: UUID) -> Int
@@ -59,6 +73,36 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
 }
 
 public extension MessageManaging {
+    func messagePage(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) -> [Message] {
+        guard limit > 0 else { return [] }
+        let all = messages(for: conversationID)
+            .filter { includesToolMessages || $0.role != .tool }
+            .sorted {
+                if $0.createdAt == $1.createdAt { return $0.id < $1.id }
+                return $0.createdAt < $1.createdAt
+            }
+        guard let beforeMessageID else { return Array(all.suffix(limit)) }
+        guard let index = all.firstIndex(where: { $0.id == beforeMessageID }) else { return [] }
+        return Array(all[max(0, index - limit)..<index])
+    }
+
+    func hasEarlierMessages(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) -> Bool {
+        let all = messages(for: conversationID)
+            .filter { includesToolMessages || $0.role != .tool }
+        guard let beforeMessageID else { return all.count > 10 }
+        guard let index = all.firstIndex(where: { $0.id == beforeMessageID }) else { return false }
+        return index > 0
+    }
+
     func dailyMessageCounts(since: Date) -> [Date: Int] { [:] }
 
     func dailyTokenCounts(since: Date) -> [Date: Int] { [:] }

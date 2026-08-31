@@ -11,6 +11,32 @@ public final class DefaultMessageManager: MessageManaging {
         storage[conversationID, default: []].sorted { $0.createdAt < $1.createdAt }
     }
 
+    public func messagePage(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) -> [Message] {
+        guard limit > 0 else { return [] }
+        let all = messages(for: conversationID)
+            .filter { includesToolMessages || $0.role != .tool }
+        guard let beforeMessageID else { return Array(all.suffix(limit)) }
+        guard let index = all.firstIndex(where: { $0.id == beforeMessageID }) else { return [] }
+        return Array(all[max(0, index - limit)..<index])
+    }
+
+    public func hasEarlierMessages(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) -> Bool {
+        let all = messages(for: conversationID)
+            .filter { includesToolMessages || $0.role != .tool }
+        guard let beforeMessageID else { return all.count > 10 }
+        guard let index = all.firstIndex(where: { $0.id == beforeMessageID }) else { return false }
+        return index > 0
+    }
+
     public func message(id: UUID, in conversationID: UUID) -> Message? {
         storage[conversationID]?.first { $0.id == id }
     }
