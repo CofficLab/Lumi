@@ -21,6 +21,10 @@ extension AgentLoopManager {
 
     public func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
         guard var runtime = runtimes[conversationID] else { throw AgentLoopError.invalidResumeRequest }
+        guard resumingConversations.insert(conversationID).inserted else {
+            throw AgentLoopError.invalidResumeRequest
+        }
+        defer { resumingConversations.remove(conversationID) }
         if let task = runtime.task { await task.value }
         guard case .awaitingUser(let turnID, _, let pendingToolCalls, let suspension) = runtime.phase,
               suspension.suspensionID == request.suspensionID,
@@ -65,6 +69,9 @@ extension AgentLoopManager {
         } else {
             launchAdvance(conversationID: conversationID, turnID: turnID)
         }
+        // 只保护 resolveUserResponse 到状态转换这一小段临界区；恢复后的
+        // 回合若再次 ask_user，新的消息仍应能够跳过新的挂起点。
+        resumingConversations.remove(conversationID)
         return await waitForCompletion(conversationID: conversationID)
     }
 

@@ -24,7 +24,7 @@ struct MessageEmptyStateView: View {
             return LumiPluginLocalization.string("Start chatting with Lumi")
         }
         if let title = context?.title {
-            return "对于 「\(title)」，我可以帮你做什么"
+            return String(format: LumiPluginLocalization.string("For 「%@」, what can I help you with?"), title)
         }
         return LumiPluginLocalization.string("Start chatting with Lumi")
     }
