@@ -4,7 +4,7 @@
 // 版本号由 CI（set-booklet-version.sh）通过 tag 注入，此处为默认值。
 //
 
-#include "App-Shared.xcconfig"
+#include "../LumiApp/Config/App-Shared.xcconfig"
 
 // 同一 target 原生支持 macOS、iPhone 和 iPad。
 SUPPORTED_PLATFORMS = macosx iphoneos iphonesimulator

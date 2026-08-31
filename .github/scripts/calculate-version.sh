@@ -25,9 +25,9 @@ LAST_TAG=$(git tag -l "v*" | sort -V | tail -n 1 2>/dev/null || echo "v0.0.0")
 LAST_TAG="${LAST_TAG#v}"
 
 # Get the current version from the Lumi xcconfig
-# (build settings 已从 project.pbxproj 迁移到 Config/*.xcconfig)。
+# (build settings 已从 project.pbxproj 迁移到各 App 目录的 xcconfig)。
 # 读 Release 配置的 MARKETING_VERSION（与 Debug 一致）。
-LUMI_XCCONFIG="Config/Lumi-Release.xcconfig"
+LUMI_XCCONFIG="LumiApp/Config/Lumi-Release.xcconfig"
 XCODE_VERSION=$(grep -m1 "^MARKETING_VERSION" "$LUMI_XCCONFIG" | sed 's/.*= *//; s/;.*//' | tr -d ' ' || echo "0.0.0")
 
 # Compare versions and use the higher one

@@ -81,10 +81,10 @@ jobs:
 
           echo "📝 Updating Lumi MARKETING_VERSION to ${{ env.new_version }}..."
 
-          # build settings 已从 project.pbxproj 迁移到 Config/*.xcconfig。
+          # build settings 已从 project.pbxproj 迁移到各 App 目录的 xcconfig。
           # 各 app 版本号独立维护：发版只改 Lumi 的 Debug/Release 两个文件，
           # 不再像旧逻辑那样把所有 target 的版本号统一覆盖。
-          for f in Config/Lumi-Debug.xcconfig Config/Lumi-Release.xcconfig; do
+          for f in LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig; do
             sed -i '' "s/^MARKETING_VERSION = .*/MARKETING_VERSION = ${{ env.new_version }};/" "$f"
             if ! grep -q "^MARKETING_VERSION = ${{ env.new_version }};" "$f"; then
               echo "❌ $f 的 MARKETING_VERSION 未更新为 ${{ env.new_version }}"
@@ -100,18 +100,18 @@ jobs:
 
           echo "📝 Updating Lumi CURRENT_PROJECT_VERSION..."
 
-          # build settings 已迁移到 Config/*.xcconfig。Lumi 的构建号在 Debug/Release 两个文件。
+          # build settings 已迁移到 LumiApp/Config/*.xcconfig。Lumi 的构建号在 Debug/Release 两个文件。
           # 从 Release 读取当前值（Debug 与 Release 保持一致）。
-          CURRENT_BUILD=$(grep -m1 "^CURRENT_PROJECT_VERSION" Config/Lumi-Release.xcconfig | sed 's/.*= *//; s/;.*//' | tr -d ' ')
+          CURRENT_BUILD=$(grep -m1 "^CURRENT_PROJECT_VERSION" LumiApp/Config/Lumi-Release.xcconfig | sed 's/.*= *//; s/;.*//' | tr -d ' ')
           if [ -z "$CURRENT_BUILD" ]; then
-            echo "❌ 无法从 Config/Lumi-Release.xcconfig 读取 CURRENT_PROJECT_VERSION"
+            echo "❌ 无法从 LumiApp/Config/Lumi-Release.xcconfig 读取 CURRENT_PROJECT_VERSION"
             exit 1
           fi
 
           NEW_BUILD_VERSION=$((CURRENT_BUILD + 1))
           echo "  Build number: $CURRENT_BUILD → $NEW_BUILD_VERSION (Lumi)"
 
-          for f in Config/Lumi-Debug.xcconfig Config/Lumi-Release.xcconfig; do
+          for f in LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig; do
             sed -i '' "s/^CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION;/" "$f"
             if ! grep -q "^CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION;" "$f"; then
               echo "❌ $f 的 CURRENT_PROJECT_VERSION 未更新为 $NEW_BUILD_VERSION"
@@ -537,7 +537,7 @@ jobs:
           tagging_message: ${{ env.tag }}
           push_options: "--follow-tags"
           # 仅提交版本号 xcconfig 和 appcast（pbxproj 不再随版本号变动）
-          file_pattern: "Config/Lumi-Debug.xcconfig Config/Lumi-Release.xcconfig appcast.xml appcast-arm64.xml appcast-x86_64.xml"
+          file_pattern: "LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig appcast.xml appcast-arm64.xml appcast-x86_64.xml"
 
       - name: Prepare Release Assets
         if: success()

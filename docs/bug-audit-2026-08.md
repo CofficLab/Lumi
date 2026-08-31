@@ -1,6 +1,6 @@
 # Lumi 代码库 Bug 审计报告（2026-08）
 
-> 审计范围：`LumiApp/`、`Packages/`、`Plugins/`、`Config/`、`ci_scripts/` 及各子 App（AppIconDesigner / BookletMaker / CADDesigner / DatabaseManager / NettoExtension）。
+> 审计范围：`LumiApp/`、`Packages/`、`Plugins/`、各 App 目录下的 `*.xcconfig`、`ci_scripts/` 及各子 App（AppIconDesigner / BookletMaker / CADDesigner / DatabaseManager / NettoExtension）。
 > 审计方式：静态代码审查（多路并行深读源码），按"可复现性 + 影响"筛选真实缺陷，已剔除风格问题与经核实的误报。
 > 严重度定义：**高** = 可能崩溃 / 数据丢失 / 功能失效；**中** = 特定条件下出错或泄漏；**低** = 健壮性 / 性能隐患。
 
@@ -475,7 +475,7 @@ process.arguments = ["-l", "-c", "which \(command)"]
 - `ModelUsageStats.swift:225` 的 `first!...last!`：上游有 guard，实际风险极低。
 - 各 `rootPath + "/"` 路径前缀判断均处理了 `"/"` 特例，逻辑正确。
 - `EditorSource` 各通知观察者（GutterView/MinimapView/TextView 等）均在 `deinit` 中 remove，无泄漏。
-- `Config/*.xcconfig` 未发现硬编码密钥；`KitHttp/HTTPClient.swift` 的超时、SSE 解析、敏感头脱敏实现良好；`ConversationService` 落盘使用了 `.atomic`；SQL 访问普遍使用绑定参数，未发现注入。
+- 各 App 目录下的 `*.xcconfig` 未发现硬编码密钥；`KitHttp/HTTPClient.swift` 的超时、SSE 解析、敏感头脱敏实现良好；`ConversationService` 落盘使用了 `.atomic`；SQL 访问普遍使用绑定参数，未发现注入。
 
 ---
 
