@@ -91,6 +91,26 @@ struct MessageManagerWriteBehindTests {
         #expect(persisted)
     }
 
+    @Test("LLM 历史读取包含磁盘与 pending 消息")
+    func llmHistoryIncludesPendingMessages() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+
+        let message = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "context",
+            createdAt: Date()
+        )
+        manager.insertMessage(message, to: conversationID)
+
+        let history = await manager.messagesForLLM(in: conversationID)
+
+        #expect(history.map(\.content) == ["context"])
+    }
+
     @Test("响应元数据字段可完整往返数据库")
     func responseMetadataRoundTrips() throws {
         let (store, directory) = try makeStore()

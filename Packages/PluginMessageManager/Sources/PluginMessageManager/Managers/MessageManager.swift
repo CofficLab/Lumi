@@ -119,6 +119,24 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         return all
     }
 
+    /// 在后台读取并组装 LLM 历史，避免 SwiftData 解码和全量排序阻塞 MainActor。
+    public func messagesForLLM(in conversationID: UUID) async -> [Message] {
+        let store = self.store
+        let pending = self.pending
+        return await Task.detached(priority: .userInitiated) {
+            let diskMessages = store?.fetchMessages(conversationId: conversationID) ?? []
+            let pendingMessages = pending.snapshot(for: conversationID)
+            let diskIDs = Set(diskMessages.map(\.id))
+            var all = diskMessages
+            all.append(contentsOf: pendingMessages.filter { !diskIDs.contains($0.id) })
+            all.sort {
+                if $0.createdAt == $1.createdAt { return $0.id < $1.id }
+                return $0.createdAt < $1.createdAt
+            }
+            return all
+        }.value
+    }
+
     public func message(id: UUID, in conversationID: UUID) -> Message? {
         if let pendingMessage = pending.snapshot(for: conversationID).first(where: { $0.id == id }) {
             return pendingMessage

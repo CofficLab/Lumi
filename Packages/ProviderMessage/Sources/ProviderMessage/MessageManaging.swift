@@ -14,6 +14,8 @@ public protocol MessageInsertedObserverHandle: AnyObject {
 @MainActor
 public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     func messages(for conversationID: UUID) -> [Message]
+    /// 异步加载发送给 LLM 的消息历史。持久化实现应将磁盘读取和解码放到后台。
+    func messagesForLLM(in conversationID: UUID) async -> [Message]
     /// 返回指定会话的一页消息，结果按时间升序排列。
     /// `beforeMessageID == nil` 时返回最新一页；否则返回游标之前的一页。
     func messagePage(
@@ -73,6 +75,10 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
 }
 
 public extension MessageManaging {
+    func messagesForLLM(in conversationID: UUID) async -> [Message] {
+        messages(for: conversationID)
+    }
+
     func messagePage(
         for conversationID: UUID,
         limit: Int,
