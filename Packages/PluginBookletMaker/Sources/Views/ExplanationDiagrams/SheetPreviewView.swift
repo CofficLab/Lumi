@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 // MARK: - Sheet Preview View
@@ -5,6 +6,8 @@ import SwiftUI
 /// 「装订前」示意图：左侧为张数 tab（第一张 … 第四张），
 /// 右侧显示选中那张纸的实际拼版内容（横向纸张上并排的左右两页）。
 struct SheetPreviewView: View {
+    @LumiTheme private var theme
+
     let document: CurrentPDFDocument
     let settings: BookletSettings
 
@@ -40,31 +43,20 @@ struct SheetPreviewView: View {
     private var sheetTabs: some View {
         VStack(alignment: .leading, spacing: 6) {
             ForEach(Array(sheets.enumerated()), id: \.element.index) { index, _ in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        selectedSheet = index
+                AppListRow(
+                    isSelected: selectedSheet == index,
+                    action: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedSheet = index
+                        }
                     }
-                } label: {
+                ) {
                     Text(sheetTitle(index))
-                        .font(.system(size: 11, weight: selectedSheet == index ? .semibold : .regular))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(selectedSheet == index
-                                      ? Color.accentColor.opacity(0.15)
-                                      : Color.secondary.opacity(0.06))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(selectedSheet == index
-                                        ? Color.accentColor
-                                        : Color.clear,
-                                        lineWidth: 1)
-                        )
+                        .font(selectedSheet == index
+                            ? DesignTokens.Typography.caption1
+                            : DesignTokens.Typography.caption2)
+                        .foregroundStyle(selectedSheet == index ? theme.primary : theme.textPrimary)
                 }
-                .buttonStyle(.plain)
-                .foregroundColor(selectedSheet == index ? .accentColor : .primary)
             }
             Spacer()
         }
@@ -102,8 +94,8 @@ struct SheetPreviewView: View {
             Text(outputSide.side == .front
                  ? BookletLocalization.string("Front")
                  : BookletLocalization.string("Back"))
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(.secondary)
+                .font(DesignTokens.Typography.caption1)
+                .foregroundStyle(theme.textSecondary)
             OutputSheetView(
                 sheet: outputSide,
                 document: document,
@@ -111,8 +103,8 @@ struct SheetPreviewView: View {
             )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             Text(pairCaption(outputSide))
-                .font(.system(size: 10))
-                .foregroundColor(.secondary)
+                .font(DesignTokens.Typography.caption1)
+                .foregroundStyle(theme.textSecondary)
         }
     }
 }

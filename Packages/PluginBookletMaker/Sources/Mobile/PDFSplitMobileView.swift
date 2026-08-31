@@ -1,7 +1,10 @@
 #if os(iOS)
+import LumiUI
 import SwiftUI
 
 struct PDFSplitMobileView: View {
+    @LumiTheme private var theme
+
     @ObservedObject var viewModel: BookletMakerViewModel
 
     var body: some View {
@@ -9,12 +12,12 @@ struct PDFSplitMobileView: View {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(BookletLocalization.string("Choose where to split"))
-                        .font(.title2.bold())
+                        .font(DesignTokens.Typography.title2)
                     Text(BookletLocalization.string(
                         "Tap a gap between pages. Blue scissors mark a split point."
                     ))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(DesignTokens.Typography.subheadline)
+                    .foregroundStyle(theme.textSecondary)
                 }
 
                 pageStrip
@@ -22,18 +25,18 @@ struct PDFSplitMobileView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(BookletLocalization.string("Output"))
-                            .font(.headline)
+                            .font(DesignTokens.Typography.title3)
                         Text(BookletLocalization.string(
                             "%lld PDF files",
                             Int64(viewModel.splitSegments.count)
                         ))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.textSecondary)
                     }
                     Spacer()
                     if viewModel.splitCutPoints.isEmpty {
                         Label(BookletLocalization.string("Add a split"), systemImage: "info.circle")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .font(DesignTokens.Typography.caption1)
+                            .foregroundStyle(theme.textSecondary)
                     }
                 }
 
@@ -45,7 +48,7 @@ struct PDFSplitMobileView: View {
             }
             .padding(20)
         }
-        .background(Color(uiColor: .systemGroupedBackground))
+        .appSurface(style: .panel, cornerRadius: 0)
     }
 
     private var pageStrip: some View {
@@ -61,7 +64,7 @@ struct PDFSplitMobileView: View {
             .padding(14)
         }
         .frame(height: 230)
-        .background(.background, in: RoundedRectangle(cornerRadius: 18))
+        .appSurface(style: .subtle, cornerRadius: DesignTokens.Radius.md)
     }
 
     private func pageCard(_ page: Int) -> some View {
@@ -72,7 +75,7 @@ struct PDFSplitMobileView: View {
                 .shadow(color: .black.opacity(0.12), radius: 3, y: 2)
 
             Text("\(page)")
-                .font(.caption2.bold())
+                .font(DesignTokens.Typography.caption2)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 4)
@@ -107,41 +110,39 @@ struct PDFSplitMobileView: View {
     }
 
     private func resultCard(_ segment: PDFSplitSegment) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Label(
-                    BookletLocalization.string(
-                        "Pages range %lld–%lld",
-                        Int64(segment.startPage),
-                        Int64(segment.endPage)
-                    ),
-                    systemImage: "doc.richtext"
-                )
-                .font(.headline)
-                Spacer()
-                Text(BookletLocalization.string("%lld pages", Int64(segment.pageCount)))
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-            }
-
-            HStack(spacing: 6) {
-                TextField(
-                    BookletLocalization.string("File name"),
-                    text: Binding(
-                        get: { viewModel.splitFileNameStem(for: segment) },
-                        set: { viewModel.renameSplitOutputStem(segment, to: $0) }
+        AppCard(style: .subtle, cornerRadius: DesignTokens.Radius.md, showShadow: false) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Label(
+                        BookletLocalization.string(
+                            "Pages range %lld–%lld",
+                            Int64(segment.startPage),
+                            Int64(segment.endPage)
+                        ),
+                        systemImage: "doc.richtext"
                     )
-                )
-                .textFieldStyle(.roundedBorder)
-                Text(LumiPluginLocalization.string(".pdf", bundle: .module)).foregroundStyle(.secondary)
-            }
+                    .font(DesignTokens.Typography.bodyEmphasized)
+                    Spacer()
+                    AppTag(BookletLocalization.string("%lld pages", Int64(segment.pageCount)))
+                }
 
-            if let message = viewModel.splitFileNameValidationMessage(for: segment) {
-                Text(message).font(.footnote).foregroundStyle(.red)
+                HStack(spacing: 6) {
+                    AppInputField(
+                        LocalizedStringKey(BookletLocalization.string("File name")),
+                        text: Binding(
+                            get: { viewModel.splitFileNameStem(for: segment) },
+                            set: { viewModel.renameSplitOutputStem(segment, to: $0) }
+                        )
+                    )
+                    Text(LumiPluginLocalization.string(".pdf", bundle: .module))
+                        .foregroundStyle(theme.textSecondary)
+                }
+
+                if let message = viewModel.splitFileNameValidationMessage(for: segment) {
+                    AppErrorBanner(message: LocalizedStringKey(message))
+                }
             }
         }
-        .padding(16)
-        .background(.background, in: RoundedRectangle(cornerRadius: 16))
     }
 }
 #endif

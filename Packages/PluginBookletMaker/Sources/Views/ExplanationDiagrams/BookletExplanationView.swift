@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 // MARK: - Booklet Explanation View
@@ -9,6 +10,8 @@ import SwiftUI
 /// - 右侧：根据选中 tab 显示对应预览：原始 PDF 展示输入页面、转换后
 ///   展示 4 张 A4 输出 PDF 全貌、装订前展示单张拼版细节、装订后展示翻页小册子
 struct BookletExplanationView: View {
+    @LumiTheme private var theme
+
     let document: CurrentPDFDocument
     let settings: BookletSettings
 
@@ -35,10 +38,8 @@ struct BookletExplanationView: View {
                     .frame(width: max(96, min(140, geo.size.width * 0.22)))
 
                 // 分隔线
-                Rectangle()
-                    .fill(Color.secondary.opacity(0.2))
-                    .frame(width: 1)
-                    .padding()
+                AppDivider(.vertical)
+                    .padding(.vertical)
 
                 // 右侧：选中 tab 的预览内容
                 rightContent
@@ -65,9 +66,7 @@ struct BookletExplanationView: View {
                 .padding(.bottom, 16)
 
             // 分隔线
-            Rectangle()
-                .fill(Color.secondary.opacity(0.15))
-                .frame(height: 1)
+            AppDivider()
 
             // 下方：原始/转换摘要，或装订前的纸张 tab
             leftDetailPanel
@@ -119,8 +118,8 @@ struct BookletExplanationView: View {
     private func stageSummary(_ text: String) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(text)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(.secondary)
+                .font(DesignTokens.Typography.caption1)
+                .foregroundStyle(theme.textSecondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
 
@@ -153,29 +152,20 @@ struct BookletExplanationView: View {
 
     private func bindingTabButton(title: String, tab: BindingTab) -> some View {
         let isSelected = selectedBindingTab == tab
-        return Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                selectedBindingTab = tab
+        return AppListRow(
+            isSelected: isSelected,
+            action: {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    selectedBindingTab = tab
+                }
             }
-        } label: {
+        ) {
             Text(title)
-                .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(isSelected
-                            ? Color.accentColor.opacity(0.15)
-                            : Color.secondary.opacity(0.06))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 1)
-                )
+                .font(isSelected
+                    ? DesignTokens.Typography.bodyEmphasized
+                    : DesignTokens.Typography.body)
+                .foregroundStyle(isSelected ? theme.primary : theme.textPrimary)
         }
-        .buttonStyle(.plain)
-        .foregroundColor(isSelected ? .accentColor : .primary)
     }
 
     /// 张数 tab 列表（装订前模式时高亮显示）
@@ -186,9 +176,7 @@ struct BookletExplanationView: View {
         )
 
         return VStack(alignment: .leading, spacing: 0) {
-            Text(BookletLocalization.string("Sheet"))
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(.secondary)
+            AppSectionLabel(BookletLocalization.string("Sheet"))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 8)
 
@@ -209,35 +197,26 @@ struct BookletExplanationView: View {
     private func sheetTabButton(index: Int, physicalSheet: PhysicalSheet) -> some View {
         let isSelected = selectedSheet == index
 
-        return Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                selectedSheet = index
+        return AppListRow(
+            isSelected: isSelected,
+            action: {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    selectedSheet = index
+                }
             }
-        } label: {
+        ) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(BookletLocalization.string("Sheet number %lld", Int64(index + 1)))
-                    .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+                    .font(isSelected
+                        ? DesignTokens.Typography.caption1
+                        : DesignTokens.Typography.caption2)
 
                 Text(physicalSheetPageCaption(physicalSheet))
-                    .font(.system(size: 9))
-                    .foregroundColor(.secondary)
+                    .font(DesignTokens.Typography.caption2)
+                    .foregroundStyle(theme.textSecondary)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 6)
-            .padding(.horizontal, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected
-                        ? Color.accentColor.opacity(0.15)
-                        : Color.secondary.opacity(0.06))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 1)
-            )
+            .foregroundStyle(isSelected ? theme.primary : theme.textPrimary)
         }
-        .buttonStyle(.plain)
-        .foregroundColor(isSelected ? .accentColor : .primary)
     }
 
     // MARK: - Right Content
@@ -344,8 +323,8 @@ struct BookletExplanationView: View {
                 Int64(outputSide.physicalSheetIndex + 1),
                 sideDisplayName(outputSide.side)
             ))
-                .font(.system(size: 9, weight: .medium))
-                .foregroundColor(.secondary)
+                .font(DesignTokens.Typography.caption2)
+                .foregroundStyle(theme.textSecondary)
         }
     }
 
@@ -398,8 +377,8 @@ struct BookletExplanationView: View {
     private func outputSideView(_ outputSide: OutputSheet) -> some View {
         VStack(spacing: 3) {
             Text(sideDisplayName(outputSide.side))
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(.secondary)
+                .font(DesignTokens.Typography.caption1)
+                .foregroundStyle(theme.textSecondary)
 
             OutputSheetView(
                 sheet: outputSide,
@@ -409,8 +388,8 @@ struct BookletExplanationView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             Text(pairCaption(outputSide))
-                .font(.system(size: 10))
-                .foregroundColor(.secondary)
+                .font(DesignTokens.Typography.caption1)
+                .foregroundStyle(theme.textSecondary)
         }
     }
 
