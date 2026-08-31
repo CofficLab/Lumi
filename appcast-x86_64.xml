@@ -3,24 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.19.0</title>
-            <pubDate>Mon, 31 Aug 2026 03:56:45 +0000</pubDate>
-            <sparkle:version>618</sparkle:version>
-            <sparkle:shortVersionString>5.19.0</sparkle:shortVersionString>
+            <title>5.19.1</title>
+            <pubDate>Mon, 31 Aug 2026 11:05:02 +0000</pubDate>
+            <sparkle:version>619</sparkle:version>
+            <sparkle:shortVersionString>5.19.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.19.0</h2>
-<h3>Changes since v5.18.4</h3>
+            <description><![CDATA[<h2>Release v5.19.1</h2>
+<h3>Changes since v5.19.0</h3>
 <ul>
-<li>feat: classify LLM providers in model selector</li>
-<li>feat(chat): add capability motifs to empty state</li>
-<li>feat(chat): polish empty state design</li>
-<li>fix: deep-link browse plugins to plugin manager</li>
-<li>fix: keep chat file attachments out of message input</li>
-<li>fix(projects): present folder importer from host window</li>
-<li>perf(chat): prioritize message list on conversation switch</li>
+<li>docs(context): add llm context provider plan</li>
+<li>feat(booklet-maker): configure plugin policy per host</li>
+<li>feat(booklet-maker): restore settings window</li>
+<li>feat(booklet-maker): specialize plugin composition</li>
+<li>feat(context): add background summary provider</li>
+<li>feat(context): persist conversation summaries</li>
+<li>feat(context): route llm history through provider</li>
+<li>feat(message-list): change empty state text to show project-specific prompt</li>
+<li>feat(message-list): change empty state text to show project-specific prompt with localization support</li>
+<li>fix: prevent git status pipe deadlocks</li>
+<li>fix(agent-loop): allow chat to continue past ask_user</li>
+<li>fix(app-icon-designer): align host composition and settings layout</li>
+<li>fix(booklet-maker): support unified multiplatform app</li>
+<li>fix(chat): cancel editor bindings during teardown</li>
+<li>fix(content-view): show empty state when no plugin view is registered</li>
+<li>fix(lumi): link codex provider product</li>
+<li>fix(rag): avoid blocking chat during indexing</li>
+<li>fix(rag): avoid cross-project indexing stalls</li>
+<li>perf(chat): load llm history off main actor</li>
+<li>perf(chat): persist user messages off main thread</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.19.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.19.0/Lumi_5.19.0_x86_64.dmg" length="43830141" type="application/octet-stream" sparkle:edSignature="kOeQjd58xBYJjev2Y6q2VXHHeWyVNJEJHYCvBFMY0I393T048bz2VaU6AJJAW38MYGsXmCRH7ORt1nxpTM9iAg=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.19.1</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.19.1/Lumi_5.19.1_x86_64.dmg" length="45475325" type="application/octet-stream" sparkle:edSignature="LLpgxtAi6EagIkfyHvXY7tWnKsxF8FMCl0Sk55Ua8k67pJNHXzIzojCmPApvXHXUq/hd+31D7dXiroe537MKCg=="/>
         </item>
     </channel>
 </rss>
