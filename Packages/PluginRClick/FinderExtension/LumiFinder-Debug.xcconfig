@@ -4,7 +4,7 @@
 // 不走 App-Shared.xcconfig（extension 的 runpath、沙盒与 app 不同）。
 //
 
-#include "Base.xcconfig"
+#include "../../../LumiApp/Config/Base.xcconfig"
 
 // 产物
 PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.debug.finder

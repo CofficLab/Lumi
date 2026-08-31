@@ -43,6 +43,46 @@ func testMessageFromLLMMessagePreservesToolCalls() {
     #expect(restored.reasoningContent == "先检查状态")
 }
 
+@Test("用户图片附件会转换为 LLM 图片")
+func testMessageToLLMMessagePreservesUserImage() {
+    let imageData = Data([0x89, 0x50, 0x4E, 0x47])
+    let message = Message(
+        conversationID: UUID(),
+        role: .user,
+        content: "这张图是什么",
+        metadata: UserAttachmentMetadata.encodeImageAttachments([
+            UserImageAttachment(
+                mimeType: "image/png",
+                base64Data: imageData.base64EncodedString(),
+                fileName: "screen.png"
+            )
+        ])
+    )
+
+    let llmMessage = message.llmMessage
+
+    #expect(llmMessage.images == [MessageImage(data: imageData, mimeType: "image/png")])
+}
+
+@Test("LLM 图片恢复为消息时会保留附件 metadata")
+func testMessageFromLLMMessagePreservesUserImage() {
+    let conversationID = UUID()
+    let imageData = Data([0xFF, 0xD8, 0xFF, 0xE0])
+    let message = LLMMessage(
+        role: .user,
+        content: "请描述图片",
+        images: [MessageImage(data: imageData, mimeType: "image/jpeg")]
+    )
+
+    let restored = messageFromLLMMessage(message, conversationID: conversationID)
+    let attachments = UserAttachmentMetadata.decodeImageAttachments(from: restored.metadata)
+
+    #expect(restored.conversationID == conversationID)
+    #expect(attachments.count == 1)
+    #expect(attachments[0].mimeType == "image/jpeg")
+    #expect(Data(base64Encoded: attachments[0].base64Data) == imageData)
+}
+
 @MainActor
 @Test("挂起 ask_user 时发送新消息会跳过挂起点并恢复原回合")
 func testMessageObserverResumesSuspendedTurnWhenUserContinuesChatting() async throws {

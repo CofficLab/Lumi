@@ -65,11 +65,11 @@ echo "    CURRENT_PROJECT_VERSION → $BUILD_NUMBER"
 # -----------------------------------------------------------------------------
 # 2. 写入 AppIconDesigner 的 xcconfig
 #
-# build settings 已从 project.pbxproj 迁移到 Config/AppIconDesigner.xcconfig。
+# build settings 已从 project.pbxproj 迁移到 AppIconDesignerApp/AppIconDesigner.xcconfig。
 # Debug/Release 共用这一个文件（两者配置一致），
 # 所以改这一个文件即可同时覆盖两个 configuration。
 # -----------------------------------------------------------------------------
-XCCONFIG="${REPOSITORY_ROOT}/Config/AppIconDesigner.xcconfig"
+XCCONFIG="${REPOSITORY_ROOT}/AppIconDesignerApp/AppIconDesigner.xcconfig"
 if [ ! -f "$XCCONFIG" ]; then
   echo "==> [set-appicondesigner-version] 错误：找不到 $XCCONFIG" >&2
   exit 1
@@ -90,4 +90,4 @@ if ! grep -q "^CURRENT_PROJECT_VERSION = $BUILD_NUMBER$" "$XCCONFIG"; then
   exit 1
 fi
 
-echo "==> [set-appicondesigner-version] 完成，已更新 Config/AppIconDesigner.xcconfig"
+echo "==> [set-appicondesigner-version] 完成，已更新 AppIconDesignerApp/AppIconDesigner.xcconfig"

@@ -226,6 +226,17 @@ struct ToolCallRowView: View {
         ToolCallResultVisualState(result: toolCall.result, isLoading: isLoadingResult)
     }
 
+    /// 参数/结果按钮是否可见：悬停该行、或对应 popover 打开时显示，平时隐藏。
+    private var controlsVisible: Bool {
+        isHovering || isParametersPresented || isResultsPresented
+    }
+
+    /// 按钮透明度：完全隐藏时用 0 而不是用 `hidden()`，
+    /// 保证 popover 的箭头 anchor 不被移除造成布局跳变。
+    private var controlsOpacity: Double {
+        controlsVisible ? 1 : 0
+    }
+
     /// 注:不再在 body 内查询工具渲染 Provider —— 两个构造方
     /// (`ToolCallRowsView` / `CollapsibleToolStepGroup`)都已先行查找并在命中时
     /// 自行渲染自定义行;这里的二次查找每次 body 求值(含 hover 与滚动
@@ -251,11 +262,16 @@ struct ToolCallRowView: View {
             Spacer(minLength: 12)
 
             // V2/V3 显示参数和结果按钮。
+            // 默认隐藏，悬停该行（或对应 popover 打开）时显现，避免常态下视觉噪声。
             // 执行耗时不再单独显示，统一整合进「调用结果」popover 的内容区顶部。
             if showsDetails {
                 parameterButton
+                    .opacity(controlsOpacity)
+                    .allowsHitTesting(controlsVisible)
 
                 resultButton
+                    .opacity(controlsOpacity)
+                    .allowsHitTesting(controlsVisible)
             }
         }
         .modifier(ToolCallRowContainerModifier(
@@ -268,6 +284,7 @@ struct ToolCallRowView: View {
         .onHover { hovering in
             isHovering = hovering
         }
+        .animation(.easeOut(duration: 0.12), value: controlsVisible)
     }
 
     @ViewBuilder

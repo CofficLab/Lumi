@@ -23,8 +23,8 @@
 ### Task 2: Consolidate product configuration
 
 **Files:**
-- Modify: `Config/BookletMaker.xcconfig`
-- Delete: `Config/BookletMaker-iOS.xcconfig`
+- Modify: `BookletMakerApp/BookletMaker.xcconfig`
+- Delete: `BookletMakerApp/BookletMaker-iOS.xcconfig`
 - Modify: `BookletMakerApp/BookletMaker-Info.plist`
 - Modify: `BookletMakerApp/Assets.xcassets/AppIcon.appiconset/Contents.json`
 

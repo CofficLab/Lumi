@@ -129,10 +129,10 @@ Lumi 走上面的 Developer ID + Notarization 流程。其余独立 app（Bookle
 
 | app | tag 前缀 | conventional commit scope | 版本注入脚本 | xcconfig |
 |-----|---------|--------------------------|-------------|----------|
-| BookletMaker | `booklet-v*` | `booklet` \| `bookletmaker` \| `bookletmakerapp` | `set-booklet-version.sh` | `Config/BookletMaker.xcconfig` |
-| AppIconDesigner | `appicondesigner-v*` | `appicondesigner` \| `appicondesignerapp` | `set-appicondesigner-version.sh` | `Config/AppIconDesigner.xcconfig` |
-| CADDesigner | `caddesigner-v*` | `caddesigner` \| `caddesignerapp` | `set-caddesigner-version.sh` | `Config/CADDesigner.xcconfig` |
-| DatabaseManager | `databasemanager-v*` | `databasemanager` \| `databasemanagerapp` | `set-databasemanager-version.sh` | `Config/DatabaseManager.xcconfig` |
+| BookletMaker | `booklet-v*` | `booklet` \| `bookletmaker` \| `bookletmakerapp` | `set-booklet-version.sh` | `BookletMakerApp/BookletMaker.xcconfig` |
+| AppIconDesigner | `appicondesigner-v*` | `appicondesigner` \| `appicondesignerapp` | `set-appicondesigner-version.sh` | `AppIconDesignerApp/AppIconDesigner.xcconfig` |
+| CADDesigner | `caddesigner-v*` | `caddesigner` \| `caddesignerapp` | `set-caddesigner-version.sh` | `CADDesignerApp/CADDesigner.xcconfig` |
+| DatabaseManager | `databasemanager-v*` | `databasemanager` \| `databasemanagerapp` | `set-databasemanager-version.sh` | `DatabaseManagerApp/DatabaseManager.xcconfig` |
 
 ### 流程
 

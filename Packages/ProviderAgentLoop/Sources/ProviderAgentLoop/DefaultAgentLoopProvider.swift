@@ -14,15 +14,27 @@ import ProviderToolManager
 
 extension Message {
     var llmMessage: LLMMessage {
-        LLMMessage(
+        let userImages: [KitLLM.MessageImage] = UserAttachmentMetadata
+            .decodeImageAttachments(from: metadata)
+            .compactMap { attachment -> KitLLM.MessageImage? in
+                guard let data = Data(base64Encoded: attachment.base64Data) else { return nil }
+                return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
+            }
+        let toolImages: [KitLLM.MessageImage] = (toolCalls ?? [])
+            .compactMap { $0.result }
+            .flatMap { $0.imageAttachments }
+            .compactMap { attachment -> KitLLM.MessageImage? in
+                guard let data = Data(base64Encoded: attachment.data) else { return nil }
+                return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
+            }
+
+        return LLMMessage(
             role: KitLLM.MessageRole(rawValue: role.rawValue) ?? .unknown,
             content: content,
             toolCalls: toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
             toolCallID: toolCallID,
             reasoningContent: reasoningContent,
-            images: (toolCalls ?? []).compactMap { $0.result }.flatMap { $0.imageAttachments }.map {
-                MessageImage(data: Data(base64Encoded: $0.data) ?? Data(), mimeType: $0.mimeType)
-            }
+            images: userImages + toolImages
         )
     }
 }
@@ -353,14 +365,13 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         let schemas = (level.allowsTools ? toolManager.allTools() : []).compactMap { tool in
             LLMFunctionSchema(name: tool.name, description: tool.description(for: language), parameters: tool.inputSchema(for: language))
         }
-        var preparedHistory = history
+        let llmHistory = history.map(\.llmMessage)
+        var preparedMessages = llmHistory
         if let lifecycleHooks {
-            let result = await lifecycleHooks.runWillSendToLLM(WillSendToLLMContext(messages: history.map(\.llmMessage), conversationID: conversationID))
-            preparedHistory = result.messages.map { message in
-                Message(conversationID: conversationID, role: .init(rawValue: message.role.rawValue) ?? .system, content: message.content, toolCallID: message.toolCallID, reasoningContent: message.reasoningContent)
-            }
+            let result = await lifecycleHooks.runWillSendToLLM(WillSendToLLMContext(messages: llmHistory, conversationID: conversationID))
+            preparedMessages = result.messages
         }
-        let request = LLMRequest(conversationID: conversationID, messages: preparedHistory.map(\.llmMessage), model: conversations.modelName(for: conversationID), tools: schemas.isEmpty ? nil : schemas, reasoningEffort: conversations.reasoningEffortOptional(for: conversationID).flatMap { $0.rawValue })
+        let request = LLMRequest(conversationID: conversationID, messages: preparedMessages, model: conversations.modelName(for: conversationID), tools: schemas.isEmpty ? nil : schemas, reasoningEffort: conversations.reasoningEffortOptional(for: conversationID).flatMap { $0.rawValue })
         streaming.start(conversationID: conversationID)
         let timingRecorder = LLMStreamTimingRecorder()
         let response: LLMResponse
@@ -405,7 +416,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         messages.insertMessage(assistant, to: conversationID)
         streaming.end(conversationID: conversationID)
         if let lifecycleHooks {
-            await lifecycleHooks.notifyDidReceiveLLMResponse(DidReceiveLLMResponseContext(response: response, requestMessages: preparedHistory.map(\.llmMessage), conversationID: conversationID))
+            await lifecycleHooks.notifyDidReceiveLLMResponse(DidReceiveLLMResponseContext(response: response, requestMessages: preparedMessages, conversationID: conversationID))
         }
         return OneLLMResponse(response: response, assistantID: assistant.id)
     }
@@ -537,28 +548,21 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             // LLM 请求前的消息准备钩子（对齐旧版 willSendToLLM）：
             // 详细度 / 语言 / 自动化级别等插件按注册顺序串行修改消息历史，
             // 注入 system 指令（不落库，仅本次请求生效）。
-            var preparedHistory = history
+            let llmHistory = history.map(\.llmMessage)
+            var preparedMessages = llmHistory
             // 生命周期钩子 willSendToLLM：插件可在 LLM 请求前修改消息历史。
             if let lifecycleHooks {
                 let ctx = WillSendToLLMContext(
-                    messages: preparedHistory.map(\.llmMessage),
+                    messages: llmHistory,
                     conversationID: conversationID
                 )
                 let result = await lifecycleHooks.runWillSendToLLM(ctx)
-                preparedHistory = result.messages.map { msg in
-                    Message(
-                        conversationID: conversationID,
-                        role: .init(rawValue: msg.role.rawValue) ?? .system,
-                        content: msg.content,
-                        toolCallID: msg.toolCallID,
-                        reasoningContent: msg.reasoningContent
-                    )
-                }
+                preparedMessages = result.messages
             }
 
             let request = LLMRequest(
                 conversationID: conversationID,
-                messages: preparedHistory.map(\.llmMessage),
+                messages: preparedMessages,
                 model: conversations.modelName(for: conversationID),
                 tools: schemas.isEmpty ? nil : schemas,
                 reasoningEffort: reasoningEffort
@@ -634,7 +638,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             if let lifecycleHooks {
                 await lifecycleHooks.notifyDidReceiveLLMResponse(DidReceiveLLMResponseContext(
                     response: response,
-                    requestMessages: preparedHistory.map(\.llmMessage),
+                    requestMessages: preparedMessages,
                     conversationID: conversationID
                 ))
             }

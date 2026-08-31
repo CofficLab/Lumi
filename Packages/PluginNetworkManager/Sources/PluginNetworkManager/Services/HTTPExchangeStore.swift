@@ -1,4 +1,5 @@
 import Foundation
+import SQLite3
 import SwiftData
 import os
 
@@ -167,6 +168,7 @@ public final class HTTPExchangeStore {
             self.container = container
             self.context = ModelContext(container)
             self.retentionCoordinator = HTTPExchangeRetentionCoordinator(container: container)
+            Self.ensureStartedAtIndex(at: configuration.url)
         } catch {
             self.container = nil
             self.context = nil
@@ -436,6 +438,79 @@ public final class HTTPExchangeStore {
         return ModelContext(container)
     }
 
+    /// Fetches only the columns needed to render list rows. Keeping this
+    /// projection in one place prevents a future list query from accidentally
+    /// selecting the request/response BLOBs again.
+    private nonisolated func fetchListRecords(
+        context: ModelContext,
+        limit: Int,
+        beforeStartedAt: Date?,
+        startedAtAfter: Date?
+    ) -> [HTTPExchangeRecord] {
+        guard limit > 0 else { return [] }
+
+        var descriptor: FetchDescriptor<HTTPExchangeRecord>
+        switch (beforeStartedAt, startedAtAfter) {
+        case let (cursor?, cutoff?):
+            descriptor = FetchDescriptor<HTTPExchangeRecord>(
+                predicate: #Predicate<HTTPExchangeRecord> {
+                    $0.startedAt < cursor && $0.startedAt >= cutoff
+                },
+                sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+            )
+        case let (cursor?, nil):
+            descriptor = FetchDescriptor<HTTPExchangeRecord>(
+                predicate: #Predicate<HTTPExchangeRecord> { $0.startedAt < cursor },
+                sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+            )
+        case let (nil, cutoff?):
+            descriptor = FetchDescriptor<HTTPExchangeRecord>(
+                predicate: #Predicate<HTTPExchangeRecord> { $0.startedAt >= cutoff },
+                sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+            )
+        case (nil, nil):
+            descriptor = FetchDescriptor<HTTPExchangeRecord>(
+                sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+            )
+        }
+
+        descriptor.fetchLimit = limit
+        descriptor.propertiesToFetch = [
+            \.id,
+            \.startedAt,
+            \.requestMethod,
+            \.requestURL,
+            \.responseStatusCode,
+            \.errorDescription,
+        ]
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
+    private nonisolated static func matchesStatus(
+        _ record: HTTPExchangeListSnapshot,
+        status: HTTPExchangeStatusFilter
+    ) -> Bool {
+        switch status {
+        case .all:
+            return true
+        case .normal:
+            guard let statusCode = record.responseStatusCode else { return false }
+            return (200..<300).contains(statusCode)
+        case .abnormal:
+            guard let statusCode = record.responseStatusCode else { return true }
+            return !(200..<300).contains(statusCode)
+        }
+    }
+
+    private nonisolated static func matchesDomain(
+        _ record: HTTPExchangeListSnapshot,
+        domain: String?
+    ) -> Bool {
+        guard let domain = domain?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+              !domain.isEmpty else { return true }
+        return URL(string: record.url)?.host?.lowercased() == domain
+    }
+
     // MARK: - Background Write Path (nonisolated)
 
     /// 后台写入版的 `begin`:用独立 `ModelContext` insert + save,返回 record id
@@ -578,31 +653,139 @@ public final class HTTPExchangeStore {
         }
     }
 
-    /// One page of newest exchanges as snapshots.
+    /// One page of newest exchanges as metadata-only snapshots.
     ///
-    /// Uses the same keyset cursor as `fetchPage(limit:beforeStartedAt:)` so
-    /// pagination boundaries stay identical to the synchronous path.
-    nonisolated func loadSnapshotPage(
+    /// The fetch explicitly projects only list fields. In particular, it does
+    /// not select either BLOB body, so sorting and paging remain cheap even
+    /// when the history contains many gigabytes of payloads.
+    nonisolated func loadListPage(
         limit: Int,
-        beforeStartedAt: Date? = nil
-    ) -> [HTTPExchangeExportSnapshot] {
-        guard limit > 0, let context = makeBackgroundContext() else { return [] }
-
-        let cursorDate = beforeStartedAt
-        var descriptor: FetchDescriptor<HTTPExchangeRecord>
-        if let cursorDate {
-            descriptor = FetchDescriptor<HTTPExchangeRecord>(
-                predicate: #Predicate<HTTPExchangeRecord> { $0.startedAt < cursorDate },
-                sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
-            )
-        } else {
-            descriptor = FetchDescriptor<HTTPExchangeRecord>(
-                sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
-            )
+        beforeStartedAt: Date? = nil,
+        status: HTTPExchangeStatusFilter = .all,
+        domain: String? = nil,
+        startedAtAfter: Date? = nil
+    ) -> HTTPExchangeListPage {
+        guard limit > 0, let context = makeBackgroundContext() else {
+            return HTTPExchangeListPage(records: [], nextCursor: nil, hasMore: false)
         }
-        descriptor.fetchLimit = limit
-        let records = (try? context.fetch(descriptor)) ?? []
-        return records.map(HTTPExchangeExportSnapshot.init(record:))
+
+        let fetchWindow = max(limit * 4, limit)
+        var matches: [HTTPExchangeListSnapshot] = []
+        var cursor = beforeStartedAt
+        var hasMore = false
+
+        while matches.count < limit {
+            let rawRecords = fetchListRecords(
+                context: context,
+                limit: fetchWindow,
+                beforeStartedAt: cursor,
+                startedAtAfter: startedAtAfter
+            )
+            let summaries = rawRecords.map(HTTPExchangeListSnapshot.init(record:))
+            matches.append(contentsOf: summaries.filter {
+                Self.matchesStatus($0, status: status) && Self.matchesDomain($0, domain: domain)
+            })
+
+            guard rawRecords.count == fetchWindow,
+                  let lastStartedAt = rawRecords.last?.startedAt else {
+                hasMore = false
+                cursor = rawRecords.last?.startedAt
+                break
+            }
+
+            // The cursor must represent the last scanned row, not the last
+            // matching row; otherwise filtered-out rows can be skipped on the
+            // next page.
+            cursor = lastStartedAt
+            hasMore = true
+        }
+
+        return HTTPExchangeListPage(
+            records: Array(matches.prefix(limit)),
+            nextCursor: cursor,
+            hasMore: hasMore
+        )
+    }
+
+    /// Counts list metadata without loading request or response bodies.
+    nonisolated func loadListCount(
+        status: HTTPExchangeStatusFilter = .all,
+        domain: String? = nil,
+        startedAtAfter: Date? = nil
+    ) -> Int {
+        guard let context = makeBackgroundContext() else { return 0 }
+
+        let batchSize = 500
+        var count = 0
+        var cursor: Date?
+
+        while true {
+            let rawRecords = fetchListRecords(
+                context: context,
+                limit: batchSize,
+                beforeStartedAt: cursor,
+                startedAtAfter: startedAtAfter
+            )
+            let summaries = rawRecords.map(HTTPExchangeListSnapshot.init(record:))
+            count += summaries.filter {
+                Self.matchesStatus($0, status: status) && Self.matchesDomain($0, domain: domain)
+            }.count
+
+            guard rawRecords.count == batchSize,
+                  let lastStartedAt = rawRecords.last?.startedAt else {
+                break
+            }
+            cursor = lastStartedAt
+        }
+
+        return count
+    }
+
+    /// Loads a single full exchange for the detail pane. This is the only
+    /// normal list/detail path that materializes request and response bodies.
+    nonisolated func loadSnapshot(id: UUID) -> HTTPExchangeExportSnapshot? {
+        guard let context = makeBackgroundContext() else { return nil }
+        let recordID = id
+        var descriptor = FetchDescriptor<HTTPExchangeRecord>(
+            predicate: #Predicate<HTTPExchangeRecord> { $0.id == recordID }
+        )
+        descriptor.fetchLimit = 1
+        return (try? context.fetch(descriptor))?.first.map(HTTPExchangeExportSnapshot.init(record:))
+    }
+
+    /// Loads all matching list metadata for an explicit export action. The
+    /// caller can then request full snapshots only for those selected IDs.
+    nonisolated func loadAllListRecords(
+        status: HTTPExchangeStatusFilter = .all,
+        domain: String? = nil,
+        startedAtAfter: Date? = nil
+    ) -> [HTTPExchangeListSnapshot] {
+        guard let context = makeBackgroundContext() else { return [] }
+
+        let batchSize = 500
+        var allRecords: [HTTPExchangeListSnapshot] = []
+        var cursor: Date?
+
+        while true {
+            let rawRecords = fetchListRecords(
+                context: context,
+                limit: batchSize,
+                beforeStartedAt: cursor,
+                startedAtAfter: startedAtAfter
+            )
+            let summaries = rawRecords.map(HTTPExchangeListSnapshot.init(record:))
+            allRecords.append(contentsOf: summaries.filter {
+                Self.matchesStatus($0, status: status) && Self.matchesDomain($0, domain: domain)
+            })
+
+            guard rawRecords.count == batchSize,
+                  let lastStartedAt = rawRecords.last?.startedAt else {
+                break
+            }
+            cursor = lastStartedAt
+        }
+
+        return allRecords
     }
 
     /// Total number of stored exchanges, without materializing bodies.
@@ -628,21 +811,6 @@ public final class HTTPExchangeStore {
             domains.insert(host)
         }
         return domains.sorted()
-    }
-
-    /// Every exchange as snapshots, for in-memory filtered mode.
-    ///
-    /// The settings view applies status/domain/time filtering in memory (the
-    /// `#Predicate` macro can't express these optionals cleanly). Returning
-    /// snapshots instead of `@Model` objects keeps that filtering cheap and
-    /// off the main thread.
-    nonisolated func loadAllSnapshots() -> [HTTPExchangeExportSnapshot] {
-        guard let context = makeBackgroundContext() else { return [] }
-        let descriptor = FetchDescriptor<HTTPExchangeRecord>(
-            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
-        )
-        let records = (try? context.fetch(descriptor)) ?? []
-        return records.map(HTTPExchangeExportSnapshot.init(record:))
     }
 
     /// Recent activity chart, built with count queries that never materialize
@@ -725,6 +893,39 @@ public final class HTTPExchangeStore {
             try context.save()
         } catch {
             NetworkManagerPlugin.logger.error("HTTP exchange SwiftData 保存失败: \(error.localizedDescription)")
+        }
+    }
+
+    /// SwiftData's public `#Index` macro requires macOS 15, while this plugin
+    /// still supports macOS 14. Create the equivalent SQLite index directly so
+    /// existing stores and the minimum deployment target remain compatible.
+    private static func ensureStartedAtIndex(at url: URL) {
+        var database: OpaquePointer?
+        let openResult = sqlite3_open_v2(
+            url.path,
+            &database,
+            SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX,
+            nil
+        )
+        guard openResult == SQLITE_OK, let database else {
+            if let database {
+                NetworkManagerPlugin.logger.error("HTTP exchange SQLite 索引连接失败: \(String(cString: sqlite3_errmsg(database)))")
+                sqlite3_close(database)
+            } else {
+                NetworkManagerPlugin.logger.error("HTTP exchange SQLite 索引连接失败，错误码: \(openResult)")
+            }
+            return
+        }
+        defer { sqlite3_close(database) }
+
+        let sql = "CREATE INDEX IF NOT EXISTS ZHTTPExchangeRecordStartedAtIndex ON ZHTTPEXCHANGERECORD (ZSTARTEDAT)"
+        var errorMessage: UnsafeMutablePointer<Int8>?
+        let result = sqlite3_exec(database, sql, nil, nil, &errorMessage)
+        guard result == SQLITE_OK else {
+            let message = errorMessage.map { String(cString: $0) } ?? String(cString: sqlite3_errmsg(database))
+            sqlite3_free(errorMessage)
+            NetworkManagerPlugin.logger.error("HTTP exchange SQLite 索引创建失败: \(message)")
+            return
         }
     }
 

@@ -3,7 +3,7 @@
 // LumiFinder（Finder 扩展）的 Release build configuration。
 //
 
-#include "Base.xcconfig"
+#include "../../../LumiApp/Config/Base.xcconfig"
 
 // 产物
 PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.finder

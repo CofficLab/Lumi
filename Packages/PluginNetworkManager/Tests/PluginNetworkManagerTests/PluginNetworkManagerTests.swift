@@ -1,6 +1,7 @@
 import Testing
 import Combine
 import Foundation
+import SQLite3
 @testable import PluginNetworkManager
 
 @MainActor
@@ -236,6 +237,76 @@ import Foundation
     #expect(store.searchCount(domain: "github.com") == 1)
     #expect(store.searchCount(domain: "api.github.com") == 1)
     #expect(store.searchCount(domain: "google.com") == 0)
+}
+
+@MainActor
+@Test func listPageFiltersMetadataAndLoadsBodiesOnlyForSelectedDetail() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("HTTPExchangeList-\(UUID().uuidString)", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    let store = HTTPExchangeStore(directory: directory, startsRetentionMaintenance: false)
+    let now = Date()
+    let body = Data(repeating: 0x41, count: 128 * 1024)
+    let response = HTTPURLResponse(
+        url: URL(string: "https://example.com/api")!,
+        statusCode: 200,
+        httpVersion: nil,
+        headerFields: nil
+    )!
+
+    var recordIDs: [UUID] = []
+    for offset in 0..<6 {
+        var request = URLRequest(url: URL(string: "https://example.com/api/\(offset)")!)
+        request.httpMethod = "POST"
+        request.httpBody = body
+        let record = store.begin(
+            request: request,
+            startedAt: now.addingTimeInterval(TimeInterval(offset))
+        )!
+        store.finish(record, response: response, body: body)
+        recordIDs.append(record.id)
+    }
+
+    let page = store.loadListPage(limit: 2, status: .normal)
+    #expect(page.records.count == 2)
+    #expect(page.records.allSatisfy { $0.responseStatusCode == 200 })
+    #expect(page.records.allSatisfy { $0.url.contains("example.com/api") })
+
+    let detail = store.loadSnapshot(id: page.records[0].id)
+    #expect(detail?.requestBody?.count == body.count)
+    #expect(detail?.responseBody?.count == body.count)
+
+    let allSummaries = store.loadAllListRecords(status: .normal)
+    #expect(allSummaries.count == recordIDs.count)
+    #expect(allSummaries.allSatisfy { $0.responseStatusCode == 200 })
+}
+
+@MainActor
+@Test func httpExchangeStoreCreatesStartedAtIndexForExistingStoreCompatibility() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("HTTPExchangeIndex-\(UUID().uuidString)", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    let store = HTTPExchangeStore(directory: directory, startsRetentionMaintenance: false)
+    let databaseURL = store.directory.appendingPathComponent(HTTPExchangeStore.databaseFileName)
+    var database: OpaquePointer?
+    let openResult = sqlite3_open_v2(databaseURL.path, &database, SQLITE_OPEN_READONLY, nil)
+    #expect(openResult == SQLITE_OK)
+    guard openResult == SQLITE_OK, let database else { return }
+    defer { sqlite3_close(database) }
+
+    var statement: OpaquePointer?
+    let sql = "SELECT 1 FROM sqlite_master WHERE type = 'index' AND name = 'ZHTTPExchangeRecordStartedAtIndex' LIMIT 1"
+    let prepareResult = sqlite3_prepare_v2(database, sql, -1, &statement, nil)
+    #expect(prepareResult == SQLITE_OK)
+    guard prepareResult == SQLITE_OK, let statement else { return }
+    defer { sqlite3_finalize(statement) }
+    #expect(sqlite3_step(statement) == SQLITE_ROW)
 }
 
 @Test func httpExchangeBatchExportIncludesAllRecordsWithNumberedHeaders() {
