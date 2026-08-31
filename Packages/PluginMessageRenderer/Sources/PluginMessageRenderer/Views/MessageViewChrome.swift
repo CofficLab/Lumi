@@ -45,46 +45,21 @@ struct MessageViewChrome<Content: View>: View {
         return nil
     }
 
-    private var tokenDisplayText: String? {
-        guard let input = message.inputTokenCount,
-              let output = message.outputTokenCount else {
-            return nil
-        }
-        let inputFormatted = formatTokenCount(input)
-        let outputFormatted = formatTokenCount(output)
-        return "\(inputFormatted)/\(outputFormatted) tokens"
-    }
-
-    private func formatTokenCount(_ count: Int) -> String {
-        if count >= 1000 {
-            let k = Double(count) / 1000.0
-            if k >= 10 {
-                return String(format: "%.0fk", k)
-            } else {
-                return String(format: "%.1fk", k)
-            }
-        }
-        return String(count)
-    }
-
     var body: some View {
-        // 局部 let:thinkingContent/tokenDisplayText 历史上每次求值计算 2 次
-        // (hasThinkingContent + 显式读取),滚动重物化时被高频触发。
         let thinking = thinkingContent
-        let tokenText = tokenDisplayText
         return Group {
             if isBrief {
-                messageBody(thinking: thinking, tokenText: tokenText)
+                messageBody(thinking: thinking)
                     .contextMenu { briefContextMenu }
             } else {
-                messageBody(thinking: thinking, tokenText: tokenText)
+                messageBody(thinking: thinking)
             }
         }
         .appThemedAppearance()
     }
 
     @ViewBuilder
-    private func messageBody(thinking: String?, tokenText: String?) -> some View {
+    private func messageBody(thinking: String?) -> some View {
         VStack(alignment: .leading, spacing: isBrief ? 0 : 4) {
             if showsHeader && !isBrief {
                 CompactMessageHeaderView {
@@ -98,7 +73,7 @@ struct MessageViewChrome<Content: View>: View {
                 } trailing: {
                     HStack(alignment: .center, spacing: 12) {
                         // 操作按钮仅在悬停时物化(见 showsActions);
-                        // 时间戳与 token 信息是纯文本,常驻。
+                        // 时间戳是纯文本,常驻。
                         if showsActions {
                             CopyMessageButton(
                                 contentProvider: { MessageViewHelpers.copyContent(for: message) },
@@ -129,13 +104,6 @@ struct MessageViewChrome<Content: View>: View {
                             title: MessageViewHelpers.formatTimestamp(message.createdAt),
                             titleColor: theme.textSecondary
                         )
-
-                        if let tokenInfo = tokenText {
-                            AppIdentityRow(
-                                title: tokenInfo,
-                                titleColor: theme.textSecondary
-                            )
-                        }
 
                         if showsActions, let errorTransportDetails, errorTransportDetails.hasTransportDetails {
                             ErrorTransportDetailsButton(details: errorTransportDetails)
