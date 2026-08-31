@@ -16,7 +16,7 @@ public final class AiRouterProviderPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.llm-provider.airouter"
-    public let order = 100
+    public let order = 1000
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.llm-provider.airouter",
         name: "AiRouter 供应商",
