@@ -249,20 +249,19 @@ extension AgentLoopManager {
         let modelName = conversations.modelName(for: conversationID)
         let resolvedProviderID = resolvedProviderID(for: conversationID)
 
-        var preparedHistory = history
+        let llmHistory = history.map(\.llmMessage)
+        var preparedMessages = llmHistory
         if let lifecycleHooks {
             let context = WillSendToLLMContext(
-                messages: history.map(\.llmMessage),
+                messages: llmHistory,
                 conversationID: conversationID
             )
             let result = await lifecycleHooks.runWillSendToLLM(context)
-            preparedHistory = result.messages.map {
-                messageFromLLMMessage($0, conversationID: conversationID)
-            }
+            preparedMessages = result.messages
         }
 
         if Self.verbose && Self.printMessages {
-            for (index, message) in preparedHistory.enumerated() {
+            for (index, message) in preparedMessages.enumerated() {
                 let content = message.content.count > 200
                     ? "\(message.content.prefix(200))..."
                     : message.content
@@ -274,7 +273,7 @@ extension AgentLoopManager {
 
         let request = LLMRequest(
             conversationID: conversationID,
-            messages: preparedHistory.map(\.llmMessage),
+            messages: preparedMessages,
             model: modelName,
             tools: schemas.isEmpty ? nil : schemas,
             reasoningEffort: reasoningEffort
@@ -384,7 +383,7 @@ extension AgentLoopManager {
                 await lifecycleHooks.notifyDidReceiveLLMResponse(
                     DidReceiveLLMResponseContext(
                         response: response,
-                        requestMessages: preparedHistory.map(\.llmMessage),
+                        requestMessages: preparedMessages,
                         conversationID: conversationID
                     )
                 )

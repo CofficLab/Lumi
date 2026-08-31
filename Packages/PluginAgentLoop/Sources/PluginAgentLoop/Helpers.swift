@@ -14,13 +14,27 @@ import KitSuperLog
 
 extension Message {
     var llmMessage: LLMMessage {
-        LLMMessage(
+        let userImages: [KitLLM.MessageImage] = UserAttachmentMetadata
+            .decodeImageAttachments(from: metadata)
+            .compactMap { attachment -> KitLLM.MessageImage? in
+                guard let data = Data(base64Encoded: attachment.base64Data) else { return nil }
+                return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
+            }
+        let toolImages: [KitLLM.MessageImage] = (toolCalls ?? [])
+            .compactMap { $0.result }
+            .flatMap { $0.imageAttachments }
+            .compactMap { attachment -> KitLLM.MessageImage? in
+                guard let data = Data(base64Encoded: attachment.data) else { return nil }
+                return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
+            }
+
+        return LLMMessage(
             role: KitLLM.MessageRole(rawValue: role.rawValue) ?? .unknown,
             content: content,
             toolCalls: toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
             toolCallID: toolCallID,
             reasoningContent: reasoningContent,
-            images: []
+            images: userImages + toolImages
         )
     }
 }
@@ -28,10 +42,25 @@ extension Message {
 /// 将生命周期钩子返回的 LLM 消息恢复为 AgentLoop 的消息模型。
 /// 工具调用声明必须保留，否则后续的 tool_result 没有对应的 assistant tool_use。
 func messageFromLLMMessage(_ message: LLMMessage, conversationID: UUID) -> Message {
-    Message(
+    let metadata: [String: String]
+    if message.role == .user, !message.images.isEmpty {
+        metadata = UserAttachmentMetadata.encodeImageAttachments(
+            message.images.map {
+                UserImageAttachment(
+                    mimeType: $0.mimeType,
+                    base64Data: $0.data.base64EncodedString()
+                )
+            }
+        )
+    } else {
+        metadata = [:]
+    }
+
+    return Message(
         conversationID: conversationID,
         role: .init(rawValue: message.role.rawValue) ?? .system,
         content: message.content,
+        metadata: metadata,
         toolCallID: message.toolCallID,
         reasoningContent: message.reasoningContent,
         toolCalls: message.toolCalls?.map {
