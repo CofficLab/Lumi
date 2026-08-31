@@ -1,5 +1,7 @@
 import Foundation
 import KernelCore
+import ProviderPluginManaging
+import ProviderPromptSuggestion
 import ProviderSettingView
 import Testing
 
@@ -26,6 +28,10 @@ struct PluginPluginManagerTests {
         let settings = DefaultSettingViewProviding()
         let kernel = KernelCoreContainer()
         try kernel.registerProvider((any SettingViewProviding).self, settings)
+        try kernel.registerProvider(
+            (any PluginManaging).self,
+            DefaultPluginManager(kernel: kernel)
+        )
 
         let plugin = PluginPluginManager()
         try plugin.onBoot(kernel: kernel)
@@ -41,6 +47,10 @@ struct PluginPluginManagerTests {
         let settings = DefaultSettingViewProviding()
         let kernel = KernelCoreContainer()
         try kernel.registerProvider((any SettingViewProviding).self, settings)
+        try kernel.registerProvider(
+            (any PluginManaging).self,
+            DefaultPluginManager(kernel: kernel)
+        )
 
         let plugin = PluginPluginManager()
         try plugin.onBoot(kernel: kernel)
@@ -49,6 +59,18 @@ struct PluginPluginManagerTests {
         #expect(entry?.title == "插件管理")
         #expect(entry?.systemImage == "puzzlepiece.extension")
         #expect(entry?.order == 3)
+    }
+
+    @Test("浏览插件建议指向插件管理设置入口")
+    func browseSuggestionTargetsPluginManagementEntry() throws {
+        let suggestions = DefaultPromptSuggestionProvider()
+        let kernel = KernelCoreContainer()
+        try kernel.registerProvider((any PromptSuggestionProviding).self, suggestions)
+
+        try PluginPluginManager().onRegister(kernel: kernel)
+
+        let suggestion = suggestions.allSuggestions.first { $0.title == "浏览插件" }
+        #expect(suggestion?.action == .openSettingsTab(PluginPluginManager.settingsEntryID))
     }
 
     /// 设置视图未注册时优雅降级：onBoot 不抛错、不贡献入口。

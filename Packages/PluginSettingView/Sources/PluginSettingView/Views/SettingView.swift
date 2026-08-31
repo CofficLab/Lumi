@@ -6,7 +6,6 @@ import LumiUI
 
 struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
     @ObservedObject var provider: Provider
-    @State private var selectedID: String?
     @LumiTheme private var theme
 
     /// 从共享内核解析的 Logo 服务；`nil` 时侧边栏 Header 仅显示回退图标。
@@ -16,7 +15,6 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
     init(provider: Provider, logo: (any LogoProviding)?) {
         self.provider = provider
         self.logo = logo
-        _selectedID = State(initialValue: provider.selectedEntryID)
     }
 
     var body: some View {
@@ -51,9 +49,8 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
                             AppSettingsSidebarItem(
                                 title: entry.title,
                                 systemImage: entry.systemImage,
-                                isSelected: (selectedID ?? provider.selectedEntryID) == entry.id
+                                isSelected: provider.selectedEntryID == entry.id
                             ) {
-                                selectedID = entry.id
                                 provider.selectEntry(id: entry.id)
                             }
                         }
@@ -71,7 +68,7 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
     private var detail: some View {
         AppSettingsDetailPane {
             Group {
-                if let selected = provider.entries.first(where: { $0.id == selectedID ?? provider.selectedEntryID }) {
+                if let selected = provider.entries.first(where: { $0.id == provider.selectedEntryID }) {
                     selected.makeDetailView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
@@ -88,7 +85,6 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
     private func selectFirstEntryIfNeeded() {
         guard provider.selectedEntryID == nil,
               let firstEntry = provider.entries.first else { return }
-        selectedID = firstEntry.id
         provider.selectEntry(id: firstEntry.id)
     }
 }

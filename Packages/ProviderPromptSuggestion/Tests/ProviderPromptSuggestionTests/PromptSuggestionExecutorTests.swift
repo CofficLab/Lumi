@@ -3,6 +3,7 @@ import KitLocalization
 import KernelCore
 import ProviderActivityBar
 import ProviderRailView
+import ProviderSettingView
 import SwiftUI
 import Testing
 @testable import ProviderPromptSuggestion
@@ -10,6 +11,11 @@ import Testing
 @Suite("PromptSuggestionExecutor")
 @MainActor
 struct PromptSuggestionExecutorTests {
+    private final class NotificationCapture: @unchecked Sendable {
+        var didOpenSettings = false
+        var receivedEntryID: String?
+    }
+
     @Test("插件启用 Toast 支持中文本地化")
     func localizesPluginEnabledToastStrings() {
         #expect(
@@ -48,14 +54,14 @@ struct PromptSuggestionExecutorTests {
     func publishesOpenSettingsNotification() async {
         let kernel = KernelCoreContainer()
         let executor = DefaultPromptSuggestionExecutor(kernel: kernel)
-        let name = Notification.Name("lumi.openSettings")
-        var didOpenSettings = false
+        let capture = NotificationCapture()
         let observer = NotificationCenter.default.addObserver(
-            forName: name,
+            forName: SettingViewNavigation.openSettingsNotification,
             object: nil,
             queue: .main
-        ) { _ in
-            didOpenSettings = true
+        ) { notification in
+            capture.didOpenSettings = true
+            capture.receivedEntryID = notification.userInfo?[SettingViewNavigation.entryIDUserInfoKey] as? String
         }
         defer { NotificationCenter.default.removeObserver(observer) }
 
@@ -66,7 +72,8 @@ struct PromptSuggestionExecutorTests {
         )
         await executor.execute(suggestion)
 
-        #expect(didOpenSettings)
+        #expect(capture.didOpenSettings)
+        #expect(capture.receivedEntryID == "settings")
     }
 
     @Test("插件入口动作同时激活 ActivityBar 和 Rail tab")

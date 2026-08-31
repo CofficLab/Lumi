@@ -76,6 +76,19 @@ struct ProviderSettingViewTests {
         #expect(type(of: provider.makeSettingView()) == AnyView.self)
     }
 
+    @Test("设置 Provider 可通过协议执行深链选择")
+    func protocolSelectionCanBeDrivenExternally() {
+        let provider: any SettingViewProviding = DefaultSettingViewProviding()
+        provider.registerEntries([
+            SettingEntryItem(id: "general", title: "General", systemImage: "gearshape", order: 100) { Text("General") },
+            SettingEntryItem(id: "plugin-manager", title: "Plugins", systemImage: "puzzlepiece", order: 200) { Text("Plugins") },
+        ])
+
+        provider.selectEntry(id: "plugin-manager")
+
+        #expect(provider.selectedEntryID == "plugin-manager")
+    }
+
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
         @MainActor final class CustomSettingView: SettingViewProviding {

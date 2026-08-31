@@ -42,6 +42,8 @@ let package = Package(
             dependencies: [
                 "PluginPluginManager",
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
+                .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
             ],
             path: "Tests/PluginPluginManagerTests"

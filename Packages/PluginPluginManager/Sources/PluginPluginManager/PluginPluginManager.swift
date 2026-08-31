@@ -26,6 +26,9 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
 
     private var generatedAboutPluginIDs: [String] = []
 
+    /// `SettingEntryItem` 的稳定 ID，供设置深链和入口注册共同使用。
+    static let settingsEntryID = "plugin-manager"
+
     public init() {}
 
     private var promptSuggestion: PromptSuggestion {
@@ -34,7 +37,7 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
             title: "浏览插件",
             order: order * 1000,
             systemImage: "puzzlepiece.extension",
-            action: .openSettingsTab(id),
+            action: .openSettingsTab(Self.settingsEntryID),
             style: .additive
         )
     }
@@ -71,7 +74,7 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
         }
 
         let entry = SettingEntryItem(
-            id: "plugin-manager",
+            id: Self.settingsEntryID,
             title: "插件管理",
             systemImage: "puzzlepiece.extension",
             order: 3
@@ -104,7 +107,7 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?
-            .removeEntries(ids: ["plugin-manager"])
+            .removeEntries(ids: [Self.settingsEntryID])
 
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
             for pluginID in generatedAboutPluginIDs {
