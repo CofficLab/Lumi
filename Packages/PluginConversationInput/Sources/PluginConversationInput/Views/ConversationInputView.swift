@@ -65,7 +65,8 @@ struct ConversationInputView: View {
     private func send() {
         guard let input, let sender else { return }
         let trimmed = input.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        let hasAttachments = !sender.pendingImageAttachments.isEmpty || !sender.pendingFileAttachments.isEmpty
+        guard !trimmed.isEmpty || hasAttachments else { return }
 
         input.text = ""
         input.errorMessage = nil

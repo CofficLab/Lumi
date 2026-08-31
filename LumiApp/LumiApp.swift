@@ -5,6 +5,7 @@ import KernelCore
 import PluginToast
 import PluginToolbarSettings
 import ProviderOnboarding
+import ProviderSettingView
 import ProviderToast
 import SwiftUI
 
@@ -76,8 +77,13 @@ struct LumiApp: App {
                     window.configureForLumiMinimalChrome()
                 }
             }
-            // 工具栏「设置」按钮点击后，通知 → 打开设置窗口
-            .onReceive(NotificationCenter.default.publisher(for: .lumiOpenSettings)) { _ in
+            // 工具栏「设置」或其他深链动作发出通知后，打开设置窗口。
+            .onReceive(NotificationCenter.default.publisher(for: SettingViewNavigation.openSettingsNotification)) { notification in
+                if let settings = kernel.resolveProvider((any SettingViewProviding).self),
+                   let entryID = notification.userInfo?[SettingViewNavigation.entryIDUserInfoKey] as? String,
+                   settings.entries.contains(where: { $0.id == entryID }) {
+                    settings.selectEntry(id: entryID)
+                }
                 openWindow(id: "lumi.settings")
             }
             .onReceive(appDelegate.$pendingOpenPath.compactMap { $0 }) { path in

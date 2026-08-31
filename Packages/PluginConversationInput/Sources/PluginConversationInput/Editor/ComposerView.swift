@@ -10,7 +10,7 @@ import UniformTypeIdentifiers
 ///
 /// 由旧版 `ComposerView` 复刻而来；`kernel` 依赖改为注入
 /// 内核的 `ConversationInputProviding` 与 `MessageSendingProviding`。
-/// 图片拖拽会加入新版发送器的挂起附件池，其他文件仍以路径文本插入输入框。
+/// 图片和文件拖拽都会加入新版发送器的挂起附件池。
 struct ComposerView: View {
     @LumiTheme private var theme
 
@@ -49,7 +49,7 @@ struct ComposerView: View {
                 if ChatInputEditorRules.isChatImageFileURL(url) {
                     attachImage(url)
                 } else {
-                    insertDroppedFile(url)
+                    attachFile(url)
                 }
             },
             isFocused: focusedBinding,
@@ -63,16 +63,21 @@ struct ComposerView: View {
         .appSurface(style: .toolbar, cornerRadius: 0)
     }
 
-    /// 拖放非图片文件：以路径文本插入输入框。
-    private func insertDroppedFile(_ url: URL) {
-        guard let input else { return }
-        let path = url.path
-        if input.text.isEmpty {
-            input.text = path
-        } else {
-            input.text += "\n\(path)"
+    /// 将拖入的非图片文件加入发送器挂起池，不修改输入框文本。
+    private func attachFile(_ url: URL) {
+        guard let sender else { return }
+
+        Task { @MainActor in
+            do {
+                let attachment = try await Task.detached(priority: .userInitiated) {
+                    try UserFileAttachmentLoader.load(from: url)
+                }.value
+                sender.addFileAttachment(attachment)
+                input?.isInputFocused = true
+            } catch {
+                input?.errorMessage = error.localizedDescription
+            }
         }
-        input.isInputFocused = true
     }
 
     /// 将拖入的图片加入发送器挂起池，供下一条消息携带发送。

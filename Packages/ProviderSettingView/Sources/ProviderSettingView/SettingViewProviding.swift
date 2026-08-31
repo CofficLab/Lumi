@@ -1,5 +1,16 @@
 import Combine
+import Foundation
 import SwiftUI
+
+/// Shared contract for opening the settings window at a specific entry.
+///
+/// The window itself is owned by the host app, while the selected entry is
+/// owned by the settings provider. The notification lets those two layers
+/// stay decoupled without losing the requested destination.
+public enum SettingViewNavigation {
+    public static let openSettingsNotification = Notification.Name("lumi.openSettings")
+    public static let entryIDUserInfoKey = "lumi.settings.entryID"
+}
 
 /// 设置视图提供能力协议
 ///
@@ -20,6 +31,12 @@ public protocol SettingViewProviding: AnyObject, ObservableObject
     /// 当前已注入的全部设置入口项。
     var entries: [SettingEntryItem] { get }
     var projectDetailSections: [ProjectDetailSectionItem] { get }
+
+    /// 当前选中的设置入口；宿主可通过它执行设置页深链导航。
+    var selectedEntryID: String? { get }
+
+    /// 选中指定设置入口。
+    func selectEntry(id: String?)
 
     /// 注入设置入口项（替换当前全部项）。
     func registerEntries(_ entries: [SettingEntryItem])
@@ -58,12 +75,12 @@ public extension SettingViewProviding {
     func removeProjectDetailSections(ids: Set<String>) {}
 }
 
-// MARK: - Optional Selection
+// MARK: - Selection Defaults
 
-public extension SettingViewProviding where Self: ObservableObject {
-    /// 当前选中入口的 id。默认 `nil`（无选中）。
+public extension SettingViewProviding {
+    /// 默认无选中入口；具体 Provider 通常会在注册入口后选中第一项。
     var selectedEntryID: String? { nil }
 
-    /// 选中指定入口。默认 no-op。
+    /// 默认 no-op，兼容只提供静态设置内容的 Provider。
     func selectEntry(id: String?) {}
 }

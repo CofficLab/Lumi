@@ -21,6 +21,7 @@ public final class FeifeimiaoProvider: VendorLLMProvider {
                     LLMModelInfo(id: "gpt-5.2", contextWindowSize: 400_000, supportsVision: true),
                 ],
                 websiteURL: URL(string: "https://feifeimiao.top")!,
+                providerType: .relay,
                 apiFormat: .openAI,
                 apiKeyStorageKey: "DevAssistant_ApiKey_Feifeimiao"
             ),

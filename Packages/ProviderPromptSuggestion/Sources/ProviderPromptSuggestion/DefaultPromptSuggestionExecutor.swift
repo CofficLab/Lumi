@@ -6,6 +6,7 @@ import ProviderMessageSender
 import ProviderPluginControl
 import ProviderPluginManaging
 import ProviderRailView
+import ProviderSettingView
 import ProviderToast
 
 /// Default coordinator for prompt suggestion actions.
@@ -31,10 +32,11 @@ public final class DefaultPromptSuggestionExecutor: PromptSuggestionExecuting {
         case .pickProjectFolder:
             pickProjectFolder?()
             return
-        case .openSettingsTab:
+        case let .openSettingsTab(entryID):
             NotificationCenter.default.post(
-                name: Notification.Name("lumi.openSettings"),
-                object: nil
+                name: SettingViewNavigation.openSettingsNotification,
+                object: nil,
+                userInfo: [SettingViewNavigation.entryIDUserInfoKey: entryID]
             )
             return
         case nil, .activatePluginEntry, .activateRailTab:

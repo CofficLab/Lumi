@@ -46,18 +46,22 @@ struct CacheHitRateToolbarView: View {
         }
         .task {
             selectedConversationID = conversations.selectedConversationID
-            refresh()
             conversationObserver = conversations.addSelectedConversationObserver { newID in
                 selectedConversationID = newID
-                refresh()
             }
             messageObserver = messages.addMessageInsertedObserver { _, conversationID in
                 if conversationID == selectedConversationID {
-                    refresh()
+                    Task(priority: .utility) { @MainActor in
+                        await Task.yield()
+                        guard !Task.isCancelled, conversationID == selectedConversationID else { return }
+                        refresh()
+                    }
                 }
             }
         }
-        .onChange(of: selectedConversationID) { _, _ in
+        .task(id: selectedConversationID) {
+            await Task.yield()
+            guard !Task.isCancelled else { return }
             refresh()
         }
     }

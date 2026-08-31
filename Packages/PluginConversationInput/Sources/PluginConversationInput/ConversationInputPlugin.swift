@@ -114,7 +114,11 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
             return
         }
 
-        actionBarInputObserver = ActionBarInputObserver(input: input, viewModel: viewModel)
+        guard let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
+            Self.logger.error("Failed to initialize ActionBarInputObserver: MessageSendingProviding unavailable")
+            return
+        }
+        actionBarInputObserver = ActionBarInputObserver(input: input, sender: sender, viewModel: viewModel)
 
         // 3. 对话切换时清空输入框
         if let conversations = kernel.resolveProvider((any ConversationManaging).self) {

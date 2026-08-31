@@ -18,6 +18,7 @@ public final class LPgptProvider: VendorLLMProvider {
                     LLMModelInfo(id: "gpt-5.5", contextWindowSize: 1_000_000, supportsVision: true),
                 ],
                 websiteURL: URL(string: "https://lpgpt.us")!,
+                providerType: .relay,
                 apiFormat: .openAI,
                 apiKeyStorageKey: "DevAssistant_ApiKey_LPgpt"
             ),

@@ -1,5 +1,6 @@
 import LumiUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// 标题栏项目控件：显示当前项目名称，点击弹出项目列表。
 struct ControlView: View {
@@ -7,6 +8,7 @@ struct ControlView: View {
     @LumiMotionPreferenceReader private var motionPreference
     @ObservedObject private var viewModel: ProjectsViewModel
     @State private var isPopoverPresented = false
+    @State private var isImporterPresented = false
     @State private var isHovering = false
 
     init(viewModel: ProjectsViewModel) {
@@ -42,7 +44,17 @@ struct ControlView: View {
         }
         .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            PopoverView(viewModel: viewModel)
+            PopoverView(viewModel: viewModel, requestImporter: presentImporter)
+        }
+        // Present the importer from the toolbar host rather than from the
+        // popover. macOS can leave a SwiftUI fileImporter attached to an
+        // NSPopover spinning while it tries to create the file panel.
+        .fileImporter(
+            isPresented: $isImporterPresented,
+            allowedContentTypes: [.folder],
+            allowsMultipleSelection: false
+        ) { result in
+            handleImport(result)
         }
         .onHover { hovering in
             LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
@@ -55,5 +67,25 @@ struct ControlView: View {
     /// 控件是否应显示高亮（悬停或弹层已展开）。
     private var isHighlighted: Bool {
         isHovering || isPopoverPresented
+    }
+
+    private func presentImporter() {
+        isPopoverPresented = false
+
+        // Let the popover finish dismissing before the file importer asks the
+        // main window to present its panel.
+        Task { @MainActor in
+            await Task.yield()
+            isImporterPresented = true
+        }
+    }
+
+    private func handleImport(_ result: Result<[URL], any Error>) {
+        guard case let .success(urls) = result,
+              let url = urls.first else {
+            return
+        }
+
+        viewModel.addProject(url: url)
     }
 }

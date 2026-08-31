@@ -19,6 +19,7 @@ public final class ZenProvider: VendorLLMProvider {
                 defaultModel: "",
                 models: [],
                 websiteURL: URL(string: "https://opencode.ai")!,
+                providerType: .cloudService,
                 apiFormat: .openAI,
                 apiKeyStorageKey: "DevAssistant_ApiKey_OpenCodeZen"
             ),

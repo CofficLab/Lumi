@@ -35,6 +35,7 @@ public final class OpenRouterProvider: VendorLLMProvider {
                     LLMModelInfo(id: "z-ai/glm-4.5-air:free", contextWindowSize: 131_000, supportsVision: true),
                 ],
                 websiteURL: URL(string: "https://openrouter.ai/")!,
+                providerType: .cloudService,
                 apiFormat: .openAI,
                 apiKeyStorageKey: "DevAssistant_ApiKey_OpenRouter"
             ),

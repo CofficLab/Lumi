@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Binary file" : {
+
+    },
     "Close" : {
       "localizations" : {
         "en" : {
@@ -187,6 +190,9 @@
         }
       }
     },
+    "Remove file" : {
+
+    },
     "Remove image" : {
 
     },
@@ -257,6 +263,9 @@
           }
         }
       }
+    },
+    "Text file" : {
+
     }
   },
   "version" : "1.0"

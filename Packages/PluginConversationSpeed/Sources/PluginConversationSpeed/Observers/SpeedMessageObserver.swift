@@ -7,6 +7,7 @@ final class SpeedMessageObserver {
     private let messages: any MessageManaging
     private let viewModel: ConversationSpeedViewModel
     private var observer: (any MessageInsertedObserverHandle)?
+    private var refreshTask: Task<Void, Never>?
 
     init(messages: any MessageManaging, viewModel: ConversationSpeedViewModel) {
         self.messages = messages
@@ -17,6 +18,8 @@ final class SpeedMessageObserver {
     }
 
     func cancel() {
+        refreshTask?.cancel()
+        refreshTask = nil
         observer?.cancel()
         observer = nil
     }
@@ -24,10 +27,17 @@ final class SpeedMessageObserver {
     private func messageDidInsert(in conversationID: UUID) {
         guard viewModel.selectedConversationID == conversationID else { return }
 
-        var snapshot = messages.messages(for: conversationID)
-        if snapshot.isEmpty, let lastMessage = messages.lastMessage(in: conversationID) {
-            snapshot = [lastMessage]
+        refreshTask?.cancel()
+        refreshTask = Task(priority: .utility) { @MainActor [weak self] in
+            await Task.yield()
+            guard !Task.isCancelled, let self,
+                  self.viewModel.selectedConversationID == conversationID else { return }
+
+            var snapshot = self.messages.messages(for: conversationID)
+            if snapshot.isEmpty, let lastMessage = self.messages.lastMessage(in: conversationID) {
+                snapshot = [lastMessage]
+            }
+            self.viewModel.refresh(conversationID: conversationID, messages: snapshot)
         }
-        viewModel.refresh(conversationID: conversationID, messages: snapshot)
     }
 }

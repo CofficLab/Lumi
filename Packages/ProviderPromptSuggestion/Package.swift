@@ -16,6 +16,7 @@ let package = Package(
         .package(path: "../ProviderPluginControl"),
         .package(path: "../ProviderPluginManaging"),
         .package(path: "../ProviderRailView"),
+        .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderToast"),
     ],
     targets: [
@@ -27,6 +28,7 @@ let package = Package(
             .product(name: "ProviderPluginControl", package: "ProviderPluginControl"),
             .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
             .product(name: "ProviderRailView", package: "ProviderRailView"),
+            .product(name: "ProviderSettingView", package: "ProviderSettingView"),
             .product(name: "ProviderToast", package: "ProviderToast"),
         ],
             path: ".",
@@ -40,6 +42,7 @@ let package = Package(
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
             ]
         ),
     ]

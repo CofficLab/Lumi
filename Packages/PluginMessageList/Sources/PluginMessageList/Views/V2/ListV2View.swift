@@ -71,7 +71,7 @@ struct ListV2View: View, SuperLog {
                     Self.logger.debug("\(Self.t)selected conversation changed: \(newID?.uuidString ?? "nil")")
                 }
                 atBottomBox.value = true
-                Task { @MainActor in
+                Task(priority: .userInitiated) { @MainActor in
                     await viewModel.activate(conversationID: newID)
                 }
             }

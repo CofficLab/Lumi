@@ -27,6 +27,7 @@ public final class AiRouterProvider: VendorLLMProvider {
                     LLMModelInfo(id: "gpt-5.1-codex", contextWindowSize: 400_000, supportsVision: true),
                 ],
                 websiteURL: URL(string: "https://airouter.org")!,
+                providerType: .relay,
                 apiFormat: .openAI,
                 apiKeyStorageKey: "DevAssistant_ApiKey_AiRouter"
             ),

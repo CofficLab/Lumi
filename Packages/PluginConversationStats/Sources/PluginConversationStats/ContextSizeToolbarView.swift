@@ -13,6 +13,7 @@ struct ContextSizeToolbarView: View {
     @State private var maxContextSize: Int?
     @State private var usedTokens: Int?
     @State private var isPopoverPresented = false
+    @State private var selectedConversationID: UUID?
 
     // 观察者令牌
     @State private var conversationObserver: (any SelectedConversationObserverHandle)?
@@ -33,17 +34,27 @@ struct ContextSizeToolbarView: View {
                 }
             }
         }
-        .task { await refreshSize() }
         .task {
+            selectedConversationID = conversations.selectedConversationID
             // 注册观察者
-            conversationObserver = conversations.addSelectedConversationObserver { _ in
-                Task { await refreshSize() }
+            conversationObserver = conversations.addSelectedConversationObserver { newID in
+                selectedConversationID = newID
             }
             messageObserver = messages.addMessageInsertedObserver { _, conversationID in
                 if conversationID == conversations.selectedConversationID {
-                    Task { await refreshUsedTokens() }
+                    Task(priority: .utility) { @MainActor in
+                        await Task.yield()
+                        guard !Task.isCancelled,
+                              conversationID == conversations.selectedConversationID else { return }
+                        await refreshUsedTokens(for: conversationID)
+                    }
                 }
             }
+        }
+        .task(id: selectedConversationID) {
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            await refreshSize(for: selectedConversationID)
         }
     }
 
@@ -77,8 +88,7 @@ struct ContextSizeToolbarView: View {
         }
     }
 
-    private func refreshSize() async {
-        let conversationID = conversations.selectedConversationID
+    private func refreshSize(for conversationID: UUID?) async {
         let providerID = conversationID.flatMap { conversations.providerID(for: $0) }
             ?? llmManager.selectedProviderID
             ?? llmManager.allProviders().first?.providerInfo.id
@@ -98,11 +108,13 @@ struct ContextSizeToolbarView: View {
         let modelInfo = info.models.first { $0.id == modelName }
             ?? info.models.first { $0.id == info.defaultModel }
         maxContextSize = modelInfo?.contextWindowSize
-        await refreshUsedTokens()
+        await refreshUsedTokens(for: conversationID)
     }
 
-    private func refreshUsedTokens() async {
-        guard let conversationID = conversations.selectedConversationID else {
+    private func refreshUsedTokens(for conversationID: UUID?) async {
+        guard let conversationID,
+              selectedConversationID == conversationID,
+              conversations.selectedConversationID == conversationID else {
             usedTokens = nil
             return
         }

@@ -4,7 +4,7 @@ import SwiftUI
 struct ListView: View {
     @ObservedObject var viewModel: ProjectsViewModel
     @State private var searchText = ""
-    @Binding var isImporterPresented: Bool
+    let addProject: () -> Void
 
     private var filteredProjects: [ProjectEntry] {
         if searchText.isEmpty {
@@ -26,7 +26,7 @@ struct ListView: View {
             AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search", bundle: .module)))
 
             AppButton(LumiPluginLocalization.string("Add", bundle: .module), systemImage: "folder.badge.plus", size: .small) {
-                isImporterPresented = true
+                addProject()
             }
         }
         .padding(.horizontal, 12)
@@ -43,7 +43,7 @@ struct ListView: View {
                     title: LumiPluginLocalization.string("No Projects", bundle: .module),
                     description: LumiPluginLocalization.string("Adding a project gives the agent file context. This is optional — chat works without one.", bundle: .module),
                     actionTitle: LumiPluginLocalization.string("Add Project", bundle: .module),
-                    action: { isImporterPresented = true }
+                    action: addProject
                 )
                 .frame(maxWidth: .infinity, minHeight: 126)
             } else {

@@ -39,9 +39,37 @@ struct KitLLMTests {
             apiKeyStorageKey: "test-key"
         )
         #expect(info.id == "test")
+        #expect(info.providerType == .cloudService)
         #expect(info.contains(model: "test-model"))
         #expect(!info.contains(model: "nonexistent"))
         #expect(info.modelIDs == ["test-model"])
+    }
+
+    @Test("本地供应商自动推导类型")
+    func localProviderTypeIsInferred() {
+        let info = LLMProviderInfo(
+            id: "local",
+            displayName: "Local",
+            defaultModel: "local-model",
+            models: [LLMModelInfo(id: "local-model")],
+            isLocal: true
+        )
+
+        #expect(info.providerType == .local)
+    }
+
+    @Test("供应商类型支持中转站")
+    func relayProviderTypeCanBeDeclared() {
+        let info = LLMProviderInfo(
+            id: "relay",
+            displayName: "Relay",
+            defaultModel: "relay-model",
+            models: [LLMModelInfo(id: "relay-model")],
+            providerType: .relay
+        )
+
+        #expect(info.providerType == .relay)
+        #expect(info.providerType.displayName == "中转站")
     }
 
     @Test("VendorAPIError 错误描述")

@@ -59,8 +59,8 @@ public final class PluginSettingView: SuperPlugin, SuperLog {
             if !old.projectDetailSections.isEmpty {
                 manager.addProjectDetailSections(old.projectDetailSections)
             }
-            // 读取先前的选中 id（仅当原实现是 ObservableObject 时可由协议扩展读取）。
-            if let oldSelection = (old as? any SettingViewProviding & ObservableObject)?.selectedEntryID {
+            // 读取先前的选中 id，保持设置 Provider 替换前后的页面状态。
+            if let oldSelection = old.selectedEntryID {
                 manager.selectEntry(id: oldSelection)
             }
             if Self.verbose {

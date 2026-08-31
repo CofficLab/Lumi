@@ -16,7 +16,7 @@ public final class FlyMuxProviderPlugin: SuperPlugin, SuperLog {
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.llm-provider.flymux"
-    public let order = 100
+    public let order = 1000
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.llm-provider.flymux",
         name: "FlyMux 供应商",

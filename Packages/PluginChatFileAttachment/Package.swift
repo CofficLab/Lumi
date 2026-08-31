@@ -15,6 +15,8 @@ let package = Package(
         .package(path: "../LumiUI"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversationInput"),
+        .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderMessageSender"),
     ],
     targets: [
         .target(
@@ -25,6 +27,8 @@ let package = Package(
                 "LumiUI",
                 "ProviderChatSection",
                 "ProviderConversationInput",
+                "ProviderMessage",
+                "ProviderMessageSender",
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),

@@ -21,6 +21,7 @@ public final class SublyxProvider: VendorLLMProvider {
                     LLMModelInfo(id: "gpt-4.1", contextWindowSize: 1_000_000, supportsVision: true),
                 ],
                 websiteURL: URL(string: "https://api.sublyx.org/")!,
+                providerType: .relay,
                 apiFormat: .openAI,
                 apiKeyStorageKey: "DevAssistant_ApiKey_Sublyx"
             ),

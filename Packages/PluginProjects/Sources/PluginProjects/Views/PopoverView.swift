@@ -1,31 +1,13 @@
 import LumiUI
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct PopoverView: View {
     @ObservedObject var viewModel: ProjectsViewModel
-    @State private var isImporterPresented = false
+    let requestImporter: () -> Void
 
     var body: some View {
-        ListView(viewModel: viewModel, isImporterPresented: $isImporterPresented)
+        ListView(viewModel: viewModel, addProject: requestImporter)
             .frame(width: 320)
             .frame(minHeight: 220, maxHeight: 420)
-            .fileImporter(
-                isPresented: $isImporterPresented,
-                allowedContentTypes: [.folder],
-                allowsMultipleSelection: false
-            ) { result in
-                handleImport(result)
-            }
-    }
-
-    private func handleImport(_ result: Result<[URL], any Error>) {
-        guard case let .success(urls) = result,
-              let url = urls.first
-        else {
-            return
-        }
-
-        viewModel.addProject(url: url)
     }
 }

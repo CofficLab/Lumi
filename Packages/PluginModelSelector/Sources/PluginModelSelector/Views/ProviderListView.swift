@@ -102,14 +102,43 @@ struct ProviderListView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 4) {
-                            ForEach(providers, id: \.id) { info in
-                                ProviderListItem(
-                                    info: info,
-                                    isSelected: info.id == selectedProviderID,
-                                    onSelect: {
-                                        selectedProviderID = info.id
+                            if selectedScope == .cloud {
+                                let cloudProviders = providers.filter { $0.providerType == .cloudService }
+                                let relayProviders = providers.filter { $0.providerType == .relay }
+
+                                ForEach(cloudProviders, id: \.id) { info in
+                                    ProviderListItem(
+                                        info: info,
+                                        isSelected: info.id == selectedProviderID,
+                                        onSelect: {
+                                            selectedProviderID = info.id
+                                        }
+                                    )
+                                }
+
+                                if !relayProviders.isEmpty {
+                                    relaySectionDivider
+
+                                    ForEach(relayProviders, id: \.id) { info in
+                                        ProviderListItem(
+                                            info: info,
+                                            isSelected: info.id == selectedProviderID,
+                                            onSelect: {
+                                                selectedProviderID = info.id
+                                            }
+                                        )
                                     }
-                                )
+                                }
+                            } else {
+                                ForEach(providers, id: \.id) { info in
+                                    ProviderListItem(
+                                        info: info,
+                                        isSelected: info.id == selectedProviderID,
+                                        onSelect: {
+                                            selectedProviderID = info.id
+                                        }
+                                    )
+                                }
                             }
                         }
                         .padding(8)
@@ -134,6 +163,25 @@ struct ProviderListView: View {
         .onChange(of: selectedScope) { _, _ in
             selectProviderInCurrentScopeIfNeeded()
         }
+    }
+
+    private var relaySectionDivider: some View {
+        HStack(spacing: 8) {
+            Rectangle()
+                .fill(theme.divider)
+                .frame(height: 1)
+            Text("中转站")
+                .font(.appMicro)
+                .foregroundStyle(theme.textSecondary)
+                .fixedSize()
+            Rectangle()
+                .fill(theme.divider)
+                .frame(height: 1)
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 6)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("中转站")
     }
 
     private func filteredProviders(_ providers: [LLMProviderInfo]) -> [LLMProviderInfo] {

@@ -5,7 +5,7 @@ import ProviderMessage
 import ProviderMessageSender
 import SwiftUI
 
-/// 聊天输入框上方的待发送图片预览。
+/// 聊天输入框上方的待发送附件预览。
 ///
 /// 发送器通过 existential provider 注入，因此使用 objectWillChange + revision
 /// 驱动 SwiftUI 重建，避免把具体的发送器实现泄漏到输入插件中。
@@ -19,11 +19,15 @@ struct AttachmentPreviewView: View {
         sender?.pendingImageAttachments ?? []
     }
 
+    private var fileAttachments: [UserFileAttachment] {
+        sender?.pendingFileAttachments ?? []
+    }
+
     var body: some View {
         let _ = revision
 
         Group {
-            if !attachments.isEmpty {
+            if !attachments.isEmpty || !fileAttachments.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(attachments) { attachment in
@@ -31,6 +35,15 @@ struct AttachmentPreviewView: View {
                                 attachment: attachment,
                                 onRemove: {
                                     sender?.removeImageAttachment(id: attachment.id)
+                                }
+                            )
+                        }
+
+                        ForEach(fileAttachments) { attachment in
+                            FileAttachmentChip(
+                                attachment: attachment,
+                                onRemove: {
+                                    sender?.removeFileAttachment(id: attachment.id)
                                 }
                             )
                         }
@@ -47,6 +60,52 @@ struct AttachmentPreviewView: View {
                 revision &+= 1
             }
         }
+    }
+}
+
+private struct FileAttachmentChip: View {
+    @LumiTheme private var theme
+
+    let attachment: UserFileAttachment
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: attachment.textContent == nil ? "doc.fill" : "doc.text")
+                .font(.system(size: 17, weight: .medium))
+                .foregroundColor(theme.textSecondary)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(attachment.fileName)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(theme.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text(attachment.textContent == nil ? "Binary file" : "Text file")
+                    .font(.system(size: 10))
+                    .foregroundColor(theme.textTertiary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: 150, alignment: .leading)
+
+            Button(action: onRemove) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(theme.textTertiary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Remove file")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(theme.textPrimary.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(theme.textPrimary.opacity(0.08), lineWidth: 1)
+        )
+        .help(attachment.fileName)
     }
 }
 
