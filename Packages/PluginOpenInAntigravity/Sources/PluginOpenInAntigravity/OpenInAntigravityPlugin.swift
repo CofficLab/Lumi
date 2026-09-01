@@ -16,8 +16,8 @@ public final class OpenInAntigravityPlugin: SuperPlugin, SuperLog {
     public let order = 614
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.open-in-antigravity",
-        name: "Open In Antigravity",
-        description: "Allow LLM to open projects in Antigravity.",
+        name: OpenInAntigravityLocalization.string("Open In Antigravity"),
+        description: OpenInAntigravityLocalization.string("Allow LLM to open projects in Antigravity."),
         category: .integration,
         stage: .stable,
         policy: .enabledByDefault

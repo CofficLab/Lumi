@@ -3,13 +3,14 @@ import PackageDescription
 
 let package = Package(
     name: "PluginOpenInAntigravity",
-    defaultLocalization: "zh-Hans",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "PluginOpenInAntigravity", targets: ["PluginOpenInAntigravity"]),
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog"),
         .package(path: "../OpenInKit"),
         .package(path: "../ProviderDocsView"),
@@ -21,13 +22,15 @@ let package = Package(
             name: "PluginOpenInAntigravity",
             dependencies: [
                 "KernelCore",
+                "KitLocalization",
                 "KitSuperLog",
                 "OpenInKit",
                 "ProviderDocsView",
                 "ProviderProject",
                 "ProviderToolManager",
             ],
-            path: "Sources/PluginOpenInAntigravity"
+            path: "Sources/PluginOpenInAntigravity",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
     ]
 )

@@ -732,6 +732,7 @@
       }
     },
     "HTTP exchanges" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -851,6 +852,7 @@
       }
     },
     "HTTP requests per day over the last 14 days" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2073,6 +2075,7 @@
       }
     },
     "Request Activity" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2379,6 +2382,40 @@
         }
       }
     },
+    "Show total HTTP exchange details" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show total HTTP exchange details"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示 HTTP 交换总数说明"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示 HTTP 交換總數說明"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示 HTTP 交換總數說明"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示 HTTP 交換總數說明"
+          }
+        }
+      }
+    },
     "Signal" : {
       "localizations" : {
         "en" : {
@@ -2515,6 +2552,40 @@
         }
       }
     },
+    "The number of HTTP exchange records currently stored locally. Each request and response round trip counts as one exchange; this is a record count, not network traffic volume." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The number of HTTP exchange records currently stored locally. Each request and response round trip counts as one exchange; this is a record count, not network traffic volume."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前本地保存的 HTTP 交换记录数量。每次请求和响应往返计为 1 条；这是记录数量，不是网络流量大小。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前本地保存的 HTTP 交換記錄數量。每次請求和回應往返計為 1 條；這是記錄數量，不是網絡流量大小。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前本地保存的 HTTP 交換記錄數量。每次請求和回應往返計為 1 條；這是記錄數量，不是網絡流量大小。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前本地保存的 HTTP 交換記錄數量。每次請求和回應往返計為 1 筆；這是記錄數量，不是網路流量大小。"
+          }
+        }
+      }
+    },
     "Time Range" : {
       "localizations" : {
         "en" : {
@@ -2561,6 +2632,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "今天"
+          }
+        }
+      }
+    },
+    "Total HTTP exchanges" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total HTTP exchanges"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTTP 交换总数"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTTP 交換總數"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTTP 交換總數"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTTP 交換總數"
           }
         }
       }
@@ -2902,6 +3007,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wi-Fi"
+          }
+        }
+      }
+    },
+    "Network Manager" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network Manager"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "网络管理"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網絡管理"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網絡管理"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網路管理"
+          }
+        }
+      }
+    },
+    "Monitor upload/download speed, traffic statistics, and process usage in real time; view network status from the menu bar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monitor upload/download speed, traffic statistics, and process usage in real time; view network status from the menu bar."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时监控上传下载速度、流量统计与进程占用，菜单栏即可一览网络状态。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時監控上傳下載速度、流量統計與程序占用，選單列即可一覽網路狀態。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時監控上傳下載速度、流量統計與程序占用，選單列即可一覽網絡狀態。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時監控上傳下載速度、流量統計與程式占用，選單列即可一覽網路狀態。"
           }
         }
       }

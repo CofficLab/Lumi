@@ -11,7 +11,7 @@ struct PluginBrewManagerTests {
     func pluginMetadataIsStable() {
         let plugin = BrewManagerSuperPlugin()
         #expect(plugin.id == "com.coffic.lumi.plugin.brew-manager")
-        #expect(plugin.metadata.name == "Package Management")
+        #expect(plugin.metadata.name == LumiPluginLocalization.string("Package Management", bundle: LumiPluginLocalization.resourceBundle))
         #expect(plugin.order == 260)
         #expect(plugin.metadata.policy == .disabledByDefault)
     }
@@ -32,7 +32,7 @@ struct PluginBrewManagerTests {
                 "installed": [{"version": "26.4.0", "installed_on_request": true}]
               }],
               "casks": [{
-                "name": "applite",
+                "name": ["Applite"],
                 "token": "applite",
                 "version": "1.2.5",
                 "installed": "1.2.5"
@@ -44,8 +44,26 @@ struct PluginBrewManagerTests {
         let info = try JSONDecoder().decode(BrewInfo.self, from: data)
 
         #expect(info.formulae.first?.installed?.first?.version == "26.4.0")
+        #expect(info.casks.first?.name == "Applite")
         #expect(info.casks.first?.installed == nil)
         #expect(info.casks.first?.version == "1.2.5")
+    }
+
+    @Test
+    func decodesFormulaNameStringAndCaskNameArray() throws {
+        let data = Data(
+            #"""
+            {
+              "formulae": [{"name": "node"}],
+              "casks": [{"name": ["Google Chrome"], "token": "google-chrome"}]
+            }
+            """#.utf8
+        )
+
+        let info = try JSONDecoder().decode(BrewInfo.self, from: data)
+
+        #expect(info.formulae.first?.name == "node")
+        #expect(info.casks.first?.name == "Google Chrome")
     }
 
     @Test

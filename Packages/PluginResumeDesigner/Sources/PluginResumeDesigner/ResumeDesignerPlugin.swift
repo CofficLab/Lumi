@@ -26,8 +26,8 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
     public let order = 81
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.resume-designer",
-        name: "Resume Designer",
-        description: "",
+        name: ResumeDesignerLocalization.string("Resume Designer"),
+        description: ResumeDesignerLocalization.string("Create and design a personal resume."),
         category: .design,
         stage: .stable,
         policy: .disabledByDefault

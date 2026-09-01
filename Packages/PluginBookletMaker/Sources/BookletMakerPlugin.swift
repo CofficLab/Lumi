@@ -56,8 +56,8 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
         id = Self.pluginID
         metadata = PluginMetadata(
             id: Self.pluginID,
-            name: "Booklet Maker",
-            description: "Create print-ready booklets from PDF documents.",
+            name: BookletLocalization.string("Booklet Maker"),
+            description: BookletLocalization.string("Create print-ready booklets from PDF documents."),
             category: .editor,
             stage: .preview,
             policy: policy

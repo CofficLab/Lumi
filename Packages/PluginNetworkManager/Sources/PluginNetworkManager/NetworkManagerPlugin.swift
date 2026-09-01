@@ -33,8 +33,8 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
     public let order = 30
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.network-manager",
-        name: "Network Manager",
-        description: "",
+        name: LumiPluginLocalization.string("Network Manager", bundle: .module),
+        description: LumiPluginLocalization.string("Monitor upload/download speed, traffic statistics, and process usage in real time; view network status from the menu bar.", bundle: .module),
         category: .system,
         stage: .stable,
         policy: .enabledByDefault

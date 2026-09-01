@@ -25,8 +25,8 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
     public let order = 80
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.app-store-promo-designer",
-        name: "App Store Promo Designer",
-        description: "",
+        name: PromoLocalization.string("App Store Promo Designer"),
+        description: PromoLocalization.string("Create App Store promo images and marketing assets."),
         category: .design,
         stage: .stable,
         policy: .disabledByDefault

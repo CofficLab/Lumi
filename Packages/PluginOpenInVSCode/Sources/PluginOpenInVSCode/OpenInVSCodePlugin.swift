@@ -16,8 +16,8 @@ public final class OpenInVSCodePlugin: SuperPlugin, SuperLog {
     public let order = 613
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.open-in-vscode",
-        name: "Open In VS Code",
-        description: "Allow LLM to open projects in Visual Studio Code.",
+        name: OpenInVSCodeLocalization.string("Open In VS Code"),
+        description: OpenInVSCodeLocalization.string("Allow LLM to open projects in Visual Studio Code."),
         category: .integration,
         stage: .stable,
         policy: .enabledByDefault

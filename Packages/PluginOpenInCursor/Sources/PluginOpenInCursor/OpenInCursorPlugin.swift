@@ -16,8 +16,8 @@ public final class OpenInCursorPlugin: SuperPlugin, SuperLog {
     public let order = 612
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.open-in-cursor",
-        name: "Open In Cursor",
-        description: "Allow LLM to open projects in Cursor.",
+        name: OpenInCursorLocalization.string("Open In Cursor"),
+        description: OpenInCursorLocalization.string("Allow LLM to open projects in Cursor."),
         category: .integration,
         stage: .stable,
         policy: .enabledByDefault

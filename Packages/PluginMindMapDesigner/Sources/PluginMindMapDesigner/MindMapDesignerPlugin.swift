@@ -27,8 +27,8 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
     public let order = 81
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.mind-map",
-        name: "Mind Map Designer",
-        description: "",
+        name: MindMapLocalization.string("Mind Map Designer"),
+        description: MindMapLocalization.string("Create and edit mind maps."),
         category: .design,
         stage: .stable,
         policy: .disabledByDefault

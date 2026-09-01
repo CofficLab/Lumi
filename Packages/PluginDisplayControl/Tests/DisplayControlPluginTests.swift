@@ -15,7 +15,7 @@ func pluginInfoIdentifier() {
 @MainActor
 @Test("Plugin info has correct display name")
 func pluginInfoDisplayName() {
-    #expect(DisplayControlSuperPlugin().metadata.name == "Display Control")
+    #expect(DisplayControlSuperPlugin().metadata.name == LumiPluginLocalization.string("Display Control", bundle: LumiPluginLocalization.resourceBundle))
 }
 
 @MainActor

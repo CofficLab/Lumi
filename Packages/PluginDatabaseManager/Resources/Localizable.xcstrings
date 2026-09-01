@@ -5038,6 +5038,40 @@
           }
         }
       }
+    },
+    "Database connections, SQL queries, schema inspection, and data editing.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Database connections, SQL queries, schema inspection, and data editing."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "数据库连接、SQL 查询、结构查看与数据编辑。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫連線、SQL 查詢、結構檢視與資料編輯。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫連線、SQL 查詢、結構檢視與資料編輯。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫連線、SQL 查詢、結構檢視與資料編輯。"
+          }
+        }
+      }
     }
   },
   "version": "1.1"

@@ -18,8 +18,8 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
     public let order = 50
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.rclick",
-        name: "Right Click",
-        description: "Configure right-click actions and preview their behavior.",
+        name: LumiPluginLocalization.string("Right Click", bundle: .module),
+        description: LumiPluginLocalization.string("Configure right-click actions and preview their behavior.", bundle: .module),
         category: .system,
         stage: .preview,
         policy: .disabledByDefault

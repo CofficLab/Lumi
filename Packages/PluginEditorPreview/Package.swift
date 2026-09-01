@@ -1,0 +1,40 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "PluginEditorPreview",
+    defaultLocalization: "en",
+    platforms: [.macOS(.v14)],
+    products: [
+        .library(name: "PluginEditorPreview", targets: ["PluginEditorPreview"]),
+    ],
+    dependencies: [
+        .package(path: "../KernelCore"),
+        .package(path: "../KitLocalization"),
+        .package(path: "../KitMarkdown"),
+        .package(path: "../LumiUI"),
+        .package(path: "../ProviderProject"),
+        .package(path: "../ProviderRootView"),
+    ],
+    targets: [
+        .target(
+            name: "PluginEditorPreview",
+            dependencies: [
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "KitMarkdown", package: "KitMarkdown"),
+                .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
+            ],
+            resources: [.process("../../Resources/Localizable.xcstrings")]
+        ),
+        .testTarget(
+            name: "PluginEditorPreviewTests",
+            dependencies: [
+                "PluginEditorPreview",
+                .product(name: "ProviderProject", package: "ProviderProject"),
+            ]
+        ),
+    ]
+)

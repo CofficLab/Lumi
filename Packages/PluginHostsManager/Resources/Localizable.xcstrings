@@ -2115,6 +2115,40 @@
           }
         }
       }
+    },
+    "Manage the hosts file and domain mappings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage the hosts file and domain mappings."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 hosts 文件与域名映射。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 hosts 檔案與網域對應。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 hosts 檔案與網域對應。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 hosts 檔案與網域對應。"
+          }
+        }
+      }
     }
   },
   "version": "1.1"

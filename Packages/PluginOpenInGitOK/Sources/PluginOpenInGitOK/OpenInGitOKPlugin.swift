@@ -16,8 +16,8 @@ public final class OpenInGitOKPlugin: SuperPlugin, SuperLog {
     public let order = 616
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.open-in-gitok",
-        name: "Open In GitOK",
-        description: "Allow LLM to open projects in GitOK.",
+        name: OpenInGitOKLocalization.string("Open In GitOK"),
+        description: OpenInGitOKLocalization.string("Allow LLM to open projects in GitOK."),
         category: .integration,
         stage: .stable,
         policy: .enabledByDefault

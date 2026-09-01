@@ -1,11 +1,16 @@
 import Testing
 import Foundation
 import KitLLM
+import KitAgentTool
 @testable import PluginAgentLoop
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderLifecycleHooks
 import ProviderMessage
+import ProviderMessageStreaming
+import ProviderLLMContext
+import ProviderLLMManager
+import ProviderToolManager
 
 @MainActor
 @Test func testPluginInitialization() async throws {
@@ -162,6 +167,133 @@ func testMessageObserverDoesNotSkipNonAskUserSuspension() async throws {
 
     #expect(loop.runTurnCallCount == 0)
     #expect(loop.resumeRequests.isEmpty)
+}
+
+@MainActor
+@Test("应用重启后授权完成事件会从历史 assistant 消息恢复 Loop")
+func testHistoricalAuthorizedCompletionRehydratesLoop() {
+    let messages = DefaultMessageManager()
+    let conversationID = UUID()
+    let turnID = UUID()
+    let assistantMessageID = UUID()
+    let toolCallID = "historical-call"
+    messages.insertMessage(
+        Message(
+            id: assistantMessageID,
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            turnID: turnID,
+            toolCalls: [
+                MessageToolCall(
+                    id: toolCallID,
+                    name: "edit_file",
+                    arguments: "{}",
+                    authorizationState: ToolCallAuthorizationState.pendingAuthorization.rawValue
+                ),
+                MessageToolCall(
+                    id: "remaining-call",
+                    name: "read_file",
+                    arguments: "{}"
+                ),
+            ]
+        ),
+        to: conversationID
+    )
+
+    let toolManager = DefaultToolManagerProviding()
+    let loop = AgentLoopManager(
+        messages: messages,
+        llmManager: DefaultLLMManager(),
+        toolManager: toolManager,
+        streaming: DefaultMessageStreamingProviding(),
+        conversations: DefaultConversationManager(),
+        contextProvider: PassthroughLLMContextProvider(messages: messages)
+    )
+
+    loop.handleToolManagerEvent(.authorizedCompleted(
+        conversationID: conversationID,
+        turnID: nil,
+        toolCall: KitAgentTool.ToolCall(
+            id: toolCallID,
+            name: "edit_file",
+            arguments: "{}",
+            authorizationState: .userApproved
+        ),
+        result: ToolCallResult(content: "edited")
+    ))
+
+    let assistant = messages.message(id: assistantMessageID, in: conversationID)
+    let updatedToolCall = assistant?.toolCalls?.first(where: { $0.id == toolCallID })
+    #expect(updatedToolCall?.result?.content == "edited")
+    #expect(updatedToolCall?.authorizationState == ToolCallAuthorizationState.userApproved.rawValue)
+    #expect(loop.currentTurnID(for: conversationID) == turnID)
+}
+
+@MainActor
+@Test("正常挂起回合收到授权完成事件后会继续剩余工具")
+func testAuthorizedCompletionResumesSuspendedLoop() {
+    let messages = DefaultMessageManager()
+    let conversationID = UUID()
+    let turnID = UUID()
+    let assistantMessageID = UUID()
+    let toolCallID = "suspended-call"
+    messages.insertMessage(
+        Message(
+            id: assistantMessageID,
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            turnID: turnID,
+            toolCalls: [
+                MessageToolCall(id: toolCallID, name: "edit_file", arguments: "{}"),
+                MessageToolCall(id: "remaining-call", name: "read_file", arguments: "{}"),
+            ]
+        ),
+        to: conversationID
+    )
+
+    let loop = AgentLoopManager(
+        messages: messages,
+        llmManager: DefaultLLMManager(),
+        toolManager: DefaultToolManagerProviding(),
+        streaming: DefaultMessageStreamingProviding(),
+        conversations: DefaultConversationManager(),
+        contextProvider: PassthroughLLMContextProvider(messages: messages)
+    )
+    loop.runtimes[conversationID] = TurnRuntime(
+        phase: .awaitingUser(
+            turnID: turnID,
+            assistantMessageID: assistantMessageID,
+            pendingToolCalls: [
+                MessageToolCall(id: "remaining-call", name: "read_file", arguments: "{}"),
+            ],
+            suspension: AgentLoopSuspension(
+                suspensionID: "userInput:\(toolCallID)",
+                conversationID: conversationID,
+                toolCallID: toolCallID,
+                kind: "permission",
+                payload: "需要批准"
+            )
+        )
+    )
+
+    loop.handleToolManagerEvent(.authorizedCompleted(
+        conversationID: conversationID,
+        turnID: turnID,
+        toolCall: KitAgentTool.ToolCall(
+            id: toolCallID,
+            name: "edit_file",
+            arguments: "{}",
+            authorizationState: .userApproved
+        ),
+        result: ToolCallResult(content: "edited")
+    ))
+
+    let updatedToolCall = messages.message(id: assistantMessageID, in: conversationID)?
+        .toolCalls?.first(where: { $0.id == toolCallID })
+    #expect(updatedToolCall?.result?.content == "edited")
+    #expect(loop.currentTurnID(for: conversationID) == turnID)
 }
 
 @MainActor

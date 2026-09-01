@@ -27,8 +27,8 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
     public let order = 750
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.database-manager",
-        name: "Database",
-        description: "Database connections, SQL queries, schema inspection, and data editing.",
+        name: LumiPluginLocalization.string("Database", bundle: .module),
+        description: LumiPluginLocalization.string("Database connections, SQL queries, schema inspection, and data editing.", bundle: .module),
         category: .project,
         stage: .preview,
         policy: .disabledByDefault

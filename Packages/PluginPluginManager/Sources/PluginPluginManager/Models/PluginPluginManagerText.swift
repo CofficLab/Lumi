@@ -28,6 +28,7 @@ enum PluginPluginManagerText {
     static let versionLabel = "版本"
     static let policyLabel = "策略"
     static let identifierLabel = "标识"
+    static let permissionsTitle = "权限"
 
     // 关于视图
     static let browsePlugins = "浏览实用插件"
@@ -106,10 +107,10 @@ extension PluginCategory {
 extension PluginStage {
     var displayName: String {
         switch self {
-        case .experimental: "Experimental"
-        case .preview: "Preview"
-        case .stable: "Stable"
-        case .deprecated: "Deprecated"
+        case .experimental: "实验"
+        case .preview: "预览"
+        case .stable: "稳定"
+        case .deprecated: "已弃用"
         }
     }
 }

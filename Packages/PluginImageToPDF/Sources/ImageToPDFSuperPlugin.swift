@@ -16,8 +16,8 @@ import SwiftUI
     public let id = "com.coffic.lumi.plugin.image-to-pdf"; public let order = 875
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.image-to-pdf",
-        name: "Image to PDF",
-        description: "Drop image files and convert each one to a single-page PDF.",
+        name: ImageToPDFLocalization.string("Image to PDF"),
+        description: ImageToPDFLocalization.string("Drop image files and convert each one to a single-page PDF."),
         category: .project,
         stage: .preview,
         policy: .disabledByDefault

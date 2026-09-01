@@ -45,6 +45,22 @@ private struct CountingTool: SuperAgentTool, @unchecked Sendable {
 }
 
 @MainActor
+@Test func authorizedToolReusesExistingResultInsteadOfExecutingAgain() async {
+    let manager = ToolManager()
+    let counter = CountingTool.Counter()
+    manager.add(CountingTool(name: "write_once", risk: .high, counter: counter), pluginID: "test")
+    let conversationID = UUID()
+    let call = ToolCall(id: "write-once-1", name: "write_once", arguments: "{}")
+
+    let first = await manager.executeAuthorized(call, conversationID: conversationID, turnID: UUID())
+    let second = await manager.executeAuthorized(call, conversationID: conversationID, turnID: UUID())
+
+    #expect(first.content == "write_once")
+    #expect(second == first)
+    #expect(counter.value == 1)
+}
+
+@MainActor
 @Test func unknownToolSkipsAuthorizationAndReturnsNotFoundResult() async {
     let manager = ToolManager()
     let call = ToolCall(id: "unknown-1", name: "git_reset", arguments: "{}")

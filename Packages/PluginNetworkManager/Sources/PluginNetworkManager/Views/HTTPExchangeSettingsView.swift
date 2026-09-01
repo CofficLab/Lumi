@@ -69,6 +69,7 @@ public struct HTTPExchangeSettingsView: View {
     @State private var hasMoreRecords = true
     @State private var nextPageCursor: Date?
     @State private var totalRecordCount: Int?
+    @State private var isTotalCountPopoverPresented = false
     @State private var selectedRecordID: UUID?
     @State private var selectedDetail: HTTPExchangeExportSnapshot?
     @State private var reloadGeneration = 0
@@ -95,9 +96,7 @@ public struct HTTPExchangeSettingsView: View {
             VStack(spacing: 12) {
                 HStack {
                     Spacer()
-                    Label(totalCountLabel, systemImage: "arrow.up.arrow.down.circle")
-                        .font(.appCaption)
-                        .foregroundStyle(theme.textSecondary)
+                    totalCountButton
                     AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), systemImage: "arrow.clockwise", size: .small) {
                         Task { await reloadAsync() }
                     }
@@ -160,28 +159,26 @@ public struct HTTPExchangeSettingsView: View {
     }
 
     private var requestActivity: some View {
-        AppSettingsSection(title: LumiPluginLocalization.string("Request Activity", bundle: .module), subtitle: LumiPluginLocalization.string("HTTP requests per day over the last 14 days", bundle: .module), spacing: 12) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .firstTextBaseline) {
-                    Label(LumiPluginLocalization.string("Daily HTTP requests", bundle: .module), systemImage: "chart.xyaxis.line")
-                        .font(.appCaptionEmphasized)
-                        .foregroundStyle(theme.textPrimary)
-                    Spacer(minLength: 0)
-                    Text(LumiPluginLocalization.string("Peak", bundle: .module) + " (\(dailyCountSeries.peakCount))")
-                        .font(.appMicro)
-                        .monospacedDigit()
-                        .foregroundStyle(theme.textSecondary)
-                }
-                HTTPExchangeDailyCountChart(series: dailyCountSeries)
-                    .frame(height: 132)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Label(LumiPluginLocalization.string("Daily HTTP requests", bundle: .module), systemImage: "chart.xyaxis.line")
+                    .font(.appCaptionEmphasized)
+                    .foregroundStyle(theme.textPrimary)
+                Spacer(minLength: 0)
+                Text(LumiPluginLocalization.string("Peak", bundle: .module) + " (\(dailyCountSeries.peakCount))")
+                    .font(.appMicro)
+                    .monospacedDigit()
+                    .foregroundStyle(theme.textSecondary)
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(theme.divider, lineWidth: 0.5)
-            }
+            HTTPExchangeDailyCountChart(series: dailyCountSeries)
+                .frame(height: 132)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(theme.divider, lineWidth: 0.5)
         }
     }
 
@@ -610,21 +607,45 @@ public struct HTTPExchangeSettingsView: View {
         // Run them after the list is on screen and discard stale results when a
         // filter changes while they are still running.
         Task { [store] in
-            async let count = Task.detached(priority: .utility) {
-                store.loadListCount(status: status, domain: domain, startedAtAfter: startedAtAfter)
-            }.value
-            async let series = Task.detached(priority: .utility) {
-                store.loadDailyCountSeries()
-            }.value
-            async let domains = Task.detached(priority: .utility) {
-                store.loadRecentDomains()
-            }.value
+            // The default view needs the total number of stored exchanges only.
+            // Use SwiftData's count query directly instead of paging through all
+            // records and rebuilding list snapshots. Filtered counts still need
+            // the metadata scan because status/domain matching is performed in
+            // Swift.
+            let countTask = Task.detached(priority: .utility) {
+                let isUnfiltered: Bool
+                switch status {
+                case .all:
+                    isUnfiltered = domain == nil && startedAtAfter == nil
+                case .normal, .abnormal:
+                    isUnfiltered = false
+                }
 
-            let loadedCount = await count
-            let loadedSeries = await series
-            let loadedDomains = await domains
+                if isUnfiltered {
+                    return store.loadSnapshotCount()
+                }
+                return store.loadListCount(
+                    status: status,
+                    domain: domain,
+                    startedAtAfter: startedAtAfter
+                )
+            }
+
+            let seriesTask = Task.detached(priority: .utility) {
+                store.loadDailyCountSeries()
+            }
+            let domainsTask = Task.detached(priority: .utility) {
+                store.loadRecentDomains()
+            }
+
+            // Publish the total independently. It should not wait for the chart
+            // or domain aggregation to finish.
+            let loadedCount = await countTask.value
             guard generation == self.reloadGeneration else { return }
             self.totalRecordCount = loadedCount
+
+            let loadedSeries = await seriesTask.value
+            let loadedDomains = await domainsTask.value
             self.dailyCountSeries = loadedSeries
             self.domains = loadedDomains
         }
@@ -682,11 +703,36 @@ public struct HTTPExchangeSettingsView: View {
         selectedDetail = detail
     }
 
-    private var totalCountLabel: String {
-        guard let totalRecordCount else {
-            return LumiPluginLocalization.string("Loading...", bundle: .module)
+    private var totalCountButton: some View {
+        AppButton(totalCountDisplay, systemImage: "arrow.up.arrow.down.circle", size: .small) {
+            isTotalCountPopoverPresented.toggle()
         }
-        return "\(totalRecordCount) " + LumiPluginLocalization.string("HTTP exchanges", bundle: .module)
+        .accessibilityLabel(LumiPluginLocalization.string("Total HTTP exchanges", bundle: .module))
+        .accessibilityValue(totalCountDisplay)
+        .help(LumiPluginLocalization.string("Show total HTTP exchange details", bundle: .module))
+        .popover(isPresented: $isTotalCountPopoverPresented, arrowEdge: .top) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(LumiPluginLocalization.string("Total HTTP exchanges", bundle: .module))
+                    .font(.appBodyEmphasized)
+
+                if let totalRecordCount {
+                    Text(totalRecordCount.formatted(.number.grouping(.automatic)))
+                        .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(theme.textPrimary)
+                }
+
+                Text(LumiPluginLocalization.string("The number of HTTP exchange records currently stored locally. Each request and response round trip counts as one exchange; this is a record count, not network traffic volume.", bundle: .module))
+                    .font(.appCaption)
+                    .foregroundStyle(theme.textSecondary)
+            }
+            .padding(14)
+            .frame(width: 300, alignment: .leading)
+        }
+    }
+
+    private var totalCountDisplay: String {
+        totalRecordCount.map(String.init) ?? "—"
     }
 
     private func statusText(for record: HTTPExchangeExportSnapshot) -> String {

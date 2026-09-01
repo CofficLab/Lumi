@@ -12,12 +12,6 @@
             "value" : ".pdf"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ".pdf"
-          }
-        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -64,12 +58,6 @@
     "%lld" : {
       "localizations" : {
         "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        },
-        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld"
@@ -248,6 +236,18 @@
             "state" : "translated",
             "value" : "将生成 %lld 个 PDF 文件"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將生成 %lld 個 PDF 檔案"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將生成 %lld 個 PDF 檔案"
+          }
         }
       }
     },
@@ -317,12 +317,6 @@
             "value" : "%lld."
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld."
-          }
-        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -340,12 +334,6 @@
     "%lld%%" : {
       "localizations" : {
         "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
-          }
-        },
-        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld%%"
@@ -394,41 +382,6 @@
         }
       }
     },
-    "2-up" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2-up"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "双页拼版"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "雙頁拼版"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "雙頁拼版"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "雙頁拼版"
-          }
-        }
-      }
-    },
     "A4" : {
       "localizations" : {
         "en" : {
@@ -438,12 +391,6 @@
           }
         },
         "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A4"
-          }
-        },
-        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "A4"
@@ -506,6 +453,18 @@
             "state" : "translated",
             "value" : "至少添加一个切分点"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "至少添加一個切分點"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "至少添加一個切分點"
+          }
         }
       }
     },
@@ -550,12 +509,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "按需调整边距、装订线、空白页补齐与裁切标记。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "依需調整邊距、裝訂線、空白頁補齊與裁切標記。"
           }
         },
         "zh-HK" : {
@@ -672,6 +625,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "还有 %lld 个…"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還有 %lld 個…"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還有 %lld 個…"
           }
         }
       }
@@ -836,6 +801,12 @@
             "value" : "小册子生成"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小冊子製作"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -862,12 +833,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "侧边栏中的小册子制作标签页"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "側邊欄中的小冊子製作標籤頁"
           }
         },
         "zh-HK" : {
@@ -898,12 +863,6 @@
             "value" : "小册子的页面会按折叠与装订需要重新排序;建议先打印一张测试。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "小冊子的頁面會按折疊與裝訂需要重新排序;建議先列印一張測試。"
-          }
-        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -931,6 +890,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "小册子设置"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小冊子設置"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小冊子設置"
           }
         }
       }
@@ -1036,12 +1007,6 @@
             "value" : "请使用新的输出名称,以免覆盖已有文件。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請使用新的輸出名稱,以免覆蓋既有檔案。"
-          }
-        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1099,6 +1064,18 @@
             "state" : "translated",
             "value" : "选择文件夹"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇檔案夾"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇檔案夾"
+          }
         }
       }
     },
@@ -1145,6 +1122,18 @@
             "state" : "translated",
             "value" : "选择拆分 PDF 的输出文件夹"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇拆分 PDF 的輸出檔案夾"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇拆分 PDF 的輸出檔案夾"
+          }
         }
       }
     },
@@ -1160,12 +1149,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "选择输出纸张大小与版式,例如「册页折叠」或「简单配对」。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇輸出紙張大小與版面配置,例如「冊頁折疊」或「簡單配對」。"
           }
         },
         "zh-HK" : {
@@ -1254,6 +1237,18 @@
             "state" : "translated",
             "value" : "点击页面之间的间隙来添加或移除切分点。"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點击頁面之間的間隙来添加或移除切分點。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點击頁面之間的間隙来添加或移除切分點。"
+          }
         }
       }
     },
@@ -1269,12 +1264,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "点击「导出小册子 PDF」,并选择保存位置。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點擊「匯出小冊子 PDF」,並選擇儲存位置。"
           }
         },
         "zh-HK" : {
@@ -1358,12 +1347,6 @@
           }
         },
         "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "核心能力"
-          }
-        },
-        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "核心能力"
@@ -1513,6 +1496,18 @@
             "state" : "translated",
             "value" : "制作小册子，或按页码范围拆分 PDF 文档。"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "制作小冊子，或按頁码范围拆分 PDF 文档。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "制作小冊子，或按頁码范围拆分 PDF 文档。"
+          }
         }
       }
     },
@@ -1530,6 +1525,18 @@
             "state" : "translated",
             "value" : "当前 PDF"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當前 PDF"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當前 PDF"
+          }
         }
       }
     },
@@ -1545,12 +1552,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "「当前 PDF」:左侧的放置区;将 PDF 拖到这里,或点击选择文件。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「目前 PDF」:左側的放置區;將 PDF 拖到這裡,或點擊選擇檔案。"
           }
         },
         "zh-HK" : {
@@ -1609,6 +1610,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "切分点必须在 1 到 %1$lld 之间（发现 %2$lld）。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切分點必须在 1 到 %1$lld 之間（发現 %2$lld）。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切分點必须在 1 到 %1$lld 之間（发現 %2$lld）。"
           }
         }
       }
@@ -1714,12 +1727,6 @@
             "value" : "将 PDF 拖入「当前 PDF」区域,或点击选择文件。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將 PDF 拖入「目前 PDF」區域,或點擊選擇檔案。"
-          }
-        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1730,41 +1737,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "將 PDF 拖入「目前 PDF」區域,或點擊選擇檔案。"
-          }
-        }
-      }
-    },
-    "Drop an A4 PDF into the Current PDF area, or click to choose one." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Drop an A4 PDF into the Current PDF area, or click to choose one."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将 A4 规格的 PDF 拖入「当前 PDF」区域,或点击选择文件。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將 A4 規格的 PDF 拖入「目前 PDF」區域,或點擊選擇檔案。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將 A4 規格的 PDF 拖入「目前 PDF」區域,或點擊選擇檔案。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將 A4 規格的 PDF 拖入「目前 PDF」區域,或點擊選擇檔案。"
           }
         }
       }
@@ -1781,12 +1753,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "双面打印"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "雙面列印"
           }
         },
         "zh-HK" : {
@@ -1817,40 +1783,17 @@
             "state" : "translated",
             "value" : "双面排版与装订"
           }
-        }
-      }
-    },
-    "Duplex Ready" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duplex Ready"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "双面就绪"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "雙面就緒"
-          }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "雙面就緒"
+            "value" : "双面排版与裝訂"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "雙面就緒"
+            "value" : "双面排版与裝訂"
           }
         }
       }
@@ -1869,6 +1812,18 @@
             "state" : "translated",
             "value" : "每个页码范围将保存为独立的 PDF 文件。"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每個頁码范围將保存为独立的 PDF 檔案。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每個頁码范围將保存为独立的 PDF 檔案。"
+          }
         }
       }
     },
@@ -1885,6 +1840,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用逗号或空格分隔页码。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用逗號或空格分隔頁码。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用逗號或空格分隔頁码。"
           }
         }
       }
@@ -1903,12 +1870,6 @@
             "value" : "以页码输入裁切点,例如「20, 50, 80」,并填写输出名称。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以頁碼輸入分割點,例如「20, 50, 80」,並填寫輸出名稱。"
-          }
-        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1919,41 +1880,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "以頁碼輸入分割點,例如「20, 50, 80」,並填寫輸出名稱。"
-          }
-        }
-      }
-    },
-    "Enter the cut points as page numbers, e.g. \\\"20, 50, 80\\\", and the output name." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter the cut points as page numbers, e.g. \\\"20, 50, 80\\\", and the output name."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以页码输入裁切点，例如「20, 50, 80」，并填写输出名称。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以页码输入裁切点，例如「20, 50, 80」，并填写输出名称。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以页码输入裁切点，例如「20, 50, 80」，并填写输出名称。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以页码输入裁切点，例如「20, 50, 80」，并填写输出名称。"
           }
         }
       }
@@ -1971,6 +1897,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "导出 %lld 个 PDF 文件"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出 %lld 個 PDF 檔案"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "導出 %lld 個 PDF 檔案"
           }
         }
       }
@@ -2134,6 +2072,18 @@
             "state" : "translated",
             "value" : "已导出 %lld 个 PDF 文件"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已導出 %lld 個 PDF 檔案"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已導出 %lld 個 PDF 檔案"
+          }
         }
       }
     },
@@ -2149,12 +2099,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "图 1 界面布局"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖 1 介面佈局"
           }
         },
         "zh-HK" : {
@@ -2214,6 +2158,18 @@
             "state" : "translated",
             "value" : "文件名不能为空。"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檔案名不能为空。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檔案名不能为空。"
+          }
         }
       }
     },
@@ -2230,6 +2186,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "文件名不能包含 / 或 :。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檔案名不能包含 / 或 :。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檔案名不能包含 / 或 :。"
           }
         }
       }
@@ -2292,41 +2260,6 @@
         }
       }
     },
-    "Fold & Staple" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fold & Staple"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "折叠装订"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "摺疊裝訂"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "摺疊裝訂"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "摺疊裝訂"
-          }
-        }
-      }
-    },
     "For example: 20, 50, 80" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2381,41 +2314,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正面"
-          }
-        }
-      }
-    },
-    "Front and back sheets for A4 double-sided printing." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Front and back sheets for A4 double-sided printing."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "生成 A4 双面打印的正反面页面。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "產生 A4 雙面列印的正反面頁面。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "產生 A4 雙面列印的正反面頁面。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "產生 A4 雙面列印的正反面頁面。"
           }
         }
       }
@@ -2478,41 +2376,6 @@
         }
       }
     },
-    "Imposition" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Imposition"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拼版"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拼版"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拼版"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拼版"
-          }
-        }
-      }
-    },
     "Interface" : {
       "localizations" : {
         "en" : {
@@ -2525,12 +2388,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "界面说明"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "介面說明"
           }
         },
         "zh-HK" : {
@@ -2561,6 +2418,18 @@
             "state" : "translated",
             "value" : "无效页码：%@"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无效頁码：%@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无效頁码：%@"
+          }
         }
       }
     },
@@ -2577,6 +2446,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ · %2$lld 页"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$lld 頁"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$lld 頁"
           }
         }
       }
@@ -2610,41 +2491,6 @@
         }
       }
     },
-    "Load any PDF and lay out its pages two-up." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Load any PDF and lay out its pages two-up."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加载任意 PDF，将页面双页拼版。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "載入任意 PDF，將頁面雙頁拼版。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "載入任意 PDF，將頁面雙頁拼版。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "載入任意 PDF，將頁面雙頁拼版。"
-          }
-        }
-      }
-    },
     "Making a Booklet" : {
       "localizations" : {
         "en" : {
@@ -2657,12 +2503,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "基本操作 - 生成小册子"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作 - 產生小冊子"
           }
         },
         "zh-HK" : {
@@ -2780,12 +2620,6 @@
             "value" : "注意事项"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意事項"
-          }
-        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2796,41 +2630,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "注意事項"
-          }
-        }
-      }
-    },
-    "Only A4 PDF files are supported." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Only A4 PDF files are supported."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "仅支持 A4 规格的 PDF 文件。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "僅支援 A4 規格的 PDF 檔案。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "僅支援 A4 規格的 PDF 檔案。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "僅支援 A4 規格的 PDF 檔案。"
           }
         }
       }
@@ -2860,41 +2659,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在開啟 PDF 工具…"
-          }
-        }
-      }
-    },
-    "Order pages so they fold into a stapled booklet." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Order pages so they fold into a stapled booklet."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "页面排序，折叠后即可装订成册。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "頁面排序，摺疊後即可裝訂成冊。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "頁面排序，摺疊後即可裝訂成冊。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "頁面排序，摺疊後即可裝訂成冊。"
           }
         }
       }
@@ -3000,6 +2764,18 @@
             "state" : "translated",
             "value" : "输出文件已存在：%@"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸出檔案已存在：%@"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸出檔案已存在：%@"
+          }
         }
       }
     },
@@ -3017,6 +2793,18 @@
             "state" : "translated",
             "value" : "输出文件名"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸出檔案名"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸出檔案名"
+          }
         }
       }
     },
@@ -3033,6 +2821,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "输出文件名不能重复。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸出檔案名不能重复。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸出檔案名不能重复。"
           }
         }
       }
@@ -3104,12 +2904,6 @@
           }
         },
         "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概述"
-          }
-        },
-        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "概述"
@@ -3200,6 +2994,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "页面序列"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "頁面序列"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "頁面序列"
           }
         }
       }
@@ -3345,41 +3151,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PDF 沒有頁面：%@"
-          }
-        }
-      }
-    },
-    "PDF Import" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PDF Import"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PDF 导入"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PDF 匯入"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PDF 匯入"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PDF 匯入"
           }
         }
       }
@@ -3688,6 +3459,18 @@
             "state" : "translated",
             "value" : "重命名第 %lld 个输出 PDF"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名第 %lld 個輸出 PDF"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名第 %lld 個輸出 PDF"
+          }
         }
       }
     },
@@ -3790,12 +3573,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "查看页序网格与拆分结果。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看頁序網格與分割結果。"
           }
         },
         "zh-HK" : {
@@ -3911,12 +3688,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "设置 → 小册子制作"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定 → 小冊子製作"
           }
         },
         "zh-HK" : {
@@ -4078,41 +3849,6 @@
         }
       }
     },
-    "Simple Pair and Booklet Fold layout modes." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simple Pair and Booklet Fold layout modes."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持 Simple Pair 与 Booklet Fold 布局模式。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援 Simple Pair 與 Booklet Fold 佈局模式。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援 Simple Pair 與 Booklet Fold 佈局模式。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援 Simple Pair 與 Booklet Fold 佈局模式。"
-          }
-        }
-      }
-    },
     "Spacing" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4185,6 +3921,18 @@
             "state" : "translated",
             "value" : "在指定页面之后切分"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在指定頁面之後切分"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在指定頁面之後切分"
+          }
         }
       }
     },
@@ -4202,6 +3950,18 @@
             "state" : "translated",
             "value" : "在这些页之后切分"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在這些頁之後切分"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在這些頁之後切分"
+          }
         }
       }
     },
@@ -4218,6 +3978,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "第 %1$lld–%2$lld 页"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$lld–%2$lld 頁"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$lld–%2$lld 頁"
           }
         }
       }
@@ -4294,6 +4066,18 @@
             "state" : "translated",
             "value" : "拆分结果"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拆分结果"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拆分结果"
+          }
         }
       }
     },
@@ -4311,6 +4095,18 @@
             "state" : "translated",
             "value" : "拆分设置"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拆分設置"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拆分設置"
+          }
         }
       }
     },
@@ -4326,12 +4122,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "基本操作 - 拆分 PDF"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作 - 分割 PDF"
           }
         },
         "zh-HK" : {
@@ -4391,12 +4181,6 @@
             "value" : "在工具栏中切换到「拆分 PDF」工具。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在工具列中切換到「分割 PDF」工具。"
-          }
-        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4454,12 +4238,6 @@
             "value" : "本手册介绍 PDF 工具的界面与基本操作:由 PDF 生成小册子以及拆分 PDF 文件。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本手冊介紹 PDF 工具的介面與基本操作:由 PDF 產生小冊子以及分割 PDF 檔案。"
-          }
-        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4486,12 +4264,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "「工具面板」:显示所选工具的选项及其操作按钮。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「工具面板」:顯示所選工具的選項及其操作按鈕。"
           }
         },
         "zh-HK" : {
@@ -4522,12 +4294,6 @@
             "value" : "工具设置"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具設定"
-          }
-        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4556,12 +4322,6 @@
             "value" : "工具栏"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工具列"
-          }
-        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4588,12 +4348,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "「工具栏」:在「小册子生成」与「拆分 PDF」两个工具之间切换。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「工具列」:在「小冊子產生」與「分割 PDF」兩個工具之間切換。"
           }
         },
         "zh-HK" : {
@@ -4635,41 +4389,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重試"
-          }
-        }
-      }
-    },
-    "Turn PDFs into 2-up imposition ready for A4 duplex printing, folding and stapling." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Turn PDFs into 2-up imposition ready for A4 duplex printing, folding and stapling."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将 PDF 转为 A4 双面打印、折页与装订所需的 2-up 拼版。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将 PDF 转为 A4 双面打印、折页与装订所需的 2-up 拼版。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将 PDF 转为 A4 双面打印、折页与装订所需的 2-up 拼版。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将 PDF 转为 A4 双面打印、折页与装订所需的 2-up 拼版。"
           }
         }
       }
@@ -4717,12 +4436,6 @@
             "value" : "使用手册"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用手冊"
-          }
-        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4746,12 +4459,6 @@
           }
         },
         "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用入口"
-          }
-        },
-        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用入口"
@@ -4796,6 +4503,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "也可以直接點按頁面預覽之間的空隙。"
+          }
+        }
+      }
+    },
+    "Create print-ready booklets from PDF documents." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create print-ready booklets from PDF documents."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从 PDF 文档制作可直接打印的小册子。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從 PDF 文件製作可直接列印的小冊子。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從 PDF 文件製作可直接列印的小冊子。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從 PDF 文件製作可直接列印的小冊子。"
           }
         }
       }

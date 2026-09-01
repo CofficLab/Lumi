@@ -2468,6 +2468,40 @@
           }
         }
       }
+    },
+    "Configure right-click actions and preview their behavior." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure right-click actions and preview their behavior."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配置右键操作并预览其行为。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定右鍵操作並預覽其行為。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定右鍵操作並預覽其行為。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定右鍵操作並預覽其行為。"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"

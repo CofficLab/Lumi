@@ -22,8 +22,8 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
     public let order = 79
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.app-icon-designer",
-        name: "App Icon Designer",
-        description: "",
+        name: AppIconDesignerLocalization.string("App Icon Designer"),
+        description: AppIconDesignerLocalization.string("Design app icons and export multiple sizes."),
         category: .design,
         stage: .stable,
         policy: .disabledByDefault

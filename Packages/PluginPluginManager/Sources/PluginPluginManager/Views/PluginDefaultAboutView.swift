@@ -57,7 +57,7 @@ struct PluginDefaultAboutView: View {
             }
 
             if !metadata.permissions.isEmpty {
-                LandingSection(title: "Permissions", icon: "hand.raised") {
+                LandingSection(title: PluginPluginManagerText.permissionsTitle, icon: "hand.raised") {
                     LandingInventory(
                         tint: theme.warning,
                         items: metadata.permissions.map {

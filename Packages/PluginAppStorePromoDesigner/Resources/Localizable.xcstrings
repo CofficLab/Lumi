@@ -184,10 +184,34 @@
     },
     "App Store Promo Designer" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Promo Designer"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "App Store 宣传图设计器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store 推廣圖設計器"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store 推廣圖設計器"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store 推廣圖設計器"
           }
         }
       }
@@ -2273,6 +2297,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用入口"
+          }
+        }
+      }
+    },
+    "Create App Store promo images and marketing assets." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create App Store promo images and marketing assets."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "制作 App Store 推广图与宣传素材。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "製作 App Store 推廣圖與宣傳素材。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "製作 App Store 推廣圖與宣傳素材。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "製作 App Store 推廣圖與宣傳素材。"
           }
         }
       }

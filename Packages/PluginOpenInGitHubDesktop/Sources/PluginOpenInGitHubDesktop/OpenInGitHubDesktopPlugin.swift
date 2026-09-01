@@ -16,8 +16,8 @@ public final class OpenInGitHubDesktopPlugin: SuperPlugin, SuperLog {
     public let order = 615
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.open-in-github-desktop",
-        name: "Open In GitHub Desktop",
-        description: "Allow LLM to open projects in GitHub Desktop.",
+        name: OpenInGitHubDesktopLocalization.string("Open In GitHub Desktop"),
+        description: OpenInGitHubDesktopLocalization.string("Allow LLM to open projects in GitHub Desktop."),
         category: .integration,
         stage: .stable,
         policy: .enabledByDefault

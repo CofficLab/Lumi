@@ -25,8 +25,8 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
     public let order = 279
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.terminal",
-        name: "Terminal",
-        description: "Integrated terminal sessions for the current project.",
+        name: LumiPluginLocalization.string("Terminal", bundle: .module),
+        description: LumiPluginLocalization.string("Integrated terminal sessions for the current project.", bundle: .module),
         category: .editor,
         stage: .preview,
         policy: .disabledByDefault

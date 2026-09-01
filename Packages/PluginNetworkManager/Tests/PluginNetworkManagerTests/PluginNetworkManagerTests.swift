@@ -123,6 +123,104 @@ import SQLite3
     #expect(series.points.last?.count == 0)
 }
 
+@Test func dailyHTTPExchangeCountCachePersistsCleanDaysAndInvalidatesDirtyDays() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("HTTPExchangeDailyCountCache-\(UUID().uuidString)", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: directory)
+    }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let cacheURL = directory.appendingPathComponent("daily-counts.json")
+    let dayKey = HTTPExchangeDailyCountCache.key(for: Date(timeIntervalSince1970: 86_400))
+    let cache = HTTPExchangeDailyCountCache(url: cacheURL)
+    let initialSnapshot = cache.snapshot(for: [dayKey])
+    #expect(initialSnapshot.counts.isEmpty)
+
+    #expect(cache.store([dayKey: 3], expectedVersions: initialSnapshot.versions) == Set([dayKey]))
+    let reloadedCache = HTTPExchangeDailyCountCache(url: cacheURL)
+    #expect(reloadedCache.snapshot(for: [dayKey]).counts[dayKey] == 3)
+
+    reloadedCache.invalidate(dayKey: dayKey)
+    #expect(reloadedCache.snapshot(for: [dayKey]).counts.isEmpty)
+}
+
+@Test func dailyHTTPExchangeCountCacheRejectsStaleReadAfterInvalidation() {
+    let cacheURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("HTTPExchangeDailyCountCache-\(UUID().uuidString).json")
+    defer {
+        try? FileManager.default.removeItem(at: cacheURL)
+    }
+
+    let cache = HTTPExchangeDailyCountCache(url: cacheURL)
+    let dayKey = HTTPExchangeDailyCountCache.key(for: Date(timeIntervalSince1970: 172_800))
+    let snapshot = cache.snapshot(for: [dayKey])
+    cache.invalidate(dayKey: dayKey)
+
+    #expect(cache.store([dayKey: 5], expectedVersions: snapshot.versions).isEmpty)
+    #expect(cache.snapshot(for: [dayKey]).counts.isEmpty)
+}
+
+@MainActor
+@Test func dailyHTTPExchangeSeriesPersistsHistoricalCountsAndRefreshesToday() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("HTTPExchangeDailySeries-\(UUID().uuidString)", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    let now = Date()
+    let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: now)!
+    let store = HTTPExchangeStore(directory: directory, startsRetentionMaintenance: false)
+
+    for index in 0..<2 {
+        _ = store.begin(
+            request: URLRequest(url: URL(string: "https://example.com/today/\(index)")!),
+            startedAt: now
+        )
+    }
+    _ = store.begin(
+        request: URLRequest(url: URL(string: "https://example.com/yesterday")!),
+        startedAt: yesterday
+    )
+
+    let initial = store.loadDailyCountSeries(days: 2, endingAt: now)
+    #expect(initial.points.map(\.count) == [1, 2])
+
+    let reloadedStore = HTTPExchangeStore(directory: directory, startsRetentionMaintenance: false)
+    let reloaded = reloadedStore.loadDailyCountSeries(days: 2, endingAt: now)
+    #expect(reloaded.points.map(\.count) == [1, 2])
+}
+
+@MainActor
+@Test func dailyHTTPExchangeSeriesInvalidatesCacheAfterRetentionDeletesRecords() async throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("HTTPExchangeDailyRetention-\(UUID().uuidString)", isDirectory: true)
+    defer {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    let now = Date()
+    let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: now)!
+    let store = HTTPExchangeStore(directory: directory, startsRetentionMaintenance: false)
+    _ = store.begin(
+        request: URLRequest(url: URL(string: "https://example.com/expired")!),
+        startedAt: twoDaysAgo
+    )
+
+    let beforeCleanup = store.loadDailyCountSeries(days: 3, endingAt: now)
+    #expect(beforeCleanup.points.map(\.count) == [1, 0, 0])
+
+    _ = await store.cleanupRetentionNow(
+        now: now,
+        retentionDays: 1,
+        maxRecordCount: 10_000
+    )
+
+    let afterCleanup = store.loadDailyCountSeries(days: 3, endingAt: now)
+    #expect(afterCleanup.points.map(\.count) == [0, 0, 0])
+}
+
 @Test func httpExchangeExportIncludesRequestResponseAndErrorDetails() {
     let record = HTTPExchangeRecord(
         startedAt: Date(timeIntervalSince1970: 0),
