@@ -10,6 +10,8 @@ public enum VendorAPIError: Error, LocalizedError, Sendable, Equatable {
     case invalidBaseURL(String)
     /// 服务返回空响应。
     case emptyResponse
+    /// 流式响应在收到协议终止信号前提前结束。
+    case incompleteStream
     /// HTTP 错误（状态码 + 摘要）。
     case httpStatus(Int, String)
     /// 底层网络/序列化错误。
@@ -27,6 +29,8 @@ public enum VendorAPIError: Error, LocalizedError, Sendable, Equatable {
             return "无效的 API 地址：\(url)"
         case .emptyResponse:
             return "服务返回了空响应"
+        case .incompleteStream:
+            return "流式响应在收到结束信号前中断"
         case .httpStatus(let code, let summary):
             return "服务返回 HTTP \(code)：\(summary)"
         case .requestFailed(let details):

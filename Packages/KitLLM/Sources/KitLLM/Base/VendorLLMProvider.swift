@@ -412,7 +412,12 @@ final class StreamingAccumulator: @unchecked Sendable {
         if let v = chunk.cacheWriteInputTokens { self.cacheWriteInputTokens = v }
         if let v = chunk.cacheTotalInputTokens { self.cacheTotalInputTokens = v }
         if let v = chunk.responseID { self.responseID = v }
-        if let v = chunk.stopReason { self.stopReason = v }
+        if let v = chunk.stopReason {
+            self.stopReason = v
+            // OpenAI-compatible gateways may send finish_reason without a
+            // trailing [DONE]; it is still an explicit protocol terminator.
+            finished = true
+        }
         if let rawEvent = chunk.rawEvent { rawStreamEvents.append(rawEvent) }
 
         // 思考增量
@@ -450,6 +455,7 @@ final class StreamingAccumulator: @unchecked Sendable {
 
     func finish(model: String) async throws -> LLMResponse {
         if let failure { throw failure }
+        guard finished else { throw VendorAPIError.incompleteStream }
         let finalCalls = toolCallOrder.compactMap { toolCalls[$0] }
         let rawStreamEventsJSON = try? String(
             data: JSONSerialization.data(withJSONObject: rawStreamEvents),
