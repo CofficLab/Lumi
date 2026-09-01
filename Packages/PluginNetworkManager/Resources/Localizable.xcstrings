@@ -3010,6 +3010,74 @@
           }
         }
       }
+    },
+    "Network Manager" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network Manager"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "网络管理"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網絡管理"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網絡管理"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網路管理"
+          }
+        }
+      }
+    },
+    "Monitor upload/download speed, traffic statistics, and process usage in real time; view network status from the menu bar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monitor upload/download speed, traffic statistics, and process usage in real time; view network status from the menu bar."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时监控上传下载速度、流量统计与进程占用，菜单栏即可一览网络状态。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時監控上傳下載速度、流量統計與程序占用，選單列即可一覽網路狀態。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時監控上傳下載速度、流量統計與程序占用，選單列即可一覽網絡狀態。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即時監控上傳下載速度、流量統計與程式占用，選單列即可一覽網路狀態。"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"
