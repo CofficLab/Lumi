@@ -286,6 +286,14 @@ struct ProviderRootViewTests {
         #expect(provider.hasActiveContent)
         #expect(type(of: provider.makeRootView()) == AnyView.self)
 
+        provider.setContentFooterViewHidden(true)
+        #expect(provider.isContentFooterViewHidden)
+        #expect(!provider.hasActiveContent)
+
+        provider.setContentFooterViewHidden(false)
+        #expect(!provider.isContentFooterViewHidden)
+        #expect(provider.hasActiveContent)
+
         provider.setContentFooterView(nil)
         #expect(!provider.hasActiveContent)
     }

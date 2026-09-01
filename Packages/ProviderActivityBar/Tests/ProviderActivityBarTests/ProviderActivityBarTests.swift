@@ -15,6 +15,15 @@ struct ProviderActivityBarTests {
         #expect(item.id == "files")
         #expect(item.title == "Files")
         #expect(item.systemImage == "folder")
+        #expect(!item.preservesContentFooter)
+
+        let editorItem = ActivityBarItem(
+            id: "editor",
+            title: "Editor",
+            systemImage: "chevron.left.forwardslash.chevron.right",
+            preservesContentFooter: true
+        )
+        #expect(editorItem.preservesContentFooter)
     }
 
     @Test("DefaultActivityBarProviding 注入 items 后可读取且按 order 排序")

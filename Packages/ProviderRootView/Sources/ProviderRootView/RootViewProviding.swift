@@ -89,6 +89,10 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     /// Footer 与 Header、主内容视图独立贡献，显示在主内容视图下方。
     func setContentFooterView(_ view: AnyView?)
 
+    /// 设置主内容区底部视图的显隐；隐藏时保留 Footer 注入内容及其状态。
+    var isContentFooterViewHidden: Bool { get }
+    func setContentFooterViewHidden(_ hidden: Bool)
+
     /// 当前 Content Footer 的有效高度。
     var contentFooterHeight: ContentFooterHeight { get }
 
@@ -139,6 +143,8 @@ public extension RootViewProviding {
     func removeOverlays(ids: Set<String>) {}
     func setContentViewHidden(_ hidden: Bool) {}
     func setContentHeaderViewHidden(_ hidden: Bool) {}
+    var isContentFooterViewHidden: Bool { false }
+    func setContentFooterViewHidden(_ hidden: Bool) {}
     func setRailViewVisible(_ visible: Bool) {}
     func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>) {}
     var railWidth: RailViewWidth { .standard }

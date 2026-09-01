@@ -20,6 +20,7 @@ let package = Package(
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderPluginManaging"),
         .package(path: "../ProviderStorage"),
+        .package(path: "../ProviderRootView"),
     ],
     targets: [
         .target(
@@ -31,6 +32,7 @@ let package = Package(
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
             ]
         ),
         .testTarget(
@@ -39,6 +41,7 @@ let package = Package(
                 "PluginActivityBar",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
             ]
         ),

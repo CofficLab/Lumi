@@ -16,6 +16,7 @@ struct RootMainContentView: View {
     let isContentHeaderViewHidden: Bool
     let contentView: AnyView?
     let contentFooterView: AnyView?
+    let isContentFooterViewHidden: Bool
     let contentFooterHeight: ContentFooterHeight
     let onContentFooterResize: (@MainActor (CGFloat) -> Void)?
     let isContentViewHidden: Bool
@@ -25,6 +26,7 @@ struct RootMainContentView: View {
         isContentHeaderViewHidden: Bool,
         contentView: AnyView?,
         contentFooterView: AnyView?,
+        isContentFooterViewHidden: Bool = false,
         contentFooterHeight: ContentFooterHeight = .standard,
         onContentFooterResize: (@MainActor (CGFloat) -> Void)? = nil,
         isContentViewHidden: Bool,
@@ -34,6 +36,7 @@ struct RootMainContentView: View {
         self.isContentHeaderViewHidden = isContentHeaderViewHidden
         self.contentView = contentView
         self.contentFooterView = contentFooterView
+        self.isContentFooterViewHidden = isContentFooterViewHidden
         self.contentFooterHeight = contentFooterHeight
         self.onContentFooterResize = onContentFooterResize
         self.isContentViewHidden = isContentViewHidden
@@ -50,7 +53,7 @@ struct RootMainContentView: View {
 
     @ViewBuilder
     private var contentWithHeaderAndFooter: some View {
-        if let contentFooterView {
+        if let contentFooterView, !isContentFooterViewHidden {
             #if os(macOS)
             VSplitView {
                 contentWithHeader
@@ -102,7 +105,9 @@ struct RootMainContentView: View {
     /// 当入口不需要独立的主内容区时（如 ChatPanel，激活时 `contentView` 被置 nil），
     /// 三个插槽均为 nil，布局层据此跳过主内容区，让 trailing pane 独占。
     private var hasMainContent: Bool {
-        (contentHeaderView != nil && !isContentHeaderViewHidden) || contentView != nil || contentFooterView != nil
+        (contentHeaderView != nil && !isContentHeaderViewHidden)
+            || contentView != nil
+            || (contentFooterView != nil && !isContentFooterViewHidden)
     }
 
     var body: some View {

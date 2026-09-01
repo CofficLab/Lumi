@@ -4,6 +4,7 @@ import os
 import ProviderActivityBar
 import KitSuperLog
 import ProviderPluginManaging
+import ProviderRootView
 import ProviderStorage
 
 /// ActivityBar 自定义插件（KernelCore 生态）。
@@ -44,6 +45,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
     /// 插件管理 Provider 的精准观察令牌；deinit 时自动取消。
     private var pluginManagerObserver: (any PluginManagingObserverHandle)?
     private var pluginManager: (any PluginManaging)?
+    private weak var rootView: (any RootViewProviding)?
 
     /// 上一次快照：已注册且启用的插件 id 集合，用于 diff 检测变化。
     private var lastKnownEnabledPluginIDs: Set<String> = []
@@ -108,10 +110,13 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         }
         // 预留：业务插件可在此处追加默认入口
         provider.bootstrapBuiltInItems()
-        restorePendingActiveItemIfAvailable(provider)
-        provider.onActiveItemChanged = { [weak self] id in
+        rootView = kernel.resolveProvider((any RootViewProviding).self)
+        provider.onActiveItemChanged = { [weak self, weak provider] id in
             self?.stateStore?.saveActiveItemID(id)
+            self?.syncContentFooterVisibility(provider: provider)
         }
+        restorePendingActiveItemIfAvailable(provider)
+        syncContentFooterVisibility(provider: provider)
         if Self.verbose {
             Self.logger.info("\(Self.t)bootstrapped built-in items: \(provider.items.count, privacy: .public) 项")
         }
@@ -135,6 +140,8 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         pluginManager = nil
         provider?.onActiveItemChanged = nil
         provider = nil
+        rootView?.setContentFooterViewHidden(false)
+        rootView = nil
         stateStore = nil
         pendingActiveItemID = nil
         lastKnownEnabledPluginIDs = []
@@ -163,6 +170,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         restorePendingActiveItemIfAvailable(provider)
 
         lastKnownEnabledPluginIDs = currentIDs
+        syncContentFooterVisibility(provider: provider)
     }
 
     /// 获取当前所有已注册且启用的插件 id 集合。
@@ -178,5 +186,10 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
 
         provider.activateItem(id: pendingActiveItemID)
         self.pendingActiveItemID = nil
+    }
+
+    private func syncContentFooterVisibility(provider: ActivityBarProvider?) {
+        let shouldPreserve = provider?.items.first(where: { $0.id == provider?.activeItemID })?.preservesContentFooter ?? false
+        rootView?.setContentFooterViewHidden(!shouldPreserve)
     }
 }

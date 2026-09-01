@@ -34,6 +34,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published public private(set) var overlays: [RootOverlayItem] = []
     @Published public private(set) var isContentViewHidden: Bool = false
     @Published public private(set) var isContentHeaderViewHidden: Bool = false
+    @Published public private(set) var isContentFooterViewHidden: Bool = false
     private var railVisibilitySubscription: AnyCancellable?
     private var railWidthSubscription: AnyCancellable?
     private var railWidthResizeHandler: (@MainActor (CGFloat) -> Void)?
@@ -179,6 +180,14 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         }
     }
 
+    public func setContentFooterViewHidden(_ hidden: Bool) {
+        guard isContentFooterViewHidden != hidden else { return }
+        isContentFooterViewHidden = hidden
+        if Self.verbose {
+            Self.logger.debug("\(self.t)set content footer hidden: \(hidden)")
+        }
+    }
+
     public func setContentViewHidden(_ hidden: Bool) {
         guard isContentViewHidden != hidden else { return }
         isContentViewHidden = hidden
@@ -241,6 +250,9 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     /// 内容插件的容器状态不是根视图渲染的必要条件。ChatPanel 由
     /// ActivityBar + ChatSection 驱动，只要 trailing pane 可见就应正常显示。
     var hasActiveContent: Bool {
-        return contentHeaderView != nil || contentView != nil || contentFooterView != nil || trailingPane?.isVisible == true
+        return contentHeaderView != nil
+            || contentView != nil
+            || (contentFooterView != nil && !isContentFooterViewHidden)
+            || trailingPane?.isVisible == true
     }
 }
