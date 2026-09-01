@@ -1,0 +1,24 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Context Window" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Context Window" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "上下文窗口" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "上下文窗口" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "上下文窗口" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "上下文窗口" } }
+      }
+    },
+    "No token usage data yet" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No token usage data yet" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "暂无令牌使用数据" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "暂无令牌使用数据" } },
+        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "暂无令牌使用数据" } },
+        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "暂无令牌使用数据" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

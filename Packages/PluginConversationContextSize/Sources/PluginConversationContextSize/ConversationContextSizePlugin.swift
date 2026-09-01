@@ -8,16 +8,15 @@ import ProviderMessage
 import KitSuperLog
 import SwiftUI
 
-/// 上下文窗口大小插件
+/// 上下文窗口大小插件。
 ///
-/// 在 Chat 工具栏显示当前模型的上下文窗口大小和已用 token 数。
-///
-/// 复刻自旧版 `Plugins/ConversationContextSizePlugin`：
-/// - 通过 `LLMManaging` 获取当前供应商的模型元数据（上下文窗口大小）
-/// - 通过 `MessageManaging` 获取最后一条消息的 inputTokenCount 作为已用量
+/// 在 Chat 工具栏显示当前模型的上下文窗口大小和最近一次请求的输入 token 数。
 @MainActor
 public final class ConversationContextSizePlugin: SuperPlugin, SuperLog {
-    nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.conversation-context-size", category: "ConversationContextSize")
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi.plugin.conversation-context-size",
+        category: "ConversationContextSize"
+    )
 
     public let id = "com.coffic.conversation-context-size"
     public let order = 85
@@ -27,11 +26,10 @@ public final class ConversationContextSizePlugin: SuperPlugin, SuperLog {
         description: "",
         category: .chat,
         stage: .stable,
-        policy: .alwaysOn
+        policy: .required
     )
 
     public init() {}
-
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
@@ -45,7 +43,7 @@ public final class ConversationContextSizePlugin: SuperPlugin, SuperLog {
         chat.addBarItems([
             ChatSectionBarItem(
                 id: "\(id).toolbar-button",
-                order: 85,
+                order: order,
                 placement: .toolbarLeading
             ) {
                 ContextSizeToolbarView(

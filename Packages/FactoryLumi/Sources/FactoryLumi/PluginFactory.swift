@@ -45,6 +45,7 @@ import PluginChatPanel
 import PluginChatScreenshot
 import PluginConversationBehavior
 import PluginConversationCacheHitRate
+import PluginConversationContextSize
 import PluginConversationFork
 import PluginConversationInput
 import PluginConversationList

@@ -4,7 +4,7 @@ import ProviderLLMVendors
 import ProviderMessage
 import SwiftUI
 
-/// 上下文窗口大小工具栏视图
+/// 上下文窗口大小工具栏视图。
 struct ContextSizeToolbarView: View {
     let conversations: any ConversationManaging
     let messages: any MessageManaging
@@ -15,9 +15,9 @@ struct ContextSizeToolbarView: View {
     @State private var isPopoverPresented = false
     @State private var selectedConversationID: UUID?
 
-    // 观察者令牌
     @State private var conversationObserver: (any SelectedConversationObserverHandle)?
     @State private var messageObserver: (any MessageInsertedObserverHandle)?
+    @State private var llmObserver: (any LLMManagerObserverHandle)?
 
     var body: some View {
         Group {
@@ -36,18 +36,22 @@ struct ContextSizeToolbarView: View {
         }
         .task {
             selectedConversationID = conversations.selectedConversationID
-            // 注册观察者
             conversationObserver = conversations.addSelectedConversationObserver { newID in
                 selectedConversationID = newID
             }
             messageObserver = messages.addMessageInsertedObserver { _, conversationID in
-                if conversationID == conversations.selectedConversationID {
-                    Task(priority: .utility) { @MainActor in
-                        await Task.yield()
-                        guard !Task.isCancelled,
-                              conversationID == conversations.selectedConversationID else { return }
-                        await refreshUsedTokens(for: conversationID)
-                    }
+                guard conversationID == conversations.selectedConversationID else { return }
+                Task(priority: .utility) { @MainActor in
+                    await Task.yield()
+                    guard !Task.isCancelled,
+                          conversationID == conversations.selectedConversationID else { return }
+                    await refreshUsedTokens(for: conversationID)
+                }
+            }
+            llmObserver = llmManager.addObserver { _ in
+                Task { @MainActor in
+                    guard !Task.isCancelled else { return }
+                    await refreshSize(for: selectedConversationID)
                 }
             }
         }
@@ -55,6 +59,14 @@ struct ContextSizeToolbarView: View {
             await Task.yield()
             guard !Task.isCancelled else { return }
             await refreshSize(for: selectedConversationID)
+        }
+        .onDisappear {
+            conversationObserver?.cancel()
+            messageObserver?.cancel()
+            llmObserver?.cancel()
+            conversationObserver = nil
+            messageObserver = nil
+            llmObserver = nil
         }
     }
 
@@ -119,22 +131,15 @@ struct ContextSizeToolbarView: View {
             return
         }
         let allMessages = messages.messages(for: conversationID)
-        // 最后一条有 inputTokenCount 的消息（通常是最近一次 assistant 回复）
-        let lastMessageWithTokens = allMessages.last { $0.inputTokenCount != nil }
-        usedTokens = lastMessageWithTokens?.inputTokenCount
+        usedTokens = allMessages.last { $0.inputTokenCount != nil }?.inputTokenCount
     }
 }
-
-// MARK: - Helpers
 
 private func colorForUsage(used: Int?, max: Int) -> Color {
     guard let used, max > 0 else { return .secondary }
     let ratio = Double(used) / Double(max)
-    if ratio >= 0.9 {
-        return .red
-    } else if ratio >= 0.75 {
-        return .orange
-    }
+    if ratio >= 0.9 { return .red }
+    if ratio >= 0.75 { return .orange }
     return .secondary
 }
 
@@ -144,8 +149,6 @@ private func contextTooltip(used: Int?, max: Int) -> String {
     }
     return "Context window: \(max.formattedContextSize) tokens"
 }
-
-// MARK: - Popover
 
 private struct ContextSizePopover: View {
     let used: Int?
@@ -171,7 +174,6 @@ private struct ContextSizePopover: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
 
-                // 进度条
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 3)

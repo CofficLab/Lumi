@@ -2,11 +2,11 @@
 import PackageDescription
 
 let package = Package(
-    name: "PluginConversationStats",
+    name: "PluginConversationContextSize",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "PluginConversationStats", targets: ["PluginConversationStats"]),
+        .library(name: "PluginConversationContextSize", targets: ["PluginConversationContextSize"]),
     ],
     dependencies: [
         .package(path: "../KernelCore"),
@@ -14,30 +14,30 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
-        .package(path: "../ProviderAgentLoop"),
-        .package(path: "../LumiUI"),
+        .package(path: "../ProviderLLMManager"),
+        .package(path: "../ProviderLLMVendors"),
         .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
-            name: "PluginConversationStats",
+            name: "PluginConversationContextSize",
             dependencies: [
                 "KernelCore",
                 "KitSuperLog",
                 "ProviderChatSection",
                 "ProviderConversation",
                 "ProviderMessage",
-                "ProviderAgentLoop",
-                "LumiUI",
+                "ProviderLLMManager",
+                "ProviderLLMVendors",
                 .product(name: "KitLocalization", package: "KitLocalization"),
             ],
-            path: "Sources/PluginConversationStats",
+            path: "Sources/PluginConversationContextSize",
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
-            name: "PluginConversationStatsTests",
-            dependencies: ["PluginConversationStats"],
-            path: "Tests/PluginConversationStatsTests"
+            name: "PluginConversationContextSizeTests",
+            dependencies: ["PluginConversationContextSize"],
+            path: "Tests/PluginConversationContextSizeTests"
         ),
     ]
 )
