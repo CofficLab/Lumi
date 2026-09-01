@@ -7,11 +7,16 @@ import os
 /// cleanup runs against its own background model context.
 private actor HTTPExchangeRetentionCoordinator {
     private let container: ModelContainer?
+    private let onRecordsDeleted: @Sendable () -> Void
     private var scheduledTask: Task<Void, Never>?
     private var periodicTask: Task<Void, Never>?
 
-    init(container: ModelContainer?) {
+    init(
+        container: ModelContainer?,
+        onRecordsDeleted: @escaping @Sendable () -> Void = {}
+    ) {
         self.container = container
+        self.onRecordsDeleted = onRecordsDeleted
     }
 
     deinit {
@@ -39,6 +44,7 @@ private actor HTTPExchangeRetentionCoordinator {
                 maxRecordCount: maxRecordCount
             )
             if deletedCount > 0 {
+                self.onRecordsDeleted()
                 NotificationCenter.default.post(name: notification, object: nil)
             }
             await self.clearScheduledTask()
@@ -67,6 +73,7 @@ private actor HTTPExchangeRetentionCoordinator {
                     maxRecordCount: maxRecordCount
                 )
                 if deletedCount > 0 {
+                    coordinator.onRecordsDeleted()
                     NotificationCenter.default.post(name: notification, object: nil)
                 }
             }
@@ -134,6 +141,7 @@ private actor HTTPExchangeRetentionCoordinator {
 @MainActor
 public final class HTTPExchangeStore {
     public static let databaseFileName = "http-exchanges.sqlite"
+    private static let dailyCountCacheFileName = "http-daily-counts.json"
     public nonisolated static let retentionDays = 30
     public nonisolated static let maxRecordCount = 10_000
     /// `nonisolated`:后台写入路径(`beginRecord`/`finishRecord`)需要 post 此通知,
@@ -144,6 +152,7 @@ public final class HTTPExchangeStore {
     /// the main actor, so this is exposed `nonisolated` to let the background
     /// snapshot readers build their own private `ModelContext`.
     private nonisolated let container: ModelContainer?
+    private nonisolated let dailyCountCache: HTTPExchangeDailyCountCache
     private let context: ModelContext?
     private nonisolated let retentionCoordinator: HTTPExchangeRetentionCoordinator
 
@@ -156,6 +165,10 @@ public final class HTTPExchangeStore {
     init(directory: URL, startsRetentionMaintenance: Bool) {
         self.directory = directory.appendingPathComponent("HTTP", isDirectory: true)
         try? FileManager.default.createDirectory(at: self.directory, withIntermediateDirectories: true)
+        let dailyCountCache = HTTPExchangeDailyCountCache(
+            url: self.directory.appendingPathComponent(Self.dailyCountCacheFileName)
+        )
+        self.dailyCountCache = dailyCountCache
 
         do {
             let schema = Schema([HTTPExchangeRecord.self])
@@ -167,12 +180,22 @@ public final class HTTPExchangeStore {
             let container = try ModelContainer(for: schema, configurations: [configuration])
             self.container = container
             self.context = ModelContext(container)
-            self.retentionCoordinator = HTTPExchangeRetentionCoordinator(container: container)
+            self.retentionCoordinator = HTTPExchangeRetentionCoordinator(
+                container: container,
+                onRecordsDeleted: {
+                    dailyCountCache.invalidateAll()
+                }
+            )
             Self.ensureStartedAtIndex(at: configuration.url)
         } catch {
             self.container = nil
             self.context = nil
-            self.retentionCoordinator = HTTPExchangeRetentionCoordinator(container: nil)
+            self.retentionCoordinator = HTTPExchangeRetentionCoordinator(
+                container: nil,
+                onRecordsDeleted: {
+                    dailyCountCache.invalidateAll()
+                }
+            )
             NetworkManagerPlugin.logger.error("HTTP exchange SwiftData 初始化失败: \(error.localizedDescription)")
         }
 
@@ -202,7 +225,12 @@ public final class HTTPExchangeStore {
             ])
         )
         context.insert(record)
-        save(context)
+        if save(context) {
+            dailyCountCache.invalidate(
+                dayKey: HTTPExchangeDailyCountCache.key(for: Calendar.current.startOfDay(for: startedAt)),
+                persist: !Calendar.current.isDateInToday(startedAt)
+            )
+        }
         NotificationCenter.default.post(name: Self.didChangeNotification, object: nil)
         scheduleRetentionCleanup()
         return record
@@ -549,6 +577,10 @@ public final class HTTPExchangeStore {
             NetworkManagerPlugin.logger.error("HTTP exchange 后台 begin 保存失败: \(error.localizedDescription)")
             return nil
         }
+        dailyCountCache.invalidate(
+            dayKey: HTTPExchangeDailyCountCache.key(for: Calendar.current.startOfDay(for: startedAt)),
+            persist: !Calendar.current.isDateInToday(startedAt)
+        )
         Self.postDidChange()
         scheduleRetentionCleanup()
         return id
@@ -625,6 +657,7 @@ public final class HTTPExchangeStore {
             maxRecordCount: maxRecordCount
         )
         if deletedCount > 0 {
+            dailyCountCache.invalidateAll()
             Self.postDidChange()
         }
         return deletedCount
@@ -813,12 +846,11 @@ public final class HTTPExchangeStore {
         return domains.sorted()
     }
 
-    /// Recent activity chart, built with count queries that never materialize
-    /// HTTP exchange bodies.
+    /// Recent activity chart backed by a small persistent daily-count cache.
     ///
-    /// This deliberately uses one `fetchCount` per day instead of fetching the
-    /// whole 14-day window. HTTP request bodies can be very large, so a normal
-    /// model fetch here can turn a small chart into a multi-gigabyte read.
+    /// Historical days are reused after the first read. The current day and
+    /// missing/invalidated days are refreshed in one metadata-only fetch, which
+    /// never materializes request or response bodies.
     nonisolated func loadDailyCountSeries(
         days: Int = 14,
         endingAt date: Date = Date()
@@ -833,21 +865,75 @@ public final class HTTPExchangeStore {
             return HTTPExchangeDailyCountSeries(points: [])
         }
 
-        let points = (0..<days).compactMap { offset -> HTTPExchangeDailyCountPoint? in
+        let dayRanges = (0..<days).compactMap { offset -> (day: Date, nextDay: Date, key: String)? in
             guard let day = calendar.date(byAdding: .day, value: offset, to: firstDay),
                   let nextDay = calendar.date(byAdding: .day, value: 1, to: day) else {
                 return nil
             }
+            return (day, nextDay, HTTPExchangeDailyCountCache.key(for: day))
+        }
+        guard dayRanges.count == days else {
+            return HTTPExchangeDailyCountSeries(points: [])
+        }
 
-            let descriptor = FetchDescriptor<HTTPExchangeRecord>(
+        let todayKey = HTTPExchangeDailyCountCache.key(for: today)
+        let keys = dayRanges.map(\.key)
+        let snapshot = dailyCountCache.snapshot(for: keys)
+        let daysToRefresh = dayRanges.filter {
+            $0.key == todayKey || snapshot.counts[$0.key] == nil
+        }
+
+        var countsByKey = Dictionary(
+            uniqueKeysWithValues: dayRanges.map { ($0.key, snapshot.counts[$0.key] ?? 0) }
+        )
+
+        if !daysToRefresh.isEmpty,
+           let refreshStart = daysToRefresh.first?.day,
+           let refreshEnd = daysToRefresh.last?.nextDay {
+            var descriptor = FetchDescriptor<HTTPExchangeRecord>(
                 predicate: #Predicate<HTTPExchangeRecord> {
-                    $0.startedAt >= day && $0.startedAt < nextDay
+                    $0.startedAt >= refreshStart && $0.startedAt < refreshEnd
                 }
             )
-            let count = (try? context.fetchCount(descriptor)) ?? 0
-            return HTTPExchangeDailyCountPoint(day: day, count: count)
+            // The chart only needs timestamps. In particular, do not load the
+            // request/response BLOBs from this multi-gigabyte store.
+            descriptor.propertiesToFetch = [\.startedAt]
+            let records = (try? context.fetch(descriptor)) ?? []
+            let refreshKeys = Set(daysToRefresh.map(\.key))
+            var refreshedCounts = Dictionary(
+                uniqueKeysWithValues: refreshKeys.map { ($0, 0) }
+            )
+
+            for record in records {
+                let key = HTTPExchangeDailyCountCache.key(
+                    for: calendar.startOfDay(for: record.startedAt)
+                )
+                if refreshKeys.contains(key) {
+                    refreshedCounts[key, default: 0] += 1
+                }
+            }
+
+            countsByKey.merge(refreshedCounts, uniquingKeysWith: { _, refreshed in refreshed })
+
+            // The current day is deliberately not persisted: it changes on
+            // every request and is always refreshed on the next chart load.
+            let historicalCounts = refreshedCounts.filter { $0.key != todayKey }
+            if !historicalCounts.isEmpty {
+                let historicalVersions = snapshot.versions.filter {
+                    historicalCounts[$0.key] != nil
+                }
+                dailyCountCache.store(
+                    historicalCounts,
+                    expectedVersions: historicalVersions
+                )
+            }
         }
-        return HTTPExchangeDailyCountSeries(points: points)
+
+        return HTTPExchangeDailyCountSeries(
+            points: dayRanges.map {
+                HTTPExchangeDailyCountPoint(day: $0.day, count: countsByKey[$0.key] ?? 0)
+            }
+        )
     }
 
     public func finish(
@@ -888,11 +974,14 @@ public final class HTTPExchangeStore {
         scheduleRetentionCleanup()
     }
 
-    private func save(_ context: ModelContext) {
+    @discardableResult
+    private func save(_ context: ModelContext) -> Bool {
         do {
             try context.save()
+            return true
         } catch {
             NetworkManagerPlugin.logger.error("HTTP exchange SwiftData 保存失败: \(error.localizedDescription)")
+            return false
         }
     }
 
