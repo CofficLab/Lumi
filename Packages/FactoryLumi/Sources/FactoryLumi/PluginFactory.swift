@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import PluginAgentRules
 import PluginAgentTempStorage
+import PluginAgentPlanStorage
 import PluginAgentTurnNotification
 import PluginDebugBadge
 import PluginFileLog
@@ -164,6 +165,7 @@ public struct DefaultPluginFactory: PluginFactory {
             WebServerPlugin(),
             AgentRulesPlugin(),
             AgentTempStoragePlugin(),
+            AgentPlanStoragePlugin(),
             OcrPlugin(),
             AppStoreConnectPlugin(),
             AppIconDesignerPlugin(),
