@@ -28,7 +28,13 @@ extension AgentLoopManager {
         if Self.verbose {
             Self.logger.info("\(Self.t)handle batch begin conversation=\(conversationID.uuidString.prefix(8)), turn=\(eventTurnID?.uuidString.prefix(8) ?? "nil"), calls=\(toolCalls.map { $0.id }), results=\(results.count)")
         }
-        guard var runtime = runtimes[conversationID] else {
+        guard let firstToolCall = toolCalls.first,
+              prepareRuntimeForToolResult(
+                  conversationID: conversationID,
+                  eventTurnID: eventTurnID,
+                  toolCall: firstToolCall
+              ),
+              var runtime = runtimes[conversationID] else {
             if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：找不到会话运行时 conversation=\(conversationID.uuidString.prefix(8))") }
             return
         }
@@ -132,9 +138,97 @@ extension AgentLoopManager {
 
         runtimes[conversationID] = runtime
         if Self.verbose { Self.logger.info("\(Self.t)handle batch end phase=\(String(describing: runtime.phase)), taskIsNil=\(runtime.task == nil)") }
-        if case .requestingLLM = runtime.phase {
+        continueAfterToolResults(runtime: runtime, conversationID: conversationID, turnID: turnID)
+    }
+
+    /// 授权按钮可能在回合仍处于 `awaitingUser` 时被点击，也可能在应用重启后
+    /// 才被点击。两种情况下都必须先把当前工具放回 `executingTools`，否则
+    /// `authorizedCompleted` 事件没有状态机可以消费，结果只会停留在 ToolManager。
+    @discardableResult
+    private func prepareRuntimeForToolResult(
+        conversationID: UUID,
+        eventTurnID: UUID?,
+        toolCall: AgentLoopToolCall
+    ) -> Bool {
+        if var runtime = runtimes[conversationID] {
+            switch runtime.phase {
+            case .executingTools:
+                return true
+            case .awaitingUser(let turnID, let assistantMessageID, let pending, let suspension):
+                guard suspension.toolCallID == toolCall.id else { return false }
+                let current = MessageToolCall(
+                    id: toolCall.id,
+                    name: toolCall.name,
+                    arguments: toolCall.arguments
+                )
+                runtime.phase = .executingTools(
+                    turnID: turnID,
+                    assistantMessageID: assistantMessageID,
+                    pendingToolCalls: [current] + pending.filter { $0.id != toolCall.id }
+                )
+                runtime.pendingSuspensions.removeValue(forKey: toolCall.id)
+                runtimes[conversationID] = runtime
+                return true
+            default:
+                return false
+            }
+        }
+
+        // 进程重启后 runtimes 为空。assistant 消息是此时仍然可靠的持久化
+        // 来源：它同时包含 turnID、assistant message ID 和完整工具调用列表。
+        guard let assistantMessage = messages.messages(for: conversationID)
+            .reversed()
+            .first(where: { message in
+                message.role == .assistant
+                    && message.toolCalls?.contains(where: { $0.id == toolCall.id }) == true
+            }),
+            let toolCalls = assistantMessage.toolCalls,
+            let current = toolCalls.first(where: { $0.id == toolCall.id }) else {
+            return false
+        }
+
+        let turnID = eventTurnID ?? assistantMessage.turnID ?? UUID()
+        let pending = toolCalls.filter { candidate in
+            candidate.id == current.id
+                || candidate.result == nil
+                || candidate.result?.awaitingUserResponse == true
+        }
+        guard pending.contains(where: { $0.id == current.id }) else { return false }
+
+        runtimes[conversationID] = TurnRuntime(
+            phase: .executingTools(
+                turnID: turnID,
+                assistantMessageID: assistantMessage.id,
+                pendingToolCalls: pending
+            )
+        )
+        Self.logger.info(
+            "\(Self.t)已从历史消息恢复授权工具回合 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), toolCall=\(toolCall.id)"
+        )
+        notify(.started(conversationID: conversationID, turnID: turnID))
+        return true
+    }
+
+    /// 统一处理工具结果后的状态机推进：批次中若还有待执行工具，继续发出
+    /// 工具事件；批次结束后才启动下一次 LLM 请求。
+    private func continueAfterToolResults(
+        runtime: TurnRuntime,
+        conversationID: UUID,
+        turnID: UUID
+    ) {
+        switch runtime.phase {
+        case .requestingLLM:
             if Self.verbose { Self.logger.info("\(Self.t)🚛 工具批次完成，继续请求 LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
             launchAdvance(conversationID: conversationID, turnID: turnID)
+        case .executingTools(let nextTurnID, let assistantMessageID, let remaining) where !remaining.isEmpty:
+            notify(.toolCallsReceived(
+                conversationID: conversationID,
+                turnID: nextTurnID,
+                assistantMessageID: assistantMessageID,
+                toolCalls: remaining
+            ))
+        default:
+            break
         }
     }
 
@@ -148,7 +242,12 @@ extension AgentLoopManager {
         toolCall: AgentLoopToolCall,
         result toolResult: ToolCallResult
     ) {
-        guard var runtime = runtimes[conversationID] else {
+        guard prepareRuntimeForToolResult(
+            conversationID: conversationID,
+            eventTurnID: eventTurnID,
+            toolCall: toolCall
+        ),
+        var runtime = runtimes[conversationID] else {
             if Self.verbose {
                 Self.logger.error("\(Self.t)忽略授权工具结果：找不到会话运行时 conversation=\(conversationID.uuidString.prefix(8))")
             }
@@ -211,9 +310,8 @@ extension AgentLoopManager {
         }
         if let outcome {
             finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome)
-        } else if case .requestingLLM = runtime.phase {
-            launchAdvance(conversationID: conversationID, turnID: turnID)
         }
+        continueAfterToolResults(runtime: runtime, conversationID: conversationID, turnID: turnID)
     }
 
     enum LLMRequestResult {
