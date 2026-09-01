@@ -801,6 +801,12 @@
             "value" : "小册子生成"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小冊子製作"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4497,6 +4503,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "也可以直接點按頁面預覽之間的空隙。"
+          }
+        }
+      }
+    },
+    "Create print-ready booklets from PDF documents." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create print-ready booklets from PDF documents."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从 PDF 文档制作可直接打印的小册子。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從 PDF 文件製作可直接列印的小冊子。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從 PDF 文件製作可直接列印的小冊子。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從 PDF 文件製作可直接列印的小冊子。"
           }
         }
       }
