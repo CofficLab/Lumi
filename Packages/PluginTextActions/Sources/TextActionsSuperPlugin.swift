@@ -11,7 +11,7 @@ public final class TextActionsSuperPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.text-actions", category: "TextActions")
     public let id = "com.coffic.lumi.plugin.text-actions"
     public let order = 275
-    public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.text-actions", name: "Text Actions", description: "Show copy, search, and translation actions for selected text in other macOS apps.", category: .system, stage: .preview, policy: .disabledByDefault)
+    public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.text-actions", name: LumiPluginLocalization.string("Text Actions", bundle: .module), description: LumiPluginLocalization.string("Show copy, search, and translation actions for selected text in other macOS apps.", bundle: .module), category: .system, stage: .preview, policy: .disabledByDefault)
     public init() {}
 
     public func onRegister(kernel: KernelCoreContainer) throws {
