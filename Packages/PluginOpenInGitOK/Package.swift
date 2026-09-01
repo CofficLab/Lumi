@@ -3,13 +3,14 @@ import PackageDescription
 
 let package = Package(
     name: "PluginOpenInGitOK",
-    defaultLocalization: "zh-Hans",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "PluginOpenInGitOK", targets: ["PluginOpenInGitOK"]),
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog"),
         .package(path: "../OpenInKit"),
         .package(path: "../ProviderDocsView"),
@@ -21,13 +22,15 @@ let package = Package(
             name: "PluginOpenInGitOK",
             dependencies: [
                 "KernelCore",
+                "KitLocalization",
                 "KitSuperLog",
                 "OpenInKit",
                 "ProviderDocsView",
                 "ProviderProject",
                 "ProviderToolManager",
             ],
-            path: "Sources/PluginOpenInGitOK"
+            path: "Sources/PluginOpenInGitOK",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
     ]
 )
