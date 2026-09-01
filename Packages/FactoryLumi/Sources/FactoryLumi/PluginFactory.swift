@@ -35,6 +35,7 @@ import PluginToast
 import PluginCommand
 import PluginActivityBar
 import PluginAppIconDesigner
+import PluginAppStoreConnect
 import PluginAppStorePromoDesigner
 import PluginAskUser
 import PluginCaffeinate
@@ -164,6 +165,7 @@ public struct DefaultPluginFactory: PluginFactory {
             AgentRulesPlugin(),
             AgentTempStoragePlugin(),
             OcrPlugin(),
+            AppStoreConnectPlugin(),
             AppIconDesignerPlugin(),
             AppStorePromoDesignerPlugin(),
             MindMapDesignerPlugin(),
