@@ -59,6 +59,14 @@ public enum ChatInputEditorRules {
         imagePathExtensions.contains(url.pathExtension.lowercased())
     }
 
+    /// Returns whether a dropped file URL points to a directory.
+    public static func isDirectoryURL(_ url: URL) -> Bool {
+        guard let values = try? url.resourceValues(forKeys: [.isDirectoryKey]) else {
+            return false
+        }
+        return values.isDirectory == true
+    }
+
     public static func fileURL(fromDroppedString string: String) -> URL? {
         fileURLs(fromDroppedString: string).first
     }

@@ -46,7 +46,9 @@ struct ComposerView: View {
             onSubmit: onSend,
             onEnter: onSend,
             onFileDrop: { url in
-                if ChatInputEditorRules.isChatImageFileURL(url) {
+                if ChatInputEditorRules.isDirectoryURL(url) {
+                    insertDirectoryPath(url)
+                } else if ChatInputEditorRules.isChatImageFileURL(url) {
                     attachImage(url)
                 } else {
                     attachFile(url)
@@ -61,6 +63,19 @@ struct ComposerView: View {
         .padding(.top, 8)
         .padding(.bottom, 8)
         .appSurface(style: .toolbar, cornerRadius: 0)
+    }
+
+    /// 目录不是可发送的文件附件；拖入目录时将其路径作为文本插入输入框。
+    private func insertDirectoryPath(_ url: URL) {
+        guard let input, !url.path.isEmpty else { return }
+
+        let currentText = input.text
+        if currentText.isEmpty || currentText.hasSuffix("\n") {
+            input.text += url.path
+        } else {
+            input.text += "\n" + url.path
+        }
+        input.isInputFocused = true
     }
 
     /// 将拖入的非图片文件加入发送器挂起池，不修改输入框文本。

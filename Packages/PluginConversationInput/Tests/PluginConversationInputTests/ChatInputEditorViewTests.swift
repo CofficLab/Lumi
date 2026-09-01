@@ -30,6 +30,19 @@ struct ChatInputEditorViewTests {
         #expect(!ChatInputEditorRules.isChatImageFileURL(URL(fileURLWithPath: "/tmp/report.pdf")))
     }
 
+    @Test("directories are recognized separately from files")
+    func directoryDropRuleRecognizesDirectories() throws {
+        let directoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("conversation-input-directory-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+        let fileURL = directoryURL.appendingPathComponent("README.md")
+        #expect(FileManager.default.createFile(atPath: fileURL.path, contents: Data()))
+
+        #expect(ChatInputEditorRules.isDirectoryURL(directoryURL))
+        #expect(!ChatInputEditorRules.isDirectoryURL(fileURL))
+    }
+
     @Test("placeholder does not intercept editor clicks")
     func placeholderAllowsClickThrough() {
         let placeholderLabel = ChatInputPlaceholderLabel(labelWithString: "Placeholder")
