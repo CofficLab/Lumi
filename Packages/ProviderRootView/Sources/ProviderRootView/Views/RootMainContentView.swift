@@ -16,6 +16,8 @@ struct RootMainContentView: View {
     let isContentHeaderViewHidden: Bool
     let contentView: AnyView?
     let contentFooterView: AnyView?
+    let contentFooterHeight: ContentFooterHeight
+    let onContentFooterResize: (@MainActor (CGFloat) -> Void)?
     let isContentViewHidden: Bool
     @ObservedObject var trailingPane: RootTrailingPane
     init(
@@ -23,6 +25,8 @@ struct RootMainContentView: View {
         isContentHeaderViewHidden: Bool,
         contentView: AnyView?,
         contentFooterView: AnyView?,
+        contentFooterHeight: ContentFooterHeight = .standard,
+        onContentFooterResize: (@MainActor (CGFloat) -> Void)? = nil,
         isContentViewHidden: Bool,
         trailingPane: RootTrailingPane?
     ) {
@@ -30,6 +34,8 @@ struct RootMainContentView: View {
         self.isContentHeaderViewHidden = isContentHeaderViewHidden
         self.contentView = contentView
         self.contentFooterView = contentFooterView
+        self.contentFooterHeight = contentFooterHeight
+        self.onContentFooterResize = onContentFooterResize
         self.isContentViewHidden = isContentViewHidden
         _trailingPane = ObservedObject(wrappedValue: trailingPane ?? RootTrailingPane(
             id: "root.empty",
@@ -44,24 +50,50 @@ struct RootMainContentView: View {
 
     @ViewBuilder
     private var contentWithHeaderAndFooter: some View {
-        if (contentHeaderView != nil && !isContentHeaderViewHidden) || contentFooterView != nil {
-            VStack(spacing: 0) {
-                if let contentHeaderView, !isContentHeaderViewHidden {
-                    contentHeaderView
-                        .zIndex(1)
-                }
-                mainContent
-                    // AppKit-backed editors can draw floating subviews (for example,
-                    // the line-number gutter) outside their SwiftUI layout bounds.
-                    // Keep those subviews below the fixed content header while scrolling.
-                    .clipped()
-                if let contentFooterView {
-                    contentFooterView
-                        .zIndex(1)
-                }
+        if let contentFooterView {
+            #if os(macOS)
+            VSplitView {
+                contentWithHeader
+                    .frame(minHeight: 0, maxHeight: .infinity)
+                    .appSplitDivider(
+                        .bottom,
+                        initialTrailingSize: contentFooterHeight.idealHeight,
+                        resizeTarget: .trailing,
+                        onResize: onContentFooterResize
+                    )
+                contentFooterView
+                    .frame(
+                        minHeight: contentFooterHeight.minHeight,
+                        idealHeight: contentFooterHeight.idealHeight,
+                        maxHeight: contentFooterHeight.maxHeight
+                    )
+                    .zIndex(1)
             }
+            #else
+            VStack(spacing: 0) {
+                contentWithHeader
+                contentFooterView
+            }
+            #endif
+        } else if contentHeaderView != nil && !isContentHeaderViewHidden {
+            contentWithHeader
         } else {
             mainContent
+        }
+    }
+
+    @ViewBuilder
+    private var contentWithHeader: some View {
+        VStack(spacing: 0) {
+            if let contentHeaderView, !isContentHeaderViewHidden {
+                contentHeaderView
+                    .zIndex(1)
+            }
+            mainContent
+                // AppKit-backed editors can draw floating subviews (for example,
+                // the line-number gutter) outside their SwiftUI layout bounds.
+                // Keep those subviews below the fixed content header while scrolling.
+                .clipped()
         }
     }
 

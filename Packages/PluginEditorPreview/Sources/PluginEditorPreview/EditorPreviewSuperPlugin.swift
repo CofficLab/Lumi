@@ -1,6 +1,7 @@
 import KernelCore
 import ProviderProject
 import ProviderRootView
+import ProviderStorage
 import SwiftUI
 
 /// Provides the editor preview through the root content footer slot.
@@ -55,12 +56,28 @@ public final class EditorPreviewSuperPlugin: SuperPlugin {
         self.viewModel = viewModel
         self.projectObserver = observer
         updateFooterVisibility(for: project.currentFileURL, rootView: rootView, viewModel: viewModel)
+
+        let heightStore = kernel
+            .resolveProvider((any StorageProviding).self)
+            .map { storage in
+                FileContentFooterHeightStore(
+                    fileURL: storage
+                        .pluginDataDirectory(for: Self.pluginID)
+                        .appendingPathComponent("content-footer-height.plist", isDirectory: false)
+                )
+            }
+        rootView.activateContentFooterHeightProfile(
+            ownerID: Self.pluginID,
+            recommended: .standard,
+            store: heightStore
+        )
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         projectObserver?.cancel()
         projectObserver = nil
         rootView?.setContentFooterView(nil)
+        rootView?.deactivateContentFooterHeightProfile(ownerID: Self.pluginID)
         isFooterInstalled = false
         rootView = nil
         viewModel = nil

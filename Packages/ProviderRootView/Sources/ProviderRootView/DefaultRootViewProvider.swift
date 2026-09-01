@@ -30,12 +30,15 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published var trailingPane: RootTrailingPane?
     @Published public private(set) var isRailViewVisible = true
     @Published public private(set) var railWidth: RailViewWidth = .standard
+    @Published public private(set) var contentFooterHeight: ContentFooterHeight = .standard
     @Published public private(set) var overlays: [RootOverlayItem] = []
     @Published public private(set) var isContentViewHidden: Bool = false
     @Published public private(set) var isContentHeaderViewHidden: Bool = false
     private var railVisibilitySubscription: AnyCancellable?
     private var railWidthSubscription: AnyCancellable?
     private var railWidthResizeHandler: (@MainActor (CGFloat) -> Void)?
+    private var activeContentFooterHeightStore: (any ContentFooterHeightStoring)?
+    private var activeContentFooterHeightOwnerID: String?
     private var lastRailViewVisibility = true
     public init() {
         if Self.verbose {
@@ -112,6 +115,44 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
 
     func saveRailViewWidth(_ width: CGFloat) {
         railWidthResizeHandler?(width)
+    }
+
+    public var contentFooterHeightPublisher: AnyPublisher<ContentFooterHeight, Never> {
+        $contentFooterHeight.eraseToAnyPublisher()
+    }
+
+    public func activateContentFooterHeightProfile(
+        ownerID: String,
+        recommended: ContentFooterHeight,
+        store: (any ContentFooterHeightStoring)?
+    ) {
+        guard !ownerID.isEmpty else { return }
+        activeContentFooterHeightOwnerID = ownerID
+        activeContentFooterHeightStore = store
+        let restoredHeight = store?.loadHeight(ownerID: ownerID) ?? recommended.idealHeight
+        let resolvedHeight = recommended.withIdealHeight(recommended.clamped(restoredHeight))
+        if contentFooterHeight != resolvedHeight {
+            contentFooterHeight = resolvedHeight
+        }
+    }
+
+    public func deactivateContentFooterHeightProfile(ownerID: String) {
+        guard activeContentFooterHeightOwnerID == ownerID else { return }
+        activeContentFooterHeightOwnerID = nil
+        activeContentFooterHeightStore = nil
+        if contentFooterHeight != .standard {
+            contentFooterHeight = .standard
+        }
+    }
+
+    public func saveCurrentContentFooterHeight(_ height: CGFloat) {
+        guard let activeContentFooterHeightOwnerID else { return }
+        let resolvedHeight = contentFooterHeight.clamped(height)
+        activeContentFooterHeightStore?.saveHeight(resolvedHeight, ownerID: activeContentFooterHeightOwnerID)
+        let updatedHeight = contentFooterHeight.withIdealHeight(resolvedHeight)
+        if contentFooterHeight != updatedHeight {
+            contentFooterHeight = updatedHeight
+        }
     }
 
     public func setContentHeaderView(_ view: AnyView?) {

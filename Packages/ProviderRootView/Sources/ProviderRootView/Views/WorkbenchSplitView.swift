@@ -50,6 +50,8 @@ struct WorkbenchSplitView: View {
             isContentHeaderViewHidden: provider.isContentHeaderViewHidden,
             contentView: provider.contentView,
             contentFooterView: provider.contentFooterView,
+            contentFooterHeight: provider.contentFooterHeight,
+            onContentFooterResize: provider.saveCurrentContentFooterHeight,
             isContentViewHidden: provider.isContentViewHidden,
             trailingPane: provider.trailingPane
         )
