@@ -155,6 +155,35 @@ struct KitLLMTests {
         #expect(chunk?.outputTokens == 8)
     }
 
+    @Test("OpenAI 兼容流式解析器识别 finish_reason")
+    func openAIAdapterParsesFinishReason() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://example.com")
+        )
+        let event = "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n"
+        let chunk = try adapter.parseStreamChunk(data: Data(event.utf8))
+
+        #expect(chunk?.stopReason == "stop")
+    }
+
+    @Test("未收到流式终止信号时拒绝不完整响应")
+    func incompleteStreamingResponseFails() async {
+        let accumulator = StreamingAccumulator()
+        _ = await accumulator.consume(
+            StreamChunk(content: "partial", eventType: .textDelta),
+            onChunk: { _ in }
+        )
+
+        do {
+            _ = try await accumulator.finish(model: "test-model")
+            Issue.record("不完整流不应被当作成功响应")
+        } catch let error as VendorAPIError {
+            #expect(error == .incompleteStream)
+        } catch {
+            Issue.record("收到意外错误：\(error)")
+        }
+    }
+
     @Test("Anthropic adapter 构建请求体")
     func anthropicAdapterBuildsBody() throws {
         let adapter = AnthropicCompatibleProviderAdapter(

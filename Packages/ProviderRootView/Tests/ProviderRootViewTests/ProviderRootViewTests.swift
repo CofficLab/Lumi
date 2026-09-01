@@ -111,6 +111,36 @@ struct ProviderRootViewTests {
         #expect(resizedWidth == 420)
     }
 
+    @Test("Content Footer 高度 profile 支持恢复约束并保存拖拽结果")
+    func contentFooterHeightProfileRestoresAndSaves() {
+        let provider = DefaultRootViewProvider()
+        let recommended = ContentFooterHeight(minHeight: 120, idealHeight: 280, maxHeight: 520)
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProviderRootViewTests-\(UUID().uuidString).plist")
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        provider.activateContentFooterHeightProfile(
+            ownerID: "plugin.editor-preview",
+            recommended: recommended,
+            store: FileContentFooterHeightStore(fileURL: fileURL)
+        )
+        #expect(provider.contentFooterHeight == recommended)
+
+        provider.saveCurrentContentFooterHeight(460)
+        #expect(provider.contentFooterHeight.idealHeight == 460)
+
+        let reloadedProvider = DefaultRootViewProvider()
+        reloadedProvider.activateContentFooterHeightProfile(
+            ownerID: "plugin.editor-preview",
+            recommended: recommended,
+            store: FileContentFooterHeightStore(fileURL: fileURL)
+        )
+        #expect(reloadedProvider.contentFooterHeight.idealHeight == 460)
+
+        provider.saveCurrentContentFooterHeight(80)
+        #expect(provider.contentFooterHeight.idealHeight == 120)
+    }
+
     @Test("没有容器时可通过 trailing pane 渲染")
     func visibleTrailingPaneCountsAsActiveContentWithoutContainer() {
         let provider = DefaultRootViewProvider()
@@ -255,6 +285,14 @@ struct ProviderRootViewTests {
 
         #expect(provider.hasActiveContent)
         #expect(type(of: provider.makeRootView()) == AnyView.self)
+
+        provider.setContentFooterViewHidden(true)
+        #expect(provider.isContentFooterViewHidden)
+        #expect(!provider.hasActiveContent)
+
+        provider.setContentFooterViewHidden(false)
+        #expect(!provider.isContentFooterViewHidden)
+        #expect(provider.hasActiveContent)
 
         provider.setContentFooterView(nil)
         #expect(!provider.hasActiveContent)

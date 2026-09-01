@@ -15,6 +15,7 @@ let package = Package(
         .package(path: "../LumiUI"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderRootView"),
+        .package(path: "../ProviderStorage"),
     ],
     targets: [
         .target(
@@ -26,6 +27,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),

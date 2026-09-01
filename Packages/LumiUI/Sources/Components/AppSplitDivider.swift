@@ -26,6 +26,12 @@ public enum AppSplitDividerEdge: Sendable {
     }
 }
 
+/// Which pane's native size should be reported after a divider drag.
+public enum AppSplitDividerResizeTarget: Sendable {
+    case leading
+    case trailing
+}
+
 public extension View {
     /// Adds Lumi's interactive styling to the divider following this pane.
     ///
@@ -38,16 +44,22 @@ public extension View {
     }
 
     /// Adds interactive styling, restores the divider once after attachment, and
-    /// reports the leading pane's native size after resize.
+    /// reports a pane's native size after resize. `initialTrailingSize` is useful
+    /// when the desired size belongs to the pane after a horizontal divider,
+    /// such as a bottom Content Footer.
     func appSplitDivider(
         _ edge: AppSplitDividerEdge,
         initialPosition: CGFloat? = nil,
+        initialTrailingSize: CGFloat? = nil,
+        resizeTarget: AppSplitDividerResizeTarget = .leading,
         onResize: (@MainActor (CGFloat) -> Void)?
     ) -> some View {
         modifier(
             AppSplitDividerModifier(
                 edge: edge,
                 initialPosition: initialPosition,
+                initialTrailingSize: initialTrailingSize,
+                resizeTarget: resizeTarget,
                 onResize: onResize
             )
         )
@@ -60,6 +72,8 @@ private struct AppSplitDividerModifier: ViewModifier {
 
     let edge: AppSplitDividerEdge
     let initialPosition: CGFloat?
+    let initialTrailingSize: CGFloat?
+    let resizeTarget: AppSplitDividerResizeTarget
     let onResize: (@MainActor (CGFloat) -> Void)?
 
     func body(content: Content) -> some View {
@@ -69,6 +83,8 @@ private struct AppSplitDividerModifier: ViewModifier {
                     edge: edge,
                     isHovered: $isHovered,
                     initialPosition: initialPosition,
+                    initialTrailingSize: initialTrailingSize,
+                    resizeTarget: resizeTarget,
                     onResize: onResize
                 )
             )
@@ -119,12 +135,16 @@ private struct AppSplitDividerHoverCoordinator: NSViewRepresentable {
     let edge: AppSplitDividerEdge
     @Binding var isHovered: Bool
     let initialPosition: CGFloat?
+    let initialTrailingSize: CGFloat?
+    let resizeTarget: AppSplitDividerResizeTarget
     let onResize: (@MainActor (CGFloat) -> Void)?
 
     func makeNSView(context: Context) -> AppSplitDividerHoverCoordinatorView {
         let view = AppSplitDividerHoverCoordinatorView(
             edge: edge,
             initialPosition: initialPosition,
+            initialTrailingSize: initialTrailingSize,
+            resizeTarget: resizeTarget,
             onResize: onResize
         )
         view.onHoverChanged = { hovering in
@@ -136,6 +156,8 @@ private struct AppSplitDividerHoverCoordinator: NSViewRepresentable {
     func updateNSView(_ nsView: AppSplitDividerHoverCoordinatorView, context: Context) {
         nsView.edge = edge
         nsView.initialPosition = initialPosition
+        nsView.initialTrailingSize = initialTrailingSize
+        nsView.resizeTarget = resizeTarget
         nsView.onResize = onResize
         nsView.onHoverChanged = { hovering in
             isHovered = hovering
@@ -161,6 +183,8 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
 
     var edge: AppSplitDividerEdge
     var initialPosition: CGFloat?
+    var initialTrailingSize: CGFloat?
+    var resizeTarget: AppSplitDividerResizeTarget
     var onHoverChanged: ((Bool) -> Void)?
     var onResize: (@MainActor (CGFloat) -> Void)?
 
@@ -184,10 +208,14 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
     init(
         edge: AppSplitDividerEdge,
         initialPosition: CGFloat? = nil,
+        initialTrailingSize: CGFloat? = nil,
+        resizeTarget: AppSplitDividerResizeTarget = .leading,
         onResize: (@MainActor (CGFloat) -> Void)? = nil
     ) {
         self.edge = edge
         self.initialPosition = initialPosition
+        self.initialTrailingSize = initialTrailingSize
+        self.resizeTarget = resizeTarget
         self.onResize = onResize
         super.init(frame: .zero)
     }
@@ -402,19 +430,35 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
     }
 
     func applyInitialPositionIfNeeded() {
-        guard let splitView, let dividerIndex, let initialPosition,
-              initialPosition.isFinite, initialPosition > 0
-        else { return }
+        guard let splitView, let dividerIndex else { return }
+
+        let position: CGFloat
+        if let initialTrailingSize,
+           !splitView.isVertical,
+           initialTrailingSize.isFinite,
+           initialTrailingSize > 0 {
+            let availableSize = splitView.bounds.height
+            guard availableSize > 0 else { return }
+            position = availableSize - initialTrailingSize - splitView.dividerThickness
+        } else {
+            guard let initialPosition,
+                  initialPosition.isFinite,
+                  initialPosition > 0
+            else { return }
+            position = initialPosition
+        }
+
+        guard position > 0 else { return }
         if let appliedInitialPosition,
-           abs(appliedInitialPosition - initialPosition) < 0.5 {
+           abs(appliedInitialPosition - position) < 0.5 {
             return
         }
 
         let availableSize = splitView.isVertical ? splitView.bounds.width : splitView.bounds.height
         guard availableSize > 0 else { return }
-        appliedInitialPosition = initialPosition
+        appliedInitialPosition = position
         let origin = splitView.isVertical ? splitView.bounds.minX : splitView.bounds.minY
-        splitView.setPosition(origin + initialPosition, ofDividerAt: dividerIndex)
+        splitView.setPosition(origin + position, ofDividerAt: dividerIndex)
         // `setPosition` moves the native divider after the initial tracking area was
         // created. Refresh on the next run-loop turn so hover/cursor hit testing follows
         // the restored divider immediately, before the user performs the first drag.
@@ -423,16 +467,16 @@ private final class AppSplitDividerHoverCoordinatorView: NSView {
         }
         if Self.verbose {
             Self.logger.info(
-                "restored divider index=\(dividerIndex) position=\(initialPosition)"
+                "restored divider index=\(dividerIndex) position=\(position)"
             )
         }
     }
 
     private func reportCurrentPosition() {
-        guard let splitView, let dividerIndex,
-              splitView.arrangedSubviews.indices.contains(dividerIndex)
-        else { return }
-        let pane = splitView.arrangedSubviews[dividerIndex]
+        guard let splitView, let dividerIndex else { return }
+        let paneIndex = resizeTarget == .trailing ? dividerIndex + 1 : dividerIndex
+        guard splitView.arrangedSubviews.indices.contains(paneIndex) else { return }
+        let pane = splitView.arrangedSubviews[paneIndex]
         let position = splitView.isVertical ? pane.frame.width : pane.frame.height
         guard position.isFinite, position > 0 else { return }
         onResize?(position)

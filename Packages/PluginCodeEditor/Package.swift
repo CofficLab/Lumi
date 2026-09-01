@@ -26,6 +26,7 @@ let package = Package(
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderPluginControl"),
+        .package(path: "../ProviderTheme"),
         .package(path: "../LumiUI"),
     ],
     targets: [
@@ -47,6 +48,7 @@ let package = Package(
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "ProviderTheme", package: "ProviderTheme"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
             resources: [.process("../../Resources")]
@@ -66,6 +68,7 @@ let package = Package(
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderPluginControl", package: "ProviderPluginControl"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "ProviderTheme", package: "ProviderTheme"),
             ]
         ),
     ]

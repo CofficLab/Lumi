@@ -451,6 +451,11 @@ public final class EditorExtensionRegistry: ObservableObject, SuperLog {
         themeContributors.sort { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
     }
 
+    /// 注销指定的编辑器主题 contributor。
+    public func unregisterThemeContributor(id: String) {
+        themeContributors.removeAll { $0.id == id }
+    }
+
     /// 所有已注册的主题（按 displayName 排序）
     public func allThemes() -> [any SuperEditorThemeContributor] {
         themeContributors

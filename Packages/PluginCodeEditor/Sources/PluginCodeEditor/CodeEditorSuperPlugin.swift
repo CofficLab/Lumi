@@ -10,6 +10,7 @@ import ProviderProject
 import ProviderRailView
 import ProviderRootView
 import ProviderStorage
+import ProviderTheme
 import ProviderToolbar
 import SwiftUI
 import KitSuperLog
@@ -40,6 +41,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     private var editor: EditorService?
     private var sendSelectionContributor: SendSelectionToConversationContributor?
     private var projectObserver: (any ProjectProvidingObserverHandle)?
+    private var themeObserver: CodeEditorThemeObserver?
     private weak var activityBar: (any ActivityBarProviding)?
     private weak var contentView: (any ContentViewProviding)?
     private weak var chat: (any ChatSectionProviding)?
@@ -110,11 +112,16 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
             guard case .currentFileChanged(let fileURL) = event else { return }
             viewModel?.updateCurrentFile(fileURL)
         }
+        let themeObserver = kernel
+            .resolveProvider((any ThemeProviding).self)
+            .map { CodeEditorThemeObserver(theme: $0, editor: editor) }
+        themeObserver?.start()
 
         self.viewModel = viewModel
         self.editor = editor
         self.sendSelectionContributor = sendSelectionContributor
         self.projectObserver = projectObserver
+        self.themeObserver = themeObserver
         self.activityBar = activityBar
         self.contentView = contentView
         self.chat = chat
@@ -146,12 +153,14 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                 title: CodeEditorLocalization.string("Code Editor"),
                 systemImage: "chevron.left.forwardslash.chevron.right",
                 order: order,
-                ownerPluginID: id
+                ownerPluginID: id,
+                preservesContentFooter: true
             ) { [weak contentView, weak railView = self.railView, weak rootView = self.rootView, weak chat] state in
                 if state == .activated {
                     toolbar?.setVisibleCategories([.global, .chat, .project, .editor])
                     // Code Editor 是唯一需要显示 ContentHeader 的工作区。
                     rootView?.setContentHeaderViewHidden(false)
+                    rootView?.setContentFooterViewHidden(false)
                     // Code Editor 激活时只显示文件树，避免带出其它项目类 RailView。
                     railView?.setVisibleCategories([.fileTree])
                         railView?.activateWidthProfile(
@@ -174,6 +183,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                 } else {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     rootView?.setContentHeaderViewHidden(true)
+                    rootView?.setContentFooterViewHidden(true)
                     chat?.setActiveContext(nil)
                     chat?.deactivateWidthProfile(ownerID: pluginID)
                     railView?.deactivateWidthProfile(ownerID: pluginID)
@@ -196,10 +206,13 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         if ownedCurrentContent { contentView?.setContentView(nil) }
         if ownedCurrentContent {
             rootView?.setContentHeaderViewHidden(true)
+            rootView?.setContentFooterViewHidden(true)
             railView?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         projectObserver?.cancel()
         projectObserver = nil
+        themeObserver?.cancel()
+        themeObserver = nil
         viewModel = nil
         sendSelectionContributor = nil
         editor = nil

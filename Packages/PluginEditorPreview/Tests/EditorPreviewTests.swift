@@ -22,6 +22,16 @@ struct EditorPreviewTests {
         #expect(EditorPreviewViewModel.kind(for: URL(fileURLWithPath: "/tmp/main.swift")) == .unsupported)
     }
 
+    @Test("unsupported preview states do not keep the Content Footer")
+    func unsupportedStatesHidePreviewFooter() {
+        #expect(!EditorPreviewState.empty.showsPreviewFooter)
+        #expect(EditorPreviewState.loading(URL(fileURLWithPath: "/tmp/README.md")).showsPreviewFooter)
+        #expect(EditorPreviewState.markdown(URL(fileURLWithPath: "/tmp/README.md"), "# Preview").showsPreviewFooter)
+        #expect(EditorPreviewState.image(URL(fileURLWithPath: "/tmp/image.png")).showsPreviewFooter)
+        #expect(!EditorPreviewState.unsupported(URL(fileURLWithPath: "/tmp/main.swift")).showsPreviewFooter)
+        #expect(EditorPreviewState.failed(URL(fileURLWithPath: "/tmp/README.md"), "read failed").showsPreviewFooter)
+    }
+
     @Test("observes the current file from ProjectProviding")
     func projectObserverUpdatesViewModel() async throws {
         let project = DefaultProjectProvider()

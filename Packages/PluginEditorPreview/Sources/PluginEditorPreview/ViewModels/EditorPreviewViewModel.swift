@@ -8,6 +8,16 @@ public enum EditorPreviewState: Equatable, Sendable {
     case image(URL)
     case unsupported(URL)
     case failed(URL, String)
+
+    /// Whether the root Content Footer should reserve space for this preview.
+    public var showsPreviewFooter: Bool {
+        switch self {
+        case .loading, .markdown, .image, .failed:
+            true
+        case .empty, .unsupported:
+            false
+        }
+    }
 }
 
 public enum EditorPreviewFileKind: Equatable, Sendable {

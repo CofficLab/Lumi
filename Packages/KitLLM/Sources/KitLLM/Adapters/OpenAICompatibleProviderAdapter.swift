@@ -304,6 +304,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             let outputTokens = tokenCounts.output
             let cachedInputTokens = Self.cachedInputTokens(from: usage)
             let stopReason = delta["stop_reason"] as? String
+                ?? firstChoice["finish_reason"] as? String
 
             // 优先解析 reasoning_content（思考过程）
             // 注意：即使同时包含 content，也要先处理 reasoning_content

@@ -25,6 +25,10 @@ public struct ActivityBarItem: Identifiable {
     /// 插件管理器据此判断：插件卸载或禁用时移除该入口，重新启用时恢复。
     /// 为 nil 时表示该入口不受插件生命周期管理（如内置欢迎入口）。
     public let ownerPluginID: String?
+    /// 激活该入口时是否保留主内容区底部的 Content Footer。
+    ///
+    /// 默认入口不需要 Footer；需要继续显示的入口应显式声明。
+    public let preservesContentFooter: Bool
     /// 该入口自身的激活状态变化时回调。
     ///
     /// ActivityBar 只向状态发生变化的入口发送通知：切换入口时，先通知旧入口
@@ -37,6 +41,7 @@ public struct ActivityBarItem: Identifiable {
         systemImage: String,
         order: Int = 200,
         ownerPluginID: String? = nil,
+        preservesContentFooter: Bool = false,
         onActivationChanged: @escaping @MainActor (ActivationState) -> Void = { _ in }
     ) {
         self.id = id
@@ -44,6 +49,7 @@ public struct ActivityBarItem: Identifiable {
         self.systemImage = systemImage
         self.order = order
         self.ownerPluginID = ownerPluginID
+        self.preservesContentFooter = preservesContentFooter
         self.onActivationChanged = onActivationChanged
     }
 }

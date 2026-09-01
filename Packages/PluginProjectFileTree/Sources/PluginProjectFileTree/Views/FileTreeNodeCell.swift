@@ -22,9 +22,9 @@ final class FileTreeNodeCell: NSCollectionViewItem {
         view = NSView()
         view.wantsLayer = true
 
-        // 使用自定义 hosting view：NSHostingView 默认会消费 rightMouseDown（即使
-        // SwiftUI 内容没有 .contextMenu 也会），导致 NSCollectionViewDelegate.menuForItemsAt
-        // 不被调用。子类化后把右键事件转发给 NSCollectionView，恢复原生右键菜单。
+        // 使用自定义 hosting view：NSHostingView 可能消费鼠标事件，导致
+        // NSCollectionView 的选择、双击和右键菜单流程失效。子类化后显式转发
+        // 这些事件，恢复 collection view 的原生交互。
         hostingView = NodeRowHostingView(rootView: NodeRowView.placeholder)
         hostingView?.translatesAutoresizingMaskIntoConstraints = false
 
@@ -90,6 +90,25 @@ final class FileTreeNodeCell: NSCollectionViewItem {
         )
     }
 
+    /// 原地更新选中状态，避免普通单击时重建 cell。
+    ///
+    /// 双击依赖 AppKit 在同一控件的连续鼠标事件上累计 `clickCount`。如果第一击
+    /// 后调用 `reloadItems` 重建了 hosting view，第二击会变成另一个控件上的单击，
+    /// 双击回调永远无法收到 `clickCount == 2`。
+    func updateSelected(_ selected: Bool) {
+        guard let item = cachedItem, let palette = cachedPalette else { return }
+        cachedIsSelected = selected
+        hostingView?.rootView = NodeRowView(
+            item: item,
+            isSelected: selected,
+            isHovered: isHovered,
+            gitStatus: cachedGitStatus,
+            palette: palette,
+            colorScheme: cachedColorScheme,
+            appearanceID: cachedAppearanceID
+        )
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
         hostingView?.rootView = NodeRowView.placeholder
@@ -114,6 +133,14 @@ final class FileTreeNodeCell: NSCollectionViewItem {
 /// delegate.menuForItemsAt 并弹出原生右键菜单。menu(for:) 同步转发，覆盖 control-click
 /// 等其他触发路径。
 final class NodeRowHostingView: NSHostingView<NodeRowView> {
+    override func mouseDown(with event: NSEvent) {
+        guard let controller = enclosingFileTreeController() else {
+            super.mouseDown(with: event)
+            return
+        }
+        controller.forwardMouseDown(from: event)
+    }
+
     override func rightMouseDown(with event: NSEvent) {
         // NSHostingView 会消费 rightMouseDown（即使 SwiftUI 内容没有 .contextMenu），
         // 且 NSCollectionView 内部的命中测试在 NSHostingView 承载的 cell 上会失效

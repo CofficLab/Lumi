@@ -89,6 +89,29 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     /// Footer 与 Header、主内容视图独立贡献，显示在主内容视图下方。
     func setContentFooterView(_ view: AnyView?)
 
+    /// 设置主内容区底部视图的显隐；隐藏时保留 Footer 注入内容及其状态。
+    var isContentFooterViewHidden: Bool { get }
+    func setContentFooterViewHidden(_ hidden: Bool)
+
+    /// 当前 Content Footer 的有效高度。
+    var contentFooterHeight: ContentFooterHeight { get }
+
+    /// Content Footer 高度变化发布器。
+    var contentFooterHeightPublisher: AnyPublisher<ContentFooterHeight, Never> { get }
+
+    /// 激活插件的 Content Footer 高度配置。
+    func activateContentFooterHeightProfile(
+        ownerID: String,
+        recommended: ContentFooterHeight,
+        store: (any ContentFooterHeightStoring)?
+    )
+
+    /// 停用插件的 Content Footer 高度配置。
+    func deactivateContentFooterHeightProfile(ownerID: String)
+
+    /// 保存当前激活插件拖拽后的 Footer 高度。
+    func saveCurrentContentFooterHeight(_ height: CGFloat)
+
     /// 主内容区是否完全隐藏（不渲染、不占用空间）。
     ///
     /// 与 `setContentView(nil)` 的区别：后者仍会显示占位视图；
@@ -120,6 +143,8 @@ public extension RootViewProviding {
     func removeOverlays(ids: Set<String>) {}
     func setContentViewHidden(_ hidden: Bool) {}
     func setContentHeaderViewHidden(_ hidden: Bool) {}
+    var isContentFooterViewHidden: Bool { false }
+    func setContentFooterViewHidden(_ hidden: Bool) {}
     func setRailViewVisible(_ visible: Bool) {}
     func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>) {}
     var railWidth: RailViewWidth { .standard }
@@ -127,6 +152,17 @@ public extension RootViewProviding {
         to publisher: AnyPublisher<RailViewWidth, Never>,
         onResize: @escaping @MainActor (CGFloat) -> Void
     ) {}
+    var contentFooterHeight: ContentFooterHeight { .standard }
+    var contentFooterHeightPublisher: AnyPublisher<ContentFooterHeight, Never> {
+        Just(contentFooterHeight).eraseToAnyPublisher()
+    }
+    func activateContentFooterHeightProfile(
+        ownerID: String,
+        recommended: ContentFooterHeight,
+        store: (any ContentFooterHeightStoring)?
+    ) {}
+    func deactivateContentFooterHeightProfile(ownerID: String) {}
+    func saveCurrentContentFooterHeight(_ height: CGFloat) {}
 }
 
 @MainActor

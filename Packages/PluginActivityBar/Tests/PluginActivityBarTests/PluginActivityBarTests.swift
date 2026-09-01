@@ -2,6 +2,7 @@ import Testing
 import SwiftUI
 import KernelCore
 import ProviderActivityBar
+import ProviderRootView
 import ProviderStorage
 @testable import PluginActivityBar
 
@@ -64,6 +65,38 @@ struct PluginActivityBarTests {
         provider.activateItem(id: "b")
 
         #expect(provider.activeItemID == "b")
+    }
+
+    @Test("激活入口时仅 Code Editor 保留 Content Footer")
+    func contentFooterVisibilityFollowsActiveItem() throws {
+        let kernel = KernelCoreContainer()
+        let rootView = DefaultRootViewProvider()
+        let legacyProvider = DefaultActivityBarProviding()
+        legacyProvider.addItems([
+            ActivityBarItem(id: "other", title: "Other", systemImage: "square"),
+            ActivityBarItem(
+                id: "editor",
+                title: "Code Editor",
+                systemImage: "chevron.left.forwardslash.chevron.right",
+                preservesContentFooter: true
+            ),
+        ])
+        try kernel.registerProvider((any RootViewProviding).self, rootView)
+        try kernel.registerProvider((any ActivityBarProviding).self, legacyProvider)
+
+        let plugin = PluginActivityBar()
+        try plugin.onBoot(kernel: kernel)
+        try plugin.onReady(kernel: kernel)
+
+        let provider = try #require(kernel.resolveProvider((any ActivityBarProviding).self) as? ActivityBarProvider)
+        #expect(provider.activeItemID == "other")
+        #expect(rootView.isContentFooterViewHidden)
+
+        provider.activateItem(id: "editor")
+        #expect(!rootView.isContentFooterViewHidden)
+
+        provider.activateItem(id: "other")
+        #expect(rootView.isContentFooterViewHidden)
     }
 
     // MARK: - PluginActivityBar

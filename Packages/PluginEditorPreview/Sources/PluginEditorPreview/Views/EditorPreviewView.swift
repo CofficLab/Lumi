@@ -13,7 +13,6 @@ struct EditorPreviewView: View {
             Divider()
             content
         }
-        .frame(minHeight: 100, idealHeight: 280, maxHeight: .infinity)
         .frame(maxWidth: .infinity)
         .background(theme.surface)
     }
