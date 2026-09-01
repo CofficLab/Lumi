@@ -3,13 +3,14 @@ import PackageDescription
 
 let package = Package(
     name: "PluginOpenInVSCode",
-    defaultLocalization: "zh-Hans",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "PluginOpenInVSCode", targets: ["PluginOpenInVSCode"]),
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog"),
         .package(path: "../OpenInKit"),
         .package(path: "../ProviderDocsView"),
@@ -21,13 +22,15 @@ let package = Package(
             name: "PluginOpenInVSCode",
             dependencies: [
                 "KernelCore",
+                "KitLocalization",
                 "KitSuperLog",
                 "OpenInKit",
                 "ProviderDocsView",
                 "ProviderProject",
                 "ProviderToolManager",
             ],
-            path: "Sources/PluginOpenInVSCode"
+            path: "Sources/PluginOpenInVSCode",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
     ]
 )
