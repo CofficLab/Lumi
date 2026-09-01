@@ -177,43 +177,46 @@ private struct ToolApprovalPendingView: View {
     @State private var responded = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.shield.fill")
-                    .foregroundColor(theme.primary)
-                Text(request.question)
-                    .font(.appCaption)
-                    .foregroundColor(theme.textPrimary)
-            }
+        AppCard(
+            style: .subtle,
+            cornerRadius: 10,
+            padding: EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12),
+            showShadow: false
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.shield.fill")
+                        .foregroundColor(theme.primary)
+                    Text(request.question)
+                        .font(.appCaption)
+                        .foregroundColor(theme.textPrimary)
+                }
 
-            HStack {
-                ForEach(request.options.indices, id: \.self) { index in
-                    if index > request.options.startIndex {
-                        Spacer(minLength: 0)
+                HStack(spacing: 8) {
+                    ForEach(request.options.indices, id: \.self) { index in
+                        let option = request.options[index]
+                        AppButton(
+                            option,
+                            systemImage: index == request.options.startIndex
+                                ? "checkmark.circle.fill"
+                                : "xmark.circle.fill",
+                            style: index == request.options.startIndex ? .primary : .destructive,
+                            size: .small,
+                            fillsWidth: true
+                        ) {
+                            submit(option)
+                        }
+                        .disabled(responded)
                     }
+                }
 
-                    let option = request.options[index]
-                    Button(option) {
-                        submit(option)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(responded)
+                if responded {
+                    Text("已提交：等待继续执行…")
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
                 }
             }
-
-            if responded {
-                Text("已提交：等待继续执行…")
-                    .font(.appMicro)
-                    .foregroundColor(theme.textSecondary)
-            }
         }
-        .padding(12)
-        .background(theme.surface)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(theme.primary.opacity(0.35), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private func submit(_ answer: String) {
