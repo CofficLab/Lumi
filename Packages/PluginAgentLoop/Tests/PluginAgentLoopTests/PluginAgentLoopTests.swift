@@ -48,6 +48,61 @@ func testMessageFromLLMMessagePreservesToolCalls() {
     #expect(restored.reasoningContent == "先检查状态")
 }
 
+@Test("可恢复的 LLM 工具协议错误会重试当前回合")
+func testRetryableLLMFailureRetriesCurrentTurn() {
+    let turnID = UUID()
+    let started = TurnReducer.reduce(
+        TurnRuntime(),
+        event: .startTurn(turnID: turnID)
+    )
+    #expect(started.1 == nil)
+
+    let firstRetry = TurnReducer.reduce(
+        started.0,
+        event: .llmRetryableFailure(reason: "incomplete tool call")
+    )
+    #expect(firstRetry.1 == nil)
+    #expect(firstRetry.0.phase == .requestingLLM(turnID: turnID))
+    #expect(firstRetry.0.llmRecoveryAttempts == 1)
+    #expect(firstRetry.0.llmRecoveryHint != nil)
+
+    let secondRetry = TurnReducer.reduce(
+        firstRetry.0,
+        event: .llmRetryableFailure(reason: "incomplete tool call")
+    )
+    #expect(secondRetry.1 == nil)
+    #expect(secondRetry.0.llmRecoveryAttempts == 2)
+
+    let exhausted = TurnReducer.reduce(
+        secondRetry.0,
+        event: .llmRetryableFailure(reason: "incomplete tool call")
+    )
+    #expect(exhausted.1 == .failed("incomplete tool call"))
+    #expect(exhausted.0.phase == .failed(reason: "incomplete tool call"))
+}
+
+@Test("LLM 成功响应会清除工具协议恢复状态")
+func testSuccessfulLLMResponseClearsRecoveryState() {
+    let turnID = UUID()
+    let started = TurnReducer.reduce(
+        TurnRuntime(),
+        event: .startTurn(turnID: turnID)
+    )
+    let retried = TurnReducer.reduce(
+        started.0,
+        event: .llmRetryableFailure(reason: "incomplete tool call")
+    )
+
+    let response = LLMResponse(content: "继续处理")
+    let succeeded = TurnReducer.reduce(
+        retried.0,
+        event: .llmResponded(response: response, assistantMessageID: UUID())
+    )
+    #expect(succeeded.1 == .completed)
+    #expect(succeeded.0.llmRecoveryAttempts == 0)
+    #expect(succeeded.0.llmRecoveryHint == nil)
+}
+
 @Test("用户图片附件会转换为 LLM 图片")
 func testMessageToLLMMessagePreservesUserImage() {
     let imageData = Data([0x89, 0x50, 0x4E, 0x47])

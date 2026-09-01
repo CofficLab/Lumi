@@ -70,6 +70,9 @@ extension TurnPhase {
 /// 收敛原先散落在 8 个字典/集合中的所有 per-conversation 状态，
 /// 成为状态机的单一事实来源。
 public struct TurnRuntime {
+    /// 同一回合内 LLM 工具协议错误的自动恢复次数上限。
+    public static let maxLLMRecoveryAttempts = 2
+
     /// 当前阶段。
     public var phase: TurnPhase = .idle
 
@@ -81,6 +84,12 @@ public struct TurnRuntime {
 
     /// 是否已请求取消。
     public var cancelRequested: Bool = false
+
+    /// 当前回合已经消耗的 LLM 工具协议恢复次数。
+    public var llmRecoveryAttempts: Int = 0
+
+    /// 下一次 LLM 请求使用的一次性恢复提示，不写入会话历史。
+    public var llmRecoveryHint: String?
 
     // MARK: - 便捷查询
 
@@ -100,6 +109,8 @@ public struct TurnRuntime {
         phase = .idle
         pendingSuspensions = [:]
         cancelRequested = false
+        llmRecoveryAttempts = 0
+        llmRecoveryHint = nil
     }
 }
 
@@ -111,6 +122,7 @@ public enum TurnEvent {
     case cancel
     case llmResponded(response: LLMResponse, assistantMessageID: UUID)
     case llmFailed(reason: String)
+    case llmRetryableFailure(reason: String)
     case toolCallCompleted(toolCallID: String, result: MessageToolResult)
     case toolNeedsUserInput(toolCallID: String, suspension: AgentLoopSuspension)
 }
@@ -149,6 +161,8 @@ public enum TurnReducer {
             guard case .requestingLLM(let turnID) = rt.phase else {
                 return (rt, nil)
             }
+            rt.llmRecoveryAttempts = 0
+            rt.llmRecoveryHint = nil
             if let toolCalls = response.toolCalls, !toolCalls.isEmpty {
                 let pending = toolCalls.map { tc in
                     MessageToolCall(id: tc.id, name: tc.name, arguments: tc.arguments)
@@ -167,6 +181,18 @@ public enum TurnReducer {
         case .llmFailed(let reason):
             rt.phase = .failed(reason: reason)
             return (rt, .failed(reason))
+
+        case .llmRetryableFailure(let reason):
+            guard case .requestingLLM = rt.phase else {
+                return (rt, nil)
+            }
+            guard rt.llmRecoveryAttempts < TurnRuntime.maxLLMRecoveryAttempts else {
+                rt.phase = .failed(reason: reason)
+                return (rt, .failed(reason))
+            }
+            rt.llmRecoveryAttempts += 1
+            rt.llmRecoveryHint = "上一次工具调用没有完整到达，系统未执行任何文件操作。请重新发送完整、合法的工具调用 JSON；如果内容较大，请拆分为较小的编辑操作。不要重复解释，直接继续任务。"
+            return (rt, nil)
 
         case .toolCallCompleted(let toolCallID, _):
             guard case .executingTools(let turnID, let assistantID, var pending) = rt.phase else {

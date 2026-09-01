@@ -247,10 +247,11 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
                     guard let chunk else { return true }
                     return await accumulator.consume(chunk, onChunk: onChunk)
                 } catch {
+                    accumulator.fail(error)
                     return false
                 }
             }
-            return accumulator.finish(model: model)
+            return try accumulator.finish(model: model)
         }
 
         let adapter = OpenAICompatibleProviderAdapter(
@@ -278,10 +279,11 @@ public final class GoProvider: VendorLLMProvider, SuperLog {
                 guard let chunk else { return true }
                 return await accumulator.consume(chunk, onChunk: onChunk)
             } catch {
+                accumulator.fail(error)
                 return false
             }
         }
-        return accumulator.finish(model: model)
+        return try accumulator.finish(model: model)
     }
 
     // MARK: - Responses
@@ -432,16 +434,48 @@ private final class GoStreamingAccumulator: @unchecked Sendable {
     private var toolCallOrder: [Int] = []
     private var inputTokens: Int?
     private var outputTokens: Int?
+    private var cachedInputTokens: Int?
+    private var cacheWriteInputTokens: Int?
+    private var cacheTotalInputTokens: Int?
+    private var responseID: String?
+    private var stopReason: String?
+    private var finished = false
+    private var failure: Error?
 
     func consume(
         _ chunk: StreamChunk,
         onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
     ) async -> Bool {
+        if failure != nil { return false }
+
+        if let error = chunk.error {
+            failure = VendorAPIError.requestFailed(error)
+            return false
+        }
+
         if let inputTokens = chunk.inputTokens {
             self.inputTokens = inputTokens
         }
         if let outputTokens = chunk.outputTokens {
             self.outputTokens = outputTokens
+        }
+        if let cachedInputTokens = chunk.cachedInputTokens {
+            self.cachedInputTokens = cachedInputTokens
+        }
+        if let cacheWriteInputTokens = chunk.cacheWriteInputTokens {
+            self.cacheWriteInputTokens = cacheWriteInputTokens
+        }
+        if let cacheTotalInputTokens = chunk.cacheTotalInputTokens {
+            self.cacheTotalInputTokens = cacheTotalInputTokens
+        }
+        if let responseID = chunk.responseID {
+            self.responseID = responseID
+        }
+        if let stopReason = chunk.stopReason {
+            self.stopReason = stopReason
+            // Some OpenAI-compatible gateways omit [DONE] but provide an
+            // explicit finish_reason. Treat that as a valid terminator.
+            finished = true
         }
 
         if chunk.eventType == .thinkingDelta, let piece = chunk.content, !piece.isEmpty {
@@ -462,12 +496,18 @@ private final class GoStreamingAccumulator: @unchecked Sendable {
             upsertArguments(index: index, fragment: partialJson)
         }
 
-        return !chunk.isDone
+        if chunk.isDone {
+            finished = true
+            return false
+        }
+        return true
     }
 
-    func finish(model: String) -> LLMResponse {
+    func finish(model: String) throws -> LLMResponse {
+        if let failure { throw failure }
+        guard finished else { throw VendorAPIError.incompleteStream }
         let calls = toolCallOrder.compactMap { toolCalls[$0] }
-        return LLMResponse(
+        let response = LLMResponse(
             content: content,
             model: model,
             toolCalls: calls.isEmpty ? nil : calls.map {
@@ -475,8 +515,19 @@ private final class GoStreamingAccumulator: @unchecked Sendable {
             },
             reasoningContent: reasoningContent.isEmpty ? nil : reasoningContent,
             inputTokenCount: inputTokens,
-            outputTokenCount: outputTokens
+            outputTokenCount: outputTokens,
+            cachedInputTokenCount: cachedInputTokens,
+            cacheWriteInputTokenCount: cacheWriteInputTokens,
+            cacheTotalInputTokenCount: cacheTotalInputTokens,
+            responseID: responseID,
+            stopReason: stopReason
         )
+        try response.validateToolCallArguments()
+        return response
+    }
+
+    func fail(_ error: Error) {
+        failure = error
     }
 
     private func nextIndex() -> Int {

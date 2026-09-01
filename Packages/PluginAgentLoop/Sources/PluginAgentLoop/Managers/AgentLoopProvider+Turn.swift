@@ -174,10 +174,20 @@ extension AgentLoopManager {
                         ) } ?? []
                     )
                 }
-            case .failure(let reason):
-                let (updated, outcome) = TurnReducer.reduce(current, event: .llmFailed(reason: reason))
+            case .failure(let reason, let recoverable):
+                let event: TurnEvent = recoverable
+                    ? .llmRetryableFailure(reason: reason)
+                    : .llmFailed(reason: reason)
+                let (updated, outcome) = TurnReducer.reduce(current, event: event)
                 runtimes[conversationID] = updated
-                finishTurn(conversationID: conversationID, turnID: currentTurnID, outcome: outcome ?? .failed(reason))
+                if let outcome {
+                    await appendError(in: conversationID, content: reason, turnID: currentTurnID)
+                    finishTurn(conversationID: conversationID, turnID: currentTurnID, outcome: outcome)
+                } else {
+                    // 当前任务仍在进行中；释放本轮 Task 后再启动下一次 LLM 请求。
+                    runtimes[conversationID]?.task = nil
+                    launchAdvance(conversationID: conversationID, turnID: currentTurnID)
+                }
             }
         case .executingTools(_, _, let pending):
             if pending.isEmpty { finishTurn(conversationID: conversationID, turnID: turnID, outcome: .failed("empty tool batch")) }

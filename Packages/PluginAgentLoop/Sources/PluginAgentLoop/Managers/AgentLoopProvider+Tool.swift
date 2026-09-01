@@ -316,7 +316,7 @@ extension AgentLoopManager {
 
     enum LLMRequestResult {
         case success(LLMResponse, assistantMessageID: UUID)
-        case failure(reason: String)
+        case failure(reason: String, recoverable: Bool)
     }
 
     /// 执行一次 LLM 流式请求，落库 assistant 消息。
@@ -357,6 +357,14 @@ extension AgentLoopManager {
             let result = await lifecycleHooks.runWillSendToLLM(context)
             preparedMessages = result.messages
         }
+        if let recoveryHint = runtimes[conversationID]?.llmRecoveryHint {
+            // 生命周期钩子可以重写待发送消息，因此恢复提示必须在钩子之后注入。
+            // 它仍然只是本次请求的临时 system message，不写入会话历史。
+            preparedMessages.insert(
+                LLMMessage(role: .system, content: recoveryHint),
+                at: 0
+            )
+        }
 
         if Self.verbose && Self.printMessages {
             for (index, message) in preparedMessages.enumerated() {
@@ -382,8 +390,7 @@ extension AgentLoopManager {
         guard let streamingManager = llmManager as? any LLMStreamingProviding else {
             streaming.end(conversationID: conversationID)
             let error = AgentLoopError.unsupportedStreaming
-            await appendError(in: conversationID, error: error, turnID: turnID)
-            return .failure(reason: "unsupported streaming: \(error.localizedDescription)")
+            return .failure(reason: "unsupported streaming: \(error.localizedDescription)", recoverable: false)
         }
 
         let timingRecorder = LLMStreamTimingRecorder()
@@ -491,8 +498,29 @@ extension AgentLoopManager {
 
         } catch {
             streaming.end(conversationID: conversationID)
-            await appendError(in: conversationID, error: error, turnID: turnID)
-            return .failure(reason: String(describing: error))
+            let recoverable = isRecoverableLLMFailure(error)
+            if Self.verbose {
+                Self.logger.error(
+                    "\(Self.t)LLM request failed recoverable=\(recoverable), conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), error=\(error.localizedDescription)"
+                )
+            }
+            return .failure(reason: String(describing: error), recoverable: recoverable)
+        }
+    }
+
+    /// LLM 工具协议错误不会改变用户任务本身，允许在同一回合内重试。
+    /// 认证、权限、上下文长度等错误仍然直接终止，避免无意义地重复请求。
+    private func isRecoverableLLMFailure(_ error: Error) -> Bool {
+        if error is LLMToolCallValidationError {
+            return true
+        }
+        guard let vendorError = error as? VendorAPIError else { return false }
+        switch vendorError {
+        case .incompleteStream, .decodingFailed:
+            return true
+        case .missingAPIKey, .apiKeyAccessFailed, .invalidBaseURL, .emptyResponse,
+             .httpStatus, .requestFailed:
+            return false
         }
     }
 }
