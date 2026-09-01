@@ -10,6 +10,7 @@ import ProviderProject
 import ProviderRailView
 import ProviderRootView
 import ProviderStorage
+import ProviderTheme
 import ProviderToolbar
 import SwiftUI
 import KitSuperLog
@@ -40,6 +41,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     private var editor: EditorService?
     private var sendSelectionContributor: SendSelectionToConversationContributor?
     private var projectObserver: (any ProjectProvidingObserverHandle)?
+    private var themeObserver: CodeEditorThemeObserver?
     private weak var activityBar: (any ActivityBarProviding)?
     private weak var contentView: (any ContentViewProviding)?
     private weak var chat: (any ChatSectionProviding)?
@@ -110,11 +112,16 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
             guard case .currentFileChanged(let fileURL) = event else { return }
             viewModel?.updateCurrentFile(fileURL)
         }
+        let themeObserver = kernel
+            .resolveProvider((any ThemeProviding).self)
+            .map { CodeEditorThemeObserver(theme: $0, editor: editor) }
+        themeObserver?.start()
 
         self.viewModel = viewModel
         self.editor = editor
         self.sendSelectionContributor = sendSelectionContributor
         self.projectObserver = projectObserver
+        self.themeObserver = themeObserver
         self.activityBar = activityBar
         self.contentView = contentView
         self.chat = chat
@@ -200,6 +207,8 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         }
         projectObserver?.cancel()
         projectObserver = nil
+        themeObserver?.cancel()
+        themeObserver = nil
         viewModel = nil
         sendSelectionContributor = nil
         editor = nil

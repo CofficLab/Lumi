@@ -11,6 +11,7 @@ import ProviderDocsView
 import ProviderPluginControl
 import ProviderProject
 import ProviderRootView
+import ProviderTheme
 import SwiftUI
 import Testing
 
@@ -80,6 +81,45 @@ struct CodeEditorSuperPluginTests {
 
         #expect(await control.enablePlugin(id: workspace.id))
         #expect(activity.items.filter { $0.id == CodeEditorSuperPlugin.activityItemID }.count == 1)
+    }
+
+    @Test("同步 ThemeProviding 主题到 EditorService")
+    func themeChangesSyncToEditor() throws {
+        let storageDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CodeEditorThemeObserver-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: storageDirectory) }
+
+        let theme = DefaultThemeProviding(
+            storageDirectory: storageDirectory,
+            builtinThemes: [BuiltinThemes.dark, BuiltinThemes.light]
+        )
+        let editor = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
+        let observer = CodeEditorThemeObserver(theme: theme, editor: editor)
+        observer.start()
+
+        let darkID = CodeEditorThemeAdapter.editorThemeID(for: BuiltinThemes.dark, colorScheme: .dark)
+        #expect(editor.theme.currentThemeId == darkID)
+        #expect(editor.editorExtensions.theme(for: darkID) != nil)
+
+        try theme.selectTheme(id: BuiltinThemes.light.id)
+        let lightID = CodeEditorThemeAdapter.editorThemeID(for: BuiltinThemes.light, colorScheme: .light)
+        #expect(editor.theme.currentThemeId == lightID)
+        #expect(editor.editorExtensions.theme(for: lightID) != nil)
+        #expect(editor.editorExtensions.theme(for: darkID) != nil)
+
+        observer.cancel()
+        #expect(editor.theme.currentThemeId == "xcode-dark")
+        #expect(editor.editorExtensions.theme(for: lightID) == nil)
+    }
+
+    @Test("主题语义色板可转换为编辑器语法色板")
+    func themePaletteMapsToEditorPalette() {
+        let palette = CodeEditorThemeAdapter.makePalette(from: BuiltinThemes.light, colorScheme: .light)
+
+        #expect(palette.backgroundHex == BuiltinThemes.light.palette.backgroundMedium.light)
+        #expect(palette.lineHighlightHex == BuiltinThemes.light.palette.backgroundLight.light)
+        #expect(palette.text.colorHex == BuiltinThemes.light.palette.textPrimary.light)
+        #expect(palette.comments.colorHex == BuiltinThemes.light.palette.textSecondary.light)
     }
 
     private func waitForFileLoad(editor: EditorService) async {
