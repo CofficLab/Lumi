@@ -1,23 +1,89 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ tokens used" : {
+
+    },
+    "%@/%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@/%2$@"
+          }
+        }
+      }
+    },
     "Context Window" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Context Window" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "上下文窗口" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "上下文窗口" } },
-        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "上下文窗口" } },
-        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "上下文窗口" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Context Window"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下文窗口"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下文窗口"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下文窗口"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下文窗口"
+          }
+        }
       }
     },
     "No token usage data yet" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "No token usage data yet" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "暂无令牌使用数据" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "暂无令牌使用数据" } },
-        "zh-HK" : { "stringUnit" : { "state" : "translated", "value" : "暂无令牌使用数据" } },
-        "zh-TW" : { "stringUnit" : { "state" : "translated", "value" : "暂无令牌使用数据" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No token usage data yet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无令牌使用数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无令牌使用数据"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无令牌使用数据"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无令牌使用数据"
+          }
+        }
       }
+    },
+    "上下文窗口 = 模型单次请求能处理的最大 token 数。输入 + 输出共享此上限。接近上限时可能导致截断或错误。" : {
+
     }
   },
   "version" : "1.0"
