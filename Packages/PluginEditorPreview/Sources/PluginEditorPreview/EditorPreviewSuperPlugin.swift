@@ -88,7 +88,7 @@ public final class EditorPreviewSuperPlugin: SuperPlugin {
         rootView: any RootViewProviding,
         viewModel: EditorPreviewViewModel
     ) {
-        let shouldInstall = fileURL != nil
+        let shouldInstall = fileURL != nil && viewModel.state.showsPreviewFooter
         guard shouldInstall != isFooterInstalled else { return }
         isFooterInstalled = shouldInstall
         rootView.setContentFooterView(
