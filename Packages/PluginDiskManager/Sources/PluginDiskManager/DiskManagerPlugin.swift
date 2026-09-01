@@ -34,8 +34,8 @@ public final class DiskManagerPlugin: SuperPlugin, SuperLog {
     public let order = 250
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.disk-manager",
-        name: "Disk Manager",
-        description: "",
+        name: PluginDiskManagerLocalization.string("Disk Manager"),
+        description: PluginDiskManagerLocalization.string("Manage disk space and volumes."),
         category: .system,
         stage: .stable,
         policy: .disabledByDefault

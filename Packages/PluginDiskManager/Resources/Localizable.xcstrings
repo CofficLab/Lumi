@@ -6324,6 +6324,40 @@
           }
         }
       }
+    },
+    "Manage disk space and volumes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage disk space and volumes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理磁盘空间与卷。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理磁碟空間與卷宗。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理磁碟空間與卷宗。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理磁碟空間與卷宗。"
+          }
+        }
+      }
     }
   },
   "version": "1.1"
