@@ -25,8 +25,8 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
     public let order = 70
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.input-manager",
-        name: "Input Manager",
-        description: "Configure input methods and their behavior.",
+        name: LumiPluginLocalization.string("Input Manager", bundle: .module),
+        description: LumiPluginLocalization.string("Configure input methods and their behavior.", bundle: .module),
         category: .system,
         stage: .preview,
         policy: .disabledByDefault
