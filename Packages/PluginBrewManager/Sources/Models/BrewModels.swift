@@ -92,7 +92,22 @@ public struct BrewPackageInfo: Codable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        name = try container.decode(String.self, forKey: .name)
+        // Formulae expose `name` as a string, while Homebrew casks expose
+        // their display names as an array (for example, ["Google Chrome"]).
+        // Keep the public model stable and accept both Homebrew shapes.
+        if let formulaName = try? container.decode(String.self, forKey: .name) {
+            name = formulaName
+        } else {
+            let caskNames = try container.decode([String].self, forKey: .name)
+            guard let caskName = caskNames.first else {
+                throw DecodingError.dataCorruptedError(
+                    forKey: .name,
+                    in: container,
+                    debugDescription: "Homebrew cask name array must not be empty"
+                )
+            }
+            name = caskName
+        }
         full_name = try container.decodeIfPresent(String.self, forKey: .full_name)
         desc = try container.decodeIfPresent(String.self, forKey: .desc)
         homepage = try container.decodeIfPresent(String.self, forKey: .homepage)
