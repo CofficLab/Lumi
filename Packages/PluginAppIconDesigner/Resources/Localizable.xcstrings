@@ -3847,6 +3847,40 @@
           }
         }
       }
+    },
+    "Design app icons and export multiple sizes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design app icons and export multiple sizes."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设计应用图标并导出多种尺寸。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計應用程式圖示並匯出多種尺寸。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計應用程式圖示並匯出多種尺寸。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設計應用程式圖示並匯出多種尺寸。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
