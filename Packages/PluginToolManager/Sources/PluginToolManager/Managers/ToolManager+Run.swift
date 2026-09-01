@@ -126,11 +126,24 @@ extension ToolManager {
         conversationID: UUID,
         turnID: UUID?
     ) async -> ToolCallResult {
-        let result = await execute(toolCall, conversationID: conversationID, turnID: turnID)
+        var authorizedToolCall = toolCall
+        authorizedToolCall.authorizationState = .userApproved
+        // 授权界面可能在应用重启后再次出现。若工具已在上一个进程中完成，
+        // 直接复用持久化/内存结果，避免再次产生文件修改等副作用。
+        if let existingResult = await toolCallResult(for: toolCall.id) {
+            eventManager.send(.authorizedCompleted(
+                conversationID: conversationID,
+                turnID: turnID,
+                toolCall: authorizedToolCall,
+                result: existingResult
+            ))
+            return existingResult
+        }
+        let result = await execute(authorizedToolCall, conversationID: conversationID, turnID: turnID)
         eventManager.send(.authorizedCompleted(
             conversationID: conversationID,
             turnID: turnID,
-            toolCall: toolCall,
+            toolCall: authorizedToolCall,
             result: result
         ))
         return result
@@ -141,11 +154,13 @@ extension ToolManager {
         conversationID: UUID,
         turnID: UUID?
     ) async -> ToolCallResult {
+        var rejectedToolCall = toolCall
+        rejectedToolCall.authorizationState = .userRejected
         let result = ToolCallResult(content: "Tool execution was rejected by the user.", isError: true)
         eventManager.send(.authorizedCompleted(
             conversationID: conversationID,
             turnID: turnID,
-            toolCall: toolCall,
+            toolCall: rejectedToolCall,
             result: result
         ))
         return result

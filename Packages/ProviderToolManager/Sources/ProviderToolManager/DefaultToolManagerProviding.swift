@@ -301,6 +301,17 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
     ) async -> ToolCallResult {
         var authorizedToolCall = toolCall
         authorizedToolCall.authorizationState = .userApproved
+        // 历史授权可能在上一个进程中已经完成执行，但结果事件尚未来得及
+        // 回写消息。优先复用记录，避免重启后重复执行有副作用的工具。
+        if let existingResult = await toolCallResult(for: toolCall.id) {
+            notify(.authorizedCompleted(
+                conversationID: conversationID,
+                turnID: turnID,
+                toolCall: authorizedToolCall,
+                result: existingResult
+            ))
+            return existingResult
+        }
         let result = await execute(authorizedToolCall, conversationID: conversationID, turnID: turnID)
         notify(.authorizedCompleted(
             conversationID: conversationID,
