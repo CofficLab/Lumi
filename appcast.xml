@@ -3,24 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.19.2</title>
-            <pubDate>Mon, 31 Aug 2026 15:17:21 +0000</pubDate>
-            <sparkle:version>620</sparkle:version>
-            <sparkle:shortVersionString>5.19.2</sparkle:shortVersionString>
+            <title>5.20.0</title>
+            <pubDate>Tue, 01 Sep 2026 05:14:11 +0000</pubDate>
+            <sparkle:version>621</sparkle:version>
+            <sparkle:shortVersionString>5.20.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.19.2</h2>
-<h3>Changes since v5.19.1</h3>
+            <description><![CDATA[<h2>Release v5.20.0</h2>
+<h3>Changes since v5.19.2</h3>
 <ul>
-<li>fix(agent-loop): preserve image attachments through lifecycle hooks</li>
-<li>fix(network): expose upstream HTTP error reason</li>
-<li>fix(network): optimize HTTP exchange log loading</li>
-<li>fix(plugin-message-list): add missing zh-Hans translation for empty state subtitle</li>
-<li>refactor(message-renderer): hide tool call controls until hover or popover open</li>
-<li>refactor(project): colocate Xcode configs with app targets</li>
+<li>feat: restore editor preview footer plugin</li>
+<li>feat(app-icon-designer): localize plugin name and description</li>
+<li>feat(app-manager): localize plugin name and description</li>
+<li>feat(app-store-promo-designer): localize plugin name and description</li>
+<li>feat(booklet-maker): localize plugin name and description</li>
+<li>feat(brew-manager): localize plugin name and description</li>
+<li>feat(clipboard-manager): localize plugin name and description</li>
+<li>feat(database-manager): localize plugin name and description</li>
+<li>feat(device): localize plugin name and description</li>
+<li>feat(disk-manager): localize plugin name and description</li>
+<li>feat(display-control): localize plugin name and description</li>
+<li>feat(hosts-manager): localize plugin name and description</li>
+<li>feat(image-to-pdf): localize plugin name and description</li>
+<li>feat(input): localize plugin name and description</li>
+<li>feat(mind-map-designer): localize plugin name and description</li>
+<li>feat(network-manager): localize plugin name and description</li>
+<li>feat(open-in-antigravity): add localization for plugin name and description</li>
+<li>feat(open-in-cursor): add localization for plugin name and description</li>
+<li>feat(open-in-finder): add localization for plugin name and description</li>
+<li>feat(open-in-github-desktop): add localization for plugin name and description</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.19.2</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.20.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.19.2/Lumi_5.19.2_arm64.dmg" length="40814142" type="application/octet-stream" sparkle:edSignature="uMq93QETJca1FkarIr3yew0/YruVWSpTDe3DlOpvmH7ilUeX9W6CkC/Uh1OfnQwViPEGaknKxcdE7kgF2WSoAg=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.20.0/Lumi_5.20.0_arm64.dmg" length="41565836" type="application/octet-stream" sparkle:edSignature="iuj2Q15FncFed6CJ6NRYMkinifCx5LHtcXPQ4klWaBrf5TQ9z2hw7Rqq2IlrozAHGMkyFKXYdAAsorr0qvj5AQ=="/>
         </item>
     </channel>
 </rss>
