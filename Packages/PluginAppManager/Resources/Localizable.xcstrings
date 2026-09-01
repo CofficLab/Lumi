@@ -1946,6 +1946,40 @@
           }
         }
       }
+    },
+    "Browse installed macOS applications.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse installed macOS applications."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浏览已安装的 macOS 应用。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽已安裝的 macOS 應用程式。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽已安裝的 macOS 應用程式。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瀏覽已安裝的 macOS 應用程式。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

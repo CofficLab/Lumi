@@ -14,7 +14,7 @@ import SwiftUI
 @MainActor public final class AppManagerSuperPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.app-manager", category: "AppManager")
     public let id = "com.coffic.lumi.plugin.app-manager"; public let order = 242
-    public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.app-manager", name: "App Manager", description: "Browse installed macOS applications.", category: .system, stage: .preview, policy: .disabledByDefault)
+    public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.app-manager", name: PluginAppManagerLocalization.string("App Manager"), description: PluginAppManagerLocalization.string("Browse installed macOS applications."), category: .system, stage: .preview, policy: .disabledByDefault)
     private let viewModel = AppManagerViewModel(); public init() {}
 
     public func onRegister(kernel: KernelCoreContainer) throws {
