@@ -113,6 +113,7 @@ import PluginProjectFiles
 import PluginCodeEditorHost
 import PluginCodeEditorLanguages
 import PluginCodeEditor
+import PluginEditorPreview
 import PluginProjectRAG
 import PluginResumeDesigner
 import PluginSettingGeneral
@@ -144,6 +145,7 @@ public struct DefaultPluginFactory: PluginFactory {
             CaffeinatePlugin(),
             SettingGeneralPlugin(),
             CodeEditorHostSuperPlugin(),
+            EditorPreviewSuperPlugin(),
             CodeEditorLanguagesSuperPlugin(),
             ProjectsPlugin(),
             // 原 LumiApp 显式注入的项目 RAG：保留旧索引数据库和 search_code 工具。

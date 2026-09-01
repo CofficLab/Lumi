@@ -1,0 +1,14 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Editor Preview" : {},
+    "Preview" : {},
+    "No file selected" : {},
+    "Open a Markdown file to see its rendered preview." : {},
+    "Preview is not available for this file type." : {},
+    "Image Preview" : {},
+    "Markdown Preview" : {},
+    "Preview is unavailable until the editor finishes loading the file." : {}
+  },
+  "version" : "1.0"
+}

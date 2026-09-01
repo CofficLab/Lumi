@@ -22,6 +22,7 @@ import PluginProjectFiles
 import KitLLM
 import ProviderMessage
 import PluginConversationManager
+import PluginEditorPreview
 import SwiftUI
 import Testing
 @testable import FactoryLumi
@@ -39,12 +40,14 @@ struct FactoryLumiTests {
         let host = try #require(plugins["com.coffic.lumi.plugin.editor-host"])
         let languages = try #require(plugins["com.coffic.lumi.plugin.editor-languages"])
         let workspace = try #require(plugins["com.coffic.lumi.plugin.code-editor"])
+        let preview = try #require(plugins[EditorPreviewSuperPlugin.pluginID])
         let projectFiles = try #require(plugins[ProjectFilesSuperPlugin.pluginID])
         let bookletMaker = try #require(plugins["com.coffic.lumi.plugin.booklet-maker"])
 
         #expect(host.metadata.policy == .alwaysOn)
         #expect(languages.metadata.policy == .required)
         #expect(workspace.metadata.policy == .disabledByDefault)
+        #expect(preview.metadata.policy == .enabledByDefault)
         #expect(projectFiles.metadata.policy == .required)
         #expect(bookletMaker.metadata.policy == .disabledByDefault)
         #expect(projectFiles.dependencies == [
