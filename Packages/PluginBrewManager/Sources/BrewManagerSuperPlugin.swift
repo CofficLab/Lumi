@@ -26,8 +26,8 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
     public let order = 260
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.brew-manager",
-        name: "Package Management",
-        description: "Manage Homebrew packages and casks.",
+        name: LumiPluginLocalization.string("Package Management", bundle: .module),
+        description: LumiPluginLocalization.string("Manage Homebrew packages and casks.", bundle: .module),
         category: .system,
         stage: .preview,
         policy: .disabledByDefault

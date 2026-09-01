@@ -3607,6 +3607,40 @@
           }
         }
       }
+    },
+    "Manage Homebrew packages and casks.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage Homebrew packages and casks."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 Homebrew 软件包与 casks。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 Homebrew 軟體套件與 casks。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 Homebrew 軟件套件與 casks。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "管理 Homebrew 軟體套件與 casks。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
