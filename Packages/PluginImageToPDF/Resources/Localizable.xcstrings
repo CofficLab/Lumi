@@ -667,6 +667,12 @@
             "value" : "拖入图片文件并将每个文件转换为单页 PDF。"
           }
         },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖入圖片檔案，並將每個檔案轉換為單頁 PDF。"
+          }
+        },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1095,6 +1101,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "图片转 PDF"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片轉 PDF"
           }
         },
         "zh-HK" : {
