@@ -41,10 +41,12 @@ struct StatusMessageView: View {
                     titleColor: theme.textSecondary
                 )
 
-                MessageInfoButton(
-                    message: message,
-                    isPresented: $showInfoPopover
-                )
+                if message.role != .status {
+                    MessageInfoButton(
+                        message: message,
+                        isPresented: $showInfoPopover
+                    )
+                }
             }
         }
     }
