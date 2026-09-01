@@ -26,6 +26,12 @@
             "state": "translated",
             "value": "一個用於在 AI 協助下創作故事的兩欄工作台。"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一個用於在 AI 協助下創作故事的兩欄工作台。"
+          }
         }
       }
     },
@@ -756,6 +762,12 @@
           }
         },
         "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "故事創作"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "故事創作"
