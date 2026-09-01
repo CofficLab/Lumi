@@ -1,5 +1,6 @@
 import Foundation
 import PluginProjectFiles
+import ProviderProject
 import Testing
 
 struct ProjectFilesTabStateTests {
@@ -24,5 +25,23 @@ struct ProjectFilesTabStateTests {
 
         #expect(projection.fileURLs.isEmpty)
         #expect(projection.activeFileURL == nil)
+    }
+
+    @MainActor
+    @Test("ProjectFiles tab updates when multiple files are pinned")
+    func observesMultiplePinnedFiles() {
+        let project = DefaultProjectProvider()
+        let viewModel = ProjectFilesTabViewModel(project: project)
+        let first = URL(fileURLWithPath: "/tmp/First.swift")
+        let second = URL(fileURLWithPath: "/tmp/Second.swift")
+
+        project.pinFile(first)
+        project.pinFile(second)
+
+        #expect(viewModel.tabState.fileURLs == [
+            first.standardizedFileURL,
+            second.standardizedFileURL,
+        ])
+        #expect(viewModel.tabState.activeFileURL == second.standardizedFileURL)
     }
 }

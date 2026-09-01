@@ -81,8 +81,8 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     }
 
     private func setupCollectionView() {
-        collectionView.onDoubleClick = { [weak self] indexPath in
-            self?.handleDoubleClick(at: indexPath)
+        collectionView.onDoubleClick = { [weak self] indexPath, event in
+            self?.handleDoubleClick(at: indexPath, event: event)
         }
 
         let layout = Self.makeLayout()
@@ -290,6 +290,20 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
         collectionView.reloadItems(at: Set(visibleItems))
     }
 
+    /// 同步可见文件行的选中样式，但不重建 cell。
+    /// 普通单击后必须保留原 hosting view，AppKit 才能把下一击识别为双击。
+    private func syncSelectionState() {
+        for cell in collectionView.visibleItems() {
+            guard let indexPath = collectionView.indexPath(for: cell),
+                  let item = dataSource.itemIdentifier(for: indexPath),
+                  let fileCell = cell as? FileTreeNodeCell,
+                  case .file(let fileItem) = item else {
+                continue
+            }
+            fileCell.updateSelected(selectionState.isSelected(fileItem.url))
+        }
+    }
+
     private func setupAppearanceSync() {
         // 监听 Lumi 主题同步通知，触发时 ActiveChromeTheme.current 已是新外观，
         // 立即 reload 重建 cell，让 hostingView.appearance 用正确外观渲染。
@@ -315,16 +329,28 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     }
 
     /// VS Code 风格的双击：将文件从预览状态固定为持久打开的文件。
-    private func handleDoubleClick(at indexPath: IndexPath) {
-        guard let item = dataSource.itemIdentifier(for: indexPath),
-              case .file(let fileItem) = item,
-              !fileItem.isDirectory,
-              let project = context?.project else {
+    private func handleDoubleClick(at indexPath: IndexPath, event: NSEvent) {
+        guard let item = dataSource.itemIdentifier(for: indexPath) else { return }
+        guard case .file(let fileItem) = item else {
+            return
+        }
+        guard !fileItem.isDirectory else {
+            return
+        }
+        guard let project = context?.project else {
             return
         }
 
-        guard ModifierFlags.currentClick.isEmpty else { return }
+        let modifiers = ModifierFlags(event.modifierFlags)
+        guard modifiers.isEmpty else { return }
         project.pinFile(fileItem.url)
+    }
+
+    /// 文件行由 NSHostingView 承载时，左键事件可能不会沿响应者链到达
+    /// NSCollectionView。由 cell 显式转发到这里，继续走 NSCollectionView 的
+    /// 原生选择流程，同时保留自定义双击识别。
+    func forwardMouseDown(from event: NSEvent) {
+        collectionView.mouseDown(with: event)
     }
 
     func getProjectRootPath() -> String {
@@ -373,7 +399,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
         }
         
         let modifiers = ModifierFlags.currentClick
-        
         selectionState.handleTap(
             url: fileItem.url,
             isDirectory: fileItem.isDirectory,
@@ -387,6 +412,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
                 self.onExpansionChange?(relativePath, !fileItem.isExpanded)
             }
         )
+        syncSelectionState()
 
         // 目录点击只改变展开状态；只有文件点击才会切换编辑器当前文件。
         guard !fileItem.isDirectory else {
@@ -402,9 +428,6 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
             return
         }
         context?.project?.previewFile(fileItem.url)
-        
-        // 刷新所有可见 cell 以同步选中状态（避免上一个选中项的高亮残留）
-        reloadVisibleItems()
     }
     
     func collectionView(
@@ -734,7 +757,7 @@ extension FileTreeCollectionViewController: NSCollectionViewDelegate {
 
 /// 为文件树提供不干扰 NSCollectionView 原生选择的双击回调。
 private final class FileTreeCollectionView: NSCollectionView {
-    var onDoubleClick: ((IndexPath) -> Void)?
+    var onDoubleClick: ((IndexPath, NSEvent) -> Void)?
 
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with: event)
@@ -742,7 +765,7 @@ private final class FileTreeCollectionView: NSCollectionView {
         guard event.clickCount == 2 else { return }
         let point = convert(event.locationInWindow, from: nil)
         guard let indexPath = indexPathForItem(at: point) else { return }
-        onDoubleClick?(indexPath)
+        onDoubleClick?(indexPath, event)
     }
 }
 

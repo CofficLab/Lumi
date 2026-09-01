@@ -27,7 +27,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginProjectFilesTests",
-            dependencies: ["PluginProjectFiles"]
+            dependencies: [
+                "PluginProjectFiles",
+                .product(name: "ProviderProject", package: "ProviderProject"),
+            ]
         ),
     ]
 )
