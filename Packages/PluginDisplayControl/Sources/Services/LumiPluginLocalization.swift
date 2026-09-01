@@ -5,6 +5,8 @@ import KitLocalization
 ///
 /// Provides localization lookup scoped to this plugin by delegating to LumiLocalization.
 enum LumiPluginLocalization {
+    static let resourceBundle: Bundle = .module
+
     static func string(
         _ key: String,
         bundle: Bundle,

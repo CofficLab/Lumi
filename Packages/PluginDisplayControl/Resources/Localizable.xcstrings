@@ -1648,6 +1648,40 @@
           }
         }
       }
+    },
+    "Control brightness, volume, and contrast for external displays via DDC/CI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Control brightness, volume, and contrast for external displays via DDC/CI."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过 DDC/CI 控制外接显示器的亮度、音量与对比度。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過 DDC/CI 控制外接顯示器的亮度、音量與對比度。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過 DDC/CI 控制外接顯示器的亮度、音量與對比度。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過 DDC/CI 控制外接顯示器的亮度、音量與對比度。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
