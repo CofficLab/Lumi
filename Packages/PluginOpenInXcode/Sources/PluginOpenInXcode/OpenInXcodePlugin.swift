@@ -16,8 +16,8 @@ public final class OpenInXcodePlugin: SuperPlugin, SuperLog {
     public let order = 611
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.open-in-xcode",
-        name: "Open In Xcode",
-        description: "Allow LLM to open projects in Xcode.",
+        name: OpenInXcodeLocalization.string("Open In Xcode"),
+        description: OpenInXcodeLocalization.string("Allow LLM to open projects in Xcode."),
         category: .integration,
         stage: .stable,
         policy: .enabledByDefault
