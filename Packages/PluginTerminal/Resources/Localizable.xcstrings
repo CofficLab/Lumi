@@ -1136,6 +1136,40 @@
           }
         }
       }
+    },
+    "Integrated terminal sessions for the current project.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Integrated terminal sessions for the current project."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前项目的集成终端会话。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前專案的整合終端機工作階段。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前專案的整合終端機工作階段。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前專案的整合終端機工作階段。"
+          }
+        }
+      }
     }
   },
   "version": "1.1"
