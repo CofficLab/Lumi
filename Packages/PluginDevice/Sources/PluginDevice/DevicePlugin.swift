@@ -20,8 +20,8 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
     public let order = 6
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.device-info",
-        name: "Device",
-        description: "",
+        name: LumiPluginLocalization.string("Device", bundle: .module),
+        description: LumiPluginLocalization.string("View device information and hardware status.", bundle: .module),
         category: .system,
         stage: .stable,
         policy: .disabledByDefault
