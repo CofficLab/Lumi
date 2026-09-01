@@ -15,8 +15,8 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
     public let order = 285
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.screen-recorder",
-        name: "Screen Recorder",
-        description: "Record an app window or display to a video file through chat.",
+        name: ScreenRecorderLocalization.string("Screen Recorder", "屏幕录制"),
+        description: ScreenRecorderLocalization.string("Record an app window or display to a video file through chat.", "通过对话将应用窗口或屏幕录制为视频文件。"),
         category: .integration,
         stage: .preview,
         policy: .disabledByDefault
