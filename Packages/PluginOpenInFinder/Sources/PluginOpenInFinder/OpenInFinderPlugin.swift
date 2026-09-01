@@ -16,8 +16,8 @@ public final class OpenInFinderPlugin: SuperPlugin, SuperLog {
     public let order = 610
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.open-in-finder",
-        name: "Open In Finder",
-        description: "Allow LLM to open files or folders in Finder.",
+        name: OpenInFinderLocalization.string("Open In Finder"),
+        description: OpenInFinderLocalization.string("Allow LLM to open files or folders in Finder."),
         category: .integration,
         stage: .stable,
         policy: .enabledByDefault

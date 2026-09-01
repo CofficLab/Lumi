@@ -3,13 +3,14 @@ import PackageDescription
 
 let package = Package(
     name: "PluginOpenInFinder",
-    defaultLocalization: "zh-Hans",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "PluginOpenInFinder", targets: ["PluginOpenInFinder"]),
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog"),
         .package(path: "../OpenInKit"),
         .package(path: "../ProviderDocsView"),
@@ -21,13 +22,15 @@ let package = Package(
             name: "PluginOpenInFinder",
             dependencies: [
                 "KernelCore",
+                "KitLocalization",
                 "KitSuperLog",
                 "OpenInKit",
                 "ProviderDocsView",
                 "ProviderProject",
                 "ProviderToolManager",
             ],
-            path: "Sources/PluginOpenInFinder"
+            path: "Sources/PluginOpenInFinder",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
     ]
 )
