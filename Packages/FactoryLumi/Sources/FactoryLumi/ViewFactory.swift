@@ -123,6 +123,11 @@ public struct DefaultViewFactory: ViewFactory {
         let chrome = PaletteChromeTheme(theme: selected, colorScheme: colorScheme)
         ActiveChromeTheme.current = chrome
         LumiUIThemeStore.shared.setTheme(ChromeToUIThemeAdapter(chrome: chrome))
+
+        // ThemeProviding is the source of truth in the new architecture, while
+        // native views such as the project file tree listen for the shared
+        // window-appearance sync notification to rebuild cached cells.
+        ThemeWindowAppearanceSync.syncAllWindows()
     }
 
     // MARK: - Theme Application
