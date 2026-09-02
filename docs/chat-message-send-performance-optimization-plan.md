@@ -204,13 +204,13 @@ V1 已改为维护有限的消息窗口：首次激活、尾部兜底刷新和�
 
 ### P2：完成主路径后处理
 
-#### P2-1：发送入口通过无优先级 MainActor Task 延后提交
+#### P2-1：发送入口通过无优先级 MainActor Task 延后提交（已完成）
 
 当前位置：
 
 `Packages/PluginConversationInput/Sources/PluginConversationInput/Views/ConversationInputView.swift`
 
-当前实现通常可以很快完成，但严格来说，用户消息插入发生在后续 `Task` 中，不是 Return 回调内的同步 commit。
+当前实现已拆分提交阶段和回合阶段。输入入口同步捕获文本与附件、提交用户消息并发布插入事件；只有回合跟踪被放入后续 `MainActor Task`。旧的 `sendMessage` API 仍会等待完整回合，保持已有调用方行为。
 
 目标：提供“快速提交”语义：
 
@@ -221,6 +221,8 @@ send() 同步捕获并提交用户消息
 ```
 
 如果保留 async API，则 UI 层不应等待完整 AgentLoop 回合；发送 API 的完成点应定义为“用户消息已提交”，而不是“LLM 回答完成”。
+
+实现记录见 [`docs/plans/2026-09-02-fast-message-commit.md`](plans/2026-09-02-fast-message-commit.md)。
 
 #### P2-2：附件编码在 MainActor
 

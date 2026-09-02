@@ -65,18 +65,29 @@ struct ConversationInputView: View {
     private func send() {
         guard let input, let sender else { return }
         let trimmed = input.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let hasAttachments = !sender.pendingImageAttachments.isEmpty || !sender.pendingFileAttachments.isEmpty
+        let imageAttachments = sender.pendingImageAttachments
+        let fileAttachments = sender.pendingFileAttachments
+        let hasAttachments = !imageAttachments.isEmpty || !fileAttachments.isEmpty
         guard !trimmed.isEmpty || hasAttachments else { return }
 
         input.text = ""
         input.errorMessage = nil
 
-        Task { @MainActor in
-            do {
-                try await sender.sendMessage(trimmed, conversationID: nil)
-            } catch {
-                input.errorMessage = error.localizedDescription
+        do {
+            guard let commit = try sender.commitUserMessage(
+                trimmed,
+                imageAttachments: imageAttachments,
+                fileAttachments: fileAttachments,
+                conversationID: nil
+            ) else { return }
+            guard !commit.wasQueued else { return }
+
+            // 用户消息已同步进入内存时间线；回合跟踪延后，不阻塞 Return → 首帧路径。
+            Task { @MainActor in
+                await sender.startTurn(for: commit)
             }
+        } catch {
+            input.errorMessage = error.localizedDescription
         }
     }
 }
