@@ -30,7 +30,7 @@ public final class ProjectFilesSuperPlugin: SuperPlugin {
     )
 
     private weak var rootView: (any RootViewProviding)?
-    private var projectObserver: (any ProjectProvidingObserverHandle)?
+    private var projectObserver: ProjectFilesProjectObserver?
 
     public init() {}
 
@@ -45,7 +45,7 @@ public final class ProjectFilesSuperPlugin: SuperPlugin {
         self.rootView = rootView
         rootView.setContentHeaderView(AnyView(ProjectFilesTabStripView(project: project)))
 
-        let projectObserver = project.addObserver { [weak self] _ in
+        let projectObserver = ProjectFilesProjectObserver(project: project) { [weak self] in
             self?.updateHeaderVisibility(for: project)
         }
         self.projectObserver = projectObserver

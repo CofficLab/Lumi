@@ -12,8 +12,7 @@ struct CacheHitRateToolbarView: View {
     @State private var isPopoverPresented = false
     @State private var messageRefreshRevision = 0
 
-    @State private var conversationObserver: (any SelectedConversationObserverHandle)?
-    @State private var messageObserver: (any MessageInsertedObserverHandle)?
+    @State private var observer: CacheHitRateObserver?
 
     var body: some View {
         Group {
@@ -46,15 +45,18 @@ struct CacheHitRateToolbarView: View {
             }
         }
         .task {
-            selectedConversationID = conversations.selectedConversationID
-            conversationObserver = conversations.addSelectedConversationObserver { newID in
+            observer = CacheHitRateObserver(
+                conversations: conversations,
+                messages: messages,
+                onConversationChange: { newID in
                 selectedConversationID = newID
-            }
-            messageObserver = messages.addMessageInsertedObserver { _, conversationID in
-                if conversationID == selectedConversationID {
-                    messageRefreshRevision &+= 1
+                },
+                onMessageInsert: { conversationID in
+                    if conversationID == selectedConversationID {
+                        messageRefreshRevision &+= 1
+                    }
                 }
-            }
+            )
         }
         .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(messageRefreshRevision)") {
             try? await Task.sleep(for: .milliseconds(150))
@@ -62,10 +64,8 @@ struct CacheHitRateToolbarView: View {
             await refresh()
         }
         .onDisappear {
-            conversationObserver?.cancel()
-            messageObserver?.cancel()
-            conversationObserver = nil
-            messageObserver = nil
+            observer?.cancel()
+            observer = nil
         }
     }
 

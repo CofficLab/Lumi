@@ -27,7 +27,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     private var selectionState = SelectionState()
     private var hoveredItemURL: URL?
     private var trackingArea: NSTrackingArea?
-    private var appearanceSyncObserver: NSObjectProtocol?
+    private var appearanceObserver: FileTreeAppearanceObserver?
     /// 当前激活的外壳主题。
     ///
     /// 不能在控制器创建时缓存主题：用户切换主题后，现有文件树控制器仍会继续
@@ -307,11 +307,7 @@ final class FileTreeCollectionViewController: NSViewController, SuperLog {
     private func setupAppearanceSync() {
         // 监听 Lumi 主题同步通知，触发时 ActiveChromeTheme.current 已是新外观，
         // 立即 reload 重建 cell，让 hostingView.appearance 用正确外观渲染。
-        appearanceSyncObserver = NotificationCenter.default.addObserver(
-            forName: .lumiThemeDidSyncWindowAppearances,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
+        appearanceObserver = FileTreeAppearanceObserver { [weak self] in
             self?.reloadVisibleItems()
         }
     }

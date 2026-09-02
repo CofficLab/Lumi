@@ -1,7 +1,6 @@
 import Foundation
 import KitSuperLog
 import AppKit
-import Combine
 import Carbon
 import os
 
@@ -22,7 +21,7 @@ public class InputService: ObservableObject, SuperLog {
     @Published var availableInputSources: [InputSource] = []
     @Published var lastActiveAppBundleID: String?
 
-    private var cancellables = Set<AnyCancellable>()
+    private var eventObserver: InputEventObserver?
     private let configKey = "InputPluginConfig"
     private let settingsStore = InputPluginLocalStore()
 
@@ -55,21 +54,15 @@ public class InputService: ObservableObject, SuperLog {
     }
     
     public func startMonitoring() {
-        NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didActivateApplicationNotification)
-            .compactMap { notification -> NSRunningApplication? in
-                return notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-            }
-            .sink { [weak self] app in
+        eventObserver?.cancel()
+        eventObserver = InputEventObserver(
+            onApplicationActivation: { [weak self] app in
                 self?.handleAppActivation(app)
-            }
-            .store(in: &cancellables)
-            
-        // Also listen for input source changes to update UI
-        NotificationCenter.default.publisher(for: NSTextInputContext.keyboardSelectionDidChangeNotification)
-            .sink { [weak self] _ in
+            },
+            onInputSourceChange: { [weak self] in
                 self?.currentInputSource = InputSource.current()
             }
-            .store(in: &cancellables)
+        )
     }
     
     private func handleAppActivation(_ app: NSRunningApplication) {

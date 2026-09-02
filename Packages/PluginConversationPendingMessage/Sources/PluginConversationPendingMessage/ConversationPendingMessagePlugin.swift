@@ -1,5 +1,4 @@
 import os
-import Combine
 import Foundation
 import KernelCore
 import KitSuperLog
@@ -32,7 +31,7 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
     )
 
     public init() {}
-
+    private var sendingBox: ObservableMessageSendingBox? = nil
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
@@ -43,6 +42,7 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
         }
 
         let box = ObservableMessageSendingBox(sender: sender)
+        sendingBox = box
         chat.addItems([
             ChatSectionItem(
                 id: "\(id).pending-list",
@@ -57,25 +57,10 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        sendingBox?.cancel()
+        sendingBox = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeItem(id: "\(id).pending-list")
-    }
-}
-
-/// SwiftUI 友好的 `MessageSendingProviding` 包装器（协议存在类型擦除）。
-@MainActor
-public final class ObservableMessageSendingBox: ObservableObject {
-    public let sender: any MessageSendingProviding
-    private var cancellable: AnyCancellable?
-
-    public init(sender: any MessageSendingProviding) {
-        self.sender = sender
-        self.cancellable = sender.objectWillChange
-            .map { _ in () }
-            .eraseToAnyPublisher()
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
     }
 }
 

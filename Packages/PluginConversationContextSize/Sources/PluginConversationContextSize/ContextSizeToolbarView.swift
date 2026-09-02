@@ -16,9 +16,7 @@ struct ContextSizeToolbarView: View {
     @State private var selectedConversationID: UUID?
     @State private var messageRefreshRevision = 0
 
-    @State private var conversationObserver: (any SelectedConversationObserverHandle)?
-    @State private var messageObserver: (any MessageInsertedObserverHandle)?
-    @State private var llmObserver: (any LLMManagerObserverHandle)?
+    @State private var observer: ContextSizeObserver?
 
     var body: some View {
         Button {
@@ -32,17 +30,21 @@ struct ContextSizeToolbarView: View {
             ContextSizePopover(used: usedTokens, max: maxContextSize)
         }
         .task {
-            selectedConversationID = conversations.selectedConversationID
-            conversationObserver = conversations.addSelectedConversationObserver { newID in
-                selectedConversationID = newID
-            }
-            messageObserver = messages.addMessageInsertedObserver { _, conversationID in
-                guard conversationID == conversations.selectedConversationID else { return }
-                messageRefreshRevision &+= 1
-            }
-            llmObserver = llmManager.addObserver { _ in
-                messageRefreshRevision &+= 1
-            }
+            observer = ContextSizeObserver(
+                conversations: conversations,
+                messages: messages,
+                llmManager: llmManager,
+                onConversationChange: { newID in
+                    selectedConversationID = newID
+                },
+                onMessageInsert: { conversationID in
+                    guard conversationID == conversations.selectedConversationID else { return }
+                    messageRefreshRevision &+= 1
+                },
+                onLLMChange: {
+                    messageRefreshRevision &+= 1
+                }
+            )
         }
         .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(messageRefreshRevision)") {
             try? await Task.sleep(for: .milliseconds(150))
@@ -50,12 +52,8 @@ struct ContextSizeToolbarView: View {
             await refreshSize(for: selectedConversationID)
         }
         .onDisappear {
-            conversationObserver?.cancel()
-            messageObserver?.cancel()
-            llmObserver?.cancel()
-            conversationObserver = nil
-            messageObserver = nil
-            llmObserver = nil
+            observer?.cancel()
+            observer = nil
         }
     }
 

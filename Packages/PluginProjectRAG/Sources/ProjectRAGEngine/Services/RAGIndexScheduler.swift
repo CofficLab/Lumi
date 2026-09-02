@@ -23,7 +23,7 @@ public final class RAGIndexScheduler: SuperLog {
     private var retryStates: [String: RAGIndexRetryState] = [:]
     private let retryStateURL: URL
     private var nextEligibleAt = Date.distantPast
-    private var observers: [NSObjectProtocol] = []
+    private var interruptionObserver: RAGIndexInterruptionObserver?
 
     public init(
         projects: any ProjectProviding,
@@ -37,11 +37,16 @@ public final class RAGIndexScheduler: SuperLog {
         self.configuration = .init()
         self.retryStateURL = stateDirectory.appendingPathComponent("index-scheduler-state.json")
         self.retryStates = Self.loadRetryStates(from: retryStateURL)
-        installInterruptionObservers()
+        interruptionObserver = RAGIndexInterruptionObserver { [weak self] in
+            await self?.interruptForForegroundActivity()
+        }
     }
 
     public func run() async {
-        defer { removeInterruptionObservers() }
+        defer {
+            interruptionObserver?.cancel()
+            interruptionObserver = nil
+        }
         while !Task.isCancelled {
             guard Date() >= nextEligibleAt else {
                 await sleep(max(nextEligibleAt.timeIntervalSinceNow, configuration.schedulerPollInterval))
@@ -167,26 +172,6 @@ public final class RAGIndexScheduler: SuperLog {
         } catch {
             // Cancellation is observed by the loop on the next iteration.
         }
-    }
-
-    private func installInterruptionObservers() {
-        let names: [Notification.Name] = [
-            NSApplication.didBecomeActiveNotification,
-        ]
-        observers = names.map { name in
-            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    await self?.interruptForForegroundActivity()
-                }
-            }
-        }
-    }
-
-    private func removeInterruptionObservers() {
-        for observer in observers {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        observers.removeAll()
     }
 
     private func interruptForForegroundActivity() async {

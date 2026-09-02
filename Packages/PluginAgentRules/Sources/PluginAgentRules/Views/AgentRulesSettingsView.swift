@@ -5,24 +5,6 @@ import LumiUI
 import ProviderProject
 import SwiftUI
 
-/// 观察项目服务，避免在 SwiftUI 中直接持有 `any ProjectProviding`。
-@MainActor
-private final class AgentRulesProjectObserver: ObservableObject {
-    @Published private(set) var projects: [ProjectInfo] = []
-
-    private var projectObserver: (any ProjectProvidingObserverHandle)?
-
-    init(projectProvider: (any ProjectProviding)?) {
-        guard let projectProvider else { return }
-
-        projects = projectProvider.projects
-        projectObserver = projectProvider.addObserver { [weak self] event in
-            guard case .projectsChanged(let projects) = event else { return }
-            self?.projects = projects
-        }
-    }
-}
-
 /// Agent Rules 设置视图。
 ///
 /// - 左侧为项目列表。

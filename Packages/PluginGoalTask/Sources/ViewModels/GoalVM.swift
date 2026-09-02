@@ -28,7 +28,7 @@ final class GoalVM: ObservableObject, SuperLog {
     private let managerProvider: () -> GoalStateManager?
 
     /// 通知观察者持有者,懒加载绑定 `.goalDidChange`。
-    private nonisolated let notificationObserverHolder = NotificationObserverHolder()
+    private var goalChangeObserver: GoalChangeObserver?
 
     @Published var currentConversationID: UUID?
 
@@ -112,7 +112,8 @@ final class GoalVM: ObservableObject, SuperLog {
 
     /// 移除 `.goalDidChange` 观察者。通常由视图 `onDisappear` 调用。
     public func removeObserver() {
-        notificationObserverHolder.remove()
+        goalChangeObserver?.cancel()
+        goalChangeObserver = nil
     }
 
     /// 刷新当前对话的 Goal 列表。
@@ -135,12 +136,8 @@ final class GoalVM: ObservableObject, SuperLog {
         }
 
         // 首次绑定 `.goalDidChange`(懒加载,后续 refresh 复用同一观察者)。
-        if !notificationObserverHolder.hasObserver {
-            let observer = NotificationCenter.default.addObserver(
-                forName: .goalDidChange,
-                object: nil,
-                queue: .main
-            ) { [weak self] notification in
+        if goalChangeObserver == nil {
+            goalChangeObserver = GoalChangeObserver { [weak self] notification in
                 let changedCid = notification.userInfo?["conversationId"] as? String
                 Task { @MainActor [weak self] in
                     guard let self else { return }
@@ -152,7 +149,6 @@ final class GoalVM: ObservableObject, SuperLog {
                     }
                 }
             }
-            notificationObserverHolder.set(observer)
         }
 
         isLoading = true

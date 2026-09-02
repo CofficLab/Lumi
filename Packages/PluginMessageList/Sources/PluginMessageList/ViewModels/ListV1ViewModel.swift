@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import ProviderAgentLoop
 import ProviderMessage
@@ -31,8 +30,7 @@ final class ListV1ViewModel: ObservableObject {
     private var activeConversationID: UUID?
     /// 激活序列号，用于防止并发 activate 的竞态。
     private var activationSequence: UInt64 = 0
-    private var cancellables: Set<AnyCancellable> = []
-    private var messageChangeObserver: (any MessageChangeObserverHandle)?
+    private let servicesObserver = MessageListServicesObserver()
     private var didBindMessageChanges = false
     /// objectWillChange remains the compatibility fallback for edits/deletes;
     /// insertion events already carry the complete message payload.
@@ -246,14 +244,12 @@ final class ListV1ViewModel: ObservableObject {
         // 第一条用户消息正是在这个阶段到达。
         guard !didBindMessageChanges else { return }
         guard let messages = services.messages else { return }
-        messageChangeObserver = messages.addMessageChangeObserver { [weak self] change in
-            self?.handleMessageChange(change)
-        }
-        messages.objectWillChange
-            .map { _ in () }
-            .eraseToAnyPublisher()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+        servicesObserver.bindMessages(
+            messages,
+            onChange: { [weak self] change in
+                self?.handleMessageChange(change)
+            },
+            onWillChange: { [weak self] in
                 guard let self else { return }
                 if self.consumePendingInsertionFallback() {
                     return
@@ -262,7 +258,7 @@ final class ListV1ViewModel: ObservableObject {
                     await self?.refresh()
                 }
             }
-            .store(in: &cancellables)
+        )
         didBindMessageChanges = true
     }
 

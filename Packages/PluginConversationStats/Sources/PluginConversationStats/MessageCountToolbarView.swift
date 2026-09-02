@@ -12,8 +12,7 @@ struct MessageCountToolbarView: View {
     @State private var isPopoverPresented = false
 
     // 持有观察者令牌，随视图生命周期自动释放
-    @State private var conversationObserver: (any SelectedConversationObserverHandle)?
-    @State private var messageObserver: (any MessageInsertedObserverHandle)?
+    @State private var observer: MessageCountObserver?
 
     var body: some View {
         Button {
@@ -41,27 +40,31 @@ struct MessageCountToolbarView: View {
             MessageCountPopover(count: count)
         }
         .task {
-            selectedConversationID = conversations.selectedConversationID
-            // 注册会话切换观察
-            conversationObserver = conversations.addSelectedConversationObserver { newID in
+            observer = MessageCountObserver(
+                conversations: conversations,
+                messages: messages,
+                onConversationChange: { newID in
                 selectedConversationID = newID
-            }
-            // 注册消息插入观察
-            messageObserver = messages.addMessageInsertedObserver { _, conversationID in
-                // 只关心当前会话的消息变更
-                if conversationID == selectedConversationID || selectedConversationID == nil {
-                    Task(priority: .utility) { @MainActor in
-                        await Task.yield()
-                        guard !Task.isCancelled else { return }
-                        refreshCount()
+                },
+                onMessageInsert: { conversationID in
+                    if conversationID == selectedConversationID || selectedConversationID == nil {
+                        Task(priority: .utility) { @MainActor in
+                            await Task.yield()
+                            guard !Task.isCancelled else { return }
+                            refreshCount()
+                        }
                     }
                 }
-            }
+            )
         }
         .task(id: selectedConversationID) {
             await Task.yield()
             guard !Task.isCancelled else { return }
             refreshCount()
+        }
+        .onDisappear {
+            observer?.cancel()
+            observer = nil
         }
     }
 

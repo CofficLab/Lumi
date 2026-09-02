@@ -26,8 +26,7 @@ public final class ConversationNewPlugin: SuperPlugin, SuperLog {
     /// - policy .alwaysOn → .required（不可禁用）
     /// - stage .beta → .preview
 
-    private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
-    private var chatSectionObserver: (any ChatSectionProvidingObserverHandle)?
+    private var toolbarObserver: NewChatToolbarObserver?
 
     public init() {}
 
@@ -40,36 +39,27 @@ public final class ConversationNewPlugin: SuperPlugin, SuperLog {
         }
 
         let toolbarItemID = "\(id).new-chat"
-        let syncToolbarItem: @MainActor () -> Void = { [weak toolbar, weak conversations, weak chat] in
-            guard let toolbar, let conversations, let chat else { return }
-            // 无选中会话时由 MessageList 的空视图承载创建入口，工具栏不重复显示。
-            let shouldShow = chat.isVisible && conversations.selectedConversationID != nil
-            let isShown = toolbar.toolbarItems.contains { $0.id == toolbarItemID }
-            if shouldShow, !isShown {
-                toolbar.addToolbarItems([
-                    ToolbarItem(id: toolbarItemID, title: LumiPluginLocalization.string("New Chat", bundle: .module), placement: .trailing, category: .chat, order: 30) {
-                        NewChatButton(kernel: kernel)
-                    },
-                ])
-            } else if !shouldShow, isShown {
-                toolbar.removeToolbarItems(ids: [toolbarItemID])
+        toolbarObserver = NewChatToolbarObserver(
+            toolbar: toolbar,
+            conversations: conversations,
+            chat: chat,
+            itemID: toolbarItemID
+        ) {
+            ToolbarItem(
+                id: toolbarItemID,
+                title: LumiPluginLocalization.string("New Chat", bundle: .module),
+                placement: .trailing,
+                category: .chat,
+                order: 30
+            ) {
+                NewChatButton(kernel: kernel)
             }
         }
-
-        selectedConversationObserver = conversations.addSelectedConversationObserver { _ in
-            syncToolbarItem()
-        }
-        chatSectionObserver = chat.addObserver { _ in
-            syncToolbarItem()
-        }
-        syncToolbarItem()
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        selectedConversationObserver?.cancel()
-        selectedConversationObserver = nil
-        chatSectionObserver?.cancel()
-        chatSectionObserver = nil
+        toolbarObserver?.cancel()
+        toolbarObserver = nil
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).new-chat"])
     }
 }

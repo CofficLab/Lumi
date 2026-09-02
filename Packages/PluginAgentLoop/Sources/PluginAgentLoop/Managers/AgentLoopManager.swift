@@ -45,7 +45,7 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
 
     var completionWaiters: [UUID: [CompletionWaiter]] = [:]
     private var agentLoopObservers: [UUID: (AgentLoopEvent) -> Void] = [:]
-    private var toolJobObserver: (any ToolJobObserverHandle)?
+    private var toolJobObserver: ToolJobObserver?
 
 
     // MARK: - Init
@@ -64,7 +64,7 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
         self.streaming = streaming
         self.conversations = conversations
         self.contextProvider = contextProvider
-        self.toolJobObserver = toolManager.addToolJobObserver { [weak self] event in
+        self.toolJobObserver = ToolJobObserver(toolManager: toolManager) { [weak self] event in
             self?.handleToolJobEvent(event)
         }
     }

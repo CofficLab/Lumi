@@ -43,7 +43,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
     private var provider: ActivityBarProvider?
 
     /// 插件管理 Provider 的精准观察令牌；deinit 时自动取消。
-    private var pluginManagerObserver: (any PluginManagingObserverHandle)?
+    private var pluginManagerObserver: PluginManagerObserver?
     private var pluginManager: (any PluginManaging)?
     private weak var rootView: (any RootViewProviding)?
 
@@ -128,7 +128,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         }
         self.pluginManager = pluginManager
         lastKnownEnabledPluginIDs = currentEnabledPluginIDs(pluginManager: pluginManager)
-        pluginManagerObserver = pluginManager.addPluginObserver { [weak self] _ in
+        pluginManagerObserver = PluginManagerObserver(pluginManager: pluginManager) { [weak self] in
             guard let self, let pluginManager = self.pluginManager else { return }
             self.syncPluginVisibility(pluginManager: pluginManager)
         }

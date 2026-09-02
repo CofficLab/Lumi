@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import ProviderMessage
 import ProviderMessageStreaming
@@ -18,7 +17,7 @@ final class AgentTurnViewModel: ObservableObject {
 
     private let services: MessageListServices
     private var item: AgentTurnPresentationItem
-    private var cancellables: Set<AnyCancellable> = []
+    private let servicesObserver = MessageListServicesObserver()
     private var didBindStreaming = false
     private var streamingRefreshTask: Task<Void, Never>?
     private var refreshSequence: UInt64 = 0
@@ -152,12 +151,13 @@ final class AgentTurnViewModel: ObservableObject {
     private func bindNotifications() {
         // 新版无 `.lumiMessagesDidChange` 通知：订阅消息服务的窄播。
         guard let messages = services.messages else { return }
-        messages.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+        servicesObserver.bindMessages(
+            messages,
+            onChange: nil,
+            onWillChange: { [weak self] in
                 Task { @MainActor [weak self] in await self?.refresh() }
             }
-            .store(in: &cancellables)
+        )
 
         bindStreamingIfNeeded()
     }
@@ -166,10 +166,9 @@ final class AgentTurnViewModel: ObservableObject {
         guard !didBindStreaming,
               item.acceptsLiveActivity,
               let streaming = services.streaming else { return }
-        streaming.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.scheduleStreamingRefresh() }
-            .store(in: &cancellables)
+        servicesObserver.bindStreaming(streaming) { [weak self] in
+            self?.scheduleStreamingRefresh()
+        }
         didBindStreaming = true
     }
 

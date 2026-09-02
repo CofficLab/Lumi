@@ -120,7 +120,7 @@ public struct ActivityDay: Identifiable, Sendable, Equatable {
 public final class ActivityHeatmapViewModel {
     private let messages: (any MessageManaging)?
     private let cache: ActivityHeatmapCache?
-    private var insertionObserver: (any MessageInsertedObserverHandle)?
+    private var insertionObserver: MessageObserver?
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
     static let periodKey = "com.coffic.activity-heatmap.period"
@@ -135,9 +135,9 @@ public final class ActivityHeatmapViewModel {
         self.messages = messages
         self.cache = cache
         self.period = ActivityHeatmapPeriod(rawValue: UserDefaults.standard.integer(forKey: Self.periodKey)) ?? .days30
-        insertionObserver = messages?.addMessageInsertedObserver { [weak self] _, _ in
+        insertionObserver = messages.map { messages in MessageObserver(messages: messages) { [weak self] in
             self?.scheduleReload()
-        }
+        } }
     }
 
     static func restoreLegacyPeriodIfNeeded(from directory: URL?) {

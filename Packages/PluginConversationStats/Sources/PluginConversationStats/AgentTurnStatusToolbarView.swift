@@ -12,7 +12,7 @@ struct AgentTurnStatusToolbarView: View {
     @State private var pulseAnimation: Bool = false
 
     // Observer tokens
-    @State private var conversationObserver: (any SelectedConversationObserverHandle)?
+    @State private var observer: AgentTurnStatusObserver?
 
     var body: some View {
         Group {
@@ -45,8 +45,7 @@ struct AgentTurnStatusToolbarView: View {
             }
         }
         .task {
-            selectedConversationID = conversations.selectedConversationID
-            conversationObserver = conversations.addSelectedConversationObserver { newID in
+            observer = AgentTurnStatusObserver(conversations: conversations) { newID in
                 selectedConversationID = newID
             }
             // Poll the agent loop state periodically via conversation's objectWillChange
@@ -61,6 +60,10 @@ struct AgentTurnStatusToolbarView: View {
         // a direct publisher for per-conversation state changes)
         .onReceive(Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()) { _ in
             updateRunningState()
+        }
+        .onDisappear {
+            observer?.cancel()
+            observer = nil
         }
     }
 

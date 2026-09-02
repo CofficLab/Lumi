@@ -29,8 +29,7 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
         policy: .required
     )
 
-    /// 事件观察者 token（onShutdown 时移除）。
-    private var observers: [NSObjectProtocol] = []
+    private var eventObserver: IdleTimeEventObserver?
     private var provider: (any IdleTimeProviding)?
 
     public init() {}
@@ -49,7 +48,7 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
 
         // 2. 注册活动事件监听（替代旧版 IdleTimeRootObserver 的职责）。
         if let provider {
-            registerEventObservers(provider: provider)
+            eventObserver = IdleTimeEventObserver(provider: provider)
         }
 
         // 3. 设置页：休息窗口详情 + 打开数据目录。
@@ -70,11 +69,8 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         // 撤回事件监听。
-        let center = NotificationCenter.default
-        for observer in observers {
-            center.removeObserver(observer)
-        }
-        observers.removeAll()
+        eventObserver?.cancel()
+        eventObserver = nil
         provider = nil
 
         kernel.resolveProvider((any SettingViewProviding).self)?
@@ -85,25 +81,4 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
     }
 
-    // MARK: - 事件监听（替代旧版 IdleTimeRootObserver）
-
-    private func registerEventObservers(provider: any IdleTimeProviding) {
-        let center = NotificationCenter.default
-
-        observers.append(center.addObserver(
-            forName: NSApplication.didBecomeActiveNotification,
-            object: nil,
-            queue: .main
-        ) { _ in
-            Task { await provider.record(.appBecameActive) }
-        })
-
-        observers.append(center.addObserver(
-            forName: .lumiEditorSave,
-            object: nil,
-            queue: .main
-        ) { _ in
-            Task { await provider.record(.fileSave) }
-        })
-    }
 }

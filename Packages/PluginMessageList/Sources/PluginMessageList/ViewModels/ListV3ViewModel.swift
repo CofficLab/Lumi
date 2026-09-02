@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import KitMarkdown
 import ProviderConversation
@@ -83,8 +82,7 @@ final class ListV3ViewModel: ObservableObject {
 
     /// 切换会话时记录的目标会话，用于丢弃过期的后台读结果。
     private var activeConversationID: UUID?
-    private var cancellables: Set<AnyCancellable> = []
-    private var messageChangeObserver: (any MessageChangeObserverHandle)?
+    private let servicesObserver = MessageListServicesObserver()
     /// objectWillChange remains a compatibility fallback for updates/deletes.
     private var pendingInsertionFallbacksToSkip = 0
     private var didBindServices = false
@@ -286,14 +284,12 @@ final class ListV3ViewModel: ObservableObject {
     private func bindServicesIfNeeded() {
         guard !didBindServices else { return }
         if let messages = services.messages {
-            messageChangeObserver = messages.addMessageChangeObserver { [weak self] change in
-                self?.handleMessageChange(change)
-            }
-            messages.objectWillChange
-                .map { _ in () }
-                .eraseToAnyPublisher()
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in
+            servicesObserver.bindMessages(
+                messages,
+                onChange: { [weak self] change in
+                    self?.handleMessageChange(change)
+                },
+                onWillChange: { [weak self] in
                     guard let self else { return }
                     if self.consumePendingInsertionFallback() {
                         return
@@ -302,16 +298,13 @@ final class ListV3ViewModel: ObservableObject {
                         await self?.refreshTail()
                     }
                 }
-                .store(in: &cancellables)
+            )
         }
         if let state = services.conversationState {
-            state.objectWillChange
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in
+            servicesObserver.bindConversationState(state) { [weak self] in
                     guard let self else { return }
                     self.activityMessage = self.services.activityMessage(for: self.selectedConversationID)
-                }
-                .store(in: &cancellables)
+            }
         }
         // 发送状态不触发历史尾部刷新；activity 由 conversationState 单独更新。
         didBindServices = services.messages != nil || services.conversationState != nil
@@ -319,12 +312,9 @@ final class ListV3ViewModel: ObservableObject {
         // 流式逐字显示：订阅 streaming，帧门禁合并。详见 V2。
         guard !didBindStreaming else { return }
         guard let streaming = services.streaming else { return }
-        streaming.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+        servicesObserver.bindStreaming(streaming) { [weak self] in
                 self?.scheduleStreamingRefresh()
-            }
-            .store(in: &cancellables)
+        }
         didBindStreaming = true
     }
 

@@ -93,24 +93,9 @@ public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
         [CreateGoalV2Tool.toolName, AddTasksToGoalV2Tool.toolName, GetGoalProgressV2Tool.toolName,
          UpdateGoalStatusV2Tool.toolName, UpdateTaskStatusV2Tool.toolName]
             .forEach { kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: $0) }
+        conversationBridge?.cancel()
         conversationBridge = nil
         Plugin._sharedManager = nil
-    }
-}
-
-@MainActor
-final class GoalTaskConversationBridge: ObservableObject {
-    @Published var selectedConversationID: UUID?
-    private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
-
-    init(_ conversations: any ConversationManaging) {
-        selectedConversationID = conversations.selectedConversationID
-        selectedConversationObserver = conversations.addSelectedConversationObserver { [weak self] newID in
-            // ConversationManaging invokes this after selectedConversationID has
-            // been updated, so the bridge never reads the previous conversation
-            // like an objectWillChange subscriber can.
-            self?.selectedConversationID = newID
-        }
     }
 }
 

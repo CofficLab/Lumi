@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import ProviderIdleTime
 import SwiftUI
@@ -24,29 +23,22 @@ public final class AppIdleTimeVM: ObservableObject {
     @Published public private(set) var activityScores: [Double] = []
     @Published public private(set) var snapshot: IdleInferenceSnapshot?
 
-    private var cancellables = Set<AnyCancellable>()
+    private var snapshotObserver: IdleTimeSnapshotObserver?
     private nonisolated let refreshTimerHolder = AppIdleTimeTimerHolder()
     private var refreshTask: Task<Void, Never>?
     private let provider: (any IdleTimeProviding)?
 
     public init(provider: (any IdleTimeProviding)?) {
         self.provider = provider
-        subscribeToSnapshotChanges()
+        snapshotObserver = IdleTimeSnapshotObserver { [weak self] in
+            self?.refreshFromService()
+        }
         schedulePeriodicRefresh()
     }
 
     deinit {
         refreshTimerHolder.invalidate()
         refreshTask?.cancel()
-    }
-
-    private func subscribeToSnapshotChanges() {
-        NotificationCenter.default.publisher(for: .idleTimeSnapshotDidChange)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.refreshFromService()
-            }
-            .store(in: &cancellables)
     }
 
     private func schedulePeriodicRefresh() {

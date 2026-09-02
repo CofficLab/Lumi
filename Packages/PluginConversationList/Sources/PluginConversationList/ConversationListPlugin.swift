@@ -36,10 +36,10 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
     public let sortStabilizer = ConversationSortStabilizer()
 
     private var context: ConversationListContext?
+    private var contextObserver: ConversationListContextObserver?
     private var railTabController: ConversationRailTabController?
     /// `addSelectedConversationObserver` 令牌：持有期间持续接收选中变化通知，
     /// 回调同步写入 `context.selectedConversationID`，使视图可观察。
-    private var selectedObserverToken: (any SelectedConversationObserverHandle)?
     /// 复刻旧版 onTurnFinished：轮询 AgentTurn 状态迁移（running → 非 running）。
     private var attentionMonitorTask: Task<Void, Never>?
     private var runningConversationIDs: Set<UUID> = []
@@ -66,9 +66,11 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
 
         // 0. 选中对话观察：回调同步写入 context.selectedConversationID，
         //    视图通过 @ObservedObject 直接观察，无需间接订阅 objectWillChange。
-        selectedObserverToken = conversations.addSelectedConversationObserver { [weak context] newID in
-            context?.selectedConversationID = newID
-        }
+        contextObserver = ConversationListContextObserver(
+            conversations: conversations,
+            conversationState: conversationState,
+            context: context
+        )
 
         // 1. Rail 侧栏：chats / project-chats 动态注册。
         let controller = ConversationRailTabController(
@@ -122,8 +124,8 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        selectedObserverToken?.cancel()
-        selectedObserverToken = nil
+        contextObserver?.cancel()
+        contextObserver = nil
 
         attentionMonitorTask?.cancel()
         attentionMonitorTask = nil
