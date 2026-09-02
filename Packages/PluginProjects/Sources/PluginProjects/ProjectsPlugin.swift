@@ -3,6 +3,7 @@ import Foundation
 import KitLLM
 import KernelCore
 import os
+import ProviderConversation
 import ProviderProject
 import ProviderProjectRAG
 import ProviderLifecycleHooks
@@ -40,6 +41,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     private var viewModel: ProjectsViewModel?
     private var projectObserver: ProjectProvidingObserver?
     private var openedFilesPersistence: ProjectOpenedFilesPersistence?
+    private var conversationProjectSyncObserver: ConversationProjectSyncObserver?
 
     public init() {}
 
@@ -182,6 +184,21 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
 
     public func onReady(kernel: KernelCoreContainer) throws {
         registerPromptSuggestion(kernel: kernel, requiresEnable: false)
+
+        // 监听「当前对话变化」并切换到对话绑定的项目。
+        // 必须在 onReady 注册而非 onBoot(order=5)：此时 ConversationManaging
+        // 仍是 ProviderFactory 预注册的内存默认版，PluginConversationManager(order=7)
+        // 之后会替换为持久化实现，监听挂在旧实例上会收不到任何切换事件。
+        guard let conversations = kernel.resolveProvider((any ConversationManaging).self),
+              let project = kernel.resolveProvider((any ProjectProviding).self) else {
+            Self.logger.warning("\(Self.t)ConversationManaging/ProjectProviding 未解析，跳过对话→项目联动")
+            return
+        }
+        conversationProjectSyncObserver?.cancel()
+        conversationProjectSyncObserver = ConversationProjectSyncObserver(
+            conversations: conversations,
+            project: project
+        )
     }
 
     public func onEnable(kernel: KernelCoreContainer) async throws {
@@ -189,6 +206,8 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        conversationProjectSyncObserver?.cancel()
+        conversationProjectSyncObserver = nil
         projectObserver?.cancel()
         projectObserver = nil
         openedFilesPersistence?.cancel()
