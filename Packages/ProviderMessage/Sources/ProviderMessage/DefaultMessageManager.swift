@@ -16,6 +16,12 @@ public final class DefaultMessageManager: MessageManaging {
         messages(for: conversationID)
     }
 
+    public func firstUserMessage(in conversationID: UUID) async -> Message? {
+        messages(for: conversationID).first {
+            $0.role == .user && !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
+
     public func messagesForLLM(in conversationID: UUID) async -> [Message] {
         await messagesSnapshot(in: conversationID)
     }
@@ -68,6 +74,10 @@ public final class DefaultMessageManager: MessageManaging {
             }
     }
 
+    public func dailyMessageCountsAsync(since: Date) async -> [Date: Int] {
+        dailyMessageCounts(since: since)
+    }
+
     public func dailyTokenCounts(since: Date) -> [Date: Int] {
         let calendar = Calendar.current
         return storage.values
@@ -78,6 +88,10 @@ public final class DefaultMessageManager: MessageManaging {
                 guard tokens > 0 else { return }
                 counts[calendar.startOfDay(for: message.createdAt), default: 0] += tokens
             }
+    }
+
+    public func dailyTokenCountsAsync(since: Date) async -> [Date: Int] {
+        dailyTokenCounts(since: since)
     }
 
     public func insertMessage(_ message: Message, to conversationID: UUID) {

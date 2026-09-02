@@ -29,7 +29,7 @@ final class SpeedMessageObserver {
 
         refreshTask?.cancel()
         refreshTask = Task(priority: .utility) { @MainActor [weak self] in
-            await Task.yield()
+            try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled, let self,
                   self.viewModel.selectedConversationID == conversationID else { return }
 

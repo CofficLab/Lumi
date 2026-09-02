@@ -96,6 +96,7 @@ struct MessageManagerWriteBehindTests {
         let snapshot = await manager.messagesSnapshot(in: conversationID)
 
         #expect(snapshot.contains { $0.id == message.id && $0.content == message.content })
+        #expect(await manager.firstUserMessage(in: conversationID)?.id == message.id)
     }
 
     @Test("user 消息立即可读并最终后台落盘")
@@ -290,6 +291,8 @@ struct MessageManagerWriteBehindTests {
 
         #expect(manager.dailyMessageCounts(since: day)[day] == 2)
         #expect(manager.dailyTokenCounts(since: day)[day] == 17)
+        #expect(await manager.dailyMessageCountsAsync(since: day)[day] == 2)
+        #expect(await manager.dailyTokenCountsAsync(since: day)[day] == 17)
 
         // 后台写入完成后再清理临时数据库，避免测试结束时队列仍在写入。
         var persisted = false

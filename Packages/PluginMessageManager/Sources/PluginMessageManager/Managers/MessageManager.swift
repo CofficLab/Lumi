@@ -126,6 +126,24 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         await readSnapshot(in: conversationID, priority: .utility)
     }
 
+    /// 在后台读取首条用户消息，避免标题服务为了一个字段物化整个会话。
+    public func firstUserMessage(in conversationID: UUID) async -> Message? {
+        let store = self.store
+        let pending = self.pending
+        return await Task.detached(priority: .utility) {
+            var candidates = pending.snapshot(for: conversationID).filter {
+                $0.role == .user && !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            if let persisted = store?.fetchFirstUserMessage(conversationId: conversationID) {
+                candidates.append(persisted)
+            }
+            return candidates.min {
+                if $0.createdAt == $1.createdAt { return $0.id < $1.id }
+                return $0.createdAt < $1.createdAt
+            }
+        }.value
+    }
+
     /// LLM 回合读取属于发送关键路径，使用较高优先级，但仍不在 MainActor 执行。
     public func messagesForLLM(in conversationID: UUID) async -> [Message] {
         await readSnapshot(in: conversationID, priority: .userInitiated)
@@ -177,6 +195,20 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         return counts
     }
 
+    /// 在后台读取并聚合消息日统计，避免 Heatmap 打开或刷新时阻塞 MainActor。
+    public func dailyMessageCountsAsync(since: Date) async -> [Date: Int] {
+        let store = self.store
+        let pending = self.pending
+        return await Task.detached(priority: .utility) {
+            var counts = store?.dailyMessageCounts(since: since) ?? [:]
+            let calendar = Calendar.current
+            for message in pending.snapshotAll() where message.createdAt >= since {
+                counts[calendar.startOfDay(for: message.createdAt), default: 0] += 1
+            }
+            return counts
+        }.value
+    }
+
     public func dailyTokenCounts(since: Date) -> [Date: Int] {
         var counts = store?.dailyTokenCounts(since: since) ?? [:]
         let calendar = Calendar.current
@@ -186,6 +218,22 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             counts[calendar.startOfDay(for: message.createdAt), default: 0] += tokens
         }
         return counts
+    }
+
+    /// 在后台读取并聚合 token 日统计，保留 pending 消息的 read-your-writes 语义。
+    public func dailyTokenCountsAsync(since: Date) async -> [Date: Int] {
+        let store = self.store
+        let pending = self.pending
+        return await Task.detached(priority: .utility) {
+            var counts = store?.dailyTokenCounts(since: since) ?? [:]
+            let calendar = Calendar.current
+            for message in pending.snapshotAll() where message.createdAt >= since {
+                let tokens = (message.inputTokenCount ?? 0) + (message.outputTokenCount ?? 0)
+                guard tokens > 0 else { continue }
+                counts[calendar.startOfDay(for: message.createdAt), default: 0] += tokens
+            }
+            return counts
+        }.value
     }
 
     /// 分页查询（UI 滚动/历史加载）。

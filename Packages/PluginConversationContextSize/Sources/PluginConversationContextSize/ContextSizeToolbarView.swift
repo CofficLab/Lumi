@@ -14,6 +14,7 @@ struct ContextSizeToolbarView: View {
     @State private var usedTokens: Int?
     @State private var isPopoverPresented = false
     @State private var selectedConversationID: UUID?
+    @State private var messageRefreshRevision = 0
 
     @State private var conversationObserver: (any SelectedConversationObserverHandle)?
     @State private var messageObserver: (any MessageInsertedObserverHandle)?
@@ -41,22 +42,14 @@ struct ContextSizeToolbarView: View {
             }
             messageObserver = messages.addMessageInsertedObserver { _, conversationID in
                 guard conversationID == conversations.selectedConversationID else { return }
-                Task(priority: .utility) { @MainActor in
-                    await Task.yield()
-                    guard !Task.isCancelled,
-                          conversationID == conversations.selectedConversationID else { return }
-                    await refreshUsedTokens(for: conversationID)
-                }
+                messageRefreshRevision &+= 1
             }
             llmObserver = llmManager.addObserver { _ in
-                Task { @MainActor in
-                    guard !Task.isCancelled else { return }
-                    await refreshSize(for: selectedConversationID)
-                }
+                messageRefreshRevision &+= 1
             }
         }
-        .task(id: selectedConversationID) {
-            await Task.yield()
+        .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(messageRefreshRevision)") {
+            try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled else { return }
             await refreshSize(for: selectedConversationID)
         }

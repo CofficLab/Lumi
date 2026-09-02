@@ -121,6 +121,8 @@ public final class ActivityHeatmapViewModel {
     private let messages: (any MessageManaging)?
     private let cache: ActivityHeatmapCache?
     private var insertionObserver: (any MessageInsertedObserverHandle)?
+    private var reloadTask: Task<Void, Never>?
+    private var reloadGeneration = 0
     static let periodKey = "com.coffic.activity-heatmap.period"
 
     public var period: ActivityHeatmapPeriod {
@@ -134,7 +136,7 @@ public final class ActivityHeatmapViewModel {
         self.cache = cache
         self.period = ActivityHeatmapPeriod(rawValue: UserDefaults.standard.integer(forKey: Self.periodKey)) ?? .days30
         insertionObserver = messages?.addMessageInsertedObserver { [weak self] _, _ in
-            Task { await self?.reload() }
+            self?.scheduleReload()
         }
     }
 
@@ -150,8 +152,31 @@ public final class ActivityHeatmapViewModel {
     }
 
     public func reload() async {
+        reloadTask?.cancel()
+        reloadTask = nil
+        await reloadNow()
+    }
+
+    private func scheduleReload() {
+        reloadTask?.cancel()
+        reloadTask = Task(priority: .utility) { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled, let self else { return }
+            self.reloadTask = nil
+            await self.reloadNow()
+        }
+    }
+
+    private func reloadNow() async {
+        reloadGeneration += 1
+        let generation = reloadGeneration
         guard let messages else { days = []; return }
         isLoading = true
+        defer {
+            if generation == reloadGeneration {
+                isLoading = false
+            }
+        }
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         guard let start = calendar.date(byAdding: .day, value: -(period.rawValue - 1), to: today) else {
@@ -162,9 +187,19 @@ public final class ActivityHeatmapViewModel {
             calendar.date(byAdding: .day, value: $0, to: start)
         }
         let cached = await cache?.counts(for: historicalDates) ?? [:]
+        guard !Task.isCancelled, generation == reloadGeneration else { return }
         let missingDates = historicalDates.filter { cached[$0] == nil }
-        let fetchedHistoricalMessages = missingDates.first.map { messages.dailyMessageCounts(since: $0) } ?? [:]
-        let fetchedHistoricalTokens = missingDates.first.map { messages.dailyTokenCounts(since: $0) } ?? [:]
+        let fetchedHistoricalMessages: [Date: Int]
+        let fetchedHistoricalTokens: [Date: Int]
+        if let firstMissingDate = missingDates.first {
+            fetchedHistoricalMessages = await messages.dailyMessageCountsAsync(since: firstMissingDate)
+            guard !Task.isCancelled, generation == reloadGeneration else { return }
+            fetchedHistoricalTokens = await messages.dailyTokenCountsAsync(since: firstMissingDate)
+            guard !Task.isCancelled, generation == reloadGeneration else { return }
+        } else {
+            fetchedHistoricalMessages = [:]
+            fetchedHistoricalTokens = [:]
+        }
         let historical = missingDates.reduce(into: [Date: ActivityHeatmapCache.Counts]()) { values, date in
             values[date] = .init(
                 messages: fetchedHistoricalMessages[date, default: 0],
@@ -172,8 +207,11 @@ public final class ActivityHeatmapViewModel {
             )
         }
         await cache?.save(historical)
-        let todayMessages = messages.dailyMessageCounts(since: today)
-        let todayTokens = messages.dailyTokenCounts(since: today)
+        guard !Task.isCancelled, generation == reloadGeneration else { return }
+        let todayMessages = await messages.dailyMessageCountsAsync(since: today)
+        guard !Task.isCancelled, generation == reloadGeneration else { return }
+        let todayTokens = await messages.dailyTokenCountsAsync(since: today)
+        guard !Task.isCancelled, generation == reloadGeneration else { return }
         days = (0..<period.rawValue).compactMap { offset in
             guard let date = calendar.date(byAdding: .day, value: offset, to: start) else { return nil }
             let isToday = date == today
@@ -184,7 +222,6 @@ public final class ActivityHeatmapViewModel {
                 tokens: isToday ? todayTokens[date, default: 0] : cachedDay?.tokens ?? historical[date]?.tokens ?? 0
             )
         }
-        isLoading = false
     }
 }
 

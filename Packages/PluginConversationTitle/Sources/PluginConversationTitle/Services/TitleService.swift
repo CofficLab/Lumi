@@ -52,42 +52,40 @@ final class TitleService: SuperLog {
                     TitleService.logger.error("\(TitleService.t)Failed to handle inserted user message because the title service is unavailable")
                     return
                 }
-                await self.handleMessageSaved(conversationID: conversationID, messageID: message.id)
+                await self.handleMessageSaved(conversationID: conversationID, message: message)
             }
         }
     }
 
-    private func handleMessageSaved(conversationID: UUID, messageID: UUID) async {
+    private func handleMessageSaved(conversationID: UUID, message: Message) async {
+        let content = message.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !content.isEmpty else { return }
         guard runningConversationIDs.insert(conversationID).inserted else {
             Self.logger.debug("\(Self.t)Skipped duplicate title generation request for conversation \(conversationID, privacy: .public)")
             return
         }
         defer { runningConversationIDs.remove(conversationID) }
 
-        guard let firstUserMessage = await firstUserMessage(in: conversationID) else {
-            Self.logger.error("\(Self.t)Failed to find the first user message for conversation \(conversationID, privacy: .public)")
-            return
-        }
-        guard firstUserMessage.id == messageID else {
-            Self.logger.error("\(Self.t)Inserted user message \(messageID, privacy: .public) is not the first user message for conversation \(conversationID, privacy: .public)")
+        guard let firstUserMessage = await messages.firstUserMessage(in: conversationID),
+              firstUserMessage.id == message.id else {
             return
         }
         guard await shouldApplyGeneratedTitle(
             conversationID: conversationID,
-            firstUserMessageContent: firstUserMessage.content
+            firstUserMessageContent: message.content
         ) else {
             return
         }
 
         do {
-            let title = try await generateTitle(for: firstUserMessage.content, conversationID: conversationID)
+            let title = try await generateTitle(for: message.content, conversationID: conversationID)
             guard !title.isEmpty else {
                 Self.logger.error("\(Self.t)LLM returned an empty generated title for conversation \(conversationID, privacy: .public)")
                 return
             }
             guard await shouldApplyGeneratedTitle(
                 conversationID: conversationID,
-                firstUserMessageContent: firstUserMessage.content,
+                firstUserMessageContent: message.content,
                 generatedTitle: title
             ) else {
                 return
@@ -133,12 +131,6 @@ final class TitleService: SuperLog {
             return true
         }
         return currentTitle == placeholderTitle(forFirstUserMessage: firstUserMessageContent)
-    }
-
-    private func firstUserMessage(in conversationID: UUID) async -> Message? {
-        await messages.messagesSnapshot(in: conversationID).first {
-            $0.role == .user && !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        }
     }
 
     private func generateTitle(for userMessage: String, conversationID: UUID) async throws -> String {

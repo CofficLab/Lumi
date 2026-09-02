@@ -10,6 +10,7 @@ struct CacheHitRateToolbarView: View {
     @State private var selectedConversationID: UUID?
     @State private var stats = CacheHitRateStats.empty
     @State private var isPopoverPresented = false
+    @State private var messageRefreshRevision = 0
 
     @State private var conversationObserver: (any SelectedConversationObserverHandle)?
     @State private var messageObserver: (any MessageInsertedObserverHandle)?
@@ -51,18 +52,20 @@ struct CacheHitRateToolbarView: View {
             }
             messageObserver = messages.addMessageInsertedObserver { _, conversationID in
                 if conversationID == selectedConversationID {
-                    Task(priority: .utility) { @MainActor in
-                        await Task.yield()
-                        guard !Task.isCancelled, conversationID == selectedConversationID else { return }
-                        await refresh()
-                    }
+                    messageRefreshRevision &+= 1
                 }
             }
         }
-        .task(id: selectedConversationID) {
-            await Task.yield()
+        .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(messageRefreshRevision)") {
+            try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled else { return }
             await refresh()
+        }
+        .onDisappear {
+            conversationObserver?.cancel()
+            messageObserver?.cancel()
+            conversationObserver = nil
+            messageObserver = nil
         }
     }
 

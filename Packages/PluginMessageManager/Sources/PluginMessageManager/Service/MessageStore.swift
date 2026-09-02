@@ -154,6 +154,25 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         }
     }
 
+    /// 返回某会话第一条用户消息，仅物化一条记录，供自动标题等轻量读取使用。
+    func fetchFirstUserMessage(conversationId: UUID) -> Message? {
+        locked {
+            let context = ModelContext(container)
+            let conversationIdString = conversationId.uuidString
+            var descriptor = FetchDescriptor<MessageModel>(
+                predicate: #Predicate<MessageModel> {
+                    $0.conversationId == conversationIdString && $0.role == "user"
+                },
+                sortBy: [
+                    SortDescriptor(\.createdAt, order: .forward),
+                    SortDescriptor(\.id, order: .forward),
+                ]
+            )
+            descriptor.fetchLimit = 1
+            return (try? context.fetch(descriptor))?.first?.toMessage()
+        }
+    }
+
     /// Fetch a single page of messages for a conversation.
     ///
     /// - Parameters:
@@ -281,9 +300,10 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         locked {
             let context = ModelContext(container)
             let timestamp = since.timeIntervalSince1970
-            let descriptor = FetchDescriptor<MessageModel>(
+            var descriptor = FetchDescriptor<MessageModel>(
                 predicate: #Predicate<MessageModel> { $0.createdAt >= timestamp }
             )
+            descriptor.propertiesToFetch = [\.createdAt]
             guard let models = try? context.fetch(descriptor) else { return [:] }
             let calendar = Calendar.current
             return models.reduce(into: [:]) { counts, model in
@@ -298,9 +318,10 @@ public final class MessageStore: SuperLog, @unchecked Sendable {
         locked {
             let context = ModelContext(container)
             let timestamp = since.timeIntervalSince1970
-            let descriptor = FetchDescriptor<MessageModel>(
+            var descriptor = FetchDescriptor<MessageModel>(
                 predicate: #Predicate<MessageModel> { $0.createdAt >= timestamp }
             )
+            descriptor.propertiesToFetch = [\.createdAt, \.inputTokenCount, \.outputTokenCount]
             guard let models = try? context.fetch(descriptor) else { return [:] }
             let calendar = Calendar.current
             return models.reduce(into: [:]) { counts, model in

@@ -30,6 +30,8 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
     func messages(for conversationID: UUID) -> [Message]
     /// 异步读取指定会话的完整消息快照。实现应避免在 MainActor 执行磁盘读取、解码和排序。
     func messagesSnapshot(in conversationID: UUID) async -> [Message]
+    /// 异步读取指定会话的第一条有效用户消息，适合自动标题等只需要首条消息的场景。
+    func firstUserMessage(in conversationID: UUID) async -> Message?
     /// 异步加载发送给 LLM 的消息历史。持久化实现应将磁盘读取和解码放到后台。
     func messagesForLLM(in conversationID: UUID) async -> [Message]
     /// 返回指定会话的一页消息，结果按时间升序排列。
@@ -67,8 +69,12 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
     /// 活动热力图等跨会话统计功能使用此接口；实现必须包含所有会话，
     /// 并将 key 规范化为 `Calendar.current.startOfDay(for:)`。
     func dailyMessageCounts(since: Date) -> [Date: Int]
+    /// 异步返回指定日期（含）以来的消息数，持久化实现应将读取放到后台。
+    func dailyMessageCountsAsync(since: Date) async -> [Date: Int]
     /// 返回指定日期（含）以来、按本地日历日聚合的输入和输出 token 总量。
     func dailyTokenCounts(since: Date) -> [Date: Int]
+    /// 异步返回指定日期（含）以来的 token 总量，持久化实现应将读取放到后台。
+    func dailyTokenCountsAsync(since: Date) async -> [Date: Int]
     func insertMessage(_ message: Message, to conversationID: UUID)
     func updateMessage(id: UUID, in conversationID: UUID, content: String)
     func deleteMessage(id: UUID, in conversationID: UUID)
@@ -114,6 +120,12 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
 public extension MessageManaging {
     func messagesSnapshot(in conversationID: UUID) async -> [Message] {
         await messagesForLLM(in: conversationID)
+    }
+
+    func firstUserMessage(in conversationID: UUID) async -> Message? {
+        await messagesSnapshot(in: conversationID).first {
+            $0.role == .user && !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
     }
 
     func messagesForLLM(in conversationID: UUID) async -> [Message] {
@@ -178,7 +190,15 @@ public extension MessageManaging {
 
     func dailyMessageCounts(since: Date) -> [Date: Int] { [:] }
 
+    func dailyMessageCountsAsync(since: Date) async -> [Date: Int] {
+        dailyMessageCounts(since: since)
+    }
+
     func dailyTokenCounts(since: Date) -> [Date: Int] { [:] }
+
+    func dailyTokenCountsAsync(since: Date) async -> [Date: Int] {
+        dailyTokenCounts(since: since)
+    }
 
     func updateToolCallResult(
         _ result: MessageToolResult,

@@ -30,10 +30,11 @@ struct ProviderMessageTests {
 
         let snapshot = await manager.messagesSnapshot(in: conversationID)
         #expect(snapshot == [message])
+        #expect(await manager.firstUserMessage(in: conversationID) == message)
     }
 
     @Test("消息与 token 可按自然日跨会话聚合")
-    func dailyAggregates() {
+    func dailyAggregates() async {
         let manager = DefaultMessageManager()
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -56,6 +57,8 @@ struct ProviderMessageTests {
 
         #expect(manager.dailyMessageCounts(since: yesterday) == [yesterday: 2, today: 1])
         #expect(manager.dailyTokenCounts(since: yesterday) == [yesterday: 20, today: 8])
+        #expect(await manager.dailyMessageCountsAsync(since: yesterday) == [yesterday: 2, today: 1])
+        #expect(await manager.dailyTokenCountsAsync(since: yesterday) == [yesterday: 20, today: 8])
     }
 
     @Test("消息插入观察者可接收事件并注销")
