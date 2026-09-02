@@ -20,7 +20,7 @@ let package = Package(
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderToolManager"),
-        .package(path: "../KitLocalization"),        .package(path: "../LumiUI"),
+        .package(path: "../KitLocalization"),        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitShell"),
         .package(path: "../KitSuperLog"),
     ],

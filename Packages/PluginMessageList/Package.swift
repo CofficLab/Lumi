@@ -8,7 +8,7 @@ let package = Package(
     products: [.library(name: "PluginMessageList", targets: ["PluginMessageList"])],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../LumiUI"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitMarkdown"),
         .package(path: "../KitLocalization"),
         .package(path: "../ProviderAgentLoop"),

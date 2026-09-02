@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversationState"),
         .package(path: "../KitAgentTool"),
-        .package(path: "../LumiUI"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitLocalization"),
     ],
     targets: [.target(name: "PluginConversationList", dependencies: [

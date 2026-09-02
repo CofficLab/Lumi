@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderSettingView"),
-        .package(path: "../LumiUI"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog"),
     ],

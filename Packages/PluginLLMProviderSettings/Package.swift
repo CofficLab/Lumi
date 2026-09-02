@@ -15,7 +15,7 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog"),
-        .package(path: "../LumiUI"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
