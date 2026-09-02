@@ -192,6 +192,9 @@ extension ToolManager {
 
     public func deleteToolCalls(for conversationID: UUID) async {
         deletedConversationIDs.insert(conversationID)
+        // 删除会话必须先停止仍在运行的 Job，避免后台工具继续修改文件、
+        // 写入输出，或在删除完成后通过迟到事件唤醒 AgentLoop。
+        cancelJobs(forConversationID: conversationID)
         await jobRecordStore?.deleteAll(for: conversationID)
         if let records = await recordStore?.fetchRecords(for: conversationID) {
             for record in records { if let toolCallID = record.toolCallID { resultCache.removeValue(forKey: toolCallID) } }

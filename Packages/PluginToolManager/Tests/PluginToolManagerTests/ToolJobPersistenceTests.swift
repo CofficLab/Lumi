@@ -141,4 +141,42 @@ struct ToolJobPersistenceTests {
         #expect(settled?.errorMessage?.contains("无法恢复") == true)
         #expect(settled?.result?.isError == true)
     }
+
+    @MainActor
+    @Test("删除会话会取消运行中的 Job 并阻止迟到持久化")
+    func deletingConversationCancelsJobsAndClearsRecords() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ToolManager()
+        manager.jobRecordStore = store
+        manager.add(
+            PersistedDelayedTool(delayNanoseconds: 5_000_000_000),
+            pluginID: "test"
+        )
+
+        let conversationID = UUID()
+        let call = ToolCall(
+            id: "deleted-conversation-job",
+            name: "persisted_delay",
+            arguments: "{}"
+        )
+        _ = manager.submit(
+            [call],
+            policy: .autoExecute,
+            conversationID: conversationID,
+            turnID: UUID()
+        )
+
+        let resultTask = Task { await manager.waitForJobResult(jobID: call.id) }
+        try await Task.sleep(nanoseconds: 50_000_000)
+        await manager.deleteToolCalls(for: conversationID)
+
+        let result = await resultTask.value
+        #expect(result?.isError == true)
+        #expect(manager.job(for: call.id)?.status == .cancelled)
+
+        try await Task.sleep(nanoseconds: 50_000_000)
+        #expect(await store.fetchRecord(forJobID: call.id) == nil)
+    }
 }
