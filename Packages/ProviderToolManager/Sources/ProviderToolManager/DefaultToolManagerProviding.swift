@@ -227,7 +227,15 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
         let interactionState: ToolCallInteractionState?
 
         do {
-            let toolResult = try await tool.executeResult(arguments: arguments)
+            let context = ToolExecutionContext(
+                jobID: toolCall.id,
+                conversationID: conversationID,
+                turnID: turnID
+            )
+            let toolResult = try await tool.executeResult(
+                context: context,
+                arguments: arguments
+            )
             executionContent = toolResult.content
             executionImages = toolResult.images
             duration = Date().timeIntervalSince(startedAt)
