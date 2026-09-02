@@ -1,43 +1,49 @@
 import Darwin
 import Foundation
 
-/// Thread-safe buffer for collecting output data
-private final class ThreadSafeBuffer: @unchecked Sendable {
+/// Thread-safe output accumulator with a bounded retained payload.
+///
+/// Live callbacks still receive every chunk. Only the final aggregate is
+/// bounded so an untrusted command cannot grow memory without limit.
+private final class BoundedOutputBuffer: @unchecked Sendable {
+    private let maxBytes: Int
     private var data = Data()
+    private var truncated = false
     private let lock = NSLock()
+
+    init(maxBytes: Int) {
+        self.maxBytes = max(0, maxBytes)
+    }
 
     func append(_ newData: Data) {
         lock.lock()
-        data.append(newData)
-        lock.unlock()
+        defer { lock.unlock() }
+
+        guard !newData.isEmpty else { return }
+        guard data.count < maxBytes else {
+            truncated = true
+            return
+        }
+
+        let remaining = maxBytes - data.count
+        if newData.count <= remaining {
+            data.append(newData)
+        } else {
+            data.append(newData.prefix(remaining))
+            truncated = true
+        }
     }
 
-    func getData() -> Data {
+    func getString() -> String {
         lock.lock()
-        let result = data
+        let result = String(decoding: data, as: UTF8.self)
         lock.unlock()
         return result
     }
 
-    func getString() -> String {
-        String(data: getData(), encoding: .utf8) ?? ""
-    }
-}
-
-/// Thread-safe string buffer for streaming output
-private final class ThreadSafeStringBuffer: @unchecked Sendable {
-    private var text = ""
-    private let lock = NSLock()
-
-    func append(_ newText: String) {
+    var isTruncated: Bool {
         lock.lock()
-        text += newText
-        lock.unlock()
-    }
-
-    func getString() -> String {
-        lock.lock()
-        let result = text
+        let result = truncated
         lock.unlock()
         return result
     }
@@ -108,8 +114,8 @@ public enum ShellExecutor {
         options: ShellOptions = .defaultOptions
     ) async throws -> ShellResult {
         let startedAt = Date()
-        let stdoutBuffer = ThreadSafeBuffer()
-        let stderrBuffer = ThreadSafeBuffer()
+        let stdoutBuffer = BoundedOutputBuffer(maxBytes: options.maxOutputBytes)
+        let stderrBuffer = BoundedOutputBuffer(maxBytes: options.maxOutputBytes)
 
         let result = try await runProcess(
             executable: executable,
@@ -134,7 +140,9 @@ public enum ShellExecutor {
             exitCode: result.exitCode,
             stdout: stdout.trimmingCharacters(in: .whitespacesAndNewlines),
             stderr: stderr.trimmingCharacters(in: .whitespacesAndNewlines),
-            duration: duration
+            duration: duration,
+            stdoutTruncated: stdoutBuffer.isTruncated,
+            stderrTruncated: stderrBuffer.isTruncated
         )
 
         if options.throwsOnError && result.exitCode != 0 {
@@ -189,8 +197,8 @@ public enum ShellExecutor {
         onErrorData: @escaping @Sendable (Data) -> Void = { _ in }
     ) async throws -> ShellResult {
         let startedAt = Date()
-        let stdoutBuffer = ThreadSafeStringBuffer()
-        let stderrBuffer = ThreadSafeStringBuffer()
+        let stdoutBuffer = BoundedOutputBuffer(maxBytes: options.maxOutputBytes)
+        let stderrBuffer = BoundedOutputBuffer(maxBytes: options.maxOutputBytes)
 
         let result = try await runProcess(
             executable: executable,
@@ -198,15 +206,15 @@ public enum ShellExecutor {
             options: options,
             stdoutHandler: { data in
                 onOutputData(data)
+                stdoutBuffer.append(data)
                 if let text = String(data: data, encoding: .utf8) {
-                    stdoutBuffer.append(text)
                     onOutput(text)
                 }
             },
             stderrHandler: { data in
                 onErrorData(data)
+                stderrBuffer.append(data)
                 if let text = String(data: data, encoding: .utf8) {
-                    stderrBuffer.append(text)
                     onError(text)
                 }
             }
@@ -225,7 +233,9 @@ public enum ShellExecutor {
             exitCode: result.exitCode,
             stdout: stdoutBuffer.getString().trimmingCharacters(in: .whitespacesAndNewlines),
             stderr: stderrBuffer.getString().trimmingCharacters(in: .whitespacesAndNewlines),
-            duration: duration
+            duration: duration,
+            stdoutTruncated: stdoutBuffer.isTruncated,
+            stderrTruncated: stderrBuffer.isTruncated
         )
 
         if options.throwsOnError && result.exitCode != 0 {
@@ -302,18 +312,35 @@ public enum ShellExecutor {
         private let lock = NSLock()
         private var continuation: CheckedContinuation<ProcessResult, Error>?
         private var process: Process?
+        private var processGroupID: Int32?
         private var timeoutItem: DispatchWorkItem?
         private var wasCancelled = false
         private var timedOut = false
+        private var finished = false
 
         init(continuation: CheckedContinuation<ProcessResult, Error>) {
             self.continuation = continuation
         }
 
-        func setProcess(_ process: Process) {
+        func prepareToStart(_ process: Process) -> Bool {
             lock.lock()
             self.process = process
+            let shouldStart = !wasCancelled && !finished
             lock.unlock()
+            return shouldStart
+        }
+
+        func markProcessStarted(processGroupID: Int32?) {
+            lock.lock()
+            self.processGroupID = processGroupID
+            lock.unlock()
+        }
+
+        func isCancellationRequested() -> Bool {
+            lock.lock()
+            let result = wasCancelled
+            lock.unlock()
+            return result
         }
 
         func setTimeoutItem(_ item: DispatchWorkItem?) {
@@ -324,26 +351,38 @@ public enum ShellExecutor {
 
         func timeout(options: ShellOptions) {
             let process: Process?
+            let processGroupID: Int32?
             lock.lock()
+            guard !finished else {
+                lock.unlock()
+                return
+            }
             timedOut = true
             wasCancelled = true
             process = self.process
+            processGroupID = self.processGroupID
             lock.unlock()
 
             if let process {
-                terminate(process: process, options: options)
+                terminate(process: process, processGroupID: processGroupID, options: options)
             }
         }
 
         func cancel(options: ShellOptions) {
             let process: Process?
+            let processGroupID: Int32?
             lock.lock()
+            guard !finished else {
+                lock.unlock()
+                return
+            }
             wasCancelled = true
             process = self.process
+            processGroupID = self.processGroupID
             lock.unlock()
 
-            if let process {
-                terminate(process: process, options: options)
+            if let process, process.isRunning || processGroupID != nil {
+                terminate(process: process, processGroupID: processGroupID, options: options)
             }
         }
 
@@ -354,6 +393,7 @@ public enum ShellExecutor {
             timeoutItem?.cancel()
             continuation = self.continuation
             self.continuation = nil
+            finished = true
             result = ProcessResult(exitCode: exitCode, wasCancelled: wasCancelled, timedOut: timedOut)
             lock.unlock()
 
@@ -366,6 +406,7 @@ public enum ShellExecutor {
             timeoutItem?.cancel()
             continuation = self.continuation
             self.continuation = nil
+            finished = true
             lock.unlock()
 
             continuation?.resume(throwing: error)
@@ -402,11 +443,16 @@ public enum ShellExecutor {
             try await withCheckedThrowingContinuation { continuation in
                 let state = ProcessExecutionState(continuation: continuation)
                 stateStore.set(state)
+                // The cancellation handler may run before the continuation
+                // installs its state in the store. Check again after
+                // registration so an already-cancelled Task never launches.
+                if Task.isCancelled {
+                    state.cancel(options: options)
+                }
                 DispatchQueue.global(qos: options.qos).async {
                 let process = Process()
                 process.executableURL = URL(fileURLWithPath: executable)
                 process.arguments = arguments
-                state.setProcess(process)
 
                 // Set working directory
                 if let dir = options.workingDirectory {
@@ -428,20 +474,22 @@ public enum ShellExecutor {
 
                 // Set up termination handler
                 process.terminationHandler = { [stdoutPipe, stderrPipe] _ in
-                    // Read final data
-                    let finalStdout = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-                    let finalStderr = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-
-                    if !finalStdout.isEmpty {
-                        stdoutHandler(finalStdout)
-                    }
-                    if !finalStderr.isEmpty {
-                        stderrHandler(finalStderr)
-                    }
-
                     // Clean up handlers
                     stdoutPipe.fileHandleForReading.readabilityHandler = nil
                     stderrPipe.fileHandleForReading.readabilityHandler = nil
+
+                    // Drain bytes already available, but never wait forever if
+                    // a descendant inherited the pipe file descriptor.
+                    drainPipe(
+                        stdoutPipe.fileHandleForReading,
+                        timeout: options.outputDrainTimeout,
+                        handler: stdoutHandler
+                    )
+                    drainPipe(
+                        stderrPipe.fileHandleForReading,
+                        timeout: options.outputDrainTimeout,
+                        handler: stderrHandler
+                    )
 
                     state.complete(exitCode: process.terminationStatus)
                 }
@@ -471,9 +519,27 @@ public enum ShellExecutor {
                         .asyncAfter(deadline: .now() + timeout, execute: timeoutItem)
                 }
 
+                guard state.prepareToStart(process) else {
+                    stdoutPipe.fileHandleForReading.readabilityHandler = nil
+                    stderrPipe.fileHandleForReading.readabilityHandler = nil
+                    state.complete(exitCode: -SIGTERM)
+                    return
+                }
+
                 // Launch process
                 do {
                     try process.run()
+                    let processGroupID: Int32?
+                    if options.terminatesProcessTree {
+                        let pid = process.processIdentifier
+                        processGroupID = pid > 0 && setpgid(pid, pid) == 0 ? pid : nil
+                    } else {
+                        processGroupID = nil
+                    }
+                    state.markProcessStarted(processGroupID: processGroupID)
+                    if state.isCancellationRequested() {
+                        state.cancel(options: options)
+                    }
                 } catch {
                     stdoutPipe.fileHandleForReading.readabilityHandler = nil
                     stderrPipe.fileHandleForReading.readabilityHandler = nil
@@ -493,10 +559,14 @@ public enum ShellExecutor {
         ([executable] + arguments).joined(separator: " ")
     }
 
-    private static func terminate(process: Process, options: ShellOptions) {
+    private static func terminate(
+        process: Process,
+        processGroupID: Int32?,
+        options: ShellOptions
+    ) {
         let pid = process.processIdentifier
-        if options.terminatesProcessTree, pid > 0 {
-            terminateChildren(of: pid, signal: SIGTERM)
+        if options.terminatesProcessTree, let processGroupID, processGroupID > 1 {
+            kill(-processGroupID, SIGTERM)
         }
         if process.isRunning {
             process.terminate()
@@ -504,8 +574,8 @@ public enum ShellExecutor {
 
         let gracePeriod = max(0, options.terminationGracePeriod)
         DispatchQueue.global(qos: options.qos).asyncAfter(deadline: .now() + gracePeriod) {
-            if options.terminatesProcessTree, pid > 0 {
-                terminateChildren(of: pid, signal: SIGKILL)
+            if options.terminatesProcessTree, let processGroupID, processGroupID > 1 {
+                kill(-processGroupID, SIGKILL)
             }
             if process.isRunning, pid > 0 {
                 kill(pid, SIGKILL)
@@ -513,12 +583,40 @@ public enum ShellExecutor {
         }
     }
 
-    private static func terminateChildren(of pid: Int32, signal: Int32) {
-        let pkill = Process()
-        pkill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-        pkill.arguments = ["-\(signal)", "-P", "\(pid)"]
-        pkill.standardOutput = Pipe()
-        pkill.standardError = Pipe()
-        try? pkill.run()
+    private static func drainPipe(
+        _ handle: FileHandle,
+        timeout: TimeInterval,
+        handler: @escaping @Sendable (Data) -> Void
+    ) {
+        let fileDescriptor = handle.fileDescriptor
+        guard fileDescriptor >= 0 else { return }
+
+        let timeoutNanoseconds = UInt64(max(0, timeout) * 1_000_000_000)
+        let deadline = DispatchTime.now().uptimeNanoseconds + timeoutNanoseconds
+
+        while true {
+            let now = DispatchTime.now().uptimeNanoseconds
+            if now >= deadline { return }
+
+            let remainingNanoseconds = deadline - now
+            let remainingMilliseconds = min(
+                Int64(remainingNanoseconds / 1_000_000),
+                Int64(Int32.max)
+            )
+            var descriptor = pollfd(
+                fd: fileDescriptor,
+                events: Int16(POLLIN | POLLHUP | POLLERR),
+                revents: 0
+            )
+            let result = Darwin.poll(&descriptor, 1, Int32(remainingMilliseconds))
+            guard result > 0 else { return }
+
+            let readableEvents = Int16(POLLIN | POLLHUP)
+            guard descriptor.revents & readableEvents != 0 else { return }
+
+            let data = handle.availableData
+            guard !data.isEmpty else { return }
+            handler(data)
+        }
     }
 }

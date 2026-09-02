@@ -12,6 +12,12 @@ public struct ShellResult: Sendable {
     /// Standard error content
     public let stderr: String
 
+    /// Whether stdout exceeded the configured capture limit.
+    public let stdoutTruncated: Bool
+
+    /// Whether stderr exceeded the configured capture limit.
+    public let stderrTruncated: Bool
+
     /// Whether the command succeeded (exit code 0)
     public var isSuccess: Bool {
         exitCode == 0
@@ -25,11 +31,15 @@ public struct ShellResult: Sendable {
         exitCode: Int32,
         stdout: String,
         stderr: String,
-        duration: TimeInterval? = nil
+        duration: TimeInterval? = nil,
+        stdoutTruncated: Bool = false,
+        stderrTruncated: Bool = false
     ) {
         self.exitCode = exitCode
         self.stdout = stdout
         self.stderr = stderr
+        self.stdoutTruncated = stdoutTruncated
+        self.stderrTruncated = stderrTruncated
         self.duration = duration
     }
 }
@@ -60,6 +70,12 @@ public struct ShellOptions: Sendable {
     /// Delay before force-killing a cancelled or timed-out process tree
     public let terminationGracePeriod: TimeInterval
 
+    /// Maximum bytes retained for each output stream. Live callbacks are not limited.
+    public let maxOutputBytes: Int
+
+    /// Maximum time spent draining pipe data after the process exits.
+    public let outputDrainTimeout: TimeInterval
+
     /// Creates new ShellOptions
     public init(
         shellExecutable: String = "/bin/bash",
@@ -69,7 +85,9 @@ public struct ShellOptions: Sendable {
         qos: DispatchQoS.QoSClass = .userInitiated,
         throwsOnError: Bool = true,
         terminatesProcessTree: Bool = true,
-        terminationGracePeriod: TimeInterval = 2.0
+        terminationGracePeriod: TimeInterval = 2.0,
+        maxOutputBytes: Int = 64 * 1024,
+        outputDrainTimeout: TimeInterval = 0.5
     ) {
         self.shellExecutable = shellExecutable
         self.workingDirectory = workingDirectory
@@ -79,6 +97,8 @@ public struct ShellOptions: Sendable {
         self.throwsOnError = throwsOnError
         self.terminatesProcessTree = terminatesProcessTree
         self.terminationGracePeriod = terminationGracePeriod
+        self.maxOutputBytes = max(0, maxOutputBytes)
+        self.outputDrainTimeout = max(0, outputDrainTimeout)
     }
 
     /// Default options
