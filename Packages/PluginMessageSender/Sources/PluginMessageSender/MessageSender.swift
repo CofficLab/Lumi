@@ -283,8 +283,12 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
 
     public func startTurn(for commit: MessageSendCommit) async {
         guard let userMessageID = commit.userMessageID else { return }
+        let task = beginTurn(
+            conversationID: commit.conversationID,
+            userMessageID: userMessageID
+        )
         pendingTurnStarts.remove(commit.conversationID)
-        await executeTurn(conversationID: commit.conversationID, userMessageID: userMessageID)
+        await task.value
     }
 
     public func sendMessage(
@@ -402,8 +406,12 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         }
     }
 
-    /// 执行一个回合（发送路径与队列消费共用）。
-    private func executeTurn(conversationID: UUID, userMessageID: UUID) async {
+    /// 建立一个回合的跟踪任务。
+    ///
+    /// 该方法必须保持同步：调用方需要先把 `currentTasks` 写入，才能清除
+    /// `pendingTurnStarts`，否则连续回车时会出现一个短暂的“既不 active、
+    /// 也不 pending”的窗口。
+    private func beginTurn(conversationID: UUID, userMessageID: UUID) -> Task<Void, Never> {
         isSending = true
         notify(.started(conversationID: conversationID))
         if Self.verbose {
@@ -437,7 +445,7 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
             }
         }
         currentTasks[conversationID] = task
-        await task.value
+        return task
     }
 
     /// 依次发送待发队列（同一会话串行）。
@@ -467,9 +475,7 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         if Self.verbose {
             Self.logger.info("\(self.t)drain queue: sending next message, conversation=\(conversationID.uuidString.prefix(8)), message=\(userMessage.id.uuidString.prefix(8))")
         }
-        Task { @MainActor [weak self] in
-            await self?.executeTurn(conversationID: conversationID, userMessageID: userMessage.id)
-        }
+        _ = beginTurn(conversationID: conversationID, userMessageID: userMessage.id)
     }
 }
 
