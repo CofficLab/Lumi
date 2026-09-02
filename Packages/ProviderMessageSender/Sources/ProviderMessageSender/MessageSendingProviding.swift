@@ -63,6 +63,32 @@ public protocol MessageSendingProviding: AnyObject, ObservableObject where Objec
 
     // MARK: - Send
 
+    /// 同步完成发送的轻量提交阶段：解析会话、写入 pending 消息并发布插入事件。
+    ///
+    /// 返回后用户消息已经可以被消息列表读取；不会等待 AgentLoop 回合完成。
+    @discardableResult
+    func commitUserMessage(_ content: String, conversationID: UUID?) throws -> MessageSendCommit?
+    @discardableResult
+    func commitUserMessage(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        conversationID: UUID?
+    ) throws -> MessageSendCommit?
+
+    /// 在后台完成附件 metadata 编码后，再回主线程提交用户消息。
+    /// 纯文字消息不应走此路径，以保持最短的同步提交链路。
+    func commitUserMessageInBackground(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        conversationID: UUID?
+    ) async throws -> MessageSendCommit?
+
+    /// 启动/跟踪已提交消息对应的回合。AgentLoop 的具体执行由消息插入观察者触发，
+    /// 此方法只负责让旧的 async send API 继续等待完整回合，不阻塞提交阶段。
+    func startTurn(for commit: MessageSendCommit) async
+
     func sendMessage(_ content: String, conversationID: UUID?) async throws
     func sendMessage(
         _ content: String,
@@ -80,6 +106,22 @@ public protocol MessageSendingProviding: AnyObject, ObservableObject where Objec
         in conversationID: UUID,
         request: AgentTurnResumeRequest
     ) async throws -> AgentLoopOutcome
+}
+
+/// 发送快速提交的结果。
+///
+/// 当同一会话已有回合运行时，消息会进入 pending 队列，此时 `userMessageID` 为 nil；
+/// 否则它就是已经写入内存消息时间线的用户消息 ID。
+public struct MessageSendCommit: Equatable, Sendable {
+    public let conversationID: UUID
+    public let userMessageID: UUID?
+
+    public var wasQueued: Bool { userMessageID == nil }
+
+    public init(conversationID: UUID, userMessageID: UUID?) {
+        self.conversationID = conversationID
+        self.userMessageID = userMessageID
+    }
 }
 
 public extension MessageSendingProviding {

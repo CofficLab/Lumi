@@ -83,28 +83,6 @@ struct AutomationLevelToolbarView: View {
     }
 }
 
-/// 将协议存在类型的对话管理变化桥接给 SwiftUI。
-///
-/// `@ObservedObject` 无法直接持有 `any ConversationManaging`，因此用具体对象
-/// 转发 publisher；按钮每次重绘时重新读取当前选中对话的自动化级别。
-@MainActor
-private final class ConversationManagerObservationBox: ObservableObject {
-    let conversations: any ConversationManaging
-
-    @Published private(set) var revision = 0
-    private var cancellable: AnyCancellable?
-
-    init(conversations: any ConversationManaging) {
-        self.conversations = conversations
-        cancellable = conversations.objectWillChange
-            .map { _ in () }
-            .eraseToAnyPublisher()
-            .sink { [weak self] _ in
-                self?.revision += 1
-            }
-    }
-}
-
 private struct AutomationLevelPopover: View {
     let selectedLevel: AutomationLevel
     let onSelect: (AutomationLevel) -> Void

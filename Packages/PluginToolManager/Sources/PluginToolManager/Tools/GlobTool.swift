@@ -4,6 +4,7 @@ import Foundation
 /// Glob 文件匹配。
 public struct GlobTool: SuperAgentTool, @unchecked Sendable {
     public let name = "glob"
+    public let executionCapability: ToolExecutionCapability = .parallelReadOnly
     private let workspaceRootProvider: @MainActor @Sendable () -> String?
 
     public init(

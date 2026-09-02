@@ -23,7 +23,7 @@ let package = Package(
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderRootView"),
-        .package(path: "../KitLocalization"),        .package(path: "../LumiUI"),
+        .package(path: "../KitLocalization"),        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitSuperLog"),
         .package(url: "https://github.com/migueldeicaza/SwiftTerm", .upToNextMajor(from: "1.5.0")),
         .package(path: "../KitTerminalCore"),

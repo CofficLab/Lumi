@@ -4,6 +4,7 @@ import Foundation
 /// 写入文件。
 public struct WriteFileTool: SuperAgentTool, @unchecked Sendable {
     public let name = "write_file"
+    public let executionCapability: ToolExecutionCapability = .serialSideEffect
     private let workspaceRootProvider: @MainActor @Sendable () -> String?
 
     public init(

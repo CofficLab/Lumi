@@ -299,6 +299,63 @@ struct ShellExecutorTests {
         #expect(stderrBytes.value > 0)
     }
 
+    @Test("聚合输出超过上限时会截断并标记")
+    func testOutputIsBounded() async throws {
+        let result = try await ShellExecutor.execute(
+            "printf '1234567890'; printf 'abcdefghij' >&2",
+            options: .init(throwsOnError: false, maxOutputBytes: 4)
+        )
+
+        #expect(result.stdout == "1234")
+        #expect(result.stderr == "abcd")
+        #expect(result.stdoutTruncated)
+        #expect(result.stderrTruncated)
+    }
+
+    @Test("输出上限只限制聚合结果，不限制实时回调")
+    func testStreamingCallbackReceivesFullOutputWhenAggregateIsBounded() async throws {
+        let callbackBytes = LockedCounter()
+        let result = try await ShellExecutor.executeStreaming(
+            "printf '1234567890'",
+            options: .init(maxOutputBytes: 4),
+            onOutput: { _ in },
+            onOutputData: { data in
+                callbackBytes.add(data.count)
+            }
+        )
+
+        #expect(callbackBytes.value == 10)
+        #expect(result.stdout == "1234")
+        #expect(result.stdoutTruncated)
+    }
+
+    @Test("子进程继承管道时会在排空超时后返回")
+    func testPipeDrainHasTimeout() async throws {
+        let tempDir = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let pidFile = tempDir.appendingPathComponent("pipe-holder.pid")
+        let command = "sleep 5 & child=$!; echo $child > '\(pidFile.path)'; echo done"
+        let startedAt = Date()
+        let result = try await ShellExecutor.execute(
+            command,
+            options: .init(
+                throwsOnError: false,
+                outputDrainTimeout: 0.1
+            )
+        )
+        let elapsed = Date().timeIntervalSince(startedAt)
+
+        defer {
+            if let pid = try? readPID(from: pidFile) {
+                kill(pid, SIGKILL)
+            }
+        }
+
+        #expect(result.stdout.contains("done"))
+        #expect(elapsed < 2.0)
+    }
+
     @Test("Cancellation terminates child processes")
     func testCancellationTerminatesChildProcess() async throws {
         let tempDir = try makeTemporaryDirectory()
@@ -330,6 +387,61 @@ struct ShellExecutorTests {
 
         try await Task.sleep(nanoseconds: 1_000_000_000)
         #expect(!isProcessRunning(pid))
+    }
+
+    @Test("取消会终止孙进程")
+    func testCancellationTerminatesGrandchildProcess() async throws {
+        let tempDir = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let pidFile = tempDir.appendingPathComponent("cancelled-grandchild.pid")
+        let command = "sh -c \"sleep 20 & echo \\\\$! > '\(pidFile.path)'; wait\" & wait"
+        let task = Task {
+            try await ShellExecutor.execute(
+                command,
+                options: .init(shellExecutable: "/bin/zsh", terminationGracePeriod: 0.25)
+            )
+        }
+
+        try await waitForFile(pidFile)
+        let pid = try readPID(from: pidFile)
+        task.cancel()
+
+        do {
+            _ = try await task.value
+            Issue.record("Should have thrown cancellation error")
+        } catch let error as ShellError {
+            if case .cancelled = error {
+                // Expected
+            } else {
+                Issue.record("Wrong error type: \(error)")
+            }
+        }
+
+        try await Task.sleep(nanoseconds: 500_000_000)
+        #expect(!isProcessRunning(pid))
+    }
+
+    @Test("进程尚未启动时取消也能结束等待")
+    func testCancellationBeforeProcessStarts() async throws {
+        let task = Task {
+            try await ShellExecutor.execute(
+                "sleep 5",
+                options: .init(terminationGracePeriod: 0.1)
+            )
+        }
+        task.cancel()
+
+        do {
+            _ = try await task.value
+            Issue.record("Should have thrown cancellation error")
+        } catch let error as ShellError {
+            if case .cancelled = error {
+                // Expected
+            } else {
+                Issue.record("Wrong error type: \(error)")
+            }
+        }
     }
 
     // MARK: - Command Lookup Tests
@@ -388,6 +500,8 @@ struct ShellExecutorTests {
         #expect(options.throwsOnError == true)
         #expect(options.terminatesProcessTree == true)
         #expect(options.terminationGracePeriod == 2.0)
+        #expect(options.maxOutputBytes == 64 * 1024)
+        #expect(options.outputDrainTimeout == 0.5)
     }
 
     @Test("ShellOptions custom initialization")
@@ -400,7 +514,9 @@ struct ShellExecutorTests {
             qos: .background,
             throwsOnError: false,
             terminatesProcessTree: false,
-            terminationGracePeriod: 0.25
+            terminationGracePeriod: 0.25,
+            maxOutputBytes: 128,
+            outputDrainTimeout: 0.75
         )
 
         #expect(options.shellExecutable == "/bin/zsh")
@@ -411,6 +527,8 @@ struct ShellExecutorTests {
         #expect(options.throwsOnError == false)
         #expect(options.terminatesProcessTree == false)
         #expect(options.terminationGracePeriod == 0.25)
+        #expect(options.maxOutputBytes == 128)
+        #expect(options.outputDrainTimeout == 0.75)
     }
 
     // MARK: - Convenience Alias Tests

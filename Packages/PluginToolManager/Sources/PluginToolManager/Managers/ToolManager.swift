@@ -37,6 +37,7 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
     var resultCacheConversationIDs: [String: UUID] = [:]
     var deletedConversationIDs: Set<UUID> = []
     let eventManager = ToolManagerEventManager()
+    let toolExecutionManager = ToolExecutionManager()
     weak var conversationManager: (any ConversationManaging)?
 
     public var recordStore: ProviderToolManager.ToolCallRecordStore? {
@@ -44,7 +45,61 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
         set { recordStoreValue = newValue }
     }
 
+    /// Job 状态存储与历史调用日志分离，避免两种数据语义互相污染。
+    var jobRecordStore: ProviderToolManager.ToolJobRecordStore? {
+        didSet {
+            toolExecutionManager.attachJobRecordStore(jobRecordStore)
+        }
+    }
+
     public init() {}
+
+    @discardableResult
+    public func addToolJobObserver(
+        _ callback: @escaping (ToolJobEvent) -> Void
+    ) -> any ToolJobObserverHandle {
+        toolExecutionManager.addObserver(callback)
+    }
+
+    @discardableResult
+    public func submit(
+        _ toolCalls: [ToolCall],
+        policy: ToolExecutionPolicy,
+        conversationID: UUID,
+        turnID: UUID?
+    ) -> [ToolJob] {
+        toolExecutionManager.submit(
+            toolCalls,
+            policy: policy,
+            conversationID: conversationID,
+            turnID: turnID,
+            toolResolver: { [weak self] name in self?.registeredTools[name] }
+        )
+    }
+
+    public func job(for jobID: String) -> ToolJob? {
+        toolExecutionManager.job(for: jobID)
+    }
+
+    public func jobs(for turnID: UUID) -> [ToolJob] {
+        toolExecutionManager.jobs(for: turnID)
+    }
+
+    public func cancelJob(_ jobID: String) {
+        toolExecutionManager.cancelJob(jobID)
+    }
+
+    public func cancelJobs(forTurnID turnID: UUID) {
+        toolExecutionManager.cancelJobs(forTurnID: turnID)
+    }
+
+    public func cancelJobs(forConversationID conversationID: UUID) {
+        toolExecutionManager.cancelJobs(forConversationID: conversationID)
+    }
+
+    func waitForJobResult(jobID: String) async -> ToolCallResult? {
+        await toolExecutionManager.waitForResult(jobID: jobID)
+    }
 
     @discardableResult
     public func addToolManagerObserver(_ callback: @escaping (ToolManagerEvent) -> Void) -> any ToolManagerObserverHandle {

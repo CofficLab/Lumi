@@ -14,7 +14,7 @@ public final class TokenHubProvider: VendorLLMProvider {
                 description: "Tencent Cloud TokenHub",
                 defaultModel: "hy4-preview",
                 models: [
-                    LLMModelInfo(id: "hy4-preview"),
+                    LLMModelInfo(id: "hy4-preview", contextWindowSize: 1_000_000),
                 ],
                 websiteURL: URL(string: "https://tokenhub.tencentmaas.com/"),
                 apiFormat: .openAI,

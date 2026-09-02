@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import ProviderAgentLoop
 import ProviderChatSection
@@ -20,8 +19,6 @@ final class ConversationListContext: ObservableObject {
     let agentTurn: (any AgentLoopProviding)?
     let conversationState: (any ConversationStateProviding)?
     let chat: (any ChatSectionProviding)?
-    private var conversationStateCancellable: AnyCancellable?
-
     /// 当前选中的对话 ID，由 `addSelectedConversationObserver` 回调同步更新。
     ///
     /// 视图通过 `@ObservedObject` 直接观察此属性，无需间接读取
@@ -41,9 +38,6 @@ final class ConversationListContext: ObservableObject {
         self.conversationState = conversationState
         self.chat = chat
         self.selectedConversationID = conversations.selectedConversationID
-        conversationStateCancellable = conversationState?.objectWillChange.sink { [weak self] _ in
-            self?.objectWillChange.send()
-        }
     }
 
     /// 当前项目路径；`nil` 表示未选中项目。

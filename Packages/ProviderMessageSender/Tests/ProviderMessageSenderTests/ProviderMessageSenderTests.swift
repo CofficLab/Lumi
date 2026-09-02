@@ -9,6 +9,54 @@ import ProviderMessage
 @Suite("ProviderMessageSender")
 @MainActor
 struct ProviderMessageSenderTests {
+    @Test("用户消息提交完成后即可读取，回合执行可随后启动")
+    func commitsUserMessageBeforeStartingTurn() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        loop.responseContent = "response"
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+
+        let optionalCommit = try sender.commitUserMessage("fast", conversationID: nil)
+        let commit = try #require(optionalCommit)
+        let conversationID = try #require(conversations.selectedConversationID)
+        #expect(commit.conversationID == conversationID)
+        #expect(commit.userMessageID != nil)
+        #expect(messages.messages(for: conversationID).map(\.content) == ["fast"])
+
+        await sender.startTurn(for: commit)
+        #expect(messages.messages(for: conversationID).map(\.content) == ["fast", "response"])
+    }
+
+    @Test("提交后回合尚未调度时，连续发送仍进入队列")
+    func preservesQueueBeforeDeferredTurnStart() async throws {
+        let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        loop.responseContent = "response"
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
+
+        let firstCommit = try sender.commitUserMessage("first", conversationID: nil)
+        let first = try #require(firstCommit)
+        let secondCommit = try sender.commitUserMessage("second", conversationID: nil)
+        let second = try #require(secondCommit)
+        let conversationID = try #require(conversations.selectedConversationID)
+
+        #expect(second.wasQueued)
+        #expect(sender.pendingMessages(for: conversationID).map(\.content) == ["second"])
+
+        await sender.startTurn(for: first)
+        #expect(messages.messages(for: conversationID).map(\.content) == ["first", "response", "second", "response"])
+    }
+
     @Test("发送消息会创建会话、落用户消息并运行 Agent Loop")
     func sendsMessageThroughLoop() async throws {
         let conversations = DefaultConversationManager()

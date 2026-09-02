@@ -40,7 +40,11 @@ import KernelCore
 /// 默认 `ProviderFactory` 实现：产出各 Provider 的默认实现。
 @MainActor
 public struct DefaultProviderFactory: ProviderFactory {
-    public init() {}
+    private let dataRootDirectory: URL?
+
+    public init(dataRootDirectory: URL? = nil) {
+        self.dataRootDirectory = dataRootDirectory
+    }
 
     /// 旧插件 ID → 新插件 ID 的别名映射。
     /// 当前插件管理器的新旧 ID 一致，保留显式映射以兼容旧数据格式。
@@ -50,7 +54,7 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     /// 产出 `StorageProviding` 实现（默认 Application Support 磁盘存储）。
     public func makeStorageProvider() -> any StorageProviding {
-        DefaultStorageProvider()
+        DefaultStorageProvider(dataRootDirectory: dataRootDirectory)
     }
 
     /// 产出 `ThemeProviding` 实现（默认内置主题注册表 + 选中持久化）。

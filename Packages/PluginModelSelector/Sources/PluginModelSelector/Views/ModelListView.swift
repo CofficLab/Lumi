@@ -1,6 +1,7 @@
 import Foundation
 import LumiUI
 import ProviderLLMManager
+import ProviderToast
 import KitLLM
 import SwiftUI
 
@@ -13,6 +14,7 @@ struct ModelListView: View {
     @ObservedObject var box: ObservableLLMProviderManagerBox
     let selectedProviderID: String?
     let initialModel: String?
+    let toast: (any ToastProviding)?
     var onSelect: ((_ providerID: String, _ model: String) -> Void)? = nil
 
     @State private var searchText = ""
@@ -76,6 +78,14 @@ struct ModelListView: View {
                                 onSelect: {
                                     onSelect?(providerID, model)
                                     box.manager.select(providerID: providerID, model: model)
+                                    // 通过内核 Toast 能力通知用户模型已切换
+                                    let providerDisplayName = box.providerInfo(id: providerID)?.displayName ?? providerID
+                                    let modelDisplayName = modelInfo?.displayName ?? model
+                                    toast?.show(
+                                        LumiPluginLocalization.string("Switched to", bundle: .module),
+                                        detail: "\(providerDisplayName) · \(modelDisplayName)",
+                                        style: .success
+                                    )
                                 }
                             )
                         }

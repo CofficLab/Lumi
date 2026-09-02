@@ -47,7 +47,7 @@ enum PromoDesignerRuntime {
     /// 聊天输入框服务（宿主注入，可空）。用于把选中的区块预填进输入框待发送。
     static var conversationInput: (any ConversationInputProviding)?
 
-    private static var projectObserver: (any ProjectProvidingObserverHandle)?
+    private static var projectObserver: PromoDesignerProjectObserver?
     static let projectFolderName = "app-store-promo"
 
     static func configure(kernel: KernelCoreContainer, pluginID: String) {
@@ -74,15 +74,14 @@ enum PromoDesignerRuntime {
             return
         }
 
-        currentProjectPath = project.currentProject?.path
-        updateProjectStorageDirectory(projectPath: currentProjectPath)
-        projectObserver = project.addObserver { [weak project] event in
-            guard case .currentProjectChanged = event else { return }
-            let newPath = project?.currentProject?.path
+        let initialPath = project.currentProject?.path
+        currentProjectPath = initialPath
+        updateProjectStorageDirectory(projectPath: initialPath)
+        projectObserver = PromoDesignerProjectObserver(project: project) { newPath in
             guard newPath != currentProjectPath else { return }
             currentProjectPath = newPath
             updateProjectStorageDirectory(projectPath: newPath)
-            }
+        }
     }
 
     private static func updateProjectStorageDirectory(projectPath: String?) {

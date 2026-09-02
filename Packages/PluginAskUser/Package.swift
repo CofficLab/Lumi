@@ -12,7 +12,7 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../KitSuperLog"),
         .package(path: "../KitAgentTool"),
-        .package(path: "../LumiUI"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessage"),

@@ -5,6 +5,42 @@ import ProviderMessage
 
 @MainActor
 struct LLMContextProvidingTests {
+    @Test("上下文预算为输出、工具和安全余量预留空间")
+    func contextBudgetReservesSpace() {
+        let budget = LLMContextBudget(
+            contextWindowTokens: 32_000,
+            reservedOutputTokens: 8_000,
+            toolSchemaTokens: 2_000,
+            safetyMarginTokens: 1_000
+        )
+
+        #expect(budget.inputTokenLimit == 21_000)
+        #expect(!budget.usesFallbackWindow)
+    }
+
+    @Test("未知窗口使用保守 fallback")
+    func unknownContextWindowUsesFallback() {
+        let budget = LLMContextBudget.conservative(contextWindowTokens: nil)
+
+        #expect(budget.usesFallbackWindow)
+        #expect(budget.inputTokenLimit == 22_000)
+    }
+
+    @Test("token 估算包含消息正文、reasoning 和工具参数")
+    func tokenEstimatorIncludesMessageParts() {
+        let message = Message(
+            conversationID: UUID(),
+            role: .assistant,
+            content: "回答",
+            reasoningContent: "推理",
+            toolCalls: [
+                MessageToolCall(id: "call-1", name: "search", arguments: "{\"q\":\"Lumi\"}"),
+            ]
+        )
+
+        #expect(LLMContextTokenEstimator.estimate(message: message) > 12)
+    }
+
     @Test("透传 Provider 保留消息顺序和内容")
     func passthroughPreservesMessages() async {
         let messages = DefaultMessageManager()

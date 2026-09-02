@@ -1047,13 +1047,18 @@
    "order": 85,
    "policy": "alwayson",
    "stage": "beta",
-   "newPackage": "PluginConversationStats",
+   "newPackage": "PluginConversationContextSize",
    "wave": "P4",
    "owners": [],
    "dependencies": [
-    "KernelLumi",
+    "KernelCore",
     "KitLocalization",
-    "LumiUI"
+    "KitSuperLog",
+    "ProviderChatSection",
+    "ProviderConversation",
+    "ProviderMessage",
+    "ProviderLLMManager",
+    "ProviderLLMVendors"
    ],
    "providersConsumed": [],
    "providersPublished": [],
@@ -1067,11 +1072,11 @@
    "testFixtures": [],
    "status": "parityReview",
    "evidence": {
-    "packageTests": "swift test --package-path Packages/PluginConversationStats (2026-08-24)",
+    "packageTests": "swift test --package-path Packages/PluginConversationContextSize (2026-09-01)",
     "integrationBuild": null,
     "runtime": null,
     "uiDiff": null,
-    "migration": "FactoryLumi registers ConversationContextSizePlugin from the consolidated PluginConversationStats package.",
+    "migration": "FactoryLumi registers ConversationContextSizePlugin from the standalone PluginConversationContextSize package.",
     "performance": null
    }
   },

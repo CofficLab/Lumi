@@ -10,9 +10,9 @@ struct CacheHitRateToolbarView: View {
     @State private var selectedConversationID: UUID?
     @State private var stats = CacheHitRateStats.empty
     @State private var isPopoverPresented = false
+    @State private var messageRefreshRevision = 0
 
-    @State private var conversationObserver: (any SelectedConversationObserverHandle)?
-    @State private var messageObserver: (any MessageInsertedObserverHandle)?
+    @State private var observer: CacheHitRateObserver?
 
     var body: some View {
         Group {
@@ -45,24 +45,27 @@ struct CacheHitRateToolbarView: View {
             }
         }
         .task {
-            selectedConversationID = conversations.selectedConversationID
-            conversationObserver = conversations.addSelectedConversationObserver { newID in
+            observer = CacheHitRateObserver(
+                conversations: conversations,
+                messages: messages,
+                onConversationChange: { newID in
                 selectedConversationID = newID
-            }
-            messageObserver = messages.addMessageInsertedObserver { _, conversationID in
-                if conversationID == selectedConversationID {
-                    Task(priority: .utility) { @MainActor in
-                        await Task.yield()
-                        guard !Task.isCancelled, conversationID == selectedConversationID else { return }
-                        refresh()
+                },
+                onMessageInsert: { conversationID in
+                    if conversationID == selectedConversationID {
+                        messageRefreshRevision &+= 1
                     }
                 }
-            }
+            )
         }
-        .task(id: selectedConversationID) {
-            await Task.yield()
+        .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(messageRefreshRevision)") {
+            try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled else { return }
-            refresh()
+            await refresh()
+        }
+        .onDisappear {
+            observer?.cancel()
+            observer = nil
         }
     }
 
@@ -74,12 +77,14 @@ struct CacheHitRateToolbarView: View {
         }
     }
 
-    private func refresh() {
+    private func refresh() async {
         guard let conversationID = selectedConversationID else {
             stats = .empty
             return
         }
-        stats = CacheHitRateStats.compute(messages: messages.messages(for: conversationID))
+        let snapshot = await messages.messagesSnapshot(in: conversationID)
+        guard conversationID == selectedConversationID else { return }
+        stats = CacheHitRateStats.compute(messages: snapshot)
     }
 }
 

@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../ProviderNetwork"),
         .package(path: "../KitLocalization"),
-        .package(path: "../LumiUI"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitSuperLog"),
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.5.0"),
     ],

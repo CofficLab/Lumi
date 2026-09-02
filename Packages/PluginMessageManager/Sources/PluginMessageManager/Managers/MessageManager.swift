@@ -21,12 +21,20 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     /// 内存中的"已通知 UI、尚未落盘"消息缓冲(write-behind 的脏数据)。
     private nonisolated let pending = PendingMessageBuffer()
 
-    /// 后台落盘串行队列,保证同一会话内消息落盘顺序与插入顺序一致。
-    private nonisolated let persistQueue = DispatchQueue(label: "com.coffic.lumi.message.persist")
+    /// 后台 utility 串行落盘队列，保证消息、更新和删除按调用顺序执行。
+    ///
+    /// 消息先进入 pending buffer，再由该队列 eventual consistency 地落盘；
+    /// 因此持久化不会和 Return → 列表首帧争抢主线程资源。
+    private nonisolated let persistQueue = DispatchQueue(
+        label: "com.coffic.lumi.message.persist",
+        qos: .utility,
+        autoreleaseFrequency: .workItem
+    )
 
     // MARK: - Message Insertion Observers
 
     private var messageInsertedObservers: [WeakMessageInsertedObserver] = []
+    private var messageChangeObservers: [WeakMessageChangeObserver] = []
 
     public init(
         store: MessageStore?,
@@ -61,8 +69,9 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     /// **游标分页(`beforeMessageID` 非 nil)不合并 pending**:游标分页是"向上翻历史"场景,
     /// 翻到的都是较早消息,那时尾部的新消息早已落盘、pending 为空,合并无意义反而易错。
     /// pending 只需参与"取最近一页"(无游标)的合并 —— 那正是 UI 实时展示的路径。
-    private func mergedPage(
+    private nonisolated static func mergedPage(
         disk: [Message],
+        pendingMessages: [Message],
         conversationID: UUID,
         beforeMessageID: UUID?,
         includesToolMessages: Bool,
@@ -70,7 +79,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     ) -> [Message] {
         guard beforeMessageID == nil else { return disk }
 
-        let pending = pending.snapshot(for: conversationID).filter {
+        let pending = pendingMessages.filter {
             includesToolMessages || $0.role != .tool
         }
         if Self.verbose {
@@ -119,11 +128,41 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         return all
     }
 
-    /// 在后台读取并组装 LLM 历史，避免 SwiftData 解码和全量排序阻塞 MainActor。
-    public func messagesForLLM(in conversationID: UUID) async -> [Message] {
+    /// 在后台读取并组装完整消息快照，避免 SwiftData 解码和全量排序阻塞 MainActor。
+    public func messagesSnapshot(in conversationID: UUID) async -> [Message] {
+        await readSnapshot(in: conversationID, priority: .utility)
+    }
+
+    /// 在后台读取首条用户消息，避免标题服务为了一个字段物化整个会话。
+    public func firstUserMessage(in conversationID: UUID) async -> Message? {
         let store = self.store
         let pending = self.pending
-        return await Task.detached(priority: .userInitiated) {
+        return await Task.detached(priority: .utility) {
+            var candidates = pending.snapshot(for: conversationID).filter {
+                $0.role == .user && !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            if let persisted = store?.fetchFirstUserMessage(conversationId: conversationID) {
+                candidates.append(persisted)
+            }
+            return candidates.min {
+                if $0.createdAt == $1.createdAt { return $0.id < $1.id }
+                return $0.createdAt < $1.createdAt
+            }
+        }.value
+    }
+
+    /// LLM 回合读取属于发送关键路径，使用较高优先级，但仍不在 MainActor 执行。
+    public func messagesForLLM(in conversationID: UUID) async -> [Message] {
+        await readSnapshot(in: conversationID, priority: .userInitiated)
+    }
+
+    private func readSnapshot(
+        in conversationID: UUID,
+        priority: TaskPriority
+    ) async -> [Message] {
+        let store = self.store
+        let pending = self.pending
+        return await Task.detached(priority: priority) {
             let diskMessages = store?.fetchMessages(conversationId: conversationID) ?? []
             let pendingMessages = pending.snapshot(for: conversationID)
             let diskIDs = Set(diskMessages.map(\.id))
@@ -163,6 +202,20 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         return counts
     }
 
+    /// 在后台读取并聚合消息日统计，避免 Heatmap 打开或刷新时阻塞 MainActor。
+    public func dailyMessageCountsAsync(since: Date) async -> [Date: Int] {
+        let store = self.store
+        let pending = self.pending
+        return await Task.detached(priority: .utility) {
+            var counts = store?.dailyMessageCounts(since: since) ?? [:]
+            let calendar = Calendar.current
+            for message in pending.snapshotAll() where message.createdAt >= since {
+                counts[calendar.startOfDay(for: message.createdAt), default: 0] += 1
+            }
+            return counts
+        }.value
+    }
+
     public func dailyTokenCounts(since: Date) -> [Date: Int] {
         var counts = store?.dailyTokenCounts(since: since) ?? [:]
         let calendar = Calendar.current
@@ -174,6 +227,22 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         return counts
     }
 
+    /// 在后台读取并聚合 token 日统计，保留 pending 消息的 read-your-writes 语义。
+    public func dailyTokenCountsAsync(since: Date) async -> [Date: Int] {
+        let store = self.store
+        let pending = self.pending
+        return await Task.detached(priority: .utility) {
+            var counts = store?.dailyTokenCounts(since: since) ?? [:]
+            let calendar = Calendar.current
+            for message in pending.snapshotAll() where message.createdAt >= since {
+                let tokens = (message.inputTokenCount ?? 0) + (message.outputTokenCount ?? 0)
+                guard tokens > 0 else { continue }
+                counts[calendar.startOfDay(for: message.createdAt), default: 0] += tokens
+            }
+            return counts
+        }.value
+    }
+
     /// 分页查询（UI 滚动/历史加载）。
     public func messagePage(
         for conversationID: UUID,
@@ -183,8 +252,10 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     ) -> [Message] {
         guard let store else {
             // store 未就绪:仍尝试返回 pending(read-your-writes,哪怕磁盘不可用)。
-            return mergedPage(
-                disk: [], conversationID: conversationID,
+            return Self.mergedPage(
+                disk: [],
+                pendingMessages: pending.snapshot(for: conversationID),
+                conversationID: conversationID,
                 beforeMessageID: beforeMessageID,
                 includesToolMessages: includesToolMessages, limit: limit
             )
@@ -195,11 +266,41 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             beforeMessageID: beforeMessageID,
             includesToolMessages: includesToolMessages
         )
-        return mergedPage(
-            disk: disk, conversationID: conversationID,
+        return Self.mergedPage(
+            disk: disk,
+            pendingMessages: pending.snapshot(for: conversationID),
+            conversationID: conversationID,
             beforeMessageID: beforeMessageID,
             includesToolMessages: includesToolMessages, limit: limit
         )
+    }
+
+    /// 异步分页查询：数据库分页和 pending 合并均在后台执行，避免阻塞 MainActor。
+    public func messagePageAsync(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) async -> [Message] {
+        guard limit > 0 else { return [] }
+        let store = self.store
+        let pending = self.pending
+        return await Task.detached(priority: .utility) {
+            let disk = store?.fetchMessagePage(
+                conversationId: conversationID,
+                limit: limit,
+                beforeMessageID: beforeMessageID,
+                includesToolMessages: includesToolMessages
+            ) ?? []
+            return Self.mergedPage(
+                disk: disk,
+                pendingMessages: pending.snapshot(for: conversationID),
+                conversationID: conversationID,
+                beforeMessageID: beforeMessageID,
+                includesToolMessages: includesToolMessages,
+                limit: limit
+            )
+        }.value
     }
 
     /// 是否有更早消息（UI 顶部"加载更早"按钮显隐）。
@@ -213,6 +314,22 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             beforeMessageID: beforeMessageID,
             includesToolMessages: includesToolMessages
         ) ?? false
+    }
+
+    /// 异步探测历史分页边界，避免在 MainActor 同步访问 SwiftData。
+    public func hasEarlierMessagesAsync(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) async -> Bool {
+        let store = self.store
+        return await Task.detached(priority: .utility) {
+            store?.hasEarlierMessages(
+                conversationId: conversationID,
+                beforeMessageID: beforeMessageID,
+                includesToolMessages: includesToolMessages
+            ) ?? false
+        }.value
     }
 
     // MARK: - MessageManaging (writes)
@@ -275,33 +392,12 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         // 1) 写入内存缓冲,立即通知 UI —— UI 这一刻就能从读路径看到它(read-your-writes)。
         enqueuePending(messageToInsert, conversationID: conversationID)
         notifyMessagesDidChange(conversationID: conversationID)
+        notifyMessageChange(.inserted(messageToInsert, conversationID: conversationID))
         notifyMessageInsertedObservers(messageToInsert, conversationID: conversationID)
 
-        // 2) 按 role 分流落盘:
-        //    - error:立即落盘，保留错误诊断的既有语义;
-        //    - user / assistant / tool:后台串行落盘。消息已经在 pending
-        //      buffer 中对 UI 和 AgentLoop 可见，不能让磁盘 I/O 阻塞发送主线程。
-        let shouldPersistEagerly = messageToInsert.role == .error
-        if shouldPersistEagerly {
-            persistNow(messageToInsert, conversationID: conversationID)
-        } else {
-            persistLater(messageToInsert, conversationID: conversationID)
-        }
-    }
-
-    /// 同步落盘 + 从缓冲移除。
-    private func persistNow(_ message: Message, conversationID: UUID) {
-        do {
-            try store?.insertMessage(message)
-            dequeuePending(id: message.id, conversationID: conversationID)
-            if message.role == .user {
-                postMessageSavedNotification(message: message, conversationID: conversationID)
-            }
-        } catch {
-            if Self.verbose {
-                Self.logger.error("\(Self.t)Failed to persist message eagerly: \(error)")
-            }
-        }
+        // 2) 所有非瞬时消息统一后台串行落盘。消息已经在 pending buffer
+        //    中对 UI 和 AgentLoop 可见，不能让磁盘 I/O 阻塞发送主线程。
+        persistLater(messageToInsert, conversationID: conversationID)
     }
 
     /// 后台串行落盘 + 从缓冲移除(成功后)。失败则保留在缓冲,下次启动可补救。
@@ -474,6 +570,15 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         return handle
     }
 
+    @discardableResult
+    public func addMessageChangeObserver(
+        _ callback: @escaping (MessageChange) -> Void
+    ) -> any MessageChangeObserverHandle {
+        let handle = MessageChangeObserverHandleImpl(owner: self, callback: callback)
+        self.messageChangeObservers.append(WeakMessageChangeObserver(handle))
+        return handle
+    }
+
     fileprivate func removeMessageInsertedObserver(_ handle: MessageInsertedObserverHandleImpl) {
         self.messageInsertedObservers.removeAll { $0.handle === handle }
         if Self.verbose {
@@ -481,11 +586,23 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         }
     }
 
+    fileprivate func removeMessageChangeObserver(_ handle: MessageChangeObserverHandleImpl) {
+        self.messageChangeObservers.removeAll { $0.handle === handle }
+    }
+
     private func notifyMessageInsertedObservers(_ message: Message, conversationID: UUID) {
         messageInsertedObservers.removeAll { $0.handle == nil }
         let observers = messageInsertedObservers
         for observer in observers {
             observer.handle?.invoke(message, conversationID)
+        }
+    }
+
+    private func notifyMessageChange(_ change: MessageChange) {
+        messageChangeObservers.removeAll { $0.handle == nil }
+        let observers = messageChangeObservers
+        for observer in observers {
+            observer.handle?.invoke(change)
         }
     }
 }
@@ -519,4 +636,33 @@ private final class MessageInsertedObserverHandleImpl: MessageInsertedObserverHa
 private final class WeakMessageInsertedObserver {
     fileprivate weak var handle: MessageInsertedObserverHandleImpl?
     init(_ handle: MessageInsertedObserverHandleImpl) { self.handle = handle }
+}
+
+@MainActor
+private final class MessageChangeObserverHandleImpl: MessageChangeObserverHandle {
+    private weak var owner: MessageManager?
+    private let callback: (MessageChange) -> Void
+    private var isCancelled = false
+
+    init(owner: MessageManager, callback: @escaping (MessageChange) -> Void) {
+        self.owner = owner
+        self.callback = callback
+    }
+
+    func cancel() {
+        guard !isCancelled else { return }
+        isCancelled = true
+        owner?.removeMessageChangeObserver(self)
+    }
+
+    fileprivate func invoke(_ change: MessageChange) {
+        guard !isCancelled else { return }
+        callback(change)
+    }
+}
+
+@MainActor
+private final class WeakMessageChangeObserver {
+    fileprivate weak var handle: MessageChangeObserverHandleImpl?
+    init(_ handle: MessageChangeObserverHandleImpl) { self.handle = handle }
 }

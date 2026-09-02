@@ -29,14 +29,11 @@ final class SpeedMessageObserver {
 
         refreshTask?.cancel()
         refreshTask = Task(priority: .utility) { @MainActor [weak self] in
-            await Task.yield()
+            try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled, let self,
                   self.viewModel.selectedConversationID == conversationID else { return }
 
-            var snapshot = self.messages.messages(for: conversationID)
-            if snapshot.isEmpty, let lastMessage = self.messages.lastMessage(in: conversationID) {
-                snapshot = [lastMessage]
-            }
+            let snapshot = await self.messages.messagesSnapshot(in: conversationID)
             self.viewModel.refresh(conversationID: conversationID, messages: snapshot)
         }
     }

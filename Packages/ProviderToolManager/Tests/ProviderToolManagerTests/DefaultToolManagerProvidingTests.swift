@@ -3,6 +3,26 @@ import Foundation
 import Testing
 @testable import ProviderToolManager
 
+private struct ContextConversationTool: SuperAgentTool {
+    let name = "context_conversation"
+
+    func description(for language: LanguagePreference) -> String { "Context conversation" }
+    func inputSchema(for language: LanguagePreference) -> [String: Any] { [:] }
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { name }
+
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
+        "legacy path"
+    }
+
+    func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: context.conversationID.uuidString)
+    }
+}
+
 @MainActor
 struct DefaultToolManagerProvidingTests {
 
@@ -21,6 +41,21 @@ struct DefaultToolManagerProvidingTests {
         // 结果缓存立即可查
         let cached = await manager.toolCallResult(for: call.id)
         #expect(cached?.content == "read /tmp/a.txt")
+    }
+
+    @Test("execute 将回合会话 ID 传给 Context-aware 工具")
+    func executePassesConversationContext() async {
+        let manager = DefaultToolManagerProviding()
+        manager.add(ContextConversationTool(), pluginID: "p")
+        let conversationID = UUID()
+
+        let result = await manager.execute(
+            makeToolCall(name: "context_conversation"),
+            conversationID: conversationID,
+            turnID: UUID()
+        )
+
+        #expect(result.content == conversationID.uuidString)
     }
 
     @Test("execute 通过观察者发出 started 和 completed")

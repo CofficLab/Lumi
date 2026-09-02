@@ -26,12 +26,12 @@ public final class BookletMakerMobileFeature: ObservableObject {
     }
 
     let viewModel: BookletMakerViewModel
-    private var observation: AnyCancellable?
+    private var observation: BookletMakerFeatureObserver?
 
     public init() {
         let viewModel = BookletMakerViewModel()
         self.viewModel = viewModel
-        observation = viewModel.objectWillChange.sink { [weak self] _ in
+        observation = BookletMakerFeatureObserver(viewModel: viewModel) { [weak self] in
             self?.objectWillChange.send()
         }
     }

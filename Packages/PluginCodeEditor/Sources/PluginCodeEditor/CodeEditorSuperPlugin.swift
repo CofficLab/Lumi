@@ -26,6 +26,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     public let order = 82
     public let dependencies = [
         "com.coffic.lumi.plugin.editor-host",
+        "com.coffic.lumi.plugin.project-file-tree",
     ]
     public let metadata = PluginMetadata(
         id: pluginID,
@@ -40,7 +41,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     private var viewModel: CodeEditorViewModel?
     private var editor: EditorService?
     private var sendSelectionContributor: SendSelectionToConversationContributor?
-    private var projectObserver: (any ProjectProvidingObserverHandle)?
+    private var projectObserver: CodeEditorProjectObserver?
     private var themeObserver: CodeEditorThemeObserver?
     private weak var activityBar: (any ActivityBarProviding)?
     private weak var contentView: (any ContentViewProviding)?
@@ -108,8 +109,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
         editor.editorExtensions.registerContextMenuContributor(sendSelectionContributor)
         let viewModel = CodeEditorViewModel(editor: editor)
         viewModel.updateCurrentFile(project.currentFileURL)
-        let projectObserver = project.addObserver { [weak viewModel] event in
-            guard case .currentFileChanged(let fileURL) = event else { return }
+        let projectObserver = CodeEditorProjectObserver(project: project) { [weak viewModel] fileURL in
             viewModel?.updateCurrentFile(fileURL)
         }
         let themeObserver = kernel

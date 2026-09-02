@@ -91,6 +91,15 @@
       }
     },
     {
+      "identity" : "lumiui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiUI.git",
+      "state" : {
+        "revision" : "4be19813249532d82e447fd814aefef84e3ea8a6",
+        "version" : "1.0.1"
+      }
+    },
+    {
       "identity" : "magicalert",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nookery/MagicAlert.git",

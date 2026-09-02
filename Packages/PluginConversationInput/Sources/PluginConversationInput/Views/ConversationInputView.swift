@@ -2,6 +2,7 @@ import Combine
 import LumiUI
 import ProviderConversationInput
 import ProviderMessageSender
+import ProviderPerformanceMetrics
 import KitSuperLog
 import SwiftUI
 import os
@@ -15,15 +16,21 @@ struct ConversationInputView: View {
 
     let input: (any ConversationInputProviding)?
     let sender: (any MessageSendingProviding)?
+    let metrics: (any PerformanceMetricsProviding)?
     @State private var errorMessage: String?
     /// 输入 Provider 的 `objectWillChange` 不会自动让这个 View 重建，
     /// 而 `ComposerView` 依赖的是普通 Binding；用 revision 让文本变化触发
     /// `ChatInputEditorView.updateNSView`，及时把 NSTextView 同步到 Provider。
     @State private var inputRevision = 0
 
-    init(input: (any ConversationInputProviding)?, sender: (any MessageSendingProviding)?) {
+    init(
+        input: (any ConversationInputProviding)?,
+        sender: (any MessageSendingProviding)?,
+        metrics: (any PerformanceMetricsProviding)? = nil
+    ) {
         self.input = input
         self.sender = sender
+        self.metrics = metrics
         _errorMessage = State(initialValue: input?.errorMessage)
     }
 
@@ -65,18 +72,60 @@ struct ConversationInputView: View {
     private func send() {
         guard let input, let sender else { return }
         let trimmed = input.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let hasAttachments = !sender.pendingImageAttachments.isEmpty || !sender.pendingFileAttachments.isEmpty
+        let imageAttachments = sender.pendingImageAttachments
+        let fileAttachments = sender.pendingFileAttachments
+        let hasAttachments = !imageAttachments.isEmpty || !fileAttachments.isEmpty
         guard !trimmed.isEmpty || hasAttachments else { return }
+
+        let trace = metrics?.begin(
+            operation: "chat.send",
+            metadata: ["attachments": hasAttachments ? "true" : "false"]
+        )
 
         input.text = ""
         input.errorMessage = nil
 
-        Task { @MainActor in
-            do {
-                try await sender.sendMessage(trimmed, conversationID: nil)
-            } catch {
-                input.errorMessage = error.localizedDescription
+        if hasAttachments {
+            Task { @MainActor in
+                do {
+                    guard let commit = try await sender.commitUserMessageInBackground(
+                        trimmed,
+                        imageAttachments: imageAttachments,
+                        fileAttachments: fileAttachments,
+                        conversationID: nil
+                    ) else { return }
+                    if let trace {
+                        metrics?.mark(trace, stage: "message.committed")
+                        metrics?.end(trace)
+                    }
+                    guard !commit.wasQueued else { return }
+                    await sender.startTurn(for: commit)
+                } catch {
+                    input.errorMessage = error.localizedDescription
+                }
             }
+            return
+        }
+
+        do {
+            guard let commit = try sender.commitUserMessage(
+                trimmed,
+                imageAttachments: imageAttachments,
+                fileAttachments: fileAttachments,
+                conversationID: nil
+            ) else { return }
+            if let trace {
+                metrics?.mark(trace, stage: "message.committed")
+                metrics?.end(trace)
+            }
+            guard !commit.wasQueued else { return }
+
+            // 用户消息已同步进入内存时间线；回合跟踪延后，不阻塞 Return → 首帧路径。
+            Task { @MainActor in
+                await sender.startTurn(for: commit)
+            }
+        } catch {
+            input.errorMessage = error.localizedDescription
         }
     }
 }

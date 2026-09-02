@@ -1,6 +1,20 @@
 import Combine
 import Foundation
 
+/// 由消息管理器发布的结构化变化事件。
+///
+/// 插入事件携带已经进入内存 pending buffer 的消息，UI 可以直接应用它，
+/// 不必为了显示一条刚发送的消息再次查询数据库。
+public enum MessageChange: Sendable {
+    case inserted(Message, conversationID: UUID)
+}
+
+/// 消息变化观察者注销令牌。
+@MainActor
+public protocol MessageChangeObserverHandle: AnyObject {
+    func cancel()
+}
+
 /// 消息插入观察者的注册令牌。
 ///
 /// 调用 `MessageManaging.addMessageInsertedObserver(_:)` 后持有返回值
@@ -14,6 +28,10 @@ public protocol MessageInsertedObserverHandle: AnyObject {
 @MainActor
 public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     func messages(for conversationID: UUID) -> [Message]
+    /// 异步读取指定会话的完整消息快照。实现应避免在 MainActor 执行磁盘读取、解码和排序。
+    func messagesSnapshot(in conversationID: UUID) async -> [Message]
+    /// 异步读取指定会话的第一条有效用户消息，适合自动标题等只需要首条消息的场景。
+    func firstUserMessage(in conversationID: UUID) async -> Message?
     /// 异步加载发送给 LLM 的消息历史。持久化实现应将磁盘读取和解码放到后台。
     func messagesForLLM(in conversationID: UUID) async -> [Message]
     /// 返回指定会话的一页消息，结果按时间升序排列。
@@ -24,12 +42,25 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
         beforeMessageID: UUID?,
         includesToolMessages: Bool
     ) -> [Message]
+    /// 异步加载指定会话的一页消息。持久化实现应将数据库读取放到后台。
+    func messagePageAsync(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> [Message]
     /// 判断游标之前是否还有消息。传入 nil 时使用实现的默认探测窗口。
     func hasEarlierMessages(
         for conversationID: UUID,
         beforeMessageID: UUID?,
         includesToolMessages: Bool
     ) -> Bool
+    /// 异步判断游标之前是否还有消息。
+    func hasEarlierMessagesAsync(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> Bool
     func message(id: UUID, in conversationID: UUID) -> Message?
     func lastMessage(in conversationID: UUID) -> Message?
     func messageCount(for conversationID: UUID) -> Int
@@ -38,8 +69,12 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
     /// 活动热力图等跨会话统计功能使用此接口；实现必须包含所有会话，
     /// 并将 key 规范化为 `Calendar.current.startOfDay(for:)`。
     func dailyMessageCounts(since: Date) -> [Date: Int]
+    /// 异步返回指定日期（含）以来的消息数，持久化实现应将读取放到后台。
+    func dailyMessageCountsAsync(since: Date) async -> [Date: Int]
     /// 返回指定日期（含）以来、按本地日历日聚合的输入和输出 token 总量。
     func dailyTokenCounts(since: Date) -> [Date: Int]
+    /// 异步返回指定日期（含）以来的 token 总量，持久化实现应将读取放到后台。
+    func dailyTokenCountsAsync(since: Date) async -> [Date: Int]
     func insertMessage(_ message: Message, to conversationID: UUID)
     func updateMessage(id: UUID, in conversationID: UUID, content: String)
     func deleteMessage(id: UUID, in conversationID: UUID)
@@ -72,9 +107,27 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
     func addMessageInsertedObserver(
         _ callback: @escaping (Message, UUID) -> Void
     ) -> any MessageInsertedObserverHandle
+
+    /// 注册结构化消息变化观察者。
+    ///
+    /// 回调在主线程同步执行。插入事件在消息进入内存缓冲后、后台落盘前发送。
+    @discardableResult
+    func addMessageChangeObserver(
+        _ callback: @escaping (MessageChange) -> Void
+    ) -> any MessageChangeObserverHandle
 }
 
 public extension MessageManaging {
+    func messagesSnapshot(in conversationID: UUID) async -> [Message] {
+        await messagesForLLM(in: conversationID)
+    }
+
+    func firstUserMessage(in conversationID: UUID) async -> Message? {
+        await messagesSnapshot(in: conversationID).first {
+            $0.role == .user && !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
+
     func messagesForLLM(in conversationID: UUID) async -> [Message] {
         messages(for: conversationID)
     }
@@ -97,6 +150,20 @@ public extension MessageManaging {
         return Array(all[max(0, index - limit)..<index])
     }
 
+    func messagePageAsync(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) async -> [Message] {
+        messagePage(
+            for: conversationID,
+            limit: limit,
+            beforeMessageID: beforeMessageID,
+            includesToolMessages: includesToolMessages
+        )
+    }
+
     func hasEarlierMessages(
         for conversationID: UUID,
         beforeMessageID: UUID?,
@@ -109,9 +176,29 @@ public extension MessageManaging {
         return index > 0
     }
 
+    func hasEarlierMessagesAsync(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) async -> Bool {
+        hasEarlierMessages(
+            for: conversationID,
+            beforeMessageID: beforeMessageID,
+            includesToolMessages: includesToolMessages
+        )
+    }
+
     func dailyMessageCounts(since: Date) -> [Date: Int] { [:] }
 
+    func dailyMessageCountsAsync(since: Date) async -> [Date: Int] {
+        dailyMessageCounts(since: since)
+    }
+
     func dailyTokenCounts(since: Date) -> [Date: Int] { [:] }
+
+    func dailyTokenCountsAsync(since: Date) async -> [Date: Int] {
+        dailyTokenCounts(since: since)
+    }
 
     func updateToolCallResult(
         _ result: MessageToolResult,
@@ -134,11 +221,22 @@ public extension MessageManaging {
     ) -> any MessageInsertedObserverHandle {
         NoopMessageInsertedObserverHandle()
     }
+
+    func addMessageChangeObserver(
+        _ callback: @escaping (MessageChange) -> Void
+    ) -> any MessageChangeObserverHandle {
+        NoopMessageChangeObserverHandle()
+    }
 }
 
 // MARK: - No-op handle (default implementation)
 
 @MainActor
 private final class NoopMessageInsertedObserverHandle: MessageInsertedObserverHandle {
+    func cancel() {}
+}
+
+@MainActor
+private final class NoopMessageChangeObserverHandle: MessageChangeObserverHandle {
     func cancel() {}
 }

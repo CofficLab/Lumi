@@ -5,6 +5,7 @@ import KitSuperLog
 import ProviderChatSection
 import ProviderLLMManager
 import ProviderStorage
+import ProviderToast
 
 /// Model Selector 插件（KernelCore 体系）。
 ///
@@ -65,6 +66,7 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
         self.usageStore = usageStore
 
         let box = ObservableLLMProviderManagerBox(manager: manager)
+        let toast = kernel.resolveProvider((any ToastProviding).self)
 
         // Action Bar 模型选择按钮（沿用旧版 chatSectionActionBarItems .leading）。
         chat.addBarItems([
@@ -72,7 +74,7 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
                 id: "\(id).action-bar-button",
                 placement: .actionLeading
             ) {
-                ActionBarButton(box: box, usageStore: usageStore)
+                ActionBarButton(box: box, usageStore: usageStore, toast: toast)
             },
         ])
     }

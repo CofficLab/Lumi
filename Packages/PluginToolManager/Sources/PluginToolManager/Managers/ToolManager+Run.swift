@@ -16,7 +16,13 @@ private struct ToolInteractionPayload: Codable {
 
 extension ToolManager {
     public func execute(_ toolCall: ToolCall, conversationID: UUID, turnID: UUID?) async -> ToolCallResult {
-        if Self.verbose { Self.logger.debug("\(Self.t)🚛 execute tool=\(toolCall.name), conversation=\(conversationID.uuidString.prefix(8))") }
+        if let cached = resultCache[toolCall.id] {
+            return cached
+        }
+
+        if Self.verbose {
+            Self.logger.debug("\(Self.t)🚛 execute tool=\(toolCall.name), conversation=\(conversationID.uuidString.prefix(8))")
+        }
         eventManager.send(.started(conversationID: conversationID, turnID: turnID, toolCall: toolCall))
 
         func finish(_ result: ToolCallResult) -> ToolCallResult {
@@ -28,37 +34,43 @@ extension ToolManager {
             cache(result, for: toolCall.id, conversationID: conversationID)
             return finish(result)
         }
-        guard let tool = registeredTools[toolCall.name] else {
-            let result = ToolCallResult(content: "Tool not found: \(toolCall.name)", isError: true)
-            cache(result, for: toolCall.id, conversationID: conversationID)
-            return finish(result)
-        }
 
         let startedAt = Date()
         let createdAt = Date()
-        let arguments: [String: ToolArgument]
-        do {
-            arguments = try ToolArgumentCoding.decode(toolCall.arguments)
-        } catch {
-            let result = ToolCallResult(content: "Tool execution failed: \(error.localizedDescription)", isError: true, duration: Date().timeIntervalSince(startedAt))
+
+        let jobs = submit(
+            [toolCall],
+            policy: .autoExecute,
+            conversationID: conversationID,
+            turnID: turnID
+        )
+        guard let job = jobs.first,
+              let result = await waitForJobResult(jobID: job.id) else {
+            let result = ToolCallResult(content: "Tool execution could not be scheduled.", isError: true)
             cache(result, for: toolCall.id, conversationID: conversationID)
-            logToolCall(toolCallID: toolCall.id, toolName: tool.name, toolDisplayName: toolCall.name, turnID: turnID, conversationID: conversationID, createdAt: createdAt, startedAt: startedAt, completedAt: Date(), duration: Date().timeIntervalSince(startedAt), argumentsJSON: ToolArgumentCoding.sanitized(toolCall.arguments), resultContent: "Failed to decode argument: \(error.localizedDescription)", result: result, resultIsError: true, riskLevel: "unknown")
             return finish(result)
         }
 
-        do {
-            let output = try await tool.executeResult(arguments: arguments)
-            let duration = Date().timeIntervalSince(startedAt)
-            let result = ToolCallResult(content: output.content, images: output.images, isError: output.isError, executedAt: Date(), duration: duration, awaitingUserResponse: output.awaitingUserResponse, interactionState: output.interactionState)
-            cache(result, for: toolCall.id, conversationID: conversationID)
-            logToolCall(toolCallID: toolCall.id, toolName: tool.name, toolDisplayName: tool.displayDescription(for: arguments), turnID: turnID, conversationID: conversationID, createdAt: createdAt, startedAt: startedAt, completedAt: Date(), duration: duration, argumentsJSON: ToolArgumentCoding.encode(arguments), resultContent: output.content, result: result, resultIsError: output.isError, riskLevel: tool.permissionRiskLevel(arguments: arguments).rawValue)
-            return finish(result)
-        } catch {
-            let result = ToolCallResult(content: "Tool execution failed: \(error.localizedDescription)", isError: true, duration: Date().timeIntervalSince(startedAt))
-            cache(result, for: toolCall.id, conversationID: conversationID)
-            logToolCall(toolCallID: toolCall.id, toolName: tool.name, toolDisplayName: tool.displayDescription(for: arguments), turnID: turnID, conversationID: conversationID, createdAt: createdAt, startedAt: startedAt, completedAt: Date(), duration: Date().timeIntervalSince(startedAt), argumentsJSON: ToolArgumentCoding.encode(arguments), resultContent: error.localizedDescription, result: result, resultIsError: true, riskLevel: tool.permissionRiskLevel(arguments: arguments).rawValue)
-            return finish(result)
-        }
+        cache(result, for: toolCall.id, conversationID: conversationID)
+        let tool = registeredTools[toolCall.name]
+        let arguments = try? ToolArgumentCoding.decode(toolCall.arguments)
+        logToolCall(
+            toolCallID: toolCall.id,
+            toolName: tool?.name ?? toolCall.name,
+            toolDisplayName: arguments.flatMap { tool?.displayDescription(for: $0) } ?? toolCall.name,
+            turnID: turnID,
+            conversationID: conversationID,
+            createdAt: createdAt,
+            startedAt: startedAt,
+            completedAt: Date(),
+            duration: result.duration ?? Date().timeIntervalSince(startedAt),
+            argumentsJSON: arguments.map(ToolArgumentCoding.encode) ?? ToolArgumentCoding.sanitized(toolCall.arguments),
+            resultContent: result.content,
+            result: result,
+            resultIsError: result.isError,
+            riskLevel: arguments.flatMap { tool?.permissionRiskLevel(arguments: $0).rawValue } ?? "unknown"
+        )
+        return finish(result)
     }
 
     public func executeBatch(_ toolCalls: [ToolCall], policy: ToolExecutionPolicy, conversationID: UUID, turnID: UUID?) async -> [BatchToolResult] {
@@ -180,6 +192,10 @@ extension ToolManager {
 
     public func deleteToolCalls(for conversationID: UUID) async {
         deletedConversationIDs.insert(conversationID)
+        // 删除会话必须先停止仍在运行的 Job，避免后台工具继续修改文件、
+        // 写入输出，或在删除完成后通过迟到事件唤醒 AgentLoop。
+        cancelJobs(forConversationID: conversationID)
+        await jobRecordStore?.deleteAll(for: conversationID)
         if let records = await recordStore?.fetchRecords(for: conversationID) {
             for record in records { if let toolCallID = record.toolCallID { resultCache.removeValue(forKey: toolCallID) } }
         }

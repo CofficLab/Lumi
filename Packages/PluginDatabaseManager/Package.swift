@@ -29,14 +29,14 @@ let package = Package(
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../KitLocalization"),
-        .package(path: "../LumiUI"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitSuperLog"),
         .package(path: "../KitKeychain"),
         .package(url: "https://github.com/vapor/mysql-nio", from: "1.9.0"),
         .package(url: "https://github.com/vapor/postgres-nio", from: "1.30.1"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.20.0"),
-        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.1"),
     ],
     targets: [
         .target(

@@ -204,19 +204,6 @@ struct ThemeSettingsDetailView: View {
     #endif
 }
 
-@MainActor
-private final class ThemeSettingsObservationModel: ObservableObject {
-    @Published private(set) var revision = 0
-    private var handle: (any ThemeProvidingObserverHandle)?
-
-    init(theme: any ThemeProviding) {
-        handle = theme.addObserver { [weak self] _ in
-            self?.revision += 1
-        }
-    }
-
-}
-
 private struct ThemePreviewPane: View {
     let item: AppThemeValue
     let isActive: Bool

@@ -111,7 +111,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         }
         toolManagerObserver = toolManager.addToolManagerObserver { [weak self] event in
             Task { @MainActor in
-                self?.handleToolManagerEvent(event)
+                await self?.handleToolManagerEvent(event)
             }
         }
     }
@@ -219,8 +219,11 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             throw AgentLoopError.invalidResumeRequest
         }
         guard suspension.suspensionID == request.suspensionID,
-              let toolCallID = suspension.toolCallID,
-              let assistantMessage = messages.messages(for: conversationID)
+              let toolCallID = suspension.toolCallID else {
+            throw AgentLoopError.invalidResumeRequest
+        }
+        let snapshot = await messages.messagesSnapshot(in: conversationID)
+        guard let assistantMessage = snapshot
               .reversed()
               .first(where: { $0.role == .assistant && $0.toolCalls?.contains(where: { $0.id == toolCallID }) == true }),
               let toolCall = assistantMessage.toolCalls?.first(where: { $0.id == toolCallID })
@@ -238,7 +241,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         // 更新 assistant 消息内的展示快照。
         messages.updateToolCallResult(result, toolCallID: toolCallID, assistantMessageID: assistantMessage.id, in: conversationID)
         // 把用户回答合并进已落库的 .tool 消息（LLM 下一轮可见）。
-        if let pendingToolMessage = messages.messages(for: conversationID)
+        if let pendingToolMessage = (await messages.messagesSnapshot(in: conversationID))
             .last(where: { $0.role == .tool && $0.toolCallID == toolCallID }) {
             messages.updateMessage(
                 id: pendingToolMessage.id,
@@ -258,7 +261,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         }
         states[conversationID] = .running
         activeToolCalls.removeValue(forKey: conversationID)
-        let completedIDs = Set(messages.messages(for: conversationID).compactMap {
+        let completedIDs = Set((await messages.messagesSnapshot(in: conversationID)).compactMap {
             $0.role == .tool ? $0.toolCallID : nil
         })
         let remaining = (assistantMessage.toolCalls ?? []).filter { !completedIDs.contains($0.id) }
@@ -359,7 +362,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         if Self.verbose {
             Self.logger.debug("\(Self.t)request LLM conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))")
         }
-        let history = messages.messages(for: conversationID)
+        let history = await messages.messagesSnapshot(in: conversationID)
         let level = conversations.automationLevel(for: conversationID)
         let language = languagePreference(for: conversationID)
         let schemas = (level.allowsTools ? toolManager.allTools() : []).compactMap { tool in
@@ -421,7 +424,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         return OneLLMResponse(response: response, assistantID: assistant.id)
     }
 
-    private func handleToolManagerEvent(_ event: ToolManagerEvent) {
+    private func handleToolManagerEvent(_ event: ToolManagerEvent) async {
         guard case .batchCompleted(let conversationID, let eventTurnID, let calls, let results) = event,
               let turnID = turnIDs[conversationID], eventTurnID == nil || eventTurnID == turnID,
               let active = activeToolCalls[conversationID] else { return }
@@ -429,7 +432,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             Self.logger.info("\(Self.t)tool batch completed conversation=\(conversationID.uuidString.prefix(8)), count=\(results.count)")
         }
         var firstSuspension: AgentLoopSuspension?
-        let assistantMessage = messages.messages(for: conversationID).reversed().first(where: { $0.id == active.assistantID })
+        let assistantMessage = (await messages.messagesSnapshot(in: conversationID)).reversed().first(where: { $0.id == active.assistantID })
         for (call, batchResult) in zip(calls, results) {
             let result: MessageToolResult
             switch batchResult {
@@ -515,7 +518,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         }
         try? Task.checkCancellation()
 
-            let history = messages.messages(for: conversationID)
+            let history = await messages.messagesSnapshot(in: conversationID)
 
             // 先续跑未完成的工具批次，再向 LLM 请求新响应。
             if let pendingAssistantMessage = incompleteToolCallMessage(messages: history) {
@@ -784,8 +787,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
 
     // MARK: - Incomplete Tool-Call Batch
 
-    private func incompleteToolCallMessage(in conversationID: UUID) -> Message? {
-        incompleteToolCallMessage(messages: messages.messages(for: conversationID))
+    private func incompleteToolCallMessage(in conversationID: UUID) async -> Message? {
+        incompleteToolCallMessage(messages: await messages.messagesSnapshot(in: conversationID))
     }
 
     private func incompleteToolCallMessage(messages: [Message]) -> Message? {
@@ -802,8 +805,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         }
     }
 
-    private func latestAssistantToolCalls(in conversationID: UUID) -> [MessageToolCall]? {
-        latestAssistantToolCalls(messages: messages.messages(for: conversationID))
+    private func latestAssistantToolCalls(in conversationID: UUID) async -> [MessageToolCall]? {
+        latestAssistantToolCalls(messages: await messages.messagesSnapshot(in: conversationID))
     }
 
     private func latestAssistantToolCalls(messages: [Message]) -> [MessageToolCall]? {
@@ -821,7 +824,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         await executePendingToolCalls(
             in: assistantMessage,
             conversationID: conversationID,
-            snapshot: messages.messages(for: conversationID)
+            snapshot: await messages.messagesSnapshot(in: conversationID)
         )
     }
 

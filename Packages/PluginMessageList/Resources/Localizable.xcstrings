@@ -30,6 +30,40 @@
         }
       }
     },
+    "」, what can I help you with?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "」, what can I help you with?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "」，我可以帮你做什么？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "」，我可以幫你做什麼？"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "」，我可以幫你做什麼？"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "」，我可以幫你做什麼？"
+          }
+        }
+      }
+    },
     "Add Project…" : {
       "localizations" : {
         "en" : {
@@ -266,40 +300,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "今天我可以幫你做什麼？"
-          }
-        }
-      }
-    },
-    "」, what can I help you with?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "」, what can I help you with?"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "」，我可以帮你做什么？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "」，我可以幫你做什麼？"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "」，我可以幫你做什麼？"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "」，我可以幫你做什麼？"
           }
         }
       }
@@ -545,6 +545,9 @@
           }
         }
       }
+    },
+    "停止当前回合" : {
+
     }
   },
   "version" : "1.0"

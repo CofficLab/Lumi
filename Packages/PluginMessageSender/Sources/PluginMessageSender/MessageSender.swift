@@ -20,6 +20,8 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     private let messages: any MessageManaging
     private let agentLoop: any AgentLoopProviding
     private var currentTasks: [UUID: Task<Void, Never>] = [:]
+    /// 消息已同步提交，但回合跟踪任务尚未被调度；用于保留连续发送的串行语义。
+    private var pendingTurnStarts: Set<UUID> = []
     private var pendingOutcomes: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
     private var completedOutcomes: [UUID: AgentLoopOutcome] = [:]
     private var messageSenderObservers: [UUID: (MessageSenderEvent) -> Void] = [:]
@@ -130,7 +132,26 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     // MARK: - Send
 
     public func sendMessage(_ content: String, conversationID: UUID?) async throws {
-        try await sendMessage(
+        let imageAttachments = pendingImageAttachments
+        let fileAttachments = pendingFileAttachments
+        let commit: MessageSendCommit?
+        if imageAttachments.isEmpty && fileAttachments.isEmpty {
+            commit = try commitUserMessage(content, conversationID: conversationID)
+        } else {
+            commit = try await commitUserMessageInBackground(
+                content,
+                imageAttachments: imageAttachments,
+                fileAttachments: fileAttachments,
+                conversationID: conversationID
+            )
+        }
+        guard let commit else { return }
+        await startTurn(for: commit)
+    }
+
+    @discardableResult
+    public func commitUserMessage(_ content: String, conversationID: UUID?) throws -> MessageSendCommit? {
+        try commitUserMessage(
             content,
             imageAttachments: pendingImageAttachments,
             fileAttachments: pendingFileAttachments,
@@ -138,19 +159,57 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         )
     }
 
-    public func sendMessage(
+    @discardableResult
+    public func commitUserMessage(
         _ content: String,
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
         conversationID: UUID?
-    ) async throws {
+    ) throws -> MessageSendCommit? {
+        try commitUserMessage(
+            content,
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments,
+            conversationID: conversationID,
+            metadata: nil
+        )
+    }
+
+    public func commitUserMessageInBackground(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        conversationID: UUID?
+    ) async throws -> MessageSendCommit? {
+        let metadata = await Task.detached(priority: .utility) {
+            Self.encodeAttachmentMetadata(
+                imageAttachments: imageAttachments,
+                fileAttachments: fileAttachments
+            )
+        }.value
+        return try commitUserMessage(
+            content,
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments,
+            conversationID: conversationID,
+            metadata: metadata
+        )
+    }
+
+    private func commitUserMessage(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        conversationID: UUID?,
+        metadata: [String: String]?
+    ) throws -> MessageSendCommit? {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         let hasAttachments = !imageAttachments.isEmpty || !fileAttachments.isEmpty
         guard !trimmed.isEmpty || hasAttachments else {
             if Self.verbose {
                 Self.logger.debug("\(Self.t)sendMessage ignored: empty content after trim")
             }
-            return
+            return nil
         }
 
         let targetID: UUID
@@ -186,28 +245,61 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(self.t)send queued: conversation=\(targetID.uuidString.prefix(8)), queueDepth=\(self.pendingQueues[targetID]?.count ?? 0)")
             }
-            return
+            return MessageSendCommit(conversationID: targetID, userMessageID: nil)
         }
 
         // 附件编码进 metadata（图片 + 文件并行）。
-        var metadata: [String: String] = [:]
-        metadata.merge(UserAttachmentMetadata.encodeImageAttachments(imageAttachments)) { _, new in new }
-        metadata.merge(UserAttachmentMetadata.encodeFileAttachments(fileAttachments)) { _, new in new }
+        let messageMetadata = metadata ?? Self.encodeAttachmentMetadata(
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments
+        )
 
         let userMessage = Message(
             conversationID: targetID,
             role: .user,
             content: trimmed,
-            metadata: metadata
+            metadata: messageMetadata
         )
         completedOutcomes.removeValue(forKey: targetID)
+        pendingTurnStarts.insert(targetID)
         messages.insertMessage(userMessage, to: targetID)
         clearSentAttachments(imageAttachments, fileAttachments)
         if Self.verbose {
             Self.logger.info("\(self.t)send user message: conversation=\(targetID.uuidString.prefix(8)), message=\(userMessage.id.uuidString.prefix(8)), contentChars=\(trimmed.count), images=\(imageAttachments.count), files=\(fileAttachments.count)")
         }
 
-        await executeTurn(conversationID: targetID, userMessageID: userMessage.id)
+        return MessageSendCommit(conversationID: targetID, userMessageID: userMessage.id)
+    }
+
+    private nonisolated static func encodeAttachmentMetadata(
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment]
+    ) -> [String: String] {
+        var metadata: [String: String] = [:]
+        metadata.merge(UserAttachmentMetadata.encodeImageAttachments(imageAttachments)) { _, new in new }
+        metadata.merge(UserAttachmentMetadata.encodeFileAttachments(fileAttachments)) { _, new in new }
+        return metadata
+    }
+
+    public func startTurn(for commit: MessageSendCommit) async {
+        guard let userMessageID = commit.userMessageID else { return }
+        pendingTurnStarts.remove(commit.conversationID)
+        await executeTurn(conversationID: commit.conversationID, userMessageID: userMessageID)
+    }
+
+    public func sendMessage(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        conversationID: UUID?
+    ) async throws {
+        guard let commit = try await commitUserMessageInBackground(
+            content,
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments,
+            conversationID: conversationID
+        ) else { return }
+        await startTurn(for: commit)
     }
 
     public func cancelCurrentRequest() {
@@ -219,6 +311,7 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         }
         currentTasks.removeAll()
         if let conversationID = conversations.selectedConversationID {
+            pendingTurnStarts.remove(conversationID)
             agentLoop.cancelTurn(in: conversationID)
             handleAgentLoopEvent(.cancelled(conversationID: conversationID, turnID: agentLoop.currentTurnID(for: conversationID)))
         }
@@ -250,7 +343,7 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     // MARK: - Private
 
     private func isSending(for conversationID: UUID) -> Bool {
-        currentTasks[conversationID] != nil
+        currentTasks[conversationID] != nil || pendingTurnStarts.contains(conversationID)
     }
 
     /// 由 MessageSenderPlugin 在 onBoot 中注册的 AgentLoop 监听器调用。

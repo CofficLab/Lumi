@@ -15,7 +15,7 @@ let package = Package(
         .package(path: "../KitAgentTool"),
         .package(path: "../KitLocalization"),
         .package(path: "../KitSuperLog"),
-        .package(path: "../LumiUI"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
@@ -44,7 +44,11 @@ let package = Package(
         ),
         .testTarget(
             name: "GoalTaskPluginTests",
-            dependencies: ["GoalTaskPlugin"],
+            dependencies: [
+                "GoalTaskPlugin",
+                "KitAgentTool",
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
+            ],
             path: "Tests"
         )
     ]

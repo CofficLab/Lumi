@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 import AppKit
 
 @MainActor
@@ -10,19 +9,16 @@ public class ClipboardManagerViewModel: ObservableObject {
     private var allItems: [ClipboardHistoryItem] = []
     private let storage = ClipboardStorage.shared
     
-    private var cancellables = Set<AnyCancellable>()
+    private var historyObserver: ClipboardHistoryObserver?
     
     public init() {
         Task {
             await loadItems()
         }
         
-        NotificationCenter.default.publisher(for: .clipboardHistoryDidUpdate)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.refresh()
-            }
-            .store(in: &cancellables)
+        historyObserver = ClipboardHistoryObserver { [weak self] in
+            self?.refresh()
+        }
     }
     
     public func loadItems() async {

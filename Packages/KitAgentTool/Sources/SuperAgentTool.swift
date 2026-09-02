@@ -23,6 +23,13 @@ public protocol SuperAgentTool: Sendable {
     /// 工具自行评估当前调用的风险等级（必填）
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel
 
+    /// Declares whether this tool can safely run concurrently with other jobs.
+    ///
+    /// Existing and third-party tools get the conservative serial default from
+    /// the protocol extension below until they explicitly opt into parallel
+    /// read-only execution.
+    var executionCapability: ToolExecutionCapability { get }
+
     /// 根据当前调用参数返回面向用户的简短操作描述（必填）
     ///
     /// 每个工具必须提供面向用户的操作描述，帮助用户快速理解当前操作。
@@ -59,9 +66,22 @@ public protocol SuperAgentTool: Sendable {
     /// 应覆盖本方法。例如 AskUser 工具返回 `awaitingUserResponse: true`
     /// 让 Agent 循环暂停等待用户回答。
     func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult
+
+    /// 带执行上下文的结构化工具执行接口。
+    ///
+    /// 新工具可以通过 Context 查询取消状态，并持续上报输出和进度。
+    /// 旧工具无需修改，默认实现会转发到无 Context 的旧接口。
+    func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult
 }
 
 extension SuperAgentTool {
+    /// Unknown/custom tools are serialized by default because their side
+    /// effects cannot be inferred safely from the protocol alone.
+    public var executionCapability: ToolExecutionCapability { .serialSideEffect }
+
     /// 默认描述（英文）
     public var description: String {
         description(for: .english)
@@ -89,5 +109,14 @@ extension SuperAgentTool {
     /// 需要返回图片附件等结构化结果的工具（如预览渲染图）可覆盖此方法。
     public func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
         ToolCallResult(content: try await execute(arguments: arguments))
+    }
+
+    /// 兼容旧工具的默认实现：忽略 Context，继续调用旧接口。
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        _ = context
+        return try await executeResult(arguments: arguments)
     }
 }

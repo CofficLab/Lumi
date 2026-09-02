@@ -25,8 +25,7 @@ final class SendActionBarViewModel: SuperLog {
     private let sender: any MessageSendingProviding
     private let conversations: any ConversationManaging
     private let conversationState: any ConversationStateProviding
-    private var conversationStateObserver: (any ConversationStateObserverHandle)?
-    private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
+    private var conversationObserver: SendActionBarConversationObserver?
 
     private(set) var state: SendActionBarState
 
@@ -49,12 +48,11 @@ final class SendActionBarViewModel: SuperLog {
                 hasAttachments: !sender.pendingImageAttachments.isEmpty || !sender.pendingFileAttachments.isEmpty
             )
         )
-        conversationStateObserver = conversationState.addConversationStateObserver { [weak self] _ in
-            self?.refreshConversationState()
-        }
-        selectedConversationObserver = conversations.addSelectedConversationObserver { [weak self] _ in
-            self?.refreshConversationState()
-        }
+        conversationObserver = SendActionBarConversationObserver(
+            conversations: conversations,
+            conversationState: conversationState,
+            onChange: { [weak self] in self?.refreshConversationState() }
+        )
     }
 
     // MARK: - State updates
@@ -82,10 +80,8 @@ final class SendActionBarViewModel: SuperLog {
     }
 
     func stopObservingConversationState() {
-        conversationStateObserver?.cancel()
-        conversationStateObserver = nil
-        selectedConversationObserver?.cancel()
-        selectedConversationObserver = nil
+        conversationObserver?.cancel()
+        conversationObserver = nil
     }
 
     // MARK: - Actions
@@ -99,21 +95,52 @@ final class SendActionBarViewModel: SuperLog {
     /// Send the current input text. Clears the input field on success.
     func send() {
         let trimmed = input.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let hasAttachments = !sender.pendingImageAttachments.isEmpty || !sender.pendingFileAttachments.isEmpty
+        let imageAttachments = sender.pendingImageAttachments
+        let fileAttachments = sender.pendingFileAttachments
+        let hasAttachments = !imageAttachments.isEmpty || !fileAttachments.isEmpty
         guard !trimmed.isEmpty || hasAttachments else { return }
 
         Self.logger.info("\(self.t)sending message, length=\(trimmed.count)")
         input.text = ""
         input.errorMessage = nil
 
-        Task { @MainActor in
-            do {
-                try await sender.sendMessage(trimmed, conversationID: nil)
-                Self.logger.info("\(self.t)message sent successfully")
-            } catch {
-                Self.logger.error("\(self.t)send failed ➡️ \(error.localizedDescription, privacy: .public)")
-                input.errorMessage = error.localizedDescription
+        if hasAttachments {
+            Task { @MainActor in
+                do {
+                    guard let commit = try await sender.commitUserMessageInBackground(
+                        trimmed,
+                        imageAttachments: imageAttachments,
+                        fileAttachments: fileAttachments,
+                        conversationID: nil
+                    ) else { return }
+                    Self.logger.info("\(self.t)message attachments encoded and committed")
+                    guard !commit.wasQueued else { return }
+                    await sender.startTurn(for: commit)
+                } catch {
+                    Self.logger.error("\(self.t)send failed ➡️ \(error.localizedDescription, privacy: .public)")
+                    input.errorMessage = error.localizedDescription
+                }
             }
+            return
+        }
+
+        do {
+            guard let commit = try sender.commitUserMessage(
+                trimmed,
+                imageAttachments: imageAttachments,
+                fileAttachments: fileAttachments,
+                conversationID: nil
+            ) else { return }
+            Self.logger.info("\(self.t)message committed successfully")
+            guard !commit.wasQueued else { return }
+
+            // 用户消息已经可见；AgentLoop 回合跟踪放到下一次 MainActor 调度。
+            Task { @MainActor in
+                await sender.startTurn(for: commit)
+            }
+        } catch {
+            Self.logger.error("\(self.t)send failed ➡️ \(error.localizedDescription, privacy: .public)")
+            input.errorMessage = error.localizedDescription
         }
     }
 

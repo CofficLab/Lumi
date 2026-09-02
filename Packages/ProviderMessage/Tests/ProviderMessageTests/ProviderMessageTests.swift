@@ -21,8 +21,20 @@ struct ProviderMessageTests {
         #expect(manager.messageCount(for: conversationID) == 1)
     }
 
+    @Test("异步消息快照包含当前会话消息")
+    func asyncSnapshot() async {
+        let manager = DefaultMessageManager()
+        let conversationID = UUID()
+        let message = Message(conversationID: conversationID, role: .user, content: "snapshot")
+        manager.insertMessage(message, to: conversationID)
+
+        let snapshot = await manager.messagesSnapshot(in: conversationID)
+        #expect(snapshot == [message])
+        #expect(await manager.firstUserMessage(in: conversationID) == message)
+    }
+
     @Test("消息与 token 可按自然日跨会话聚合")
-    func dailyAggregates() {
+    func dailyAggregates() async {
         let manager = DefaultMessageManager()
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -45,6 +57,8 @@ struct ProviderMessageTests {
 
         #expect(manager.dailyMessageCounts(since: yesterday) == [yesterday: 2, today: 1])
         #expect(manager.dailyTokenCounts(since: yesterday) == [yesterday: 20, today: 8])
+        #expect(await manager.dailyMessageCountsAsync(since: yesterday) == [yesterday: 2, today: 1])
+        #expect(await manager.dailyTokenCountsAsync(since: yesterday) == [yesterday: 20, today: 8])
     }
 
     @Test("消息插入观察者可接收事件并注销")
@@ -63,6 +77,28 @@ struct ProviderMessageTests {
         #expect(observed.count == 1)
         #expect(observed.first?.0 == first.id)
         #expect(observed.first?.1 == conversationID)
+    }
+
+    @Test("结构化消息变化观察者携带消息并支持注销")
+    func messageChangeObservation() {
+        let manager = DefaultMessageManager()
+        let conversationID = UUID()
+        var observed: [Message] = []
+        let handle = manager.addMessageChangeObserver { change in
+            guard case let .inserted(message, id) = change else { return }
+            #expect(id == conversationID)
+            observed.append(message)
+        }
+
+        let first = Message(conversationID: conversationID, role: .user, content: "first")
+        manager.insertMessage(first, to: conversationID)
+        handle.cancel()
+        manager.insertMessage(
+            Message(conversationID: conversationID, role: .assistant, content: "second"),
+            to: conversationID
+        )
+
+        #expect(observed == [first])
     }
 
     @Test("本地文本文件转换为附件时不污染消息正文")

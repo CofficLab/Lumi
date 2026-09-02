@@ -8,7 +8,6 @@ import ProviderConversation
 import ProviderConversationState
 import ProviderMessage
 import ProviderMessageRendering
-import ProviderMessageSender
 import ProviderMessageStreaming
 import ProviderPromptSuggestion
 import ProviderProject
@@ -44,7 +43,6 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
             conversationState: kernel.resolveProvider((any ConversationStateProviding).self),
             messages: kernel.resolveProvider((any MessageManaging).self),
             rendering: kernel.resolveProvider((any MessageRenderingProviding).self),
-            sender: kernel.resolveProvider((any MessageSendingProviding).self),
             streaming: kernel.resolveProvider((any MessageStreamingProviding).self),
             toolManager: kernel.resolveProvider((any ToolManagerProviding).self),
             agentTurn: kernel.resolveProvider((any AgentLoopProviding).self),

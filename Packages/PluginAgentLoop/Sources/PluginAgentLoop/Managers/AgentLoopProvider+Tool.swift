@@ -8,15 +8,144 @@ import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
 import ProviderLifecycleHooks
+import ProviderLLMContext
 import KitSuperLog
 
 // MARK: - LLM Request
 
 extension AgentLoopManager {
+    /// 接收独立 Tool Job 的生命周期事件。
+    ///
+    /// Job 事件和旧的 batchCompleted 事件分开处理：新提交路径只消费 Job
+    /// 终态，兼容路径继续消费 ToolManagerEvent，避免同一个工具结果被写回两次。
+    func handleToolJobEvent(_ event: ToolJobEvent) {
+        switch event {
+        case .created(let job), .started(let job), .waitingForUser(let job):
+            registerToolJob(job)
+        case .output, .progress:
+            // 输出和进度由 ToolExecutionManager 对 UI 发布；AgentLoop 只在终态
+            // 到达时回写消息并推进回合。
+            break
+        case .completed(let jobID, let result, let snapshot),
+             .failed(let jobID, let result, let snapshot),
+             .cancelled(let jobID, let result, let snapshot),
+             .timedOut(let jobID, let result, let snapshot):
+            handleToolJobTerminal(jobID: jobID, result: result, snapshot: snapshot)
+        }
+    }
+
+    @discardableResult
+    private func registerToolJob(_ job: ToolJob) -> TurnRuntime? {
+        guard let jobTurnID = job.turnID,
+              var runtime = runtimes[job.conversationID],
+              runtime.turnID == jobTurnID else {
+            return nil
+        }
+        let (updated, _) = TurnReducer.reduce(
+            runtime,
+            event: .toolJobCreated(jobID: job.id)
+        )
+        runtime = updated
+        runtimes[job.conversationID] = runtime
+        return runtime
+    }
+
+    private func handleToolJobTerminal(
+        jobID: String,
+        result toolResult: ToolCallResult,
+        snapshot: ToolJob
+    ) {
+        guard snapshot.id == jobID,
+              let jobTurnID = snapshot.turnID,
+              let runtime = registerToolJob(snapshot),
+              runtime.turnID == jobTurnID,
+              let assistantMessageID = assistantMessageID(in: runtime) else {
+            if Self.verbose {
+                Self.logger.debug(
+                    "\(Self.t)忽略过期 Tool Job 事件 conversation=\(snapshot.conversationID.uuidString.prefix(8)), turn=\(snapshot.turnID?.uuidString.prefix(8) ?? "nil"), job=\(jobID)"
+                )
+            }
+            return
+        }
+
+        let pendingToolCallIDs: Set<String>
+        switch runtime.phase {
+        case .executingTools(_, _, let pending),
+             .waitingForToolJobs(_, _, let pending, _),
+             .awaitingUser(_, _, let pending, _):
+            pendingToolCallIDs = Set(pending.map(\.id))
+        default:
+            return
+        }
+        guard pendingToolCallIDs.contains(jobID) else {
+            // 终态事件可能因为重试或取消重复到达；pending 已移除时直接忽略。
+            return
+        }
+
+        let result = convertResult(toolResult)
+        messages.updateToolCallResult(
+            result,
+            toolCallID: jobID,
+            assistantMessageID: assistantMessageID,
+            in: snapshot.conversationID
+        )
+        insertToolResultMessage(
+            result,
+            toolCallID: jobID,
+            conversationID: snapshot.conversationID,
+            turnID: jobTurnID
+        )
+
+        if result.awaitingUserResponse {
+            let suspension = AgentLoopSuspension(
+                suspensionID: "userInput:\(jobID)",
+                conversationID: snapshot.conversationID,
+                toolCallID: jobID,
+                kind: "userInput",
+                payload: result.content
+            )
+            let (updated, outcome) = TurnReducer.reduce(
+                runtime,
+                event: .toolNeedsUserInput(toolCallID: jobID, suspension: suspension)
+            )
+            runtimes[snapshot.conversationID] = updated
+            if let outcome {
+                finishTurn(conversationID: snapshot.conversationID, turnID: jobTurnID, outcome: outcome)
+            }
+            return
+        }
+
+        let (updated, outcome) = TurnReducer.reduce(
+            runtime,
+            event: .toolJobCompleted(toolCallID: jobID, result: result)
+        )
+        runtimes[snapshot.conversationID] = updated
+        if let outcome {
+            finishTurn(conversationID: snapshot.conversationID, turnID: jobTurnID, outcome: outcome)
+            return
+        }
+        continueAfterToolResults(
+            runtime: updated,
+            conversationID: snapshot.conversationID,
+            turnID: jobTurnID
+        )
+    }
+
+    private func assistantMessageID(in runtime: TurnRuntime) -> UUID? {
+        switch runtime.phase {
+        case .executingTools(_, let assistantID, _),
+             .waitingForToolJobs(_, let assistantID, _, _),
+             .awaitingUser(_, let assistantID, _, _):
+            return assistantID
+        case .idle, .requestingLLM, .completed, .failed, .cancelled:
+            return nil
+        }
+    }
+
     /// 接收 ToolManager 的批量完成事件，推进当前回合状态机。
-    func handleToolManagerEvent(_ event: ToolManagerEvent) {
+    func handleToolManagerEvent(_ event: ToolManagerEvent) async {
         if case let .authorizedCompleted(conversationID, eventTurnID, toolCall, result) = event {
-            handleAuthorizedToolCompletion(
+            await handleAuthorizedToolCompletion(
                 conversationID: conversationID,
                 eventTurnID: eventTurnID,
                 toolCall: toolCall,
@@ -29,7 +158,7 @@ extension AgentLoopManager {
             Self.logger.info("\(Self.t)handle batch begin conversation=\(conversationID.uuidString.prefix(8)), turn=\(eventTurnID?.uuidString.prefix(8) ?? "nil"), calls=\(toolCalls.map { $0.id }), results=\(results.count)")
         }
         guard let firstToolCall = toolCalls.first,
-              prepareRuntimeForToolResult(
+              await prepareRuntimeForToolResult(
                   conversationID: conversationID,
                   eventTurnID: eventTurnID,
                   toolCall: firstToolCall
@@ -38,8 +167,20 @@ extension AgentLoopManager {
             if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：找不到会话运行时 conversation=\(conversationID.uuidString.prefix(8))") }
             return
         }
-        guard case .executingTools(let turnID, let assistantMessageID, let pending) = runtime.phase else {
-            if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：当前状态不是 executingTools，conversation=\(conversationID.uuidString.prefix(8)), phase=\(String(describing: runtime.phase))") }
+        let turnID: UUID
+        let assistantMessageID: UUID
+        let pending: [MessageToolCall]
+        switch runtime.phase {
+        case .executingTools(let currentTurnID, let currentAssistantMessageID, let currentPending):
+            turnID = currentTurnID
+            assistantMessageID = currentAssistantMessageID
+            pending = currentPending
+        case .waitingForToolJobs(let currentTurnID, let currentAssistantMessageID, let currentPending, _):
+            turnID = currentTurnID
+            assistantMessageID = currentAssistantMessageID
+            pending = currentPending
+        default:
+            if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：当前状态不是工具执行中，conversation=\(conversationID.uuidString.prefix(8)), phase=\(String(describing: runtime.phase))") }
             return
         }
         if Self.verbose {
@@ -149,10 +290,10 @@ extension AgentLoopManager {
         conversationID: UUID,
         eventTurnID: UUID?,
         toolCall: AgentLoopToolCall
-    ) -> Bool {
+    ) async -> Bool {
         if var runtime = runtimes[conversationID] {
             switch runtime.phase {
-            case .executingTools:
+            case .executingTools, .waitingForToolJobs:
                 return true
             case .awaitingUser(let turnID, let assistantMessageID, let pending, let suspension):
                 guard suspension.toolCallID == toolCall.id else { return false }
@@ -166,6 +307,7 @@ extension AgentLoopManager {
                     assistantMessageID: assistantMessageID,
                     pendingToolCalls: [current] + pending.filter { $0.id != toolCall.id }
                 )
+                runtime.completionDelivered = false
                 runtime.pendingSuspensions.removeValue(forKey: toolCall.id)
                 runtimes[conversationID] = runtime
                 return true
@@ -176,7 +318,7 @@ extension AgentLoopManager {
 
         // 进程重启后 runtimes 为空。assistant 消息是此时仍然可靠的持久化
         // 来源：它同时包含 turnID、assistant message ID 和完整工具调用列表。
-        guard let assistantMessage = messages.messages(for: conversationID)
+        guard let assistantMessage = await messages.messagesSnapshot(in: conversationID)
             .reversed()
             .first(where: { message in
                 message.role == .assistant
@@ -241,8 +383,8 @@ extension AgentLoopManager {
         eventTurnID: UUID?,
         toolCall: AgentLoopToolCall,
         result toolResult: ToolCallResult
-    ) {
-        guard prepareRuntimeForToolResult(
+    ) async {
+        guard await prepareRuntimeForToolResult(
             conversationID: conversationID,
             eventTurnID: eventTurnID,
             toolCall: toolCall
@@ -316,16 +458,27 @@ extension AgentLoopManager {
 
     enum LLMRequestResult {
         case success(LLMResponse, assistantMessageID: UUID)
-        case failure(reason: String)
+        case failure(reason: String, recoverable: Bool)
+        case cancelled
     }
 
     /// 执行一次 LLM 流式请求，落库 assistant 消息。
     func performLLMRequest(conversationID: UUID, turnID: UUID) async -> LLMRequestResult {
-        if Self.verbose { Self.logger.info("\(Self.t)LLM request begin conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
-        // 由上下文 Provider 统一决定发送完整历史还是压缩后的上下文。
-        // AgentLoop 不读取全量历史，也不感知具体压缩策略。
-        let history = await contextProvider.messagesForLLM(in: conversationID)
+        await performLLMRequest(
+            conversationID: conversationID,
+            turnID: turnID,
+            allowContextRetry: true
+        )
+    }
 
+    /// 上下文超限时允许一次紧急压缩重试，避免 provider 的实际 tokenizer
+    /// 与本地估算存在偏差时直接终止当前回合。
+    private func performLLMRequest(
+        conversationID: UUID,
+        turnID: UUID,
+        allowContextRetry: Bool
+    ) async -> LLMRequestResult {
+        if Self.verbose { Self.logger.info("\(Self.t)LLM request begin conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
         // 计算工具 schema
         let automationLevel = conversations.automationLevel(for: conversationID)
         let rawTools = toolManager.allTools()
@@ -344,9 +497,35 @@ extension AgentLoopManager {
         }
         let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
             .flatMap { $0.rawValue }
-        let modelName = conversations.modelName(for: conversationID)
-        let resolvedProviderID = resolvedProviderID(for: conversationID)
+        let conversationProviderID = resolvedProviderID(for: conversationID)
+        let routingProviderID = llmManager.selectedProviderID
+            ?? llmManager.allProviders().first?.providerInfo.id
+            ?? conversationProviderID
+        let routingProvider = routingProviderID.flatMap { llmManager.provider(id: $0) }
+        let requestedModel = conversations.modelName(for: conversationID)
+        let modelName = routingProvider?.providerInfo.models.contains(where: { $0.id == requestedModel }) == true
+            ? requestedModel
+            : llmManager.selectedModel
+                ?? routingProvider?.providerInfo.defaultModel
+                ?? requestedModel
+        let modelInfo = routingProvider?.providerInfo.models.first { $0.id == modelName }
+            ?? routingProvider?.providerInfo.models.first { $0.id == routingProvider?.providerInfo.defaultModel }
+        let toolSchemaTokens = estimateToolSchemaTokens(schemas)
+        let contextRequest = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: routingProviderID,
+            model: modelName,
+            budget: .conservative(
+                contextWindowTokens: modelInfo?.contextWindowSize,
+                toolSchemaTokens: toolSchemaTokens
+            ),
+            mode: .beforeSend
+        )
 
+        // 由上下文 Provider 统一决定发送完整历史还是压缩后的上下文。
+        // AgentLoop 不读取全量历史，也不感知具体压缩策略。
+        let contextResult = await contextProvider.prepareContext(for: contextRequest)
+        let history = contextResult.messages
         let llmHistory = history.map(\.llmMessage)
         var preparedMessages = llmHistory
         if let lifecycleHooks {
@@ -356,6 +535,17 @@ extension AgentLoopManager {
             )
             let result = await lifecycleHooks.runWillSendToLLM(context)
             preparedMessages = result.messages
+        }
+        guard isActiveLLMRequest(conversationID: conversationID, turnID: turnID) else {
+            return .cancelled
+        }
+        if let recoveryHint = runtimes[conversationID]?.llmRecoveryHint {
+            // 生命周期钩子可以重写待发送消息，因此恢复提示必须在钩子之后注入。
+            // 它仍然只是本次请求的临时 system message，不写入会话历史。
+            preparedMessages.insert(
+                LLMMessage(role: .system, content: recoveryHint),
+                at: 0
+            )
         }
 
         if Self.verbose && Self.printMessages {
@@ -382,8 +572,7 @@ extension AgentLoopManager {
         guard let streamingManager = llmManager as? any LLMStreamingProviding else {
             streaming.end(conversationID: conversationID)
             let error = AgentLoopError.unsupportedStreaming
-            await appendError(in: conversationID, error: error, turnID: turnID)
-            return .failure(reason: "unsupported streaming: \(error.localizedDescription)")
+            return .failure(reason: "unsupported streaming: \(error.localizedDescription)", recoverable: false)
         }
 
         let timingRecorder = LLMStreamTimingRecorder()
@@ -402,6 +591,11 @@ extension AgentLoopManager {
                 } else {
                     await bridge.appendContent(piece, conversationID: conversationID)
                 }
+            }
+
+            guard isActiveLLMRequest(conversationID: conversationID, turnID: turnID) else {
+                streaming.end(conversationID: conversationID)
+                return .cancelled
             }
 
             // 模型返回的 tool-call arguments 必须在落库前是 JSON 对象。
@@ -428,6 +622,13 @@ extension AgentLoopManager {
             }
 
             // 构建并落库 assistant 消息
+            if let inputTokenCount = response.inputTokenCount {
+                contextProvider.reportInputUsage(
+                    inputTokenCount,
+                    for: contextRequest,
+                    estimatedInputTokens: contextResult.estimatedInputTokens
+                )
+            }
             var assistant = Message(
                 conversationID: conversationID,
                 role: .assistant,
@@ -450,7 +651,7 @@ extension AgentLoopManager {
                 timeToFirstTokenMs: timing.timeToFirstTokenMs,
                 streamingDurationMs: timing.streamingDurationMs
             )
-            assistant.providerID = resolvedProviderID
+            assistant.providerID = conversationProviderID
             if let toolCalls = assistant.toolCalls {
                 assistant.toolCalls = toolCalls.map { toolCall in
                     var enriched = toolCall
@@ -475,6 +676,10 @@ extension AgentLoopManager {
                     return enriched
                 }
             }
+            guard isActiveLLMRequest(conversationID: conversationID, turnID: turnID) else {
+                streaming.end(conversationID: conversationID)
+                return .cancelled
+            }
             messages.insertMessage(assistant, to: conversationID)
             streaming.end(conversationID: conversationID)
             if let lifecycleHooks {
@@ -491,8 +696,66 @@ extension AgentLoopManager {
 
         } catch {
             streaming.end(conversationID: conversationID)
-            await appendError(in: conversationID, error: error, turnID: turnID)
-            return .failure(reason: String(describing: error))
+            if isContextLimitError(error) {
+                contextProvider.reportContextLimitExceeded(for: contextRequest)
+                if allowContextRetry {
+                    if Self.verbose {
+                        Self.logger.warning("\(Self.t)检测到上下文超限，执行一次紧急压缩重试")
+                    }
+                    return await performLLMRequest(
+                        conversationID: conversationID,
+                        turnID: turnID,
+                        allowContextRetry: false
+                    )
+                }
+            }
+            let recoverable = isRecoverableLLMFailure(error)
+            if Self.verbose {
+                Self.logger.error(
+                    "\(Self.t)LLM request failed recoverable=\(recoverable), conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), error=\(error.localizedDescription)"
+                )
+            }
+            return .failure(reason: String(describing: error), recoverable: recoverable)
+        }
+    }
+
+    private func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {
+        schemas.reduce(0) { total, schema in
+            let parameters = (try? JSONSerialization.data(
+                withJSONObject: schema.parameters,
+                options: [.sortedKeys]
+            )).flatMap { String(data: $0, encoding: .utf8) } ?? String(describing: schema.parameters)
+            return total
+                + LLMContextTokenEstimator.estimate(text: schema.name)
+                + LLMContextTokenEstimator.estimate(text: schema.description)
+                + LLMContextTokenEstimator.estimate(text: parameters)
+                + 16
+        }
+    }
+
+    private func isContextLimitError(_ error: Error) -> Bool {
+        guard case let VendorAPIError.httpStatus(_, summary) = error else { return false }
+        let normalized = summary.lowercased()
+        return normalized.contains("context")
+            || normalized.contains("token limit")
+            || normalized.contains("maximum token")
+            || normalized.contains("too many tokens")
+            || normalized.contains("prompt is too long")
+    }
+
+    /// LLM 工具协议错误不会改变用户任务本身，允许在同一回合内重试。
+    /// 认证、权限、上下文长度等错误仍然直接终止，避免无意义地重复请求。
+    private func isRecoverableLLMFailure(_ error: Error) -> Bool {
+        if error is LLMToolCallValidationError {
+            return true
+        }
+        guard let vendorError = error as? VendorAPIError else { return false }
+        switch vendorError {
+        case .incompleteStream, .decodingFailed:
+            return true
+        case .missingAPIKey, .apiKeyAccessFailed, .invalidBaseURL, .emptyResponse,
+             .httpStatus, .requestFailed:
+            return false
         }
     }
 }

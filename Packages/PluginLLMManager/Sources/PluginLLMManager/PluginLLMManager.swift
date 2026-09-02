@@ -39,7 +39,7 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
     /// onBoot 创建并注册的 LLMManaging 实现（observer 回调需要它做同步）。
     private var manager: CustomLLMManager?
     /// 当前对话变化观察令牌（onReady 注册,onShutdown 注销）。
-    private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
+    private var selectedConversationObserver: SelectedConversationObserver?
     /// 当前对话变化回调里用到的会话管理器。
     private var conversations: (any ConversationManaging)?
 
@@ -92,7 +92,7 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         }
         self.conversations = conversations
 
-        selectedConversationObserver = conversations.addSelectedConversationObserver { [weak self] conversationID in
+        selectedConversationObserver = SelectedConversationObserver(conversations: conversations) { [weak self] conversationID in
             guard let self, let manager = self.manager else { return }
             if Self.verbose {
                 Self.logger.info("\(Self.t)selected conversation changed: \(conversationID?.uuidString ?? "nil")")

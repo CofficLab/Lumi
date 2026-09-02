@@ -43,7 +43,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
     private var provider: ActivityBarProvider?
 
     /// 插件管理 Provider 的精准观察令牌；deinit 时自动取消。
-    private var pluginManagerObserver: (any PluginManagingObserverHandle)?
+    private var pluginManagerObserver: PluginManagerObserver?
     private var pluginManager: (any PluginManaging)?
     private weak var rootView: (any RootViewProviding)?
 
@@ -89,7 +89,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
 
         // 4. 注册本插件实现。消费者直接观察 ActivityBarProvider，Kernel 不转发
         // 其高频状态变化。
-        try kernel.registerProvider((any ActivityBarProviding).self, provider)
+        try kernel.registerHostProvider((any ActivityBarProviding).self, provider)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)registered ActivityBarProvider as ActivityBarProviding (preloaded \(preloadedItems.count, privacy: .public) 项)")
@@ -128,7 +128,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         }
         self.pluginManager = pluginManager
         lastKnownEnabledPluginIDs = currentEnabledPluginIDs(pluginManager: pluginManager)
-        pluginManagerObserver = pluginManager.addPluginObserver { [weak self] _ in
+        pluginManagerObserver = PluginManagerObserver(pluginManager: pluginManager) { [weak self] in
             guard let self, let pluginManager = self.pluginManager else { return }
             self.syncPluginVisibility(pluginManager: pluginManager)
         }
@@ -139,6 +139,9 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         pluginManagerObserver = nil
         pluginManager = nil
         provider?.onActiveItemChanged = nil
+        // ActivityBar Provider 由宿主持有，停止插件时不会随插件自动释放；
+        // 清空本插件目录中所有业务入口，保证 stop/start 生命周期之间不残留旧贡献。
+        provider?.registerItems([])
         provider = nil
         rootView?.setContentFooterViewHidden(false)
         rootView = nil

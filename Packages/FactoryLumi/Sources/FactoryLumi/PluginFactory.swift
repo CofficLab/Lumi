@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import PluginAgentRules
 import PluginAgentTempStorage
+import PluginAgentPlanStorage
 import PluginAgentTurnNotification
 import PluginDebugBadge
 import PluginFileLog
@@ -35,6 +36,7 @@ import PluginToast
 import PluginCommand
 import PluginActivityBar
 import PluginAppIconDesigner
+import PluginAppStoreConnect
 import PluginAppStorePromoDesigner
 import PluginAskUser
 import PluginCaffeinate
@@ -43,6 +45,7 @@ import PluginChatPanel
 import PluginChatScreenshot
 import PluginConversationBehavior
 import PluginConversationCacheHitRate
+import PluginConversationContextSize
 import PluginConversationFork
 import PluginConversationInput
 import PluginConversationList
@@ -118,6 +121,7 @@ import PluginProjectRAG
 import PluginResumeDesigner
 import PluginSettingGeneral
 import PluginSettingView
+import PluginPerformanceMetrics
 import PluginSkill
 import PluginOnboarding
 import PluginThemePack
@@ -163,7 +167,9 @@ public struct DefaultPluginFactory: PluginFactory {
             WebServerPlugin(),
             AgentRulesPlugin(),
             AgentTempStoragePlugin(),
+            AgentPlanStoragePlugin(),
             OcrPlugin(),
+            AppStoreConnectPlugin(),
             AppIconDesignerPlugin(),
             AppStorePromoDesignerPlugin(),
             MindMapDesignerPlugin(),
@@ -252,6 +258,7 @@ public struct DefaultPluginFactory: PluginFactory {
             // 设置视图管理器：替换 ProviderFactory 预注册的默认 SettingViewProviding 实现，
             // 必须先于各设置入口贡献插件（如 SettingGeneralPlugin order=200）。
             PluginSettingView(),
+            PerformanceMetricsPlugin(),
             // Logo 管理器：替换 ProviderFactory 预注册的默认 LogoProviding 实现，
             // 必须先于各 Logo 贡献插件（如 LogoCofficPlugin order=100）。
             PluginLogoManager(),

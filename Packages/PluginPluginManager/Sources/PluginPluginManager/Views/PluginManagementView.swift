@@ -202,17 +202,3 @@ struct PluginManagementView: View {
         }
     }
 }
-
-@MainActor
-private final class PluginManagementViewModel: ObservableObject {
-    let manager: any PluginManaging
-    @Published private(set) var revision = 0
-    private var observer: (any PluginManagingObserverHandle)?
-
-    init(manager: any PluginManaging) {
-        self.manager = manager
-        self.observer = manager.addPluginObserver { [weak self] _ in
-            self?.revision &+= 1
-        }
-    }
-}

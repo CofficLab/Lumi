@@ -21,6 +21,7 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject, SuperLog {
 
     private var lastMetrics = DeviceInfoMenuBarMetrics.empty
     private var cancellables = Set<AnyCancellable>()
+    private var appearanceObserver: MenuBarAppearanceObserver?
 
     /// 心跳节流计数：Combine sink 每触发一次自增，每 N 次打一条日志，
     /// 避免每秒 12 条心跳刷屏。用于排查 CPU 占用持续 100% 时确认本链路是否在狂跑。
@@ -30,25 +31,18 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject, SuperLog {
     private init() {
         if Self.verbose { Self.logger.info("\(Self.t)ViewModel init，启动监控") }
         startMonitoring()
-        observeMenuBarAppearanceChanges()
-    }
-
-    private func observeMenuBarAppearanceChanges() {
-        NotificationCenter.default.publisher(for: .lumiMenuBarAppearanceDidChange)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] notification in
-                guard let self else { return }
-                if Self.verbose { Self.logger.info("\(self.t)收到外观变更通知，刷新快照") }
-                if let button = notification.object as? NSStatusBarButton {
-                    let appearance = button.window?.effectiveAppearance ?? button.effectiveAppearance
-                    appearance.performAsCurrentDrawingAppearance {
-                        self.refreshSnapshotForCurrentAppearance()
-                    }
-                } else {
+        appearanceObserver = MenuBarAppearanceObserver { [weak self] button in
+            guard let self else { return }
+            if Self.verbose { Self.logger.info("\(self.t)收到外观变更通知，刷新快照") }
+            if let button {
+                let appearance = button.window?.effectiveAppearance ?? button.effectiveAppearance
+                appearance.performAsCurrentDrawingAppearance {
                     self.refreshSnapshotForCurrentAppearance()
                 }
+            } else {
+                self.refreshSnapshotForCurrentAppearance()
             }
-            .store(in: &cancellables)
+        }
     }
 
     func refreshSnapshotForCurrentAppearance() {

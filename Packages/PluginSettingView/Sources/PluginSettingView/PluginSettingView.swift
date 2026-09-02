@@ -72,7 +72,7 @@ public final class PluginSettingView: SuperPlugin, SuperLog {
         kernel.unregisterProvider((any SettingViewProviding).self)
 
         // 2. 注册本插件实现。消费者直接观察 SettingViewProviding 的状态变化。
-        try kernel.registerProvider((any SettingViewProviding).self, manager)
+        try kernel.registerHostProvider((any SettingViewProviding).self, manager)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)registered SettingViewManager as SettingViewProviding")

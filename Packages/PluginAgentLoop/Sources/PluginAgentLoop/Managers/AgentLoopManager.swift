@@ -38,8 +38,14 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
     /// 每会话的回合运行时上下文。替代原先 8 个散落的字典/集合。
     var runtimes: [UUID: TurnRuntime] = [:]
     var resumingConversations: Set<UUID> = []
-    var completionWaiters: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
+    struct CompletionWaiter {
+        let turnID: UUID
+        let continuation: CheckedContinuation<AgentLoopOutcome, Never>
+    }
+
+    var completionWaiters: [UUID: [CompletionWaiter]] = [:]
     private var agentLoopObservers: [UUID: (AgentLoopEvent) -> Void] = [:]
+    private var toolJobObserver: ToolJobObserver?
 
 
     // MARK: - Init
@@ -58,6 +64,9 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
         self.streaming = streaming
         self.conversations = conversations
         self.contextProvider = contextProvider
+        self.toolJobObserver = ToolJobObserver(toolManager: toolManager) { [weak self] event in
+            self?.handleToolJobEvent(event)
+        }
     }
 
     public func addAgentLoopObserver(
@@ -84,7 +93,7 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
         let state: AgentLoopState
         switch phase {
         case .idle: state = .idle
-        case .requestingLLM, .executingTools: state = .running
+        case .requestingLLM, .executingTools, .waitingForToolJobs: state = .running
         case .awaitingUser: state = .suspended
         case .completed: state = .completed
         case .failed: state = .failed
@@ -141,6 +150,16 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
 
     func resolvedProviderID(for conversationID: UUID) -> String? {
         conversations.providerID(for: conversationID)
+    }
+
+    /// Provider 可能不响应 Swift Task 的取消；所有会产生消息或推进状态的
+    /// LLM 结果都必须再次确认仍属于当前未取消的 requestingLLM 回合。
+    func isActiveLLMRequest(conversationID: UUID, turnID: UUID) -> Bool {
+        guard let runtime = runtimes[conversationID] else { return false }
+        return runtime.lastTurnID == turnID
+            && runtime.phase == .requestingLLM(turnID: turnID)
+            && !runtime.cancelRequested
+            && !Task.isCancelled
     }
 }
 

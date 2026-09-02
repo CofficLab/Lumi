@@ -31,6 +31,36 @@ import Testing
 @Suite("FactoryLumi")
 struct FactoryLumiTests {
 
+    /// 使用隔离的插件状态目录，避免测试读取或修改开发者本机的真实配置。
+    private func makeKernelWithAllConfigurablePluginsEnabled() throws -> KernelCoreContainer {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FactoryLumiTests-\(UUID().uuidString)", isDirectory: true)
+        let storage = DefaultStorageProvider(dataRootDirectory: root)
+        let stateStore = PluginEnabledStateStore(
+            pluginDirectory: storage.pluginDataDirectory(for: "PluginManager")
+        )
+        let enabledPluginIDs = [
+            "com.coffic.lumi.plugin.device-info",
+            "com.coffic.lumi.plugin.hosts-manager",
+            "com.coffic.lumi.plugin.app-icon-designer",
+            "com.coffic.lumi.plugin.app-store-promo-designer",
+            "com.coffic.lumi.plugin.mind-map",
+            "com.coffic.lumi.plugin.resume-designer",
+            "com.coffic.lumi.plugin.disk-manager",
+            "com.coffic.lumi.plugin.white-noise",
+            "com.coffic.lumi.plugin.video-converter",
+        ]
+        for pluginID in enabledPluginIDs {
+            stateStore.setEnabled(true, pluginID: pluginID)
+        }
+
+        let providerFactory = DefaultProviderFactory(dataRootDirectory: root)
+        return try KernelFactory.makeKernel(
+            providerFactory: providerFactory,
+            pluginFactory: DefaultPluginFactory()
+        )
+    }
+
     @Test("默认插件目录包含编辑器基础设施、语言包和可选工作区")
     func defaultFactoryIncludesEditorPluginStack() throws {
         let plugins = Dictionary(
@@ -211,7 +241,7 @@ struct FactoryLumiTests {
 
     @Test("默认内容插件注册 ActivityBar 入口且设备入口初始激活")
     func defaultContentPluginsRegisterActivityBarEntries() throws {
-        let kernel = try KernelFactory.makeKernel()
+        let kernel = try makeKernelWithAllConfigurablePluginsEnabled()
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
 
         #expect(activityBar?.items.map(\.id) == [
@@ -378,8 +408,8 @@ struct FactoryLumiTests {
         let logo = kernel.resolveProvider((any LogoProviding).self)
         #expect(logo != nil)
 
-        // 默认已由 LogoCofficPlugin 贡献 Coffic Logo
-        #expect(logo?.highestPriorityLogoItem?.id == "com.lumi.plugin.logo-coffic")
+        // Smart Light 的 order=200 高于 Coffic 的 order=100，当前默认优先级为 Smart Light。
+        #expect(logo?.highestPriorityLogoItem?.id == "com.lumi.plugin.logo-smart-light")
 
         // 注册更高优先级 Logo 后成为最高优先级
         logo?.registerLogoItem(
@@ -389,9 +419,9 @@ struct FactoryLumiTests {
         )
         #expect(logo?.highestPriorityLogoItem?.id == "test.logo")
 
-        // 注销后回退到下一个贡献者（Coffic Logo）
+        // 注销后回退到下一个贡献者（Smart Light Logo）
         logo?.unregisterLogoItem(id: "test.logo")
-        #expect(logo?.highestPriorityLogoItem?.id == "com.lumi.plugin.logo-coffic")
+        #expect(logo?.highestPriorityLogoItem?.id == "com.lumi.plugin.logo-smart-light")
     }
 
     @Test("makeKernel 启动 ThemePackPlugin 后注册全部复刻主题")
@@ -442,7 +472,7 @@ struct FactoryLumiTests {
 
     @Test("停止内核会撤回默认插件写入共享 Provider 的贡献并支持重启")
     func stopWithdrawsContributionsAndSupportsRestart() throws {
-        let kernel = try KernelFactory.makeKernel()
+        let kernel = try makeKernelWithAllConfigurablePluginsEnabled()
 
         try kernel.stop()
 

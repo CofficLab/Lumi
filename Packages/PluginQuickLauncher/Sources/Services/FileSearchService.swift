@@ -104,24 +104,11 @@ public final class FileSearchService: NSObject, ObservableObject, SuperLog {
 
         // 首批 gathering 完成 / 超时 / Task 取消，三者任一先到即恢复
         let timeout = queryTimeout
-        let stream = AsyncStream<Void> { continuation in
-            let observer = NotificationCenter.default.addObserver(
-                forName: NSNotification.Name.NSMetadataQueryDidFinishGathering,
-                object: metadataQuery,
-                queue: .main
-            ) { _ in
-                continuation.finish()
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + timeout) {
-                continuation.finish()
-            }
-            continuation.onTermination = { _ in
-                NotificationCenter.default.removeObserver(observer)
-            }
-        }
-        for await _ in stream {
+        let gatheringObserver = SpotlightGatheringObserver(query: metadataQuery, timeout: timeout)
+        for await _ in gatheringObserver.stream {
             break
         }
+        gatheringObserver.finish()
 
         metadataQuery.stop()
         activeQuery = nil

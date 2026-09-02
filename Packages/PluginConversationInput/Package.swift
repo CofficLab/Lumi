@@ -11,13 +11,14 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../KitLocalization"),
-        .package(path: "../LumiUI"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderConversationState"),
         .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageSender"),
+        .package(path: "../ProviderPerformanceMetrics"),
         .package(path: "../KitSuperLog"),
     ],
     targets: [
@@ -33,6 +34,7 @@ let package = Package(
                 "ProviderConversationInput",
                 "ProviderMessage",
                 "ProviderMessageSender",
+                "ProviderPerformanceMetrics",
                 "KitSuperLog",
             ],
             path: "Sources/PluginConversationInput",

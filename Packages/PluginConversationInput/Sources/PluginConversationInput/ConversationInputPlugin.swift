@@ -6,6 +6,7 @@ import ProviderConversation
 import ProviderConversationState
 import ProviderConversationInput
 import ProviderMessageSender
+import ProviderPerformanceMetrics
 import KitSuperLog
 import SwiftUI
 
@@ -45,6 +46,7 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
 
         let input = kernel.resolveProvider((any ConversationInputProviding).self)
         let sender = kernel.resolveProvider((any MessageSendingProviding).self)
+        let metrics = kernel.resolveProvider((any PerformanceMetricsProviding).self)
         let conversations = kernel.resolveProvider((any ConversationManaging).self)
         let conversationState = kernel.resolveProvider((any ConversationStateProviding).self)
 
@@ -89,7 +91,7 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
             ) {
-                ConversationInputView(input: input, sender: sender)
+                ConversationInputView(input: input, sender: sender, metrics: metrics)
             },
         ])
 

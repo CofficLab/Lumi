@@ -115,19 +115,3 @@ private struct TerminalV2MainView: View {
         TerminalMainView(projectPath: observer.currentPath)
     }
 }
-
-@MainActor
-private final class TerminalV2ProjectObserver: ObservableObject {
-    @Published private(set) var currentPath: String?
-    private var projectObserver: (any ProjectProvidingObserverHandle)?
-    private let project: (any ProjectProviding)?
-
-    init(project: (any ProjectProviding)?) {
-        self.project = project
-        self.currentPath = project?.currentProject?.path
-        projectObserver = project?.addObserver { [weak self] event in
-            guard case .currentProjectChanged = event else { return }
-            self?.currentPath = self?.project?.currentProject?.path
-        }
-    }
-}

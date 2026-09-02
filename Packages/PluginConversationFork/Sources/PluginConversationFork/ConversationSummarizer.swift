@@ -54,7 +54,7 @@ public struct ConversationSummarizer: @unchecked Sendable {
 
     @MainActor
     public func summarize(conversationID: UUID) async -> Outcome {
-        let history = filteredMessages(messages.messages(for: conversationID))
+        let history = filteredMessages(await messages.messagesSnapshot(in: conversationID))
         guard !history.isEmpty else {
             return Outcome(summary: fallbackSummary(from: history), usedFallback: true)
         }

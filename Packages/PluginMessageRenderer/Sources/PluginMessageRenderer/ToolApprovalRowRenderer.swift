@@ -5,6 +5,7 @@ import KitSuperLog
 import LumiUI
 import os
 import ProviderAgentLoop
+import ProviderConversation
 import ProviderMessageRendering
 import ProviderToolManager
 import SwiftUI
@@ -22,6 +23,50 @@ private struct ToolPermissionRequest: Codable {
     }
 }
 
+private enum ToolApprovalAction: Equatable {
+    case allow
+    case alwaysAllow
+    case reject
+    case other
+
+    static let alwaysAllowLabel = "始终允许"
+
+    init(answer: String) {
+        switch answer.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "允许", "同意", "是", "allow", "approve", "approved", "yes":
+            self = .allow
+        case "始终允许", "always allow", "always_allow":
+            self = .alwaysAllow
+        case "拒绝", "否", "deny", "reject", "no":
+            self = .reject
+        default:
+            self = .other
+        }
+    }
+
+    var buttonStyle: AppButton.Style {
+        switch self {
+        case .allow:
+            .primary
+        case .alwaysAllow:
+            .warning
+        case .reject, .other:
+            .destructive
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .allow:
+            "checkmark.circle.fill"
+        case .alwaysAllow:
+            "bolt.shield.fill"
+        case .reject, .other:
+            "xmark.circle.fill"
+        }
+    }
+}
+
 @MainActor
 final class ToolApprovalBridge: SuperLog {
     static let shared = ToolApprovalBridge()
@@ -32,20 +77,23 @@ final class ToolApprovalBridge: SuperLog {
 
     private weak var agentLoop: (any AgentLoopProviding)?
     private weak var toolManager: (any ToolManagerProviding)?
+    private weak var conversations: (any ConversationManaging)?
 
     private init() {}
 
     func start(kernel: KernelCoreContainer) {
         agentLoop = kernel.resolveProvider((any AgentLoopProviding).self)
         toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
+        conversations = kernel.resolveProvider((any ConversationManaging).self)
         Self.logger.info(
-            "\(Self.t)授权桥接已启动 agentLoop=\(self.agentLoop != nil, privacy: .public) toolManager=\(self.toolManager != nil, privacy: .public)"
+            "\(Self.t)授权桥接已启动 agentLoop=\(self.agentLoop != nil, privacy: .public) toolManager=\(self.toolManager != nil, privacy: .public) conversations=\(self.conversations != nil, privacy: .public)"
         )
     }
 
     func stop() {
         agentLoop = nil
         toolManager = nil
+        conversations = nil
         Self.logger.info("\(Self.t)授权桥接已停止")
     }
 
@@ -93,7 +141,20 @@ final class ToolApprovalBridge: SuperLog {
             return
         }
         let turnID = agentLoop?.currentTurnID(for: conversationID)
-        let approved = Self.isApproval(answer)
+        let action = ToolApprovalAction(answer: answer)
+        if action == .alwaysAllow {
+            guard let conversations else {
+                Self.logger.error(
+                    "\(Self.t)设置 A3 失败：ConversationManager 不可用 conversation=\(conversationID.uuidString, privacy: .public)"
+                )
+                return
+            }
+            conversations.setAutomationLevel(.autonomous, for: conversationID)
+            Self.logger.info(
+                "\(Self.t)当前对话已切换为 A3 conversation=\(conversationID.uuidString, privacy: .public)"
+            )
+        }
+        let approved = action == .allow || action == .alwaysAllow
         Self.logger.info(
             "\(Self.t)提交授权结果 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) approved=\(approved, privacy: .public)"
         )
@@ -114,14 +175,6 @@ final class ToolApprovalBridge: SuperLog {
         }
     }
 
-    private static func isApproval(_ answer: String) -> Bool {
-        switch answer.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
-        case "允许", "同意", "是", "allow", "approve", "approved", "yes":
-            return true
-        default:
-            return false
-        }
-    }
 }
 
 /// 高风险工具审批的通用行渲染器。
@@ -176,44 +229,59 @@ private struct ToolApprovalPendingView: View {
 
     @State private var responded = false
 
+    private var options: [String] {
+        guard !request.options.contains(where: { ToolApprovalAction(answer: $0) == .alwaysAllow }) else {
+            return request.options
+        }
+
+        var options = request.options
+        let insertionIndex = options.firstIndex {
+            ToolApprovalAction(answer: $0) == .reject
+        } ?? options.endIndex
+        options.insert(ToolApprovalAction.alwaysAllowLabel, at: insertionIndex)
+        return options
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.shield.fill")
-                    .foregroundColor(theme.primary)
-                Text(request.question)
-                    .font(.appCaption)
-                    .foregroundColor(theme.textPrimary)
-            }
+        AppCard(
+            style: .subtle,
+            cornerRadius: 10,
+            padding: EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12),
+            showShadow: false
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.shield.fill")
+                        .foregroundColor(theme.primary)
+                    Text(request.question)
+                        .font(.appCaption)
+                        .foregroundColor(theme.textPrimary)
+                }
 
-            HStack {
-                ForEach(request.options.indices, id: \.self) { index in
-                    if index > request.options.startIndex {
-                        Spacer(minLength: 0)
+                HStack(spacing: 8) {
+                    ForEach(options.indices, id: \.self) { index in
+                        let option = options[index]
+                        let action = ToolApprovalAction(answer: option)
+                        AppButton(
+                            option,
+                            systemImage: action.systemImage,
+                            style: action.buttonStyle,
+                            size: .small,
+                            fillsWidth: true
+                        ) {
+                            submit(option)
+                        }
+                        .disabled(responded)
                     }
+                }
 
-                    let option = request.options[index]
-                    Button(option) {
-                        submit(option)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(responded)
+                if responded {
+                    Text("已提交：等待继续执行…")
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
                 }
             }
-
-            if responded {
-                Text("已提交：等待继续执行…")
-                    .font(.appMicro)
-                    .foregroundColor(theme.textSecondary)
-            }
         }
-        .padding(12)
-        .background(theme.surface)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(theme.primary.opacity(0.35), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private func submit(_ answer: String) {

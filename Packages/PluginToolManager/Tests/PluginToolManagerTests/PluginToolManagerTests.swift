@@ -1,5 +1,9 @@
 import KernelCore
 import KitAgentTool
+import ProviderAgentLoop
+import ProviderConversation
+import ProviderLifecycleHooks
+import ProviderMessage
 import ProviderToolManager
 import Testing
 @testable import PluginToolManager
@@ -20,6 +24,49 @@ private struct CountingTool: SuperAgentTool, @unchecked Sendable {
     func execute(arguments: [String: ToolArgument]) async throws -> String {
         counter.value += 1
         return name
+    }
+}
+
+private struct ShellOutputEvent: Sendable {
+    let stream: ToolExecutionOutputStream
+    let text: String
+}
+
+private actor ShellExecutionState {
+    private(set) var finished = false
+
+    func markFinished() {
+        finished = true
+    }
+}
+
+private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
+    let name: String
+    let delayNanoseconds: UInt64
+    let counter: CountingTool.Counter
+
+    func description(for language: LanguagePreference) -> String { name }
+    func inputSchema(for language: LanguagePreference) -> [String: Any] { [:] }
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { name }
+
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await Task.sleep(nanoseconds: delayNanoseconds)
+        return name
+    }
+
+    func executeResult(
+        context: KitAgentTool.ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        counter.value += 1
+        await context.reportOutput(.stdout, "started")
+        await context.reportProgress(
+            ToolExecutionProgress(message: "halfway", completed: 1, total: 2, fraction: 0.5)
+        )
+        try await Task.sleep(nanoseconds: delayNanoseconds)
+        try Task.checkCancellation()
+        return ToolCallResult(content: "finished")
     }
 }
 
@@ -107,6 +154,276 @@ private struct CountingTool: SuperAgentTool, @unchecked Sendable {
         URL(fileURLWithPath: result).standardizedFileURL.path
             == URL(fileURLWithPath: "/tmp").standardizedFileURL.path
     )
+}
+
+@MainActor
+@Test func shellToolStreamsOutputBeforeCommandCompletes() async throws {
+    let tool = ShellTool(workspaceRootProvider: { "/tmp" })
+    let (stream, continuation) = AsyncStream<ShellOutputEvent>.makeStream()
+    var iterator = stream.makeAsyncIterator()
+    let state = ShellExecutionState()
+    let context = ToolExecutionContext(
+        jobID: "shell-stream-1",
+        conversationID: UUID(),
+        reportOutput: { stream, text in
+            continuation.yield(ShellOutputEvent(stream: stream, text: text))
+        }
+    )
+
+    let execution = Task {
+        let result = try await tool.executeResult(
+            context: context,
+            arguments: ["command": ToolArgument("printf 'first\\n'; sleep 0.5; printf 'second\\n' >&2")]
+        )
+        await state.markFinished()
+        return result
+    }
+
+    let first = try #require(await iterator.next())
+    #expect(first.stream == .stdout)
+    #expect(first.text.contains("first"))
+    try await Task.sleep(nanoseconds: 100_000_000)
+    #expect(await state.finished == false)
+
+    let result = try await execution.value
+    continuation.finish()
+    var events = [first]
+    while let event = await iterator.next() {
+        events.append(event)
+    }
+
+    #expect(events.contains { $0.stream == .stderr && $0.text.contains("second") })
+    #expect(result.content.contains("second"))
+}
+
+@MainActor
+@Test func toolJobSubmitsWithoutWaitingAndPublishesTerminalEvents() async throws {
+    let manager = ToolManager()
+    let counter = CountingTool.Counter()
+    manager.add(
+        DelayedTool(name: "delayed", delayNanoseconds: 300_000_000, counter: counter),
+        pluginID: "test"
+    )
+    let conversationID = UUID()
+    let call = ToolCall(id: "job-1", name: "delayed", arguments: "{}")
+    var events: [ToolJobEvent] = []
+    let handle = manager.addToolJobObserver { events.append($0) }
+    defer { handle.cancel() }
+
+    let startedAt = Date()
+    let jobs = manager.submit(
+        [call],
+        policy: .autoExecute,
+        conversationID: conversationID,
+        turnID: UUID()
+    )
+
+    #expect(Date().timeIntervalSince(startedAt) < 0.1)
+    #expect(jobs.count == 1)
+    #expect(jobs.first?.status == .running)
+
+    let result = await manager.waitForJobResult(jobID: call.id)
+    #expect(result?.content == "finished")
+    #expect(manager.job(for: call.id)?.status == .completed)
+    #expect(counter.value == 1)
+    #expect(events.filter { if case .created = $0 { true } else { false } }.count == 1)
+    #expect(events.filter { if case .started = $0 { true } else { false } }.count == 1)
+    #expect(events.filter { if case .output = $0 { true } else { false } }.count == 1)
+    #expect(events.filter { if case .progress = $0 { true } else { false } }.count == 1)
+    #expect(events.filter { if case .completed = $0 { true } else { false } }.count == 1)
+}
+
+@MainActor
+@Test func cancellingToolJobFinishesItExactlyOnce() async throws {
+    let manager = ToolManager()
+    manager.add(
+        DelayedTool(name: "slow", delayNanoseconds: 5_000_000_000, counter: .init()),
+        pluginID: "test"
+    )
+    let call = ToolCall(id: "job-cancel-1", name: "slow", arguments: "{}")
+    var cancelledEvents = 0
+    let handle = manager.addToolJobObserver { event in
+        if case .cancelled = event { cancelledEvents += 1 }
+    }
+    defer { handle.cancel() }
+
+    _ = manager.submit(
+        [call],
+        policy: .autoExecute,
+        conversationID: UUID(),
+        turnID: UUID()
+    )
+    manager.cancelJob(call.id)
+
+    let result = await manager.waitForJobResult(jobID: call.id)
+    #expect(result?.isError == true)
+    #expect(manager.job(for: call.id)?.status == .cancelled)
+    #expect(cancelledEvents == 1)
+}
+
+@MainActor
+@Test func timedOutShellJobPublishesTimedOutTerminalState() async throws {
+    let manager = ToolManager()
+    manager.add(ShellTool(), pluginID: "test")
+    let call = ToolCall(
+        id: "job-timeout-1",
+        name: "run_command",
+        arguments: "{\"command\":\"sleep 10\",\"timeout\":1}"
+    )
+    var timedOutEvents = 0
+    var failedEvents = 0
+    let handle = manager.addToolJobObserver { event in
+        switch event {
+        case .timedOut: timedOutEvents += 1
+        case .failed: failedEvents += 1
+        default: break
+        }
+    }
+    defer { handle.cancel() }
+
+    _ = manager.submit(
+        [call],
+        policy: .autoExecute,
+        conversationID: UUID(),
+        turnID: UUID()
+    )
+
+    let result = try #require(await manager.waitForJobResult(jobID: call.id))
+    #expect(result.isError)
+    #expect(result.content.contains("timed out"))
+    #expect(manager.job(for: call.id)?.status == .timedOut)
+    #expect(timedOutEvents == 1)
+    #expect(failedEvents == 0)
+}
+
+@MainActor
+@Test func duplicateToolJobSubmissionReusesTheExistingJob() async throws {
+    let manager = ToolManager()
+    let counter = CountingTool.Counter()
+    manager.add(
+        DelayedTool(name: "once", delayNanoseconds: 50_000_000, counter: counter),
+        pluginID: "test"
+    )
+    let call = ToolCall(id: "job-idempotent-1", name: "once", arguments: "{}")
+    var createdEvents = 0
+    let handle = manager.addToolJobObserver { event in
+        if case .created = event { createdEvents += 1 }
+    }
+    defer { handle.cancel() }
+
+    let first = manager.submit(
+        [call],
+        policy: .autoExecute,
+        conversationID: UUID(),
+        turnID: nil
+    )
+    let second = manager.submit(
+        [call],
+        policy: .autoExecute,
+        conversationID: UUID(),
+        turnID: nil
+    )
+
+    #expect(first == second)
+    _ = await manager.waitForJobResult(jobID: call.id)
+    #expect(counter.value == 1)
+    #expect(createdEvents == 1)
+}
+
+@MainActor
+@Test func toolCallsObserverSubmitsWithoutWaitingForToolCompletion() async throws {
+    let manager = ToolManager()
+    manager.add(
+        DelayedTool(name: "observer-delayed", delayNanoseconds: 300_000_000, counter: .init()),
+        pluginID: "test"
+    )
+    let conversationID = UUID()
+    let turnID = UUID()
+    let agentLoop = RecordingToolCallsAgentLoop()
+    let conversations = DefaultConversationManager()
+    conversations.setGlobalAutomationLevel(.autonomous)
+    let observer = ToolCallsObserver(
+        agentLoop: agentLoop,
+        conversations: conversations,
+        service: manager
+    )
+    defer { observer.cancel() }
+
+    let startedAt = Date()
+    agentLoop.send(.toolCallsReceived(
+        conversationID: conversationID,
+        turnID: turnID,
+        assistantMessageID: UUID(),
+        toolCalls: [
+            MessageToolCall(
+                id: "observer-job-1",
+                name: "observer-delayed",
+                arguments: "{}"
+            )
+        ]
+    ))
+
+    #expect(Date().timeIntervalSince(startedAt) < 0.1)
+    #expect(manager.job(for: "observer-job-1")?.status == .running)
+
+    let result = await manager.waitForJobResult(jobID: "observer-job-1")
+    #expect(result?.content == "finished")
+}
+
+@MainActor
+@Test func toolCallsObserverDoesNotDropBlockedOrApprovalCalls() async throws {
+    let manager = ToolManager()
+    manager.add(CountingTool(name: "risky-observer", risk: .high, counter: .init()), pluginID: "test")
+    let conversationID = UUID()
+    let turnID = UUID()
+    let agentLoop = RecordingToolCallsAgentLoop()
+    let conversations = DefaultConversationManager()
+    var events: [ToolManagerEvent] = []
+    let handle = manager.addToolManagerObserver { events.append($0) }
+    defer { handle.cancel() }
+    let observer = ToolCallsObserver(
+        agentLoop: agentLoop,
+        conversations: conversations,
+        service: manager
+    )
+    defer { observer.cancel() }
+
+    conversations.setGlobalAutomationLevel(.chat)
+    agentLoop.send(.toolCallsReceived(
+        conversationID: conversationID,
+        turnID: turnID,
+        assistantMessageID: UUID(),
+        toolCalls: [MessageToolCall(id: "blocked-1", name: "risky-observer", arguments: "{}")]
+    ))
+    try await Task.sleep(nanoseconds: 50_000_000)
+
+    let blocked = events.contains { event in
+        guard case let .batchCompleted(_, _, _, results) = event,
+              case let .blocked(reason) = results.first else { return false }
+        return reason.contains("Chat mode")
+    }
+    #expect(blocked)
+
+    conversations.setGlobalAutomationLevel(.build)
+    agentLoop.send(.toolCallsReceived(
+        conversationID: conversationID,
+        turnID: turnID,
+        assistantMessageID: UUID(),
+        toolCalls: [MessageToolCall(id: "approval-1", name: "risky-observer", arguments: "{}")]
+    ))
+    try await Task.sleep(nanoseconds: 50_000_000)
+
+    let approvalRequested = events.contains { event in
+        if case .authorizationRequired = event { return true }
+        return false
+    }
+    let approvalResult = events.contains { event in
+        guard case let .batchCompleted(_, _, _, results) = event,
+              case .needsUserResponse = results.first else { return false }
+        return true
+    }
+    #expect(approvalRequested)
+    #expect(approvalResult)
 }
 
 @MainActor
@@ -217,4 +534,44 @@ private struct CountingTool: SuperAgentTool, @unchecked Sendable {
         turnID: nil
     )
     #expect(eventCount == 1)
+}
+
+@MainActor
+private final class RecordingToolCallsAgentLoop: AgentLoopProviding {
+    private var observer: ((AgentLoopEvent) -> Void)?
+
+    func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle {
+        observer = callback
+        return NoopAgentLoopObserverHandle()
+    }
+
+    func send(_ event: AgentLoopEvent) {
+        observer?(event)
+    }
+
+    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome { .completed }
+
+    func resumeTurn(
+        in conversationID: UUID,
+        request: AgentTurnResumeRequest
+    ) async throws -> AgentLoopOutcome { .completed }
+
+    func cancelTurn(in conversationID: UUID) {}
+
+    func state(for conversationID: UUID) -> AgentLoopState { .idle }
+
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
+
+    func isRunning(for conversationID: UUID) -> Bool { false }
+
+    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
+
+    func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
+}
+
+@MainActor
+private final class NoopAgentLoopObserverHandle: AgentLoopObserverHandle {
+    func cancel() {}
 }

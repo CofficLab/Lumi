@@ -31,11 +31,11 @@ struct MessageListPaginationService {
     func loadFirstPage(
         conversationID: UUID,
         messageManager: (any MessageManaging)?
-    ) -> LoadFirstPageResult {
+    ) async -> LoadFirstPageResult {
         guard let messageManager else {
             return LoadFirstPageResult(messages: [], hasEarlierMessages: false)
         }
-        let page = messageManager.messagePage(
+        let page = await messageManager.messagePageAsync(
             for: conversationID,
             limit: pageSize + 1,
             beforeMessageID: nil,
@@ -54,18 +54,18 @@ struct MessageListPaginationService {
         messageManager: (any MessageManaging)?,
         currentFirstID: UUID?,
         hasEarlier: Bool
-    ) -> LoadEarlierResult? {
+    ) async -> LoadEarlierResult? {
         guard hasEarlier,
               let currentFirstID,
               let messageManager else { return nil }
-        let earlier = messageManager.messagePage(
+        let earlier = await messageManager.messagePageAsync(
             for: conversationID,
             limit: pageSize,
             beforeMessageID: currentFirstID,
             includesToolMessages: false
         )
         guard !earlier.isEmpty else { return nil }
-        let stillHasEarlier = messageManager.hasEarlierMessages(
+        let stillHasEarlier = await messageManager.hasEarlierMessagesAsync(
             for: conversationID,
             beforeMessageID: earlier.first?.id,
             includesToolMessages: false
@@ -85,9 +85,9 @@ struct MessageListPaginationService {
         conversationID: UUID,
         messageManager: (any MessageManaging)?,
         current: [Message]
-    ) -> RefreshTailResult? {
+    ) async -> RefreshTailResult? {
         guard let messageManager else { return nil }
-        let latestPage = messageManager.messagePage(
+        let latestPage = await messageManager.messagePageAsync(
             for: conversationID,
             limit: pageSize,
             beforeMessageID: nil,
@@ -105,7 +105,7 @@ struct MessageListPaginationService {
             // 从无到有：直接把最近一页铺上，并补查 hasEarlier。
             return RefreshTailResult(
                 merged: latestPage,
-                hasEarlierMessages: messageManager.hasEarlierMessages(
+                hasEarlierMessages: await messageManager.hasEarlierMessagesAsync(
                     for: conversationID,
                     beforeMessageID: latestPage.first?.id,
                     includesToolMessages: false

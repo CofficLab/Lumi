@@ -4,7 +4,6 @@ import LumiUI
 import os
 import ProviderConversation
 import ProviderMessage
-import ProviderMessageSender
 import KitSuperLog
 import SwiftUI
 
@@ -159,65 +158,13 @@ struct ListV2View: View, SuperLog {
                     scrollTick &+= 1
                 }
             }
-            .onReceive(messageChangesPublisher) { _ in
-                handleMessagesDidChange(proxy: proxy)
+            // 用户消息已经由 ViewModel 从内存事件直接应用；这里仅负责滚到底部，
+            // 不再监听 objectWillChange 触发数据库尾部查询。
+            .onChange(of: viewModel.latestUserMessageID) { _, newID in
+                guard newID != nil else { return }
+                atBottomBox.value = true
+                scrollTick &+= 1
             }
-        }
-    }
-
-    /// 落库消息变化的窄播（替代旧版 `.lumiMessagesDidChange` 通知）。
-    /// `receive(on:)` 让回调在属性写入完成后异步执行。
-    private var messageChangesPublisher: AnyPublisher<Void, Never> {
-        guard let messages = services.messages else {
-            return Empty().eraseToAnyPublisher()
-        }
-        return messages.objectWillChange
-            .map { _ in () }
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
-    }
-
-    /// 消息变化处理：合并刷新 + 按需滚动（与旧版 `onLumiMessagesDidChange` 行为一致）。
-    private func handleMessagesDidChange(proxy: ScrollViewProxy) {
-        guard MessageListNotificationFilter.shouldHandle(
-            eventConversationID: nil,
-            selectedConversationID: viewModel.selectedConversationID
-        ) else { return }
-
-        let targetConversationID = viewModel.selectedConversationID
-        let wasAtBottom = atBottomBox.value
-        // 记录刷新前最后一条用户消息 id，用于判定「用户本人刚发送了新消息」。
-        let previousLastUserMessageID = viewModel.historyRows
-            .last(where: { $0.role == .user })?.id
-        Task {
-            let didChange = await viewModel.refreshTail()
-            guard didChange,
-                  viewModel.selectedConversationID == targetConversationID else { return }
-
-            // 用户本人发送：像常见聊天软件一样无条件滚到底，
-            // 并把底部判定重置回 true（tracker 会随后按几何自校准）。
-            let lastUserMessageID = viewModel.historyRows
-                .last(where: { $0.role == .user })?.id
-            let isOwnSend = lastUserMessageID != nil
-                && lastUserMessageID != previousLastUserMessageID
-            guard wasAtBottom || isOwnSend else { return }
-            if isOwnSend { atBottomBox.value = true }
-            if Self.verbose {
-                Self.logger.debug("\(Self.t)messages changed: didChange=true, wasAtBottom=\(wasAtBottom), isOwnSend=\(isOwnSend), scrolling to bottom")
-            }
-
-            // 注意：这里不再用 `atBottomBox.value` 作为实时滚动条件。
-            // 原因：新行追加后首次 scrollTo 常落点偏上，此时内容底沿
-            // 超出视口 > 离开阈值会让 tracker 把 atBottomBox 翻成 false，
-            // 从而取消本应修正落点的 +100ms 重试，导致列表停在半路 ——
-            // 这正是「有时不滚到底部」的根因。这里改用事件时刻的
-            // wasAtBottom / isOwnSend 做一次性判定，让重试能正常完成。
-            await scrollCoordinator.scrollToBottomAfterLayout(
-                proxy: proxy,
-                messages: viewModel.historyRows,
-                animated: false,
-                condition: { true }
-            )
         }
     }
 

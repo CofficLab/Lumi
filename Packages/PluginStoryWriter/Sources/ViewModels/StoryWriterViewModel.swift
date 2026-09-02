@@ -30,26 +30,16 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
 
     // MARK: - External change observation
 
-    private nonisolated(unsafe) var notificationObserver: NSObjectProtocol?
+    private var changeObserver: StoryWriterChangeObserver?
 
     private func observeExternalChanges() {
         // Agent tools post this notification after mutating the on-disk story
         // store. Reload everything to stay in sync.
-        notificationObserver = NotificationCenter.default.addObserver(
-            forName: .storyWriterDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
+        changeObserver = StoryWriterChangeObserver { [weak self] in
             guard let self else { return }
             Task { @MainActor in
                 await self.reloadFromDisk()
             }
-        }
-    }
-
-    deinit {
-        if let token = notificationObserver {
-            NotificationCenter.default.removeObserver(token)
         }
     }
 

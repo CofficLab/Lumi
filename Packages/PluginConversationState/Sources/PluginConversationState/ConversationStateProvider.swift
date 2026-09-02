@@ -48,6 +48,7 @@ public final class ConversationStateProvider: ConversationStateProviding, SuperL
         toolState: ConversationToolState? = nil,
         authorizationState: ConversationAuthorizationState? = nil,
         activity: ConversationActivity? = nil,
+        jobActivity: ConversationJobActivity? = nil,
         clearActivity: Bool = false,
         lastError: String? = nil,
         clearError: Bool = false
@@ -61,6 +62,7 @@ public final class ConversationStateProvider: ConversationStateProviding, SuperL
                 toolState: toolState ?? current.toolState,
                 authorizationState: authorizationState ?? current.authorizationState,
                 activity: clearActivity ? nil : (activity ?? current.activity),
+                jobActivity: jobActivity ?? current.jobActivity,
                 lastError: clearError ? nil : (lastError ?? current.lastError)
             )
         )
@@ -80,6 +82,7 @@ public final class ConversationStateProvider: ConversationStateProviding, SuperL
                 "tool=\(snapshot.toolState.rawValue)",
                 "authorization=\(snapshot.authorizationState.rawValue)",
                 "activity=\(snapshot.activity?.rawValue ?? "none")",
+                "jobs=\(snapshot.jobActivity.currentJobCount)/\(snapshot.jobActivity.runningJobCount)",
                 "isSending=\(snapshot.isSending)",
                 "error=\(error)",
             ].joined(separator: ", ")

@@ -35,7 +35,7 @@ enum MindMapDesignerRuntime {
     /// 当前打开项目的路径（供工具访问与 UI 展示）。
     static private(set) var currentProjectPath: String?
 
-    private static var projectObserver: (any ProjectProvidingObserverHandle)?
+    private static var projectObserver: MindMapProjectObserver?
 
     /// 项目内存储目录的末段名称（`<project>/.lumi/mind-map`）。
     static let projectFolderName = "mind-map"
@@ -64,15 +64,14 @@ enum MindMapDesignerRuntime {
             return
         }
 
-        currentProjectPath = project.currentProject?.path
-        updateProjectStorageDirectory(projectPath: currentProjectPath)
-        projectObserver = project.addObserver { [weak project] event in
-            guard case .currentProjectChanged = event else { return }
-            let newPath = project?.currentProject?.path
+        let initialPath = project.currentProject?.path
+        currentProjectPath = initialPath
+        updateProjectStorageDirectory(projectPath: initialPath)
+        projectObserver = MindMapProjectObserver(project: project) { newPath in
             guard newPath != currentProjectPath else { return }
             currentProjectPath = newPath
             updateProjectStorageDirectory(projectPath: newPath)
-            }
+        }
     }
 
     private static func updateProjectStorageDirectory(projectPath: String?) {

@@ -51,45 +51,86 @@ final class ToolCallsObserver: SuperLog {
         }
 
         let inputs = toolCalls.map { ToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) }
-        let executableInputs: [ToolCall]
-        let executionPolicy: ToolExecutionPolicy
         switch policy {
         case .blockAll:
-            // Chat 模式需要发布 blocked 结果，让 AgentLoop 正常结束当前工具步骤。
-            executableInputs = inputs
-            executionPolicy = .blockAll
+            // Chat 模式仍使用兼容事件发布 blocked 结果；executeBatch 对该策略
+            // 不会执行工具，因此把它放进 Task 不会阻塞当前 AgentLoop 回调。
+            executeLegacyBatch(inputs, policy: .blockAll, conversationID: conversationID, turnID: turnID)
         case .autoExecute:
-            executableInputs = inputs
-            executionPolicy = .autoExecute
+            // Job manager 只负责提交和启动后台任务，绝不在这里等待工具结果。
+            _ = toolManager.submit(
+                inputs,
+                policy: .autoExecute,
+                conversationID: conversationID,
+                turnID: turnID
+            )
         case .requireApprovalForHighRisk:
-            executableInputs = inputs.filter { toolCall in
-                guard case .autoApproved = toolManager.authorizationDecision(
+            var autoExecutableInputs: [ToolCall] = []
+            var approvalInputs: [ToolCall] = []
+            var blockedInputs: [ToolCall] = []
+            for toolCall in inputs {
+                switch toolManager.authorizationDecision(
                     for: toolCall,
                     conversationID: conversationID
-                ) else {
+                ) {
+                case .autoApproved:
+                    autoExecutableInputs.append(toolCall)
+                case .requiresUserApproval:
+                    approvalInputs.append(toolCall)
                     if Self.verbose {
-                        Self.logger.info("\(Self.t)🌚 工具需要授权，放弃执行 tool=\(toolCall.name), id=\(toolCall.id)")
+                        Self.logger.info("\(Self.t)🌚 工具需要授权，暂停执行 tool=\(toolCall.name), id=\(toolCall.id)")
                     }
-                    return false
+                case .blocked:
+                    // build 模式通常不会返回 blocked，但自定义授权策略可能会；
+                    // 单独走 blockAll，避免被 requireApproval 的兼容逻辑误执行。
+                    blockedInputs.append(toolCall)
                 }
-                return true
             }
-            executionPolicy = .autoExecute
-        }
 
-        guard !executableInputs.isEmpty else { return }
+            if !autoExecutableInputs.isEmpty {
+                _ = toolManager.submit(
+                    autoExecutableInputs,
+                    policy: .autoExecute,
+                    conversationID: conversationID,
+                    turnID: turnID
+                )
+            }
+            if !blockedInputs.isEmpty {
+                executeLegacyBatch(
+                    blockedInputs,
+                    policy: .blockAll,
+                    conversationID: conversationID,
+                    turnID: turnID
+                )
+            }
+            if !approvalInputs.isEmpty {
+                executeLegacyBatch(
+                    approvalInputs,
+                    policy: .requireApprovalForHighRisk,
+                    conversationID: conversationID,
+                    turnID: turnID
+                )
+            }
+        }
         if Self.verbose {
-            Self.logger.info("\(Self.t)🍋 收到 AgentLoop 工具调用事件 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), count=\(executableInputs.count)")
+            Self.logger.info("\(Self.t)🍋 收到 AgentLoop 工具调用事件 conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), count=\(inputs.count)")
         }
+    }
 
+    private func executeLegacyBatch(
+        _ toolCalls: [ToolCall],
+        policy: ToolExecutionPolicy,
+        conversationID: UUID,
+        turnID: UUID
+    ) {
         Task { @MainActor [weak self] in
             guard let self else {
                 Self.logger.error("\(Self.emoji)ToolManager 工具调用观察者已释放，无法执行工具批次")
                 return
             }
             _ = await self.toolManager.executeBatch(
-                executableInputs,
-                policy: executionPolicy,
+                toolCalls,
+                policy: policy,
                 conversationID: conversationID,
                 turnID: turnID
             )

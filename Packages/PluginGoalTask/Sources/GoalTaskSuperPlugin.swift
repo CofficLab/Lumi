@@ -1,5 +1,4 @@
 import KitAgentTool
-import Combine
 import KernelCore
 import ProviderAgentLoop
 import ProviderChatSection
@@ -94,21 +93,9 @@ public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
         [CreateGoalV2Tool.toolName, AddTasksToGoalV2Tool.toolName, GetGoalProgressV2Tool.toolName,
          UpdateGoalStatusV2Tool.toolName, UpdateTaskStatusV2Tool.toolName]
             .forEach { kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: $0) }
+        conversationBridge?.cancel()
         conversationBridge = nil
         Plugin._sharedManager = nil
-    }
-}
-
-@MainActor
-private final class GoalTaskConversationBridge: ObservableObject {
-    @Published var selectedConversationID: UUID?
-    private var cancellable: AnyCancellable?
-
-    init(_ conversations: any ConversationManaging) {
-        selectedConversationID = conversations.selectedConversationID
-        cancellable = conversations.objectWillChange.sink { [weak self, weak conversations] _ in
-            self?.selectedConversationID = conversations?.selectedConversationID
-        }
     }
 }
 

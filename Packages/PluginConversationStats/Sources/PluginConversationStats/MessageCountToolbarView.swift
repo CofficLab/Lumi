@@ -12,8 +12,7 @@ struct MessageCountToolbarView: View {
     @State private var isPopoverPresented = false
 
     // 持有观察者令牌，随视图生命周期自动释放
-    @State private var conversationObserver: (any SelectedConversationObserverHandle)?
-    @State private var messageObserver: (any MessageInsertedObserverHandle)?
+    @State private var observer: MessageCountObserver?
 
     var body: some View {
         Button {
@@ -36,32 +35,36 @@ struct MessageCountToolbarView: View {
             .contentShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
         }
         .buttonStyle(.plain)
-        .help("Messages in current conversation: \(count)")
+        .help(String(format: LumiPluginLocalization.string("Messages in current conversation: %lld", bundle: .module), count))
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             MessageCountPopover(count: count)
         }
         .task {
-            selectedConversationID = conversations.selectedConversationID
-            // 注册会话切换观察
-            conversationObserver = conversations.addSelectedConversationObserver { newID in
+            observer = MessageCountObserver(
+                conversations: conversations,
+                messages: messages,
+                onConversationChange: { newID in
                 selectedConversationID = newID
-            }
-            // 注册消息插入观察
-            messageObserver = messages.addMessageInsertedObserver { _, conversationID in
-                // 只关心当前会话的消息变更
-                if conversationID == selectedConversationID || selectedConversationID == nil {
-                    Task(priority: .utility) { @MainActor in
-                        await Task.yield()
-                        guard !Task.isCancelled else { return }
-                        refreshCount()
+                },
+                onMessageInsert: { conversationID in
+                    if conversationID == selectedConversationID || selectedConversationID == nil {
+                        Task(priority: .utility) { @MainActor in
+                            await Task.yield()
+                            guard !Task.isCancelled else { return }
+                            refreshCount()
+                        }
                     }
                 }
-            }
+            )
         }
         .task(id: selectedConversationID) {
             await Task.yield()
             guard !Task.isCancelled else { return }
             refreshCount()
+        }
+        .onDisappear {
+            observer?.cancel()
+            observer = nil
         }
     }
 
@@ -87,19 +90,19 @@ private struct MessageCountPopover: View {
             VStack(alignment: .leading, spacing: 6) {
                 explanationRow(
                     icon: "message",
-                    text: "Count includes all messages in the current conversation."
+                    text: LumiPluginLocalization.string("Count includes all messages in the current conversation.", bundle: .module)
                 )
                 explanationRow(
                     icon: "arrow.left.arrow.right",
-                    text: "Each user + assistant pair counts as 2 messages."
+                    text: LumiPluginLocalization.string("Each user + assistant pair counts as 2 messages.", bundle: .module)
                 )
                 explanationRow(
                     icon: "wrench.and.screwdriver",
-                    text: "Tool calls and results are also counted individually."
+                    text: LumiPluginLocalization.string("Tool calls and results are also counted individually.", bundle: .module)
                 )
                 explanationRow(
                     icon: "clock.arrow.circlepath",
-                    text: "Updates in real-time as messages are sent or received."
+                    text: LumiPluginLocalization.string("Updates in real-time as messages are sent or received.", bundle: .module)
                 )
             }
 
@@ -109,7 +112,7 @@ private struct MessageCountPopover: View {
                 Text(LumiPluginLocalization.string("Current:", bundle: .module))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
-                Text("\(count) messages")
+                Text(String(format: LumiPluginLocalization.string("%lld messages", bundle: .module), count))
                     .font(.system(size: 11, weight: .semibold))
                     .monospacedDigit()
             }

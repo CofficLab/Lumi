@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import ProviderMessage
 import ProviderMessageStreaming
@@ -18,7 +17,7 @@ final class AgentTurnViewModel: ObservableObject {
 
     private let services: MessageListServices
     private var item: AgentTurnPresentationItem
-    private var cancellables: Set<AnyCancellable> = []
+    private let servicesObserver = MessageListServicesObserver()
     private var didBindStreaming = false
     private var streamingRefreshTask: Task<Void, Never>?
     private var refreshSequence: UInt64 = 0
@@ -42,6 +41,14 @@ final class AgentTurnViewModel: ObservableObject {
         await refresh()
     }
 
+    /// 停止当前回合尚未结束的全部 Tool Job。
+    ///
+    /// 取消是同步发起的状态操作，实际进程终止和终态事件仍由 ToolManager 负责。
+    func stopCurrentTurn() {
+        guard let turnID = item.record?.id else { return }
+        services.toolManager?.cancelJobs(forTurnID: turnID)
+    }
+
     func refresh() async {
         guard let messageManager = services.messages else {
             projection = AgentTurnMessageProjection()
@@ -50,7 +57,7 @@ final class AgentTurnViewModel: ObservableObject {
         refreshSequence &+= 1
         let sequence = refreshSequence
         let conversationID = item.conversationID
-        let messages = messageManager.messages(for: conversationID)
+        let messages = await messageManager.messagesSnapshot(in: conversationID)
         guard sequence == refreshSequence else { return }
         projection = Self.project(
             item: item,
@@ -144,12 +151,13 @@ final class AgentTurnViewModel: ObservableObject {
     private func bindNotifications() {
         // 新版无 `.lumiMessagesDidChange` 通知：订阅消息服务的窄播。
         guard let messages = services.messages else { return }
-        messages.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+        servicesObserver.bindMessages(
+            messages,
+            onChange: nil,
+            onWillChange: { [weak self] in
                 Task { @MainActor [weak self] in await self?.refresh() }
             }
-            .store(in: &cancellables)
+        )
 
         bindStreamingIfNeeded()
     }
@@ -158,10 +166,9 @@ final class AgentTurnViewModel: ObservableObject {
         guard !didBindStreaming,
               item.acceptsLiveActivity,
               let streaming = services.streaming else { return }
-        streaming.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.scheduleStreamingRefresh() }
-            .store(in: &cancellables)
+        servicesObserver.bindStreaming(streaming) { [weak self] in
+            self?.scheduleStreamingRefresh()
+        }
         didBindStreaming = true
     }
 

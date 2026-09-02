@@ -28,6 +28,29 @@ struct MessageManagerWriteBehindTests {
         )
     }
 
+    @Test("结构化插入事件在后台落盘前同步发布")
+    func messageChangePublishesBeforePersistence() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+        var observed: Message?
+        let handle = manager.addMessageChangeObserver { change in
+            guard case let .inserted(message, id) = change, id == conversationID else { return }
+            observed = message
+        }
+        defer { handle.cancel() }
+
+        let message = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "instant"
+        )
+        manager.insertMessage(message, to: conversationID)
+
+        #expect(observed == message)
+    }
+
     @Test("insert 后立即能读到(assistant 走后台落盘,不等盘)")
     func readYourWritesForAssistant() async throws {
         let (store, directory) = try makeStore()
@@ -55,6 +78,25 @@ struct MessageManagerWriteBehindTests {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
         #expect(persisted)
+    }
+
+    @Test("异步消息快照包含待落盘消息")
+    func asyncSnapshotIncludesPendingMessage() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+        let message = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "background snapshot"
+        )
+
+        manager.insertMessage(message, to: conversationID)
+        let snapshot = await manager.messagesSnapshot(in: conversationID)
+
+        #expect(snapshot.contains { $0.id == message.id && $0.content == message.content })
+        #expect(await manager.firstUserMessage(in: conversationID)?.id == message.id)
     }
 
     @Test("user 消息立即可读并最终后台落盘")
@@ -212,6 +254,39 @@ struct MessageManagerWriteBehindTests {
         #expect(persisted)
     }
 
+    @Test("error 消息也先进入 pending，再由 utility 队列落盘")
+    func errorEventuallyPersisted() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+        let message = Message(
+            conversationID: conversationID,
+            role: .error,
+            content: "temporary failure"
+        )
+
+        manager.insertMessage(message, to: conversationID)
+
+        let page = manager.messagePage(
+            for: conversationID,
+            limit: 10,
+            beforeMessageID: nil,
+            includesToolMessages: false
+        )
+        #expect(page.map(\.id) == [message.id])
+
+        var persisted = false
+        for _ in 0..<100 {
+            if store.fetchMessages(conversationId: conversationID).contains(where: { $0.id == message.id }) {
+                persisted = true
+                break
+            }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(persisted)
+    }
+
     @Test("store 不可用时,assistant 消息仍可从内存读路径读到(优雅降级)")
     func readableEvenWhenStoreUnavailable() async throws {
         let manager = makeManager(store: nil)
@@ -249,6 +324,8 @@ struct MessageManagerWriteBehindTests {
 
         #expect(manager.dailyMessageCounts(since: day)[day] == 2)
         #expect(manager.dailyTokenCounts(since: day)[day] == 17)
+        #expect(await manager.dailyMessageCountsAsync(since: day)[day] == 2)
+        #expect(await manager.dailyTokenCountsAsync(since: day)[day] == 17)
 
         // 后台写入完成后再清理临时数据库，避免测试结束时队列仍在写入。
         var persisted = false
@@ -320,6 +397,48 @@ struct MessageManagerPaginationDeleteTests {
         let earlier = manager.messagePage(for: conversationID, limit: 10, beforeMessageID: m2.id, includesToolMessages: true)
         #expect(earlier.count == 2)
         #expect(earlier.map(\.content) == ["m0", "m1"])
+    }
+
+    @Test("异步分页包含 pending 消息并遵守游标")
+    func asyncPagination() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+
+        for index in 0..<5 {
+            manager.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: "m\(index)",
+                    createdAt: Date(timeIntervalSince1970: TimeInterval(index))
+                ),
+                to: conversationID
+            )
+        }
+
+        let latest = await manager.messagePageAsync(
+            for: conversationID,
+            limit: 2,
+            beforeMessageID: nil,
+            includesToolMessages: false
+        )
+        #expect(latest.map(\.content) == ["m3", "m4"])
+
+        let anchor = try #require(latest.first)
+        let earlier = await manager.messagePageAsync(
+            for: conversationID,
+            limit: 2,
+            beforeMessageID: anchor.id,
+            includesToolMessages: false
+        )
+        #expect(earlier.map(\.content) == ["m1", "m2"])
+        #expect(await manager.hasEarlierMessagesAsync(
+            for: conversationID,
+            beforeMessageID: anchor.id,
+            includesToolMessages: false
+        ))
     }
 
     @Test("deleteMessage 从磁盘与读路径移除")

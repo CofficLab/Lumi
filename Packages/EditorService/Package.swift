@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../EditorContracts"),
-        .package(path: "../LumiUI"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitLocalization"),
         .package(path: "../EditorKernel"),
         .package(path: "../EditorSource"),
@@ -23,7 +23,7 @@ let package = Package(
         .package(path: "../EditorLanguageRuntime"),
         .package(path: "../KitShell"),
         .package(path: "../KitSuperLog"),
-        .package(url: "https://github.com/nookery/MagicAlert.git", from: "1.0.0"),
+        .package(url: "https://github.com/nookery/MagicAlert.git", from: "1.0.1"),
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", from: "0.25.0"),
         .package(url: "https://github.com/ChimeHQ/LanguageClient", .upToNextMajor(from: "0.8.2")),
         .package(url: "https://github.com/ChimeHQ/JSONRPC", from: "0.9.0"),

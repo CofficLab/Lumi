@@ -11,7 +11,7 @@ import SwiftUI
 /// 在 Chat 工具栏显示当前对话的输出速度（tokens/s）。
 ///
 /// 复刻自旧版 `Plugins/ConversationSpeedPlugin`：
-/// - 从 `MessageManaging.messages(for:)` 获取消息列表
+/// - 从 `MessageManaging.messagesSnapshot(in:)` 获取消息列表
 /// - 从 assistant 消息的 `outputTokenCount` / `streamingDurationMs` 计算速度
 /// - 展示折线图趋势和详细指标
 @MainActor
