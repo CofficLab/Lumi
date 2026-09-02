@@ -10,7 +10,9 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../LumiUI"),
         .package(path: "../ProviderTheme"),
+        .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderToast"),
         .package(path: "../ProviderWebServer"),
         .package(path: "../KitWebServer"),
@@ -19,7 +21,7 @@ let package = Package(
     targets: [
         .target(
             name: "PluginWebServer",
-            dependencies: ["KernelCore", "ProviderTheme", "ProviderToast", "ProviderWebServer", "KitWebServer", "KitSuperLog"]
+            dependencies: ["KernelCore", "ProviderTheme", "ProviderSettingView", "ProviderToast", "ProviderWebServer", "KitWebServer", "KitSuperLog", "LumiUI"]
         ),
         .testTarget(
             name: "PluginWebServerTests",

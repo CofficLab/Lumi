@@ -97,8 +97,8 @@ public final class LumiWebServer: WebServerProviding, @unchecked Sendable {
     /// 是否正在监听。
     public private(set) var isRunning: Bool = false
 
-    /// 仅监听回环地址,避免暴露到局域网。
-    private let host = "127.0.0.1"
+    /// 当前监听地址。默认仅监听回环地址,避免暴露到局域网。
+    public let listenHost = "127.0.0.1"
     /// 请求体最大字节数,防止超大请求耗尽内存。
     private let maxBodySize: Int
     /// 可选鉴权 token。非 nil 时要求请求头 `Authorization: Bearer <token>`。
@@ -119,6 +119,18 @@ public final class LumiWebServer: WebServerProviding, @unchecked Sendable {
     /// 携带 method/path/pluginID/description/状态码,供宿主做 UI 反馈(toast)。
     /// 在 init 时设置一次,故为 `let`,无线程安全问题。
     public let onActivity: (@Sendable (WebRequestActivity) -> Void)?
+
+    /// 当前已注册的路由数量,供状态页和诊断信息使用。
+    public var registeredRouteCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return routesByPlugin.values.reduce(0) { $0 + $1.count }
+    }
+
+    /// 是否配置了请求鉴权。
+    public var hasAuthentication: Bool {
+        authToken != nil
+    }
 
     /// - Parameters:
     ///   - port: 监听端口(默认 7310)。
@@ -170,7 +182,7 @@ public final class LumiWebServer: WebServerProviding, @unchecked Sendable {
 
         let app = Application(
             responder: router.buildResponder(),
-            configuration: .init(address: .hostname(host, port: port)),
+            configuration: .init(address: .hostname(listenHost, port: port)),
             onServerRunning: { channel in
                 if let port = channel.localAddress?.port {
                     gate.succeed(withPort: port)

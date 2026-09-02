@@ -1,6 +1,7 @@
 import Foundation
 import KernelCore
 import ProviderTheme
+import ProviderSettingView
 import ProviderWebServer
 import Testing
 import KitWebServer
@@ -15,6 +16,8 @@ struct WebServerPluginTests {
         let theme = DefaultThemeProviding()
         try kernel.registerProvider((any ThemeProviding).self, theme)
         try kernel.registerProvider((any WebServerProviding).self, DefaultWebServerProviding())
+        let settings = DefaultSettingViewProviding()
+        try kernel.registerProvider((any SettingViewProviding).self, settings)
 
         let plugin = WebServerPlugin()
         try plugin.onBoot(kernel: kernel)
@@ -22,5 +25,6 @@ struct WebServerPluginTests {
         let server = try #require(kernel.resolveProvider((any WebServerProviding).self))
         #expect(server.port == 7310)
         #expect(server is LumiWebServer)
+        #expect(settings.entries.contains { $0.id == "com.coffic.lumi.plugin.web-server.settings" })
     }
 }

@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import ProviderTheme
 import ProviderToast
+import ProviderSettingView
 import ProviderWebServer
 import KitWebServer
 import KitSuperLog
@@ -50,6 +51,16 @@ public final class WebServerPlugin: SuperPlugin, SuperLog {
         try kernel.registerProvider((any WebServerProviding).self, server)
         self.server = server
         registerThemeRoutes(kernel: kernel, server: server)
+        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
+            SettingEntryItem(
+                id: "\(id).settings",
+                title: "Web Server",
+                systemImage: "network",
+                order: order
+            ) {
+                WebServerSettingsView(server: server)
+            },
+        ])
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {
@@ -68,6 +79,8 @@ public final class WebServerPlugin: SuperPlugin, SuperLog {
         let server = server
         Task { await server?.stop() }
         self.server = nil
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeEntries(ids: ["\(id).settings"])
     }
 
     private func startIfNeeded() async {
