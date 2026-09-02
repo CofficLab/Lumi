@@ -254,6 +254,39 @@ struct MessageManagerWriteBehindTests {
         #expect(persisted)
     }
 
+    @Test("error 消息也先进入 pending，再由 utility 队列落盘")
+    func errorEventuallyPersisted() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+        let message = Message(
+            conversationID: conversationID,
+            role: .error,
+            content: "temporary failure"
+        )
+
+        manager.insertMessage(message, to: conversationID)
+
+        let page = manager.messagePage(
+            for: conversationID,
+            limit: 10,
+            beforeMessageID: nil,
+            includesToolMessages: false
+        )
+        #expect(page.map(\.id) == [message.id])
+
+        var persisted = false
+        for _ in 0..<100 {
+            if store.fetchMessages(conversationId: conversationID).contains(where: { $0.id == message.id }) {
+                persisted = true
+                break
+            }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(persisted)
+    }
+
     @Test("store 不可用时,assistant 消息仍可从内存读路径读到(优雅降级)")
     func readableEvenWhenStoreUnavailable() async throws {
         let manager = makeManager(store: nil)

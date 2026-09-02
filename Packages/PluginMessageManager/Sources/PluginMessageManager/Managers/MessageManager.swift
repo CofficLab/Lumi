@@ -21,8 +21,15 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     /// 内存中的"已通知 UI、尚未落盘"消息缓冲(write-behind 的脏数据)。
     private nonisolated let pending = PendingMessageBuffer()
 
-    /// 后台落盘串行队列,保证同一会话内消息落盘顺序与插入顺序一致。
-    private nonisolated let persistQueue = DispatchQueue(label: "com.coffic.lumi.message.persist")
+    /// 后台 utility 串行落盘队列，保证消息、更新和删除按调用顺序执行。
+    ///
+    /// 消息先进入 pending buffer，再由该队列 eventual consistency 地落盘；
+    /// 因此持久化不会和 Return → 列表首帧争抢主线程资源。
+    private nonisolated let persistQueue = DispatchQueue(
+        label: "com.coffic.lumi.message.persist",
+        qos: .utility,
+        autoreleaseFrequency: .workItem
+    )
 
     // MARK: - Message Insertion Observers
 
@@ -388,31 +395,9 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         notifyMessageChange(.inserted(messageToInsert, conversationID: conversationID))
         notifyMessageInsertedObservers(messageToInsert, conversationID: conversationID)
 
-        // 2) 按 role 分流落盘:
-        //    - error:立即落盘，保留错误诊断的既有语义;
-        //    - user / assistant / tool:后台串行落盘。消息已经在 pending
-        //      buffer 中对 UI 和 AgentLoop 可见，不能让磁盘 I/O 阻塞发送主线程。
-        let shouldPersistEagerly = messageToInsert.role == .error
-        if shouldPersistEagerly {
-            persistNow(messageToInsert, conversationID: conversationID)
-        } else {
-            persistLater(messageToInsert, conversationID: conversationID)
-        }
-    }
-
-    /// 同步落盘 + 从缓冲移除。
-    private func persistNow(_ message: Message, conversationID: UUID) {
-        do {
-            try store?.insertMessage(message)
-            dequeuePending(id: message.id, conversationID: conversationID)
-            if message.role == .user {
-                postMessageSavedNotification(message: message, conversationID: conversationID)
-            }
-        } catch {
-            if Self.verbose {
-                Self.logger.error("\(Self.t)Failed to persist message eagerly: \(error)")
-            }
-        }
+        // 2) 所有非瞬时消息统一后台串行落盘。消息已经在 pending buffer
+        //    中对 UI 和 AgentLoop 可见，不能让磁盘 I/O 阻塞发送主线程。
+        persistLater(messageToInsert, conversationID: conversationID)
     }
 
     /// 后台串行落盘 + 从缓冲移除(成功后)。失败则保留在缓冲,下次启动可补救。

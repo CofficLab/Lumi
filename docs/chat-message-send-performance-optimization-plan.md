@@ -232,9 +232,11 @@ send() 同步捕获并提交用户消息
 
 实现记录见 [`docs/plans/2026-09-02-attachment-encoding.md`](plans/2026-09-02-attachment-encoding.md)。
 
-#### P2-3：持久化队列应明确设置 QoS
+#### P2-3：持久化队列应明确设置 QoS（已完成）
 
-消息持久化属于 eventual consistency，建议使用 `.utility`，避免与用户交互争抢调度资源，同时保留顺序保证和失败补偿机制。
+消息持久化属于 eventual consistency，已使用 `.utility` 串行队列，避免与用户交互争抢调度资源，同时保留顺序保证和失败补偿机制。error、user、assistant、tool 等非瞬时消息统一先进入 pending，再排队落盘；删除和清空操作继续同步排空该队列，避免旧写入复活已删除消息。
+
+实现记录见 [`docs/plans/2026-09-02-persistence-queue-qos.md`](plans/2026-09-02-persistence-queue-qos.md)。
 
 ## 5. 推荐实施顺序
 
