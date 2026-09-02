@@ -73,6 +73,24 @@ struct ConversationInputView: View {
         input.text = ""
         input.errorMessage = nil
 
+        if hasAttachments {
+            Task { @MainActor in
+                do {
+                    guard let commit = try await sender.commitUserMessageInBackground(
+                        trimmed,
+                        imageAttachments: imageAttachments,
+                        fileAttachments: fileAttachments,
+                        conversationID: nil
+                    ) else { return }
+                    guard !commit.wasQueued else { return }
+                    await sender.startTurn(for: commit)
+                } catch {
+                    input.errorMessage = error.localizedDescription
+                }
+            }
+            return
+        }
+
         do {
             guard let commit = try sender.commitUserMessage(
                 trimmed,

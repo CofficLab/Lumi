@@ -132,12 +132,20 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
     // MARK: - Send
 
     public func sendMessage(_ content: String, conversationID: UUID?) async throws {
-        guard let commit = try commitUserMessage(
-            content,
-            imageAttachments: pendingImageAttachments,
-            fileAttachments: pendingFileAttachments,
-            conversationID: conversationID
-        ) else { return }
+        let imageAttachments = pendingImageAttachments
+        let fileAttachments = pendingFileAttachments
+        let commit: MessageSendCommit?
+        if imageAttachments.isEmpty && fileAttachments.isEmpty {
+            commit = try commitUserMessage(content, conversationID: conversationID)
+        } else {
+            commit = try await commitUserMessageInBackground(
+                content,
+                imageAttachments: imageAttachments,
+                fileAttachments: fileAttachments,
+                conversationID: conversationID
+            )
+        }
+        guard let commit else { return }
         await startTurn(for: commit)
     }
 
@@ -157,6 +165,43 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
         conversationID: UUID?
+    ) throws -> MessageSendCommit? {
+        try commitUserMessage(
+            content,
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments,
+            conversationID: conversationID,
+            metadata: nil
+        )
+    }
+
+    public func commitUserMessageInBackground(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        conversationID: UUID?
+    ) async throws -> MessageSendCommit? {
+        let metadata = await Task.detached(priority: .utility) {
+            Self.encodeAttachmentMetadata(
+                imageAttachments: imageAttachments,
+                fileAttachments: fileAttachments
+            )
+        }.value
+        return try commitUserMessage(
+            content,
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments,
+            conversationID: conversationID,
+            metadata: metadata
+        )
+    }
+
+    private func commitUserMessage(
+        _ content: String,
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment],
+        conversationID: UUID?,
+        metadata: [String: String]?
     ) throws -> MessageSendCommit? {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         let hasAttachments = !imageAttachments.isEmpty || !fileAttachments.isEmpty
@@ -204,15 +249,16 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         }
 
         // 附件编码进 metadata（图片 + 文件并行）。
-        var metadata: [String: String] = [:]
-        metadata.merge(UserAttachmentMetadata.encodeImageAttachments(imageAttachments)) { _, new in new }
-        metadata.merge(UserAttachmentMetadata.encodeFileAttachments(fileAttachments)) { _, new in new }
+        let messageMetadata = metadata ?? Self.encodeAttachmentMetadata(
+            imageAttachments: imageAttachments,
+            fileAttachments: fileAttachments
+        )
 
         let userMessage = Message(
             conversationID: targetID,
             role: .user,
             content: trimmed,
-            metadata: metadata
+            metadata: messageMetadata
         )
         completedOutcomes.removeValue(forKey: targetID)
         pendingTurnStarts.insert(targetID)
@@ -223,6 +269,16 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         }
 
         return MessageSendCommit(conversationID: targetID, userMessageID: userMessage.id)
+    }
+
+    private nonisolated static func encodeAttachmentMetadata(
+        imageAttachments: [UserImageAttachment],
+        fileAttachments: [UserFileAttachment]
+    ) -> [String: String] {
+        var metadata: [String: String] = [:]
+        metadata.merge(UserAttachmentMetadata.encodeImageAttachments(imageAttachments)) { _, new in new }
+        metadata.merge(UserAttachmentMetadata.encodeFileAttachments(fileAttachments)) { _, new in new }
+        return metadata
     }
 
     public func startTurn(for commit: MessageSendCommit) async {
@@ -237,7 +293,7 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         fileAttachments: [UserFileAttachment],
         conversationID: UUID?
     ) async throws {
-        guard let commit = try commitUserMessage(
+        guard let commit = try await commitUserMessageInBackground(
             content,
             imageAttachments: imageAttachments,
             fileAttachments: fileAttachments,

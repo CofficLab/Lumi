@@ -224,9 +224,13 @@ send() 同步捕获并提交用户消息
 
 实现记录见 [`docs/plans/2026-09-02-fast-message-commit.md`](plans/2026-09-02-fast-message-commit.md)。
 
-#### P2-2：附件编码在 MainActor
+#### P2-2：附件编码在 MainActor（已完成）
 
 纯文字消息影响很小，但图片 base64、文件 metadata 可能较大。应先在主线程完成轻量快照，再将编码工作放到后台。
+
+已完成：图片文件读取和 base64 编码均在附件准备任务中执行；带附件发送时，附件 JSON metadata 通过 `.utility` 任务编码，编码完成后才回主线程提交消息。纯文本发送不创建编码任务，继续走同步提交路径。
+
+实现记录见 [`docs/plans/2026-09-02-attachment-encoding.md`](plans/2026-09-02-attachment-encoding.md)。
 
 #### P2-3：持久化队列应明确设置 QoS
 

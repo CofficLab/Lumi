@@ -108,6 +108,26 @@ final class SendActionBarViewModel: SuperLog {
         input.text = ""
         input.errorMessage = nil
 
+        if hasAttachments {
+            Task { @MainActor in
+                do {
+                    guard let commit = try await sender.commitUserMessageInBackground(
+                        trimmed,
+                        imageAttachments: imageAttachments,
+                        fileAttachments: fileAttachments,
+                        conversationID: nil
+                    ) else { return }
+                    Self.logger.info("\(self.t)message attachments encoded and committed")
+                    guard !commit.wasQueued else { return }
+                    await sender.startTurn(for: commit)
+                } catch {
+                    Self.logger.error("\(self.t)send failed ➡️ \(error.localizedDescription, privacy: .public)")
+                    input.errorMessage = error.localizedDescription
+                }
+            }
+            return
+        }
+
         do {
             guard let commit = try sender.commitUserMessage(
                 trimmed,

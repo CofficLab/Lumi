@@ -101,19 +101,20 @@ struct ComposerView: View {
 
         let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "image/png"
         Task { @MainActor in
-            guard let data = await Task.detached(priority: .userInitiated, operation: {
-                try? Data(contentsOf: url)
-            }).value, !data.isEmpty else {
-                return
-            }
-
-            sender.addImageAttachment(
-                UserImageAttachment(
+            guard let attachment = await Task.detached(priority: .userInitiated, operation: { () -> UserImageAttachment? in
+                guard let data = try? Data(contentsOf: url), !data.isEmpty else {
+                    return nil
+                }
+                return UserImageAttachment(
                     mimeType: mimeType,
                     base64Data: data.base64EncodedString(),
                     fileName: url.lastPathComponent
                 )
-            )
+            }).value else {
+                return
+            }
+
+            sender.addImageAttachment(attachment)
             input?.isInputFocused = true
         }
     }
