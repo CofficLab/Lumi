@@ -155,14 +155,14 @@ extension ConversationManager {
     /// 标记对话为活跃：刷新 `lastMessageAt` 和 `updatedAt`，使其在对话列表排序中置顶。
     ///
     /// 由消息写入路径在会话收到新消息时调用(见 `MessageManager.insertMessage`)。
-    /// - 内存：更新缓存中的 `lastMessageAt` 和 `updatedAt` 并广播 `conversationsDidChange`，
-    ///   驱动对话列表(ConversationListPlugin)重新加载并按最新时间重排；
+    /// - 内存：立即更新缓存中的 `lastMessageAt` 和 `updatedAt`，让当前状态可读；
+    ///   对话列表的广播播报经过短暂去抖，避免发送期间频繁重载和重排侧栏；
     /// - 持久化：异步写入数据库，保证重启后排序一致。
     public func markConversationActive(id: UUID, messageDate: Date) {
         if let index = conversations.firstIndex(where: { $0.id == id }) {
             conversations[index].lastMessageAt = messageDate
             conversations[index].updatedAt = Date()
-            notifyConversationsChanged()
+            scheduleConversationsChangedNotification()
             notifyConversationObservers(.markedActive(id))
         }
 

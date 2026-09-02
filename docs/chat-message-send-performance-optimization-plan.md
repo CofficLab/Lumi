@@ -160,7 +160,7 @@ V2/V3 同时监听消息管理器和发送器的状态变化。消息插入、�
 
 已完成：V2/V3 不再监听 `sender.objectWillChange` 来触发 `refreshTail()`；发送状态由 `conversationState` 更新 activity，流式状态由独立 streaming row 更新，消息列表只保留消息事件和编辑/删除兼容兜底刷新。
 
-#### P1-3：更新会话排序会触发侧栏刷新
+#### P1-3：更新会话排序会触发侧栏刷新（已完成）
 
 `MessageManager.insertMessage` 会调用 `markConversationActive`，继而通知会话列表刷新。会话排序对首帧消息显示不是必要条件，应让位于消息时间线更新。
 
@@ -170,6 +170,8 @@ V2/V3 同时监听消息管理器和发送器的状态变化。消息插入、�
 - 数据库写入放到 utility 队列；
 - 侧栏刷新做 100～300ms 去抖；
 - 优先更新当前会话的侧栏 item，避免全量 reload。
+
+已完成：`markConversationActive` 立即更新内存摘要，但将 `conversationsDidChange` 通知延迟 200ms 并合并；创建、删除、标题更新等明确结构变化仍然立即通知，避免影响侧栏最终一致性。
 
 #### P1-4：低优先级统计任务仍在主线程执行同步读取
 

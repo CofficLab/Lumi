@@ -38,6 +38,9 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     @Published public internal(set) var globalAutomationLevel: AutomationLevel = .build
     @Published public internal(set) var globalLanguage: ConversationLanguage = .chinese
 
+    /// 会话列表刷新去抖任务。消息写入会高频更新 lastMessageAt，侧栏排序不需要同步跟随每一次变化。
+    private var conversationsChangeTask: Task<Void, Never>?
+
     /// 按最后消息时间倒序排序
     public var sortedConversations: [ConversationSummary] {
         conversations.sorted { lhs, rhs in
@@ -143,10 +146,26 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     /// v2 无事件管理器：@Published 已驱动 `registerProvider` 的 objectWillChange 转发；
     /// 这里额外以类型化事件发布 + 旧 Notification 桥接，兼容尚未迁移的消费者。
     func notifyConversationsChanged() {
+        // 创建、删除、标题更新等明确的结构变化需要立即通知；同时取消尚未发出的活跃会话去抖通知，
+        // 避免一次变更产生重复的侧栏刷新。
+        conversationsChangeTask?.cancel()
+        conversationsChangeTask = nil
         eventBus?.publishAsLegacy(
             ConversationsDidChangeEvent(),
             notificationName: .lumiConversationsDidChange
         )
+    }
+
+    /// 延迟并合并消息带来的侧栏刷新。内存中的会话摘要已经在调用方立即更新，
+    /// 这里只控制列表消费者何时重新加载和排序。
+    func scheduleConversationsChangedNotification() {
+        conversationsChangeTask?.cancel()
+        conversationsChangeTask = Task(priority: .utility) { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(200))
+            guard !Task.isCancelled, let self else { return }
+            self.conversationsChangeTask = nil
+            self.notifyConversationsChanged()
+        }
     }
 
     /// Notify observers that the selected conversation changed.
