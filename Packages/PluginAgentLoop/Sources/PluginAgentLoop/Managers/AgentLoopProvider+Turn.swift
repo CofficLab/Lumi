@@ -84,7 +84,11 @@ extension AgentLoopManager {
         runtime = updated
         runtime.task?.cancel()
         runtime.task = nil
+        // 先写入 cancelled 状态，再取消底层 Job。cancelJobs 可能在同一个
+        // MainActor 调用栈内同步发布 cancelled 事件，提前写入可避免该事件
+        // 被误当成普通完成而重新启动 LLM。
         runtimes[conversationID] = runtime
+        toolManager.cancelJobs(forTurnID: turnID)
         finishTurn(conversationID: conversationID, turnID: turnID, outcome: .cancelled)
     }
 }
@@ -194,6 +198,9 @@ extension AgentLoopManager {
             }
         case .executingTools(_, _, let pending):
             if pending.isEmpty { finishTurn(conversationID: conversationID, turnID: turnID, outcome: .failed("empty tool batch")) }
+        case .waitingForToolJobs:
+            // Job 运行由 ToolExecutionManager 驱动；等待期间不保留一个长期 Agent Task。
+            break
         case .awaitingUser:
             finishTurn(conversationID: conversationID, turnID: turnID, outcome: .suspended(runtime.activeSuspension?.suspensionID ?? "unknown"))
         }

@@ -40,6 +40,7 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
     var resumingConversations: Set<UUID> = []
     var completionWaiters: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
     private var agentLoopObservers: [UUID: (AgentLoopEvent) -> Void] = [:]
+    private var toolJobObserver: (any ToolJobObserverHandle)?
 
 
     // MARK: - Init
@@ -58,6 +59,9 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
         self.streaming = streaming
         self.conversations = conversations
         self.contextProvider = contextProvider
+        self.toolJobObserver = toolManager.addToolJobObserver { [weak self] event in
+            self?.handleToolJobEvent(event)
+        }
     }
 
     public func addAgentLoopObserver(
@@ -84,7 +88,7 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
         let state: AgentLoopState
         switch phase {
         case .idle: state = .idle
-        case .requestingLLM, .executingTools: state = .running
+        case .requestingLLM, .executingTools, .waitingForToolJobs: state = .running
         case .awaitingUser: state = .suspended
         case .completed: state = .completed
         case .failed: state = .failed

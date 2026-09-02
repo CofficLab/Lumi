@@ -13,6 +13,134 @@ import KitSuperLog
 // MARK: - LLM Request
 
 extension AgentLoopManager {
+    /// 接收独立 Tool Job 的生命周期事件。
+    ///
+    /// Job 事件和旧的 batchCompleted 事件分开处理：新提交路径只消费 Job
+    /// 终态，兼容路径继续消费 ToolManagerEvent，避免同一个工具结果被写回两次。
+    func handleToolJobEvent(_ event: ToolJobEvent) {
+        switch event {
+        case .created(let job), .started(let job), .waitingForUser(let job):
+            registerToolJob(job)
+        case .output, .progress:
+            // 输出和进度由 ToolExecutionManager 对 UI 发布；AgentLoop 只在终态
+            // 到达时回写消息并推进回合。
+            break
+        case .completed(let jobID, let result, let snapshot),
+             .failed(let jobID, let result, let snapshot),
+             .cancelled(let jobID, let result, let snapshot),
+             .timedOut(let jobID, let result, let snapshot):
+            handleToolJobTerminal(jobID: jobID, result: result, snapshot: snapshot)
+        }
+    }
+
+    @discardableResult
+    private func registerToolJob(_ job: ToolJob) -> TurnRuntime? {
+        guard let jobTurnID = job.turnID,
+              var runtime = runtimes[job.conversationID],
+              runtime.turnID == jobTurnID else {
+            return nil
+        }
+        let (updated, _) = TurnReducer.reduce(
+            runtime,
+            event: .toolJobCreated(jobID: job.id)
+        )
+        runtime = updated
+        runtimes[job.conversationID] = runtime
+        return runtime
+    }
+
+    private func handleToolJobTerminal(
+        jobID: String,
+        result toolResult: ToolCallResult,
+        snapshot: ToolJob
+    ) {
+        guard snapshot.id == jobID,
+              let jobTurnID = snapshot.turnID,
+              let runtime = registerToolJob(snapshot),
+              runtime.turnID == jobTurnID,
+              let assistantMessageID = assistantMessageID(in: runtime) else {
+            if Self.verbose {
+                Self.logger.debug(
+                    "\(Self.t)忽略过期 Tool Job 事件 conversation=\(snapshot.conversationID.uuidString.prefix(8)), turn=\(snapshot.turnID?.uuidString.prefix(8) ?? "nil"), job=\(jobID)"
+                )
+            }
+            return
+        }
+
+        let pendingToolCallIDs: Set<String>
+        switch runtime.phase {
+        case .executingTools(_, _, let pending),
+             .waitingForToolJobs(_, _, let pending, _),
+             .awaitingUser(_, _, let pending, _):
+            pendingToolCallIDs = Set(pending.map(\.id))
+        default:
+            return
+        }
+        guard pendingToolCallIDs.contains(jobID) else {
+            // 终态事件可能因为重试或取消重复到达；pending 已移除时直接忽略。
+            return
+        }
+
+        let result = convertResult(toolResult)
+        messages.updateToolCallResult(
+            result,
+            toolCallID: jobID,
+            assistantMessageID: assistantMessageID,
+            in: snapshot.conversationID
+        )
+        insertToolResultMessage(
+            result,
+            toolCallID: jobID,
+            conversationID: snapshot.conversationID,
+            turnID: jobTurnID
+        )
+
+        if result.awaitingUserResponse {
+            let suspension = AgentLoopSuspension(
+                suspensionID: "userInput:\(jobID)",
+                conversationID: snapshot.conversationID,
+                toolCallID: jobID,
+                kind: "userInput",
+                payload: result.content
+            )
+            let (updated, outcome) = TurnReducer.reduce(
+                runtime,
+                event: .toolNeedsUserInput(toolCallID: jobID, suspension: suspension)
+            )
+            runtimes[snapshot.conversationID] = updated
+            if let outcome {
+                finishTurn(conversationID: snapshot.conversationID, turnID: jobTurnID, outcome: outcome)
+            }
+            return
+        }
+
+        let (updated, outcome) = TurnReducer.reduce(
+            runtime,
+            event: .toolJobCompleted(toolCallID: jobID, result: result)
+        )
+        runtimes[snapshot.conversationID] = updated
+        if let outcome {
+            finishTurn(conversationID: snapshot.conversationID, turnID: jobTurnID, outcome: outcome)
+            return
+        }
+        continueAfterToolResults(
+            runtime: updated,
+            conversationID: snapshot.conversationID,
+            turnID: jobTurnID
+        )
+    }
+
+    private func assistantMessageID(in runtime: TurnRuntime) -> UUID? {
+        switch runtime.phase {
+        case .executingTools(_, let assistantID, _),
+             .waitingForToolJobs(_, let assistantID, _, _),
+             .awaitingUser(_, let assistantID, _, _):
+            return assistantID
+        case .idle, .requestingLLM, .completed, .failed, .cancelled:
+            return nil
+        }
+    }
+
     /// 接收 ToolManager 的批量完成事件，推进当前回合状态机。
     func handleToolManagerEvent(_ event: ToolManagerEvent) async {
         if case let .authorizedCompleted(conversationID, eventTurnID, toolCall, result) = event {
@@ -38,8 +166,20 @@ extension AgentLoopManager {
             if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：找不到会话运行时 conversation=\(conversationID.uuidString.prefix(8))") }
             return
         }
-        guard case .executingTools(let turnID, let assistantMessageID, let pending) = runtime.phase else {
-            if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：当前状态不是 executingTools，conversation=\(conversationID.uuidString.prefix(8)), phase=\(String(describing: runtime.phase))") }
+        let turnID: UUID
+        let assistantMessageID: UUID
+        let pending: [MessageToolCall]
+        switch runtime.phase {
+        case .executingTools(let currentTurnID, let currentAssistantMessageID, let currentPending):
+            turnID = currentTurnID
+            assistantMessageID = currentAssistantMessageID
+            pending = currentPending
+        case .waitingForToolJobs(let currentTurnID, let currentAssistantMessageID, let currentPending, _):
+            turnID = currentTurnID
+            assistantMessageID = currentAssistantMessageID
+            pending = currentPending
+        default:
+            if Self.verbose { Self.logger.error("\(Self.t)忽略工具批次结果：当前状态不是工具执行中，conversation=\(conversationID.uuidString.prefix(8)), phase=\(String(describing: runtime.phase))") }
             return
         }
         if Self.verbose {
@@ -152,7 +292,7 @@ extension AgentLoopManager {
     ) async -> Bool {
         if var runtime = runtimes[conversationID] {
             switch runtime.phase {
-            case .executingTools:
+            case .executingTools, .waitingForToolJobs:
                 return true
             case .awaitingUser(let turnID, let assistantMessageID, let pending, let suspension):
                 guard suspension.toolCallID == toolCall.id else { return false }

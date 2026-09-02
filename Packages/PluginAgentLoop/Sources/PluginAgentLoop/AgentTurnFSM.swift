@@ -16,10 +16,16 @@ public enum TurnPhase: Equatable {
     /// 正在向 LLM 发起流式请求。
     case requestingLLM(turnID: UUID)
 
-    /// 正在顺序执行一批工具调用。
-    ///
-    /// `pendingToolCalls` 为**尚未执行**的调用（已执行的从数组头部移除）。
+    /// 已收到工具调用，正在提交或处理授权。
     case executingTools(turnID: UUID, assistantMessageID: UUID, pendingToolCalls: [MessageToolCall])
+
+    /// 工具已经交给 ToolExecutionManager，等待独立 Job 的终态事件。
+    case waitingForToolJobs(
+        turnID: UUID,
+        assistantMessageID: UUID,
+        pendingToolCalls: [MessageToolCall],
+        jobIDs: Set<String>
+    )
 
     /// 回合挂起，等待用户响应（工具审批 / ask_user 等）。
     case awaitingUser(turnID: UUID, assistantMessageID: UUID, pendingToolCalls: [MessageToolCall], suspension: AgentLoopSuspension)
@@ -57,6 +63,7 @@ extension TurnPhase {
         case .idle, .completed, .cancelled: return nil
         case .requestingLLM(let id): return id
         case .executingTools(let id, _, _): return id
+        case .waitingForToolJobs(let id, _, _, _): return id
         case .awaitingUser(let id, _, _, _): return id
         case .failed: return nil
         }
@@ -124,6 +131,8 @@ public enum TurnEvent {
     case llmFailed(reason: String)
     case llmRetryableFailure(reason: String)
     case toolCallCompleted(toolCallID: String, result: MessageToolResult)
+    case toolJobCreated(jobID: String)
+    case toolJobCompleted(toolCallID: String, result: MessageToolResult)
     case toolNeedsUserInput(toolCallID: String, suspension: AgentLoopSuspension)
 }
 
@@ -194,36 +203,56 @@ public enum TurnReducer {
             rt.llmRecoveryHint = "上一次工具调用没有完整到达，系统未执行任何文件操作。请重新发送完整、合法的工具调用 JSON；如果内容较大，请拆分为较小的编辑操作。不要重复解释，直接继续任务。"
             return (rt, nil)
 
-        case .toolCallCompleted(let toolCallID, _):
-            guard case .executingTools(let turnID, let assistantID, var pending) = rt.phase else {
-                return (rt, nil)
-            }
-            pending.removeAll { $0.id == toolCallID }
-
-            if rt.cancelRequested {
-                rt.phase = .cancelled
-                return (rt, .cancelled)
-            }
-
-            if pending.isEmpty {
-                // 批次完成，回到 requestingLLM
-                rt.phase = .requestingLLM(turnID: turnID)
-            } else {
-                // 还有剩余工具
-                rt.phase = .executingTools(
+        case .toolJobCreated(let jobID):
+            guard !jobID.isEmpty else { return (rt, nil) }
+            switch rt.phase {
+            case .executingTools(let turnID, let assistantID, let pending):
+                guard pending.contains(where: { $0.id == jobID }) else { return (rt, nil) }
+                rt.phase = .waitingForToolJobs(
                     turnID: turnID,
                     assistantMessageID: assistantID,
-                    pendingToolCalls: pending
+                    pendingToolCalls: pending,
+                    jobIDs: [jobID]
                 )
+            case .waitingForToolJobs(let turnID, let assistantID, let pending, var jobIDs):
+                guard pending.contains(where: { $0.id == jobID }) else { return (rt, nil) }
+                jobIDs.insert(jobID)
+                rt.phase = .waitingForToolJobs(
+                    turnID: turnID,
+                    assistantMessageID: assistantID,
+                    pendingToolCalls: pending,
+                    jobIDs: jobIDs
+                )
+            default:
+                break
             }
             return (rt, nil)
 
+        case .toolCallCompleted(let toolCallID, _), .toolJobCompleted(let toolCallID, _):
+            return reduceToolCompletion(rt, toolCallID: toolCallID)
+
         case .toolNeedsUserInput(let toolCallID, let suspension):
-            guard case .executingTools(let turnID, let assistantID, var pending) = rt.phase else {
+            let turnID: UUID
+            let assistantID: UUID
+            var pending: [MessageToolCall]
+            var jobIDs: Set<String> = []
+            switch rt.phase {
+            case .executingTools(let currentTurnID, let currentAssistantID, let currentPending):
+                turnID = currentTurnID
+                assistantID = currentAssistantID
+                pending = currentPending
+            case .waitingForToolJobs(let currentTurnID, let currentAssistantID, let currentPending, let currentJobIDs):
+                turnID = currentTurnID
+                assistantID = currentAssistantID
+                pending = currentPending
+                jobIDs = currentJobIDs
+            default:
                 return (rt, nil)
             }
+            guard pending.contains(where: { $0.id == toolCallID }) else { return (rt, nil) }
             rt.pendingSuspensions[toolCallID] = suspension
             pending.removeAll { $0.id == toolCallID }
+            jobIDs.remove(toolCallID)
             rt.phase = .awaitingUser(
                 turnID: turnID,
                 assistantMessageID: assistantID,
@@ -232,5 +261,62 @@ public enum TurnReducer {
             )
             return (rt, .suspended("awaiting user response"))
         }
+    }
+
+    private static func reduceToolCompletion(
+        _ runtime: TurnRuntime,
+        toolCallID: String
+    ) -> (TurnRuntime, AgentLoopOutcome?) {
+        var rt = runtime
+        switch rt.phase {
+        case .executingTools(let turnID, let assistantID, var pending):
+            guard pending.contains(where: { $0.id == toolCallID }) else { return (rt, nil) }
+            pending.removeAll { $0.id == toolCallID }
+            if rt.cancelRequested {
+                rt.phase = .cancelled
+                return (rt, .cancelled)
+            }
+            if pending.isEmpty {
+                rt.phase = .requestingLLM(turnID: turnID)
+            } else {
+                rt.phase = .executingTools(
+                    turnID: turnID,
+                    assistantMessageID: assistantID,
+                    pendingToolCalls: pending
+                )
+            }
+        case .waitingForToolJobs(let turnID, let assistantID, var pending, var jobIDs):
+            guard pending.contains(where: { $0.id == toolCallID }) else { return (rt, nil) }
+            pending.removeAll { $0.id == toolCallID }
+            jobIDs.remove(toolCallID)
+            if rt.cancelRequested {
+                rt.phase = .cancelled
+                return (rt, .cancelled)
+            }
+            if pending.isEmpty {
+                rt.phase = .requestingLLM(turnID: turnID)
+            } else {
+                rt.phase = .waitingForToolJobs(
+                    turnID: turnID,
+                    assistantMessageID: assistantID,
+                    pendingToolCalls: pending,
+                    jobIDs: jobIDs
+                )
+            }
+        case .awaitingUser(let turnID, let assistantID, var pending, let suspension):
+            // 其他低风险 Job 可能在某个高风险工具进入审批等待后完成。
+            // 消费它们，但保留当前审批挂起点，避免结果丢失或重复执行。
+            guard pending.contains(where: { $0.id == toolCallID }) else { return (rt, nil) }
+            pending.removeAll { $0.id == toolCallID }
+            rt.phase = .awaitingUser(
+                turnID: turnID,
+                assistantMessageID: assistantID,
+                pendingToolCalls: pending,
+                suspension: suspension
+            )
+        default:
+            break
+        }
+        return (rt, nil)
     }
 }
