@@ -177,6 +177,181 @@
         }
       }
     },
+    "Count includes all messages in the current conversation." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Count includes all messages in the current conversation."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "统计包含当前对话中的所有消息。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "統計包含當前對話中的所有訊息。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "統計包含當前對話中的所有訊息。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "統計包含當前對話中的所有訊息。"
+          }
+        }
+      }
+    },
+    "Each user + assistant pair counts as 2 messages." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each user + assistant pair counts as 2 messages."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每组用户 + 助手对话计为 2 条消息。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每組使用者 + 助手對話計為 2 條訊息。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每組使用者 + 助手對話計為 2 條訊息。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每組使用者 + 助手對話計為 2 條訊息。"
+          }
+        }
+      }
+    },
+    "Tool calls and results are also counted individually." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tool calls and results are also counted individually."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具调用和结果也会单独计数。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具呼叫和結果也會單獨計數。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具呼叫和結果也會單獨計數。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具呼叫和結果也會單獨計數。"
+          }
+        }
+      }
+    },
+    "Updates in real-time as messages are sent or received." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updates in real-time as messages are sent or received."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "消息发送或接收时实时更新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訊息傳送或接收時即時更新。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訊息傳送或接收時即時更新。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訊息傳送或接收時即時更新。"
+          }
+        }
+      }
+    },
+    "%lld messages" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld messages"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 条消息"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 條訊息"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 條訊息"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 條訊息"
+          }
+        }
+      }
+    },
     "Messages in current conversation: %lld" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -195,19 +370,19 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "当前对话消息数：%lld"
+            "value" : "當前對話訊息數：%lld"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "当前对话消息数：%lld"
+            "value" : "當前對話訊息數：%lld"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "当前对话消息数：%lld"
+            "value" : "當前對話訊息數：%lld"
           }
         }
       }
