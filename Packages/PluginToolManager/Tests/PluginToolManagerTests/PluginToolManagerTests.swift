@@ -23,6 +23,19 @@ private struct CountingTool: SuperAgentTool, @unchecked Sendable {
     }
 }
 
+private struct ShellOutputEvent: Sendable {
+    let stream: ToolExecutionOutputStream
+    let text: String
+}
+
+private actor ShellExecutionState {
+    private(set) var finished = false
+
+    func markFinished() {
+        finished = true
+    }
+}
+
 @MainActor
 @Test func toolManagerBatchStopsAtApproval() async {
     let manager = ToolManager()
@@ -107,6 +120,46 @@ private struct CountingTool: SuperAgentTool, @unchecked Sendable {
         URL(fileURLWithPath: result).standardizedFileURL.path
             == URL(fileURLWithPath: "/tmp").standardizedFileURL.path
     )
+}
+
+@MainActor
+@Test func shellToolStreamsOutputBeforeCommandCompletes() async throws {
+    let tool = ShellTool(workspaceRootProvider: { "/tmp" })
+    let (stream, continuation) = AsyncStream<ShellOutputEvent>.makeStream()
+    var iterator = stream.makeAsyncIterator()
+    let state = ShellExecutionState()
+    let context = ToolExecutionContext(
+        jobID: "shell-stream-1",
+        conversationID: UUID(),
+        reportOutput: { stream, text in
+            continuation.yield(ShellOutputEvent(stream: stream, text: text))
+        }
+    )
+
+    let execution = Task {
+        let result = try await tool.executeResult(
+            context: context,
+            arguments: ["command": ToolArgument("printf 'first\\n'; sleep 0.5; printf 'second\\n' >&2")]
+        )
+        await state.markFinished()
+        return result
+    }
+
+    let first = try #require(await iterator.next())
+    #expect(first.stream == .stdout)
+    #expect(first.text.contains("first"))
+    try await Task.sleep(nanoseconds: 100_000_000)
+    #expect(await state.finished == false)
+
+    let result = try await execution.value
+    continuation.finish()
+    var events = [first]
+    while let event = await iterator.next() {
+        events.append(event)
+    }
+
+    #expect(events.contains { $0.stream == .stderr && $0.text.contains("second") })
+    #expect(result.content.contains("second"))
 }
 
 @MainActor
