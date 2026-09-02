@@ -22,6 +22,7 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
     public static let toolName = "ask_user"
 
     public let name: String = Self.toolName
+    public let executionCapability: ToolExecutionCapability = .interactive
 
     private let conversations: (any ConversationManaging)?
 

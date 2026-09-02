@@ -9,12 +9,32 @@ import ProviderToolManager
 @MainActor
 final class ToolExecutionManager {
     private static let maxOutputBytes = 64 * 1024
+    private static let maxParallelReadOnlyJobs = 4
+
+    private struct ExecutionScope: Hashable {
+        let conversationID: UUID
+        let turnID: UUID?
+    }
+
+    private struct ExecutionMetadata {
+        let scope: ExecutionScope
+        let capability: ToolExecutionCapability
+    }
+
+    private struct PendingExecution {
+        let tool: any SuperAgentTool
+        let arguments: [String: ToolArgument]
+    }
 
     private let runtime = ToolExecutionRuntime()
     private var jobsByID: [String: ToolJob] = [:]
     private var resultsByID: [String: ToolCallResult] = [:]
     private var waiters: [String: [CheckedContinuation<ToolCallResult, Never>]] = [:]
     private var observers: [UUID: (ToolJobEvent) -> Void] = [:]
+    private var submissionOrder: [String] = []
+    private var pendingExecutions: [String: PendingExecution] = [:]
+    private var executionMetadata: [String: ExecutionMetadata] = [:]
+    private var runningJobIDs: Set<String> = []
 
     @discardableResult
     func addObserver(
@@ -81,8 +101,14 @@ final class ToolExecutionManager {
                 toolCall: toolCall
             )
             jobsByID[job.id] = job
+            submissionOrder.append(job.id)
+            executionMetadata[job.id] = ExecutionMetadata(
+                scope: ExecutionScope(conversationID: conversationID, turnID: turnID),
+                capability: tool.executionCapability
+            )
+            pendingExecutions[job.id] = PendingExecution(tool: tool, arguments: arguments)
             emit(.created(job))
-            start(job: job, tool: tool, arguments: arguments)
+            schedule()
             return jobsByID[job.id] ?? job
         }
     }
@@ -121,6 +147,9 @@ final class ToolExecutionManager {
             status: .cancelled,
             errorMessage: result.content
         )
+        if !runningJobIDs.contains(jobID) {
+            releaseExecution(jobID: jobID)
+        }
     }
 
     func cancelJobs(forTurnID turnID: UUID) {
@@ -140,6 +169,9 @@ final class ToolExecutionManager {
         tool: any SuperAgentTool,
         arguments: [String: ToolArgument]
     ) {
+        pendingExecutions.removeValue(forKey: job.id)
+        runningJobIDs.insert(job.id)
+
         var runningJob = job
         runningJob.status = .running
         runningJob.startedAt = Date()
@@ -162,8 +194,11 @@ final class ToolExecutionManager {
         )
 
         Task { [weak self] in
-            guard self?.jobsByID[job.id]?.status.isTerminal == false else { return }
-            await self?.runtime.start(jobID: job.id) {
+            guard let self, self.jobsByID[job.id]?.status.isTerminal == false else {
+                self?.releaseExecution(jobID: job.id)
+                return
+            }
+            await self.runtime.start(jobID: job.id) {
                 let startedAt = Date()
                 do {
                     let output = try await tool.executeResult(
@@ -188,29 +223,112 @@ final class ToolExecutionManager {
                 }
             }
 
-            if self?.jobsByID[job.id]?.status.isTerminal == true {
-                await self?.runtime.cancel(jobID: job.id)
+            if self.jobsByID[job.id]?.status.isTerminal == true {
+                await self.runtime.cancel(jobID: job.id)
             }
-            guard let outcome = await self?.runtime.wait(for: job.id) else { return }
-            self?.apply(outcome: outcome, jobID: job.id)
+            guard let outcome = await self.runtime.wait(for: job.id) else {
+                self.releaseExecution(jobID: job.id)
+                return
+            }
+            self.apply(outcome: outcome, jobID: job.id)
         }
     }
 
     private func apply(outcome: ToolExecutionOutcome, jobID: String) {
-        guard let job = jobsByID[jobID], !job.status.isTerminal else { return }
-        switch outcome {
-        case .completed(let result):
-            finish(jobID: jobID, result: result, status: .completed, errorMessage: nil)
-        case .failed(let message):
-            let result = ToolCallResult(
-                content: "Tool execution failed: \(message)",
-                isError: true
-            )
-            finish(jobID: jobID, result: result, status: .failed, errorMessage: message)
-        case .cancelled(let message):
-            let result = ToolCallResult(content: "Tool execution cancelled.", isError: true)
-            finish(jobID: jobID, result: result, status: .cancelled, errorMessage: message)
+        if let job = jobsByID[jobID], !job.status.isTerminal {
+            switch outcome {
+            case .completed(let result):
+                finish(jobID: jobID, result: result, status: .completed, errorMessage: nil)
+            case .failed(let message):
+                let result = ToolCallResult(
+                    content: "Tool execution failed: \(message)",
+                    isError: true
+                )
+                finish(jobID: jobID, result: result, status: .failed, errorMessage: message)
+            case .cancelled(let message):
+                let result = ToolCallResult(content: "Tool execution cancelled.", isError: true)
+                finish(jobID: jobID, result: result, status: .cancelled, errorMessage: message)
+            }
         }
+        releaseExecution(jobID: jobID)
+    }
+
+    /// Starts every queued job that is safe to run now. Read-only jobs may
+    /// share a turn, while side-effecting and interactive jobs form strict
+    /// barriers in submission order.
+    private func schedule() {
+        var madeProgress = true
+        while madeProgress {
+            madeProgress = false
+
+            for jobID in submissionOrder {
+                guard let job = jobsByID[jobID],
+                      job.status == .queued,
+                      let pending = pendingExecutions[jobID],
+                      let metadata = executionMetadata[jobID],
+                      canStart(jobID: jobID, metadata: metadata)
+                else { continue }
+
+                start(job: job, tool: pending.tool, arguments: pending.arguments)
+                madeProgress = true
+            }
+        }
+    }
+
+    private func canStart(jobID: String, metadata: ExecutionMetadata) -> Bool {
+        switch metadata.capability {
+        case .parallelReadOnly:
+            guard activeReadOnlyJobCount(in: metadata.scope) < Self.maxParallelReadOnlyJobs else {
+                return false
+            }
+            return !hasEarlierBarrier(before: jobID, in: metadata.scope)
+        case .serialSideEffect, .interactive:
+            return !hasEarlierUnfinishedJob(before: jobID, in: metadata.scope)
+        }
+    }
+
+    private func activeReadOnlyJobCount(in scope: ExecutionScope) -> Int {
+        runningJobIDs.reduce(into: 0) { count, jobID in
+            guard let metadata = executionMetadata[jobID],
+                  metadata.scope == scope,
+                  metadata.capability == .parallelReadOnly
+            else { return }
+            count += 1
+        }
+    }
+
+    private func hasEarlierBarrier(before jobID: String, in scope: ExecutionScope) -> Bool {
+        for earlierID in submissionOrder.prefix(while: { $0 != jobID }) {
+            guard let earlierJob = jobsByID[earlierID],
+                  !earlierJob.status.isTerminal,
+                  let metadata = executionMetadata[earlierID],
+                  metadata.scope == scope
+            else { continue }
+
+            if metadata.capability == .serialSideEffect || metadata.capability == .interactive {
+                return true
+            }
+        }
+        return false
+    }
+
+    private func hasEarlierUnfinishedJob(before jobID: String, in scope: ExecutionScope) -> Bool {
+        for earlierID in submissionOrder.prefix(while: { $0 != jobID }) {
+            guard let earlierJob = jobsByID[earlierID],
+                  !earlierJob.status.isTerminal,
+                  let metadata = executionMetadata[earlierID],
+                  metadata.scope == scope
+            else { continue }
+            return true
+        }
+        return false
+    }
+
+    private func releaseExecution(jobID: String) {
+        pendingExecutions.removeValue(forKey: jobID)
+        runningJobIDs.remove(jobID)
+        executionMetadata.removeValue(forKey: jobID)
+        schedule()
     }
 
     private func finishImmediately(

@@ -4,6 +4,7 @@ import Foundation
 /// 列出目录内容。
 public struct ListDirectoryTool: SuperAgentTool, @unchecked Sendable {
     public let name = "ls"
+    public let executionCapability: ToolExecutionCapability = .parallelReadOnly
     private let maxItems = 500
     private let workspaceRootProvider: @MainActor @Sendable () -> String?
 

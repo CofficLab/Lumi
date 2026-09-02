@@ -23,6 +23,13 @@ public protocol SuperAgentTool: Sendable {
     /// 工具自行评估当前调用的风险等级（必填）
     func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel
 
+    /// Declares whether this tool can safely run concurrently with other jobs.
+    ///
+    /// Existing and third-party tools get the conservative serial default from
+    /// the protocol extension below until they explicitly opt into parallel
+    /// read-only execution.
+    var executionCapability: ToolExecutionCapability { get }
+
     /// 根据当前调用参数返回面向用户的简短操作描述（必填）
     ///
     /// 每个工具必须提供面向用户的操作描述，帮助用户快速理解当前操作。
@@ -71,6 +78,10 @@ public protocol SuperAgentTool: Sendable {
 }
 
 extension SuperAgentTool {
+    /// Unknown/custom tools are serialized by default because their side
+    /// effects cannot be inferred safely from the protocol alone.
+    public var executionCapability: ToolExecutionCapability { .serialSideEffect }
+
     /// 默认描述（英文）
     public var description: String {
         description(for: .english)

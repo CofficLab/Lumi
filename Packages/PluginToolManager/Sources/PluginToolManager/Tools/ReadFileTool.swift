@@ -4,6 +4,7 @@ import Foundation
 /// 按行读取文件，支持 offset/limit 与截断。
 public struct ReadFileTool: SuperAgentTool, @unchecked Sendable {
     public let name = "read_file"
+    public let executionCapability: ToolExecutionCapability = .parallelReadOnly
 
     private static let maxWholeFileBytes: Int64 = 10 * 1024 * 1024
     private static let defaultLineLimit = 250

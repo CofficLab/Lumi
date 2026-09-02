@@ -36,6 +36,7 @@ private final class ShellOutputReporter: @unchecked Sendable {
 /// 执行终端命令。
 public struct ShellTool: SuperAgentTool, @unchecked Sendable {
     public let name = "run_command"
+    public let executionCapability: ToolExecutionCapability = .serialSideEffect
 
     private static let highRiskCommands: Set<String> = [
         "rm", "rmdir", "mv", "sudo", "kill", "killall", "chmod", "chown", "dd", "shutdown", "reboot"

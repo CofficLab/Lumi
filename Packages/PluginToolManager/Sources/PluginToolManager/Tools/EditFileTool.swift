@@ -5,6 +5,7 @@ import Foundation
 /// 精确替换文件内容。
 public struct EditFileTool: SuperAgentTool, @unchecked Sendable {
     public let name = "edit_file"
+    public let executionCapability: ToolExecutionCapability = .serialSideEffect
 
     private let editor = WorkspaceFileEditor()
     private let workspaceRootProvider: @MainActor @Sendable () -> String?
