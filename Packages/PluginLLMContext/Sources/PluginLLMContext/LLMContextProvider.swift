@@ -101,11 +101,19 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
         await loadPersistedSummaryIfNeeded(for: request.conversationID)
 
-        if let snapshot = summaries[request.conversationID],
+        let shouldUseCompactedContext = isEmergency || estimate >= softLimit
+        if shouldUseCompactedContext,
+           let snapshot = summaries[request.conversationID],
            let compacted = compactedHistory(history, snapshot: snapshot, request: request) {
             let compactedEstimate = calibratedEstimate(of: compacted, key: key)
             if compactedEstimate <= limit,
-               compactedEstimate <= softLimit || estimate >= hardLimit || isEmergency {
+               compactedEstimate < estimate {
+                recordActualCompactionIfNeeded(
+                    for: request,
+                    snapshot: snapshot,
+                    originalEstimate: estimate,
+                    compactedEstimate: compactedEstimate
+                )
                 return result(
                     messages: compacted,
                     estimate: compactedEstimate,
@@ -124,7 +132,13 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         if let snapshot = summaries[request.conversationID],
            let compacted = compactedHistory(history, snapshot: snapshot, request: request) {
             let compactedEstimate = calibratedEstimate(of: compacted, key: key)
-            if compactedEstimate <= limit {
+            if compactedEstimate <= limit, compactedEstimate < estimate {
+                recordActualCompactionIfNeeded(
+                    for: request,
+                    snapshot: snapshot,
+                    originalEstimate: estimate,
+                    compactedEstimate: compactedEstimate
+                )
                 return result(
                     messages: compacted,
                     estimate: compactedEstimate,
@@ -221,6 +235,43 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         }
     }
 
+    private func recordActualCompactionIfNeeded(
+        for request: LLMContextPreparationRequest,
+        snapshot: SummarySnapshot,
+        originalEstimate: Int,
+        compactedEstimate: Int
+    ) {
+        // 预热只准备摘要，不代表某个用户请求实际发送了压缩上下文。
+        guard request.mode != .prewarm else { return }
+
+        let alreadyRecorded = messages.messages(for: request.conversationID).contains {
+            MessageTimelineEvent.isActualContextCompaction($0)
+                && $0.metadata["contextCompactionSourceLastMessageID"]
+                    == snapshot.sourceLastMessageID.uuidString
+        }
+        guard !alreadyRecorded else { return }
+
+        messages.insertMessage(
+            Message(
+                conversationID: request.conversationID,
+                role: .system,
+                content: String(localized: "Conversation compacted", defaultValue: "对话已压缩"),
+                createdAt: Date(),
+                metadata: [
+                    MessageTimelineEvent.metadataKey: MessageTimelineEvent.contextCompaction,
+                    MessageTimelineEvent.actualContextCompactionKey:
+                        MessageTimelineEvent.actualContextCompactionValue,
+                    "contextCompactionOriginalEstimate": "\(originalEstimate)",
+                    "contextCompactionCompactedEstimate": "\(compactedEstimate)",
+                    "contextCompactionSourceLastMessageID": snapshot.sourceLastMessageID.uuidString,
+                ],
+                renderKind: MessageTimelineEvent.contextCompactionRenderKind,
+                preferredRendererID: "core-context-compaction"
+            ),
+            to: request.conversationID
+        )
+    }
+
     private func refreshSummaryIfNeeded(
         for request: LLMContextPreparationRequest
     ) async {
@@ -300,22 +351,6 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                 // 内存摘要仍然可以服务当前会话，不因磁盘失败丢弃压缩结果。
             }
 
-            messages.insertMessage(
-                Message(
-                    conversationID: request.conversationID,
-                    role: .system,
-                    content: String(localized: "Conversation compacted", defaultValue: "对话已压缩"),
-                    createdAt: Date(),
-                    metadata: [
-                        MessageTimelineEvent.metadataKey: MessageTimelineEvent.contextCompaction,
-                        "contextCompactionSourceMessageCount": "\(latest.count)",
-                        "contextCompactionRecentMessageCount": "\(Self.minimumRecentMessageCount)",
-                    ],
-                    renderKind: MessageTimelineEvent.contextCompactionRenderKind,
-                    preferredRendererID: "core-context-compaction"
-                ),
-                to: request.conversationID
-            )
         } catch {
             if Self.verbose {
                 Self.logger.error("摘要生成失败：\(error.localizedDescription, privacy: .public)")

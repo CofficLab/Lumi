@@ -227,7 +227,8 @@ final class ListV1ViewModel: ObservableObject {
         summaryItems = turnItems
         pendingUserSnapshot = pendingUserMessages
         pendingStatusSnapshot = pendingStatusMessage
-        let timelineEvents = messageWindow.filter(MessageTimelineEvent.isContextCompaction)
+        // 仅展示确实用于一次上下文压缩的事件；旧版本的预热事件继续隐藏。
+        let timelineEvents = messageWindow.filter(MessageTimelineEvent.isActualContextCompaction)
         presentation = ListV1Presentation(
             agentTurns: agentTurns,
             timelineEvents: timelineEvents
