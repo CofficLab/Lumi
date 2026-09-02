@@ -26,6 +26,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
     public let order = 82
     public let dependencies = [
         "com.coffic.lumi.plugin.editor-host",
+        "com.coffic.lumi.plugin.project-file-tree",
     ]
     public let metadata = PluginMetadata(
         id: pluginID,

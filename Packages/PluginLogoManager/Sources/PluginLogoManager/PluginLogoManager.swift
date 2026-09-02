@@ -58,7 +58,7 @@ public final class PluginLogoManager: SuperPlugin, SuperLog {
         kernel.unregisterProvider((any LogoProviding).self)
 
         // 2. 注册本插件实现。消费者直接观察 LogoProviding 的状态变化。
-        try kernel.registerProvider((any LogoProviding).self, manager)
+        try kernel.registerHostProvider((any LogoProviding).self, manager)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)registered LogoManager as LogoProviding")

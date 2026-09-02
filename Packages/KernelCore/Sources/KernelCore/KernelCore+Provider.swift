@@ -27,6 +27,20 @@ extension KernelCoreContainer {
         }
     }
 
+    /// 注册由宿主生命周期持有的 Provider。
+    ///
+    /// 适用于插件替换默认基础设施 Provider 的场景：插件负责组装实现，
+    /// 但 Provider 本身应在 `kernel.stop()` 后继续存在，以便同一个 Kernel
+    /// 可以再次启动插件并重新接收贡献。插件级贡献仍由 Kernel 按插件归属撤回。
+    public func registerHostProvider<T>(_ type: T.Type, _ provider: T) throws {
+        let key = ObjectIdentifier(type)
+        guard providers[key] == nil else {
+            throw KernelCoreError.providerAlreadyRegistered(type: type)
+        }
+        providers[key] = provider
+        providerOwners.removeValue(forKey: key)
+    }
+
     // MARK: - Resolve
 
     /// 解析 Provider 实现；未注册时返回 nil。

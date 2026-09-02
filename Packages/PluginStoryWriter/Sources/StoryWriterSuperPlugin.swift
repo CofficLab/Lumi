@@ -116,6 +116,11 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
         RuntimeBridge.viewModel = nil; RuntimeBridge.conversationInput = nil
         StoryWriterStorage.configureV2(directory: nil)
     }
+
+    /// 文档条目在注册阶段就已写入，因此即使插件未启动，也必须在注销阶段撤回。
+    public func onUnregister(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
 }
 
 public struct StoryWriterV2Tool: SuperAgentTool {
