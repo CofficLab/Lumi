@@ -1,6 +1,20 @@
 import Combine
 import Foundation
 
+/// 由消息管理器发布的结构化变化事件。
+///
+/// 插入事件携带已经进入内存 pending buffer 的消息，UI 可以直接应用它，
+/// 不必为了显示一条刚发送的消息再次查询数据库。
+public enum MessageChange: Sendable {
+    case inserted(Message, conversationID: UUID)
+}
+
+/// 消息变化观察者注销令牌。
+@MainActor
+public protocol MessageChangeObserverHandle: AnyObject {
+    func cancel()
+}
+
 /// 消息插入观察者的注册令牌。
 ///
 /// 调用 `MessageManaging.addMessageInsertedObserver(_:)` 后持有返回值
@@ -72,6 +86,14 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
     func addMessageInsertedObserver(
         _ callback: @escaping (Message, UUID) -> Void
     ) -> any MessageInsertedObserverHandle
+
+    /// 注册结构化消息变化观察者。
+    ///
+    /// 回调在主线程同步执行。插入事件在消息进入内存缓冲后、后台落盘前发送。
+    @discardableResult
+    func addMessageChangeObserver(
+        _ callback: @escaping (MessageChange) -> Void
+    ) -> any MessageChangeObserverHandle
 }
 
 public extension MessageManaging {
@@ -134,11 +156,22 @@ public extension MessageManaging {
     ) -> any MessageInsertedObserverHandle {
         NoopMessageInsertedObserverHandle()
     }
+
+    func addMessageChangeObserver(
+        _ callback: @escaping (MessageChange) -> Void
+    ) -> any MessageChangeObserverHandle {
+        NoopMessageChangeObserverHandle()
+    }
 }
 
 // MARK: - No-op handle (default implementation)
 
 @MainActor
 private final class NoopMessageInsertedObserverHandle: MessageInsertedObserverHandle {
+    func cancel() {}
+}
+
+@MainActor
+private final class NoopMessageChangeObserverHandle: MessageChangeObserverHandle {
     func cancel() {}
 }

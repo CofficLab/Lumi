@@ -65,6 +65,28 @@ struct ProviderMessageTests {
         #expect(observed.first?.1 == conversationID)
     }
 
+    @Test("结构化消息变化观察者携带消息并支持注销")
+    func messageChangeObservation() {
+        let manager = DefaultMessageManager()
+        let conversationID = UUID()
+        var observed: [Message] = []
+        let handle = manager.addMessageChangeObserver { change in
+            guard case let .inserted(message, id) = change else { return }
+            #expect(id == conversationID)
+            observed.append(message)
+        }
+
+        let first = Message(conversationID: conversationID, role: .user, content: "first")
+        manager.insertMessage(first, to: conversationID)
+        handle.cancel()
+        manager.insertMessage(
+            Message(conversationID: conversationID, role: .assistant, content: "second"),
+            to: conversationID
+        )
+
+        #expect(observed == [first])
+    }
+
     @Test("本地文本文件转换为附件时不污染消息正文")
     func loadsTextFileAsAttachment() throws {
         let url = FileManager.default.temporaryDirectory

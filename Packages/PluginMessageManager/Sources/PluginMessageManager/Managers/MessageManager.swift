@@ -27,6 +27,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     // MARK: - Message Insertion Observers
 
     private var messageInsertedObservers: [WeakMessageInsertedObserver] = []
+    private var messageChangeObservers: [WeakMessageChangeObserver] = []
 
     public init(
         store: MessageStore?,
@@ -275,6 +276,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         // 1) 写入内存缓冲,立即通知 UI —— UI 这一刻就能从读路径看到它(read-your-writes)。
         enqueuePending(messageToInsert, conversationID: conversationID)
         notifyMessagesDidChange(conversationID: conversationID)
+        notifyMessageChange(.inserted(messageToInsert, conversationID: conversationID))
         notifyMessageInsertedObservers(messageToInsert, conversationID: conversationID)
 
         // 2) 按 role 分流落盘:
@@ -474,6 +476,15 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         return handle
     }
 
+    @discardableResult
+    public func addMessageChangeObserver(
+        _ callback: @escaping (MessageChange) -> Void
+    ) -> any MessageChangeObserverHandle {
+        let handle = MessageChangeObserverHandleImpl(owner: self, callback: callback)
+        self.messageChangeObservers.append(WeakMessageChangeObserver(handle))
+        return handle
+    }
+
     fileprivate func removeMessageInsertedObserver(_ handle: MessageInsertedObserverHandleImpl) {
         self.messageInsertedObservers.removeAll { $0.handle === handle }
         if Self.verbose {
@@ -481,11 +492,23 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         }
     }
 
+    fileprivate func removeMessageChangeObserver(_ handle: MessageChangeObserverHandleImpl) {
+        self.messageChangeObservers.removeAll { $0.handle === handle }
+    }
+
     private func notifyMessageInsertedObservers(_ message: Message, conversationID: UUID) {
         messageInsertedObservers.removeAll { $0.handle == nil }
         let observers = messageInsertedObservers
         for observer in observers {
             observer.handle?.invoke(message, conversationID)
+        }
+    }
+
+    private func notifyMessageChange(_ change: MessageChange) {
+        messageChangeObservers.removeAll { $0.handle == nil }
+        let observers = messageChangeObservers
+        for observer in observers {
+            observer.handle?.invoke(change)
         }
     }
 }
@@ -519,4 +542,33 @@ private final class MessageInsertedObserverHandleImpl: MessageInsertedObserverHa
 private final class WeakMessageInsertedObserver {
     fileprivate weak var handle: MessageInsertedObserverHandleImpl?
     init(_ handle: MessageInsertedObserverHandleImpl) { self.handle = handle }
+}
+
+@MainActor
+private final class MessageChangeObserverHandleImpl: MessageChangeObserverHandle {
+    private weak var owner: MessageManager?
+    private let callback: (MessageChange) -> Void
+    private var isCancelled = false
+
+    init(owner: MessageManager, callback: @escaping (MessageChange) -> Void) {
+        self.owner = owner
+        self.callback = callback
+    }
+
+    func cancel() {
+        guard !isCancelled else { return }
+        isCancelled = true
+        owner?.removeMessageChangeObserver(self)
+    }
+
+    fileprivate func invoke(_ change: MessageChange) {
+        guard !isCancelled else { return }
+        callback(change)
+    }
+}
+
+@MainActor
+private final class WeakMessageChangeObserver {
+    fileprivate weak var handle: MessageChangeObserverHandleImpl?
+    init(_ handle: MessageChangeObserverHandleImpl) { self.handle = handle }
 }

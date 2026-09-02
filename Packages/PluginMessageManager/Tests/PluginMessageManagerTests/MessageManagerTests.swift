@@ -28,6 +28,29 @@ struct MessageManagerWriteBehindTests {
         )
     }
 
+    @Test("结构化插入事件在后台落盘前同步发布")
+    func messageChangePublishesBeforePersistence() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+        var observed: Message?
+        let handle = manager.addMessageChangeObserver { change in
+            guard case let .inserted(message, id) = change, id == conversationID else { return }
+            observed = message
+        }
+        defer { handle.cancel() }
+
+        let message = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "instant"
+        )
+        manager.insertMessage(message, to: conversationID)
+
+        #expect(observed == message)
+    }
+
     @Test("insert 后立即能读到(assistant 走后台落盘,不等盘)")
     func readYourWritesForAssistant() async throws {
         let (store, directory) = try makeStore()

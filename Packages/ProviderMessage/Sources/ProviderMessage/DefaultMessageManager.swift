@@ -4,6 +4,7 @@ import Foundation
 public final class DefaultMessageManager: MessageManaging {
     @Published private var storage: [UUID: [Message]] = [:]
     private var insertionObservers: [UUID: (Message, UUID) -> Void] = [:]
+    private var changeObservers: [UUID: (MessageChange) -> Void] = [:]
 
     public init() {}
 
@@ -77,6 +78,8 @@ public final class DefaultMessageManager: MessageManaging {
 
     public func insertMessage(_ message: Message, to conversationID: UUID) {
         storage[conversationID, default: []].append(message)
+        let change = MessageChange.inserted(message, conversationID: conversationID)
+        changeObservers.values.forEach { $0(change) }
         insertionObservers.values.forEach { $0(message, conversationID) }
     }
 
@@ -88,6 +91,17 @@ public final class DefaultMessageManager: MessageManaging {
         insertionObservers[id] = callback
         return InsertionObserverHandle { [weak self] in
             self?.insertionObservers.removeValue(forKey: id)
+        }
+    }
+
+    @discardableResult
+    public func addMessageChangeObserver(
+        _ callback: @escaping (MessageChange) -> Void
+    ) -> any MessageChangeObserverHandle {
+        let id = UUID()
+        changeObservers[id] = callback
+        return ChangeObserverHandle { [weak self] in
+            self?.changeObservers.removeValue(forKey: id)
         }
     }
 
@@ -124,6 +138,20 @@ public final class DefaultMessageManager: MessageManaging {
 
 @MainActor
 private final class InsertionObserverHandle: MessageInsertedObserverHandle {
+    private var cancellation: (() -> Void)?
+
+    init(cancellation: @escaping () -> Void) {
+        self.cancellation = cancellation
+    }
+
+    func cancel() {
+        cancellation?()
+        cancellation = nil
+    }
+}
+
+@MainActor
+private final class ChangeObserverHandle: MessageChangeObserverHandle {
     private var cancellation: (() -> Void)?
 
     init(cancellation: @escaping () -> Void) {

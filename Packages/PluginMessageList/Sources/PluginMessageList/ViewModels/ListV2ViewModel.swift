@@ -34,7 +34,7 @@ private struct MessageFingerprint: Equatable {
 /// 消息列表 UI 的**视图模型**：持有全部视图状态（`historyRows`/`isLoading`/分页窗口），
 /// 把数据层服务合并成可直接展示的行序列，让 `ListV2View` 只负责纯展示与滚动。
 ///
-/// **历史行纯数据库驱动 + 流式行独立**：`historyRows` 只来源于落库消息，
+/// **历史行快照驱动 + 流式行独立**：`historyRows` 来源于落库快照和插入事件，
 /// 经 `HistoryBuildSignature`（含 contentLength）短路避免高频重建。流式临时行
 /// （`streamingRow`）是**独立** published 属性，用稳定 id `LumiStreamingRowID` ——
 /// token 增长只让 SwiftUI diff 这一行，不触发 `historyRows` 全量 rebuild，
@@ -48,8 +48,9 @@ private struct MessageFingerprint: Equatable {
 /// - **渲染器分发**：View 直接从 `MessageRenderingProviding` 获取渲染器，
 ///   并透传 `verbosity`，本 viewmodel 不参与渲染。
 ///
-/// 事件感知（新版无 `.lumiMessagesDidChange` 通知，全部改为订阅 Provider 的
-/// `objectWillChange` 窄播）：`messages` 落库变化、`sender` 发送状态、`streaming`
+/// 事件感知（新版无 `.lumiMessagesDidChange` 通知）：`messages` 的插入优先消费
+/// 结构化事件，编辑/删除再回退到 Provider 的 `objectWillChange` 窄播；`sender`
+/// 发送状态、`streaming`
 /// 流式 token、`toolManager` 工具活动。
 @MainActor
 final class ListV2ViewModel: ObservableObject {
@@ -58,7 +59,7 @@ final class ListV2ViewModel: ObservableObject {
 
     // MARK: - Published State (供 View 展示)
 
-    /// 稳定历史展示行：真实落库消息 + 状态行，纯数据库驱动。
+    /// 稳定历史展示行：落库消息快照/结构化插入消息 + 状态行。
     @Published private(set) var historyRows: [Message] = []
 
     /// 流式临时行（独立于历史行）。仅在 thinking/generating 阶段非 nil。
@@ -87,6 +88,9 @@ final class ListV2ViewModel: ObservableObject {
     /// ToolManager-backed summaries keyed by AgentTurn ID。
     @Published private(set) var turnActivitySummaries: [UUID: LumiTurnActivitySummary] = [:]
 
+    /// 最近一次当前会话的用户消息插入，用于让 View 在用户发送后滚到底部。
+    @Published private(set) var latestUserMessageID: UUID?
+
     // MARK: - Dependencies & Internal State
 
     private let services: MessageListServices
@@ -97,6 +101,11 @@ final class ListV2ViewModel: ObservableObject {
     /// 切换会话时记录的目标会话，用于丢弃过期的后台读结果。
     private var activeConversationID: UUID?
     private var cancellables: Set<AnyCancellable> = []
+    private var messageChangeObserver: (any MessageChangeObserverHandle)?
+    /// objectWillChange remains a compatibility fallback for updates/deletes. An
+    /// insertion event already carries the complete message, so its matching
+    /// fallback refresh must be skipped.
+    private var pendingInsertionFallbacksToSkip = 0
     private var didBindServices = false
     private var didBindStreaming = false
     /// 单飞帧门禁：把逐 token 的 `objectWillChange` 广播合并成每帧（~16ms）最多一次刷新。
@@ -152,6 +161,7 @@ final class ListV2ViewModel: ObservableObject {
     func activate(conversationID: UUID?) async {
         bindServicesIfNeeded()
         activeConversationID = conversationID
+        latestUserMessageID = nil
         // 切换会话：清掉上一会话的流式行残留，并重置可见性记忆。
         streamingRow = nil
         activityMessage = services.activityMessage(for: conversationID)
@@ -294,8 +304,8 @@ final class ListV2ViewModel: ObservableObject {
 
     /// 订阅发送服务 / 流式服务的窄播（绕开全局广播），变化时重算展示行。
     ///
-    /// 历史行仍是**纯数据库驱动**：落库消息由 `messages.objectWillChange` →
-    /// `refreshTail()` 路径刷新（替代旧版 `.lumiMessagesDidChange` 通知），
+    /// 历史行由落库快照和结构化插入事件共同驱动：新增消息直接应用事件 payload，
+    /// 编辑/删除仍由 `messages.objectWillChange` → `refreshTail()` 路径刷新，
     /// `refreshTurnActivitySummaries` 也随之更新（新版 `ToolManagerProviding`
     /// 协议无 objectWillChange 通道，工具活动摘要只在消息落库时刷新）。
     /// 流式逐字显示通过独立订阅 `streaming.objectWillChange` 实现：
@@ -308,6 +318,9 @@ final class ListV2ViewModel: ObservableObject {
     private func bindServicesIfNeeded() {
         guard !didBindServices else { return }
         if let messages = services.messages {
+            messageChangeObserver = messages.addMessageChangeObserver { [weak self] change in
+                self?.handleMessageChange(change)
+            }
             // 落库消息变化（新增/编辑/删除，任意会话）：统一走合并的 tail-refresh 路径。
             messages.objectWillChange
                 .map { _ in () }
@@ -315,6 +328,9 @@ final class ListV2ViewModel: ObservableObject {
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in
                     guard let self else { return }
+                    if self.consumePendingInsertionFallback() {
+                        return
+                    }
                     Task { @MainActor [weak self] in
                         await self?.refreshTail()
                     }
@@ -357,6 +373,43 @@ final class ListV2ViewModel: ObservableObject {
             }
             .store(in: &cancellables)
         didBindStreaming = true
+    }
+
+    /// Applies an insertion directly from the in-memory message event.
+    ///
+    /// The event is emitted after MessageManager updates its pending buffer,
+    /// so this path is independent of database persistence timing.
+    private func handleMessageChange(_ change: MessageChange) {
+        guard case let .inserted(message, conversationID) = change else { return }
+        pendingInsertionFallbacksToSkip += 1
+        guard conversationID == selectedConversationID,
+              message.role != .tool else { return }
+
+        if message.role == .user {
+            latestUserMessageID = message.id
+        }
+
+        var next = persistedMessages
+        if let index = next.firstIndex(where: { $0.id == message.id }) {
+            next[index] = message
+        } else {
+            next.append(message)
+            next.sort {
+                if $0.createdAt == $1.createdAt { return $0.id < $1.id }
+                return $0.createdAt < $1.createdAt
+            }
+        }
+        if next.count > pagination.maxRetainedCount {
+            next.removeFirst(next.count - pagination.maxRetainedCount)
+        }
+        persistedMessages = next
+    }
+
+    /// Consumed by the ViewModel's objectWillChange compatibility path.
+    private func consumePendingInsertionFallback() -> Bool {
+        guard pendingInsertionFallbacksToSkip > 0 else { return false }
+        pendingInsertionFallbacksToSkip -= 1
+        return true
     }
 
     /// 帧门禁：把逐 token 的流式广播合并成每帧（~16ms）最多一次刷新。
