@@ -72,8 +72,7 @@ struct MessageViewChrome<Content: View>: View {
                     }
                 } trailing: {
                     HStack(alignment: .center, spacing: 12) {
-                        // 操作按钮仅在悬停时物化(见 showsActions);
-                        // 时间戳是纯文本,常驻。
+                        // 操作按钮与时间戳仅在悬停时物化(见 showsActions)。
                         if showsActions {
                             CopyMessageButton(
                                 contentProvider: { MessageViewHelpers.copyContent(for: message) },
@@ -100,10 +99,12 @@ struct MessageViewChrome<Content: View>: View {
                             }
                         }
 
-                        AppIdentityRow(
-                            title: MessageViewHelpers.formatTimestamp(message.createdAt),
-                            titleColor: theme.textSecondary
-                        )
+                        if showsActions {
+                            AppIdentityRow(
+                                title: MessageViewHelpers.formatTimestamp(message.createdAt),
+                                titleColor: theme.textSecondary
+                            )
+                        }
 
                         if showsActions, let errorTransportDetails, errorTransportDetails.hasTransportDetails {
                             ErrorTransportDetailsButton(details: errorTransportDetails)
