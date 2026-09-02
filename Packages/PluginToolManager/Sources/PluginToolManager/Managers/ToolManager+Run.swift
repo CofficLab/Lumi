@@ -192,6 +192,7 @@ extension ToolManager {
 
     public func deleteToolCalls(for conversationID: UUID) async {
         deletedConversationIDs.insert(conversationID)
+        await jobRecordStore?.deleteAll(for: conversationID)
         if let records = await recordStore?.fetchRecords(for: conversationID) {
             for record in records { if let toolCallID = record.toolCallID { resultCache.removeValue(forKey: toolCallID) } }
         }

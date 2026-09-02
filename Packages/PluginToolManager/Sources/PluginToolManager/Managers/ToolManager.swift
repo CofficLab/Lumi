@@ -45,6 +45,13 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
         set { recordStoreValue = newValue }
     }
 
+    /// Job 状态存储与历史调用日志分离，避免两种数据语义互相污染。
+    var jobRecordStore: ProviderToolManager.ToolJobRecordStore? {
+        didSet {
+            toolExecutionManager.attachJobRecordStore(jobRecordStore)
+        }
+    }
+
     public init() {}
 
     @discardableResult

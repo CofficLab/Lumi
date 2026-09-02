@@ -50,6 +50,13 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
             if Self.verbose {
                 Self.logger.info("\(Self.t)created record store at \(databaseRootURL.path)")
             }
+
+            let jobStore = ProviderToolManager.ToolJobRecordStore(databaseRootURL: databaseRootURL)
+            service.jobRecordStore = jobStore
+            if Self.verbose {
+                let jobStoreURL = jobStore.directory.appendingPathComponent("tool_jobs.sqlite")
+                Self.logger.info("\(Self.t)created job store at \(jobStoreURL.path)")
+            }
         }
 
         // 2. 注册内置工具。

@@ -35,6 +35,20 @@ final class ToolExecutionManager {
     private var pendingExecutions: [String: PendingExecution] = [:]
     private var executionMetadata: [String: ExecutionMetadata] = [:]
     private var runningJobIDs: Set<String> = []
+    private var jobRecordStore: ToolJobRecordStore?
+    private var persistenceTask: Task<Void, Never>?
+    private var cancelRequestedJobIDs: Set<String> = []
+
+    /// Attaches the durable Job store and safely settles Jobs left over from a
+    /// previous process. We never re-run a persisted tool automatically.
+    func attachJobRecordStore(_ store: ToolJobRecordStore?) {
+        jobRecordStore = store
+        guard let store else { return }
+        Task { [weak self] in
+            let records = await store.fetchAllJobs()
+            self?.restore(records)
+        }
+    }
 
     @discardableResult
     func addObserver(
@@ -107,6 +121,7 @@ final class ToolExecutionManager {
                 capability: tool.executionCapability
             )
             pendingExecutions[job.id] = PendingExecution(tool: tool, arguments: arguments)
+            persist(job)
             emit(.created(job))
             schedule()
             return jobsByID[job.id] ?? job
@@ -139,6 +154,7 @@ final class ToolExecutionManager {
 
     func cancelJob(_ jobID: String) {
         guard let job = jobsByID[jobID], !job.status.isTerminal else { return }
+        cancelRequestedJobIDs.insert(jobID)
         Task { await runtime.cancel(jobID: jobID) }
         let result = ToolCallResult(content: "Tool execution cancelled.", isError: true)
         finish(
@@ -177,6 +193,7 @@ final class ToolExecutionManager {
         runningJob.startedAt = Date()
         runningJob.updatedAt = Date()
         jobsByID[job.id] = runningJob
+        persist(runningJob)
         emit(.started(runningJob))
 
         let bridge = ToolJobEventBridge(owner: self)
@@ -352,6 +369,7 @@ final class ToolExecutionManager {
         )
         jobsByID[job.id] = job
         resultsByID[job.id] = result
+        persist(job, result: result)
         emit(.created(job))
         emitTerminal(jobID: job.id, status: status, result: result, snapshot: job)
         return job
@@ -370,6 +388,7 @@ final class ToolExecutionManager {
         job.errorMessage = errorMessage
         jobsByID[jobID] = job
         resultsByID[jobID] = result
+        persist(job, result: result)
         emitTerminal(jobID: jobID, status: status, result: result, snapshot: job)
         let continuations = waiters.removeValue(forKey: jobID) ?? []
         for continuation in continuations {
@@ -418,6 +437,7 @@ final class ToolExecutionManager {
         )
         job.updatedAt = Date()
         jobsByID[jobID] = job
+        persist(job)
         let outputStream: ToolOutputStream = stream == .stdout ? .stdout : .stderr
         emit(.output(
             jobID: jobID,
@@ -442,6 +462,95 @@ final class ToolExecutionManager {
             ),
             snapshot: job
         ))
+    }
+
+    private func persist(_ job: ToolJob, result: ToolCallResult? = nil) {
+        guard let store = jobRecordStore else { return }
+        let argumentsJSON = job.toolCall.arguments
+        let record = ToolJobRecord(
+            id: job.id,
+            conversationID: job.conversationID,
+            turnID: job.turnID,
+            toolName: job.toolCall.name,
+            argumentsJSON: argumentsJSON,
+            argumentsHash: ToolJobRecord.makeArgumentsHash(argumentsJSON),
+            status: job.status,
+            createdAt: job.createdAt,
+            startedAt: job.startedAt,
+            updatedAt: job.updatedAt,
+            latestOutput: ToolJobRecordStore.boundedOutput(job.latestOutput),
+            outputByteCount: job.outputByteCount,
+            processID: nil,
+            cancelRequested: cancelRequestedJobIDs.contains(job.id),
+            completedAt: job.completedAt,
+            result: result ?? resultsByID[job.id],
+            errorMessage: job.errorMessage
+        )
+
+        // Preserve lifecycle ordering even though each database write is
+        // asynchronous from the MainActor control plane.
+        let previous = persistenceTask
+        persistenceTask = Task {
+            await previous?.value
+            await store.upsert(record)
+        }
+    }
+
+    private func restore(_ records: [ToolJobRecord]) {
+        let message = "工具进程在应用重启后无法恢复，未自动重试。"
+        for record in records where jobsByID[record.id] == nil {
+            if record.status.isTerminal {
+                let toolCall = ToolCall(
+                    id: record.id,
+                    name: record.toolName,
+                    arguments: record.argumentsJSON
+                )
+                let job = ToolJob(
+                    conversationID: record.conversationID,
+                    turnID: record.turnID,
+                    toolCall: toolCall,
+                    status: record.status,
+                    createdAt: record.createdAt,
+                    startedAt: record.startedAt,
+                    updatedAt: record.updatedAt,
+                    completedAt: record.completedAt,
+                    latestOutput: record.latestOutput,
+                    outputByteCount: record.outputByteCount,
+                    errorMessage: record.errorMessage
+                )
+                jobsByID[job.id] = job
+                if let result = record.result {
+                    resultsByID[job.id] = result
+                }
+                continue
+            }
+
+            let now = Date()
+            let result = ToolCallResult(content: message, isError: true)
+            let toolCall = ToolCall(
+                id: record.id,
+                name: record.toolName,
+                arguments: record.argumentsJSON
+            )
+            let job = ToolJob(
+                conversationID: record.conversationID,
+                turnID: record.turnID,
+                toolCall: toolCall,
+                status: .failed,
+                createdAt: record.createdAt,
+                startedAt: record.startedAt,
+                updatedAt: now,
+                completedAt: now,
+                latestOutput: record.latestOutput,
+                outputByteCount: record.outputByteCount,
+                errorMessage: message
+            )
+            jobsByID[job.id] = job
+            resultsByID[job.id] = result
+            persist(job, result: result)
+            emit(.created(job))
+            emit(.failed(jobID: job.id, result: result, snapshot: job))
+        }
     }
 }
 
