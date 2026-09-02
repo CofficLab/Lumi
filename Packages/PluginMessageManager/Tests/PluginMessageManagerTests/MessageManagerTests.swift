@@ -80,6 +80,24 @@ struct MessageManagerWriteBehindTests {
         #expect(persisted)
     }
 
+    @Test("异步消息快照包含待落盘消息")
+    func asyncSnapshotIncludesPendingMessage() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+        let message = Message(
+            conversationID: conversationID,
+            role: .user,
+            content: "background snapshot"
+        )
+
+        manager.insertMessage(message, to: conversationID)
+        let snapshot = await manager.messagesSnapshot(in: conversationID)
+
+        #expect(snapshot.contains { $0.id == message.id && $0.content == message.content })
+    }
+
     @Test("user 消息立即可读并最终后台落盘")
     func userMessagePersistedInBackground() async throws {
         let (store, directory) = try makeStore()

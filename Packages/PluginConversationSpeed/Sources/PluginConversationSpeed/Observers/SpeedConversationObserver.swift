@@ -64,20 +64,17 @@ final class SpeedConversationObserver: SuperLog {
             guard !Task.isCancelled,
                   let self,
                   self.conversations.selectedConversationID == conversationID else { return }
-            self.refresh(conversationID: conversationID)
+            await self.refresh(conversationID: conversationID)
         }
     }
 
-    private func refresh(conversationID: UUID?) {
+    private func refresh(conversationID: UUID?) async {
         guard let conversationID else {
             viewModel.selectConversation(nil, messages: [])
             return
         }
 
-        var snapshot = messages.messages(for: conversationID)
-        if snapshot.isEmpty, let lastMessage = messages.lastMessage(in: conversationID) {
-            snapshot = [lastMessage]
-        }
+        let snapshot = await messages.messagesSnapshot(in: conversationID)
         viewModel.selectConversation(conversationID, messages: snapshot)
     }
 }

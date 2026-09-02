@@ -50,7 +50,7 @@ final class AgentTurnViewModel: ObservableObject {
         refreshSequence &+= 1
         let sequence = refreshSequence
         let conversationID = item.conversationID
-        let messages = messageManager.messages(for: conversationID)
+        let messages = await messageManager.messagesSnapshot(in: conversationID)
         guard sequence == refreshSequence else { return }
         projection = Self.project(
             item: item,

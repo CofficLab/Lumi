@@ -86,7 +86,7 @@ final class ListV1ViewModel: ObservableObject {
             return
         }
 
-        let allMessages = messageManager.messages(for: conversationID)
+        let allMessages = await messageManager.messagesSnapshot(in: conversationID)
         let conversationState = services.agentTurn?.state(for: conversationID) ?? .idle
         let allRecords = AgentTurnRecordBuilder.records(
             from: allMessages,
@@ -117,7 +117,7 @@ final class ListV1ViewModel: ObservableObject {
         guard let conversationID = activeConversationID,
               let messageManager = services.messages else { return false }
 
-        let allMessages = messageManager.messages(for: conversationID)
+        let allMessages = await messageManager.messagesSnapshot(in: conversationID)
         guard selectedConversationID == conversationID else { return false }
 
         let conversationState = services.agentTurn?.state(for: conversationID) ?? .idle
@@ -153,7 +153,7 @@ final class ListV1ViewModel: ObservableObject {
         isLoadingEarlier = true
         defer { isLoadingEarlier = false }
 
-        let allMessages = messageManager.messages(for: conversationID)
+        let allMessages = await messageManager.messagesSnapshot(in: conversationID)
         guard selectedConversationID == conversationID else { return nil }
 
         let conversationState = services.agentTurn?.state(for: conversationID) ?? .idle
@@ -193,7 +193,7 @@ final class ListV1ViewModel: ObservableObject {
               selectedConversationID == conversationID else { return }
         // builder 聚合已落库/瞬时过程；逐 token 的流式正文由独立属性承载。
         let messages = allMessages.isEmpty
-            ? messageManager.messages(for: conversationID)
+            ? await messageManager.messagesSnapshot(in: conversationID)
             : allMessages
         let turnItems = builder.build(records: records, messages: messages)
         let claimedUserMessageIDs = Set(turnItems.compactMap { $0.userMessage?.id })

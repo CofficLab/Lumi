@@ -130,7 +130,7 @@ struct ContextSizeToolbarView: View {
             usedTokens = nil
             return
         }
-        let allMessages = messages.messages(for: conversationID)
+        let allMessages = await messages.messagesSnapshot(in: conversationID)
         usedTokens = allMessages.last { $0.inputTokenCount != nil }?.inputTokenCount
     }
 }

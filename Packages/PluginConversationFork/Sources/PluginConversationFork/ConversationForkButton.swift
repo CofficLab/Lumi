@@ -39,13 +39,17 @@ struct ConversationForkButton: View {
     @MainActor
     private func fork() {
         guard !isForking,
-              let currentID = conversations.selectedConversationID,
-              !messages.messages(for: currentID).isEmpty else {
+              conversations.selectedConversationID != nil else {
             return
         }
 
         isForking = true
         Task { @MainActor in
+            guard let currentID = conversations.selectedConversationID,
+                  !(await messages.messagesSnapshot(in: currentID)).isEmpty else {
+                isForking = false
+                return
+            }
             let outcome = await summarizer.summarize(conversationID: currentID)
             let summary = outcome.summary
             lastFallbackNotice = outcome.usedFallback

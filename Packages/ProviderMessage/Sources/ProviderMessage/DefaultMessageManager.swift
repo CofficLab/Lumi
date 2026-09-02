@@ -12,8 +12,12 @@ public final class DefaultMessageManager: MessageManaging {
         storage[conversationID, default: []].sorted { $0.createdAt < $1.createdAt }
     }
 
-    public func messagesForLLM(in conversationID: UUID) async -> [Message] {
+    public func messagesSnapshot(in conversationID: UUID) async -> [Message] {
         messages(for: conversationID)
+    }
+
+    public func messagesForLLM(in conversationID: UUID) async -> [Message] {
+        await messagesSnapshot(in: conversationID)
     }
 
     public func messagePage(

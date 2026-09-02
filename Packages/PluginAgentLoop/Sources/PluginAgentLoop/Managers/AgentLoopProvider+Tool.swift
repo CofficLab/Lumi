@@ -14,9 +14,9 @@ import KitSuperLog
 
 extension AgentLoopManager {
     /// 接收 ToolManager 的批量完成事件，推进当前回合状态机。
-    func handleToolManagerEvent(_ event: ToolManagerEvent) {
+    func handleToolManagerEvent(_ event: ToolManagerEvent) async {
         if case let .authorizedCompleted(conversationID, eventTurnID, toolCall, result) = event {
-            handleAuthorizedToolCompletion(
+            await handleAuthorizedToolCompletion(
                 conversationID: conversationID,
                 eventTurnID: eventTurnID,
                 toolCall: toolCall,
@@ -29,7 +29,7 @@ extension AgentLoopManager {
             Self.logger.info("\(Self.t)handle batch begin conversation=\(conversationID.uuidString.prefix(8)), turn=\(eventTurnID?.uuidString.prefix(8) ?? "nil"), calls=\(toolCalls.map { $0.id }), results=\(results.count)")
         }
         guard let firstToolCall = toolCalls.first,
-              prepareRuntimeForToolResult(
+              await prepareRuntimeForToolResult(
                   conversationID: conversationID,
                   eventTurnID: eventTurnID,
                   toolCall: firstToolCall
@@ -149,7 +149,7 @@ extension AgentLoopManager {
         conversationID: UUID,
         eventTurnID: UUID?,
         toolCall: AgentLoopToolCall
-    ) -> Bool {
+    ) async -> Bool {
         if var runtime = runtimes[conversationID] {
             switch runtime.phase {
             case .executingTools:
@@ -176,7 +176,7 @@ extension AgentLoopManager {
 
         // 进程重启后 runtimes 为空。assistant 消息是此时仍然可靠的持久化
         // 来源：它同时包含 turnID、assistant message ID 和完整工具调用列表。
-        guard let assistantMessage = messages.messages(for: conversationID)
+        guard let assistantMessage = await messages.messagesSnapshot(in: conversationID)
             .reversed()
             .first(where: { message in
                 message.role == .assistant
@@ -241,8 +241,8 @@ extension AgentLoopManager {
         eventTurnID: UUID?,
         toolCall: AgentLoopToolCall,
         result toolResult: ToolCallResult
-    ) {
-        guard prepareRuntimeForToolResult(
+    ) async {
+        guard await prepareRuntimeForToolResult(
             conversationID: conversationID,
             eventTurnID: eventTurnID,
             toolCall: toolCall

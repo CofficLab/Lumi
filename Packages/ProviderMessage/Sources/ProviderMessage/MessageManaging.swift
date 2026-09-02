@@ -28,6 +28,8 @@ public protocol MessageInsertedObserverHandle: AnyObject {
 @MainActor
 public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
     func messages(for conversationID: UUID) -> [Message]
+    /// 异步读取指定会话的完整消息快照。实现应避免在 MainActor 执行磁盘读取、解码和排序。
+    func messagesSnapshot(in conversationID: UUID) async -> [Message]
     /// 异步加载发送给 LLM 的消息历史。持久化实现应将磁盘读取和解码放到后台。
     func messagesForLLM(in conversationID: UUID) async -> [Message]
     /// 返回指定会话的一页消息，结果按时间升序排列。
@@ -97,6 +99,10 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
 }
 
 public extension MessageManaging {
+    func messagesSnapshot(in conversationID: UUID) async -> [Message] {
+        await messagesForLLM(in: conversationID)
+    }
+
     func messagesForLLM(in conversationID: UUID) async -> [Message] {
         messages(for: conversationID)
     }

@@ -406,7 +406,7 @@ public struct ConversationStoreSettingsView: View {
             messagesForSelected = []
             return
         }
-        let all = messageManager?.messages(for: id) ?? []
+        let all = await messageManager?.messagesSnapshot(in: id) ?? []
         let loaded = Array(all.suffix(messageDisplayLimit))
         guard selectedConversationID == id else { return }
         messagesForSelected = loaded

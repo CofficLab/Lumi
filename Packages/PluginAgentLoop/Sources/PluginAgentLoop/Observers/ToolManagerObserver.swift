@@ -41,12 +41,14 @@ final class ToolManagerObserver: SuperLog {
             )
         }
 
-        // ToolManager 事件已经在 MainActor 上分发，直接推进回合状态机，
-        // 避免批次完成后再异步调度导致下一轮请求被延迟或丢失。
+        // ToolManager 事件已经在 MainActor 上分发；消息恢复读取是异步的，
+        // 因此在保持 MainActor 状态机语义的同时交给一个可等待的任务处理。
         guard let agentLoop = agentLoop as? AgentLoopManager else {
             Self.logger.error("\(Self.emoji)无法处理 ToolManager 事件：AgentLoopProvider 不是 AgentLoopManager")
             return
         }
-        agentLoop.handleToolManagerEvent(event)
+        Task { @MainActor in
+            await agentLoop.handleToolManagerEvent(event)
+        }
     }
 }

@@ -64,7 +64,7 @@ final class TitleService: SuperLog {
         }
         defer { runningConversationIDs.remove(conversationID) }
 
-        guard let firstUserMessage = firstUserMessage(in: conversationID) else {
+        guard let firstUserMessage = await firstUserMessage(in: conversationID) else {
             Self.logger.error("\(Self.t)Failed to find the first user message for conversation \(conversationID, privacy: .public)")
             return
         }
@@ -135,8 +135,8 @@ final class TitleService: SuperLog {
         return currentTitle == placeholderTitle(forFirstUserMessage: firstUserMessageContent)
     }
 
-    private func firstUserMessage(in conversationID: UUID) -> Message? {
-        messages.messages(for: conversationID).first {
+    private func firstUserMessage(in conversationID: UUID) async -> Message? {
+        await messages.messagesSnapshot(in: conversationID).first {
             $0.role == .user && !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
     }

@@ -54,7 +54,7 @@ struct CacheHitRateToolbarView: View {
                     Task(priority: .utility) { @MainActor in
                         await Task.yield()
                         guard !Task.isCancelled, conversationID == selectedConversationID else { return }
-                        refresh()
+                        await refresh()
                     }
                 }
             }
@@ -62,7 +62,7 @@ struct CacheHitRateToolbarView: View {
         .task(id: selectedConversationID) {
             await Task.yield()
             guard !Task.isCancelled else { return }
-            refresh()
+            await refresh()
         }
     }
 
@@ -74,12 +74,14 @@ struct CacheHitRateToolbarView: View {
         }
     }
 
-    private func refresh() {
+    private func refresh() async {
         guard let conversationID = selectedConversationID else {
             stats = .empty
             return
         }
-        stats = CacheHitRateStats.compute(messages: messages.messages(for: conversationID))
+        let snapshot = await messages.messagesSnapshot(in: conversationID)
+        guard conversationID == selectedConversationID else { return }
+        stats = CacheHitRateStats.compute(messages: snapshot)
     }
 }
 

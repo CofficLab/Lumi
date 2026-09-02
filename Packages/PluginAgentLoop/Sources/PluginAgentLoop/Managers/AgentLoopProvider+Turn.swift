@@ -28,8 +28,11 @@ extension AgentLoopManager {
         if let task = runtime.task { await task.value }
         guard case .awaitingUser(let turnID, _, let pendingToolCalls, let suspension) = runtime.phase,
               suspension.suspensionID == request.suspensionID,
-              let toolCallID = suspension.toolCallID,
-              let assistantMessage = messages.messages(for: conversationID).reversed().first(where: {
+              let toolCallID = suspension.toolCallID else {
+            throw AgentLoopError.invalidResumeRequest
+        }
+        let snapshot = await messages.messagesSnapshot(in: conversationID)
+        guard let assistantMessage = snapshot.reversed().first(where: {
                   $0.role == .assistant && $0.toolCalls?.contains(where: { $0.id == toolCallID }) == true
               }),
               let toolCall = assistantMessage.toolCalls?.first(where: { $0.id == toolCallID }) else {
@@ -42,7 +45,7 @@ extension AgentLoopManager {
             turnID: turnID
         ))
         messages.updateToolCallResult(result, toolCallID: toolCallID, assistantMessageID: assistantMessage.id, in: conversationID)
-        if let pending = messages.messages(for: conversationID).last(where: { $0.role == .tool && $0.toolCallID == toolCallID }) {
+        if let pending = (await messages.messagesSnapshot(in: conversationID)).last(where: { $0.role == .tool && $0.toolCallID == toolCallID }) {
             messages.updateMessage(id: pending.id, in: conversationID, content: result.content)
         }
         runtime.pendingSuspensions.removeValue(forKey: toolCallID)

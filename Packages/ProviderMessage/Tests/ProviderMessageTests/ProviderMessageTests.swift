@@ -21,6 +21,17 @@ struct ProviderMessageTests {
         #expect(manager.messageCount(for: conversationID) == 1)
     }
 
+    @Test("异步消息快照包含当前会话消息")
+    func asyncSnapshot() async {
+        let manager = DefaultMessageManager()
+        let conversationID = UUID()
+        let message = Message(conversationID: conversationID, role: .user, content: "snapshot")
+        manager.insertMessage(message, to: conversationID)
+
+        let snapshot = await manager.messagesSnapshot(in: conversationID)
+        #expect(snapshot == [message])
+    }
+
     @Test("消息与 token 可按自然日跨会话聚合")
     func dailyAggregates() {
         let manager = DefaultMessageManager()

@@ -64,8 +64,8 @@ extension AgentLoopManager {
 // MARK: - Message Query
 
 extension AgentLoopManager {
-    func incompleteToolCallMessage(in conversationID: UUID) -> Message? {
-        incompleteToolCallMessage(messages: messages.messages(for: conversationID))
+    func incompleteToolCallMessage(in conversationID: UUID) async -> Message? {
+        incompleteToolCallMessage(messages: await messages.messagesSnapshot(in: conversationID))
     }
 
     func incompleteToolCallMessage(messages: [Message]) -> Message? {
@@ -82,8 +82,8 @@ extension AgentLoopManager {
         }
     }
 
-    func latestAssistantToolCalls(in conversationID: UUID) -> [MessageToolCall]? {
-        latestAssistantToolCalls(messages: messages.messages(for: conversationID))
+    func latestAssistantToolCalls(in conversationID: UUID) async -> [MessageToolCall]? {
+        latestAssistantToolCalls(messages: await messages.messagesSnapshot(in: conversationID))
     }
 
     func latestAssistantToolCalls(messages: [Message]) -> [MessageToolCall]? {

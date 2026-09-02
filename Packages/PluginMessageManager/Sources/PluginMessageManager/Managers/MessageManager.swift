@@ -120,11 +120,23 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         return all
     }
 
-    /// 在后台读取并组装 LLM 历史，避免 SwiftData 解码和全量排序阻塞 MainActor。
+    /// 在后台读取并组装完整消息快照，避免 SwiftData 解码和全量排序阻塞 MainActor。
+    public func messagesSnapshot(in conversationID: UUID) async -> [Message] {
+        await readSnapshot(in: conversationID, priority: .utility)
+    }
+
+    /// LLM 回合读取属于发送关键路径，使用较高优先级，但仍不在 MainActor 执行。
     public func messagesForLLM(in conversationID: UUID) async -> [Message] {
+        await readSnapshot(in: conversationID, priority: .userInitiated)
+    }
+
+    private func readSnapshot(
+        in conversationID: UUID,
+        priority: TaskPriority
+    ) async -> [Message] {
         let store = self.store
         let pending = self.pending
-        return await Task.detached(priority: .userInitiated) {
+        return await Task.detached(priority: priority) {
             let diskMessages = store?.fetchMessages(conversationId: conversationID) ?? []
             let pendingMessages = pending.snapshot(for: conversationID)
             let diskIDs = Set(diskMessages.map(\.id))

@@ -33,10 +33,7 @@ final class SpeedMessageObserver {
             guard !Task.isCancelled, let self,
                   self.viewModel.selectedConversationID == conversationID else { return }
 
-            var snapshot = self.messages.messages(for: conversationID)
-            if snapshot.isEmpty, let lastMessage = self.messages.lastMessage(in: conversationID) {
-                snapshot = [lastMessage]
-            }
+            let snapshot = await self.messages.messagesSnapshot(in: conversationID)
             self.viewModel.refresh(conversationID: conversationID, messages: snapshot)
         }
     }

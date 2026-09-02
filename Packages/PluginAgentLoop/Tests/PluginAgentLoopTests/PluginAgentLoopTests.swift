@@ -226,7 +226,7 @@ func testMessageObserverDoesNotSkipNonAskUserSuspension() async throws {
 
 @MainActor
 @Test("应用重启后授权完成事件会从历史 assistant 消息恢复 Loop")
-func testHistoricalAuthorizedCompletionRehydratesLoop() {
+func testHistoricalAuthorizedCompletionRehydratesLoop() async {
     let messages = DefaultMessageManager()
     let conversationID = UUID()
     let turnID = UUID()
@@ -266,7 +266,7 @@ func testHistoricalAuthorizedCompletionRehydratesLoop() {
         contextProvider: PassthroughLLMContextProvider(messages: messages)
     )
 
-    loop.handleToolManagerEvent(.authorizedCompleted(
+    await loop.handleToolManagerEvent(.authorizedCompleted(
         conversationID: conversationID,
         turnID: nil,
         toolCall: KitAgentTool.ToolCall(
@@ -287,7 +287,7 @@ func testHistoricalAuthorizedCompletionRehydratesLoop() {
 
 @MainActor
 @Test("正常挂起回合收到授权完成事件后会继续剩余工具")
-func testAuthorizedCompletionResumesSuspendedLoop() {
+func testAuthorizedCompletionResumesSuspendedLoop() async {
     let messages = DefaultMessageManager()
     let conversationID = UUID()
     let turnID = UUID()
@@ -333,7 +333,7 @@ func testAuthorizedCompletionResumesSuspendedLoop() {
         )
     )
 
-    loop.handleToolManagerEvent(.authorizedCompleted(
+    await loop.handleToolManagerEvent(.authorizedCompleted(
         conversationID: conversationID,
         turnID: turnID,
         toolCall: KitAgentTool.ToolCall(

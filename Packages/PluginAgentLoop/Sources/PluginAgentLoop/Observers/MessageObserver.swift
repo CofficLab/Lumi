@@ -51,7 +51,7 @@ final class MessageObserver: SuperLog {
             // 不应让这条消息卡在一个永远不会被启动的独立回合里。把挂起点
             // 以“跳过”结果恢复，当前消息会保留在历史中并由恢复后的 LLM
             // 请求继续处理；这不是把当前消息当作 ask_user 的答案。
-            if let suspension = self.askUserSuspension(
+            if let suspension = await self.askUserSuspension(
                 in: conversationID,
                 agentLoop: agentLoop
             ) {
@@ -84,11 +84,11 @@ final class MessageObserver: SuperLog {
     private func askUserSuspension(
         in conversationID: UUID,
         agentLoop: any AgentLoopProviding
-    ) -> AgentLoopSuspension? {
+    ) async -> AgentLoopSuspension? {
         guard agentLoop.state(for: conversationID) == .suspended,
               let suspension = agentLoop.suspension(for: conversationID),
               let toolCallID = suspension.toolCallID,
-              let assistantMessage = messages.messages(for: conversationID).reversed().first(where: {
+              let assistantMessage = await messages.messagesSnapshot(in: conversationID).reversed().first(where: {
                   $0.role == .assistant
                       && $0.toolCalls?.contains(where: { $0.id == toolCallID }) == true
               }),
