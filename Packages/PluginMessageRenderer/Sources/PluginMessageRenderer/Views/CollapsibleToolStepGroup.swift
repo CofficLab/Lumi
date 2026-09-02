@@ -43,6 +43,23 @@ struct CollapsibleToolStepGroup: View {
     @State private var isHovering = false
     @State private var resolvedToolCalls: [MessageToolCall]?
     @State private var isLoadingResults = false
+    @StateObject private var jobActivity: ToolJobGroupActivityModel
+
+    init(
+        kernel: KernelCoreContainer,
+        message: Message,
+        toolCalls: [MessageToolCall],
+        verbosity: ResponseVerbosity
+    ) {
+        self.kernel = kernel
+        self.message = message
+        self.toolCalls = toolCalls
+        self.verbosity = verbosity
+        self._jobActivity = StateObject(wrappedValue: ToolJobGroupActivityModel(
+            manager: kernel.resolveProvider((any ToolManagerProviding).self),
+            jobIDs: toolCalls.map(\.id)
+        ))
+    }
 
     private var displayedToolCalls: [MessageToolCall] {
         resolvedToolCalls ?? toolCalls
@@ -152,6 +169,12 @@ struct CollapsibleToolStepGroup: View {
     /// 组内任一调用仍在执行 → loading;否则任一失败 → failed;否则 completed。
     private var aggregateState: ToolCallResultVisualState {
         if isLoadingResults { return .loading }
+        if jobActivity.jobs.contains(where: { $0.status == .failed || $0.status == .timedOut }) {
+            return .failed
+        }
+        if jobActivity.jobs.contains(where: { !$0.status.isTerminal }) {
+            return .loading
+        }
         return ToolStepGroupSummary.aggregateState(for: displayedToolCalls)
     }
 
@@ -159,7 +182,10 @@ struct CollapsibleToolStepGroup: View {
     /// - 进行中:`执行中 · 已完成 k/N`
     /// - 全部完成:`执行了 N 个步骤 · <总耗时>`(有失败则追加 `· X 失败`)
     private var summaryText: String {
-        ToolStepGroupSummary.summaryText(for: displayedToolCalls)
+        if !jobActivity.jobs.isEmpty {
+            return ToolStepGroupSummary.summaryText(for: jobActivity.jobs)
+        }
+        return ToolStepGroupSummary.summaryText(for: displayedToolCalls)
     }
 
     @MainActor

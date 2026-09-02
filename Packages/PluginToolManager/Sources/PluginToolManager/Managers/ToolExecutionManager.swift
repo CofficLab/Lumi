@@ -451,15 +451,20 @@ final class ToolExecutionManager {
         jobID: String,
         progress: ToolExecutionProgress
     ) {
-        guard let job = jobsByID[jobID], !job.status.isTerminal else { return }
+        guard var job = jobsByID[jobID], !job.status.isTerminal else { return }
+        let snapshot = ToolJobProgress(
+            message: progress.message,
+            completed: progress.completed,
+            total: progress.total,
+            fraction: progress.fraction
+        )
+        job.latestProgress = snapshot
+        job.updatedAt = Date()
+        jobsByID[jobID] = job
+        persist(job)
         emit(.progress(
             jobID: jobID,
-            progress: ToolJobProgress(
-                message: progress.message,
-                completed: progress.completed,
-                total: progress.total,
-                fraction: progress.fraction
-            ),
+            progress: snapshot,
             snapshot: job
         ))
     }

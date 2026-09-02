@@ -53,6 +53,25 @@ enum ToolStepGroupSummary {
         return parts.joined(separator: " · ")
     }
 
+    /// 从 Job 快照生成 V1 折叠态摘要，避免把实时态误判成“无结果”。
+    static func summaryText(for jobs: [ToolJob], now: Date = Date()) -> String {
+        guard !jobs.isEmpty else { return "执行工具" }
+        let total = jobs.count
+        let active = jobs.filter { !$0.status.isTerminal }.count
+        let failed = jobs.filter { $0.status == .failed || $0.status == .timedOut }.count
+        let start = jobs.map { $0.startedAt ?? $0.createdAt }.min() ?? now
+        let end = jobs.map { $0.completedAt ?? now }.max() ?? now
+        let elapsed = max(0, end.timeIntervalSince(start))
+
+        if active > 0 {
+            return "执行中 · \(total - active)/\(total) · \(MessageViewHelpers.formatDuration(elapsed))"
+        }
+        if failed > 0 {
+            return "已停止 · \(failed)个失败"
+        }
+        return "执行了\(total)个步骤 · \(MessageViewHelpers.formatDuration(elapsed))"
+    }
+
     /// 已完成工具的耗时之和(进行中仅统计已完成的部分);无任何耗时数据时为 nil。
     static func totalDuration(for toolCalls: [MessageToolCall]) -> TimeInterval? {
         let durations = toolCalls.compactMap { $0.result?.duration }

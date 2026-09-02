@@ -23,6 +23,33 @@ public enum ConversationActivity: String, Codable, Sendable, Equatable {
     case waitingForUser
 }
 
+/// 当前 Agent 回合中 Tool Job 的实时汇总。
+///
+/// 这是会话层面供 UI 使用的轻量投影，不携带完整 Job 和输出内容；
+/// 具体 Job 快照仍由 ToolManager 提供。
+public struct ConversationJobActivity: Codable, Sendable, Equatable {
+    public let currentJobCount: Int
+    public let runningJobCount: Int
+    public let recentJobDescription: String?
+    public let recentJobUpdatedAt: Date?
+
+    public init(
+        currentJobCount: Int = 0,
+        runningJobCount: Int = 0,
+        recentJobDescription: String? = nil,
+        recentJobUpdatedAt: Date? = nil
+    ) {
+        self.currentJobCount = currentJobCount
+        self.runningJobCount = runningJobCount
+        self.recentJobDescription = recentJobDescription
+        self.recentJobUpdatedAt = recentJobUpdatedAt
+    }
+
+    public var hasJobs: Bool {
+        currentJobCount > 0
+    }
+}
+
 /// 一个会话的当前状态快照。
 public struct ConversationStateSnapshot: Equatable, Sendable {
     public let conversationID: UUID
@@ -31,6 +58,7 @@ public struct ConversationStateSnapshot: Equatable, Sendable {
     public let toolState: ConversationToolState
     public let authorizationState: ConversationAuthorizationState
     public let activity: ConversationActivity?
+    public let jobActivity: ConversationJobActivity
     public let lastError: String?
 
     /// 当前会话是否正在执行 Agent 回合。
@@ -45,6 +73,7 @@ public struct ConversationStateSnapshot: Equatable, Sendable {
         toolState: ConversationToolState = .idle,
         authorizationState: ConversationAuthorizationState = .none,
         activity: ConversationActivity? = nil,
+        jobActivity: ConversationJobActivity = ConversationJobActivity(),
         lastError: String? = nil
     ) {
         self.conversationID = conversationID
@@ -53,6 +82,7 @@ public struct ConversationStateSnapshot: Equatable, Sendable {
         self.toolState = toolState
         self.authorizationState = authorizationState
         self.activity = activity
+        self.jobActivity = jobActivity
         self.lastError = lastError
     }
 }

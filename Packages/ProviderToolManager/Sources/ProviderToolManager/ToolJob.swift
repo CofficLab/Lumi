@@ -67,6 +67,7 @@ public struct ToolJob: Identifiable, Codable, Sendable, Equatable {
     public var updatedAt: Date
     public var completedAt: Date?
     public var latestOutput: String
+    public var latestProgress: ToolJobProgress?
     public var outputByteCount: Int
     public var exitCode: Int32?
     public var errorMessage: String?
@@ -81,6 +82,7 @@ public struct ToolJob: Identifiable, Codable, Sendable, Equatable {
         updatedAt: Date? = nil,
         completedAt: Date? = nil,
         latestOutput: String = "",
+        latestProgress: ToolJobProgress? = nil,
         outputByteCount: Int = 0,
         exitCode: Int32? = nil,
         errorMessage: String? = nil
@@ -95,6 +97,7 @@ public struct ToolJob: Identifiable, Codable, Sendable, Equatable {
         self.updatedAt = updatedAt ?? createdAt
         self.completedAt = completedAt
         self.latestOutput = latestOutput
+        self.latestProgress = latestProgress
         self.outputByteCount = outputByteCount
         self.exitCode = exitCode
         self.errorMessage = errorMessage
@@ -111,6 +114,7 @@ public struct ToolJob: Identifiable, Codable, Sendable, Equatable {
         case updatedAt
         case completedAt
         case latestOutput
+        case latestProgress
         case outputByteCount
         case exitCode
         case errorMessage
@@ -134,6 +138,7 @@ public struct ToolJob: Identifiable, Codable, Sendable, Equatable {
         self.updatedAt = try container.decode(Date.self, forKey: .updatedAt)
         self.completedAt = try container.decodeIfPresent(Date.self, forKey: .completedAt)
         self.latestOutput = try container.decode(String.self, forKey: .latestOutput)
+        self.latestProgress = try container.decodeIfPresent(ToolJobProgress.self, forKey: .latestProgress)
         self.outputByteCount = try container.decode(Int.self, forKey: .outputByteCount)
         self.exitCode = try container.decodeIfPresent(Int32.self, forKey: .exitCode)
         self.errorMessage = try container.decodeIfPresent(String.self, forKey: .errorMessage)

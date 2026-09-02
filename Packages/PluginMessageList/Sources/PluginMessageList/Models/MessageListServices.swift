@@ -46,12 +46,20 @@ struct MessageListServices {
 
     func activityMessage(for conversationID: UUID?) -> Message? {
         guard let conversationID,
-              let activity = conversationState?.state(for: conversationID).activity else { return nil }
+              let conversationState else { return nil }
+        let state = conversationState.state(for: conversationID)
+        guard let activity = state.activity else { return nil }
         let content: String
         switch activity {
         case .sending: content = String(localized: "status.sending", defaultValue: "正在发送消息…")
         case .thinking: content = String(localized: "status.thinking", defaultValue: "正在思考…")
-        case .executingTool: content = String(localized: "status.executing-tool", defaultValue: "正在执行工具…")
+        case .executingTool:
+            if let description = state.jobActivity.recentJobDescription,
+               state.jobActivity.runningJobCount > 0 {
+                content = "正在\(description)…"
+            } else {
+                content = String(localized: "status.executing-tool", defaultValue: "正在执行工具…")
+            }
         case .waitingForUser: content = String(localized: "status.waiting-for-user", defaultValue: "等待你的输入…")
         }
         return Message(conversationID: conversationID, role: .status, content: content)

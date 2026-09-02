@@ -202,6 +202,30 @@ struct ToolCallRowView: View {
     @Binding var resultPopoverToolCallID: String?
 
     @State private var isHovering = false
+    @State private var isJobOutputPresented = false
+    @StateObject private var jobActivity: ToolJobActivityModel
+
+    init(
+        kernel: KernelCoreContainer,
+        message: Message,
+        toolCall: MessageToolCall,
+        verbosity: ResponseVerbosity,
+        showsDetails: Bool,
+        parameterPopoverToolCallID: Binding<String?>,
+        resultPopoverToolCallID: Binding<String?>
+    ) {
+        self.kernel = kernel
+        self.message = message
+        self.toolCall = toolCall
+        self.verbosity = verbosity
+        self.showsDetails = showsDetails
+        self._parameterPopoverToolCallID = parameterPopoverToolCallID
+        self._resultPopoverToolCallID = resultPopoverToolCallID
+        self._jobActivity = StateObject(wrappedValue: ToolJobActivityModel(
+            manager: kernel.resolveProvider((any ToolManagerProviding).self),
+            jobID: toolCall.id
+        ))
+    }
 
     private var isParametersPresented: Bool {
         parameterPopoverToolCallID == toolCall.id
@@ -215,15 +239,29 @@ struct ToolCallRowView: View {
         toolCall.result == nil
     }
 
+    private var jobProjection: ToolJobActivityProjection? {
+        guard let job = jobActivity.job else { return nil }
+        return ToolJobActivityProjection(job: job)
+    }
+
     /// 动作行展示文案：使用工具生成的语义化描述，并根据执行状态加上
     /// 「正在…/已完成」前缀，读起来更接近自然语言。
     private var actionTitle: String {
+        if let projection = jobProjection, toolCall.result == nil {
+            return "\(projection.state.title) · \(projection.title)"
+        }
         let description = toolCall.displayDescription ?? "执行工具"
         return isLoadingResult ? "正在\(description)…" : description
     }
 
     private var visualState: ToolCallResultVisualState {
-        ToolCallResultVisualState(result: toolCall.result, isLoading: isLoadingResult)
+        if let job = jobActivity.job, job.status == .failed || job.status == .timedOut {
+            return .failed
+        }
+        if let job = jobActivity.job, job.status.isTerminal, toolCall.result == nil {
+            return .completed
+        }
+        return ToolCallResultVisualState(result: toolCall.result, isLoading: isLoadingResult)
     }
 
     /// 参数/结果按钮是否可见：悬停该行、或对应 popover 打开时显示，平时隐藏。
@@ -247,31 +285,36 @@ struct ToolCallRowView: View {
     }
 
     private var defaultToolCallRow: some View {
-        HStack(spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: "wrench.and.screwdriver")
-                    .font(.appCaptionEmphasized)
-                    .foregroundColor(visualState.isFailure ? theme.error : theme.textSecondary)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "wrench.and.screwdriver")
+                        .font(.appCaptionEmphasized)
+                        .foregroundColor(visualState.isFailure ? theme.error : theme.textSecondary)
 
-                Text(actionTitle)
-                    .font(.appCaption)
-                    .foregroundColor(visualState.isFailure ? theme.error : theme.textPrimary)
-                    .lineLimit(1)
+                    Text(actionTitle)
+                        .font(.appCaption)
+                        .foregroundColor(visualState.isFailure ? theme.error : theme.textPrimary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 12)
+
+                // V2/V3 显示参数和结果按钮。
+                // 默认隐藏，悬停该行（或对应 popover 打开）时显现，避免常态下视觉噪声。
+                if showsDetails {
+                    parameterButton
+                        .opacity(controlsOpacity)
+                        .allowsHitTesting(controlsVisible)
+
+                    resultButton
+                        .opacity(controlsOpacity)
+                        .allowsHitTesting(controlsVisible)
+                }
             }
 
-            Spacer(minLength: 12)
-
-            // V2/V3 显示参数和结果按钮。
-            // 默认隐藏，悬停该行（或对应 popover 打开）时显现，避免常态下视觉噪声。
-            // 执行耗时不再单独显示，统一整合进「调用结果」popover 的内容区顶部。
-            if showsDetails {
-                parameterButton
-                    .opacity(controlsOpacity)
-                    .allowsHitTesting(controlsVisible)
-
-                resultButton
-                    .opacity(controlsOpacity)
-                    .allowsHitTesting(controlsVisible)
+            if let projection = jobProjection, toolCall.result == nil {
+                liveJobDetails(projection)
             }
         }
         .modifier(ToolCallRowContainerModifier(
@@ -285,6 +328,45 @@ struct ToolCallRowView: View {
             isHovering = hovering
         }
         .animation(.easeOut(duration: 0.12), value: controlsVisible)
+    }
+
+    @ViewBuilder
+    private func liveJobDetails(_ projection: ToolJobActivityProjection) -> some View {
+        HStack(spacing: 8) {
+            Text("耗时\(MessageViewHelpers.formatDuration(projection.duration))")
+                .font(.appMicro)
+                .foregroundColor(theme.textSecondary)
+
+            if let progressText = projection.progressText {
+                Text(progressText)
+                    .font(.appMicro)
+                    .foregroundColor(theme.textSecondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            if !projection.outputTail.isEmpty {
+                AppIconButton(
+                    systemImage: "terminal",
+                    tint: isJobOutputPresented ? theme.textPrimary : theme.textSecondary,
+                    size: .compact,
+                    isActive: isJobOutputPresented
+                ) {
+                    isJobOutputPresented.toggle()
+                }
+                .help("查看输出")
+                .popover(isPresented: $isJobOutputPresented, arrowEdge: .bottom) {
+                    if let job = jobActivity.job {
+                        ToolJobOutputPopover(job: job)
+                    }
+                }
+            }
+
+            if projection.canStop {
+                ToolJobStopButton(model: jobActivity)
+            }
+        }
     }
 
     @ViewBuilder

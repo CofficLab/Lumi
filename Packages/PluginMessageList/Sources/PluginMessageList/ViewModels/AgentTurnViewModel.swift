@@ -42,6 +42,14 @@ final class AgentTurnViewModel: ObservableObject {
         await refresh()
     }
 
+    /// 停止当前回合尚未结束的全部 Tool Job。
+    ///
+    /// 取消是同步发起的状态操作，实际进程终止和终态事件仍由 ToolManager 负责。
+    func stopCurrentTurn() {
+        guard let turnID = item.record?.id else { return }
+        services.toolManager?.cancelJobs(forTurnID: turnID)
+    }
+
     func refresh() async {
         guard let messageManager = services.messages else {
             projection = AgentTurnMessageProjection()
