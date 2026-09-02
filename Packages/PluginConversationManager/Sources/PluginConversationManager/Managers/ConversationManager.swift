@@ -26,6 +26,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     @Published public internal(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
+            syncProjectForSelectedConversation()
             notifySelectedConversationObservers()
             notifyConversationObservers(.selected(selectedConversationID))
         }
@@ -254,6 +255,39 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         // 避免 selectConversation 触发第二次全局广播。
         guard currentTitle != newTitle else { return }
         currentTitle = newTitle
+    }
+
+    // MARK: - Project Sync
+
+    /// 选中对话变化时，若该对话绑定了项目，则将内核当前项目切换为该对话绑定的项目。
+    ///
+    /// 仅在以下情况切换：
+    /// - 对话存在且 `projectPath` 非空；
+    /// - 与 `ProjectProviding.currentProject` 的路径不同（避免重复打开）。
+    ///
+    /// 选中未绑定项目的对话时不强关当前项目（用户手动打开的项目不应被误伤）。
+    /// 失败仅记录日志，不阻塞选中流程。
+    func syncProjectForSelectedConversation() {
+        guard let project else { return }
+        guard let selectedID = selectedConversationID,
+              let conversation = conversations.first(where: { $0.id == selectedID }),
+              let projectPath = conversation.projectPath?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !projectPath.isEmpty else {
+            return
+        }
+        if project.currentProject?.path == projectPath {
+            return
+        }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)当前对话绑定项目，切换项目到 \(projectPath, privacy: .public)")
+        }
+        Task { @MainActor in
+            do {
+                try await project.openProject(at: projectPath)
+            } catch {
+                Self.logger.error("\(Self.t)切换项目失败：\(error.localizedDescription, privacy: .public)")
+            }
+        }
     }
 
     func loadPersistedSelectedConversationID() -> UUID? {

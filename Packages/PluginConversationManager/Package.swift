@@ -43,7 +43,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginConversationManagerTests",
-            dependencies: ["PluginConversationManager"],
+            dependencies: [
+                "PluginConversationManager",
+                "ProviderProject",
+            ],
             path: "Tests"
         ),
     ]
