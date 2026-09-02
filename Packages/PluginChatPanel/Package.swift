@@ -37,6 +37,7 @@ let package = Package(
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
             ]
         ),
     ]
