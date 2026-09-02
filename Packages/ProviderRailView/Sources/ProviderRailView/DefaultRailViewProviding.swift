@@ -19,6 +19,8 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
     private var activeWidthStore: (any RailViewWidthStoring)?
     private var activeWidthOwnerID: String?
 
+    private var observers: [WeakObserver] = []
+
     public var railVisibilityPublisher: AnyPublisher<Bool, Never> {
         $hasVisibleTabs.eraseToAnyPublisher()
     }
@@ -36,35 +38,82 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
     }
 
     public func registerTabs(_ tabs: [RailTabItem]) {
+        let oldTabs = self.tabs
+        let oldActiveTabID = activeTabID
+        let oldHasVisibleTabs = hasVisibleTabs
+
         self.tabs = tabs.sorted { $0.order < $1.order }
         reconcileActiveTab()
         updateVisibleTabState()
+
+        if self.tabs.map(\.id) != oldTabs.map(\.id) {
+            notify(.tabsChanged(self.tabs))
+        }
+        if activeTabID != oldActiveTabID {
+            notify(.activeTabChanged(activeTabID))
+        }
+        if hasVisibleTabs != oldHasVisibleTabs {
+            notify(.visibilityChanged(hasVisibleTabs))
+        }
     }
 
     public func activateTab(id: String?) {
+        let oldActiveTabID = activeTabID
         guard let id else {
             activeTabID = nil
+            if activeTabID != oldActiveTabID {
+                notify(.activeTabChanged(activeTabID))
+            }
             return
         }
         guard visibleTabs.contains(where: { $0.id == id }) else { return }
         activeTabID = id
+        if activeTabID != oldActiveTabID {
+            notify(.activeTabChanged(activeTabID))
+        }
     }
 
     public func setVisibleCategories(_ categories: Set<RailViewCategory>) {
         guard visibleCategories != categories || visibleTabID != nil else { return }
+        let oldVisibleTabID = visibleTabID
+        let oldActiveTabID = activeTabID
+        let oldHasVisibleTabs = hasVisibleTabs
+
         visibleCategories = categories
         // 分类过滤和指定 tab 过滤是两种互斥的显示模式；切换回分类模式时，
         // 必须清除上一个插件留下的 tab id，否则可能把分类内所有 tab 都过滤掉。
         visibleTabID = nil
         reconcileActiveTab()
         updateVisibleTabState()
+
+        notify(.visibleCategoriesChanged(visibleCategories))
+        if visibleTabID != oldVisibleTabID {
+            notify(.visibleTabIDChanged(visibleTabID))
+        }
+        if activeTabID != oldActiveTabID {
+            notify(.activeTabChanged(activeTabID))
+        }
+        if hasVisibleTabs != oldHasVisibleTabs {
+            notify(.visibilityChanged(hasVisibleTabs))
+        }
     }
 
     public func setVisibleTabID(_ id: String?) {
         guard visibleTabID != id else { return }
+        let oldActiveTabID = activeTabID
+        let oldHasVisibleTabs = hasVisibleTabs
+
         visibleTabID = id
         reconcileActiveTab()
         updateVisibleTabState()
+
+        notify(.visibleTabIDChanged(visibleTabID))
+        if activeTabID != oldActiveTabID {
+            notify(.activeTabChanged(activeTabID))
+        }
+        if hasVisibleTabs != oldHasVisibleTabs {
+            notify(.visibilityChanged(hasVisibleTabs))
+        }
     }
 
     public func activateWidthProfile(
@@ -80,6 +129,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         let resolvedWidth = recommended.withIdealWidth(recommended.clamped(restoredWidth))
         if railWidth != resolvedWidth {
             railWidth = resolvedWidth
+            notify(.widthChanged(railWidth))
         }
     }
 
@@ -89,6 +139,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         activeWidthStore = nil
         if railWidth != .standard {
             railWidth = .standard
+            notify(.widthChanged(railWidth))
         }
     }
 
@@ -99,11 +150,33 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         let updatedWidth = railWidth.withIdealWidth(resolvedWidth)
         if railWidth != updatedWidth {
             railWidth = updatedWidth
+            notify(.widthChanged(railWidth))
         }
+    }
+
+    @discardableResult
+    public func addObserver(_ callback: @escaping (RailViewProvidingEvent) -> Void) -> any RailViewProvidingObserverHandle {
+        let observer = Observer(owner: self, callback: callback)
+        observers.append(WeakObserver(observer))
+        return observer
     }
 
     public func makeRailView() -> AnyView {
         AnyView(RailView(provider: self))
+    }
+
+    // MARK: - Observer Infrastructure
+
+    private func remove(_ observer: Observer) {
+        observers.removeAll { $0.observer === observer }
+    }
+
+    private func notify(_ event: RailViewProvidingEvent) {
+        observers.removeAll { $0.observer == nil }
+        let activeObservers = observers
+        for observer in activeObservers {
+            observer.observer?.invoke(event)
+        }
     }
 
     fileprivate var visibleTabs: [RailTabItem] {
@@ -126,6 +199,36 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
             return
         }
         activeTabID = visibleTabs[0].id
+    }
+
+    private final class Observer: RailViewProvidingObserverHandle {
+        private weak var owner: DefaultRailViewProviding?
+        private let callback: (RailViewProvidingEvent) -> Void
+        private var cancelled = false
+
+        init(owner: DefaultRailViewProviding, callback: @escaping (RailViewProvidingEvent) -> Void) {
+            self.owner = owner
+            self.callback = callback
+        }
+
+        func cancel() {
+            guard !cancelled else { return }
+            cancelled = true
+            owner?.remove(self)
+        }
+
+        func invoke(_ event: RailViewProvidingEvent) {
+            guard !cancelled else { return }
+            callback(event)
+        }
+    }
+
+    private final class WeakObserver {
+        weak var observer: Observer?
+
+        init(_ observer: Observer) {
+            self.observer = observer
+        }
     }
 }
 
