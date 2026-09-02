@@ -18,6 +18,7 @@ let package = Package(
         .package(path: "../ProviderConversationInput"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageSender"),
+        .package(path: "../ProviderPerformanceMetrics"),
         .package(path: "../KitSuperLog"),
     ],
     targets: [
@@ -33,6 +34,7 @@ let package = Package(
                 "ProviderConversationInput",
                 "ProviderMessage",
                 "ProviderMessageSender",
+                "ProviderPerformanceMetrics",
                 "KitSuperLog",
             ],
             path: "Sources/PluginConversationInput",

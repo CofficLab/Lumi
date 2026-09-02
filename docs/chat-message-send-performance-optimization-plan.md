@@ -238,11 +238,26 @@ send() 同步捕获并提交用户消息
 
 实现记录见 [`docs/plans/2026-09-02-persistence-queue-qos.md`](plans/2026-09-02-persistence-queue-qos.md)。
 
+#### P2-4：建立统一性能指标 Providing（MVP 已完成）
+
+已增加 `PerformanceMetricsProviding`，由 `PluginPerformanceMetrics` 注册为全局 Provider。插件只需要上报操作名、阶段、耗时和少量非敏感 metadata；Provider 在内存中做有界缓存，使用 `.utility` 队列批量落盘，设置页展示 P50/P95/P99/Max。
+
+当前已接入聊天输入发送链路：
+
+```text
+Return
+  -> chat.send.begin
+  -> message.committed
+  -> chat.send.total
+```
+
+这条上报不会读取消息文本，也不会在 Return 同步路径执行文件 I/O。后续可以沿同一契约补充 `MessageChangePublished`、`MessageRowApplied` 和首帧等阶段。
+
 ## 5. 推荐实施顺序
 
 ### 阶段一：建立可观测基线
 
-先不改变产品行为，增加 signpost 和计时：
+使用统一性能指标 Provider 增加计时：
 
 ```text
 ReturnKey
@@ -258,6 +273,7 @@ FirstFrameAfterSend
 - Return → UserMessageCommitted；
 - UserMessageCommitted → MessageRowApplied；
 - MessageRowApplied → FirstFrameAfterSend；
+- 每个阶段的 P50/P95/P99，而不是只看单次最大值；
 - 主线程同步耗时；
 - 消息数据库查询次数；
 - 单次查询解码消息数和文本字符数。
@@ -384,12 +400,12 @@ sender.startAgentTurn(for: message)
 - [ ] Instruments 中主线程没有新的长耗时尖峰；
 - [ ] 关键路径的 signpost 数据有改善。
 
-## 9. 建议的第一批改动
+## 9. 建议的下一批改动
 
-这三项已完成。后续优化按本文档中 P1/P2 的顺序继续推进：
+发送快速提交、附件编码、持久化 QoS 和统一指标 Provider 的第一版已完成。后续优化按本文档中 P1/P2 的顺序继续推进：
 
-1. 优先补齐发送入口的同步快速提交语义；
-2. 再处理附件编码、首帧预算和 Instruments signpost 验证；
+1. 让消息变化事件带上阶段信息，补齐 `MessageChangePublished` 与 `MessageRowApplied`；
+2. 增加首帧观测和 Instruments 性能基准；
 3. 对 V1 的 turn 边界和大历史滚动补充性能基准。
 
 完成这三项后，再处理统计、标题和会话列表等后台消费者。
