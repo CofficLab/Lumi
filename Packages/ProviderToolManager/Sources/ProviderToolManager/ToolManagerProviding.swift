@@ -29,6 +29,28 @@ public protocol ToolManagerProviding: AnyObject {
     func addToolJobObserver(
         _ callback: @escaping (ToolJobEvent) -> Void
     ) -> any ToolJobObserverHandle
+
+    /// 提交一批工具 Job。提交只负责创建并启动后台 Job，不等待工具完成。
+    @discardableResult
+    func submit(
+        _ toolCalls: [ToolCall],
+        policy: ToolExecutionPolicy,
+        conversationID: UUID,
+        turnID: UUID?
+    ) -> [ToolJob]
+
+    /// 查询单个 Job 的最新快照。
+    func job(for jobID: String) -> ToolJob?
+
+    /// 查询指定 turn 的全部 Job，按创建时间排序。
+    func jobs(for turnID: UUID) -> [ToolJob]
+
+    /// 取消单个 Job；重复取消不会产生重复终态事件。
+    func cancelJob(_ jobID: String)
+
+    /// 取消指定 turn 或会话中的全部 Job。
+    func cancelJobs(forTurnID turnID: UUID)
+    func cancelJobs(forConversationID conversationID: UUID)
     // MARK: - Registration（插件调用）
 
     /// 所有已注册的 Agent 工具，按注册顺序返回。
@@ -133,6 +155,42 @@ public protocol ToolManagerProviding: AnyObject {
 public extension ToolManagerProviding {
     /// 未指定插件归属的工具使用的默认分组。
     static var builtInPluginID: String { "Built-in" }
+
+    @discardableResult
+    func submit(
+        _ toolCalls: [ToolCall],
+        policy: ToolExecutionPolicy,
+        conversationID: UUID,
+        turnID: UUID?
+    ) -> [ToolJob] {
+        _ = toolCalls
+        _ = policy
+        _ = conversationID
+        _ = turnID
+        return []
+    }
+
+    func job(for jobID: String) -> ToolJob? {
+        _ = jobID
+        return nil
+    }
+
+    func jobs(for turnID: UUID) -> [ToolJob] {
+        _ = turnID
+        return []
+    }
+
+    func cancelJob(_ jobID: String) {
+        _ = jobID
+    }
+
+    func cancelJobs(forTurnID turnID: UUID) {
+        _ = turnID
+    }
+
+    func cancelJobs(forConversationID conversationID: UUID) {
+        _ = conversationID
+    }
 
     func authorizationDecision(
         for toolCall: ToolCall,

@@ -36,6 +36,36 @@ private actor ShellExecutionState {
     }
 }
 
+private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
+    let name: String
+    let delayNanoseconds: UInt64
+    let counter: CountingTool.Counter
+
+    func description(for language: LanguagePreference) -> String { name }
+    func inputSchema(for language: LanguagePreference) -> [String: Any] { [:] }
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { name }
+
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await Task.sleep(nanoseconds: delayNanoseconds)
+        return name
+    }
+
+    func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        counter.value += 1
+        await context.reportOutput(.stdout, "started")
+        await context.reportProgress(
+            ToolExecutionProgress(message: "halfway", completed: 1, total: 2, fraction: 0.5)
+        )
+        try await Task.sleep(nanoseconds: delayNanoseconds)
+        try Task.checkCancellation()
+        return ToolCallResult(content: "finished")
+    }
+}
+
 @MainActor
 @Test func toolManagerBatchStopsAtApproval() async {
     let manager = ToolManager()
@@ -160,6 +190,105 @@ private actor ShellExecutionState {
 
     #expect(events.contains { $0.stream == .stderr && $0.text.contains("second") })
     #expect(result.content.contains("second"))
+}
+
+@MainActor
+@Test func toolJobSubmitsWithoutWaitingAndPublishesTerminalEvents() async throws {
+    let manager = ToolManager()
+    let counter = CountingTool.Counter()
+    manager.add(
+        DelayedTool(name: "delayed", delayNanoseconds: 300_000_000, counter: counter),
+        pluginID: "test"
+    )
+    let conversationID = UUID()
+    let call = ToolCall(id: "job-1", name: "delayed", arguments: "{}")
+    var events: [ToolJobEvent] = []
+    let handle = manager.addToolJobObserver { events.append($0) }
+    defer { handle.cancel() }
+
+    let startedAt = Date()
+    let jobs = manager.submit(
+        [call],
+        policy: .autoExecute,
+        conversationID: conversationID,
+        turnID: UUID()
+    )
+
+    #expect(Date().timeIntervalSince(startedAt) < 0.1)
+    #expect(jobs.count == 1)
+    #expect(jobs.first?.status == .running)
+
+    let result = await manager.waitForJobResult(jobID: call.id)
+    #expect(result?.content == "finished")
+    #expect(manager.job(for: call.id)?.status == .completed)
+    #expect(counter.value == 1)
+    #expect(events.filter { if case .created = $0 { true } else { false } }.count == 1)
+    #expect(events.filter { if case .started = $0 { true } else { false } }.count == 1)
+    #expect(events.filter { if case .output = $0 { true } else { false } }.count == 1)
+    #expect(events.filter { if case .progress = $0 { true } else { false } }.count == 1)
+    #expect(events.filter { if case .completed = $0 { true } else { false } }.count == 1)
+}
+
+@MainActor
+@Test func cancellingToolJobFinishesItExactlyOnce() async throws {
+    let manager = ToolManager()
+    manager.add(
+        DelayedTool(name: "slow", delayNanoseconds: 5_000_000_000, counter: .init()),
+        pluginID: "test"
+    )
+    let call = ToolCall(id: "job-cancel-1", name: "slow", arguments: "{}")
+    var cancelledEvents = 0
+    let handle = manager.addToolJobObserver { event in
+        if case .cancelled = event { cancelledEvents += 1 }
+    }
+    defer { handle.cancel() }
+
+    _ = manager.submit(
+        [call],
+        policy: .autoExecute,
+        conversationID: UUID(),
+        turnID: UUID()
+    )
+    manager.cancelJob(call.id)
+
+    let result = await manager.waitForJobResult(jobID: call.id)
+    #expect(result?.isError == true)
+    #expect(manager.job(for: call.id)?.status == .cancelled)
+    #expect(cancelledEvents == 1)
+}
+
+@MainActor
+@Test func duplicateToolJobSubmissionReusesTheExistingJob() async throws {
+    let manager = ToolManager()
+    let counter = CountingTool.Counter()
+    manager.add(
+        DelayedTool(name: "once", delayNanoseconds: 50_000_000, counter: counter),
+        pluginID: "test"
+    )
+    let call = ToolCall(id: "job-idempotent-1", name: "once", arguments: "{}")
+    var createdEvents = 0
+    let handle = manager.addToolJobObserver { event in
+        if case .created = event { createdEvents += 1 }
+    }
+    defer { handle.cancel() }
+
+    let first = manager.submit(
+        [call],
+        policy: .autoExecute,
+        conversationID: UUID(),
+        turnID: nil
+    )
+    let second = manager.submit(
+        [call],
+        policy: .autoExecute,
+        conversationID: UUID(),
+        turnID: nil
+    )
+
+    #expect(first == second)
+    _ = await manager.waitForJobResult(jobID: call.id)
+    #expect(counter.value == 1)
+    #expect(createdEvents == 1)
 }
 
 @MainActor
