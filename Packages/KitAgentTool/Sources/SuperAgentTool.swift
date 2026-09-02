@@ -59,6 +59,15 @@ public protocol SuperAgentTool: Sendable {
     /// 应覆盖本方法。例如 AskUser 工具返回 `awaitingUserResponse: true`
     /// 让 Agent 循环暂停等待用户回答。
     func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult
+
+    /// 带执行上下文的结构化工具执行接口。
+    ///
+    /// 新工具可以通过 Context 查询取消状态，并持续上报输出和进度。
+    /// 旧工具无需修改，默认实现会转发到无 Context 的旧接口。
+    func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult
 }
 
 extension SuperAgentTool {
@@ -89,5 +98,14 @@ extension SuperAgentTool {
     /// 需要返回图片附件等结构化结果的工具（如预览渲染图）可覆盖此方法。
     public func executeResult(arguments: [String: ToolArgument]) async throws -> ToolCallResult {
         ToolCallResult(content: try await execute(arguments: arguments))
+    }
+
+    /// 兼容旧工具的默认实现：忽略 Context，继续调用旧接口。
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        _ = context
+        return try await executeResult(arguments: arguments)
     }
 }
