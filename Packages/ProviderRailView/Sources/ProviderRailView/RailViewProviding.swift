@@ -2,6 +2,35 @@ import Combine
 import Foundation
 import SwiftUI
 
+// MARK: - Observation
+
+/// Rail 视图状态变更事件。
+///
+/// 消费者通过 `addObserver` 注册回调，收到精准的"谁变了、变成什么"，
+/// 避免只用 `objectWillChange` 粗粒度通知导致的不必要刷新与歧义。
+@MainActor
+public enum RailViewProvidingEvent {
+    case tabsChanged([RailTabItem])
+    case activeTabChanged(String?)
+    case visibleCategoriesChanged(Set<RailViewCategory>)
+    case visibleTabIDChanged(String?)
+    case visibilityChanged(Bool)
+    case widthChanged(RailViewWidth)
+}
+
+/// Rail 视图状态观察句柄。
+@MainActor
+public protocol RailViewProvidingObserverHandle: AnyObject {
+    /// 停止接收后续 Rail 视图变更通知。重复调用无副作用。
+    func cancel()
+}
+
+@MainActor
+public final class NoopRailViewProvidingObserverHandle: RailViewProvidingObserverHandle {
+    public init() {}
+    public func cancel() {}
+}
+
 // MARK: - Rail Width
 
 /// Rail 侧栏的宽度约束。
@@ -121,8 +150,7 @@ public final class FileRailViewWidthStore: RailViewWidthStoring {
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any RailViewProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
-public protocol RailViewProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol RailViewProviding: AnyObject {
     /// 当前已注入的全部 Rail tab 项。
     var tabs: [RailTabItem] { get }
 
@@ -184,6 +212,13 @@ public protocol RailViewProviding: AnyObject, ObservableObject
     /// 保存当前激活插件的用户拖拽宽度。
     func saveCurrentWidth(_ width: CGFloat)
 
+    /// 注册 Rail 视图状态变更观察者。
+    ///
+    /// 不应保存 Provider 的强引用；返回的句柄在释放或显式调用 `cancel()` 后
+    /// 自动停止接收通知。
+    @discardableResult
+    func addObserver(_ callback: @escaping (RailViewProvidingEvent) -> Void) -> any RailViewProvidingObserverHandle
+
     /// 返回 Rail 视图（基于已注入的 tabs 渲染）。
     func makeRailView() -> AnyView
 }
@@ -238,4 +273,9 @@ public extension RailViewProviding {
     func deactivateWidthProfile(ownerID: String) {}
 
     func saveCurrentWidth(_ width: CGFloat) {}
+
+    @discardableResult
+    func addObserver(_ callback: @escaping (RailViewProvidingEvent) -> Void) -> any RailViewProvidingObserverHandle {
+        NoopRailViewProvidingObserverHandle()
+    }
 }
