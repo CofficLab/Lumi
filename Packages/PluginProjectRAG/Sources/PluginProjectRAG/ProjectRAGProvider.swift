@@ -9,14 +9,16 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
     private let service: RAGService
     private weak var project: (any ProjectProviding)?
     private var observers: [UUID: (ProjectRAGEvent) -> Void] = [:]
-    private var projectObserver: (any ProjectProvidingObserverHandle)?
+    private var projectObserver: ProjectRAGProjectObserver?
 
     public init(service: RAGService, project: (any ProjectProviding)?) {
         self.service = service
         self.project = project
-        projectObserver = project?.addObserver { [weak self] event in
-            guard case .currentProjectChanged = event, let self else { return }
-            self.notify(.projectChanged(self.currentProjectPath))
+        if let project {
+            projectObserver = ProjectRAGProjectObserver(project: project) { [weak self] in
+                guard let self else { return }
+                self.notify(.projectChanged(self.currentProjectPath))
+            }
         }
     }
 
