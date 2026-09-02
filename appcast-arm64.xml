@@ -3,26 +3,38 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.21.0</title>
-            <pubDate>Tue, 01 Sep 2026 08:45:43 +0000</pubDate>
-            <sparkle:version>622</sparkle:version>
-            <sparkle:shortVersionString>5.21.0</sparkle:shortVersionString>
+            <title>5.22.0</title>
+            <pubDate>Wed, 02 Sep 2026 10:17:21 +0000</pubDate>
+            <sparkle:version>623</sparkle:version>
+            <sparkle:shortVersionString>5.22.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.21.0</h2>
-<h3>Changes since v5.20.0</h3>
+            <description><![CDATA[<h2>Release v5.22.0</h2>
+<h3>Changes since v5.21.0</h3>
 <ul>
-<li>feat: make content footer resizable</li>
-<li>feat(activity-bar): hide content footer for non-editor plugins</li>
-<li>feat(conversation-input): support dropping directories into chat input</li>
-<li>feat(factory-lumi): sync native window appearance after theme change</li>
-<li>feat(plugin-code-editor): sync editor theme with Lumi themes</li>
-<li>feat(plugin-editor-preview): conditionally show content footer based on preview state</li>
-<li>fix(kitllm): reject incomplete streaming responses</li>
-<li>fix(project-files): preserve double-click events</li>
+<li>docs(agent-loop): add tool job orchestration plan</li>
+<li>docs(tool-job): document runtime operations and recovery</li>
+<li>feat: add agent plan storage plugin</li>
+<li>feat: add always allow tool approval action</li>
+<li>feat: optimize context compaction lifecycle</li>
+<li>feat: show context compaction timeline events</li>
+<li>feat(agent-loop): resume turns from tool job events</li>
+<li>feat(agent-tool): add cancellable execution context</li>
+<li>feat(app-store-connect): restore App Store Connect plugin</li>
+<li>feat(model-selector): notify model switch via kernel toast</li>
+<li>feat(perf): add centralized metrics provider</li>
+<li>feat(PluginAppStoreConnect): localize size and relation format strings</li>
+<li>feat(PluginChatPanel): persist and restore active Rail tab on Chat activation</li>
+<li>feat(PluginConversationContextSize): add token usage and context window localization</li>
+<li>feat(RailView): add Observer event mechanism and remove ObservableObject from protocol</li>
+<li>feat(RailView): add Observer event mechanism to RailViewProviding</li>
+<li>feat(shell-tool): stream output through tool context</li>
+<li>feat(tool-job): add cancellable execution manager</li>
+<li>feat(tool-job): define observable tool job contracts</li>
+<li>feat(tool-job): persist and recover execution state</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.21.0</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.22.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.21.0/Lumi_5.21.0_arm64.dmg" length="41566711" type="application/octet-stream" sparkle:edSignature="/JCI0yIwYjDaJpzRvf3SlKLYMpIjidM17WuORQgNv9ZA8nXB8rjiKn4iH7eaiWC6x5e+2h1KMYDq6gsi/P6HBQ=="/>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.22.0/Lumi_5.22.0_arm64.dmg" length="41816407" type="application/octet-stream" sparkle:edSignature="iv8ulbnblTbCXNvqCsIfXHY9/dHw3OD1Y+RDSlXDWzziRcQEML7A7IOp8HZu2ZnUpo/1ZiwEVaWynQ7WoqvFCA=="/>
         </item>
     </channel>
 </rss>
