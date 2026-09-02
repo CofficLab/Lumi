@@ -1,5 +1,6 @@
 import LumiUI
 import ProviderLLMManager
+import ProviderToast
 import SwiftUI
 
 /// Action Bar 上的模型选择按钮（由旧版 ModelSelectorPlugin 复刻）。
@@ -11,6 +12,7 @@ struct ActionBarButton: View {
     @LumiTheme private var theme
     @ObservedObject var box: ObservableLLMProviderManagerBox
     @ObservedObject var usageStore: ProviderUsageStore
+    let toast: (any ToastProviding)?
 
     @State private var isPopoverPresented = false
 
@@ -43,6 +45,7 @@ struct ActionBarButton: View {
             PopoverContent(
                 box: box,
                 usageStore: usageStore,
+                toast: toast,
                 isPresented: $isPopoverPresented
             )
         }

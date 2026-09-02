@@ -1,6 +1,7 @@
 import Foundation
 import LumiUI
 import ProviderLLMManager
+import ProviderToast
 import SwiftUI
 
 /// 模型选择弹窗：左侧供应商列表 + 右侧模型列表（由旧版复刻）。
@@ -8,6 +9,7 @@ struct PopoverContent: View {
     @LumiTheme private var theme
     @ObservedObject var box: ObservableLLMProviderManagerBox
     @ObservedObject var usageStore: ProviderUsageStore
+    let toast: (any ToastProviding)?
     @Binding var isPresented: Bool
 
     /// 当前选中的供应商（初始来自内核 `LLMManaging`）。
@@ -31,6 +33,7 @@ struct PopoverContent: View {
                 box: box,
                 selectedProviderID: selectedProviderID,
                 initialModel: box.selectedModel,
+                toast: toast,
                 onSelect: { providerID, _ in
                     usageStore.recordUse(providerID: providerID)
                     isPresented = false

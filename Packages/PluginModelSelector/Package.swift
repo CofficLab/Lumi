@@ -17,6 +17,7 @@ let package = Package(
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderStorage"),
         .package(path: "../KitLLM"),
+        .package(path: "../ProviderToast"),
     ],
     targets: [
         .target(
@@ -29,6 +30,7 @@ let package = Package(
                 "ProviderLLMManager",
                 "ProviderStorage",
                 "KitLLM",
+                "ProviderToast",
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
