@@ -1,5 +1,9 @@
 import KernelCore
 import KitAgentTool
+import ProviderAgentLoop
+import ProviderConversation
+import ProviderLifecycleHooks
+import ProviderMessage
 import ProviderToolManager
 import Testing
 @testable import PluginToolManager
@@ -52,7 +56,7 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
     }
 
     func executeResult(
-        context: ToolExecutionContext,
+        context: KitAgentTool.ToolExecutionContext,
         arguments: [String: ToolArgument]
     ) async throws -> ToolCallResult {
         counter.value += 1
@@ -292,6 +296,102 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
 }
 
 @MainActor
+@Test func toolCallsObserverSubmitsWithoutWaitingForToolCompletion() async throws {
+    let manager = ToolManager()
+    manager.add(
+        DelayedTool(name: "observer-delayed", delayNanoseconds: 300_000_000, counter: .init()),
+        pluginID: "test"
+    )
+    let conversationID = UUID()
+    let turnID = UUID()
+    let agentLoop = RecordingToolCallsAgentLoop()
+    let conversations = DefaultConversationManager()
+    conversations.setGlobalAutomationLevel(.autonomous)
+    let observer = ToolCallsObserver(
+        agentLoop: agentLoop,
+        conversations: conversations,
+        service: manager
+    )
+    defer { observer.cancel() }
+
+    let startedAt = Date()
+    agentLoop.send(.toolCallsReceived(
+        conversationID: conversationID,
+        turnID: turnID,
+        assistantMessageID: UUID(),
+        toolCalls: [
+            MessageToolCall(
+                id: "observer-job-1",
+                name: "observer-delayed",
+                arguments: "{}"
+            )
+        ]
+    ))
+
+    #expect(Date().timeIntervalSince(startedAt) < 0.1)
+    #expect(manager.job(for: "observer-job-1")?.status == .running)
+
+    let result = await manager.waitForJobResult(jobID: "observer-job-1")
+    #expect(result?.content == "finished")
+}
+
+@MainActor
+@Test func toolCallsObserverDoesNotDropBlockedOrApprovalCalls() async throws {
+    let manager = ToolManager()
+    manager.add(CountingTool(name: "risky-observer", risk: .high, counter: .init()), pluginID: "test")
+    let conversationID = UUID()
+    let turnID = UUID()
+    let agentLoop = RecordingToolCallsAgentLoop()
+    let conversations = DefaultConversationManager()
+    var events: [ToolManagerEvent] = []
+    let handle = manager.addToolManagerObserver { events.append($0) }
+    defer { handle.cancel() }
+    let observer = ToolCallsObserver(
+        agentLoop: agentLoop,
+        conversations: conversations,
+        service: manager
+    )
+    defer { observer.cancel() }
+
+    conversations.setGlobalAutomationLevel(.chat)
+    agentLoop.send(.toolCallsReceived(
+        conversationID: conversationID,
+        turnID: turnID,
+        assistantMessageID: UUID(),
+        toolCalls: [MessageToolCall(id: "blocked-1", name: "risky-observer", arguments: "{}")]
+    ))
+    try await Task.sleep(nanoseconds: 50_000_000)
+
+    let blocked = events.contains { event in
+        guard case let .batchCompleted(_, _, _, results) = event,
+              case let .blocked(reason) = results.first else { return false }
+        return reason.contains("Chat mode")
+    }
+    #expect(blocked)
+
+    conversations.setGlobalAutomationLevel(.build)
+    agentLoop.send(.toolCallsReceived(
+        conversationID: conversationID,
+        turnID: turnID,
+        assistantMessageID: UUID(),
+        toolCalls: [MessageToolCall(id: "approval-1", name: "risky-observer", arguments: "{}")]
+    ))
+    try await Task.sleep(nanoseconds: 50_000_000)
+
+    let approvalRequested = events.contains { event in
+        if case .authorizationRequired = event { return true }
+        return false
+    }
+    let approvalResult = events.contains { event in
+        guard case let .batchCompleted(_, _, _, results) = event,
+              case .needsUserResponse = results.first else { return false }
+        return true
+    }
+    #expect(approvalRequested)
+    #expect(approvalResult)
+}
+
+@MainActor
 @Test func globToolUsesTheCurrentWorkspaceRootWhenPathIsOmitted() async throws {
     let packageRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent()
@@ -399,4 +499,44 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
         turnID: nil
     )
     #expect(eventCount == 1)
+}
+
+@MainActor
+private final class RecordingToolCallsAgentLoop: AgentLoopProviding {
+    private var observer: ((AgentLoopEvent) -> Void)?
+
+    func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle {
+        observer = callback
+        return NoopAgentLoopObserverHandle()
+    }
+
+    func send(_ event: AgentLoopEvent) {
+        observer?(event)
+    }
+
+    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome { .completed }
+
+    func resumeTurn(
+        in conversationID: UUID,
+        request: AgentTurnResumeRequest
+    ) async throws -> AgentLoopOutcome { .completed }
+
+    func cancelTurn(in conversationID: UUID) {}
+
+    func state(for conversationID: UUID) -> AgentLoopState { .idle }
+
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
+
+    func isRunning(for conversationID: UUID) -> Bool { false }
+
+    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
+
+    func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
+}
+
+@MainActor
+private final class NoopAgentLoopObserverHandle: AgentLoopObserverHandle {
+    func cancel() {}
 }
