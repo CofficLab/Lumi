@@ -1,5 +1,4 @@
 import KitAgentTool
-import Combine
 import KernelCore
 import ProviderAgentLoop
 import ProviderChatSection
@@ -100,14 +99,17 @@ public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
 }
 
 @MainActor
-private final class GoalTaskConversationBridge: ObservableObject {
+final class GoalTaskConversationBridge: ObservableObject {
     @Published var selectedConversationID: UUID?
-    private var cancellable: AnyCancellable?
+    private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
 
     init(_ conversations: any ConversationManaging) {
         selectedConversationID = conversations.selectedConversationID
-        cancellable = conversations.objectWillChange.sink { [weak self, weak conversations] _ in
-            self?.selectedConversationID = conversations?.selectedConversationID
+        selectedConversationObserver = conversations.addSelectedConversationObserver { [weak self] newID in
+            // ConversationManaging invokes this after selectedConversationID has
+            // been updated, so the bridge never reads the previous conversation
+            // like an objectWillChange subscriber can.
+            self?.selectedConversationID = newID
         }
     }
 }

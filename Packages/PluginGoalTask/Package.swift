@@ -44,7 +44,11 @@ let package = Package(
         ),
         .testTarget(
             name: "GoalTaskPluginTests",
-            dependencies: ["GoalTaskPlugin"],
+            dependencies: [
+                "GoalTaskPlugin",
+                "KitAgentTool",
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
+            ],
             path: "Tests"
         )
     ]

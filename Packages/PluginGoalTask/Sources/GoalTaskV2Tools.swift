@@ -47,16 +47,42 @@ private enum GoalTaskToolSupport {
 public struct CreateGoalV2Tool: SuperAgentTool, @unchecked Sendable {
     public static let toolName = "create_goal"
     public let name = toolName
-    private let conversations: (any ConversationManaging)?
-    public init(conversations: (any ConversationManaging)? = nil) { self.conversations = conversations }
+    public init(conversations: (any ConversationManaging)? = nil) { _ = conversations }
     public func description(for language: LanguagePreference) -> String { "Create a goal with tasks for complex, multi-step work. Only one unfinished goal is allowed per conversation." }
     public func inputSchema(for language: LanguagePreference) -> [String: Any] { ["type": "object", "properties": ["title": ["type": "string", "description": "Short goal title", "minLength": 1], "description": ["type": "string", "description": "Detailed goal description"], "successCriteria": ["type": "string", "description": "Optional completion criteria"], "tasks": GoalTaskToolSupport.taskSchema(maxItems: GoalStateManager.maxTasksPerGoal)], "required": ["title", "tasks"]] }
     public func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .low }
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "Create goal" }
+
+    /// A goal must be created in the conversation that owns the current Agent
+    /// turn. The UI selection is deliberately not used here: the user may
+    /// switch conversations while a background turn is still executing.
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
+        throw ToolExecutionError.executionFailed(
+            toolName: name,
+            reason: "create_goal requires an Agent execution context"
+        )
+    }
+
+    /// Context-aware entry point used by the real ToolManager. The context is
+    /// created from the ToolJob's conversation ID, which is captured when the
+    /// AgentLoop emits the tool call.
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: try await execute(
+            conversationID: context.conversationID,
+            arguments: arguments
+        ))
+    }
+
+    private func execute(
+        conversationID: UUID,
+        arguments: [String: ToolArgument]
+    ) async throws -> String {
         guard let title = GoalTaskToolSupport.string(arguments, "title"), !title.isEmpty else { return "Error: title is required" }
         guard let manager = GoalTaskToolSupport.manager() else { return "Error: goal task manager is not initialized" }
-        guard let conversationId = await MainActor.run(body: { conversations?.selectedConversationID?.uuidString }) else { return "Error: no active conversation" }
+        let conversationId = conversationID.uuidString
         let tasks = GoalTaskToolSupport.taskInputs(arguments["tasks"]?.value)
         guard !tasks.isEmpty else { return "Error: no valid tasks found" }
         let existingGoals = await manager.fetchGoals(conversationId: conversationId)
