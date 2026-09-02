@@ -192,13 +192,15 @@ V2/V3 同时监听消息管理器和发送器的状态变化。消息插入、�
 
 已完成：Activity Heatmap 使用后台日统计 API，统计查询只投影必要字段；标题服务通过事件消息和单条首用户消息校验，避免扫描整段历史；缓存命中率、上下文大小、速度统计的消息变化刷新均做去抖和取消，避免发送期间堆积重复快照任务。
 
-#### P1-5：V1/brief 模式每次刷新扫描全量消息
+#### P1-5：V1/brief 模式每次刷新扫描全量消息（已完成）
 
 位置：
 
 `Packages/PluginMessageList/Sources/PluginMessageList/ViewModels/ListV1ViewModel.swift`
 
-V1 当前会通过 `messages(for:)` 重新构建 turn 记录。需要单独改为分页或增量更新，否则用户切换到 brief 模式后会重新暴露全量扫描问题。
+V1 已改为维护有限的消息窗口：首次激活、尾部兜底刷新和加载更早内容均使用异步分页；turn 记录和展示项只从当前窗口重建。新消息通过带 payload 的插入事件直接合并到窗口，编辑/删除继续使用 `objectWillChange` 兜底刷新，因此 brief 模式不再因一次刷新扫描整段历史。
+
+实现记录见 [`docs/plans/2026-09-02-v1-window-pagination.md`](plans/2026-09-02-v1-window-pagination.md)。
 
 ### P2：完成主路径后处理
 
@@ -376,10 +378,10 @@ sender.startAgentTurn(for: message)
 
 ## 9. 建议的第一批改动
 
-下一步建议只做以下三项，控制变更面：
+这三项已完成。后续优化按本文档中 P1/P2 的顺序继续推进：
 
-1. 给消息管理器增加带 Message payload 的插入事件；
-2. 让 V2/V3 消息列表直接应用插入事件，不调用 `refreshTail()`；
-3. 为 `messagePage()` 增加异步后台读取版本，并将其用于历史加载和兜底刷新。
+1. 优先补齐发送入口的同步快速提交语义；
+2. 再处理附件编码、首帧预算和 Instruments signpost 验证；
+3. 对 V1 的 turn 边界和大历史滚动补充性能基准。
 
 完成这三项后，再处理统计、标题和会话列表等后台消费者。
