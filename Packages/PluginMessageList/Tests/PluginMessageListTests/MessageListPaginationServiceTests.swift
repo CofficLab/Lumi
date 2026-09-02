@@ -7,7 +7,7 @@ import Testing
 @Suite("Message list pagination service")
 struct MessageListPaginationServiceTests {
     @Test("loads bounded windows and walks older pages by cursor")
-    func loadsBoundedWindowsAndEarlierPages() {
+    func loadsBoundedWindowsAndEarlierPages() async {
         let manager = DefaultMessageManager()
         let conversationID = UUID()
 
@@ -24,7 +24,7 @@ struct MessageListPaginationServiceTests {
         }
 
         let pagination = MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
-        let first = pagination.loadFirstPage(
+        let first = await pagination.loadFirstPage(
             conversationID: conversationID,
             messageManager: manager
         )
@@ -34,7 +34,7 @@ struct MessageListPaginationServiceTests {
         #expect(first.messages.last?.content == "m94")
         #expect(first.hasEarlierMessages)
 
-        let middle = pagination.loadEarlier(
+        let middle = await pagination.loadEarlier(
             conversationID: conversationID,
             messageManager: manager,
             currentFirstID: first.messages.first?.id,
@@ -45,7 +45,7 @@ struct MessageListPaginationServiceTests {
         #expect(middle?.earlier.last?.content == "m54")
         #expect(middle?.hasEarlierMessages == true)
 
-        let oldest = pagination.loadEarlier(
+        let oldest = await pagination.loadEarlier(
             conversationID: conversationID,
             messageManager: manager,
             currentFirstID: middle?.earlier.first?.id,

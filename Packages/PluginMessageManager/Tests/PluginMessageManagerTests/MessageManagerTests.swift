@@ -363,6 +363,48 @@ struct MessageManagerPaginationDeleteTests {
         #expect(earlier.map(\.content) == ["m0", "m1"])
     }
 
+    @Test("异步分页包含 pending 消息并遵守游标")
+    func asyncPagination() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manager = makeManager(store: store)
+        let conversationID = UUID()
+
+        for index in 0..<5 {
+            manager.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: "m\(index)",
+                    createdAt: Date(timeIntervalSince1970: TimeInterval(index))
+                ),
+                to: conversationID
+            )
+        }
+
+        let latest = await manager.messagePageAsync(
+            for: conversationID,
+            limit: 2,
+            beforeMessageID: nil,
+            includesToolMessages: false
+        )
+        #expect(latest.map(\.content) == ["m3", "m4"])
+
+        let anchor = try #require(latest.first)
+        let earlier = await manager.messagePageAsync(
+            for: conversationID,
+            limit: 2,
+            beforeMessageID: anchor.id,
+            includesToolMessages: false
+        )
+        #expect(earlier.map(\.content) == ["m1", "m2"])
+        #expect(await manager.hasEarlierMessagesAsync(
+            for: conversationID,
+            beforeMessageID: anchor.id,
+            includesToolMessages: false
+        ))
+    }
+
     @Test("deleteMessage 从磁盘与读路径移除")
     func deleteMessage() async throws {
         let (store, directory) = try makeStore()

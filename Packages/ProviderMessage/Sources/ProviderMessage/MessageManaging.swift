@@ -40,12 +40,25 @@ public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillCha
         beforeMessageID: UUID?,
         includesToolMessages: Bool
     ) -> [Message]
+    /// 异步加载指定会话的一页消息。持久化实现应将数据库读取放到后台。
+    func messagePageAsync(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> [Message]
     /// 判断游标之前是否还有消息。传入 nil 时使用实现的默认探测窗口。
     func hasEarlierMessages(
         for conversationID: UUID,
         beforeMessageID: UUID?,
         includesToolMessages: Bool
     ) -> Bool
+    /// 异步判断游标之前是否还有消息。
+    func hasEarlierMessagesAsync(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool
+    ) async -> Bool
     func message(id: UUID, in conversationID: UUID) -> Message?
     func lastMessage(in conversationID: UUID) -> Message?
     func messageCount(for conversationID: UUID) -> Int
@@ -125,6 +138,20 @@ public extension MessageManaging {
         return Array(all[max(0, index - limit)..<index])
     }
 
+    func messagePageAsync(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) async -> [Message] {
+        messagePage(
+            for: conversationID,
+            limit: limit,
+            beforeMessageID: beforeMessageID,
+            includesToolMessages: includesToolMessages
+        )
+    }
+
     func hasEarlierMessages(
         for conversationID: UUID,
         beforeMessageID: UUID?,
@@ -135,6 +162,18 @@ public extension MessageManaging {
         guard let beforeMessageID else { return all.count > 10 }
         guard let index = all.firstIndex(where: { $0.id == beforeMessageID }) else { return false }
         return index > 0
+    }
+
+    func hasEarlierMessagesAsync(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) async -> Bool {
+        hasEarlierMessages(
+            for: conversationID,
+            beforeMessageID: beforeMessageID,
+            includesToolMessages: includesToolMessages
+        )
     }
 
     func dailyMessageCounts(since: Date) -> [Date: Int] { [:] }

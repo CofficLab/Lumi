@@ -167,7 +167,7 @@ final class ListV2ViewModel: ObservableObject {
         activityMessage = services.activityMessage(for: conversationID)
         streamingRowWasVisible = false
         isLoading = true
-        loadFirstPage(conversationID: conversationID)
+        await loadFirstPage(conversationID: conversationID)
         if let conversationID {
             await refreshTurnActivitySummaries(conversationID: conversationID)
         } else {
@@ -190,7 +190,7 @@ final class ListV2ViewModel: ObservableObject {
               let currentFirstID = persistedMessages.first?.id else { return nil }
         isLoadingEarlier = true
         defer { isLoadingEarlier = false }
-        guard let result = pagination.loadEarlier(
+        guard let result = await pagination.loadEarlier(
             conversationID: conversationID,
             messageManager: services.messages,
             currentFirstID: currentFirstID,
@@ -220,7 +220,7 @@ final class ListV2ViewModel: ObservableObject {
     /// one trailing pass before the owner returns.
     private func performTailRefresh() async -> Bool {
         guard let conversationID = selectedConversationID else { return false }
-        guard let result = pagination.refreshTail(
+        guard let result = await pagination.refreshTail(
             conversationID: conversationID,
             messageManager: services.messages,
             current: persistedMessages
@@ -246,14 +246,14 @@ final class ListV2ViewModel: ObservableObject {
     // MARK: - Private
 
     /// 首屏：加载最近一页，并探测是否还有更早消息。
-    private func loadFirstPage(conversationID: UUID?) {
+    private func loadFirstPage(conversationID: UUID?) async {
         guard let conversationID else {
             persistedMessages = []
             hasEarlierMessages = false
             isLoading = false
             return
         }
-        let result = pagination.loadFirstPage(
+        let result = await pagination.loadFirstPage(
             conversationID: conversationID,
             messageManager: services.messages
         )

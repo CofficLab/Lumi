@@ -62,8 +62,9 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     /// **游标分页(`beforeMessageID` 非 nil)不合并 pending**:游标分页是"向上翻历史"场景,
     /// 翻到的都是较早消息,那时尾部的新消息早已落盘、pending 为空,合并无意义反而易错。
     /// pending 只需参与"取最近一页"(无游标)的合并 —— 那正是 UI 实时展示的路径。
-    private func mergedPage(
+    private nonisolated static func mergedPage(
         disk: [Message],
+        pendingMessages: [Message],
         conversationID: UUID,
         beforeMessageID: UUID?,
         includesToolMessages: Bool,
@@ -71,7 +72,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     ) -> [Message] {
         guard beforeMessageID == nil else { return disk }
 
-        let pending = pending.snapshot(for: conversationID).filter {
+        let pending = pendingMessages.filter {
             includesToolMessages || $0.role != .tool
         }
         if Self.verbose {
@@ -196,8 +197,10 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     ) -> [Message] {
         guard let store else {
             // store 未就绪:仍尝试返回 pending(read-your-writes,哪怕磁盘不可用)。
-            return mergedPage(
-                disk: [], conversationID: conversationID,
+            return Self.mergedPage(
+                disk: [],
+                pendingMessages: pending.snapshot(for: conversationID),
+                conversationID: conversationID,
                 beforeMessageID: beforeMessageID,
                 includesToolMessages: includesToolMessages, limit: limit
             )
@@ -208,11 +211,41 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             beforeMessageID: beforeMessageID,
             includesToolMessages: includesToolMessages
         )
-        return mergedPage(
-            disk: disk, conversationID: conversationID,
+        return Self.mergedPage(
+            disk: disk,
+            pendingMessages: pending.snapshot(for: conversationID),
+            conversationID: conversationID,
             beforeMessageID: beforeMessageID,
             includesToolMessages: includesToolMessages, limit: limit
         )
+    }
+
+    /// 异步分页查询：数据库分页和 pending 合并均在后台执行，避免阻塞 MainActor。
+    public func messagePageAsync(
+        for conversationID: UUID,
+        limit: Int,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) async -> [Message] {
+        guard limit > 0 else { return [] }
+        let store = self.store
+        let pending = self.pending
+        return await Task.detached(priority: .utility) {
+            let disk = store?.fetchMessagePage(
+                conversationId: conversationID,
+                limit: limit,
+                beforeMessageID: beforeMessageID,
+                includesToolMessages: includesToolMessages
+            ) ?? []
+            return Self.mergedPage(
+                disk: disk,
+                pendingMessages: pending.snapshot(for: conversationID),
+                conversationID: conversationID,
+                beforeMessageID: beforeMessageID,
+                includesToolMessages: includesToolMessages,
+                limit: limit
+            )
+        }.value
     }
 
     /// 是否有更早消息（UI 顶部"加载更早"按钮显隐）。
@@ -226,6 +259,22 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             beforeMessageID: beforeMessageID,
             includesToolMessages: includesToolMessages
         ) ?? false
+    }
+
+    /// 异步探测历史分页边界，避免在 MainActor 同步访问 SwiftData。
+    public func hasEarlierMessagesAsync(
+        for conversationID: UUID,
+        beforeMessageID: UUID?,
+        includesToolMessages: Bool = false
+    ) async -> Bool {
+        let store = self.store
+        return await Task.detached(priority: .utility) {
+            store?.hasEarlierMessages(
+                conversationId: conversationID,
+                beforeMessageID: beforeMessageID,
+                includesToolMessages: includesToolMessages
+            ) ?? false
+        }.value
     }
 
     // MARK: - MessageManaging (writes)
