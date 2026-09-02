@@ -262,6 +262,41 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
 }
 
 @MainActor
+@Test func timedOutShellJobPublishesTimedOutTerminalState() async throws {
+    let manager = ToolManager()
+    manager.add(ShellTool(), pluginID: "test")
+    let call = ToolCall(
+        id: "job-timeout-1",
+        name: "run_command",
+        arguments: "{\"command\":\"sleep 10\",\"timeout\":1}"
+    )
+    var timedOutEvents = 0
+    var failedEvents = 0
+    let handle = manager.addToolJobObserver { event in
+        switch event {
+        case .timedOut: timedOutEvents += 1
+        case .failed: failedEvents += 1
+        default: break
+        }
+    }
+    defer { handle.cancel() }
+
+    _ = manager.submit(
+        [call],
+        policy: .autoExecute,
+        conversationID: UUID(),
+        turnID: UUID()
+    )
+
+    let result = try #require(await manager.waitForJobResult(jobID: call.id))
+    #expect(result.isError)
+    #expect(result.content.contains("timed out"))
+    #expect(manager.job(for: call.id)?.status == .timedOut)
+    #expect(timedOutEvents == 1)
+    #expect(failedEvents == 0)
+}
+
+@MainActor
 @Test func duplicateToolJobSubmissionReusesTheExistingJob() async throws {
     let manager = ToolManager()
     let counter = CountingTool.Counter()

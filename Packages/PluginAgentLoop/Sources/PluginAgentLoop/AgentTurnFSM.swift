@@ -83,6 +83,13 @@ public struct TurnRuntime {
     /// 当前阶段。
     public var phase: TurnPhase = .idle
 
+    /// 当前或最近一次回合的身份。
+    ///
+    /// 终态 phase 为了保持既有 API 没有携带 turnID，因此不能只依赖
+    /// `phase.turnID` 判断迟到事件是否属于当前回合。这个字段专门用于
+    /// 终态幂等校验和取消后的 stale completion 防护。
+    public var lastTurnID: UUID?
+
     /// 当前执行任务句柄（用于取消）。
     public var task: Task<Void, Never>?
 
@@ -91,6 +98,9 @@ public struct TurnRuntime {
 
     /// 是否已请求取消。
     public var cancelRequested: Bool = false
+
+    /// 终态通知是否已经被消费。防止 finishTurn 被取消、超时和迟到事件重复调用。
+    public var completionDelivered: Bool = false
 
     /// 当前回合已经消耗的 LLM 工具协议恢复次数。
     public var llmRecoveryAttempts: Int = 0
@@ -114,8 +124,10 @@ public struct TurnRuntime {
     /// 重置为 idle。
     public mutating func reset() {
         phase = .idle
+        lastTurnID = nil
         pendingSuspensions = [:]
         cancelRequested = false
+        completionDelivered = false
         llmRecoveryAttempts = 0
         llmRecoveryHint = nil
     }
@@ -150,12 +162,19 @@ public enum TurnReducer {
     ) -> (TurnRuntime, AgentLoopOutcome?) {
         var rt = runtime
 
+        // 测试、恢复和旧调用方可能直接构造带 active phase 的 runtime；
+        // 首次收到事件时补齐身份，保证后续终态校验仍然有效。
+        if rt.lastTurnID == nil {
+            rt.lastTurnID = rt.phase.turnID
+        }
+
         switch event {
         case .startTurn(let turnID):
             guard rt.phase == .idle || rt.phase.isTerminal else {
                 return (rt, .failed("turn already running"))
             }
             rt.reset()
+            rt.lastTurnID = turnID
             rt.phase = .requestingLLM(turnID: turnID)
             return (rt, nil)
 

@@ -5,6 +5,7 @@ enum ToolExecutionOutcome: Sendable {
     case completed(ToolCallResult)
     case failed(String)
     case cancelled(String)
+    case timedOut(String)
 }
 
 /// 持有实际工具执行 Task 的后台 runtime。

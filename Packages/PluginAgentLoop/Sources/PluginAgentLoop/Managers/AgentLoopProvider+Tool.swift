@@ -306,6 +306,7 @@ extension AgentLoopManager {
                     assistantMessageID: assistantMessageID,
                     pendingToolCalls: [current] + pending.filter { $0.id != toolCall.id }
                 )
+                runtime.completionDelivered = false
                 runtime.pendingSuspensions.removeValue(forKey: toolCall.id)
                 runtimes[conversationID] = runtime
                 return true
@@ -457,6 +458,7 @@ extension AgentLoopManager {
     enum LLMRequestResult {
         case success(LLMResponse, assistantMessageID: UUID)
         case failure(reason: String, recoverable: Bool)
+        case cancelled
     }
 
     /// 执行一次 LLM 流式请求，落库 assistant 消息。
@@ -496,6 +498,9 @@ extension AgentLoopManager {
             )
             let result = await lifecycleHooks.runWillSendToLLM(context)
             preparedMessages = result.messages
+        }
+        guard isActiveLLMRequest(conversationID: conversationID, turnID: turnID) else {
+            return .cancelled
         }
         if let recoveryHint = runtimes[conversationID]?.llmRecoveryHint {
             // 生命周期钩子可以重写待发送消息，因此恢复提示必须在钩子之后注入。
@@ -549,6 +554,11 @@ extension AgentLoopManager {
                 } else {
                     await bridge.appendContent(piece, conversationID: conversationID)
                 }
+            }
+
+            guard isActiveLLMRequest(conversationID: conversationID, turnID: turnID) else {
+                streaming.end(conversationID: conversationID)
+                return .cancelled
             }
 
             // 模型返回的 tool-call arguments 必须在落库前是 JSON 对象。
@@ -621,6 +631,10 @@ extension AgentLoopManager {
                     }
                     return enriched
                 }
+            }
+            guard isActiveLLMRequest(conversationID: conversationID, turnID: turnID) else {
+                streaming.end(conversationID: conversationID)
+                return .cancelled
             }
             messages.insertMessage(assistant, to: conversationID)
             streaming.end(conversationID: conversationID)

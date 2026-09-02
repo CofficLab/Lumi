@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import KitShell
 import ProviderToolManager
 
 /// Tool Job 的 MainActor 控制面。
@@ -236,6 +237,10 @@ final class ToolExecutionManager {
                     if Task.isCancelled {
                         return .cancelled(error.localizedDescription)
                     }
+                    if let shellError = error as? ShellError,
+                       case .timeout = shellError {
+                        return .timedOut(error.localizedDescription)
+                    }
                     return .failed(error.localizedDescription)
                 }
             }
@@ -265,6 +270,12 @@ final class ToolExecutionManager {
             case .cancelled(let message):
                 let result = ToolCallResult(content: "Tool execution cancelled.", isError: true)
                 finish(jobID: jobID, result: result, status: .cancelled, errorMessage: message)
+            case .timedOut(let message):
+                let result = ToolCallResult(
+                    content: "Tool execution timed out: \(message)",
+                    isError: true
+                )
+                finish(jobID: jobID, result: result, status: .timedOut, errorMessage: message)
             }
         }
         releaseExecution(jobID: jobID)
