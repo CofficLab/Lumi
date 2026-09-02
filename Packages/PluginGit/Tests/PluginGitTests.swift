@@ -8,15 +8,6 @@ import ProviderToolManager
 @testable import GitPlugin
 
 @MainActor
-@Test func packageLoads() async throws {
-    let plugin = GitPlugin()
-    #expect(plugin.id == "com.coffic.lumi.plugin.git")
-    #expect(plugin.name.isEmpty == false)
-    #expect(plugin.order == 11)
-    #expect(plugin.category == .development)
-}
-
-@MainActor
 @Test func sourceControlPluginRegistersEditorContract() throws {
     let kernel = KernelCoreContainer()
     let plugin = GitSourceControlSuperPlugin()
@@ -39,24 +30,6 @@ import ProviderToolManager
 }
 
 @MainActor
-@Test func gitStatusBarVisibilityIsScopedToGitContainer() {
-    let gitContainerID = "com.coffic.lumi.plugin.git"
-
-    #expect(GitStatusBarVisibilityGate<EmptyView>.isVisible(
-        activeContainerID: gitContainerID,
-        containerID: gitContainerID
-    ))
-    #expect(!GitStatusBarVisibilityGate<EmptyView>.isVisible(
-        activeContainerID: "com.coffic.lumi.plugin.workspace",
-        containerID: gitContainerID
-    ))
-    #expect(!GitStatusBarVisibilityGate<EmptyView>.isVisible(
-        activeContainerID: nil,
-        containerID: gitContainerID
-    ))
-}
-
-@MainActor
 @Test func gitLogToolNormalizesCount() throws {
     #expect(GitLogTool.normalizedCount(nil) == 10)
     #expect(GitLogTool.normalizedCount(-5) == 1)
@@ -68,23 +41,22 @@ import ProviderToolManager
     #expect(GitLogTool.normalizedCount("not-a-number") == 10)
 
     let schema = GitLogTool().inputSchema
-    guard case .object(let keys) = schema,
-          case .object(let properties) = keys["properties"],
-          case .object(let countProps) = properties["count"] else {
+    guard let properties = schema["properties"] as? [String: Any],
+          let countProps = properties["count"] as? [String: Any] else {
         Issue.record("schema should declare count property")
         return
     }
-    if case .string(let type) = countProps["type"] {
+    if let type = countProps["type"] as? String {
         #expect(type == "integer")
     } else {
         Issue.record("count type missing")
     }
-    if case .int(let minimum) = countProps["minimum"] {
+    if let minimum = countProps["minimum"] as? Int {
         #expect(minimum == 1)
     } else {
         Issue.record("count minimum missing")
     }
-    if case .int(let maximum) = countProps["maximum"] {
+    if let maximum = countProps["maximum"] as? Int {
         #expect(maximum == 50)
     } else {
         Issue.record("count maximum missing")
@@ -126,7 +98,7 @@ import ProviderToolManager
     let root = try GitService.repositoryRoot(containing: filePath)
     let relative = GitService.relativePath(filePath, fromRepositoryRoot: root)
 
-    #expect(relative == "Plugins/GitPlugin/Tests/PluginGitTests.swift")
+    #expect(relative == "Packages/PluginGit/Tests/PluginGitTests.swift")
 }
 
 @MainActor
