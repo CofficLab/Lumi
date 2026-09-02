@@ -199,15 +199,26 @@ struct ListV1View: View {
             .plainMessageListRow(insets: EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
         }
 
-        ForEach(turnViewModel.agentTurns) { item in
-            AgentTurnView(
-                services: services,
-                item: item,
-                lastAgentTurnID: turnViewModel.agentTurns.last?.id,
-                verbosity: verbosity
-            )
-            .id(item.id)
-            .plainMessageListRow()
+        ForEach(turnViewModel.rows) { row in
+            switch row {
+            case let .agentTurn(item):
+                AgentTurnView(
+                    services: services,
+                    item: item,
+                    lastAgentTurnID: turnViewModel.agentTurns.last?.id,
+                    verbosity: verbosity
+                )
+                .id(item.id)
+                .plainMessageListRow()
+            case let .timelineEvent(message):
+                MessageRowView(
+                    services: services,
+                    message: message,
+                    verbosity: verbosity
+                )
+                .id(message.id)
+                .plainMessageListRow()
+            }
         }
     }
 

@@ -59,7 +59,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     }
 
     func messagesForLLM(in conversationID: UUID) async -> [Message] {
-        let history = await messages.messagesForLLM(in: conversationID)
+        let history = await llmHistory(for: conversationID)
         guard history.count > Self.compactionMessageThreshold else {
             return history
         }
@@ -110,7 +110,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     private func refreshSummaryIfNeeded(for conversationID: UUID) async {
         guard isActive else { return }
 
-        let history = await messages.messagesForLLM(in: conversationID)
+        let history = await llmHistory(for: conversationID)
         guard history.count > Self.compactionMessageThreshold,
               let source = summarySource(from: history) else {
             return
@@ -143,7 +143,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
             guard !summary.isEmpty else { return }
 
             // 如果摘要请求期间产生了新消息，放弃旧结果，避免新对话内容被旧快照覆盖。
-            let latest = await messages.messagesForLLM(in: conversationID)
+            let latest = await llmHistory(for: conversationID)
             guard latest.last?.id == source.sourceLastMessageID else { return }
 
             summaries[conversationID] = SummarySnapshot(
@@ -170,13 +170,38 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                 if Self.verbose {
                     Self.logger.error("摘要保存失败：\(error.localizedDescription, privacy: .public)")
                 }
+                return
             }
+
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .system,
+                    content: String(localized: "Conversation compacted", defaultValue: "对话已压缩"),
+                    createdAt: Date(),
+                    metadata: [
+                        MessageTimelineEvent.metadataKey: MessageTimelineEvent.contextCompaction,
+                        "contextCompactionSourceMessageCount": "\(latest.count)",
+                        "contextCompactionRecentMessageCount": "\(Self.recentMessageCount)",
+                    ],
+                    renderKind: MessageTimelineEvent.contextCompactionRenderKind,
+                    preferredRendererID: "core-context-compaction"
+                ),
+                to: conversationID
+            )
         } catch {
             // 前台请求不依赖摘要；失败时保留旧摘要或继续使用完整历史。
             if Self.verbose {
                 Self.logger.error("摘要生成失败：\(error.localizedDescription, privacy: .public)")
             }
         }
+    }
+
+    /// Timeline events are persisted for the UI, but must never be sent back
+    /// to the model as conversational content.
+    private func llmHistory(for conversationID: UUID) async -> [Message] {
+        await messages.messagesForLLM(in: conversationID)
+            .filter { !MessageTimelineEvent.isContextCompaction($0) }
     }
 
     private func loadPersistedSummaryIfNeeded(for conversationID: UUID) async {

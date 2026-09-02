@@ -8,7 +8,7 @@ import SwiftUI
 import Testing
 @testable import PluginMessageRenderer
 
-/// 验证 PluginMessageRenderer 的 10 个内置渲染器注册与匹配逻辑。
+    /// 验证 PluginMessageRenderer 的 10 个内置渲染器注册与匹配逻辑。
 @Suite("MessageRendererPlugin")
 @MainActor
 struct MessageRendererPluginTests {
@@ -71,7 +71,7 @@ struct MessageRendererPluginTests {
     func registersAllBuiltinRenderers() throws {
         let kernel = try makeKernel()
         let manager = try #require(kernel.resolveProvider((any MessageRenderingProviding).self))
-        #expect(manager.allRenderers.count == 9)
+        #expect(manager.allRenderers.count == 10)
         let ids = Set(manager.allRenderers.map(\.id))
         #expect(ids.contains("core-user-message"))
         #expect(ids.contains("core-assistant-message"))
@@ -80,6 +80,7 @@ struct MessageRendererPluginTests {
         #expect(ids.contains("core-tool-message"))
         #expect(ids.contains("core-status-message"))
         #expect(ids.contains("core-turn-completed"))
+        #expect(ids.contains("core-context-compaction"))
         #expect(ids.contains("core-tool-step-group"))
         #expect(ids.contains("core-default-markdown"))
     }
@@ -107,6 +108,7 @@ struct MessageRendererPluginTests {
         #expect(manager.renderer(for: message(role: .assistant, content: "__lumi_turn_completed__"))?.id == "core-turn-completed")
         // tool-step-group
         #expect(manager.renderer(for: message(role: .assistant, renderKind: "tool-step-group"))?.id == "core-tool-step-group")
+        #expect(manager.renderer(for: message(role: .system, renderKind: MessageTimelineEvent.contextCompactionRenderKind))?.id == "core-context-compaction")
         // 错误消息
         #expect(manager.renderer(for: message(role: .assistant, isError: true))?.id == "core-error-message")
     }

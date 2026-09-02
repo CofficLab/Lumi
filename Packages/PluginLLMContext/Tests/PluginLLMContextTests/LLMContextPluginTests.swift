@@ -94,6 +94,10 @@ struct LLMContextPluginTests {
             if compacted.contains(where: { $0.metadata["llmContext"] == "summary" }) {
                 #expect(compacted.count < initial.count)
                 #expect(compacted.contains { $0.content.contains("摘要结果") })
+                #expect(messages.messages(for: conversationID).contains {
+                    MessageTimelineEvent.isContextCompaction($0)
+                })
+                #expect(!compacted.contains(where: MessageTimelineEvent.isContextCompaction))
                 #expect(summaryProvider.completeCalls == 1)
                 return
             }

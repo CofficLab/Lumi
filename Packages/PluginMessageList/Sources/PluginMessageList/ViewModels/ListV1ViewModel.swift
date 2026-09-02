@@ -45,6 +45,8 @@ final class ListV1ViewModel: ObservableObject {
 
     /// ListV1View 的唯一数据源：每一项都对应一个 AgentTurnView。
     var agentTurns: [AgentTurnPresentationItem] { presentation.agentTurns }
+    /// AgentTurn 与独立时间线事件合并后的展示行。
+    var rows: [ListV1PresentationRow] { presentation.rows }
 
     // 旧粒度只读访问器仅保留给行为回归测试；视图层不得使用。
     var items: [AgentTurnSummaryItem] { summaryItems }
@@ -58,10 +60,11 @@ final class ListV1ViewModel: ObservableObject {
         return turnMessages
             + pendingUserSnapshot
             + (pendingStatusSnapshot.map { [$0] } ?? [])
+            + presentation.timelineEvents
             .sorted(by: messageOrdering)
     }
 
-    var hasVisibleContent: Bool { !agentTurns.isEmpty }
+    var hasVisibleContent: Bool { !rows.isEmpty }
 
     /// 用户当前选中的对话 ID（来自内核状态，反映真实意图）。
     var selectedConversationID: UUID? {
@@ -226,7 +229,11 @@ final class ListV1ViewModel: ObservableObject {
         summaryItems = turnItems
         pendingUserSnapshot = pendingUserMessages
         pendingStatusSnapshot = pendingStatusMessage
-        presentation = ListV1Presentation(agentTurns: agentTurns)
+        let timelineEvents = messageWindow.filter(MessageTimelineEvent.isContextCompaction)
+        presentation = ListV1Presentation(
+            agentTurns: agentTurns,
+            timelineEvents: timelineEvents
+        )
     }
 
     private func newestRecordFirst(_ lhs: AgentTurnRecord, _ rhs: AgentTurnRecord) -> Bool {

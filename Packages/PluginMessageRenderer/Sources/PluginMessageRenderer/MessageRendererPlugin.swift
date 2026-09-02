@@ -34,6 +34,7 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
 
     private let rendererIDs: [String] = [
         "core-turn-completed",
+        "core-context-compaction",
         "core-status-message",
         "core-error-message",
         "core-tool-message",
@@ -65,6 +66,17 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             },
             render: { message, _ in
                 AnyView(TurnCompletedMessageView(message: message))
+            }
+        ))
+
+        manager.register(MessageRendererItem(
+            id: "core-context-compaction",
+            order: base + 315,
+            canRender: { message in
+                MessageTimelineEvent.isContextCompaction(message)
+            },
+            render: { message, _ in
+                AnyView(ContextCompactionMessageView(message: message))
             }
         ))
 
