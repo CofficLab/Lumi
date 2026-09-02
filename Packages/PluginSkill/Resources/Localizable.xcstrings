@@ -73,6 +73,9 @@
         }
       }
     },
+    "当前没有可用技能" : {
+
+    },
     "当前项目没有配置技能（.agent/skills/）" : {
       "extractionState" : "manual",
       "localizations" : {

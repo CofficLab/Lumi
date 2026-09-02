@@ -76,7 +76,6 @@
       }
     },
     "·" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5023,6 +5022,18 @@
           }
         }
       }
+    },
+    "最近 %lld 次提交" : {
+
+    },
+    "复制" : {
+
+    },
+    "复制完整 commit 哈希" : {
+
+    },
+    "已复制" : {
+
     }
   },
   "version" : "1.1"
