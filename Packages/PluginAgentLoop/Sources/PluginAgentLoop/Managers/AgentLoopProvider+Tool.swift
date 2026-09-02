@@ -8,6 +8,7 @@ import ProviderMessage
 import ProviderMessageStreaming
 import ProviderToolManager
 import ProviderLifecycleHooks
+import ProviderLLMContext
 import KitSuperLog
 
 // MARK: - LLM Request
@@ -463,11 +464,21 @@ extension AgentLoopManager {
 
     /// 执行一次 LLM 流式请求，落库 assistant 消息。
     func performLLMRequest(conversationID: UUID, turnID: UUID) async -> LLMRequestResult {
-        if Self.verbose { Self.logger.info("\(Self.t)LLM request begin conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
-        // 由上下文 Provider 统一决定发送完整历史还是压缩后的上下文。
-        // AgentLoop 不读取全量历史，也不感知具体压缩策略。
-        let history = await contextProvider.messagesForLLM(in: conversationID)
+        await performLLMRequest(
+            conversationID: conversationID,
+            turnID: turnID,
+            allowContextRetry: true
+        )
+    }
 
+    /// 上下文超限时允许一次紧急压缩重试，避免 provider 的实际 tokenizer
+    /// 与本地估算存在偏差时直接终止当前回合。
+    private func performLLMRequest(
+        conversationID: UUID,
+        turnID: UUID,
+        allowContextRetry: Bool
+    ) async -> LLMRequestResult {
+        if Self.verbose { Self.logger.info("\(Self.t)LLM request begin conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8))") }
         // 计算工具 schema
         let automationLevel = conversations.automationLevel(for: conversationID)
         let rawTools = toolManager.allTools()
@@ -486,9 +497,35 @@ extension AgentLoopManager {
         }
         let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
             .flatMap { $0.rawValue }
-        let modelName = conversations.modelName(for: conversationID)
-        let resolvedProviderID = resolvedProviderID(for: conversationID)
+        let conversationProviderID = resolvedProviderID(for: conversationID)
+        let routingProviderID = llmManager.selectedProviderID
+            ?? llmManager.allProviders().first?.providerInfo.id
+            ?? conversationProviderID
+        let routingProvider = routingProviderID.flatMap { llmManager.provider(id: $0) }
+        let requestedModel = conversations.modelName(for: conversationID)
+        let modelName = routingProvider?.providerInfo.models.contains(where: { $0.id == requestedModel }) == true
+            ? requestedModel
+            : llmManager.selectedModel
+                ?? routingProvider?.providerInfo.defaultModel
+                ?? requestedModel
+        let modelInfo = routingProvider?.providerInfo.models.first { $0.id == modelName }
+            ?? routingProvider?.providerInfo.models.first { $0.id == routingProvider?.providerInfo.defaultModel }
+        let toolSchemaTokens = estimateToolSchemaTokens(schemas)
+        let contextRequest = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: routingProviderID,
+            model: modelName,
+            budget: .conservative(
+                contextWindowTokens: modelInfo?.contextWindowSize,
+                toolSchemaTokens: toolSchemaTokens
+            ),
+            mode: .beforeSend
+        )
 
+        // 由上下文 Provider 统一决定发送完整历史还是压缩后的上下文。
+        // AgentLoop 不读取全量历史，也不感知具体压缩策略。
+        let contextResult = await contextProvider.prepareContext(for: contextRequest)
+        let history = contextResult.messages
         let llmHistory = history.map(\.llmMessage)
         var preparedMessages = llmHistory
         if let lifecycleHooks {
@@ -585,6 +622,13 @@ extension AgentLoopManager {
             }
 
             // 构建并落库 assistant 消息
+            if let inputTokenCount = response.inputTokenCount {
+                contextProvider.reportInputUsage(
+                    inputTokenCount,
+                    for: contextRequest,
+                    estimatedInputTokens: contextResult.estimatedInputTokens
+                )
+            }
             var assistant = Message(
                 conversationID: conversationID,
                 role: .assistant,
@@ -607,7 +651,7 @@ extension AgentLoopManager {
                 timeToFirstTokenMs: timing.timeToFirstTokenMs,
                 streamingDurationMs: timing.streamingDurationMs
             )
-            assistant.providerID = resolvedProviderID
+            assistant.providerID = conversationProviderID
             if let toolCalls = assistant.toolCalls {
                 assistant.toolCalls = toolCalls.map { toolCall in
                     var enriched = toolCall
@@ -652,6 +696,19 @@ extension AgentLoopManager {
 
         } catch {
             streaming.end(conversationID: conversationID)
+            if isContextLimitError(error) {
+                contextProvider.reportContextLimitExceeded(for: contextRequest)
+                if allowContextRetry {
+                    if Self.verbose {
+                        Self.logger.warning("\(Self.t)检测到上下文超限，执行一次紧急压缩重试")
+                    }
+                    return await performLLMRequest(
+                        conversationID: conversationID,
+                        turnID: turnID,
+                        allowContextRetry: false
+                    )
+                }
+            }
             let recoverable = isRecoverableLLMFailure(error)
             if Self.verbose {
                 Self.logger.error(
@@ -660,6 +717,30 @@ extension AgentLoopManager {
             }
             return .failure(reason: String(describing: error), recoverable: recoverable)
         }
+    }
+
+    private func estimateToolSchemaTokens(_ schemas: [LLMFunctionSchema]) -> Int {
+        schemas.reduce(0) { total, schema in
+            let parameters = (try? JSONSerialization.data(
+                withJSONObject: schema.parameters,
+                options: [.sortedKeys]
+            )).flatMap { String(data: $0, encoding: .utf8) } ?? String(describing: schema.parameters)
+            return total
+                + LLMContextTokenEstimator.estimate(text: schema.name)
+                + LLMContextTokenEstimator.estimate(text: schema.description)
+                + LLMContextTokenEstimator.estimate(text: parameters)
+                + 16
+        }
+    }
+
+    private func isContextLimitError(_ error: Error) -> Bool {
+        guard case let VendorAPIError.httpStatus(_, summary) = error else { return false }
+        let normalized = summary.lowercased()
+        return normalized.contains("context")
+            || normalized.contains("token limit")
+            || normalized.contains("maximum token")
+            || normalized.contains("too many tokens")
+            || normalized.contains("prompt is too long")
     }
 
     /// LLM 工具协议错误不会改变用户任务本身，允许在同一回合内重试。

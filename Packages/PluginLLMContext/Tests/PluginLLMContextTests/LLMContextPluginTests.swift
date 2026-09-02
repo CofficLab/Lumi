@@ -1,6 +1,7 @@
 import Foundation
 import KitLLM
 import ProviderConversation
+import ProviderLLMContext
 import ProviderLLMManager
 import ProviderMessage
 import Testing
@@ -104,6 +105,105 @@ struct LLMContextPluginTests {
         }
 
         #expect(Bool(false), "后台摘要未在测试窗口内生成")
+    }
+
+    @Test("硬阈值请求会在发送前等待摘要")
+    func hardBudgetWaitsForCompaction() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider()
+        try? llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        for index in 0..<60 {
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "长对话内容 ", count: 600) + "\(index)"
+                ),
+                to: conversationID
+            )
+        }
+
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 20_000,
+                reservedOutputTokens: 2_000,
+                safetyMarginTokens: 1_000
+            ),
+            mode: .beforeSend
+        )
+        let result = await provider.prepareContext(for: request)
+
+        #expect(result.didCompact)
+        #expect(!result.didFallback)
+        #expect(result.estimatedInputTokens <= result.inputTokenLimit)
+        #expect(result.messages.contains { $0.metadata["llmContext"] == "summary" })
+    }
+
+    @Test("超过原先消息上限后仍能滚动生成摘要")
+    func rollingSummaryContinuesPastLegacyMessageLimit() async throws {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider()
+        try llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        for index in 0..<130 {
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "滚动摘要内容 ", count: 400) + "\(index)"
+                ),
+                to: conversationID
+            )
+        }
+
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 20_000,
+                reservedOutputTokens: 2_000,
+                safetyMarginTokens: 1_000
+            ),
+            mode: .beforeSend
+        )
+
+        _ = await provider.prepareContext(for: request)
+        for _ in 0..<20 {
+            try await Task.sleep(nanoseconds: 100_000_000)
+            _ = await provider.prepareContext(for: request)
+            let compactionCount = messages.messages(for: conversationID)
+                .filter(MessageTimelineEvent.isContextCompaction)
+                .count
+            if compactionCount >= 2 {
+                #expect(summaryProvider.completeCalls >= 2)
+                return
+            }
+        }
+
+        #expect(Bool(false), "滚动摘要未继续推进")
     }
 
     @Test("重新创建 Provider 后复用磁盘摘要")
