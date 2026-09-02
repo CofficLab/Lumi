@@ -313,20 +313,8 @@ final class ListV3ViewModel: ObservableObject {
                 }
                 .store(in: &cancellables)
         }
-        if let sender = services.sender {
-            sender.objectWillChange
-                .map { _ in () }
-                .eraseToAnyPublisher()
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in
-                    guard let self else { return }
-                    Task { @MainActor [weak self] in
-                        await self?.refreshTail()
-                    }
-                }
-                .store(in: &cancellables)
-        }
-        didBindServices = services.messages != nil || services.sender != nil
+        // 发送状态不触发历史尾部刷新；activity 由 conversationState 单独更新。
+        didBindServices = services.messages != nil || services.conversationState != nil
 
         // 流式逐字显示：订阅 streaming，帧门禁合并。详见 V2。
         guard !didBindStreaming else { return }

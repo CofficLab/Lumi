@@ -6,7 +6,6 @@ import ProviderConversation
 import ProviderConversationState
 import ProviderMessage
 import ProviderMessageRendering
-import ProviderMessageSender
 import ProviderMessageStreaming
 import ProviderPromptSuggestion
 import ProviderProject
@@ -24,7 +23,6 @@ struct MessageListServices {
     let conversationState: (any ConversationStateProviding)?
     let messages: (any MessageManaging)?
     let rendering: (any MessageRenderingProviding)?
-    let sender: (any MessageSendingProviding)?
     let streaming: (any MessageStreamingProviding)?
     let toolManager: (any ToolManagerProviding)?
     let agentTurn: (any AgentLoopProviding)?

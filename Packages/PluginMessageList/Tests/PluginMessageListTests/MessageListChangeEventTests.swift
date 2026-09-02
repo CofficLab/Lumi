@@ -19,7 +19,6 @@ struct MessageListChangeEventTests {
             conversationState: nil,
             messages: messages,
             rendering: nil,
-            sender: nil,
             streaming: nil,
             toolManager: nil,
             agentTurn: nil,

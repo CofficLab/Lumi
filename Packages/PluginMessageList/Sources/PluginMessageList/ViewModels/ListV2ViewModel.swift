@@ -49,9 +49,8 @@ private struct MessageFingerprint: Equatable {
 ///   并透传 `verbosity`，本 viewmodel 不参与渲染。
 ///
 /// 事件感知（新版无 `.lumiMessagesDidChange` 通知）：`messages` 的插入优先消费
-/// 结构化事件，编辑/删除再回退到 Provider 的 `objectWillChange` 窄播；`sender`
-/// 发送状态、`streaming`
-/// 流式 token、`toolManager` 工具活动。
+/// 结构化事件，编辑/删除再回退到 Provider 的 `objectWillChange` 窄播；发送状态由
+/// `conversationState` 负责，`streaming` 负责流式 token，`toolManager` 负责工具活动。
 @MainActor
 final class ListV2ViewModel: ObservableObject {
     /// 流式逐字显示开关。
@@ -302,7 +301,7 @@ final class ListV2ViewModel: ObservableObject {
         }
     }
 
-    /// 订阅发送服务 / 流式服务的窄播（绕开全局广播），变化时重算展示行。
+    /// 订阅消息 / 会话状态 / 流式服务的窄播。
     ///
     /// 历史行由落库快照和结构化插入事件共同驱动：新增消息直接应用事件 payload，
     /// 编辑/删除仍由 `messages.objectWillChange` → `refreshTail()` 路径刷新，
@@ -314,7 +313,7 @@ final class ListV2ViewModel: ObservableObject {
     ///
     /// `receive(on:)` 让 sink 在属性写入完成后异步执行
     /// （objectWillChange 在 willSet 触发，同步读取会拿到旧值）。
-    /// 幂等：sender / streaming 各绑定一次；尚未就绪时由下次 `activate` 重试。
+    /// 幂等：消息服务 / streaming 各绑定一次；尚未就绪时由下次 `activate` 重试。
     private func bindServicesIfNeeded() {
         guard !didBindServices else { return }
         if let messages = services.messages {
@@ -346,22 +345,9 @@ final class ListV2ViewModel: ObservableObject {
                 }
                 .store(in: &cancellables)
         }
-        if let sender = services.sender {
-            // Sending churns at high frequency during a turn（status/queue 更新）。
-            // 路由 sender 变化走同一个合并的 tail-refresh 路径。
-            sender.objectWillChange
-                .map { _ in () }
-                .eraseToAnyPublisher()
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in
-                    guard let self else { return }
-                    Task { @MainActor [weak self] in
-                        await self?.refreshTail()
-                    }
-                }
-                .store(in: &cancellables)
-        }
-        didBindServices = services.messages != nil || services.sender != nil
+        // 发送状态不再触发历史尾部刷新。它由 conversationState 更新 activityMessage，
+        // 而发送队列本身属于输入/发送 UI，不应让消息列表重新读取历史页。
+        didBindServices = services.messages != nil || services.conversationState != nil
 
         // 流式逐字显示：订阅 streaming 的 objectWillChange，用帧门禁合并。
         guard !didBindStreaming else { return }
