@@ -20,6 +20,7 @@ struct TokenHubProviderPluginTests {
         #expect(manager.provider(id: "tencent")?.providerInfo.id == "tencent")
         #expect(manager.provider(id: "tencent")?.providerInfo.defaultModel == "hy4-preview")
         #expect(manager.provider(id: "tencent")?.providerInfo.modelIDs == ["hy4-preview"])
+        #expect(manager.provider(id: "tencent")?.providerInfo.models.first?.contextWindowSize == 1_000_000)
     }
 
     @Test("TokenHubProvider 使用腾讯云 Chat Completions 端点")

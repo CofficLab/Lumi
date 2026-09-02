@@ -21,19 +21,15 @@ struct ContextSizeToolbarView: View {
     @State private var llmObserver: (any LLMManagerObserverHandle)?
 
     var body: some View {
-        Group {
-            if let maxSize = maxContextSize, maxSize > 0 {
-                Button {
-                    isPopoverPresented.toggle()
-                } label: {
-                    buttonLabel(maxSize: maxSize)
-                }
-                .buttonStyle(.plain)
-                .help(contextTooltip(used: usedTokens, max: maxSize))
-                .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-                    ContextSizePopover(used: usedTokens, max: maxSize)
-                }
-            }
+        Button {
+            isPopoverPresented.toggle()
+        } label: {
+            buttonLabel(maxSize: maxContextSize)
+        }
+        .buttonStyle(.plain)
+        .help(contextTooltip(used: usedTokens, max: maxContextSize))
+        .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
+            ContextSizePopover(used: usedTokens, max: maxContextSize)
         }
         .task {
             selectedConversationID = conversations.selectedConversationID
@@ -64,11 +60,16 @@ struct ContextSizeToolbarView: View {
     }
 
     @ViewBuilder
-    private func buttonLabel(maxSize: Int) -> some View {
+    private func buttonLabel(maxSize: Int?) -> some View {
         HStack(spacing: 3) {
             Image(systemName: "text.viewfinder")
                 .font(.system(size: 10))
-            tokenText(maxSize: maxSize)
+            if let maxSize, maxSize > 0 {
+                tokenText(maxSize: maxSize)
+            } else {
+                Text(LumiPluginLocalization.string("Context: Unknown", bundle: .module))
+                    .font(.system(size: 10, weight: .medium))
+            }
         }
         .foregroundColor(colorForUsage(used: usedTokens, max: maxSize))
         .padding(.horizontal, 6)
@@ -128,24 +129,27 @@ struct ContextSizeToolbarView: View {
     }
 }
 
-private func colorForUsage(used: Int?, max: Int) -> Color {
-    guard let used, max > 0 else { return .secondary }
+private func colorForUsage(used: Int?, max: Int?) -> Color {
+    guard let used, let max, max > 0 else { return .secondary }
     let ratio = Double(used) / Double(max)
     if ratio >= 0.9 { return .red }
     if ratio >= 0.75 { return .orange }
     return .secondary
 }
 
-private func contextTooltip(used: Int?, max: Int) -> String {
-    if let used, used > 0 {
+private func contextTooltip(used: Int?, max: Int?) -> String {
+    if let max, max > 0, let used, used > 0 {
         return "Context: \(used.formattedTokensShort) / \(max.formattedContextSize) tokens used"
     }
-    return "Context window: \(max.formattedContextSize) tokens"
+    if let max, max > 0 {
+        return "Context window: \(max.formattedContextSize) tokens"
+    }
+    return LumiPluginLocalization.string("Context window size is unknown", bundle: .module)
 }
 
 private struct ContextSizePopover: View {
     let used: Int?
-    let max: Int
+    let max: Int?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -158,29 +162,42 @@ private struct ContextSizePopover: View {
                     .fontWeight(.semibold)
             }
 
-            Text(max.formattedContextSize)
-                .font(.system(size: 34, weight: .bold))
-                .monospacedDigit()
+            if let max, max > 0 {
+                Text(max.formattedContextSize)
+                    .font(.system(size: 34, weight: .bold))
+                    .monospacedDigit()
+            } else {
+                Text(LumiPluginLocalization.string("Unknown", bundle: .module))
+                    .font(.system(size: 28, weight: .bold))
+            }
 
             if let used, used > 0 {
                 Text("\(used.formattedTokensShort) tokens used")
                     .font(.caption)
                     .foregroundColor(.secondary)
 
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(Color.secondary.opacity(0.2))
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(colorForUsage(used: used, max: max))
-                            .frame(width: geo.size.width * min(Double(used) / Double(max), 1.0))
+                if let max, max > 0 {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color.secondary.opacity(0.2))
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(colorForUsage(used: used, max: max))
+                                .frame(width: geo.size.width * min(Double(used) / Double(max), 1.0))
+                        }
                     }
+                    .frame(height: 6)
                 }
-                .frame(height: 6)
             } else {
-                Text(LumiPluginLocalization.string("No token usage data yet", bundle: .module))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                if let max, max > 0 {
+                    Text(LumiPluginLocalization.string("No token usage data yet", bundle: .module))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                } else {
+                    Text(LumiPluginLocalization.string("Context window size is unknown", bundle: .module))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
 
             Divider()
