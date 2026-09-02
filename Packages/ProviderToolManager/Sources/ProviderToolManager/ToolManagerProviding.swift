@@ -22,6 +22,13 @@ public protocol ToolManagerProviding: AnyObject {
     func addToolManagerObserver(
         _ callback: @escaping (ToolManagerEvent) -> Void
     ) -> any ToolManagerObserverHandle
+
+    /// 注册独立 Tool Job 的生命周期观察者。
+    /// 当前阶段只增加契约，具体 Job 调度由后续 ToolExecutionManager 实现。
+    @discardableResult
+    func addToolJobObserver(
+        _ callback: @escaping (ToolJobEvent) -> Void
+    ) -> any ToolJobObserverHandle
     // MARK: - Registration（插件调用）
 
     /// 所有已注册的 Agent 工具，按注册顺序返回。
