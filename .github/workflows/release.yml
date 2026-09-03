@@ -25,6 +25,8 @@ env:
   RELEASE_ARCHS: "arm64 x86_64"
   DEFAULT_UPDATE_ARCH: "arm64"
   SPARKLE_VERSION: "2.9.1"
+  # 客户端 feed 与 DMG 的公开下载根地址。该路径对应 R2 中的 lumi/ 前缀。
+  UPDATE_DOWNLOAD_BASE_URL: "https://s.kuaiyizhi.cn/lumi"
 
   # Secrets
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -490,7 +492,7 @@ jobs:
             # 替换 enclosure url 为正确的下载链接
             DMG_FILENAME=$(basename "$DMG_FILE")
             DMG_URL_ENCODED=$(echo "$DMG_FILENAME" | sed 's/ /%20/g')
-            DOWNLOAD_URL="${{ env.REPO_LINK }}/releases/download/${{ env.tag }}/$DMG_URL_ENCODED"
+            DOWNLOAD_URL="${{ env.UPDATE_DOWNLOAD_BASE_URL }}/$DMG_URL_ENCODED"
             sed -i '' 's|url="[^"]*"|url="'"$DOWNLOAD_URL"'"|g' "$APPCAST_FILE"
 
             # 注入 release notes HTML 到 appcast

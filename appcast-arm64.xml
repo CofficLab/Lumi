@@ -54,7 +54,7 @@
 </ul>]]></description>
             <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.16.0</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.16.0/Lumi_5.16.0_arm64.dmg" length="49186332" type="application/octet-stream" sparkle:edSignature="0Liv2xYcDvLhSjC6N3AeRTBeTBQWN77CXmDyGa40Di6Ra0IfPylaoBQyCQLNs+/XOEB2X1dPKMdhWq5BFcXTBg=="/>
+            <enclosure url="https://s.kuaiyizhi.cn/lumi/Lumi_5.16.0_arm64.dmg" length="49186332" type="application/octet-stream" sparkle:edSignature="0Liv2xYcDvLhSjC6N3AeRTBeTBQWN77CXmDyGa40Di6Ra0IfPylaoBQyCQLNs+/XOEB2X1dPKMdhWq5BFcXTBg=="/>
         </item>
     </channel>
 </rss>
