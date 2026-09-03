@@ -42,55 +42,61 @@ public final class MiniMaxOpenAIProvider: VendorLLMProvider {
 }
 
 /// MiniMax Anthropic 协议变体（迁移自旧 `MiniMaxAnthropicProvider`）。
-@MainActor
-public final class MiniMaxAnthropicProvider: VendorLLMProvider {
-
-    public init(apiService: VendorAPIService = VendorAPIService()) {
-        super.init(
-            info: LLMProviderInfo(
-                id: "minimax-tokenplan-anthropic",
-                displayName: "MiniMax (Anthropic)",
-                description: "MiniMax Token Plan via Anthropic-compatible API",
-                defaultModel: "MiniMax-M2.7",
-                models: MiniMaxVendorModels.all,
-                websiteURL: URL(string: "https://platform.minimaxi.com/")!,
-                apiFormat: .anthropic,
-                apiKeyStorageKey: "DevAssistant_ApiKey_MiniMax"
-            ),
-            apiService: apiService
-        )
-    }
-
-
-    public override var anthropicConfiguration: AnthropicCompatibleProviderConfiguration? {
-        AnthropicCompatibleProviderConfiguration(
-            baseURL: "https://api.minimax.chat/anthropic/v1/messages"
-        )
-    }
-}
+///
+/// 已停用：与 OpenAI 变体共享同一批模型与 API Key，当前仅保留 OpenAI 变体。
+/// 如需恢复，取消注释并在 MiniMaxProviderPlugin 中重新注册。
+// @MainActor
+// public final class MiniMaxAnthropicProvider: VendorLLMProvider {
+//
+//     public init(apiService: VendorAPIService = VendorAPIService()) {
+//         super.init(
+//             info: LLMProviderInfo(
+//                 id: "minimax-tokenplan-anthropic",
+//                 displayName: "MiniMax (Anthropic)",
+//                 description: "MiniMax Token Plan via Anthropic-compatible API",
+//                 defaultModel: "MiniMax-M2.7",
+//                 models: MiniMaxVendorModels.all,
+//                 websiteURL: URL(string: "https://platform.minimaxi.com/")!,
+//                 apiFormat: .anthropic,
+//                 apiKeyStorageKey: "DevAssistant_ApiKey_MiniMax"
+//             ),
+//             apiService: apiService
+//         )
+//     }
+//
+//
+//     public override var anthropicConfiguration: AnthropicCompatibleProviderConfiguration? {
+//         AnthropicCompatibleProviderConfiguration(
+//             baseURL: "https://api.minimax.chat/anthropic/v1/messages"
+//         )
+//     }
+// }
 
 /// MiniMax Responses 协议变体（迁移自旧 `MiniMaxResponsesProvider`）。
-@MainActor
-public final class MiniMaxResponsesProvider: VendorLLMProvider {
-
-    public init(apiService: VendorAPIService = VendorAPIService()) {
-        super.init(
-            info: LLMProviderInfo(
-                id: "minimax-responses",
-                displayName: "MiniMax (Responses)",
-                description: "MiniMax Token Plan via OpenAI Responses API",
-                defaultModel: "MiniMax-M3",
-                models: MiniMaxVendorModels.all,
-                websiteURL: URL(string: "https://platform.minimaxi.com/")!,
-                apiFormat: .responses,
-                apiKeyStorageKey: "DevAssistant_ApiKey_MiniMax"
-            ),
-            apiService: apiService
-        )
-    }
-
-    public override var responsesEndpointURL: String {
-        "https://api.minimaxi.com/v1/responses"
-    }
-
-}
+///
+/// 已停用：与 OpenAI 变体共享同一批模型与 API Key，当前仅保留 OpenAI 变体。
+/// 如需恢复，取消注释并在 MiniMaxProviderPlugin 中重新注册。
+// @MainActor
+// public final class MiniMaxResponsesProvider: VendorLLMProvider {
+//
+//     public init(apiService: VendorAPIService = VendorAPIService()) {
+//         super.init(
+//             info: LLMProviderInfo(
+//                 id: "minimax-responses",
+//                 displayName: "MiniMax (Responses)",
+//                 description: "MiniMax Token Plan via OpenAI Responses API",
+//                 defaultModel: "MiniMax-M3",
+//                 models: MiniMaxVendorModels.all,
+//                 websiteURL: URL(string: "https://platform.minimaxi.com/")!,
+//                 apiFormat: .responses,
+//                 apiKeyStorageKey: "DevAssistant_ApiKey_MiniMax"
+//             ),
+//             apiService: apiService
+//         )
+//     }
+//
+//     public override var responsesEndpointURL: String {
+//         "https://api.minimaxi.com/v1/responses"
+//     }
+//
+// }
