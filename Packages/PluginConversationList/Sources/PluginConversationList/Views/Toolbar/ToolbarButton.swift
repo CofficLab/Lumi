@@ -6,7 +6,7 @@ import SwiftUI
 /// 仅在「Chat 区块可见」且「全库至少存在一条对话」时渲染。任一条件不满足时
 /// 整个按钮消失，键盘/工具栏流程自然略过它。
 struct ToolbarButton: View {
-    let context: ConversationListContext
+    @ObservedObject private var context: ConversationListContext
     let attentionStore: ConversationAttentionStore
     let sortStabilizer: ConversationSortStabilizer
     @State private var isPresented = false
@@ -19,6 +19,16 @@ struct ToolbarButton: View {
     /// 全库是否存在任意对话；默认 true 以避免启动加载期间按钮闪烁，
     /// 异步查得数量为 0 时再隐藏。
     @State private var hasAnyConversations: Bool = true
+
+    init(
+        context: ConversationListContext,
+        attentionStore: ConversationAttentionStore,
+        sortStabilizer: ConversationSortStabilizer
+    ) {
+        self._context = ObservedObject(wrappedValue: context)
+        self.attentionStore = attentionStore
+        self.sortStabilizer = sortStabilizer
+    }
 
     var body: some View {
         Group {
@@ -51,7 +61,7 @@ struct ToolbarButton: View {
                 try? await Task.sleep(for: .milliseconds(300))
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiConversationsDidChange)) { _ in
+        .onChange(of: context.conversationsRevision) { _, _ in
             Task { await refreshConversationPresence() }
         }
     }

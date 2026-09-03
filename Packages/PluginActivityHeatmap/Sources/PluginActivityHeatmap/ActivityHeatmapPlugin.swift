@@ -32,6 +32,10 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
 
     private var cache: ActivityHeatmapCache?
     private var cacheDirectory: URL?
+    private var viewModel: ActivityHeatmapViewModel?
+    private var insertionObserver: MessageObserver?
+    private var idleTimeState: ActivityHeatmapIdleTimeState?
+    private var idleTimeObserver: ActivityHeatmapIdleTimeObserver?
 
     public init() {}
 
@@ -53,6 +57,25 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
         ActivityHeatmapViewModel.restoreLegacyPeriodIfNeeded(from: directory)
         cacheDirectory = directory
         cache = ActivityHeatmapCache(directory: directory)
+        let viewModel = ActivityHeatmapViewModel(messages: messages, cache: cache)
+        self.viewModel = viewModel
+        if let messages {
+            insertionObserver = MessageObserver(messages: messages) { [weak self] in
+                Task { @MainActor in
+                    await self?.viewModel?.reload()
+                }
+            }
+        }
+        if let idleTime {
+            let idleTimeState = ActivityHeatmapIdleTimeState(provider: idleTime)
+            self.idleTimeState = idleTimeState
+            idleTimeObserver = ActivityHeatmapIdleTimeObserver { [weak idleTimeState] in
+                Task { @MainActor in
+                    idleTimeState?.refresh()
+                }
+            }
+            idleTimeState.refresh()
+        }
         settings.addEntries([
             SettingEntryItem(
                 id: id,
@@ -61,9 +84,9 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
                 order: order
             ) {
                 ActivityHeatmapSettingsView(
-                    messages: messages,
+                    model: viewModel,
                     idleTime: idleTime,
-                    cache: self.cache,
+                    idleTimeState: self.idleTimeState,
                     cacheDirectory: directory
                 )
             },
@@ -83,6 +106,12 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
+        insertionObserver?.cancel()
+        insertionObserver = nil
+        idleTimeObserver?.cancel()
+        idleTimeObserver = nil
+        idleTimeState = nil
+        viewModel = nil
         cache = nil
         cacheDirectory = nil
     }
@@ -120,7 +149,6 @@ public struct ActivityDay: Identifiable, Sendable, Equatable {
 public final class ActivityHeatmapViewModel {
     private let messages: (any MessageManaging)?
     private let cache: ActivityHeatmapCache?
-    private var insertionObserver: MessageObserver?
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
     static let periodKey = "com.coffic.activity-heatmap.period"
@@ -135,9 +163,6 @@ public final class ActivityHeatmapViewModel {
         self.messages = messages
         self.cache = cache
         self.period = ActivityHeatmapPeriod(rawValue: UserDefaults.standard.integer(forKey: Self.periodKey)) ?? .days30
-        insertionObserver = messages.map { messages in MessageObserver(messages: messages) { [weak self] in
-            self?.scheduleReload()
-        } }
     }
 
     static func restoreLegacyPeriodIfNeeded(from directory: URL?) {
@@ -232,11 +257,24 @@ private struct LegacyPeriodPreference: Decodable {
 public struct ActivityHeatmapSettingsView: View {
     @State private var model: ActivityHeatmapViewModel
     private let idleTime: (any IdleTimeProviding)?
+    private let idleTimeState: ActivityHeatmapIdleTimeState
 
     private let cacheDirectory: URL?
 
     private func L(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: .module)
+    }
+
+    public init(
+        model: ActivityHeatmapViewModel,
+        idleTime: (any IdleTimeProviding)? = nil,
+        idleTimeState: ActivityHeatmapIdleTimeState? = nil,
+        cacheDirectory: URL? = nil
+    ) {
+        _model = State(initialValue: model)
+        self.idleTime = idleTime
+        self.idleTimeState = idleTimeState ?? ActivityHeatmapIdleTimeState(provider: idleTime)
+        self.cacheDirectory = cacheDirectory
     }
 
     public init(
@@ -247,6 +285,7 @@ public struct ActivityHeatmapSettingsView: View {
     ) {
         _model = State(initialValue: ActivityHeatmapViewModel(messages: messages, cache: cache))
         self.idleTime = idleTime
+        self.idleTimeState = ActivityHeatmapIdleTimeState(provider: idleTime)
         self.cacheDirectory = cacheDirectory
     }
 
@@ -276,8 +315,8 @@ public struct ActivityHeatmapSettingsView: View {
                 heatmap
                 tokenTrend
                 if let cacheDirectory { dataDirectoryButton(cacheDirectory) }
-                if let idleTime {
-                    IdleTimeSummaryCard(provider: idleTime)
+                if idleTime != nil {
+                    IdleTimeSummaryCard(state: idleTimeState)
                 }
             }
             .padding(24)
@@ -435,8 +474,7 @@ public actor ActivityHeatmapCache {
 }
 
 private struct IdleTimeSummaryCard: View {
-    let provider: any IdleTimeProviding
-    @State private var snapshot: IdleInferenceSnapshot?
+    @ObservedObject var state: ActivityHeatmapIdleTimeState
 
     private func L(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: .module)
@@ -449,7 +487,7 @@ private struct IdleTimeSummaryCard: View {
                 Spacer()
                 Text(L("Activity patterns and rest windows")).font(.caption).foregroundStyle(.secondary)
             }
-            if let snapshot {
+            if let snapshot = state.snapshot {
                 HStack(spacing: 12) {
                     metric(L("Rest window"), value: restWindow(snapshot))
                     metric(L("Confidence"), value: snapshot.restWindow.map { "\(Int(($0.confidence * 100).rounded()))%" } ?? L("Learning"))
@@ -473,10 +511,7 @@ private struct IdleTimeSummaryCard: View {
         }
         .padding(16)
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .task { snapshot = await provider.currentSnapshot() }
-        .onReceive(NotificationCenter.default.publisher(for: .idleTimeSnapshotDidChange)) { _ in
-            Task { snapshot = await provider.currentSnapshot() }
-        }
+        .task { state.refresh() }
     }
 
     private func metric(_ title: String, value: String) -> some View {

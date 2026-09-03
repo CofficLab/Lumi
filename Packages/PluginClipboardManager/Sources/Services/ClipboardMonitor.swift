@@ -59,7 +59,7 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
             for item in items {
                 await storage.add(item: item)
                 await MainActor.run {
-                    NotificationCenter.default.post(name: .clipboardHistoryDidUpdate, object: nil)
+                    ClipboardHistoryChangeCenter.shared.notify()
                 }
 
                 if Self.verbose {

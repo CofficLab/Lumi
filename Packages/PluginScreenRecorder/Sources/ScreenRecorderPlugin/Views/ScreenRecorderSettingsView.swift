@@ -4,11 +4,16 @@ import SwiftUI
 /// 屏幕录制设置页：权限状态、3 秒测试录制、行为说明。
 @MainActor
 struct ScreenRecorderSettingsView: View {
+    @ObservedObject private var state: ScreenRecorderSettingsState
     @State private var screenRecordingAllowed = false
     @State private var microphoneAllowed = false
     @State private var revision = 0
     @State private var testing = false
     @State private var testMessage: String?
+
+    init(state: ScreenRecorderSettingsState) {
+        self._state = ObservedObject(wrappedValue: state)
+    }
 
     var body: some View {
         Form {
@@ -61,7 +66,7 @@ struct ScreenRecorderSettingsView: View {
         .formStyle(.grouped)
         .id(revision)
         .onAppear(perform: refresh)
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in refresh() }
+        .onChange(of: state.revision) { _, _ in refresh() }
     }
 
     @ViewBuilder

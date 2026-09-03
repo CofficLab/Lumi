@@ -9,15 +9,9 @@ public class ClipboardManagerViewModel: ObservableObject {
     private var allItems: [ClipboardHistoryItem] = []
     private let storage = ClipboardStorage.shared
     
-    private var historyObserver: ClipboardHistoryObserver?
-    
     public init() {
         Task {
             await loadItems()
-        }
-        
-        historyObserver = ClipboardHistoryObserver { [weak self] in
-            self?.refresh()
         }
     }
     

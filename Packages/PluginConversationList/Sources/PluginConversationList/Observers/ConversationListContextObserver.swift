@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import ProviderConversation
 import ProviderConversationState
@@ -7,7 +6,8 @@ import ProviderConversationState
 @MainActor
 final class ConversationListContextObserver {
     private var selectedConversationHandle: (any SelectedConversationObserverHandle)?
-    private var stateCancellable: AnyCancellable?
+    private var conversationHandle: (any ConversationObserverHandle)?
+    private var stateHandle: (any ConversationStateObserverHandle)?
 
     init(
         conversations: any ConversationManaging,
@@ -17,15 +17,25 @@ final class ConversationListContextObserver {
         selectedConversationHandle = conversations.addSelectedConversationObserver { [weak context] newID in
             context?.selectedConversationID = newID
         }
-        stateCancellable = conversationState?.objectWillChange.sink { [weak context] _ in
-            context?.objectWillChange.send()
+        conversationHandle = conversations.addConversationObserver { [weak context] event in
+            switch event {
+            case .selected:
+                break
+            default:
+                context?.markConversationsChanged()
+            }
+        }
+        stateHandle = conversationState?.addConversationStateObserver { [weak context] _ in
+            context?.markConversationsChanged()
         }
     }
 
     func cancel() {
         selectedConversationHandle?.cancel()
         selectedConversationHandle = nil
-        stateCancellable?.cancel()
-        stateCancellable = nil
+        conversationHandle?.cancel()
+        conversationHandle = nil
+        stateHandle?.cancel()
+        stateHandle = nil
     }
 }

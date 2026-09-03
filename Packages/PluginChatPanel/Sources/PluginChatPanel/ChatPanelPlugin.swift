@@ -61,7 +61,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         stage: .stable,
         policy: .alwaysOn
     )
-    private var railObserverHandle: (any RailViewProvidingObserverHandle)?
+    private var railObserver: ChatPanelRailObserver?
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -109,18 +109,12 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
                 )
             }
 
-        // Track whether Chat is the active panel so the observer only
-        // persists tab changes that happen while Chat owns the Rail.
-        final class ChatActiveState { var isActive = true }
-        let chatActiveState = ChatActiveState()
-
-        railObserverHandle = railView?.addObserver { [weak self] event in
-            guard case .activeTabChanged(let tabID) = event,
-                  let tabID,
-                  chatActiveState.isActive else { return }
-            activeTabStore?.save(tabID)
-            _ = self // prevent premature deallocation warning
+        // The plugin owns the external Rail observer and controls whether it
+        // is active while Chat owns the panel.
+        let railObserver = railView.flatMap { rail in
+            activeTabStore.map { ChatPanelRailObserver(rail: rail, activeTabStore: $0) }
         }
+        self.railObserver = railObserver
 
         activityBar.addItems([ActivityBarItem(
             id: entryID,
@@ -130,7 +124,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             ownerPluginID: id
         ) { state in
             let isChatActive = state == .activated
-            chatActiveState.isActive = isChatActive
+            railObserver?.isActive = isChatActive
             toolbar?.setVisibleCategories(isChatActive ? [.global, .chat, .project] : Set(ToolbarItemCategory.allCases))
             chat.setVisible(isChatActive)
             chat.setContextActive(isChatActive)
@@ -182,8 +176,8 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        railObserverHandle?.cancel()
-        railObserverHandle = nil
+        railObserver?.cancel()
+        railObserver = nil
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])

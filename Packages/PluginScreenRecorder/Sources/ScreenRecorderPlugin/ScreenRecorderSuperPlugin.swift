@@ -22,6 +22,9 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
         policy: .disabledByDefault
     )
 
+    private var settingsState: ScreenRecorderSettingsState?
+    private var activationObserver: ApplicationActivationObserver?
+
     public init() {}
 
     public func onRegister(kernel: KernelCoreContainer) throws {
@@ -36,6 +39,11 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
             .pluginDataDirectory(for: "ScreenRecorder")
             ?? FileManager.default.temporaryDirectory.appendingPathComponent("ScreenRecorder", isDirectory: true)
         ScreenRecorderRuntime.configure(dataDirectory: dataDirectory)
+        let settingsState = ScreenRecorderSettingsState()
+        self.settingsState = settingsState
+        activationObserver = ApplicationActivationObserver { [weak settingsState] in
+            settingsState?.refresh()
+        }
 
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)
         tools?.add(StartRecordingV2Tool(), pluginID: id)
@@ -44,7 +52,7 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
 
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(id: "\(id).settings", title: metadata.name, systemImage: "record.circle", order: order) {
-                ScreenRecorderSettingsView()
+                ScreenRecorderSettingsView(state: settingsState)
             },
         ])
     }
@@ -54,6 +62,9 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
         [StartRecordingV2Tool.toolName, StopRecordingV2Tool.toolName, ListRecordableAppsV2Tool.toolName].forEach {
             tools?.remove(id: $0)
         }
+        activationObserver?.cancel()
+        activationObserver = nil
+        settingsState = nil
         ScreenRecorderRuntime.reset()
     }
 

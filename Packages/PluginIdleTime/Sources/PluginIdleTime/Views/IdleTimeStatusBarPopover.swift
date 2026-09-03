@@ -8,6 +8,10 @@ import SwiftUI
 public struct IdleTimeStatusBarPopover: View {
     @StateObject private var vm: AppIdleTimeVM
 
+    public init(viewModel: AppIdleTimeVM) {
+        _vm = StateObject(wrappedValue: viewModel)
+    }
+
     public init(provider: (any IdleTimeProviding)?) {
         _vm = StateObject(wrappedValue: AppIdleTimeVM(provider: provider))
     }

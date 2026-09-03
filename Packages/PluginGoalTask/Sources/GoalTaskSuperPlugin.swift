@@ -30,6 +30,7 @@ public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
 
     private let goalVM = GoalVM()
     private var conversationBridge: GoalTaskConversationBridge?
+    private var goalChangeObserver: GoalChangeObserver?
 
     public init() {}
 
@@ -52,6 +53,9 @@ public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
         let bridge = GoalTaskConversationBridge(conversations)
         conversationBridge = bridge
         goalVM.updateCurrentConversationID(bridge.selectedConversationID)
+        goalChangeObserver = GoalChangeObserver { [weak self] conversationID in
+            self?.goalVM.refreshIfCurrentConversation(conversationID)
+        }
 
         kernel.resolveProvider((any ChatSectionProviding).self)?.addItems([
             ChatSectionItem(
@@ -95,6 +99,8 @@ public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
             .forEach { kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: $0) }
         conversationBridge?.cancel()
         conversationBridge = nil
+        goalChangeObserver?.cancel()
+        goalChangeObserver = nil
         Plugin._sharedManager = nil
     }
 }
@@ -155,6 +161,7 @@ private enum GoalTaskContinuation {
     }
 
     @MainActor private static func postChange(_ conversationId: String) {
-        NotificationCenter.default.post(name: .goalDidChange, object: nil, userInfo: ["conversationId": conversationId])
+        guard let conversationID = UUID(uuidString: conversationId) else { return }
+        GoalChangeCenter.shared.notify(conversationID: conversationID)
     }
 }

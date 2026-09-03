@@ -1,4 +1,5 @@
 import KernelCore
+import ProviderConversation
 import ProviderProject
 import ProviderRailView
 import SwiftUI
@@ -28,7 +29,7 @@ final class ConversationRailTabController {
     private let sortStabilizer: ConversationSortStabilizer
 
     private weak var rail: (any RailViewProviding)?
-    private var conversationsObserver: NSObjectProtocol?
+    private var conversationsObserver: (any ConversationObserverHandle)?
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private var pendingRefresh: Task<Void, Never>?
 
@@ -51,12 +52,11 @@ final class ConversationRailTabController {
     func start(rail: (any RailViewProviding)?) {
         self.rail = rail
 
-        conversationsObserver = NotificationCenter.default.addObserver(
-            forName: .lumiConversationsDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
+        conversationsObserver = context.conversations.addConversationObserver { [weak self] event in
+            switch event {
+            case .selected:
+                break
+            default:
                 self?.scheduleRefresh()
             }
         }
@@ -76,9 +76,7 @@ final class ConversationRailTabController {
     func stop() {
         pendingRefresh?.cancel()
         pendingRefresh = nil
-        if let conversationsObserver {
-            NotificationCenter.default.removeObserver(conversationsObserver)
-        }
+        conversationsObserver?.cancel()
         conversationsObserver = nil
         projectObserver?.cancel()
         projectObserver = nil

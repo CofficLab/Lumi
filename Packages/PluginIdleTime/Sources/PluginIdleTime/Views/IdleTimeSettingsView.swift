@@ -12,6 +12,11 @@ public struct IdleTimeSettingsView: View {
     @StateObject private var vm: AppIdleTimeVM
     private let dataDirectory: URL?
 
+    public init(viewModel: AppIdleTimeVM, dataDirectory: URL?) {
+        _vm = StateObject(wrappedValue: viewModel)
+        self.dataDirectory = dataDirectory
+    }
+
     public init(provider: (any IdleTimeProviding)?, dataDirectory: URL?) {
         _vm = StateObject(wrappedValue: AppIdleTimeVM(provider: provider))
         self.dataDirectory = dataDirectory

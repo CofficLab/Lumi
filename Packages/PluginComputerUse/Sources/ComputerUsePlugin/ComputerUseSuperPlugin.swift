@@ -21,9 +21,17 @@ public final class ComputerUseSuperPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
+    private var settingsState: ComputerUseSettingsState?
+    private var activationObserver: ApplicationActivationObserver?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        let settingsState = ComputerUseSettingsState()
+        self.settingsState = settingsState
+        activationObserver = ApplicationActivationObserver { [weak settingsState] in
+            settingsState?.refresh()
+        }
         kernel.resolveProvider((any ToolManagerProviding).self)?.add(
             ComputerObserveV2Tool(),
             pluginID: id
@@ -39,7 +47,7 @@ public final class ComputerUseSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "cursorarrow.motionlines",
                 order: order
             ) {
-                ComputerUseSettingsView()
+                ComputerUseSettingsView(state: settingsState)
             },
         ])
     }
@@ -48,6 +56,9 @@ public final class ComputerUseSuperPlugin: SuperPlugin, SuperLog {
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)
         tools?.remove(id: ComputerObserveV2Tool.toolName)
         tools?.remove(id: ComputerActV2Tool.toolName)
+        activationObserver?.cancel()
+        activationObserver = nil
+        settingsState = nil
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: ["\(id).settings"])
     }
 }

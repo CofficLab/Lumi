@@ -58,8 +58,8 @@ struct ListView: View {
         .task(id: effectiveProjectPath) {
             await reload()
         }
-        // 对话增删 / 标题 / 项目迁移时刷新（与旧版 onLumiConversationsDidChange 一致）。
-        .onReceive(NotificationCenter.default.publisher(for: .lumiConversationsDidChange)) { _ in
+        // 插件入口持有 typed observer，并将结构变更转成 context revision。
+        .onChange(of: context.conversationsRevision) { _, _ in
             Task { @MainActor in
                 await reload()
             }

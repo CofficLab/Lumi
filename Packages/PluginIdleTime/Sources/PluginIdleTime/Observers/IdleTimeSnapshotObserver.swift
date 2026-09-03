@@ -1,19 +1,19 @@
-import Combine
 import Foundation
+import ProviderIdleTime
 
 /// Observes idle-time snapshot broadcasts and asks the view model to refresh.
 @MainActor
 final class IdleTimeSnapshotObserver {
-    private var cancellable: AnyCancellable?
+    private var handle: IdleTimeSnapshotChangeHandle?
 
-    init(onChange: @escaping () -> Void) {
-        cancellable = NotificationCenter.default.publisher(for: .idleTimeSnapshotDidChange)
-            .receive(on: RunLoop.main)
-            .sink { _ in onChange() }
+    init(onChange: @escaping @Sendable () -> Void) {
+        handle = IdleTimeSnapshotChangeCenter.shared.addObserver {
+            Task { @MainActor in onChange() }
+        }
     }
 
     func cancel() {
-        cancellable?.cancel()
-        cancellable = nil
+        handle?.cancel()
+        handle = nil
     }
 }

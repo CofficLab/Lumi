@@ -23,6 +23,8 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
     public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.story-writer", name: LumiPluginLocalization.string("Story Writer", bundle: .module), description: LumiPluginLocalization.string("A two-pane workspace for crafting stories with AI assistance.", bundle: .module), category: .project, stage: .preview, policy: .disabledByDefault)
     public static let railTabID = "com.coffic.lumi.plugin.story-writer.outline"
     private let entryID = "com.coffic.lumi.plugin.story-writer.entry"
+    private var viewModel: StoryWriterViewModel?
+    private var changeObserver: StoryWriterChangeObserver?
     public init() {}
 
     public func onRegister(kernel: KernelCoreContainer) throws {
@@ -36,6 +38,10 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
         let directory = kernel.resolveProvider((any StorageProviding).self)?.pluginDataDirectory(for: "StoryWriter")
         StoryWriterStorage.configureV2(directory: directory)
         let viewModel = StoryWriterViewModel(store: StoryStore(pluginDirectory: directory ?? FileManager.default.temporaryDirectory))
+        self.viewModel = viewModel
+        changeObserver = StoryWriterChangeObserver { [weak viewModel] in
+            Task { await viewModel?.reloadFromDisk() }
+        }
         RuntimeBridge.viewModel = viewModel
         RuntimeBridge.conversationInput = kernel.resolveProvider((any ConversationInputProviding).self)
         Task { await viewModel.loadStories() }
@@ -114,6 +120,9 @@ public final class StoryWriterSuperPlugin: SuperPlugin, SuperLog {
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)
         StoryWriterV2Tool.all.forEach { tools?.remove(id: $0.name) }
         RuntimeBridge.viewModel = nil; RuntimeBridge.conversationInput = nil
+        changeObserver?.cancel()
+        changeObserver = nil
+        viewModel = nil
         StoryWriterStorage.configureV2(directory: nil)
     }
 
@@ -171,5 +180,9 @@ private enum StoryWriterV2Support {
     }
     static func findStory(_ store: StoryStore, _ arguments: [String: ToolArgument]) async -> Story? { if let storyID = id(arguments, "story_id") { return await store.loadStory(id: storyID) }; guard let title = string(arguments, "title") else { return nil }; return await store.loadAllStories().first { $0.title == title } }
     static func findChapter(_ store: StoryStore, _ arguments: [String: ToolArgument]) async -> Chapter? { guard let storyID = id(arguments, "story_id"), let chapterID = id(arguments, "chapter_id") else { return nil }; return await store.loadChapter(id: chapterID, storyID: storyID) }
-    static func changed() { NotificationCenter.default.post(name: .storyWriterDidChange, object: nil) }
+    static func changed() {
+        Task { @MainActor in
+            StoryWriterChangeCenter.shared.notify()
+        }
+    }
 }
