@@ -13,16 +13,14 @@ import SwiftUI
 public struct AgentRulesSettingsView: View {
     @LumiTheme private var theme
 
-    @StateObject private var projectObserver: AgentRulesProjectObserver
+    @ObservedObject private var projectObserver: AgentRulesProjectObserver
     @State private var selectedProjectPath: String?
     @State private var rules: [AgentRuleMetadata] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
 
-    public init(projectProvider: (any ProjectProviding)? = nil) {
-        _projectObserver = StateObject(
-            wrappedValue: AgentRulesProjectObserver(projectProvider: projectProvider)
-        )
+    public init(projectObserver: AgentRulesProjectObserver) {
+        _projectObserver = ObservedObject(wrappedValue: projectObserver)
     }
 
     private var projects: [ProjectInfo] {

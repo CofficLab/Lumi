@@ -30,6 +30,9 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
     private var missingActionBarProviders: [String] = []
     private var actionBarInputObserver: ActionBarInputObserver?
     private var actionBarConversationObserver: ActionBarConversationObserver?
+    private var sendActionBarStateObserver: SendActionBarConversationObserver?
+    private let inputViewState = ConversationInputViewState()
+    private var inputObserver: ConversationInputObserver?
 
     public init() {}
 
@@ -49,6 +52,13 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
         let metrics = kernel.resolveProvider((any PerformanceMetricsProviding).self)
         let conversations = kernel.resolveProvider((any ConversationManaging).self)
         let conversationState = kernel.resolveProvider((any ConversationStateProviding).self)
+
+        inputObserver?.cancel()
+        inputObserver = ConversationInputObserver(
+            input: input,
+            sender: sender,
+            state: inputViewState
+        )
 
         var missingProviders: [String] = []
         if input == nil { missingProviders.append("ConversationInputProviding") }
@@ -78,7 +88,7 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
             ) {
-                AttachmentPreviewView(sender: sender)
+                AttachmentPreviewView(sender: sender, state: self.inputViewState)
             },
         ])
 
@@ -91,7 +101,12 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
             ) {
-                ConversationInputView(input: input, sender: sender, metrics: metrics)
+                ConversationInputView(
+                    input: input,
+                    sender: sender,
+                    metrics: metrics,
+                    state: self.inputViewState
+                )
             },
         ])
 
@@ -122,6 +137,17 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
         }
         actionBarInputObserver = ActionBarInputObserver(input: input, sender: sender, viewModel: viewModel)
 
+        if let conversations = kernel.resolveProvider((any ConversationManaging).self),
+           let conversationState = kernel.resolveProvider((any ConversationStateProviding).self) {
+            sendActionBarStateObserver = SendActionBarConversationObserver(
+                conversations: conversations,
+                conversationState: conversationState,
+                onChange: { [weak viewModel] in
+                    viewModel?.refreshConversationState()
+                }
+            )
+        }
+
         // 3. 对话切换时清空输入框
         if let conversations = kernel.resolveProvider((any ConversationManaging).self) {
             actionBarConversationObserver = ActionBarConversationObserver(
@@ -132,9 +158,12 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        inputObserver?.cancel()
+        inputObserver = nil
         actionBarInputObserver?.cancel()
         actionBarInputObserver = nil
-        sendActionBarViewModel?.stopObservingConversationState()
+        sendActionBarStateObserver?.cancel()
+        sendActionBarStateObserver = nil
         actionBarConversationObserver?.cancel()
         actionBarConversationObserver = nil
         sendActionBarViewModel = nil

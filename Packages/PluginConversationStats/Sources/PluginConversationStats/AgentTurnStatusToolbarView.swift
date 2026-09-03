@@ -1,18 +1,13 @@
 import ProviderAgentLoop
-import ProviderConversation
 import SwiftUI
 
 /// Agent Turn 运行状态工具栏视图
 struct AgentTurnStatusToolbarView: View {
-    let conversations: any ConversationManaging
     let agentLoop: any AgentLoopProviding
+    @ObservedObject var state: AgentTurnStatusToolbarState
 
-    @State private var selectedConversationID: UUID?
     @State private var isRunning: Bool = false
     @State private var pulseAnimation: Bool = false
-
-    // Observer tokens
-    @State private var observer: AgentTurnStatusObserver?
 
     var body: some View {
         Group {
@@ -44,31 +39,15 @@ struct AgentTurnStatusToolbarView: View {
                 .onDisappear { pulseAnimation = false }
             }
         }
-        .task {
-            observer = AgentTurnStatusObserver(conversations: conversations) { newID in
-                selectedConversationID = newID
-            }
-            // Poll the agent loop state periodically via conversation's objectWillChange
-            // (the AgentLoop is ObservableObject, so we can observe it)
-        }
-        .task(id: selectedConversationID) {
+        .task(id: "\(state.selectedConversationID?.uuidString ?? "nil")-\(state.revision)") {
             await Task.yield()
             guard !Task.isCancelled else { return }
             updateRunningState()
         }
-        // Observe agent loop state changes via timer (AgentLoop doesn't expose
-        // a direct publisher for per-conversation state changes)
-        .onReceive(Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()) { _ in
-            updateRunningState()
-        }
-        .onDisappear {
-            observer?.cancel()
-            observer = nil
-        }
     }
 
     private func updateRunningState() {
-        guard let conversationID = selectedConversationID else {
+        guard let conversationID = state.selectedConversationID else {
             isRunning = false
             return
         }

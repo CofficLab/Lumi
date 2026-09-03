@@ -31,6 +31,7 @@ public final class ProjectFilesSuperPlugin: SuperPlugin {
 
     private weak var rootView: (any RootViewProviding)?
     private var projectObserver: ProjectFilesProjectObserver?
+    private var tabViewModel: ProjectFilesTabViewModel?
 
     public init() {}
 
@@ -42,19 +43,22 @@ public final class ProjectFilesSuperPlugin: SuperPlugin {
             throw KernelCoreError.providerNotRegistered(type: (any RootViewProviding).self)
         }
 
-        self.rootView = rootView
-        rootView.setContentHeaderView(AnyView(ProjectFilesTabStripView(project: project)))
-
+        let tabViewModel = ProjectFilesTabViewModel(project: project)
         let projectObserver = ProjectFilesProjectObserver(project: project) { [weak self] in
+            tabViewModel.reload()
             self?.updateHeaderVisibility(for: project)
         }
+        self.rootView = rootView
+        self.tabViewModel = tabViewModel
         self.projectObserver = projectObserver
+        rootView.setContentHeaderView(AnyView(ProjectFilesTabStripView(viewModel: tabViewModel)))
         updateHeaderVisibility(for: project)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         projectObserver?.cancel()
         projectObserver = nil
+        tabViewModel = nil
         kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderView(nil)
     }
 

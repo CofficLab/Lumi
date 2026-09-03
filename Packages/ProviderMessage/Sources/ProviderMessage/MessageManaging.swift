@@ -7,6 +7,8 @@ import Foundation
 /// 不必为了显示一条刚发送的消息再次查询数据库。
 public enum MessageChange: Sendable {
     case inserted(Message, conversationID: UUID)
+    /// 消息已经成功写入持久化存储。
+    case persisted(Message, conversationID: UUID)
 }
 
 /// 消息变化观察者注销令牌。

@@ -185,8 +185,8 @@ struct MessageManagerWriteBehindTests {
         #expect(restored.stopReason == "end_turn")
     }
 
-    @Test("user 消息落盘成功后发 saved 通知")
-    func userMessagePostsSavedNotificationAfterPersistence() async throws {
+    @Test("消息落盘成功后发布结构化持久化事件")
+    func messageChangePublishesAfterPersistence() async throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
         let manager = makeManager(store: store)
@@ -196,27 +196,20 @@ struct MessageManagerWriteBehindTests {
             content: "hi", createdAt: Date()
         )
 
-        let received = expectationCapture()
-        let observer = NotificationCenter.default.addObserver(
-            forName: Notification.Name("com.coffic.lumi.messageSaved"),
-            object: nil,
-            queue: nil
-        ) { notification in
-            guard notification.userInfo?["messageID"] as? UUID == msg.id else { return }
-            received.conversationID = notification.userInfo?["conversationID"] as? UUID
-            received.messageID = notification.userInfo?["messageID"] as? UUID
-            received.role = notification.userInfo?["role"] as? String
+        var persistedMessage: Message?
+        let handle = manager.addMessageChangeObserver { change in
+            guard case let .persisted(message, id) = change,
+                  id == conversationID else { return }
+            persistedMessage = message
         }
-        defer { NotificationCenter.default.removeObserver(observer) }
+        defer { handle.cancel() }
 
         manager.insertMessage(msg, to: conversationID)
 
         var notified = false
         for _ in 0..<100 {
             if store.fetchMessages(conversationId: conversationID).contains(where: { $0.id == msg.id })
-                && received.conversationID == conversationID
-                && received.messageID == msg.id
-                && received.role == MessageRole.user.rawValue {
+                && persistedMessage == msg {
                 notified = true
                 break
             }
@@ -224,9 +217,7 @@ struct MessageManagerWriteBehindTests {
         }
 
         #expect(notified)
-        #expect(received.conversationID == conversationID)
-        #expect(received.messageID == msg.id)
-        #expect(received.role == MessageRole.user.rawValue)
+        #expect(persistedMessage == msg)
     }
 
     @Test("assistant 消息最终落盘(等后台队列完成后)")
@@ -340,16 +331,6 @@ struct MessageManagerWriteBehindTests {
         #expect(persisted)
     }
 
-    private func expectationCapture() -> SavedNotificationCapture {
-        SavedNotificationCapture()
-    }
-}
-
-/// 通知捕获辅助。
-private final class SavedNotificationCapture {
-    var conversationID: UUID?
-    var messageID: UUID?
-    var role: String?
 }
 
 /// 分页与删除行为测试。

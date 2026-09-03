@@ -7,14 +7,14 @@ public final class ProjectFilesTabViewModel: ObservableObject {
     @Published public private(set) var tabState: ProjectFilesTabState
 
     private let project: any ProjectProviding
-    private var projectObserver: ProjectFilesProjectObserver?
 
     public init(project: any ProjectProviding) {
         self.project = project
         self.tabState = ProjectFilesTabState(project: project)
-        self.projectObserver = ProjectFilesProjectObserver(project: project) { [weak self] in
-            self?.tabState = ProjectFilesTabState(project: project)
-        }
+    }
+
+    public func reload() {
+        tabState = ProjectFilesTabState(project: project)
     }
 
     public func activate(_ fileURL: URL) {

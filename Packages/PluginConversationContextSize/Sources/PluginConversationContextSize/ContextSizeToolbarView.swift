@@ -9,14 +9,11 @@ struct ContextSizeToolbarView: View {
     let conversations: any ConversationManaging
     let messages: any MessageManaging
     let llmManager: any LLMManaging
+    @ObservedObject var state: ContextSizeToolbarState
 
     @State private var maxContextSize: Int?
     @State private var usedTokens: Int?
     @State private var isPopoverPresented = false
-    @State private var selectedConversationID: UUID?
-    @State private var messageRefreshRevision = 0
-
-    @State private var observer: ContextSizeObserver?
 
     var body: some View {
         Button {
@@ -29,31 +26,10 @@ struct ContextSizeToolbarView: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             ContextSizePopover(used: usedTokens, max: maxContextSize)
         }
-        .task {
-            observer = ContextSizeObserver(
-                conversations: conversations,
-                messages: messages,
-                llmManager: llmManager,
-                onConversationChange: { newID in
-                    selectedConversationID = newID
-                },
-                onMessageInsert: { conversationID in
-                    guard conversationID == conversations.selectedConversationID else { return }
-                    messageRefreshRevision &+= 1
-                },
-                onLLMChange: {
-                    messageRefreshRevision &+= 1
-                }
-            )
-        }
-        .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(messageRefreshRevision)") {
+        .task(id: "\(state.selectedConversationID?.uuidString ?? "nil")-\(state.messageRefreshRevision)") {
             try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled else { return }
-            await refreshSize(for: selectedConversationID)
-        }
-        .onDisappear {
-            observer?.cancel()
-            observer = nil
+            await refreshSize(for: state.selectedConversationID)
         }
     }
 
@@ -117,7 +93,7 @@ struct ContextSizeToolbarView: View {
 
     private func refreshUsedTokens(for conversationID: UUID?) async {
         guard let conversationID,
-              selectedConversationID == conversationID,
+              state.selectedConversationID == conversationID,
               conversations.selectedConversationID == conversationID else {
             usedTokens = nil
             return

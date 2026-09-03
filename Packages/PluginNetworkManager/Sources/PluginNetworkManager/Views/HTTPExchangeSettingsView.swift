@@ -61,6 +61,7 @@ public struct HTTPExchangeSettingsView: View {
     }
 
     private let store: HTTPExchangeStore
+    @ObservedObject private var state: HTTPExchangeSettingsState
     @LumiTheme private var theme
 
     @State private var records: [HTTPExchangeListSnapshot] = []
@@ -82,8 +83,9 @@ public struct HTTPExchangeSettingsView: View {
 
     private let pageSize = 40
 
-    public init(store: HTTPExchangeStore) {
+    public init(store: HTTPExchangeStore, state: HTTPExchangeSettingsState) {
         self.store = store
+        _state = ObservedObject(wrappedValue: state)
     }
 
     public var body: some View {
@@ -130,6 +132,9 @@ public struct HTTPExchangeSettingsView: View {
         }
         .task {
             await reloadAsync()
+        }
+        .onChange(of: state.revision) { _, _ in
+            Task { await reloadAsync() }
         }
         .onChange(of: selectedDomain) { _, _ in
             Task { await reloadAsync() }

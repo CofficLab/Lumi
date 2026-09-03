@@ -27,8 +27,7 @@ private actor HTTPExchangeRetentionCoordinator {
     func scheduleCleanup(
         immediately: Bool,
         retentionDays: Int,
-        maxRecordCount: Int,
-        notification: Notification.Name
+        maxRecordCount: Int
     ) {
         guard scheduledTask == nil else { return }
 
@@ -45,7 +44,7 @@ private actor HTTPExchangeRetentionCoordinator {
             )
             if deletedCount > 0 {
                 self.onRecordsDeleted()
-                NotificationCenter.default.post(name: notification, object: nil)
+                HTTPExchangeChangeCenter.shared.notify()
             }
             await self.clearScheduledTask()
         }
@@ -53,8 +52,7 @@ private actor HTTPExchangeRetentionCoordinator {
 
     func startPeriodicCleanup(
         retentionDays: Int,
-        maxRecordCount: Int,
-        notification: Notification.Name
+        maxRecordCount: Int
     ) {
         guard periodicTask == nil else { return }
 
@@ -74,7 +72,7 @@ private actor HTTPExchangeRetentionCoordinator {
                 )
                 if deletedCount > 0 {
                     coordinator.onRecordsDeleted()
-                    NotificationCenter.default.post(name: notification, object: nil)
+                    HTTPExchangeChangeCenter.shared.notify()
                 }
             }
         }
@@ -144,10 +142,6 @@ public final class HTTPExchangeStore {
     private static let dailyCountCacheFileName = "http-daily-counts.json"
     public nonisolated static let retentionDays = 30
     public nonisolated static let maxRecordCount = 10_000
-    /// `nonisolated`:后台写入路径(`beginRecord`/`finishRecord`)需要 post 此通知,
-    /// 而它是纯常量,可安全地从任意线程引用。
-    public nonisolated static let didChangeNotification = Notification.Name("com.coffic.lumi.networkManagerHTTPExchangeDidChange")
-
     /// Backing container. `ModelContainer` is `Sendable` and safe to touch off
     /// the main actor, so this is exposed `nonisolated` to let the background
     /// snapshot readers build their own private `ModelContext`.
@@ -231,7 +225,7 @@ public final class HTTPExchangeStore {
                 persist: !Calendar.current.isDateInToday(startedAt)
             )
         }
-        NotificationCenter.default.post(name: Self.didChangeNotification, object: nil)
+        HTTPExchangeChangeCenter.shared.notify()
         scheduleRetentionCleanup()
         return record
     }
@@ -636,10 +630,13 @@ public final class HTTPExchangeStore {
         scheduleRetentionCleanup()
     }
 
-    /// `didChangeNotification` 发送抽成 nonisolated 静态方法,供后台写入路径复用。
-    /// `NotificationCenter` 线程安全,可从任意线程 post。
     private nonisolated static func postDidChange() {
-        NotificationCenter.default.post(name: didChangeNotification, object: nil)
+        HTTPExchangeChangeCenter.shared.notify()
+    }
+
+    @discardableResult
+    public func addObserver(_ callback: @escaping @Sendable () -> Void) -> HTTPExchangeChangeHandle {
+        HTTPExchangeChangeCenter.shared.addObserver(callback)
     }
 
     /// Runs retention cleanup immediately. The normal write path uses the
@@ -669,8 +666,7 @@ public final class HTTPExchangeStore {
             await coordinator.scheduleCleanup(
                 immediately: immediately,
                 retentionDays: Self.retentionDays,
-                maxRecordCount: Self.maxRecordCount,
-                notification: Self.didChangeNotification
+                maxRecordCount: Self.maxRecordCount
             )
         }
     }
@@ -680,8 +676,7 @@ public final class HTTPExchangeStore {
         Task {
             await coordinator.startPeriodicCleanup(
                 retentionDays: Self.retentionDays,
-                maxRecordCount: Self.maxRecordCount,
-                notification: Self.didChangeNotification
+                maxRecordCount: Self.maxRecordCount
             )
         }
     }
@@ -970,7 +965,7 @@ public final class HTTPExchangeStore {
             })
         }
         save(context)
-        NotificationCenter.default.post(name: Self.didChangeNotification, object: nil)
+        HTTPExchangeChangeCenter.shared.notify()
         scheduleRetentionCleanup()
     }
 

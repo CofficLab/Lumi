@@ -409,13 +409,8 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
                 try store.insertMessage(message)
                 // dequeuePending 是 nonisolated + 锁保护,可在本队列直接调用。
                 self?.dequeuePending(id: message.id, conversationID: conversationID)
-                if message.role == .user {
-                    Task { @MainActor [weak self] in
-                        self?.postMessageSavedNotification(
-                            message: message,
-                            conversationID: conversationID
-                        )
-                    }
+                Task { @MainActor [weak self] in
+                    self?.notifyMessageChange(.persisted(message, conversationID: conversationID))
                 }
             } catch {
                 if Self.verbose {
@@ -423,19 +418,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
                 }
             }
         }
-    }
-
-    private func postMessageSavedNotification(message: Message, conversationID: UUID) {
-        let userInfo: [AnyHashable: Any] = [
-            "conversationID": conversationID,
-            "messageID": message.id,
-            "role": message.role.rawValue,
-        ]
-        NotificationCenter.default.post(
-            name: Notification.Name("com.coffic.lumi.messageSaved"),
-            object: nil,
-            userInfo: userInfo
-        )
     }
 
     public func updateMessage(id: UUID, in conversationID: UUID, content: String) {

@@ -13,7 +13,7 @@ struct AttachmentPreviewView: View {
     @LumiTheme private var theme
 
     let sender: (any MessageSendingProviding)?
-    @State private var revision = 0
+    @ObservedObject var state: ConversationInputViewState
 
     private var attachments: [UserImageAttachment] {
         sender?.pendingImageAttachments ?? []
@@ -24,7 +24,7 @@ struct AttachmentPreviewView: View {
     }
 
     var body: some View {
-        let _ = revision
+        let _ = state.revision
 
         Group {
             if !attachments.isEmpty || !fileAttachments.isEmpty {
@@ -53,11 +53,6 @@ struct AttachmentPreviewView: View {
                 }
                 .background(theme.textPrimary.opacity(0.04))
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
-            }
-        }
-        .onReceive(sender?.objectWillChange ?? ObservableObjectPublisher()) { _ in
-            DispatchQueue.main.async {
-                revision &+= 1
             }
         }
     }

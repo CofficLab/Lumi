@@ -45,6 +45,8 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
     }
 
     private var httpExchangeStore: HTTPExchangeStore?
+    private var httpExchangeObserver: HTTPExchangeObserver?
+    private var httpExchangeSettingsState: HTTPExchangeSettingsState?
 
     public init() {}
 
@@ -67,6 +69,15 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
             exchangeStore = nil
         }
         httpExchangeStore = exchangeStore
+        if let exchangeStore {
+            let settingsState = HTTPExchangeSettingsState()
+            httpExchangeSettingsState = settingsState
+            httpExchangeObserver = HTTPExchangeObserver(store: exchangeStore) { [weak settingsState] in
+                Task { @MainActor in
+                    settingsState?.refresh()
+                }
+            }
+        }
         NetworkService.shared.configureHTTPExchangeStore(exchangeStore)
 
         // 2. 注册 NetworkProviding 到内核（替换默认实现，附带 exchangeStore）
@@ -121,7 +132,10 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
                     systemImage: "arrow.up.arrow.down.circle",
                     order: order
                 ) {
-                    HTTPExchangeSettingsView(store: httpExchangeStore)
+                    HTTPExchangeSettingsView(
+                        store: httpExchangeStore,
+                        state: self.httpExchangeSettingsState ?? HTTPExchangeSettingsState()
+                    )
                 },
             ])
         }
@@ -142,6 +156,12 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
         // 撤回设置入口
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
+
+        httpExchangeObserver?.cancel()
+        httpExchangeObserver = nil
+        httpExchangeSettingsState = nil
+        httpExchangeStore = nil
+        NetworkService.shared.configureHTTPExchangeStore(nil)
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
