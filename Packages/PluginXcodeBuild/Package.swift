@@ -21,7 +21,11 @@ let package = Package(
                 "KitSuperLog",
                 "ProviderSkill",
             ],
-            path: "Sources/PluginXcodeBuild"
+            path: "Sources/PluginXcodeBuild",
+            resources: [
+                // 保留 Resources/Skills 目录结构（.copy），否则 Bundle.module 遍历会失败。
+                .copy("Resources/Skills")
+            ]
         ),
         .testTarget(
             name: "PluginXcodeBuildTests",

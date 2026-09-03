@@ -1,45 +1,29 @@
 import Foundation
 import ProviderSkill
 
-/// Xcode Build 技能贡献者：演示第三方插件如何贡献 Skill。
+/// Xcode Build 技能贡献者：演示第三方插件从自己的 `Resources/` 目录贡献 Skill。
 ///
-/// 实现 `SkillContributing`（`Sendable` 值类型），在 `onBoot` 时通过
-/// `SkillProviding.addProvider(_:)` 注入。技能正文内嵌（不依赖磁盘文件），
-/// 插件卸载时按 `providerID` 幂等撤回。
+/// 技能以标准目录格式存放在插件自己的资源目录（`Resources/Skills/`，
+/// 每个子目录一个技能：`metadata.json` + `SKILL.md`），通过
+/// `SkillDirectoryLoader` 解析——与`PluginSkill` 的内置目录、项目
+/// `.agent/skills/` 共用同一套目录约定与解析器。
+///
+/// Package.swift 中须用 `.copy("Resources/Skills")` 保留目录结构，
+/// 不能用 `.process`（后者可能扁平化/重命名资源导致目录遍历失败）。
 public struct XcodeBuildSkillContributor: SkillContributing {
     public let providerID: String
+    public let skills: [SkillMetadata]
 
-    public init(providerID: String = XcodeBuildPlugin.pluginID) {
+    public init(
+        providerID: String = XcodeBuildPlugin.pluginID,
+        directoryName: String = "Skills"
+    ) {
         self.providerID = providerID
+        // Bundle.module 是当前 target 专属资源；SPM 资源文件夹默认复制到
+        // bundle 根，故直接以 Skills 目录为根。
+        let root = Bundle.module.resourceURL?.appendingPathComponent(directoryName, isDirectory: true)
+        self.skills = SkillDirectoryLoader().loadSkills(from: root ?? URL(fileURLWithPath: "/nonexistent"))
     }
 
-    public var allSkills: [SkillMetadata] {
-        [
-            SkillMetadata(
-                name: "xcode-build",
-                title: "Xcode Build",
-                description: "在涉及 Xcode 工程编译、构建错误、签名与模拟器问题时，按本规范引导构建流程。",
-                triggers: ["xcode", "build", "编译", "签名", "模拟器"],
-                version: "1.0.0",
-                content: Self.skillContent
-            ),
-        ]
-    }
-
-    /// SKILL.md 正文（内嵌字符串；实际场景也可从 Bundle 资源加载）。
-    public static let skillContent = """
-    # Xcode Build 规范
-
-    当任务涉及 Xcode 工程编译时，遵循以下步骤：
-
-    1. 先确认工程根目录：查找 `.xcodeproj` 或 `Package.swift`。
-    2. 区分目标：App / Framework / Package，使用对应 `xcodebuild` 参数。
-    3. 构建命令：
-       - `xcodebuild -project Foo.xcodeproj -scheme Foo -configuration Debug build`
-       - `xcodebuild -destination 'platform=iOS Simulator,name=iPhone 15' build`
-    4. 遇到构建错误先读取完整 error 上下文，不要只看最后一行。
-    5. 签名问题（code signing）通常需要检查 Signing & Capabilities 与
-       DEVELOPMENT_TEAM 配置。
-    6. 模拟器问题优先检查 destination 名称是否与当前 Xcode 支持的模拟器匹配。
-    """
+    public var allSkills: [SkillMetadata] { skills }
 }

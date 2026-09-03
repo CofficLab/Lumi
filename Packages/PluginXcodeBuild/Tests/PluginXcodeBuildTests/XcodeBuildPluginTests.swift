@@ -9,14 +9,25 @@ import ProviderSkill
 @MainActor
 struct XcodeBuildPluginTests {
 
-    @Test("contributor 提供 xcode-build 技能与内嵌正文")
-    func contributorProvidesSkill() {
+    @Test("contributor 从 Resources 目录加载 xcode-build 技能")
+    func contributorLoadsSkillFromResources() {
         let contributor = XcodeBuildSkillContributor()
         #expect(contributor.allSkills.count == 1)
         let skill = contributor.allSkills[0]
         #expect(skill.name == "xcode-build")
-        #expect(skill.content?.contains("xcodebuild") == true)
         #expect(skill.triggers.contains("xcode") == true)
+        // metadata.json 进来的技能 contentPath 指向 SKILL.md
+        #expect(skill.contentPath.hasSuffix("SKILL.md"))
+    }
+
+    @Test("技能正文可通过 loadContent 从 SKILL.md 读取")
+    func skillContentLoadsFromBundle() {
+        let contributor = XcodeBuildSkillContributor()
+        let skill = contributor.allSkills[0]
+        let content = skill.loadContent()
+        #expect(content != nil)
+        #expect(content?.contains("xcodebuild") == true)
+        #expect(content?.contains("# Xcode Build 规范") == true)
     }
 
     @Test("onBoot 注入 SkillProviding，onShutdown 幂等撤回")

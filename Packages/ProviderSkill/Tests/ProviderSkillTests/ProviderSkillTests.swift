@@ -137,3 +137,124 @@ final class ProviderSkillTests: XCTestCase {
         XCTAssertEqual(count, 0)
     }
 }
+
+// MARK: - SkillDirectoryLoader
+
+@MainActor
+final class SkillDirectoryLoaderTests: XCTestCase {
+    /// 在临时目录构造一个含标准结构的技能目录树。
+    private func makeSkillDirectory(
+        skills: [(name: String, title: String)],
+        missingSKILLMD: Set<String> = [],
+        emptyNameSkills: Set<String> = []
+    ) -> URL {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SkillLoaderTests-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.removeItem(at: root)
+        try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+
+        for skill in skills {
+            let dir = root.appendingPathComponent(skill.name, isDirectory: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            let meta: [String: Any] = [
+                "name": emptyNameSkills.contains(skill.name) ? "   " : skill.name,
+                "title": skill.title,
+                "description": "desc-\(skill.name)",
+                "triggers": ["trigger-\(skill.name)"],
+                "version": "1.0.0",
+            ]
+            let data = try! JSONSerialization.data(withJSONObject: meta)
+            try! data.write(to: dir.appendingPathComponent("metadata.json"))
+            if !missingSKILLMD.contains(skill.name) {
+                try? "content of \(skill.name)".write(to: dir.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+            }
+        }
+        return root
+    }
+
+    private func cleanup(_ url: URL) {
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    func testLoadsAndSortsSkills() {
+        let root = makeSkillDirectory(skills: [
+            (name: "beta", title: "Beta"),
+            (name: "alpha", title: "Alpha"),
+        ])
+        defer { cleanup(root) }
+
+        let loader = SkillDirectoryLoader()
+        let skills = loader.loadSkills(from: root)
+
+        XCTAssertEqual(skills.map(\.name), ["alpha", "beta"])
+        XCTAssertEqual(skills.first?.title, "Alpha")
+        XCTAssertEqual(skills.first?.triggers, ["trigger-alpha"])
+        XCTAssertTrue(skills.allSatisfy { $0.contentPath.hasSuffix("SKILL.md") })
+    }
+
+    func testSkipsDirectoriesWithoutSKILLMD() {
+        let root = makeSkillDirectory(
+            skills: [(name: "good", title: "Good"), (name: "bad", title: "Bad")],
+            missingSKILLMD: ["bad"]
+        )
+        defer { cleanup(root) }
+
+        let loader = SkillDirectoryLoader()
+        let skills = loader.loadSkills(from: root)
+        XCTAssertEqual(skills.map(\.name), ["good"])
+    }
+
+    func testSkipsWhitespaceName() {
+        let root = makeSkillDirectory(
+            skills: [(name: "good", title: "Good"), (name: " ", title: "Empty")],
+            emptyNameSkills: [" "]
+        )
+        defer { cleanup(root) }
+
+        let loader = SkillDirectoryLoader()
+        let skills = loader.loadSkills(from: root)
+        XCTAssertEqual(skills.map(\.name), ["good"])
+    }
+
+    func testRespectsMaxSkillCount() {
+        let root = makeSkillDirectory(skills: [
+            (name: "a", title: "A"),
+            (name: "b", title: "B"),
+            (name: "c", title: "C"),
+        ])
+        defer { cleanup(root) }
+
+        let loader = SkillDirectoryLoader(maxSkillCount: 2)
+        let skills = loader.loadSkills(from: root)
+        XCTAssertEqual(skills.count, 2)
+    }
+
+    func testMissingDirectoryReturnsEmpty() {
+        let loader = SkillDirectoryLoader()
+        let skills = loader.loadSkills(from: URL(fileURLWithPath: "/nonexistent/\(UUID().uuidString)"))
+        XCTAssertTrue(skills.isEmpty)
+    }
+
+    func testLoadContentFallsBackToContentPath() {
+        let root = makeSkillDirectory(skills: [(name: "alpha", title: "Alpha")])
+        defer { cleanup(root) }
+
+        let loader = SkillDirectoryLoader()
+        let skills = loader.loadSkills(from: root)
+        XCTAssertEqual(skills.count, 1)
+
+        let content = skills[0].loadContent()
+        XCTAssertEqual(content, "content of alpha")
+    }
+
+    func testLoadContentPrefersInlineContent() {
+        let skill = SkillMetadata(
+            name: "inline",
+            title: "Inline",
+            description: "desc",
+            contentPath: "/nonexistent/SKILL.md",
+            content: "inline body"
+        )
+        XCTAssertEqual(skill.loadContent(), "inline body")
+    }
+}

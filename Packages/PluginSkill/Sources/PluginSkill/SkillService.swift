@@ -18,15 +18,17 @@ public protocol BuiltinSkillProviding: Sendable {
 /// 从 `Bundle.module` 加载随包携带的 `BuiltinSkills/` 目录，每个子目录
 /// 一个技能（与项目技能格式一致：`metadata.json` + `SKILL.md`）。
 ///
-/// 刻意只持有 `resourceURL`（`URL` 是 `Sendable`），不长期持有 `Bundle`，
-/// 保证该提供者可安全跨 actor 使用。
+/// 解析复用 `SkillDirectoryLoader`（与项目扫描 / 第三方插件共用同一套
+/// 目录约定）。刻意只持有 `resourceURL`（`URL` 是 `Sendable`），不长期
+/// 持有 `Bundle`，保证该提供者可安全跨 actor 使用。
 public struct BuiltinSkillCatalog: BuiltinSkillProviding {
     public static let shared = BuiltinSkillCatalog()
 
     public let resourceURL: URL?
     public let directoryName: String
-    public let maxSkillCount: Int
+    public let loader: SkillDirectoryLoader
 
+    /// 以「Bundle 资源根 + 目录名」构造。
     public init(
         bundle: Bundle? = nil,
         directoryName: String = "BuiltinSkills",
@@ -34,55 +36,20 @@ public struct BuiltinSkillCatalog: BuiltinSkillProviding {
     ) {
         self.resourceURL = (bundle ?? .module).resourceURL
         self.directoryName = directoryName
-        self.maxSkillCount = maxSkillCount
+        self.loader = SkillDirectoryLoader(maxSkillCount: maxSkillCount)
+    }
+
+    /// 直接以技能根目录构造（第三方插件可复用，指向自己的资源目录）。
+    public init(resourceURL: URL?, directoryName: String = "BuiltinSkills", maxSkillCount: Int = 100) {
+        self.resourceURL = resourceURL
+        self.directoryName = directoryName
+        self.loader = SkillDirectoryLoader(maxSkillCount: maxSkillCount)
     }
 
     public func builtinSkills() -> [SkillMetadata] {
-        guard let resourceURL,
-              let directoryURL = resourceURL.appendingPathComponent(directoryName, isDirectory: true) as URL?,
-              FileManager.default.fileExists(atPath: directoryURL.path) else {
-            return []
-        }
-        guard let contents = try? FileManager.default.contentsOfDirectory(
-            at: directoryURL,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            return []
-        }
-
-        var skills: [SkillMetadata] = []
-        for itemURL in contents {
-            if skills.count >= maxSkillCount { break }
-
-            let resourceValues = try? itemURL.resourceValues(forKeys: [.isDirectoryKey])
-            guard resourceValues?.isDirectory == true else { continue }
-
-            let metadataURL = itemURL.appendingPathComponent("metadata.json")
-            let skillMDURL = itemURL.appendingPathComponent("SKILL.md")
-            guard FileManager.default.fileExists(atPath: metadataURL.path),
-                  FileManager.default.fileExists(atPath: skillMDURL.path),
-                  let data = try? Data(contentsOf: metadataURL),
-                  let skill = try? JSONDecoder().decode(SkillMetadata.self, from: data),
-                  !skill.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  !skill.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                continue
-            }
-
-            skills.append(SkillMetadata(
-                id: skill.name,
-                name: skill.name,
-                title: skill.title,
-                description: skill.description,
-                triggers: skill.triggers,
-                version: skill.version,
-                contentPath: skillMDURL.path,
-                modifiedAt: (try? skillMDURL.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? Date()
-            ))
-        }
-
-        skills.sort { $0.name < $1.name }
-        return skills
+        guard let resourceURL else { return [] }
+        let directoryURL = resourceURL.appendingPathComponent(directoryName, isDirectory: true)
+        return loader.loadSkills(from: directoryURL)
     }
 }
 
@@ -116,69 +83,24 @@ public enum SkillMergePolicy {
 
 /// 默认文件系统扫描器：扫描 `.agent/skills/` 目录，解析 metadata.json，
 /// 验证 SKILL.md 存在。复刻旧版 `SkillScanner`。
+///
+/// 内部复用 `SkillDirectoryLoader`（与内置 / 插件贡献共用同一套目录约定）。
 public struct SkillScanner: SkillScanning {
-    public let maxMetadataSize: Int
-    public let maxSkillCount: Int
+    public let loader: SkillDirectoryLoader
 
     public init(maxMetadataSize: Int = 1_048_576, maxSkillCount: Int = 100) {
-        self.maxMetadataSize = maxMetadataSize
-        self.maxSkillCount = maxSkillCount
+        self.loader = SkillDirectoryLoader(maxMetadataSize: maxMetadataSize, maxSkillCount: maxSkillCount)
+    }
+
+    /// 直接以 loader 构造（便于测试注入自定义 loader）。
+    public init(loader: SkillDirectoryLoader) {
+        self.loader = loader
     }
 
     public func scanSkills(projectPath: String) -> [SkillMetadata] {
         let directoryURL = URL(fileURLWithPath: projectPath)
             .appendingPathComponent(".agent/skills")
-
-        guard FileManager.default.fileExists(atPath: directoryURL.path) else {
-            return []
-        }
-        guard let contents = try? FileManager.default.contentsOfDirectory(
-            at: directoryURL,
-            includingPropertiesForKeys: [.isDirectoryKey, .contentModificationDateKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            return []
-        }
-
-        var skills: [SkillMetadata] = []
-        for itemURL in contents {
-            if skills.count >= maxSkillCount { break }
-
-            let resourceValues = try? itemURL.resourceValues(forKeys: [.isDirectoryKey])
-            guard resourceValues?.isDirectory == true else { continue }
-
-            let metadataURL = itemURL.appendingPathComponent("metadata.json")
-            let skillMDURL = itemURL.appendingPathComponent("SKILL.md")
-            guard FileManager.default.fileExists(atPath: metadataURL.path),
-                  FileManager.default.fileExists(atPath: skillMDURL.path) else {
-                continue
-            }
-
-            guard let metadataAttrs = try? FileManager.default.attributesOfItem(atPath: metadataURL.path),
-                  let fileSize = metadataAttrs[.size] as? Int,
-                  fileSize <= maxMetadataSize,
-                  let data = try? Data(contentsOf: metadataURL),
-                  let skill = try? JSONDecoder().decode(SkillMetadata.self, from: data),
-                  !skill.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  !skill.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                continue
-            }
-
-            let modifiedAt = (try? skillMDURL.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? Date()
-            skills.append(SkillMetadata(
-                id: skill.name,
-                name: skill.name,
-                title: skill.title,
-                description: skill.description,
-                triggers: skill.triggers,
-                version: skill.version,
-                contentPath: skillMDURL.path,
-                modifiedAt: modifiedAt
-            ))
-        }
-
-        skills.sort { $0.name < $1.name }
-        return skills
+        return loader.loadSkills(from: directoryURL)
     }
 }
 

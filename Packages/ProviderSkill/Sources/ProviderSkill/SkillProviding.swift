@@ -54,6 +54,19 @@ public struct SkillMetadata: Identifiable, Equatable, Sendable, Codable {
     public func hasSameName(_ other: SkillMetadata) -> Bool {
         name == other.name
     }
+
+    /// 加载技能正文：优先使用内嵌 `content`，为空时回退读取 `contentPath`。
+    ///
+    /// 插件贡献的技能通常直接携带 `content`；文件系统来源的技能
+    /// （项目 `.agent/skills/`、内置资源目录）依赖 `contentPath` 指向的
+    /// `SKILL.md`。两种来源都能通过本方法拿到统一的正文文本。
+    public func loadContent() -> String? {
+        if let content, !content.isEmpty {
+            return content
+        }
+        guard !contentPath.isEmpty else { return nil }
+        return try? String(contentsOfFile: contentPath, encoding: .utf8)
+    }
 }
 
 extension SkillMetadata {
