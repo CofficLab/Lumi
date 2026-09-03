@@ -21,7 +21,6 @@ public class InputService: ObservableObject, SuperLog {
     @Published var availableInputSources: [InputSource] = []
     @Published var lastActiveAppBundleID: String?
 
-    private var eventObserver: InputEventObserver?
     private let configKey = "InputPluginConfig"
     private let settingsStore = InputPluginLocalStore()
 
@@ -50,22 +49,13 @@ public class InputService: ObservableObject, SuperLog {
             }
         }
 
-        startMonitoring()
+    }
+
+    func handleInputSourceChange() {
+        currentInputSource = InputSource.current()
     }
     
-    public func startMonitoring() {
-        eventObserver?.cancel()
-        eventObserver = InputEventObserver(
-            onApplicationActivation: { [weak self] app in
-                self?.handleAppActivation(app)
-            },
-            onInputSourceChange: { [weak self] in
-                self?.currentInputSource = InputSource.current()
-            }
-        )
-    }
-    
-    private func handleAppActivation(_ app: NSRunningApplication) {
+    func handleAppActivation(_ app: NSRunningApplication) {
         guard config.isEnabled, let bundleID = app.bundleIdentifier else { return }
         lastActiveAppBundleID = bundleID
 

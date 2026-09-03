@@ -17,8 +17,7 @@ final class AgentTurnViewModel: ObservableObject {
 
     private let services: MessageListServices
     private var item: AgentTurnPresentationItem
-    private let servicesObserver = MessageListServicesObserver()
-    private var didBindStreaming = false
+    private var observerHandle: MessageListObserverHubHandle?
     private var streamingRefreshTask: Task<Void, Never>?
     private var refreshSequence: UInt64 = 0
 
@@ -37,7 +36,6 @@ final class AgentTurnViewModel: ObservableObject {
     func update(item: AgentTurnPresentationItem) async {
         guard self.item != item else { return }
         self.item = item
-        bindStreamingIfNeeded()
         await refresh()
     }
 
@@ -149,27 +147,18 @@ final class AgentTurnViewModel: ObservableObject {
     }
 
     private func bindNotifications() {
-        // 新版无 `.lumiMessagesDidChange` 通知：订阅消息服务的窄播。
-        guard let messages = services.messages else { return }
-        servicesObserver.bindMessages(
-            messages,
-            onChange: nil,
-            onWillChange: { [weak self] in
+        // The plugin-owned hub owns every Provider subscription. This view model
+        // only consumes the narrow events it needs for its turn projection.
+        guard let hub = services.observerHub else { return }
+        observerHandle = hub.addConsumer(
+            onMessagesWillChange: { [weak self] in
                 Task { @MainActor [weak self] in await self?.refresh() }
+            },
+            onStreamingChange: { [weak self] in
+                guard self?.item.acceptsLiveActivity == true else { return }
+                self?.scheduleStreamingRefresh()
             }
         )
-
-        bindStreamingIfNeeded()
-    }
-
-    private func bindStreamingIfNeeded() {
-        guard !didBindStreaming,
-              item.acceptsLiveActivity,
-              let streaming = services.streaming else { return }
-        servicesObserver.bindStreaming(streaming) { [weak self] in
-            self?.scheduleStreamingRefresh()
-        }
-        didBindStreaming = true
     }
 
     private func scheduleStreamingRefresh() {

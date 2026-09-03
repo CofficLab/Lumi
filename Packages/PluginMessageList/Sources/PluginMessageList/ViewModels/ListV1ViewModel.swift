@@ -30,7 +30,7 @@ final class ListV1ViewModel: ObservableObject {
     private var activeConversationID: UUID?
     /// 激活序列号，用于防止并发 activate 的竞态。
     private var activationSequence: UInt64 = 0
-    private let servicesObserver = MessageListServicesObserver()
+    private var observerHandle: MessageListObserverHubHandle?
     private var didBindMessageChanges = false
     /// objectWillChange remains the compatibility fallback for edits/deletes;
     /// insertion events already carry the complete message payload.
@@ -241,16 +241,15 @@ final class ListV1ViewModel: ObservableObject {
     }
 
     private func bindServicesIfNeeded() {
-        // 必须由 ViewModel 自己监听：空对话时 List 尚未创建，View 内的监听器不存在。
-        // 第一条用户消息正是在这个阶段到达。
+        // The plugin-owned hub is created before the list view, so empty states
+        // still receive the first message without subscribing to Providers here.
         guard !didBindMessageChanges else { return }
-        guard let messages = services.messages else { return }
-        servicesObserver.bindMessages(
-            messages,
-            onChange: { [weak self] change in
+        guard let hub = services.observerHub else { return }
+        observerHandle = hub.addConsumer(
+            onMessageChange: { [weak self] change in
                 self?.handleMessageChange(change)
             },
-            onWillChange: { [weak self] in
+            onMessagesWillChange: { [weak self] in
                 guard let self else { return }
                 if self.consumePendingInsertionFallback() {
                     return

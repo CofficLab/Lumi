@@ -6,6 +6,7 @@ import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
+import ProviderProject
 import ProviderRootView
 import ProviderStorage
 import ProviderToolManager
@@ -25,6 +26,7 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
     /// continue to resolve under the same key after the KernelCore migration.
     public let id = "com.coffic.lumi.plugin.mind-map"
     public let order = 81
+    private var projectObserver: MindMapProjectObserver?
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.mind-map",
         name: MindMapLocalization.string("Mind Map Designer"),
@@ -51,6 +53,12 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         MindMapDesignerRuntime.configure(kernel: kernel, pluginID: id)
+        projectObserver?.cancel()
+        projectObserver = kernel.resolveProvider((any ProjectProviding).self).map { project in
+            MindMapProjectObserver(project: project) { path in
+                MindMapDesignerRuntime.updateProjectStorageDirectory(projectPath: path)
+            }
+        }
 
         // 注册 Agent 工具到 ToolManagerProviding。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
@@ -148,6 +156,8 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
 
+        projectObserver?.cancel()
+        projectObserver = nil
         MindMapDesignerRuntime.reset()
     }
 

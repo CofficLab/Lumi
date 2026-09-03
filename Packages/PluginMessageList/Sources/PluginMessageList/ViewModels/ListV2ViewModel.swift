@@ -98,13 +98,12 @@ final class ListV2ViewModel: ObservableObject {
 
     /// 切换会话时记录的目标会话，用于丢弃过期的后台读结果。
     private var activeConversationID: UUID?
-    private let servicesObserver = MessageListServicesObserver()
+    private var observerHandle: MessageListObserverHubHandle?
     /// objectWillChange remains a compatibility fallback for updates/deletes. An
     /// insertion event already carries the complete message, so its matching
     /// fallback refresh must be skipped.
     private var pendingInsertionFallbacksToSkip = 0
     private var didBindServices = false
-    private var didBindStreaming = false
     /// 单飞帧门禁：把逐 token 的 `objectWillChange` 广播合并成每帧（~16ms）最多一次刷新。
     private var streamingRefreshTask: Task<Void, Never>?
     /// 流式行上次的可见性（nil↔非 nil），用于在切换时重算历史行（隐藏/恢复 status 行）。
@@ -313,41 +312,28 @@ final class ListV2ViewModel: ObservableObject {
     /// （objectWillChange 在 willSet 触发，同步读取会拿到旧值）。
     /// 幂等：消息服务 / streaming 各绑定一次；尚未就绪时由下次 `activate` 重试。
     private func bindServicesIfNeeded() {
-        guard !didBindServices else { return }
-        if let messages = services.messages {
-            servicesObserver.bindMessages(
-                messages,
-                onChange: { [weak self] change in
-                    self?.handleMessageChange(change)
-                },
-                onWillChange: { [weak self] in
-                    guard let self else { return }
-                    if self.consumePendingInsertionFallback() {
-                        return
-                    }
-                    Task { @MainActor [weak self] in
-                        await self?.refreshTail()
-                    }
+        guard !didBindServices, let hub = services.observerHub else { return }
+        observerHandle = hub.addConsumer(
+            onMessageChange: { [weak self] change in
+                self?.handleMessageChange(change)
+            },
+            onMessagesWillChange: { [weak self] in
+                guard let self else { return }
+                if self.consumePendingInsertionFallback() { return }
+                Task { @MainActor [weak self] in
+                    await self?.refreshTail()
                 }
-            )
-        }
-        if let state = services.conversationState {
-            servicesObserver.bindConversationState(state) { [weak self] in
-                    guard let self else { return }
-                    self.activityMessage = self.services.activityMessage(for: self.selectedConversationID)
-            }
-        }
-        // 发送状态不再触发历史尾部刷新。它由 conversationState 更新 activityMessage，
-        // 而发送队列本身属于输入/发送 UI，不应让消息列表重新读取历史页。
-        didBindServices = services.messages != nil || services.conversationState != nil
-
-        // 流式逐字显示：订阅 streaming 的 objectWillChange，用帧门禁合并。
-        guard !didBindStreaming else { return }
-        guard let streaming = services.streaming else { return }
-        servicesObserver.bindStreaming(streaming) { [weak self] in
+            },
+            onConversationStateChange: { [weak self] in
+                guard let self else { return }
+                self.activityMessage = self.services.activityMessage(for: self.selectedConversationID)
+            },
+            onStreamingChange: { [weak self] in
                 self?.scheduleStreamingRefresh()
-        }
-        didBindStreaming = true
+            }
+        )
+        // The hub owns Provider subscriptions; this model only consumes its events.
+        didBindServices = true
     }
 
     /// Applies an insertion directly from the in-memory message event.

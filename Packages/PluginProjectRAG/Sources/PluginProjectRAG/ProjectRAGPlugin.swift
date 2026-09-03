@@ -36,6 +36,7 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
     private var llmContextHookHandle: (any LifecycleHookHandle)?
     private var projectLifecycleHook: ProjectRAGProjectLifecycleHook?
     private var searchMemory: ProjectRAGSearchMemory?
+    private var projectObserver: ProjectRAGProjectObserver?
 
     public init() {}
 
@@ -49,6 +50,11 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
         let project = kernel.resolveProvider((any ProjectProviding).self)
         let idleTime = kernel.resolveProvider((any IdleTimeProviding).self)
         let provider = ProjectRAGProvider(service: service, project: project)
+        if let project {
+            projectObserver = ProjectRAGProjectObserver(project: project) { [weak provider] in
+                provider?.handleProjectChange()
+            }
+        }
         ProjectRAGRuntime.configure(provider: provider)
         try kernel.registerProvider((any ProjectRAGProviding).self, provider)
         let searchMemory = ProjectRAGSearchMemory()
@@ -98,6 +104,8 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
         llmContextHookHandle?.cancel()
         llmContextHookHandle = nil
         llmContextHook = nil
+        projectObserver?.cancel()
+        projectObserver = nil
         projectLifecycleHook?.cancel()
         projectLifecycleHook = nil
         searchMemory = nil

@@ -1,13 +1,17 @@
 import Combine
 import ProviderChatSection
+import ProviderPromptSuggestion
 import ProviderProject
 import SwiftUI
+import ProviderToolbar
 
 @MainActor
 final class PromptSuggestionsObserver: ObservableObject {
     private var cancellable: AnyCancellable?
-    init(services: MessageListServices) {
-        cancellable = services.promptSuggestionsChangesPublisher.sink { [weak self] _ in self?.objectWillChange.send() }
+    init(provider: (any PromptSuggestionProviding)?) {
+        cancellable = provider?.changes.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
     }
 }
 
@@ -34,4 +38,36 @@ final class ChatContextObserver: ObservableObject {
         }
     }
 
+}
+
+/// Aggregates the observers shared by the message-list empty states.
+@MainActor
+final class MessageListGuideState: ObservableObject {
+    let promptObserver: PromptSuggestionsObserver
+    let contextObserver: ChatContextObserver
+    let projectObserver: ProjectObserver
+    let toolbarCoordinator: NoConversationSelectedToolbarCoordinator
+    private var cancellables = Set<AnyCancellable>()
+
+    init(
+        promptObserver: PromptSuggestionsObserver,
+        contextObserver: ChatContextObserver,
+        projectObserver: ProjectObserver,
+        toolbarCoordinator: NoConversationSelectedToolbarCoordinator
+    ) {
+        self.promptObserver = promptObserver
+        self.contextObserver = contextObserver
+        self.projectObserver = projectObserver
+        self.toolbarCoordinator = toolbarCoordinator
+        [promptObserver.objectWillChange, contextObserver.objectWillChange, projectObserver.objectWillChange]
+            .forEach { publisher in
+                publisher.sink { [weak self] in
+                    self?.objectWillChange.send()
+                }
+                .store(in: &cancellables)
+            }
+    }
+
+    var context: ChatContext? { contextObserver.context }
+    var currentProject: ProjectInfo? { projectObserver.project?.currentProject }
 }

@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import LumiUI
 import os
@@ -27,7 +26,7 @@ struct ListV2View: View, SuperLog {
     @State private var scrollTick: Int = 0
 
     /// 选中对话变化观察者令牌：视图消失时释放（自动注销）。
-    @State private var selectedObserverToken: (any SelectedConversationObserverHandle)?
+    @State private var observerHandle: MessageListObserverHubHandle?
 
     init(services: MessageListServices) {
         self.services = services
@@ -43,7 +42,10 @@ struct ListV2View: View, SuperLog {
             if viewModel.hasPersistedMessages {
                 messageScrollView
             } else {
-                MessageEmptyStateView(services: services)
+                MessageEmptyStateView(
+                    services: services,
+                    guideState: services.guideState!
+                )
             }
             if viewModel.isLoading {
                 MessageLoadingView()
@@ -65,7 +67,8 @@ struct ListV2View: View, SuperLog {
             if Self.verbose {
                 Self.logger.debug("\(Self.t)onAppear: registering selected conversation observer")
             }
-            selectedObserverToken = services.addSelectedConversationObserver { newID in
+            observerHandle = services.observerHub?.addConsumer(
+                onSelectedConversationChange: { newID in
                 if Self.verbose {
                     Self.logger.debug("\(Self.t)selected conversation changed: \(newID?.uuidString ?? "nil")")
                 }
@@ -73,19 +76,18 @@ struct ListV2View: View, SuperLog {
                 Task(priority: .userInitiated) { @MainActor in
                     await viewModel.activate(conversationID: newID)
                 }
-            }
+                },
+                onConversationChange: {
+                    if Self.verbose {
+                        Self.logger.debug("\(Self.t)conversation settings changed, refreshing")
+                    }
+                    viewModel.refreshConversationSettingsIfNeeded()
+                }
+            )
         }
         .onDisappear {
-            selectedObserverToken?.cancel()
-            selectedObserverToken = nil
-        }
-        // 会话设置变化（verbosity 等）：订阅 ConversationManaging 窄播
-        // （替代旧版 `.lumiConversationsDidChange` 通知）。
-        .onReceive(services.conversationsChangesPublisher) { _ in
-            if Self.verbose {
-                Self.logger.debug("\(Self.t)conversation settings changed, refreshing")
-            }
-            viewModel.refreshConversationSettingsIfNeeded()
+            observerHandle?.cancel()
+            observerHandle = nil
         }
     }
 

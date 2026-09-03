@@ -7,19 +7,17 @@ import UniformTypeIdentifiers
 struct MessageEmptyStateView: View {
     @LumiTheme private var theme
     let services: MessageListServices
-    @StateObject private var promptObserver: PromptSuggestionsObserver
-    @StateObject private var contextObserver: ChatContextObserver
+    @ObservedObject private var guideState: MessageListGuideState
     @State private var importingFolder = false
     @State private var projectError: String?
 
-    init(services: MessageListServices) {
+    init(services: MessageListServices, guideState: MessageListGuideState) {
         self.services = services
-        _promptObserver = StateObject(wrappedValue: PromptSuggestionsObserver(services: services))
-        _contextObserver = StateObject(wrappedValue: ChatContextObserver(chat: services.chat))
+        _guideState = ObservedObject(wrappedValue: guideState)
     }
 
     private var emptyStateTitle: String {
-        let context = contextObserver.context
+        let context = guideState.context
         if context?.id == ChatContext.defaultChat.id {
             return LumiPluginLocalization.string("Start chatting with Lumi")
         }
@@ -36,7 +34,7 @@ struct MessageEmptyStateView: View {
 
                 ScrollView(.vertical) {
                     VStack(spacing: 0) {
-                        EmptyStateHeroIcon(systemImage: contextObserver.context?.systemImage ?? "bubble.left.and.bubble.right")
+                        EmptyStateHeroIcon(systemImage: guideState.context?.systemImage ?? "bubble.left.and.bubble.right")
                             .padding(.bottom, 18)
 
                         Text(emptyStateTitle)
@@ -44,8 +42,8 @@ struct MessageEmptyStateView: View {
                             .foregroundStyle(theme.textPrimary)
                             .multilineTextAlignment(.center)
 
-                        if let subtitle = contextObserver.context?.subtitle,
-                           contextObserver.context?.id != ChatContext.defaultChat.id {
+                        if let subtitle = guideState.context?.subtitle,
+                           guideState.context?.id != ChatContext.defaultChat.id {
                             Text(subtitle)
                                 .font(.system(size: 13))
                                 .foregroundStyle(theme.textSecondary)
@@ -62,7 +60,7 @@ struct MessageEmptyStateView: View {
                         let suggestions = visibleSuggestions(
                             services.promptSuggestions?.allSuggestions ?? [],
                             hasProject: services.project?.currentProject != nil,
-                            contextID: contextObserver.context?.id
+                            contextID: guideState.context?.id
                         )
                         if !suggestions.isEmpty {
                             PromptSuggestionFlow(suggestions: suggestions, services: services) { importingFolder = true }

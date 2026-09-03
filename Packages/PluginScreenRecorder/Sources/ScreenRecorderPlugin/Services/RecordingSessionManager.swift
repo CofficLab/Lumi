@@ -6,27 +6,38 @@ import ScreenCaptureKit
 /// 录制会话管理器：跨多轮对话存活的单例，编排「校验权限 → 解析目标 → 启动引擎 →
 /// 计时/自动停/存活检测 → 停止落盘 → 广播状态」全流程。
 ///
-/// 设计与 `ComputerUseService` / `MindMapStore` 一致：`@MainActor ObservableObject`
-/// 单例，工具只是向它发命令。状态变化通过 `NotificationCenter` 广播
-/// `.lumiRecordingStateChanged`（携带 `RecordingActivity`），供浮层指示器等订阅。
+/// 设计与 `ComputerUseService` / `MindMapStore` 一致：`@MainActor` 单例，
+/// 工具只是向它发命令。状态变化通过插件自有的 typed observer 广播。
 @MainActor
-public final class RecordingSessionManager: ObservableObject {
+public final class RecordingSessionManager {
     public static let shared = RecordingSessionManager()
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.screen-recorder")
 
-    @Published public private(set) var currentSession: RecordingSession?
-    @Published public private(set) var elapsedSeconds: Int = 0
+    public private(set) var currentSession: RecordingSession?
+    public private(set) var elapsedSeconds: Int = 0
 
     private var recorder: ScreenCaptureRecorder?
     private var resolvedWindow: RecordableWindow?
     private var elapsedTimer: Task<Void, Never>?
     private var survivalPollTask: Task<Void, Never>?
     private var isStopping = false
+    private var observers: [UUID: (RecordingActivity) -> Void] = [:]
 
     public var hasActiveSession: Bool { currentSession?.isActive == true }
     public var lastResult: RecordingResult?
 
     public init() {}
+
+    @discardableResult
+    public func addObserver(
+        _ callback: @escaping (RecordingActivity) -> Void
+    ) -> any RecordingSessionObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return RecordingSessionObserverHandleImpl { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
 
     // MARK: - Start
 
@@ -84,7 +95,6 @@ public final class RecordingSessionManager: ObservableObject {
         )
         startTimers(for: config, window: window)
         postActivity(state: .recording)
-        RecordingIndicatorController.shared.show(description: targetDescription)
         Self.logger.info("recording started: \(targetDescription, privacy: .public) → \(config.outputDirectory.path, privacy: .public)")
     }
 
@@ -124,7 +134,6 @@ public final class RecordingSessionManager: ObservableObject {
             currentSession?.state = .finished
             currentSession?.outputURL = finalURL
             postActivity(state: .finished, outputPath: finalURL.path)
-            RecordingIndicatorController.shared.hide()
             self.recorder = nil
             resolvedWindow = nil
             Self.logger.info("recording finished: \(finalURL.path, privacy: .public) (\(result.durationSeconds)s)")
@@ -133,7 +142,6 @@ public final class RecordingSessionManager: ObservableObject {
             currentSession?.state = .error
             currentSession?.error = error.localizedDescription
             postActivity(state: .error, error: error.localizedDescription)
-            RecordingIndicatorController.shared.hide()
             self.recorder = nil
             resolvedWindow = nil
             Self.logger.error("recording failed: \(error.localizedDescription, privacy: .public)")
@@ -144,7 +152,6 @@ public final class RecordingSessionManager: ObservableObject {
     /// 取消（异常/取消回滚），不保证落盘。
     public func cancel() async {
         cancelTimers()
-        RecordingIndicatorController.shared.hide()
         await recorder?.cancel()
         recorder = nil
         resolvedWindow = nil
@@ -207,7 +214,7 @@ public final class RecordingSessionManager: ObservableObject {
                 if Task.isCancelled { break }
                 guard let self, self.hasActiveSession else { break }
                 self.elapsedSeconds += 1
-                RecordingIndicatorController.shared.update(elapsed: self.elapsedSeconds)
+                self.postActivity(state: self.currentSession?.state ?? .idle)
                 if let maxDuration, self.elapsedSeconds >= maxDuration {
                     _ = try? await self.stop()
                     return
@@ -243,7 +250,6 @@ public final class RecordingSessionManager: ObservableObject {
         currentSession?.state = .error
         currentSession?.error = error.localizedDescription
         postActivity(state: .error, error: error.localizedDescription)
-        RecordingIndicatorController.shared.hide()
         Task { await recorder?.cancel() }
         recorder = nil
         resolvedWindow = nil
@@ -260,10 +266,6 @@ public final class RecordingSessionManager: ObservableObject {
             outputPath: outputPath,
             error: error
         )
-        NotificationCenter.default.post(
-            name: .lumiRecordingStateChanged,
-            object: nil,
-            userInfo: [RecordingActivityNotification.activityKey: activity]
-        )
+        observers.values.forEach { $0(activity) }
     }
 }

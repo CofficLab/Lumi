@@ -33,6 +33,7 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
     )
 
     private let activityItemID = "com.coffic.lumi.plugin.input-manager.entry"
+    private var eventObserver: InputEventObserver?
 
     public init() {}
 
@@ -44,6 +45,16 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        let inputService = InputService.shared
+        eventObserver?.cancel()
+        eventObserver = InputEventObserver(
+            onApplicationActivation: { [weak inputService] app in
+                inputService?.handleAppActivation(app)
+            },
+            onInputSourceChange: { [weak inputService] in
+                inputService?.handleInputSourceChange()
+            }
+        )
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             InputPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
         }
@@ -82,6 +93,8 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        eventObserver?.cancel()
+        eventObserver = nil
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == activityItemID
         activityBar?.removeItems(ids: [activityItemID])

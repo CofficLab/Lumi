@@ -31,6 +31,8 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
+    private var observerHub: MessageListObserverHub?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -38,7 +40,7 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding from kernel")
             return
         }
-        let services = MessageListServices(
+        var services = MessageListServices(
             conversations: kernel.resolveProvider((any ConversationManaging).self),
             conversationState: kernel.resolveProvider((any ConversationStateProviding).self),
             messages: kernel.resolveProvider((any MessageManaging).self),
@@ -52,12 +54,30 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
             toolbar: kernel.resolveProvider((any ToolbarProviding).self),
             chat: chat,
         )
+        let promptObserver = PromptSuggestionsObserver(provider: services.promptSuggestions)
+        let contextObserver = ChatContextObserver(chat: services.chat)
+        let projectObserver = ProjectObserver(project: services.project)
+        let toolbarCoordinator = NoConversationSelectedToolbarCoordinator(
+            project: services.project,
+            toolbar: services.toolbar
+        )
+        services.guideState = MessageListGuideState(
+            promptObserver: promptObserver,
+            contextObserver: contextObserver,
+            projectObserver: projectObserver,
+            toolbarCoordinator: toolbarCoordinator
+        )
+        let observerHub = MessageListObserverHub(services: services)
+        services.observerHub = observerHub
+        self.observerHub = observerHub
         chat.addItems([ChatSectionItem(id: id, order: 100, fillsRemainingHeight: true) {
             ListView(services: services)
         }])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        observerHub?.cancel()
+        observerHub = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?.removeItem(id: id)
     }
 

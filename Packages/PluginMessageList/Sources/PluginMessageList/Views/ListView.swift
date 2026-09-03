@@ -29,8 +29,8 @@ struct ListView: View, SuperLog {
     @State private var selectedConversationID: UUID?
     @State private var verbosity: ResponseVerbosity = .defaultVerbosity
 
-    /// 选中对话变化观察者令牌：视图消失时释放（自动注销）。
-    @State private var selectedObserverToken: (any SelectedConversationObserverHandle)?
+    /// Plugin-owned observer hub consumer; the hub owns external Provider subscriptions.
+    @State private var observerHandle: MessageListObserverHubHandle?
 
     init(services: MessageListServices) {
         self.services = services
@@ -49,7 +49,10 @@ struct ListView: View, SuperLog {
                 // The empty state is not a message list. Keep it in the
                 // normal AppKit/SwiftUI resize path instead of snapshotting
                 // and freezing it during a split resize.
-                NoConversationSelectedView(services: services)
+                NoConversationSelectedView(
+                    services: services,
+                    guideState: services.guideState!
+                )
             } else {
                 LiveResizeFrozenView {
                     routedMessageList
@@ -64,25 +67,26 @@ struct ListView: View, SuperLog {
             if Self.verbose {
                 Self.logger.debug("\(Self.t)onAppear: registering selected conversation observer")
             }
-            selectedObserverToken = services.addSelectedConversationObserver { newID in
+            observerHandle = services.observerHub?.addConsumer(
+                onSelectedConversationChange: { newID in
                 if Self.verbose {
                     Self.logger.debug("\(Self.t)selected conversation changed: \(newID?.uuidString ?? "nil")")
                 }
                 selectedConversationID = newID
                 verbosity = services.verbosity(for: newID)
-            }
+                },
+                onConversationChange: {
+                    let newVerbosity = services.verbosity(for: services.selectedConversationID)
+                    if Self.verbose, newVerbosity != verbosity {
+                        Self.logger.debug("\(Self.t)verbosity changed: \(verbosity.rawValue) → \(newVerbosity.rawValue)")
+                    }
+                    verbosity = newVerbosity
+                }
+            )
         }
         .onDisappear {
-            selectedObserverToken?.cancel()
-            selectedObserverToken = nil
-        }
-        // 会话设置变化（setVerbosity 等广播 conversationsDidChange）：刷新路由用 verbosity。
-        .onReceive(services.conversationsChangesPublisher) { _ in
-            let newVerbosity = services.verbosity(for: services.selectedConversationID)
-            if Self.verbose, newVerbosity != verbosity {
-                Self.logger.debug("\(Self.t)verbosity changed: \(verbosity.rawValue) → \(newVerbosity.rawValue)")
-            }
-            verbosity = newVerbosity
+            observerHandle?.cancel()
+            observerHandle = nil
         }
     }
 

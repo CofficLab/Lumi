@@ -8,30 +8,21 @@ import UniformTypeIdentifiers
 struct NoConversationSelectedView: View {
     @LumiTheme private var theme
     let services: MessageListServices
-    @StateObject private var promptObserver: PromptSuggestionsObserver
-    @StateObject private var contextObserver: ChatContextObserver
-    @StateObject private var projectObserver: ProjectObserver
-    @StateObject private var toolbarCoordinator: NoConversationSelectedToolbarCoordinator
+    @ObservedObject private var guideState: MessageListGuideState
     @State private var importingFolder = false
     @State private var projectError: String?
 
-    init(services: MessageListServices) {
+    init(services: MessageListServices, guideState: MessageListGuideState) {
         self.services = services
-        _promptObserver = StateObject(wrappedValue: PromptSuggestionsObserver(services: services))
-        _contextObserver = StateObject(wrappedValue: ChatContextObserver(chat: services.chat))
-        _projectObserver = StateObject(wrappedValue: ProjectObserver(project: services.project))
-        _toolbarCoordinator = StateObject(wrappedValue: NoConversationSelectedToolbarCoordinator(
-            project: services.project,
-            toolbar: services.toolbar
-        ))
+        _guideState = ObservedObject(wrappedValue: guideState)
     }
 
-    private var project: ProjectInfo? { projectObserver.project?.currentProject }
+    private var project: ProjectInfo? { guideState.currentProject }
     private var suggestions: [PromptSuggestion] {
         visibleSuggestions(
             services.promptSuggestions?.allSuggestions ?? [],
             hasProject: project != nil,
-            contextID: contextObserver.context?.id
+            contextID: guideState.context?.id
         )
     }
 
@@ -42,10 +33,10 @@ struct NoConversationSelectedView: View {
 
                 ScrollView(.vertical) {
                     VStack(spacing: 0) {
-                        EmptyStateHeroIcon(systemImage: contextObserver.context?.systemImage ?? "square.and.pencil")
+                        EmptyStateHeroIcon(systemImage: guideState.context?.systemImage ?? "square.and.pencil")
                             .padding(.bottom, 18)
 
-                        if let context = contextObserver.context,
+                        if let context = guideState.context,
                            context.id != ChatContext.defaultChat.id {
                             Text(String(format: LumiPluginLocalization.string("For 「%@」, what can I help you with?"), context.title))
                                 .font(.system(size: 20, weight: .semibold))
@@ -82,10 +73,10 @@ struct NoConversationSelectedView: View {
             }
         }
         .onAppear {
-            toolbarCoordinator.activate()
+            guideState.toolbarCoordinator.activate()
         }
         .onDisappear {
-            toolbarCoordinator.deactivate()
+            guideState.toolbarCoordinator.deactivate()
         }
         .fileImporter(isPresented: $importingFolder, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
             guard case .success(let urls) = result, let url = urls.first else { return }
@@ -102,7 +93,7 @@ struct NoConversationSelectedView: View {
             Text(LumiPluginLocalization.string("For 「"))
                 .foregroundStyle(theme.textPrimary)
             Menu {
-                ForEach(projectObserver.project?.projects ?? [], id: \.path) { item in
+                ForEach(guideState.projectObserver.project?.projects ?? [], id: \.path) { item in
                     Button(item.name) { Task { @MainActor in do { try await services.project?.openProject(at: item.path) } catch { projectError = error.localizedDescription } } }
                 }
                 Divider()

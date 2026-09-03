@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import LumiUI
 import ProviderConversation
@@ -19,8 +18,9 @@ struct ListV1View: View {
     /// 快照 + 事件刷新：init 同步读初值，之后由事件驱动更新。
     @State private var verbosity: ResponseVerbosity = .defaultVerbosity
 
-    /// 选中对话变化观察者令牌：视图消失时释放（自动注销）。
-    @State private var selectedObserverToken: (any SelectedConversationObserverHandle)?
+    /// Plugin-owned observer hub consumer; the hub owns external Provider subscriptions.
+    @State private var observerHandle: MessageListObserverHubHandle?
+    @State private var messageChangeTick = 0
 
     /// 用户是否停在列表底部附近；用于决定新消息到达时是否自动滚到底部。
     ///
@@ -45,7 +45,10 @@ struct ListV1View: View {
             if turnViewModel.isLoading {
                 MessageLoadingView()
             } else if !turnViewModel.hasVisibleContent {
-                MessageEmptyStateView(services: services)
+                MessageEmptyStateView(
+                    services: services,
+                    guideState: services.guideState!
+                )
             } else {
                 messageScrollView
             }
@@ -60,22 +63,25 @@ struct ListV1View: View {
         // 选中对话变化：callback 机制（替代旧版 `.lumiSelectedConversationDidChange` 通知）。
         // 视图消失时释放令牌自动注销，无需手动反注册。
         .onAppear {
-            selectedObserverToken = services.addSelectedConversationObserver { newID in
-                atBottomBox.value = true
-                verbosity = services.verbosity(for: newID)
-                Task(priority: .userInitiated) { @MainActor in
-                    await turnViewModel.activate(conversationID: newID)
+            observerHandle = services.observerHub?.addConsumer(
+                onMessagesWillChange: {
+                    messageChangeTick &+= 1
+                },
+                onSelectedConversationChange: { newID in
+                    atBottomBox.value = true
+                    verbosity = services.verbosity(for: newID)
+                    Task(priority: .userInitiated) { @MainActor in
+                        await turnViewModel.activate(conversationID: newID)
+                    }
+                },
+                onConversationChange: {
+                    refreshVerbosity()
                 }
-            }
+            )
         }
         .onDisappear {
-            selectedObserverToken?.cancel()
-            selectedObserverToken = nil
-        }
-        // 会话设置变化（verbosity 等）：订阅 ConversationManaging 窄播
-        // （替代旧版 `.lumiConversationsDidChange` 通知）。
-        .onReceive(services.conversationsChangesPublisher) { _ in
-            refreshVerbosity()
+            observerHandle?.cancel()
+            observerHandle = nil
         }
     }
 
@@ -131,21 +137,10 @@ struct ListV1View: View {
                     )
                 }
             }
-            .onReceive(messageChangesPublisher) { _ in
+            .onChange(of: messageChangeTick) { _, _ in
                 handleMessagesDidChange(proxy: proxy)
             }
         }
-    }
-
-    /// 落库消息变化的窄播（替代旧版 `.lumiMessagesDidChange` 通知）。
-    private var messageChangesPublisher: AnyPublisher<Void, Never> {
-        guard let messages = services.messages else {
-            return Empty().eraseToAnyPublisher()
-        }
-        return messages.objectWillChange
-            .map { _ in () }
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
     }
 
     /// 消息变化处理：合并刷新 + 按需滚动（与旧版 `onLumiMessagesDidChange` 行为一致）。

@@ -9,11 +9,23 @@ import ProviderNetwork
 /// registered `NetworkProviding`, preserving the old plugin's boot behavior.
 @MainActor
 public enum AppUpdateBootstrap {
+    private static var requestObserver: UpdateRequestObserver?
+
     public static func start(kernel: KernelCoreContainer) {
         let service = UpdateService.shared
+        requestObserver?.cancel()
+        requestObserver = UpdateRequestObserver(
+            onCheckForUpdates: { [weak service] in service?.checkForUpdates() },
+            onInstallPreparedUpdate: { [weak service] in service?.handleInstallPreparedAppUpdateRequest() }
+        )
         if let network = kernel.resolveProvider((any NetworkProviding).self) {
             service.configure(network: network)
         }
         service.setupFeedURLIfNeeded()
+    }
+
+    public static func stop() {
+        requestObserver?.cancel()
+        requestObserver = nil
     }
 }

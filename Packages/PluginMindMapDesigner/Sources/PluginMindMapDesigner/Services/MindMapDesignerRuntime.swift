@@ -35,8 +35,6 @@ enum MindMapDesignerRuntime {
     /// 当前打开项目的路径（供工具访问与 UI 展示）。
     static private(set) var currentProjectPath: String?
 
-    private static var projectObserver: MindMapProjectObserver?
-
     /// 项目内存储目录的末段名称（`<project>/.lumi/mind-map`）。
     static let projectFolderName = "mind-map"
 
@@ -44,7 +42,9 @@ enum MindMapDesignerRuntime {
         let appDirectory = kernel.resolveProvider((any StorageProviding).self)?
             .pluginDataDirectory(for: pluginID)
         configure(appStorageDirectory: appDirectory)
-        installProjectObserver(kernel: kernel)
+        updateProjectStorageDirectory(
+            projectPath: kernel.resolveProvider((any ProjectProviding).self)?.currentProject?.path
+        )
     }
 
     static func configure(appStorageDirectory: URL?) {
@@ -54,27 +54,10 @@ enum MindMapDesignerRuntime {
         MindMapStore.shared.setAppStorage(appStorageDirectory: resolved)
     }
 
-    /// 安装对 `ProjectProviding` 变化的监听，自动刷新项目内存储路径。
-    private static func installProjectObserver(kernel: KernelCoreContainer) {
-        projectObserver?.cancel()
-        projectObserver = nil
-        guard let project = kernel.resolveProvider((any ProjectProviding).self) else {
-            currentProjectPath = nil
-            updateProjectStorageDirectory(projectPath: nil)
-            return
-        }
-
-        let initialPath = project.currentProject?.path
-        currentProjectPath = initialPath
-        updateProjectStorageDirectory(projectPath: initialPath)
-        projectObserver = MindMapProjectObserver(project: project) { newPath in
-            guard newPath != currentProjectPath else { return }
-            currentProjectPath = newPath
-            updateProjectStorageDirectory(projectPath: newPath)
-        }
-    }
-
-    private static func updateProjectStorageDirectory(projectPath: String?) {
+    /// Called by the plugin-owned project observer when the active project changes.
+    static func updateProjectStorageDirectory(projectPath: String?) {
+        guard projectPath != currentProjectPath else { return }
+        currentProjectPath = projectPath
         let resolved: URL?
         if let projectPath, !projectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             resolved = URL(fileURLWithPath: projectPath, isDirectory: true)
@@ -113,8 +96,6 @@ enum MindMapDesignerRuntime {
 
     /// 测试辅助：重置所有运行时状态（含 app / project 路径及订阅）。
     static func reset() {
-        projectObserver?.cancel()
-        projectObserver = nil
         appStorageDirectory = nil
         projectStorageDirectory = nil
         currentProjectPath = nil

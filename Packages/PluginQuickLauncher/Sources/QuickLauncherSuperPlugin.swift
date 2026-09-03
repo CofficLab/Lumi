@@ -40,6 +40,9 @@ public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        FileSearchService.shared.configureGatheringObserverFactory { query, timeout in
+            SpotlightGatheringObserver(query: query, timeout: timeout)
+        }
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
                 id: id,
@@ -94,6 +97,7 @@ public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        FileSearchService.shared.cancelSearch()
         GlobalHotkeyManager.shared.stop()
         LauncherWindowController.shared.hide()
         LauncherBridge.askAIHandler = nil

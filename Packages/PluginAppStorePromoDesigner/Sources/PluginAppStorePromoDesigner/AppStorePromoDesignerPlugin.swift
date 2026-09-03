@@ -10,6 +10,7 @@ import ProviderStorage
 import ProviderRootView
 import ProviderToolManager
 import ProviderPromptSuggestion
+import ProviderProject
 import SwiftUI
 import KitSuperLog
 import os
@@ -23,6 +24,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.app-store-promo-designer", category: "AppStorePromoDesigner")
     public let id = "com.coffic.lumi.plugin.app-store-promo-designer"
     public let order = 80
+    private var projectObserver: PromoDesignerProjectObserver?
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.app-store-promo-designer",
         name: PromoLocalization.string("App Store Promo Designer"),
@@ -71,6 +73,12 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         PromoDesignerRuntime.configure(kernel: kernel, pluginID: id)
+        projectObserver?.cancel()
+        projectObserver = kernel.resolveProvider((any ProjectProviding).self).map { project in
+            PromoDesignerProjectObserver(project: project) { path in
+                PromoDesignerRuntime.updateProjectStorageDirectory(projectPath: path)
+            }
+        }
 
         // 注册 Agent 工具到 ToolManagerProviding。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
@@ -223,6 +231,8 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
 
+        projectObserver?.cancel()
+        projectObserver = nil
         PromoDesignerRuntime.reset()
     }
 

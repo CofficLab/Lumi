@@ -10,9 +10,6 @@ public struct RecordingActivity: Sendable {
     public let elapsedSeconds: Int
     public init(state: State, sessionID: UUID?, targetDescription: String? = nil, elapsedSeconds: Int = 0, outputPath: String? = nil, error: String? = nil) { self.state = state; self.sessionID = sessionID; self.targetDescription = targetDescription; self.elapsedSeconds = elapsedSeconds; self.outputPath = outputPath; self.error = error }
 }
-enum RecordingActivityNotification { static let activityKey = "activity" }
-extension Notification.Name { static let lumiRecordingStateChanged = Notification.Name("com.coffic.lumi.screen-recorder.stateChanged") }
-
 // MARK: - Recording Target
 
 /// 录制目标。

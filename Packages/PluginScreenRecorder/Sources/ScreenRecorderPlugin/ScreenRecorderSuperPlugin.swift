@@ -24,6 +24,7 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
 
     private var settingsState: ScreenRecorderSettingsState?
     private var activationObserver: ApplicationActivationObserver?
+    private var recordingObserver: RecordingSessionObserver?
 
     public init() {}
 
@@ -43,6 +44,19 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
         self.settingsState = settingsState
         activationObserver = ApplicationActivationObserver { [weak settingsState] in
             settingsState?.refresh()
+        }
+        recordingObserver = RecordingSessionObserver(manager: .shared) { activity in
+            switch activity.state {
+            case .recording:
+                if let description = activity.targetDescription {
+                    RecordingIndicatorController.shared.show(description: description)
+                }
+                RecordingIndicatorController.shared.update(elapsed: activity.elapsedSeconds)
+            case .stopping:
+                RecordingIndicatorController.shared.update(elapsed: activity.elapsedSeconds)
+            case .finished, .error, .idle:
+                RecordingIndicatorController.shared.hide()
+            }
         }
 
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)
@@ -64,6 +78,8 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
         }
         activationObserver?.cancel()
         activationObserver = nil
+        recordingObserver?.cancel()
+        recordingObserver = nil
         settingsState = nil
         ScreenRecorderRuntime.reset()
     }

@@ -8,6 +8,7 @@ import ProviderChatSection
 import ProviderContentView
 import ProviderDocsView
 import ProviderPromptSuggestion
+import ProviderProject
 import ProviderRailView
 import ProviderStorage
 import ProviderRootView
@@ -20,6 +21,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.app-icon-designer", category: "AppIconDesigner")
     public let id = "com.coffic.lumi.plugin.app-icon-designer"
     public let order = 79
+    private var projectObserver: IconDesignerProjectObserver?
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.app-icon-designer",
         name: AppIconDesignerLocalization.string("App Icon Designer"),
@@ -71,6 +73,12 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         IconDesignerRuntime.configure(kernel: kernel, pluginID: id)
+        projectObserver?.cancel()
+        projectObserver = kernel.resolveProvider((any ProjectProviding).self).map { project in
+            IconDesignerProjectObserver(project: project) { path in
+                IconDesignerRuntime.updateProjectStorageDirectory(projectPath: path)
+            }
+        }
 
         // 注册 Agent 工具到 ToolManagerProviding
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
@@ -229,6 +237,8 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
 
+        projectObserver?.cancel()
+        projectObserver = nil
         IconDesignerRuntime.reset()
     }
 
