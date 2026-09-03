@@ -28,9 +28,6 @@ public class FirewallService: NSObject, ObservableObject, SuperLog, @unchecked S
     
     override init() {
         super.init()
-        Task {
-            await refreshStatus()
-        }
     }
     
     @MainActor

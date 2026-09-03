@@ -5,7 +5,6 @@ import SwiftUI
 public struct ClipboardSettingsView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @StateObject private var monitor = ClipboardMonitor.shared
     @State private var historySize: Int = 500
     @State private var isMonitoringEnabled: Bool = true
 
@@ -52,11 +51,6 @@ public struct ClipboardSettingsView: View {
                 )
                 .onChange(of: isMonitoringEnabled) { _, newValue in
                     store.set(newValue, forKey: monitoringKey)
-                    if newValue {
-                        monitor.startMonitoring()
-                    } else {
-                        monitor.stopMonitoring()
-                    }
                 }
 
                 AppSettingsPickerRow(

@@ -62,7 +62,8 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
 
         // 3. 设置页：休息窗口详情 + 打开数据目录。
         if let settings = kernel.resolveProvider((any SettingViewProviding).self),
-           let storage = kernel.resolveProvider((any StorageProviding).self) {
+           let storage = kernel.resolveProvider((any StorageProviding).self),
+           let viewModel {
             let dataDirectory = storage.pluginDataDirectory(for: "IdleTime")
             let entry = SettingEntryItem(
                 id: "\(id).settings",
@@ -70,7 +71,7 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
                 systemImage: "moon.zzz",
                 order: order
             ) {
-                IdleTimeSettingsView(viewModel: self.viewModel ?? AppIdleTimeVM(provider: provider), dataDirectory: dataDirectory)
+                IdleTimeSettingsView(viewModel: viewModel, dataDirectory: dataDirectory)
             }
             settings.addEntries([entry])
         }

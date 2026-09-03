@@ -3,7 +3,13 @@ import LumiUI
 import KernelCore
 
 public struct NetworkDashboardView: View {
-    @ObservedObject private var viewModel = NetworkManagerViewModel.shared
+    @ObservedObject private var viewModel: NetworkManagerViewModel
+
+    public init(viewModel: NetworkManagerViewModel) {
+        self.viewModel = viewModel
+    }
+
+    init() { self.init(viewModel: NetworkManagerViewModel()) }
 
     public var body: some View {
         VSplitView {

@@ -17,7 +17,7 @@ struct ProviderModelDownloadView: View {
     private let models: [LLMModelInfo]
     private let onSelectModel: (String) -> Void
     private let isModelSelected: (String) -> Bool
-    @State private var downloadState: LLMModelDownloadState
+    @ObservedObject private var viewModel: ProviderModelDownloadViewModel
     @State private var speedLimitBytes: Int
     @State private var errorModelID: String?
     @State private var errorMessage: String?
@@ -25,15 +25,16 @@ struct ProviderModelDownloadView: View {
     init(
         models: [LLMModelInfo],
         downloader: any LLMModelDownloadProviding,
+        viewModel: ProviderModelDownloadViewModel,
         onSelectModel: @escaping (String) -> Void,
         isModelSelected: @escaping (String) -> Bool
     ) {
         self.models = models
         self.downloader = downloader
+        self.viewModel = viewModel
         self.onSelectModel = onSelectModel
         self.isModelSelected = isModelSelected
-        _downloadState = State(initialValue: downloader.downloadState)
-        _speedLimitBytes = State(initialValue: downloader.downloadState.speedLimitBytesPerSecond ?? 0)
+        _speedLimitBytes = State(initialValue: viewModel.downloadState.speedLimitBytesPerSecond ?? 0)
     }
 
     var body: some View {
@@ -50,10 +51,9 @@ struct ProviderModelDownloadView: View {
             }
         }
         .onAppear { downloader.refreshDownloadState() }
-        .onReceive(downloader.downloadStatePublisher) { state in
-            downloadState = state
-        }
     }
+
+    private var downloadState: LLMModelDownloadState { viewModel.downloadState }
 
     private var cacheRow: some View {
         AppSettingsRow(horizontalPadding: 10, verticalPadding: 8) {

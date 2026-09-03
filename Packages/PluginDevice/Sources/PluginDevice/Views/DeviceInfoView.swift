@@ -4,11 +4,11 @@ import SwiftUI
 
 public struct DeviceInfoView: View {
     @LumiTheme private var theme
-    @StateObject private var data = DeviceData()
-    @ObservedObject private var gpuService = GPUService.shared
-    @ObservedObject private var batteryService = BatteryService.shared
-    @ObservedObject private var storageService = StorageService.shared
-    @ObservedObject private var cpuService = CPUService.shared
+    @ObservedObject private var viewModels: DevicePluginViewModels
+
+    init(viewModels: DevicePluginViewModels) {
+        self.viewModels = viewModels
+    }
 
     public var body: some View {
         ScrollView {
@@ -21,11 +21,11 @@ public struct DeviceInfoView: View {
                                 .foregroundStyle(theme.primary)
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(data.deviceName)
+                                Text(viewModels.deviceData.deviceName)
                                     .font(.appBody)
                                     .fontWeight(.semibold)
                                     .foregroundColor(theme.textPrimary)
-                                Text(data.osVersion)
+                                Text(viewModels.deviceData.osVersion)
                                     .font(.appCaption)
                                     .foregroundColor(theme.textSecondary)
                             }
@@ -37,16 +37,16 @@ public struct DeviceInfoView: View {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                         DeviceInfoCard(title: LumiPluginLocalization.string("CPU", bundle: .module), icon: "cpu", color: theme.info) {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text(data.processorName.isEmpty ? String(format: LumiPluginLocalization.string("%d cores", bundle: .module), data.coreCount) : data.processorName)
+                                Text(viewModels.deviceData.processorName.isEmpty ? String(format: LumiPluginLocalization.string("%d cores", bundle: .module), viewModels.deviceData.coreCount) : viewModels.deviceData.processorName)
                                     .font(.appCaption)
                                     .lineLimit(1)
                                     .foregroundColor(theme.textSecondary)
 
-                                Text("\(Int(data.cpuUsage))%")
+                                Text("\(Int(viewModels.deviceData.cpuUsage))%")
                                     .font(.appSectionTitle)
                                     .foregroundColor(theme.textPrimary)
 
-                                ProgressView(value: data.cpuUsage, total: 100)
+                                ProgressView(value: viewModels.deviceData.cpuUsage, total: 100)
                                     .tint(theme.info)
 
                                 // User / system breakdown (compact)
@@ -55,7 +55,7 @@ public struct DeviceInfoView: View {
                                         Text(LumiPluginLocalization.string("User", bundle: .module))
                                             .font(.appCaption)
                                             .foregroundColor(theme.textSecondary)
-                                        Text(String(format: "%.0f%%", cpuService.userUsage))
+                                        Text(String(format: "%.0f%%", viewModels.cpu.userUsage))
                                             .font(.appCaption)
                                             .foregroundColor(theme.success)
                                     }
@@ -63,7 +63,7 @@ public struct DeviceInfoView: View {
                                         Text(LumiPluginLocalization.string("System", bundle: .module))
                                             .font(.appCaption)
                                             .foregroundColor(theme.textSecondary)
-                                        Text(String(format: "%.0f%%", cpuService.systemUsage))
+                                        Text(String(format: "%.0f%%", viewModels.cpu.systemUsage))
                                             .font(.appCaption)
                                             .foregroundColor(theme.warning)
                                     }
@@ -78,7 +78,7 @@ public struct DeviceInfoView: View {
                                     .font(.appCaption)
                                     .foregroundColor(theme.textSecondary)
 
-                                ProgressView(value: data.memoryUsage, total: 1.0)
+                                ProgressView(value: viewModels.deviceData.memoryUsage, total: 1.0)
                                     .tint(theme.info)
                             }
                         }
@@ -90,8 +90,8 @@ public struct DeviceInfoView: View {
                                     .foregroundColor(theme.textSecondary)
 
                                 ProgressView(
-                                    value: Double(data.diskUsed),
-                                    total: max(Double(data.diskTotal), 1)
+                                    value: Double(viewModels.deviceData.diskUsed),
+                                    total: max(Double(viewModels.deviceData.diskTotal), 1)
                                 )
                                 .tint(theme.info)
 
@@ -103,25 +103,25 @@ public struct DeviceInfoView: View {
 
                         DeviceInfoCard(title: LumiPluginLocalization.string("Battery", bundle: .module), icon: batteryIcon, color: batteryLevelColor) {
                             VStack(alignment: .leading, spacing: 8) {
-                                if batteryService.hasBattery {
+                                if viewModels.battery.hasBattery {
                                     HStack {
-                                        Text("\(Int(batteryService.level * 100))%")
+                                        Text("\(Int(viewModels.battery.level * 100))%")
                                             .font(.appSectionTitle)
                                             .foregroundColor(theme.textPrimary)
                                         Spacer()
-                                        if batteryService.isCharging {
+                                        if viewModels.battery.isCharging {
                                             Image(systemName: "bolt.fill")
                                                 .foregroundColor(theme.warning)
                                         }
                                     }
 
-                                    ProgressView(value: batteryService.level)
+                                    ProgressView(value: viewModels.battery.level)
                                         .tint(batteryLevelColor)
 
                                     HStack(spacing: 12) {
-                                        if batteryService.healthPercentage > 0 {
+                                        if viewModels.battery.healthPercentage > 0 {
                                             Label {
-                                                Text("\(Int(batteryService.healthPercentage))%")
+                                                Text("\(Int(viewModels.battery.healthPercentage))%")
                                                     .font(.appCaption)
                                             } icon: {
                                                 Image(systemName: "heart.fill")
@@ -129,9 +129,9 @@ public struct DeviceInfoView: View {
                                             }
                                             .foregroundColor(batteryHealthColor)
                                         }
-                                        if batteryService.cycleCount > 0 {
+                                        if viewModels.battery.cycleCount > 0 {
                                             Label {
-                                                Text(String(format: LumiPluginLocalization.string("%d cycles", bundle: .module), batteryService.cycleCount))
+                                                Text(String(format: LumiPluginLocalization.string("%d cycles", bundle: .module), viewModels.battery.cycleCount))
                                                     .font(.appCaption)
                                             } icon: {
                                                 Image(systemName: "arrow.triangle.2.circlepath")
@@ -150,8 +150,8 @@ public struct DeviceInfoView: View {
                                             .foregroundColor(theme.textPrimary)
                                         Spacer()
                                     }
-                                    if batteryService.adapterWatts > 0 {
-                                        Text(String(format: LumiPluginLocalization.string("Adapter: %@", bundle: .module), batteryService.adapterWattsString))
+                                    if viewModels.battery.adapterWatts > 0 {
+                                        Text(String(format: LumiPluginLocalization.string("Adapter: %@", bundle: .module), viewModels.battery.adapterWattsString))
                                             .font(.appCaption)
                                             .foregroundColor(theme.textSecondary)
                                     }
@@ -161,25 +161,25 @@ public struct DeviceInfoView: View {
 
                         DeviceInfoCard(title: LumiPluginLocalization.string("GPU", bundle: .module), icon: "cpu", color: theme.info) {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text(gpuService.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpuService.modelName)
+                                Text(viewModels.gpu.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : viewModels.gpu.modelName)
                                     .font(.appCaption)
                                     .lineLimit(1)
                                     .foregroundColor(theme.textSecondary)
 
-                                Text(String(format: "%.0f%%", gpuService.utilization))
+                                Text(String(format: "%.0f%%", viewModels.gpu.utilization))
                                     .font(.appSectionTitle)
                                     .foregroundColor(theme.textPrimary)
 
-                                ProgressView(value: gpuService.utilization, total: 100)
+                                ProgressView(value: viewModels.gpu.utilization, total: 100)
                                     .tint(theme.info)
                             }
                         }
                     }
 
                     // External Volumes
-                    if !storageService.externalVolumes.isEmpty {
+                    if !viewModels.storage.externalVolumes.isEmpty {
                         VStack(spacing: 12) {
-                            ForEach(storageService.externalVolumes) { volume in
+                            ForEach(viewModels.storage.externalVolumes) { volume in
                                 AppCard {
                                     AppSettingsRow {
                                         HStack(spacing: 12) {
@@ -214,7 +214,7 @@ public struct DeviceInfoView: View {
                     HStack {
                         Image(systemName: "clock")
                             .foregroundColor(theme.textSecondary)
-                        Text("\(LumiPluginLocalization.string("Uptime", bundle: .module)): \(formatUptime(data.uptime))")
+                        Text("\(LumiPluginLocalization.string("Uptime", bundle: .module)): \(formatUptime(viewModels.deviceData.uptime))")
                             .font(.appCaption)
                             .foregroundColor(theme.textSecondary)
                         Spacer()
@@ -233,7 +233,7 @@ public struct DeviceInfoView: View {
                         .foregroundColor(theme.textPrimary)
                         .padding(.horizontal)
 
-                    SystemMonitorView()
+                    SystemMonitorView(viewModel: viewModels.systemMonitor, gpuViewModel: viewModels.gpu, batteryViewModel: viewModels.battery)
                 }
             }
             .padding()
@@ -241,37 +241,30 @@ public struct DeviceInfoView: View {
         // 让容器页里的 AppCard 走 subtle 风格，移除默认的 glass shadow / glow，
         // 与 RailView 中其他扁平卡片保持一致。
         .environment(\.appSettingsCardStyleOverride, .subtle)
-        .onAppear {
-            storageService.startMonitoring()
-        }
-        .onDisappear {
-            data.stopMonitoring()
-            storageService.stopMonitoring()
-        }
     }
 
     private var memoryUsedText: String {
-        ByteCountFormatter.string(fromByteCount: Int64(data.memoryUsed), countStyle: .memory)
+        ByteCountFormatter.string(fromByteCount: Int64(viewModels.deviceData.memoryUsed), countStyle: .memory)
     }
 
     private var memoryTotalText: String {
-        ByteCountFormatter.string(fromByteCount: Int64(data.memoryTotal), countStyle: .memory)
+        ByteCountFormatter.string(fromByteCount: Int64(viewModels.deviceData.memoryTotal), countStyle: .memory)
     }
 
     private var diskUsedText: String {
-        ByteCountFormatter.string(fromByteCount: data.diskUsed, countStyle: .file)
+        ByteCountFormatter.string(fromByteCount: viewModels.deviceData.diskUsed, countStyle: .file)
     }
 
     private var diskTotalText: String {
-        ByteCountFormatter.string(fromByteCount: data.diskTotal, countStyle: .file)
+        ByteCountFormatter.string(fromByteCount: viewModels.deviceData.diskTotal, countStyle: .file)
     }
 
     // MARK: - Battery Helpers
 
     private var batteryIcon: String {
-        guard batteryService.hasBattery else { return "powerplug.fill" }
-        let pct = Int(batteryService.level * 100)
-        if batteryService.isCharging {
+        guard viewModels.battery.hasBattery else { return "powerplug.fill" }
+        let pct = Int(viewModels.battery.level * 100)
+        if viewModels.battery.isCharging {
             return "battery.100.bolt"
         }
         if pct >= 90 { return "battery.100" }
@@ -282,12 +275,12 @@ public struct DeviceInfoView: View {
     }
 
     private var batteryLevelColor: Color {
-        guard batteryService.hasBattery else { return theme.success }
-        return MetricStatus.batteryLevel(batteryService.level).color(in: theme)
+        guard viewModels.battery.hasBattery else { return theme.success }
+        return MetricStatus.batteryLevel(viewModels.battery.level).color(in: theme)
     }
 
     private var batteryHealthColor: Color {
-        MetricStatus.batteryHealth(batteryService.healthPercentage).color(in: theme)
+        MetricStatus.batteryHealth(viewModels.battery.healthPercentage).color(in: theme)
     }
 
     private func formatUptime(_ interval: TimeInterval) -> String {

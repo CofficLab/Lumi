@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 import AppKit
 
 @MainActor
@@ -11,21 +10,19 @@ public class InputSettingsViewModel: ObservableObject {
     @Published var selectedApp: NSRunningApplication?
     @Published var selectedSourceID: String = ""
     
-    private var service = InputService.shared
-    private var cancellables = Set<AnyCancellable>()
+    let service = InputService.shared
     
     public init() {
-        service.$config
-            .sink { [weak self] config in
-                self?.rules = config.rules
-                self?.isEnabled = config.isEnabled
-            }
-            .store(in: &cancellables)
-            
-        service.$availableInputSources
-            .assign(to: &$availableSources)
-        
         refreshRunningApps()
+    }
+
+    func apply(config: InputConfig) {
+        rules = config.rules
+        isEnabled = config.isEnabled
+    }
+
+    func apply(availableSources: [InputSource]) {
+        self.availableSources = availableSources
     }
     
     public func refreshRunningApps() {

@@ -3,8 +3,15 @@ import SwiftUI
 import KernelCore
 
 public struct NetworkHistoryDetailView: View {
-    @ObservedObject private var historyService = NetworkHistoryService.shared
-    @ObservedObject private var viewModel = NetworkManagerViewModel.shared
+    @ObservedObject private var historyViewModel: NetworkHistoryViewModel
+    @ObservedObject private var viewModel: NetworkManagerViewModel
+
+    init(viewModel: NetworkManagerViewModel, historyViewModel: NetworkHistoryViewModel) {
+        self.viewModel = viewModel
+        self.historyViewModel = historyViewModel
+    }
+
+    init() { self.init(viewModel: NetworkManagerViewModel(), historyViewModel: NetworkHistoryViewModel()) }
     @State private var selectedRange: TimeRange = .hour1
 
     public var body: some View {
@@ -31,7 +38,7 @@ public struct NetworkHistoryDetailView: View {
 
             // Graph
             NetworkHistoryGraphView(
-                dataPoints: historyService.getData(for: selectedRange),
+                dataPoints: selectedRange == .hour1 ? historyViewModel.recentHistory : historyViewModel.longTermHistory,
                 timeRange: selectedRange
             )
             .frame(height: 140)

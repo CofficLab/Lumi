@@ -35,6 +35,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
 
     /// 本插件 rail 面板的稳定标识（注册为 `RailTabItem.id`）。
     public static let railTabID = "resume-designer.resumes"
+    private let workspace = WorkspaceStore.shared
 
     public var name: String {
         ResumeDesignerLocalization.string("Resume Designer")
@@ -110,7 +111,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                 systemImage: "doc.text",
                 order: order
             ) {
-                ResumeRailView()
+                ResumeRailView(workspace: self.workspace)
             },
         ])
 
@@ -142,8 +143,8 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                 chat?.setVisible(true)
                 chat?.setContextActive(true)
                 chat?.setActiveContext(chatContext)
-                        WorkspaceStore.shared.reload()
-                        contentView?.setContentView(AnyView(DesignerView()))
+                        self.workspace.reload()
+                        contentView?.setContentView(AnyView(DesignerView(workspace: self.workspace)))
             } else {
                 toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                 rootView?.setContentHeaderViewHidden(false)
@@ -154,8 +155,8 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                 },
             ])
         } else {
-            WorkspaceStore.shared.reload()
-            contentView?.setContentView(AnyView(DesignerView()))
+            workspace.reload()
+            contentView?.setContentView(AnyView(DesignerView(workspace: workspace)))
             chat?.setVisible(true)
             chat?.setContextActive(true)
             chat?.setActiveContext(chatContext)

@@ -25,6 +25,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.app-store-promo-designer"
     public let order = 80
     private var projectObserver: PromoDesignerProjectObserver?
+    private let workspace = WorkspaceStore.shared
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.app-store-promo-designer",
         name: PromoLocalization.string("App Store Promo Designer"),
@@ -117,7 +118,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                 systemImage: "photo.stack",
                 order: order
             ) {
-                PromoRailView()
+                PromoRailView(workspace: self.workspace)
             },
         ])
 
@@ -150,8 +151,8 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                             recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
                             store: railWidthStore
                         )
-                        WorkspaceStore.shared.reload()
-                        contentView?.setContentView(AnyView(PromoDesignerView()))
+                        self.workspace.reload()
+                        contentView?.setContentView(AnyView(PromoDesignerView(workspace: self.workspace)))
                         chat?.setVisible(true)
                         chat?.setContextActive(true)
                         chat?.setActiveContext(chatContext)
@@ -170,8 +171,8 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                 },
             ])
         } else {
-            WorkspaceStore.shared.reload()
-            contentView?.setContentView(AnyView(PromoDesignerView()))
+            workspace.reload()
+            contentView?.setContentView(AnyView(PromoDesignerView(workspace: workspace)))
             chat?.setVisible(true)
             chat?.setContextActive(true)
             chat?.setActiveContext(chatContext)

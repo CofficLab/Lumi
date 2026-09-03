@@ -6,7 +6,13 @@ import Combine
 public struct NetworkMenuBarContentView: View {
     // MARK: - Properties
 
-    @ObservedObject private var viewModel = NetworkManagerViewModel.shared
+    @ObservedObject private var viewModel: NetworkManagerViewModel
+
+    public init(viewModel: NetworkManagerViewModel) {
+        self.viewModel = viewModel
+    }
+
+    init() { self.init(viewModel: NetworkManagerViewModel()) }
 
     // MARK: - Body
 

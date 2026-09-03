@@ -22,6 +22,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.app-icon-designer"
     public let order = 79
     private var projectObserver: IconDesignerProjectObserver?
+    private let documentStore = IconDocumentStore.shared
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.app-icon-designer",
         name: AppIconDesignerLocalization.string("App Icon Designer"),
@@ -120,7 +121,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                     systemImage: "doc.text",
                     order: order
                 ) {
-                    AppIconDesignerRailView()
+                    AppIconDesignerRailView(documentStore: self.documentStore)
                 },
             ])
         } else {
@@ -156,8 +157,8 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                             recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
                             store: railWidthStore
                         )
-                        IconDocumentStore.shared.reload()
-                        contentView?.setContentView(AnyView(DesignerView()))
+                        self.documentStore.reload()
+                        contentView?.setContentView(AnyView(DesignerView(documentStore: self.documentStore)))
                         chat?.setVisible(true)
                         chat?.setContextActive(true)
                         chat?.setActiveContext(chatContext)
@@ -176,8 +177,8 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                 },
             ])
         } else {
-            IconDocumentStore.shared.reload()
-            contentView?.setContentView(AnyView(DesignerView()))
+            documentStore.reload()
+            contentView?.setContentView(AnyView(DesignerView(documentStore: documentStore)))
             chat?.setVisible(true)
             chat?.setContextActive(true)
             chat?.setActiveContext(chatContext)

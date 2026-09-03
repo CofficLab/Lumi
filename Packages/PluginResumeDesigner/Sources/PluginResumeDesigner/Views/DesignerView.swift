@@ -11,11 +11,13 @@ private typealias L = ResumeDesignerLocalization
 public struct DesignerView: View {
     enum Mode: String, CaseIterable { case preview, source }
 
-    @ObservedObject private var workspace = WorkspaceStore.shared
+    @ObservedObject private var workspace: WorkspaceStore
     @State private var mode: Mode = .preview
     @State private var isExporting = false
 
-    public init() {}
+    init(workspace: WorkspaceStore) {
+        self.workspace = workspace
+    }
 
     public var body: some View {
         VStack(spacing: 0) {
@@ -28,7 +30,6 @@ public struct DesignerView: View {
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { workspace.reload() }
         .alert(
             L.string("Export Failed"),
             isPresented: errorBinding
@@ -236,6 +237,6 @@ public struct DesignerView: View {
 // MARK: - 预览
 
 #Preview {
-    DesignerView()
+    DesignerView(workspace: WorkspaceStore.shared)
         .frame(width: 800, height: 600)
 }

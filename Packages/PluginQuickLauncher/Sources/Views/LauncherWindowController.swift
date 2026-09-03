@@ -21,6 +21,8 @@ public final class LauncherWindowController: NSObject, SuperLog {
 
     private var panel: LauncherPanel?
     private let searchModel: LauncherSearchModel
+    private let appSearch: AppSearchService
+    private let fileSearch: FileSearchService
 
     /// 面板宽度
     private let panelWidth: CGFloat = 680
@@ -31,6 +33,8 @@ public final class LauncherWindowController: NSObject, SuperLog {
 
     private override init() {
         self.searchModel = LauncherSearchModel.shared
+        self.appSearch = AppSearchService.shared
+        self.fileSearch = FileSearchService.shared
         super.init()
     }
 
@@ -98,7 +102,13 @@ public final class LauncherWindowController: NSObject, SuperLog {
         panel.standardWindowButton(.zoomButton)?.isHidden = true
         panel.delegate = self
 
-        let hostingView = NSHostingView(rootView: LauncherView())
+        let hostingView = NSHostingView(
+            rootView: LauncherView(
+                searchModel: searchModel,
+                appSearch: appSearch,
+                fileSearch: fileSearch
+            )
+        )
         hostingView.setFrameSize(NSSize(width: panelWidth, height: panelHeight))
         panel.contentView = hostingView
 

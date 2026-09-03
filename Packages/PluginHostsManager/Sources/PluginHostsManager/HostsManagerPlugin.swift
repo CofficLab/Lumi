@@ -35,6 +35,7 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
 
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.hosts-manager")
     public nonisolated static let verbose: Bool = false
+    private var viewModel: HostsManagerViewModel?
 
     public init() {}
 
@@ -50,6 +51,8 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        let viewModel = HostsManagerViewModel()
+        self.viewModel = viewModel
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
@@ -69,7 +72,7 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
                 ) { state in
                     if state == .activated {
                         toolbar?.setVisibleCategories([.global, .system])
-                        contentView?.setContentView(AnyView(HostsManagerView()))
+                        contentView?.setContentView(AnyView(HostsManagerView(viewModel: viewModel)))
                         chat?.setVisible(false)
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
@@ -82,7 +85,7 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
                 },
             ])
         } else {
-            contentView?.setContentView(AnyView(HostsManagerView()))
+            contentView?.setContentView(AnyView(HostsManagerView(viewModel: viewModel)))
         }
     }
 
@@ -100,6 +103,7 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
+        viewModel = nil
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

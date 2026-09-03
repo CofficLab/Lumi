@@ -2,15 +2,6 @@ import Foundation
 import ProviderIdleTime
 import SwiftUI
 
-private final class AppIdleTimeTimerHolder: @unchecked Sendable {
-    var timer: Timer?
-
-    func invalidate() {
-        timer?.invalidate()
-        timer = nil
-    }
-}
-
 /// 休息窗口快照视图模型：由插件入口的观察者触发刷新 + 周期性刷新。
 ///
 /// 由旧版 `Plugins/IdleTimePlugin/Sources/ViewModels/AppIdleTimeVM.swift` 迁移而来，
@@ -23,30 +14,16 @@ public final class AppIdleTimeVM: ObservableObject {
     @Published public private(set) var activityScores: [Double] = []
     @Published public private(set) var snapshot: IdleInferenceSnapshot?
 
-    private nonisolated let refreshTimerHolder = AppIdleTimeTimerHolder()
     private var refreshTask: Task<Void, Never>?
     private let provider: (any IdleTimeProviding)?
 
     public init(provider: (any IdleTimeProviding)?) {
         self.provider = provider
-        schedulePeriodicRefresh()
+        refreshFromService()
     }
 
     deinit {
-        refreshTimerHolder.invalidate()
         refreshTask?.cancel()
-    }
-
-    private func schedulePeriodicRefresh() {
-        guard refreshTimerHolder.timer == nil else { return }
-
-        refreshFromService()
-
-        refreshTimerHolder.timer = Timer.scheduledTimer(withTimeInterval: 10 * 60, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.refreshFromService()
-            }
-        }
     }
 
     public func refresh() {

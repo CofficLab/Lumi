@@ -13,6 +13,8 @@ public final class QuickFileSearchSuperPlugin: SuperPlugin, SuperLog {
     public let id = "QuickFileSearch"
     public let order = 50
     public let metadata = PluginMetadata(id: "QuickFileSearch", name: "Quick File Search", description: "Search and open project files with Cmd+P.", category: .editor, stage: .preview, policy: .alwaysOn)
+    private let hotkeyManager = FileSearchHotkeyManager.shared
+    private let searchService = FileSearchService.shared
     public init() {}
 
     public func onRegister(kernel: KernelCoreContainer) throws {
@@ -40,7 +42,13 @@ public final class QuickFileSearchSuperPlugin: SuperPlugin, SuperLog {
         QuickFileSearchBridge.activeWindowIdProvider = { nil }
         FileSearchHotkeyManager.shared.startMonitoring()
         kernel.resolveProvider((any RootViewProviding).self)?.addOverlays([RootOverlayItem(id: id, order: order) { content in
-            FileSearchOverlay(content: content, projectPathProvider: { project?.currentProject?.path ?? "" }, windowIdProvider: { nil })
+            FileSearchOverlay(
+                content: content,
+                projectPathProvider: { project?.currentProject?.path ?? "" },
+                windowIdProvider: { nil },
+                hotkeyManager: self.hotkeyManager,
+                searchService: self.searchService
+            )
         }])
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([SettingEntryItem(id: id, title: LumiPluginLocalization.string("Quick File Search", bundle: .module), systemImage: "magnifyingglass", order: order) { QuickFileSearchSettingsView(projectPath: project?.currentProject?.path ?? "") }])
     }

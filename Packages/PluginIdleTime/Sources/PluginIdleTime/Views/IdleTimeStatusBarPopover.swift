@@ -6,14 +6,10 @@ import SwiftUI
 /// 由旧版 `Plugins/IdleTimePlugin/Sources/Views/IdleTimeStatusBarPopover.swift`
 /// 迁移而来，差异：provider 由插件注入（替代旧版默认 `IdleTimeService.shared`）。
 public struct IdleTimeStatusBarPopover: View {
-    @StateObject private var vm: AppIdleTimeVM
+    @ObservedObject private var vm: AppIdleTimeVM
 
     public init(viewModel: AppIdleTimeVM) {
-        _vm = StateObject(wrappedValue: viewModel)
-    }
-
-    public init(provider: (any IdleTimeProviding)?) {
-        _vm = StateObject(wrappedValue: AppIdleTimeVM(provider: provider))
+        self.vm = viewModel
     }
 
     public var body: some View {

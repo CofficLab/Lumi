@@ -5,15 +5,13 @@ import SwiftUI
 
 /// 自动化级别 chip：显示当前会话的 automationLevel，点击弹出三档选择。
 struct AutomationLevelToolbarView: View {
-    @StateObject private var conversationObservation: ConversationManagerObservationBox
+    @ObservedObject private var conversationObservation: ConversationManagerObservationBox
     let toast: (any ToastProviding)?
 
     @State private var isPopoverPresented = false
 
-    init(conversations: any ConversationManaging, toast: (any ToastProviding)? = nil) {
-        _conversationObservation = StateObject(
-            wrappedValue: ConversationManagerObservationBox(conversations: conversations)
-        )
+    init(observation: ConversationManagerObservationBox, toast: (any ToastProviding)? = nil) {
+        self.conversationObservation = observation
         self.toast = toast
     }
 

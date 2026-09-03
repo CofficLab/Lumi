@@ -2,11 +2,11 @@ import LumiUI
 import SwiftUI
 
 public struct ClipboardHistoryView: View {
-    @StateObject private var viewModel: ClipboardManagerViewModel
+    @ObservedObject private var viewModel: ClipboardManagerViewModel
     @State private var selectedItemId: UUID?
 
     public init(viewModel: ClipboardManagerViewModel) {
-        _viewModel = StateObject(wrappedValue: viewModel)
+        self.viewModel = viewModel
     }
     
     public var body: some View {

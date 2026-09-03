@@ -8,10 +8,26 @@ struct MindMapCanvas: View {
     @Binding var editingNodeId: String?
     @Binding var scale: CGFloat
 
-    @ObservedObject private var store = MindMapStore.shared
+    @ObservedObject private var store: MindMapStore
     @State private var dragOffset: CGSize = .zero
 
     private let padding: CGFloat = 48
+
+    init(
+        map: MindMap,
+        scope: MindMapScope,
+        selectedNodeId: Binding<String?>,
+        editingNodeId: Binding<String?>,
+        scale: Binding<CGFloat>,
+        store: MindMapStore
+    ) {
+        self.map = map
+        self.scope = scope
+        self._selectedNodeId = selectedNodeId
+        self._editingNodeId = editingNodeId
+        self._scale = scale
+        self.store = store
+    }
 
     var body: some View {
         GeometryReader { _ in

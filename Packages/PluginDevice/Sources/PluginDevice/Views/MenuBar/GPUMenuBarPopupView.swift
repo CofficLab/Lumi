@@ -4,11 +4,16 @@ import SwiftUI
 /// Menu bar popup view for GPU monitoring.
 /// Shows live GPU utilization with progress bar and mini trend graph.
 struct GPUMenuBarPopupView: View {
-    @StateObject private var viewModel = GPUManagerViewModel()
-    @ObservedObject private var historyService = GPUHistoryService.shared
+    @ObservedObject private var viewModel: GPUManagerViewModel
+    @ObservedObject private var historyViewModel: DeviceHistoryViewModel<GPUDataPoint>
+
+    init(viewModel: GPUManagerViewModel, historyViewModel: DeviceHistoryViewModel<GPUDataPoint>) {
+        self.viewModel = viewModel
+        self.historyViewModel = historyViewModel
+    }
 
     var body: some View {
-        HoverableContainerView(detailView: GPUHistoryDetailView()) {
+        HoverableContainerView(detailView: GPUHistoryDetailView(viewModel: viewModel, historyViewModel: historyViewModel)) {
             VStack(spacing: 0) {
                 liveStatsView
                 miniTrendView
@@ -59,7 +64,7 @@ struct GPUMenuBarPopupView: View {
     // MARK: - Mini Trend View
 
     private var miniTrendView: some View {
-        let recentData = Array(historyService.recentHistory.suffix(60))
+        let recentData = Array(historyViewModel.recentHistory.suffix(60))
         let maxValue = 100.0
 
         return VStack(alignment: .leading, spacing: 6) {

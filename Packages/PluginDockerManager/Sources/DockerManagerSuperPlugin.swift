@@ -32,6 +32,7 @@ public final class DockerManagerSuperPlugin: SuperPlugin, SuperLog {
 
     private let activityItemID = "com.coffic.lumi.plugin.docker-manager.entry"
     private let titleItemID = "com.coffic.lumi.plugin.docker-manager.title"
+    private var viewModel: DockerManagerViewModel?
 
     public init() {}
 
@@ -44,6 +45,8 @@ public final class DockerManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        let viewModel = DockerManagerViewModel()
+        self.viewModel = viewModel
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
@@ -59,7 +62,7 @@ public final class DockerManagerSuperPlugin: SuperPlugin, SuperLog {
             ) { [titleItemID] state in
                 if state == .activated {
                     toolbar?.setVisibleCategories([.global, .system])
-                    content?.setContentView(AnyView(DockerImagesView()))
+                    content?.setContentView(AnyView(DockerImagesView(viewModel: viewModel)))
                     rootView?.setRailView(nil)
                     rootView?.setContentHeaderViewHidden(true)
                     toolbar?.addToolbarItems([
@@ -80,6 +83,7 @@ public final class DockerManagerSuperPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: [activityItemID])
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: [titleItemID])
+        viewModel = nil
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

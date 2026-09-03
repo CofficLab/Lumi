@@ -6,7 +6,11 @@ import SwiftUI
 struct DisplayControlView: View {
     @Environment(\.locale) private var locale
     @LumiTheme private var theme
-    @StateObject private var service = DisplayService.shared
+    @ObservedObject private var viewModel: DisplayControlViewModel
+
+    init(viewModel: DisplayControlViewModel) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         ScrollView {
@@ -37,7 +41,7 @@ struct DisplayControlView: View {
                     }
                 }
 
-                if service.displays.isEmpty {
+                if viewModel.displays.isEmpty {
                     emptyState
                 } else {
                     displaysList
@@ -47,7 +51,7 @@ struct DisplayControlView: View {
             .padding()
         }
         .onAppear {
-            service.refresh()
+            viewModel.refresh()
         }
     }
 
@@ -72,8 +76,8 @@ struct DisplayControlView: View {
 
     private var displaysList: some View {
         VStack(spacing: 16) {
-            ForEach(service.displays) { display in
-                DisplayControlCard(display: display, service: service)
+            ForEach(viewModel.displays) { display in
+                DisplayControlCard(display: display, viewModel: viewModel)
             }
         }
     }
@@ -88,7 +92,7 @@ struct DisplayControlView: View {
                 AppButton(
                     L("Restore"),
                     style: .secondary,
-                    action: { service.restoreDefaults() }
+                    action: { viewModel.restoreDefaults() }
                 )
                 .frame(width: 100)
             }
@@ -106,7 +110,7 @@ struct DisplayControlCard: View {
     @Environment(\.locale) private var locale
     @LumiTheme private var theme
     let display: ControlledDisplay
-    @ObservedObject var service: DisplayService
+    @ObservedObject var viewModel: DisplayControlViewModel
 
     var body: some View {
         AppCard {
@@ -148,7 +152,7 @@ struct DisplayControlCard: View {
     @ViewBuilder
     private func controlSlider(for control: DisplayControlKind) -> some View {
         let isEnabled = display.supports(control)
-        let currentValue = service.value(for: control, displayID: display.id)
+        let currentValue = viewModel.value(for: control, displayID: display.id)
 
         HStack(spacing: 12) {
             Image(systemName: control.icon)
@@ -164,7 +168,7 @@ struct DisplayControlCard: View {
             Slider(
                 value: Binding(
                     get: { currentValue },
-                    set: { service.setValue($0, for: control, displayID: display.id) }
+                    set: { viewModel.setValue($0, for: control, displayID: display.id) }
                 ),
                 in: 0...100,
                 step: 1

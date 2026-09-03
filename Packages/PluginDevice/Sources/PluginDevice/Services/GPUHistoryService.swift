@@ -19,7 +19,6 @@ public final class GPUHistoryService: ObservableObject, SuperLog {
     private let maxRecentPoints = 1800 // 1 hour / 2 seconds
     private let maxLongTermPoints = 43200 // 30 days * 24 hours * 60 minutes
 
-    private var cancellables = Set<AnyCancellable>()
     private var minuteAccumulator: (sum: Double, count: Int) = (0, 0)
     private var lastMinuteTimestamp: TimeInterval = 0
 
@@ -50,21 +49,10 @@ public final class GPUHistoryService: ObservableObject, SuperLog {
     // MARK: - Public Methods
 
     public func startRecording() {
-        guard cancellables.isEmpty else { return }
-
-        GPUService.shared.startMonitoring()
-        GPUService.shared.$utilization
-            .sink { [weak self] utilization in
-                self?.recordDataPoint(usage: utilization)
-            }
-            .store(in: &cancellables)
+        // Input observation is owned by DeviceMetricsObserver.
     }
 
     public func stopRecording() {
-        guard !cancellables.isEmpty else { return }
-
-        cancellables.removeAll()
-        GPUService.shared.stopMonitoring()
         saveHistory()
     }
 

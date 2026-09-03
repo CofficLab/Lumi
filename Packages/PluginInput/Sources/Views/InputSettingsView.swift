@@ -4,7 +4,11 @@ import LumiUI
 
 /// 输入源插件设置视图
 public struct InputSettingsView: View {
-    @StateObject private var viewModel = InputSettingsViewModel()
+    @ObservedObject private var viewModel: InputSettingsViewModel
+
+    init(viewModel: InputSettingsViewModel) {
+        self.viewModel = viewModel
+    }
 
     public var body: some View {
         PluginSettingsScaffold(
@@ -95,7 +99,7 @@ public struct InputSettingsView: View {
 }
 
 #Preview("App") {
-    InputSettingsView()
+    InputSettingsView(viewModel: InputSettingsViewModel())
         .inRootView()
         .frame(width: 520, height: 560)
 }

@@ -5,9 +5,13 @@ import LumiUI
 public struct HostsManagerView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @StateObject private var viewModel = HostsManagerViewModel()
+    @ObservedObject private var viewModel: HostsManagerViewModel
     @State private var showAddSheet = false
     @State private var showImportExport = false
+
+    init(viewModel: HostsManagerViewModel) {
+        self.viewModel = viewModel
+    }
 
     public var body: some View {
         VStack(spacing: 0) {

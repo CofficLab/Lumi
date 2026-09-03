@@ -29,6 +29,8 @@ public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
+    private let hotkeyManager = GlobalHotkeyManager.shared
+
     public init() {}
 
     public func onRegister(kernel: KernelCoreContainer) throws {
@@ -50,7 +52,7 @@ public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "bolt.fill",
                 order: order
             ) {
-                LauncherSettingsView()
+                LauncherSettingsView(hotkeyManager: self.hotkeyManager)
             },
         ])
 
@@ -82,23 +84,23 @@ public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
             }
         }
 
-        GlobalHotkeyManager.shared.onToggle = { LauncherWindowController.shared.toggle() }
-        GlobalHotkeyManager.shared.start()
+        hotkeyManager.onToggle = { LauncherWindowController.shared.toggle() }
+        hotkeyManager.start()
         AppSearchService.shared.scanApplications()
     }
 
     public func onEnable(kernel: KernelCoreContainer) async throws {
-        GlobalHotkeyManager.shared.start()
+        hotkeyManager.start()
     }
 
     public func onDisable(kernel: KernelCoreContainer) async throws {
-        GlobalHotkeyManager.shared.stop()
+        hotkeyManager.stop()
         LauncherWindowController.shared.hide()
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         FileSearchService.shared.cancelSearch()
-        GlobalHotkeyManager.shared.stop()
+        hotkeyManager.stop()
         LauncherWindowController.shared.hide()
         LauncherBridge.askAIHandler = nil
         LauncherBridge.commandGroupsProvider = nil

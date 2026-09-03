@@ -7,9 +7,13 @@ import SwiftUI
 public struct MemorySettingsView: View {
     @LumiTheme private var theme
 
-    @StateObject private var viewModel = MemorySettingsViewModel()
+    @ObservedObject private var viewModel: MemorySettingsViewModel
     @State private var systemMemoryTimeRange: MemoryTimeRange = .hour1
     @State private var lumiMemoryTimeRange: LumiMemoryTimeRange = .minute15
+
+    init(viewModel: MemorySettingsViewModel) {
+        self.viewModel = viewModel
+    }
 
     public var body: some View {
         PluginSettingsScaffold(
@@ -26,12 +30,6 @@ public struct MemorySettingsView: View {
 
             // Lumi Memory Section
             lumiMemorySection
-        }
-        .task {
-            viewModel.startMonitoring()
-        }
-        .onDisappear {
-            viewModel.stopMonitoring()
         }
     }
 
@@ -326,7 +324,7 @@ private struct StatisticItem: View {
 // MARK: - Memory Settings ViewModel
 
 @MainActor
-private class MemorySettingsViewModel: ObservableObject {
+class MemorySettingsViewModel: ObservableObject {
     // System memory
     @Published var currentUsagePercentage: Double = 0.0
     @Published var usedMemory: String = "0 GB"
@@ -338,9 +336,8 @@ private class MemorySettingsViewModel: ObservableObject {
     @Published var lumiMemoryFormatted: String = "0 MB"
     @Published var lumiStatistics: LumiMemoryStatistics = .zero
 
-    private var cancellables = Set<AnyCancellable>()
-    private let memoryHistoryService = MemoryHistoryService.shared
-    private let lumiMemoryService = LumiMemoryService.shared
+    @Published private(set) var systemHistory: [MemoryDataPoint] = []
+    @Published private(set) var lumiHistory: [LumiMemoryDataPoint] = []
 
     // MARK: - System Memory
 
@@ -353,11 +350,12 @@ private class MemorySettingsViewModel: ObservableObject {
     }
 
     var systemDataPointCount: Int {
-        memoryHistoryService.recentHistory.count + memoryHistoryService.longTermHistory.count
+        systemHistory.count
     }
 
     func getSystemMemoryData(for range: MemoryTimeRange) -> [MemoryDataPoint] {
-        memoryHistoryService.getData(for: range)
+        let cutoff = Date().timeIntervalSince1970 - range.duration
+        return systemHistory.filter { $0.timestamp >= cutoff }
     }
 
     // MARK: - Lumi Memory
@@ -382,55 +380,38 @@ private class MemorySettingsViewModel: ObservableObject {
     }
 
     var lumiDataPointCount: Int {
-        lumiMemoryService.history.count
+        lumiHistory.count
     }
 
     func getLumiMemoryData(for range: LumiMemoryTimeRange) -> [LumiMemoryDataPoint] {
-        lumiMemoryService.getData(for: range)
+        let cutoff = Date().timeIntervalSince1970 - range.duration
+        return lumiHistory.filter { $0.timestamp >= cutoff }
     }
 
     // MARK: - Monitoring
 
-    func startMonitoring() {
+    func applyMemory(percentage: Double, used: UInt64, total: UInt64) {
         isRecording = true
-
-        // System memory monitoring
-        memoryHistoryService.startRecording()
-
-        MemoryService.shared.$memoryUsagePercentage
-            .combineLatest(MemoryService.shared.$usedMemory, MemoryService.shared.$totalMemory)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] pct, used, total in
-                guard let self else { return }
-                self.currentUsagePercentage = pct
-                self.usedMemory = ByteCountFormatter.string(fromByteCount: Int64(used), countStyle: .memory)
-                self.totalMemory = ByteCountFormatter.string(fromByteCount: Int64(total), countStyle: .memory)
-                self.updateSystemStatistics()
-            }
-            .store(in: &cancellables)
-
-        // Lumi memory monitoring
-        lumiMemoryService.startMonitoring()
-
-        lumiMemoryService.$currentMemoryBytes
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                self.lumiMemoryFormatted = self.lumiMemoryService.currentMemoryFormatted
-                self.updateLumiStatistics()
-            }
-            .store(in: &cancellables)
+        currentUsagePercentage = percentage
+        usedMemory = ByteCountFormatter.string(fromByteCount: Int64(used), countStyle: .memory)
+        totalMemory = ByteCountFormatter.string(fromByteCount: Int64(total), countStyle: .memory)
+        updateSystemStatistics()
     }
 
-    func stopMonitoring() {
-        isRecording = false
-        memoryHistoryService.stopRecording()
-        lumiMemoryService.stopMonitoring()
-        cancellables.removeAll()
+    func applyLumiMemory(currentFormatted: String, history: [LumiMemoryDataPoint]) {
+        isRecording = true
+        lumiMemoryFormatted = currentFormatted
+        lumiHistory = history
+        updateLumiStatistics()
+    }
+
+    func applySystemHistory(recent: [MemoryDataPoint], longTerm: [MemoryDataPoint]) {
+        systemHistory = recent + longTerm
+        updateSystemStatistics()
     }
 
     private func updateSystemStatistics() {
-        let recentData = memoryHistoryService.recentHistory
+        let recentData = systemHistory
         guard !recentData.isEmpty else {
             systemStatistics = .zero
             return
@@ -443,7 +424,7 @@ private class MemorySettingsViewModel: ObservableObject {
     }
 
     private func updateLumiStatistics() {
-        let history = lumiMemoryService.history
+        let history = lumiHistory
         guard !history.isEmpty else {
             lumiStatistics = .zero
             return
@@ -457,6 +438,6 @@ private class MemorySettingsViewModel: ObservableObject {
 }
 
 #Preview {
-    MemorySettingsView()
+    MemorySettingsView(viewModel: MemorySettingsViewModel())
         .frame(width: 480, height: 900)
 }

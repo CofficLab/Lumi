@@ -8,13 +8,15 @@ import SwiftUI
 public struct PromoDesignerView: View {
     enum Mode: String, CaseIterable { case preview, source }
 
-    @ObservedObject private var workspace = WorkspaceStore.shared
+    @ObservedObject private var workspace: WorkspaceStore
     @State private var mode: Mode = .preview
     @State private var isExporting = false
 
     // MARK: - 初始化
 
-    public init() {}
+    init(workspace: WorkspaceStore) {
+        self.workspace = workspace
+    }
 
     // MARK: - Body
 
@@ -29,7 +31,6 @@ public struct PromoDesignerView: View {
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { workspace.reload() }
         .alert(
             PromoLocalization.string("Export Failed"),
             isPresented: errorBinding
@@ -212,6 +213,6 @@ public struct PromoDesignerView: View {
 // MARK: - 预览
 
 #Preview {
-    PromoDesignerView()
+    PromoDesignerView(workspace: WorkspaceStore.shared)
         .frame(width: 800, height: 600)
 }

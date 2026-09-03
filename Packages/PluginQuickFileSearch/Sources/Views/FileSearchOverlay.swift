@@ -7,10 +7,10 @@ import LumiUI
 /// 监听项目变化和快捷键事件，在原有内容上叠加搜索框
 public struct FileSearchOverlay<Content: View>: View {
     /// 热键管理器
-    @StateObject private var hotkeyManager = FileSearchHotkeyManager.shared
+    @ObservedObject private var hotkeyManager: FileSearchHotkeyManager
 
     /// 搜索服务
-    @StateObject private var searchService = FileSearchService.shared
+    @ObservedObject private var searchService: FileSearchService
 
     public let content: Content
     private let projectPathProvider: () -> String
@@ -19,11 +19,15 @@ public struct FileSearchOverlay<Content: View>: View {
     public init(
         content: Content,
         projectPathProvider: @escaping () -> String,
-        windowIdProvider: @escaping () -> UUID?
+        windowIdProvider: @escaping () -> UUID?,
+        hotkeyManager: FileSearchHotkeyManager,
+        searchService: FileSearchService
     ) {
         self.content = content
         self.projectPathProvider = projectPathProvider
         self.windowIdProvider = windowIdProvider
+        self.hotkeyManager = hotkeyManager
+        self.searchService = searchService
     }
 
     public var body: some View {
@@ -31,7 +35,11 @@ public struct FileSearchOverlay<Content: View>: View {
             content
 
             if hotkeyManager.isOverlayVisible(for: windowIdProvider()) {
-                FileSearchPanelView(windowIdProvider: windowIdProvider)
+                FileSearchPanelView(
+                    windowIdProvider: windowIdProvider,
+                    hotkeyManager: hotkeyManager,
+                    searchService: searchService
+                )
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     .zIndex(999)
             }
@@ -79,7 +87,9 @@ extension FileSearchOverlay {
     FileSearchOverlay(
         content: Text(LumiPluginLocalization.string("Content", bundle: .module)),
         projectPathProvider: { "" },
-        windowIdProvider: { nil }
+        windowIdProvider: { nil },
+        hotkeyManager: FileSearchHotkeyManager.shared,
+        searchService: FileSearchService.shared
     )
     .inRootView()
 }

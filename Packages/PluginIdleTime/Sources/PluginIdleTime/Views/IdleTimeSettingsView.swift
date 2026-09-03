@@ -9,16 +9,11 @@ import SwiftUI
 /// 差异：不再依赖 `KernelLumi`，数据目录由插件注入（来自 StorageProviding）。
 @MainActor
 public struct IdleTimeSettingsView: View {
-    @StateObject private var vm: AppIdleTimeVM
+    @ObservedObject private var vm: AppIdleTimeVM
     private let dataDirectory: URL?
 
     public init(viewModel: AppIdleTimeVM, dataDirectory: URL?) {
-        _vm = StateObject(wrappedValue: viewModel)
-        self.dataDirectory = dataDirectory
-    }
-
-    public init(provider: (any IdleTimeProviding)?, dataDirectory: URL?) {
-        _vm = StateObject(wrappedValue: AppIdleTimeVM(provider: provider))
+        self.vm = viewModel
         self.dataDirectory = dataDirectory
     }
 

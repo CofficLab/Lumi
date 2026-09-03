@@ -27,6 +27,7 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.mind-map"
     public let order = 81
     private var projectObserver: MindMapProjectObserver?
+    private let store = MindMapStore.shared
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.mind-map",
         name: MindMapLocalization.string("Mind Map Designer"),
@@ -92,7 +93,7 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
                 systemImage: "doc.text",
                 order: order
             ) {
-                MindMapRailView()
+                MindMapRailView(store: self.store)
             },
         ])
 
@@ -116,8 +117,8 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
                             recommended: RailViewWidth(minWidth: 240, idealWidth: 300, maxWidth: 440),
                             store: railWidthStore
                         )
-                        MindMapStore.shared.reload()
-                        contentView?.setContentView(AnyView(MindMapDesignerView()))
+                        self.store.reload()
+                        contentView?.setContentView(AnyView(MindMapDesignerView(store: self.store)))
                     } else {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         rootView?.setContentHeaderViewHidden(false)
@@ -127,8 +128,8 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
                 },
             ])
         } else {
-            MindMapStore.shared.reload()
-            contentView?.setContentView(AnyView(MindMapDesignerView()))
+            store.reload()
+            contentView?.setContentView(AnyView(MindMapDesignerView(store: store)))
         }
     }
 

@@ -6,10 +6,12 @@ private typealias L = ResumeDesignerLocalization
 
 /// 简历 Rail 容器：列出应用数据目录（app 存储）下的简历。
 public struct ResumeRailView: View {
-    @ObservedObject private var workspace = WorkspaceStore.shared
+    @ObservedObject private var workspace: WorkspaceStore
     @LumiTheme private var theme
 
-    public init() {}
+    init(workspace: WorkspaceStore) {
+        self.workspace = workspace
+    }
 
     public var body: some View {
         VStack(spacing: 0) {
@@ -45,7 +47,6 @@ public struct ResumeRailView: View {
             }
         }
         .background(Color(nsColor: .controlBackgroundColor))
-        .onAppear { workspace.reload() }
     }
 
     // MARK: - 子视图
@@ -93,6 +94,6 @@ public struct ResumeRailView: View {
 // MARK: - 预览
 
 #Preview {
-    ResumeRailView()
+    ResumeRailView(workspace: WorkspaceStore.shared)
         .frame(width: 280, height: 500)
 }

@@ -2,8 +2,11 @@ import SwiftUI
 import LumiUI
 
 public struct NettoDashboardView: View {
-    @StateObject private var service = FirewallService.shared
-    @StateObject private var repo = AppSettingRepo.shared
+    @ObservedObject private var viewModel: NettoViewModel
+
+    init(viewModel: NettoViewModel) {
+        self.viewModel = viewModel
+    }
     
     public var body: some View {
         VStack(spacing: 0) {
@@ -14,16 +17,12 @@ public struct NettoDashboardView: View {
                     .fontWeight(.bold)
                 Spacer()
                 
-                StatusBadge(status: service.status)
+                StatusBadge(status: viewModel.status)
                 
                 Button(action: {
-                    if service.status == .running {
-                        service.stopFilter()
-                    } else {
-                        service.startFilter()
-                    }
+                    viewModel.toggleFilter()
                 }) {
-                    Text(service.status == .running ? "Stop" : "Start")
+                    Text(viewModel.status == .running ? "Stop" : "Start")
                 }
             }
             .padding()
@@ -42,8 +41,8 @@ public struct NettoDashboardView: View {
                     
                     List {
                         ForEach(SmartApp.appList) { app in
-                            NettoAppRow(app: app, isAllowed: repo.isAllowed(appId: app.id)) { allowed in
-                                repo.setAllowed(appId: app.id, allowed: allowed)
+                            NettoAppRow(app: app, isAllowed: viewModel.isAllowed(appId: app.id)) { allowed in
+                                viewModel.setAllowed(appId: app.id, allowed: allowed)
                             }
                         }
                     }
@@ -57,7 +56,7 @@ public struct NettoDashboardView: View {
                         .padding(.horizontal)
                         .padding(.top)
                     
-                    List(service.events) { event in
+                    List(viewModel.events) { event in
                         EventRow(event: event)
                     }
                 }

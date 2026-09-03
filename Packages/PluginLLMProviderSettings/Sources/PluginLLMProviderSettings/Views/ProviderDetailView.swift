@@ -14,14 +14,20 @@ public struct ProviderDetailView: View {
 
     private let manager: any LLMManaging
     private let provider: any SuperLLMProvider
+    private let downloadViewModel: ProviderModelDownloadViewModel?
 
     @State private var apiKey: String = ""
     @State private var savedAPIKey: String = ""
     @State private var apiKeySaveError: String?
 
-    public init(manager: any LLMManaging, provider: any SuperLLMProvider) {
+    public init(
+        manager: any LLMManaging,
+        provider: any SuperLLMProvider,
+        downloadViewModel: ProviderModelDownloadViewModel? = nil
+    ) {
         self.manager = manager
         self.provider = provider
+        self.downloadViewModel = downloadViewModel
     }
 
     private var info: LLMProviderInfo { provider.providerInfo }
@@ -37,10 +43,12 @@ public struct ProviderDetailView: View {
             if !isLocal {
                 apiKeySection
             }
-            if let downloader = provider as? any LLMModelDownloadProviding {
+            if let downloader = provider as? any LLMModelDownloadProviding,
+               let downloadViewModel {
                 ProviderModelDownloadView(
                     models: info.models,
                     downloader: downloader,
+                    viewModel: downloadViewModel,
                     onSelectModel: { modelID in
                         manager.select(providerID: info.id, model: modelID)
                     },
