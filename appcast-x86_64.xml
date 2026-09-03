@@ -53,7 +53,7 @@
 <li>refactor(plugins): surface agentTools dependency failures instead of silent returns</li>
 </ul>]]></description>
             <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.16.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.16.0/Lumi_5.16.0_x86_64.dmg" length="53522217" type="application/octet-stream" sparkle:edSignature="QH45JPAmW5sLnifz44DHMnl+rhg6xRlAXA2ErHXKVgUYPBdletHOvZxkFuMW6Sj5+iyMS92RexhbkDlv4vMcBQ=="/>
+            <enclosure url="https://s.kuaiyizhi.cn/lumi/Lumi_5.16.0_x86_64.dmg" length="53522217" type="application/octet-stream" sparkle:edSignature="QH45JPAmW5sLnifz44DHMnl+rhg6xRlAXA2ErHXKVgUYPBdletHOvZxkFuMW6Sj5+iyMS92RexhbkDlv4vMcBQ=="/>
         </item>
     </channel>
 </rss>
