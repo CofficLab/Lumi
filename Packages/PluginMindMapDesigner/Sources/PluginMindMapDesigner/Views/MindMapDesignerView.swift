@@ -2,12 +2,14 @@ import SwiftUI
 
 /// 思维导图主视图：文档工具条 + 画布 + 选中节点操作 + 空态。
 public struct MindMapDesignerView: View {
-    @ObservedObject private var store = MindMapStore.shared
+    @ObservedObject private var store: MindMapStore
     @State private var selectedNodeId: String?
     @State private var editingNodeId: String?
     @State private var scale: CGFloat = 1.0
 
-    public init() {}
+    init(store: MindMapStore) {
+        self.store = store
+    }
 
     public var body: some View {
         ZStack {
@@ -19,7 +21,8 @@ public struct MindMapDesignerView: View {
                     scope: store.selectedScope,
                     selectedNodeId: $selectedNodeId,
                     editingNodeId: $editingNodeId,
-                    scale: $scale
+                    scale: $scale,
+                    store: store
                 )
                 .padding(.top, 4)
 
@@ -240,6 +243,6 @@ public struct MindMapDesignerView: View {
 // MARK: - Preview
 
 #Preview {
-    MindMapDesignerView()
+    MindMapDesignerView(store: MindMapStore.shared)
         .frame(width: 800, height: 600)
 }

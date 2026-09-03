@@ -2,10 +2,16 @@ import LumiUI
 import SwiftUI
 
 public struct MemoryMenuBarPopupView: View {
-    @StateObject private var viewModel = MemoryManagerViewModel()
+    @ObservedObject private var viewModel: MemoryManagerViewModel
+    private let historyViewModel: DeviceHistoryViewModel<MemoryDataPoint>
+
+    init(viewModel: MemoryManagerViewModel, historyViewModel: DeviceHistoryViewModel<MemoryDataPoint>) {
+        self.viewModel = viewModel
+        self.historyViewModel = historyViewModel
+    }
 
     public var body: some View {
-        HoverableContainerView(detailView: MemoryHistoryDetailView()) {
+        HoverableContainerView(detailView: MemoryHistoryDetailView(viewModel: historyViewModel)) {
             liveStatsView
         }
     }

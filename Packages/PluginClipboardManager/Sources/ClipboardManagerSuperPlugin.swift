@@ -30,6 +30,7 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
 
     private var viewModel: ClipboardManagerViewModel?
     private var historyObserver: ClipboardHistoryObserver?
+    private var monitorObserver: ClipboardMonitorObserver?
 
     public init() {}
 
@@ -45,7 +46,8 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        ClipboardMonitor.shared.startMonitoring()
+        monitorObserver?.cancel()
+        monitorObserver = ClipboardMonitorObserver()
         let viewModel = ClipboardManagerViewModel()
         self.viewModel = viewModel
         historyObserver = ClipboardHistoryObserver { [weak viewModel] in
@@ -87,7 +89,8 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        ClipboardMonitor.shared.stopMonitoring()
+        monitorObserver?.cancel()
+        monitorObserver = nil
         historyObserver?.cancel()
         historyObserver = nil
         viewModel = nil

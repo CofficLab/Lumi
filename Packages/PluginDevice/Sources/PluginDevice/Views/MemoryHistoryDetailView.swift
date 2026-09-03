@@ -2,8 +2,12 @@ import SwiftUI
 import LumiUI
 
 struct MemoryHistoryDetailView: View {
-    @ObservedObject private var historyService = MemoryHistoryService.shared
+    @ObservedObject private var viewModel: DeviceHistoryViewModel<MemoryDataPoint>
     @State private var selectedRange: MemoryTimeRange = .hour1
+
+    init(viewModel: DeviceHistoryViewModel<MemoryDataPoint>) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -29,7 +33,7 @@ struct MemoryHistoryDetailView: View {
 
             VStack(spacing: 0) {
                 MemoryHistoryGraphView(
-                    dataPoints: historyService.getData(for: selectedRange),
+                    dataPoints: selectedRange == .hour1 ? viewModel.recentHistory : viewModel.longTermHistory,
                     timeRange: selectedRange
                 )
             }

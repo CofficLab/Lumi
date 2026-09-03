@@ -6,10 +6,12 @@ private typealias L = AppIconDesignerLocalization
 /// Source-file browser injected into the workspace Rail. Shows project- and app-scope
 /// document libraries as two collapsible sections, mirroring the Promo Designer rail.
 public struct AppIconDesignerRailView: View {
-    @ObservedObject private var documentStore = IconDocumentStore.shared
+    @ObservedObject private var documentStore: IconDocumentStore
     @State private var expandedScopes: Set<IconScope> = [.project, .app]
 
-    public init() {}
+    init(documentStore: IconDocumentStore) {
+        self.documentStore = documentStore
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {

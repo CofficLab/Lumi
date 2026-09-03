@@ -3,12 +3,21 @@ import LumiUI
 
 /// 启动器搜索面板视图（悬浮窗口内容）
 public struct LauncherView: View {
-    @ObservedObject private var searchModel = LauncherSearchModel.shared
-    @ObservedObject private var appSearch = AppSearchService.shared
+    @ObservedObject private var searchModel: LauncherSearchModel
+    @ObservedObject private var appSearch: AppSearchService
+    private let fileSearch: FileSearchService
 
     @FocusState private var isInputFocused: Bool
 
-    public init() {}
+    init(
+        searchModel: LauncherSearchModel,
+        appSearch: AppSearchService,
+        fileSearch: FileSearchService
+    ) {
+        self.searchModel = searchModel
+        self.appSearch = appSearch
+        self.fileSearch = fileSearch
+    }
 
     public var body: some View {
         VStack(spacing: 0) {
@@ -42,7 +51,7 @@ public struct LauncherView: View {
     }
 
     private var isFileSearching: Bool {
-        !searchModel.results.isEmpty && FileSearchService.shared.isSearching
+        !searchModel.results.isEmpty && fileSearch.isSearching
     }
 
     // MARK: - Search Header
@@ -115,7 +124,8 @@ public struct LauncherView: View {
                             ForEach(Array(items.enumerated()), id: \.element.id) { _, result in
                                 LauncherResultRow(
                                     result: result,
-                                    isSelected: flattenedIndex(of: result) == searchModel.selectedIndex
+                                    isSelected: flattenedIndex(of: result) == searchModel.selectedIndex,
+                                    appSearch: appSearch
                                 )
                                 .onTapGesture {
                                     selectAndExecute(result)
@@ -241,6 +251,7 @@ private struct LauncherSectionHeader: View {
 private struct LauncherResultRow: View {
     let result: LauncherResult
     let isSelected: Bool
+    let appSearch: AppSearchService
 
     var body: some View {
         HStack(spacing: 10) {
@@ -275,7 +286,7 @@ private struct LauncherResultRow: View {
         switch result.kind {
         case .app:
             if let app = result.app {
-                Image(nsImage: AppSearchService.shared.icon(for: app))
+                Image(nsImage: appSearch.icon(for: app))
                     .resizable()
                     .aspectRatio(contentMode: .fit)
             }

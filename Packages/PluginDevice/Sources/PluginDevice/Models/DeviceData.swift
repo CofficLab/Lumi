@@ -5,16 +5,6 @@ import IOKit.ps
 import os
 import SwiftUI
 
-// Helper class to hold timer avoiding actor isolation issues
-private final class TimerHolder: @unchecked Sendable {
-    var timer: Timer?
-    
-    func invalidate() {
-        timer?.invalidate()
-        timer = nil
-    }
-}
-
 /// 设备信息数据模型
 @MainActor
 class DeviceData: ObservableObject {
@@ -41,29 +31,17 @@ class DeviceData: ObservableObject {
 
     // MARK: - Private Properties
 
-    private nonisolated let timerHolder = TimerHolder()
-    private var isMonitoring = false
     private var samplingTask: Task<Void, Never>?
     private let cpuUsageProvider: @MainActor () -> Double
-    private let cpuMonitoringStarter: @MainActor () -> Void
-    private let cpuMonitoringStopper: @MainActor () -> Void
 
     // MARK: - Initialization
 
     init(
         cpuUsageProvider: @escaping @MainActor () -> Double = {
             CPUService.shared.cpuUsage
-        },
-        cpuMonitoringStarter: @escaping @MainActor () -> Void = {
-            CPUService.shared.startMonitoring()
-        },
-        cpuMonitoringStopper: @escaping @MainActor () -> Void = {
-            CPUService.shared.stopMonitoring()
         }
     ) {
         self.cpuUsageProvider = cpuUsageProvider
-        self.cpuMonitoringStarter = cpuMonitoringStarter
-        self.cpuMonitoringStopper = cpuMonitoringStopper
         self.deviceName = Host.current().localizedName ?? "Unknown Mac"
 
         let os = ProcessInfo.processInfo.operatingSystemVersion
@@ -73,43 +51,7 @@ class DeviceData: ObservableObject {
         self.coreCount = Self.physicalCoreCount()
 
         self.memoryTotal = ProcessInfo.processInfo.physicalMemory
-
-        self.updateDynamicData()
-        self.startMonitoring()
-    }
-
-    deinit {
-        timerHolder.invalidate()
-        samplingTask?.cancel()
-        if isMonitoring {
-            Task { @MainActor [cpuMonitoringStopper] in
-                cpuMonitoringStopper()
-            }
-        }
-    }
-
-    // MARK: - Monitoring
-
-    func startMonitoring() {
-        guard timerHolder.timer == nil else { return }
-        isMonitoring = true
-        cpuMonitoringStarter()
-
-        let timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.updateDynamicData()
-            }
-        }
-        timerHolder.timer = timer
-    }
-
-    func stopMonitoring() {
-        guard isMonitoring else { return }
-        isMonitoring = false
-        timerHolder.invalidate()
-        samplingTask?.cancel()
-        samplingTask = nil
-        cpuMonitoringStopper()
+        updateDynamicData()
     }
 
     // MARK: - Data Fetching
@@ -143,6 +85,14 @@ class DeviceData: ObservableObject {
             }
         }
     }
+
+    /// Compatibility no-ops. The plugin-owned `DeviceMetricsObserver` now
+    /// controls the sampling lifecycle.
+    @available(*, deprecated, message: "Use DeviceMetricsObserver owned by DevicePlugin")
+    func startMonitoring() {}
+
+    @available(*, deprecated, message: "Use DeviceMetricsObserver owned by DevicePlugin")
+    func stopMonitoring() {}
 
     // MARK: - Helpers
 

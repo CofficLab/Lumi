@@ -31,6 +31,12 @@ struct MessageListChangeEventTests {
         let viewModel = ListV2ViewModel(services: services)
         let detailedViewModel = ListV3ViewModel(services: services)
         let briefViewModel = ListV1ViewModel(services: services)
+        let messageObserver = messages.addMessageChangeObserver { change in
+            viewModel.handleMessageChange(change)
+            detailedViewModel.handleMessageChange(change)
+            briefViewModel.handleMessageChange(change)
+        }
+        defer { messageObserver.cancel() }
 
         await viewModel.activate(conversationID: conversationID)
         await detailedViewModel.activate(conversationID: conversationID)
@@ -49,7 +55,7 @@ struct MessageListChangeEventTests {
         #expect(briefViewModel.pendingUserMessages.contains { $0.id == message.id })
         #expect(briefViewModel.agentTurns.contains { $0.pendingAnchorMessageID == message.id })
 
-        // 后续没有结构化事件的编辑仍应走 objectWillChange 回退路径。
+        // 更新事件同样由插件注册的类型化观察器转发。
         messages.updateMessage(id: message.id, in: conversationID, content: "更新后的内容")
         for _ in 0..<100 {
             if viewModel.historyRows.last?.content == "更新后的内容",

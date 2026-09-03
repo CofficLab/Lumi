@@ -3,7 +3,11 @@ import SwiftUI
 
 struct DisplayMenuBarPopupView: View {
     @Environment(\.locale) private var locale
-    @StateObject private var service = DisplayService.shared
+    @ObservedObject private var viewModel: DisplayControlViewModel
+
+    init(viewModel: DisplayControlViewModel) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -16,29 +20,29 @@ struct DisplayMenuBarPopupView: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.primary)
                 Spacer()
-                Text("\(service.displays.count)")
+                Text("\(viewModel.displays.count)")
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .foregroundStyle(.secondary)
             }
 
-            if service.displays.isEmpty {
+            if viewModel.displays.isEmpty {
                 Text(verbatim: L("No displays detected"))
                     .font(.system(size: 10))
                     .foregroundStyle(.tertiary)
-                    .onAppear { service.refresh() }
+                    .onAppear { viewModel.refresh() }
             } else {
-                ForEach(service.displays) { display in
-                    menuBarDisplayRow(display: display, service: service)
+                ForEach(viewModel.displays) { display in
+                    menuBarDisplayRow(display: display, viewModel: viewModel)
                 }
             }
         }
         .onAppear {
-            service.refresh()
+            viewModel.refresh()
         }
     }
 
     @ViewBuilder
-    private func menuBarDisplayRow(display: ControlledDisplay, service: DisplayService) -> some View {
+    private func menuBarDisplayRow(display: ControlledDisplay, viewModel: DisplayControlViewModel) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 4) {
                 Image(systemName: display.isBuiltIn ? "laptopcomputer" : "desktopcomputer")
@@ -56,8 +60,8 @@ struct DisplayMenuBarPopupView: View {
                 compactSlider(
                     icon: "sun.max",
                     value: Binding(
-                        get: { service.value(for: .brightness, displayID: display.id) },
-                        set: { service.setValue($0, for: .brightness, displayID: display.id) }
+                        get: { viewModel.value(for: .brightness, displayID: display.id) },
+                        set: { viewModel.setValue($0, for: .brightness, displayID: display.id) }
                     )
                 )
             }
@@ -67,8 +71,8 @@ struct DisplayMenuBarPopupView: View {
                 compactSlider(
                     icon: "speaker.wave.2",
                     value: Binding(
-                        get: { service.value(for: .volume, displayID: display.id) },
-                        set: { service.setValue($0, for: .volume, displayID: display.id) }
+                        get: { viewModel.value(for: .volume, displayID: display.id) },
+                        set: { viewModel.setValue($0, for: .volume, displayID: display.id) }
                     )
                 )
             }

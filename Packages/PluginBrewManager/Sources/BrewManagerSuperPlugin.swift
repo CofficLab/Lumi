@@ -16,10 +16,6 @@ struct BrewManagerPlugin {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "BrewManagerPlugin")
 }
 
-extension Notification.Name {
-    static let brewManagerRefreshRequested = Notification.Name("BrewManagerRefreshRequested")
-}
-
 @MainActor
 public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.brew-manager"
@@ -35,6 +31,7 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
 
     private let activityItemID = "com.coffic.lumi.plugin.brew-manager.entry"
     private let refreshItemID = "com.coffic.lumi.plugin.brew-manager.refresh"
+    private var viewModel: BrewManagerViewModel?
 
     public init() {}
 
@@ -46,6 +43,8 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        let viewModel = BrewManagerViewModel()
+        self.viewModel = viewModel
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
@@ -61,14 +60,14 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
             ) { [refreshItemID] state in
                 if state == .activated {
                     toolbar?.setVisibleCategories([.global, .system])
-                    content?.setContentView(AnyView(BrewManagerView()))
+                    content?.setContentView(AnyView(BrewManagerView(viewModel: viewModel)))
                     chat?.setVisible(false)
                     rootView?.setRailView(nil)
                     rootView?.setContentHeaderViewHidden(true)
                     toolbar?.addToolbarItems([
                         ToolbarItem(id: refreshItemID, title: LumiPluginLocalization.string("Refresh", bundle: .module), placement: .trailing, category: .system, order: 260) {
                             AppIconButton(systemImage: "arrow.clockwise") {
-                                NotificationCenter.default.post(name: .brewManagerRefreshRequested, object: nil)
+                                Task { await viewModel.refresh() }
                             }
                             .help(LumiPluginLocalization.string("Refresh", bundle: .module))
                         },
@@ -92,6 +91,7 @@ public final class BrewManagerSuperPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
         }
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: [refreshItemID])
+        viewModel = nil
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

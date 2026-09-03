@@ -2,9 +2,14 @@ import LumiUI
 import SwiftUI
 
 struct GPUHistoryDetailView: View {
-    @ObservedObject private var historyService = GPUHistoryService.shared
-    @StateObject private var viewModel = GPUManagerViewModel()
+    @ObservedObject private var viewModel: GPUManagerViewModel
+    @ObservedObject private var historyViewModel: DeviceHistoryViewModel<GPUDataPoint>
     @State private var selectedRange: GPUTimeRange = .hour1
+
+    init(viewModel: GPUManagerViewModel, historyViewModel: DeviceHistoryViewModel<GPUDataPoint>) {
+        self.viewModel = viewModel
+        self.historyViewModel = historyViewModel
+    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -30,7 +35,7 @@ struct GPUHistoryDetailView: View {
 
             VStack(spacing: 0) {
                 GPUHistoryGraphView(
-                    dataPoints: historyService.getData(for: selectedRange),
+                    dataPoints: selectedRange == .hour1 ? historyViewModel.recentHistory : historyViewModel.longTermHistory,
                     timeRange: selectedRange
                 )
             }
@@ -88,9 +93,9 @@ struct GPUHistoryDetailView: View {
     }
 
     private var temperatureColor: Color {
-        guard viewModel.gpuService.temperature > 0 else { return .secondary }
-        if viewModel.gpuService.temperature < 60 { return .green }
-        if viewModel.gpuService.temperature < 80 { return .orange }
+        guard viewModel.temperature > 0 else { return .secondary }
+        if viewModel.temperature < 60 { return .green }
+        if viewModel.temperature < 80 { return .orange }
         return .red
     }
 }

@@ -2,9 +2,11 @@ import SwiftUI
 
 /// 侧栏：按作用域列出思维导图，支持切换与删除。
 public struct MindMapRailView: View {
-    @ObservedObject private var store = MindMapStore.shared
+    @ObservedObject private var store: MindMapStore
 
-    public init() {}
+    init(store: MindMapStore) {
+        self.store = store
+    }
 
     public var body: some View {
         VStack(spacing: 0) {
@@ -69,6 +71,6 @@ public struct MindMapRailView: View {
 // MARK: - Preview
 
 #Preview {
-    MindMapRailView()
+    MindMapRailView(store: MindMapStore.shared)
         .frame(width: 280, height: 500)
 }

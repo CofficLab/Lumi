@@ -27,6 +27,9 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
         policy: .disabledByDefault
     )
 
+    private var viewModels: DevicePluginViewModels?
+    private var metricsObserver: DeviceMetricsObserver?
+
     public init() {}
 
     public func onRegister(kernel: KernelCoreContainer) throws {
@@ -37,6 +40,11 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        let viewModels = DevicePluginViewModels()
+        self.viewModels = viewModels
+        metricsObserver?.cancel()
+        metricsObserver = DeviceMetricsObserver(viewModels: viewModels)
+
         // 0. 配置 MemoryHistoryService 存储目录
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let pluginStorageDir = storage.pluginDataDirectory(for: id)
@@ -51,7 +59,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
                 systemImage: "memorychip",
                 order: order
             ) {
-                MemorySettingsView()
+                MemorySettingsView(viewModel: viewModels.memorySettings)
             }
             settings.addEntries([entry])
         }
@@ -75,7 +83,7 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
                     if state == .activated {
                         toolbar?.setVisibleCategories([.global, .system])
                         // 本插件被激活：展示主内容并隐藏侧边栏 Rail（全屏展示）。
-                        contentView?.setContentView(AnyView(DeviceInfoView()))
+                        contentView?.setContentView(AnyView(DeviceInfoView(viewModels: viewModels)))
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
                     } else {
@@ -88,24 +96,27 @@ public final class DevicePlugin: SuperPlugin, SuperLog {
             ])
         } else {
             // 无 ActivityBar 的精简宿主仍可直接展示插件主内容。
-            contentView?.setContentView(AnyView(DeviceInfoView()))
+            contentView?.setContentView(AnyView(DeviceInfoView(viewModels: viewModels)))
         }
 
         // 3. 贡献菜单栏内容与弹窗（沿用旧版 menuBarContentItems / menuBarPopupItems）
         if let menuBar = kernel.resolveProvider((any MenuBarProviding).self) {
             menuBar.addContent(MenuBarContentItem(id: "\(id).metrics", title: "设备信息", order: order) {
-                DeviceInfoMenuBarContentView()
+                DeviceInfoMenuBarContentView(viewModel: viewModels.menuBar)
             })
             menuBar.addPopup(MenuBarPopupItem(id: "\(id).cpu", title: "CPU", order: order) {
-                DeviceInfoMenuBarPopupView()
+                DeviceInfoMenuBarPopupView(viewModel: viewModels.cpu, historyViewModel: viewModels.cpuHistory)
             })
             menuBar.addPopup(MenuBarPopupItem(id: "\(id).memory", title: "内存", order: order) {
-                MemoryMenuBarPopupView()
+                MemoryMenuBarPopupView(viewModel: viewModels.memory, historyViewModel: viewModels.memoryHistory)
             })
         }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        metricsObserver?.cancel()
+        metricsObserver = nil
+        viewModels = nil
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).memory-settings"])
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)

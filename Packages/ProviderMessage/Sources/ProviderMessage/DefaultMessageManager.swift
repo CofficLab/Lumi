@@ -126,10 +126,12 @@ public final class DefaultMessageManager: MessageManaging {
     public func updateMessage(id: UUID, in conversationID: UUID, content: String) {
         guard let index = storage[conversationID]?.firstIndex(where: { $0.id == id }) else { return }
         storage[conversationID]?[index].content = content
+        changeObservers.values.forEach { $0(.updated(conversationID: conversationID)) }
     }
 
     public func deleteMessage(id: UUID, in conversationID: UUID) {
         storage[conversationID]?.removeAll { $0.id == id }
+        changeObservers.values.forEach { $0(.deleted(messageID: id, conversationID: conversationID)) }
     }
 
     public func updateToolCallResult(
@@ -146,10 +148,12 @@ public final class DefaultMessageManager: MessageManaging {
         if let authorizationState {
             storage[conversationID]?[index].toolCalls?[callIndex].authorizationState = authorizationState
         }
+        changeObservers.values.forEach { $0(.updated(conversationID: conversationID)) }
     }
 
     public func clearMessages(in conversationID: UUID) {
         storage[conversationID] = []
+        changeObservers.values.forEach { $0(.cleared(conversationID: conversationID)) }
     }
 
 }

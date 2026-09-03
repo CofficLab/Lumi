@@ -13,7 +13,7 @@ import SwiftUI
 public struct ConversationStoreSettingsView: View {
     @LumiTheme private var theme
     @ObservedObject private var conversationManager: ConversationManager
-    @ObservedObject private var migrationProgress = ConversationMigrationProgressStore.shared
+    @ObservedObject private var migrationProgress: ConversationMigrationProgressStore
 
     private let messageManager: (any MessageManaging)?
 
@@ -38,7 +38,11 @@ public struct ConversationStoreSettingsView: View {
     /// - Parameters:
     ///   - manager: SwiftData 实现的 ConversationManager；nil 时显示不可用占位。
     ///   - messageManager: 消息存储，用于展示会话的消息数/最近消息。
-    public init(manager: ConversationManager?, messageManager: (any MessageManaging)? = nil) {
+    public init(
+        manager: ConversationManager?,
+        messageManager: (any MessageManaging)? = nil,
+        migrationProgress: ConversationMigrationProgressStore
+    ) {
         if let manager {
             self._conversationManager = ObservedObject(wrappedValue: manager)
         } else {
@@ -51,6 +55,7 @@ public struct ConversationStoreSettingsView: View {
             )
         }
         self.messageManager = messageManager
+        self.migrationProgress = migrationProgress
     }
 
     private var selectedConversation: ConversationSummary? {

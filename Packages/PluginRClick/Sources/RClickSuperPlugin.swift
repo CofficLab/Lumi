@@ -27,6 +27,8 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
 
     private let activityItemID = "com.coffic.lumi.plugin.rclick.entry"
     private let railTabID = "com.coffic.lumi.plugin.rclick.preview"
+    private let configManager = RClickConfigManager.shared
+    private var configObserver: RClickConfigObserver?
 
     public init() {}
 
@@ -38,6 +40,8 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        configObserver?.cancel()
+        configObserver = RClickConfigObserver(configManager: configManager)
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             RClickPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
         }
@@ -65,7 +69,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "eye",
                 order: order
             ) {
-                RClickRailView()
+                RClickRailView(configManager: self.configManager)
             },
         ])
 
@@ -86,7 +90,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                         recommended: RailViewWidth(minWidth: 240, idealWidth: 280, maxWidth: 400),
                         store: railWidthStore
                     )
-                    content?.setContentView(AnyView(RClickSettingsView()))
+                    content?.setContentView(AnyView(RClickSettingsView(configManager: self.configManager)))
                     chat?.setVisible(false)
                     rootView?.setContentHeaderViewHidden(true)
                 } else {
@@ -112,6 +116,8 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         RClickPluginRuntimeBridge.dataRootDirectory = nil
+        configObserver?.cancel()
+        configObserver = nil
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

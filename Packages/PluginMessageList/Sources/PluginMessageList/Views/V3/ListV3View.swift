@@ -17,7 +17,8 @@ import SwiftUI
 /// 懒加载但不经过 LazyStack 那套尺寸协商，天然避开已踩过的活锁。
 struct ListV3View: View {
     let services: MessageListServices
-    @StateObject private var viewModel: ListV3ViewModel
+    @ObservedObject private var viewModel: ListV3ViewModel
+    let guideState: MessageListGuideState
 
     @LumiTheme private var theme
 
@@ -29,12 +30,14 @@ struct ListV3View: View {
     /// 内容就绪信号：historyRows 首尾消息 id 变化时 +1。
     @State private var scrollTick: Int = 0
 
-    /// 选中对话变化观察者令牌：视图消失时释放（自动注销）。
-    @State private var observerHandle: MessageListObserverHubHandle?
-
-    init(services: MessageListServices) {
+    init(
+        services: MessageListServices,
+        viewModel: ListV3ViewModel,
+        guideState: MessageListGuideState
+    ) {
         self.services = services
-        _viewModel = StateObject(wrappedValue: ListV3ViewModel(services: services))
+        _viewModel = ObservedObject(wrappedValue: viewModel)
+        self.guideState = guideState
     }
 
     var body: some View {
@@ -44,7 +47,7 @@ struct ListV3View: View {
             } else {
                 MessageEmptyStateView(
                     services: services,
-                    guideState: services.guideState!
+                    guideState: guideState
                 )
             }
             if viewModel.isLoading {
@@ -57,25 +60,6 @@ struct ListV3View: View {
             // 首次出现/容器切换重建：重置滚动位置，加载当前选中会话。
             atBottomBox.value = true
             await viewModel.activate(conversationID: viewModel.selectedConversationID)
-        }
-        // 选中对话变化：callback 机制（替代旧版 `.lumiSelectedConversationDidChange` 通知）。
-        // 视图消失时释放令牌自动注销，无需手动反注册。
-        .onAppear {
-            observerHandle = services.observerHub?.addConsumer(
-                onSelectedConversationChange: { newID in
-                    atBottomBox.value = true
-                    Task(priority: .userInitiated) { @MainActor in
-                        await viewModel.activate(conversationID: newID)
-                    }
-                },
-                onConversationChange: {
-                    viewModel.refreshConversationSettingsIfNeeded()
-                }
-            )
-        }
-        .onDisappear {
-            observerHandle?.cancel()
-            observerHandle = nil
         }
     }
 
@@ -103,10 +87,17 @@ struct ListV3View: View {
                     .accessibilityHidden(true)
                     .plainMessageListRow(insets: EdgeInsets())
                     .onChange(of: scrollTick) { _, _ in
-                        proxy.scrollTo(
-                            MessageListScrollCoordinator.bottomAnchorID,
-                            anchor: .bottom
-                        )
+                        // 新消息行可能还没有完成尺寸布局；立即 scrollTo 会把
+                        // 锚点停在旧的内容底部，导致最后一行被输入框截断。
+                        // 等布局完成后滚动，并保留协调器的重试，确保真正钉到底部。
+                        Task { @MainActor in
+                            await scrollCoordinator.scrollToBottomAfterLayout(
+                                proxy: proxy,
+                                messages: viewModel.historyRows,
+                                animated: false,
+                                condition: { true }
+                            )
+                        }
                     }
             }
             .listStyle(.plain)
@@ -135,8 +126,7 @@ struct ListV3View: View {
                     scrollTick &+= 1
                 }
             }
-            // 用户消息已经由 ViewModel 从内存事件直接应用；这里仅负责滚到底部，
-            // 不再监听 objectWillChange 触发数据库尾部查询。
+            // 用户消息已经由插件转发的类型化事件直接应用；这里仅负责滚到底部。
             .onChange(of: viewModel.latestUserMessageID) { _, newID in
                 guard newID != nil else { return }
                 atBottomBox.value = true

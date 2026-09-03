@@ -11,16 +11,11 @@ import SwiftUI
 /// turn 结束时动画折叠，只保留最终回复。历史终态 turn 首次加载时直接显示结果。
 struct ListV1View: View {
     let services: MessageListServices
-    @StateObject private var turnViewModel: ListV1ViewModel
+    @ObservedObject private var turnViewModel: ListV1ViewModel
+    @ObservedObject private var rootViewModel: MessageListRootViewModel
+    let guideState: MessageListGuideState
 
     @LumiTheme private var theme
-
-    /// 快照 + 事件刷新：init 同步读初值，之后由事件驱动更新。
-    @State private var verbosity: ResponseVerbosity = .defaultVerbosity
-
-    /// Plugin-owned observer hub consumer; the hub owns external Provider subscriptions.
-    @State private var observerHandle: MessageListObserverHubHandle?
-    @State private var messageChangeTick = 0
 
     /// 用户是否停在列表底部附近；用于决定新消息到达时是否自动滚到底部。
     ///
@@ -32,12 +27,16 @@ struct ListV1View: View {
 
     private let scrollCoordinator = MessageListScrollCoordinator()
 
-    init(services: MessageListServices) {
+    init(
+        services: MessageListServices,
+        viewModel: ListV1ViewModel,
+        rootViewModel: MessageListRootViewModel,
+        guideState: MessageListGuideState
+    ) {
         self.services = services
-        _turnViewModel = StateObject(wrappedValue: ListV1ViewModel(services: services))
-        _verbosity = State(
-            initialValue: services.verbosity(for: services.selectedConversationID)
-        )
+        _turnViewModel = ObservedObject(wrappedValue: viewModel)
+        _rootViewModel = ObservedObject(wrappedValue: rootViewModel)
+        self.guideState = guideState
     }
 
     var body: some View {
@@ -47,7 +46,7 @@ struct ListV1View: View {
             } else if !turnViewModel.hasVisibleContent {
                 MessageEmptyStateView(
                     services: services,
-                    guideState: services.guideState!
+                    guideState: guideState
                 )
             } else {
                 messageScrollView
@@ -59,29 +58,6 @@ struct ListV1View: View {
             // 首次出现/容器切换重建：重置滚动位置，加载当前选中会话。
             atBottomBox.value = true
             await turnViewModel.activate(conversationID: selectedConversationID)
-        }
-        // 选中对话变化：callback 机制（替代旧版 `.lumiSelectedConversationDidChange` 通知）。
-        // 视图消失时释放令牌自动注销，无需手动反注册。
-        .onAppear {
-            observerHandle = services.observerHub?.addConsumer(
-                onMessagesWillChange: {
-                    messageChangeTick &+= 1
-                },
-                onSelectedConversationChange: { newID in
-                    atBottomBox.value = true
-                    verbosity = services.verbosity(for: newID)
-                    Task(priority: .userInitiated) { @MainActor in
-                        await turnViewModel.activate(conversationID: newID)
-                    }
-                },
-                onConversationChange: {
-                    refreshVerbosity()
-                }
-            )
-        }
-        .onDisappear {
-            observerHandle?.cancel()
-            observerHandle = nil
         }
     }
 
@@ -136,9 +112,6 @@ struct ListV1View: View {
                         animated: false
                     )
                 }
-            }
-            .onChange(of: messageChangeTick) { _, _ in
-                handleMessagesDidChange(proxy: proxy)
             }
         }
     }
@@ -201,7 +174,8 @@ struct ListV1View: View {
                     services: services,
                     item: item,
                     lastAgentTurnID: turnViewModel.agentTurns.last?.id,
-                    verbosity: verbosity
+                    verbosity: rootViewModel.verbosity,
+                    viewModel: turnViewModel.agentTurnViewModel(for: item)
                 )
                 .id(item.id)
                 .plainMessageListRow()
@@ -209,7 +183,7 @@ struct ListV1View: View {
                 MessageRowView(
                     services: services,
                     message: message,
-                    verbosity: verbosity
+                    verbosity: rootViewModel.verbosity
                 )
                 .id(message.id)
                 .plainMessageListRow()
@@ -242,13 +216,10 @@ struct ListV1View: View {
     }
 
     private var selectedConversationID: UUID? {
-        services.selectedConversationID
+        rootViewModel.selectedConversationID
     }
 
-    /// 事件驱动刷新 verbosity 快照（路由与行渲染共用）。
-    private func refreshVerbosity() {
-        verbosity = services.verbosity(for: selectedConversationID)
-    }
+    private var verbosity: ResponseVerbosity { rootViewModel.verbosity }
 
     // MARK: - Pagination Trigger
 

@@ -30,9 +30,6 @@ struct MessageListServices {
     let project: (any ProjectProviding)?
     let toolbar: (any ToolbarProviding)?
     let chat: (any ChatSectionProviding)?
-    var observerHub: MessageListObserverHub? = nil
-    var guideState: MessageListGuideState? = nil
-
     var selectedConversationID: UUID? {
         conversations?.selectedConversationID
     }

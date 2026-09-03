@@ -25,6 +25,9 @@ public final class NettoSuperPlugin: SuperPlugin, SuperLog {
         policy: .disabled
     )
 
+    private var viewModel: NettoViewModel?
+    private var observer: NettoObserver?
+
     public init() {}
 
     public func onRegister(kernel: KernelCoreContainer) throws {
@@ -35,14 +38,20 @@ public final class NettoSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        let viewModel = NettoViewModel()
+        self.viewModel = viewModel
+        observer = NettoObserver(viewModel: viewModel)
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(true)
-        content?.setContentView(AnyView(NettoDashboardView()))
+        content?.setContentView(AnyView(NettoDashboardView(viewModel: viewModel)))
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
+        observer?.cancel()
+        observer = nil
+        viewModel = nil
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

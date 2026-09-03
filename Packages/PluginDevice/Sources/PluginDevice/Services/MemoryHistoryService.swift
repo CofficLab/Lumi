@@ -16,7 +16,6 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
     private let maxRecentPoints = 3600
     private let maxLongTermPoints = 43200
 
-    private var cancellables = Set<AnyCancellable>()
     private var minuteAccumulator: (sumPct: Double, sumBytes: UInt64, count: Int) = (0, 0, 0)
     private var lastMinuteTimestamp: TimeInterval = 0
 
@@ -54,22 +53,10 @@ public final class MemoryHistoryService: ObservableObject, SuperLog {
     // MARK: - Public Methods
 
     public func startRecording() {
-        guard cancellables.isEmpty else { return }
-
-        MemoryService.shared.startMonitoring()
-        MemoryService.shared.$memoryUsagePercentage
-            .combineLatest(MemoryService.shared.$usedMemory)
-            .sink { [weak self] pct, bytes in
-                self?.recordDataPoint(pct: pct, bytes: bytes)
-            }
-            .store(in: &cancellables)
+        // Input observation is owned by DeviceMetricsObserver.
     }
 
     public func stopRecording() {
-        guard !cancellables.isEmpty else { return }
-
-        cancellables.removeAll()
-        MemoryService.shared.stopMonitoring()
         saveHistory()
     }
 

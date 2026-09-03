@@ -6,10 +6,12 @@ private typealias L = AppIconDesignerLocalization
 /// Main canvas for the icon designer. Editing is intentionally agent-driven;
 /// this view only previews the selected source document and exposes exports.
 public struct DesignerView: View {
-    @ObservedObject private var documentStore = IconDocumentStore.shared
+    @ObservedObject private var documentStore: IconDocumentStore
     @State private var isExporting = false
 
-    public init() {}
+    init(documentStore: IconDocumentStore) {
+        self.documentStore = documentStore
+    }
 
     public var body: some View {
         VStack(spacing: 0) {

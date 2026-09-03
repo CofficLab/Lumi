@@ -5,7 +5,7 @@ import KitSuperLog
 struct DockerImagesView: View, SuperLog {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @StateObject private var viewModel = DockerManagerViewModel()
+    @ObservedObject private var viewModel: DockerManagerViewModel
     @State private var showPullSheet = false
     @State private var pullImageName = ""
 
@@ -18,6 +18,10 @@ struct DockerImagesView: View, SuperLog {
     @State private var showFileImporter = false
     @State private var showFileExporter = false
     @State private var imageToExport: DockerImage?
+
+    init(viewModel: DockerManagerViewModel) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         VStack(spacing: 0) {

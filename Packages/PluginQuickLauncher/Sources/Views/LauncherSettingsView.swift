@@ -7,7 +7,7 @@ import SwiftUI
 public struct LauncherSettingsView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @ObservedObject private var hotkeyManager = GlobalHotkeyManager.shared
+    @ObservedObject private var hotkeyManager: GlobalHotkeyManager
     @AppStorage("QuickLauncher.Source.apps") private var appsEnabled = true
     @AppStorage("QuickLauncher.Source.files") private var filesEnabled = true
     @AppStorage("QuickLauncher.Source.commands") private var commandsEnabled = true
@@ -15,7 +15,9 @@ public struct LauncherSettingsView: View {
     @State private var isRecording = false
     @State private var recordMonitor: Any?
 
-    public init() {}
+    init(hotkeyManager: GlobalHotkeyManager) {
+        self.hotkeyManager = hotkeyManager
+    }
 
     public var body: some View {
         PluginSettingsScaffold(
@@ -219,7 +221,7 @@ public struct LauncherSettingsView: View {
 }
 
 #Preview("Launcher Settings") {
-    LauncherSettingsView()
+    LauncherSettingsView(hotkeyManager: GlobalHotkeyManager.shared)
         .inRootView()
         .frame(width: 600, height: 520)
 }

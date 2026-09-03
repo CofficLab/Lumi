@@ -34,6 +34,8 @@ public final class ConversationModePlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
+    private var conversationObservation: ConversationManagerObservationBox?
+
     public init() {}
 
 
@@ -43,6 +45,9 @@ public final class ConversationModePlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding, ConversationManaging from kernel")
             return
         }
+        conversationObservation?.cancel()
+        let observation = ConversationManagerObservationBox(conversations: conversations)
+        conversationObservation = observation
 
         chat.addBarItems([
             ChatSectionBarItem(
@@ -51,7 +56,7 @@ public final class ConversationModePlugin: SuperPlugin, SuperLog {
                 placement: .toolbarTrailing
             ) {
                 AutomationLevelToolbarView(
-                    conversations: conversations,
+                    observation: observation,
                     toast: kernel.resolveProvider((any ToastProviding).self)
                 )
             },
@@ -59,6 +64,8 @@ public final class ConversationModePlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        conversationObservation?.cancel()
+        conversationObservation = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar-button")
     }

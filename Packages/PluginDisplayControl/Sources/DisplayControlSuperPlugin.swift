@@ -24,6 +24,9 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
         policy: .disabledByDefault
     )
 
+    private var viewModel: DisplayControlViewModel?
+    private var observer: DisplayControlObserver?
+
     public init() {}
 
     public func onRegister(kernel: KernelCoreContainer) throws {
@@ -34,6 +37,10 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        let viewModel = DisplayControlViewModel()
+        self.viewModel = viewModel
+        observer?.cancel()
+        observer = DisplayControlObserver(viewModel: viewModel)
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
@@ -51,7 +58,7 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
                 ) { state in
                     if state == .activated {
                         toolbar?.setVisibleCategories([.global, .system])
-                        content?.setContentView(AnyView(DisplayControlView()))
+                        content?.setContentView(AnyView(DisplayControlView(viewModel: viewModel)))
                         chat?.setVisible(false)
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
@@ -64,11 +71,14 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
                 },
             ])
         } else {
-            content?.setContentView(AnyView(DisplayControlView()))
+            content?.setContentView(AnyView(DisplayControlView(viewModel: viewModel)))
         }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        observer?.cancel()
+        observer = nil
+        viewModel = nil
         kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
     }
 

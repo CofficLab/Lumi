@@ -50,6 +50,9 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
     )
 
     private var viewModel: ProjectFileTreeViewModel?
+    private var refreshCoordinator: RefreshCoordinator?
+    private var fileTreeObserver: FileTreeObserver?
+    private var packageDependencyStore: PackageDependencyStore?
     private var projectObserver: ProjectProvidingObserver?
     private weak var railView: (any RailViewProviding)?
 
@@ -58,6 +61,12 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
     public func onBoot(kernel: KernelCoreContainer) throws {
         let viewModel = ProjectFileTreeViewModel()
         self.viewModel = viewModel
+        let refreshCoordinator = RefreshCoordinator()
+        let fileTreeObserver = FileTreeObserver(coordinator: refreshCoordinator)
+        let packageDependencyStore = PackageDependencyStore()
+        self.refreshCoordinator = refreshCoordinator
+        self.fileTreeObserver = fileTreeObserver
+        self.packageDependencyStore = packageDependencyStore
 
         // 通过 Storage service 解析插件目录，供 FileTreeSettings 持久化展开状态。
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
@@ -125,6 +134,11 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
         projectObserver?.cancel()
         projectObserver = nil
         viewModel = nil
+        refreshCoordinator?.stop()
+        refreshCoordinator = nil
+        fileTreeObserver?.stopWatching()
+        fileTreeObserver = nil
+        packageDependencyStore = nil
         railView?.removeTabs(ids: [Self.railTabID])
         railView = nil
     }
@@ -135,6 +149,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
         viewModel: ProjectFileTreeViewModel
     ) {
         guard let railView else { return }
+        guard let refreshCoordinator, let packageDependencyStore else { return }
 
         if project == nil {
             railView.removeTabs(ids: [Self.railTabID])
@@ -147,7 +162,12 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
                     systemImage: "square.grid.2x2.fill",
                     order: order
                 ) {
-                    TreeView(context: context, viewModel: viewModel)
+                    TreeView(
+                        context: context,
+                        viewModel: viewModel,
+                        coordinator: refreshCoordinator,
+                        packageStore: packageDependencyStore
+                    )
                 }
             ])
         }

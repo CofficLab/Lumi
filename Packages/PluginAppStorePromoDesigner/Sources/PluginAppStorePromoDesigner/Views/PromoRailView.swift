@@ -4,14 +4,16 @@ import SwiftUI
 
 /// Promo 任务 Rail 容器：列出 project / app 两个 scope 下的任务与图像。
 public struct PromoRailView: View {
-    @ObservedObject private var workspace = WorkspaceStore.shared
+    @ObservedObject private var workspace: WorkspaceStore
     @LumiTheme private var theme
     @State private var expandedTaskIDs: Set<String> = []
     @State private var expandedScopes: Set<Scope> = [.project, .app]
 
     // MARK: - 初始化
 
-    public init() {}
+    init(workspace: WorkspaceStore) {
+        self.workspace = workspace
+    }
 
     // MARK: - Body
 
@@ -47,7 +49,6 @@ public struct PromoRailView: View {
         }
         .background(Color(nsColor: .controlBackgroundColor))
         .onAppear {
-            workspace.reload()
             if let selectedTaskID = workspace.selectedTaskID {
                 expandedTaskIDs.insert(selectedTaskID)
             }
@@ -133,6 +134,6 @@ public struct PromoRailView: View {
 // MARK: - 预览
 
 #Preview {
-    PromoRailView()
+    PromoRailView(workspace: WorkspaceStore.shared)
         .frame(width: 280, height: 500)
 }

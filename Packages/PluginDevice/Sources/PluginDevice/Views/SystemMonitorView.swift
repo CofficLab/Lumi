@@ -4,9 +4,15 @@ import LumiUI
 struct SystemMonitorView: View {
     @LumiTheme private var theme
 
-    @StateObject private var viewModel = SystemMonitorViewModel()
-    @ObservedObject private var gpuService = GPUService.shared
-    @ObservedObject private var batteryService = BatteryService.shared
+    @ObservedObject private var viewModel: SystemMonitorViewModel
+    @ObservedObject private var gpuViewModel: GPUManagerViewModel
+    @ObservedObject private var batteryViewModel: BatteryManagerViewModel
+
+    init(viewModel: SystemMonitorViewModel, gpuViewModel: GPUManagerViewModel, batteryViewModel: BatteryManagerViewModel) {
+        self.viewModel = viewModel
+        self.gpuViewModel = gpuViewModel
+        self.batteryViewModel = batteryViewModel
+    }
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: 16) {
@@ -26,10 +32,10 @@ struct SystemMonitorView: View {
             
             // GPU Card
             MonitorCard(title: LumiPluginLocalization.string("GPU", bundle: .module),
-                        value: String(format: "%.0f%%", gpuService.utilization),
+                        value: String(format: "%.0f%%", gpuViewModel.utilization),
                         color: gpuColor) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(gpuService.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpuService.modelName)
+                    Text(gpuViewModel.modelName.isEmpty ? LumiPluginLocalization.string("GPU", bundle: .module) : gpuViewModel.modelName)
                         .font(.system(size: 9))
                         .foregroundColor(theme.textSecondary)
 
@@ -38,17 +44,17 @@ struct SystemMonitorView: View {
                             Text(LumiPluginLocalization.string("Memory", bundle: .module))
                                 .font(.system(size: 8))
                                 .foregroundColor(theme.textSecondary)
-                            Text(gpuService.usedMemoryString)
+                            Text(gpuViewModel.usedMemory)
                                 .font(.system(size: 10, weight: .medium, design: .monospaced))
                                 .foregroundColor(gpuColor)
                         }
 
-                        if gpuService.temperature > 0 {
+                        if gpuViewModel.temperature > 0 {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(LumiPluginLocalization.string("Temperature", bundle: .module))
                                     .font(.system(size: 8))
                                     .foregroundColor(theme.textSecondary)
-                                Text(String(format: "%.0f°C", gpuService.temperature))
+                                Text(String(format: "%.0f°C", gpuViewModel.temperature))
                                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                                     .foregroundColor(gpuColor)
                             }
@@ -85,7 +91,7 @@ struct SystemMonitorView: View {
             }
 
             // Battery Card
-            if batteryService.hasBattery {
+            if batteryViewModel.hasBattery {
                 MonitorCard(title: LumiPluginLocalization.string("Battery", bundle: .module),
                             value: batteryMonitorValue,
                             color: batteryLevelColor) {
@@ -95,7 +101,7 @@ struct SystemMonitorView: View {
                                 Text(LumiPluginLocalization.string("Health", bundle: .module))
                                     .font(.system(size: 8))
                                     .foregroundColor(theme.textSecondary)
-                                Text("\(Int(batteryService.healthPercentage))%")
+                                Text("\(Int(batteryViewModel.healthPercentage))%")
                                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                                     .foregroundColor(batteryHealthColor)
                             }
@@ -104,28 +110,28 @@ struct SystemMonitorView: View {
                                 Text(LumiPluginLocalization.string("Cycles", bundle: .module))
                                     .font(.system(size: 8))
                                     .foregroundColor(theme.textSecondary)
-                                Text("\(batteryService.cycleCount)")
+                                Text("\(batteryViewModel.cycleCount)")
                                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                                     .foregroundColor(theme.textSecondary)
                             }
 
-                            if batteryService.temperature > 0 {
+                            if batteryViewModel.temperature > 0 {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(LumiPluginLocalization.string("Temperature", bundle: .module))
                                         .font(.system(size: 8))
                                         .foregroundColor(theme.textSecondary)
-                                    Text(String(format: "%.1f°C", batteryService.temperature))
+                                    Text(String(format: "%.1f°C", batteryViewModel.temperature))
                                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                                         .foregroundColor(batteryTemperatureColor)
                                 }
                             }
 
-                            if batteryService.watts > 0 {
+                            if batteryViewModel.watts > 0 {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(LumiPluginLocalization.string("Power", bundle: .module))
                                         .font(.system(size: 8))
                                         .foregroundColor(theme.textSecondary)
-                                    Text(batteryService.wattsString)
+                                    Text(batteryViewModel.wattsString)
                                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                                         .foregroundColor(batteryLevelColor)
                                 }
@@ -143,7 +149,7 @@ struct SystemMonitorView: View {
 
                                 RoundedRectangle(cornerRadius: 4)
                                     .fill(batteryLevelColor)
-                                    .frame(width: geo.size.width * min(max(batteryService.level, 0), 1), height: 8)
+                                    .frame(width: geo.size.width * min(max(batteryViewModel.level, 0), 1), height: 8)
                             }
                         }
                         .frame(height: 8)
@@ -153,40 +159,30 @@ struct SystemMonitorView: View {
             }
         }
         .padding()
-        .onAppear {
-            viewModel.startMonitoring()
-            gpuService.startMonitoring()
-            batteryService.startMonitoring()
-        }
-        .onDisappear {
-            viewModel.stopMonitoring()
-            gpuService.stopMonitoring()
-            batteryService.stopMonitoring()
-        }
     }
     
     private var gpuColor: Color {
-        MetricStatusScale.from(percentage: gpuService.utilization).color(in: theme)
+        MetricStatusScale.from(percentage: gpuViewModel.utilization).color(in: theme)
     }
 
     private var batteryMonitorValue: String {
-        let pct = Int(batteryService.level * 100)
-        if batteryService.isCharging {
+        let pct = Int(batteryViewModel.level * 100)
+        if batteryViewModel.isCharging {
             return "\(pct)% ⚡"
         }
         return "\(pct)%"
     }
 
     private var batteryLevelColor: Color {
-        MetricStatus.batteryLevel(batteryService.level).color(in: theme)
+        MetricStatus.batteryLevel(batteryViewModel.level).color(in: theme)
     }
 
     private var batteryHealthColor: Color {
-        MetricStatus.batteryHealth(batteryService.healthPercentage).color(in: theme)
+        MetricStatus.batteryHealth(batteryViewModel.healthPercentage).color(in: theme)
     }
 
     private var batteryTemperatureColor: Color {
-        MetricStatus.temperature(batteryService.temperature).color(in: theme)
+        MetricStatus.temperature(batteryViewModel.temperature).color(in: theme)
     }
 }
 
@@ -220,4 +216,3 @@ struct MonitorCard<Content: View>: View {
         }
     }
 }
-

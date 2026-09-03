@@ -93,7 +93,7 @@ struct NoConversationSelectedView: View {
             Text(LumiPluginLocalization.string("For 「"))
                 .foregroundStyle(theme.textPrimary)
             Menu {
-                ForEach(guideState.projectObserver.project?.projects ?? [], id: \.path) { item in
+                ForEach(guideState.projects, id: \.path) { item in
                     Button(item.name) { Task { @MainActor in do { try await services.project?.openProject(at: item.path) } catch { projectError = error.localizedDescription } } }
                 }
                 Divider()

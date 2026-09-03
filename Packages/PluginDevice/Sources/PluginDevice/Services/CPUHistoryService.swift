@@ -19,7 +19,6 @@ public final class CPUHistoryService: ObservableObject, SuperLog {
     private let maxRecentPoints = 3600 // 1 hour * 60 seconds
     private let maxLongTermPoints = 43200 // 30 days * 24 hours * 60 minutes
 
-    private var cancellables = Set<AnyCancellable>()
     private var minuteAccumulator: (sum: Double, count: Int) = (0, 0)
     private var lastMinuteTimestamp: TimeInterval = 0
 
@@ -51,21 +50,10 @@ public final class CPUHistoryService: ObservableObject, SuperLog {
     // MARK: - Public Methods
 
     public func startRecording() {
-        guard cancellables.isEmpty else { return }
-
-        CPUService.shared.startMonitoring()
-        CPUService.shared.$cpuUsage
-            .sink { [weak self] usage in
-                self?.recordDataPoint(usage: usage)
-            }
-            .store(in: &cancellables)
+        // Input observation is owned by DeviceMetricsObserver.
     }
 
     public func stopRecording() {
-        guard !cancellables.isEmpty else { return }
-
-        cancellables.removeAll()
-        CPUService.shared.stopMonitoring()
         saveHistory()
     }
 

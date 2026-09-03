@@ -31,6 +31,8 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
         policy: .required
     )
 
+    private var migrationProgress: ConversationMigrationProgressStore?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -72,14 +74,18 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
                 title: LumiPluginLocalization.string("Conversations", bundle: .module),
                 systemImage: "bubble.left.and.bubble.right",
                 order: 7
-            ) { [weak manager] in
-                ConversationStoreSettingsView(manager: manager)
+            ) { [weak manager, weak self] in
+                ConversationStoreSettingsView(
+                    manager: manager,
+                    migrationProgress: self?.migrationProgress ?? ConversationMigrationProgressStore.shared
+                )
             },
         ])
 
         // 5. 后台启动 v4 历史会话迁移（不 await，onBoot 立即返回）。
         //    迁移完成后装载会话列表（此时新库已含历史会话）。
         let progress = ConversationMigrationProgressStore.shared
+        migrationProgress = progress
         let migration = ConversationLegacyMigration(
             reader: V4ConversationReader(
                 v4DataRootDirectory: V4DataDirectoryLocator.locate(
@@ -102,5 +108,6 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(
             ids: ["\(id).settings"]
         )
+        migrationProgress = nil
     }
 }

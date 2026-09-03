@@ -12,6 +12,8 @@ public final class TextActionsSuperPlugin: SuperPlugin, SuperLog {
     public let id = "com.coffic.lumi.plugin.text-actions"
     public let order = 275
     public let metadata = PluginMetadata(id: "com.coffic.lumi.plugin.text-actions", name: LumiPluginLocalization.string("Text Actions", bundle: .module), description: LumiPluginLocalization.string("Show copy, search, and translation actions for selected text in other macOS apps.", bundle: .module), category: .system, stage: .preview, policy: .disabledByDefault)
+    private var selectionObserver: TextSelectionObserver?
+
     public init() {}
 
     public func onRegister(kernel: KernelCoreContainer) throws {
@@ -27,15 +29,17 @@ public final class TextActionsSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onEnable(kernel: KernelCoreContainer) async throws {
-        if TextActionsSettings.isEnabled { TextSelectionManager.shared.startMonitoring() }
+        if TextActionsSettings.isEnabled { selectionObserver = TextSelectionObserver() }
     }
 
     public func onDisable(kernel: KernelCoreContainer) async throws {
-        TextSelectionManager.shared.stopMonitoring()
+        selectionObserver?.cancel()
+        selectionObserver = nil
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        TextSelectionManager.shared.stopMonitoring()
+        selectionObserver?.cancel()
+        selectionObserver = nil
         TextActionMenuController.shared.hide()
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
     }
