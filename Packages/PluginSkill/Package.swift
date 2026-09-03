@@ -30,7 +30,10 @@ let package = Package(
                 "KitLocalization",
             ],
             path: "Sources/PluginSkill",
-            resources: [.process("../../Resources/Localizable.xcstrings")]
+            resources: [
+                .process("../../Resources/Localizable.xcstrings"),
+                .copy("../../Resources/BuiltinSkills"),
+            ]
         ),
         .testTarget(
             name: "PluginSkillTests",

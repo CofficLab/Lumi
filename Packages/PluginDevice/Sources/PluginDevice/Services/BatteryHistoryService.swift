@@ -17,28 +17,15 @@ public final class BatteryHistoryService: ObservableObject, SuperLog {
 
     private let maxRecentPoints = 720 // 1 hour / 5 seconds
 
-    private var cancellables = Set<AnyCancellable>()
-
     package init() {}
 
     // MARK: - Public Methods
 
     public func startRecording() {
-        guard cancellables.isEmpty else { return }
-
-        BatteryService.shared.startMonitoring()
-        BatteryService.shared.$watts
-            .sink { [weak self] watts in
-                self?.recordDataPoint(watts: watts)
-            }
-            .store(in: &cancellables)
+        // Input observation is owned by DeviceMetricsObserver.
     }
 
     public func stopRecording() {
-        guard !cancellables.isEmpty else { return }
-
-        cancellables.removeAll()
-        BatteryService.shared.stopMonitoring()
     }
 
     public func getData(for range: BatteryTimeRange) -> [BatteryDataPoint] {

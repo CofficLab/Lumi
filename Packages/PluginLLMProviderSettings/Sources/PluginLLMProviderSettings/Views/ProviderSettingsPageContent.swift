@@ -11,13 +11,19 @@ struct ProviderSettingsPageContent: View {
 
     private let manager: any LLMManaging
     private let isLocal: Bool
+    private let downloadViewModel: (String) -> ProviderModelDownloadViewModel?
 
     @State private var selectedProviderID: String?
     @State private var searchText: String = ""
 
-    init(manager: any LLMManaging, isLocal: Bool) {
+    init(
+        manager: any LLMManaging,
+        isLocal: Bool,
+        downloadViewModel: @escaping (String) -> ProviderModelDownloadViewModel?
+    ) {
         self.manager = manager
         self.isLocal = isLocal
+        self.downloadViewModel = downloadViewModel
     }
 
     private var allProviders: [any SuperLLMProvider] {
@@ -146,7 +152,11 @@ struct ProviderSettingsPageContent: View {
     private var detailPane: some View {
         if let selectedProvider {
             ScrollView {
-                ProviderDetailView(manager: manager, provider: selectedProvider)
+                ProviderDetailView(
+                    manager: manager,
+                    provider: selectedProvider,
+                    downloadViewModel: downloadViewModel(selectedProvider.providerInfo.id)
+                )
                     .padding(22)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
             }

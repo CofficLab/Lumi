@@ -16,9 +16,7 @@ struct MiniMaxProviderPluginTests {
         let plugin = MiniMaxProviderPlugin()
         try plugin.onBoot(kernel: kernel)
 
-        #expect(manager.providerCount == 3)
+        #expect(manager.providerCount == 1)
         #expect(manager.provider(id: "minimax-tokenplan")?.providerInfo.id == "minimax-tokenplan")
-        #expect(manager.provider(id: "minimax-tokenplan-anthropic")?.providerInfo.id == "minimax-tokenplan-anthropic")
-        #expect(manager.provider(id: "minimax-responses")?.providerInfo.id == "minimax-responses")
     }
 }

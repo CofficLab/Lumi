@@ -43,14 +43,15 @@ enum IconDesignerRuntime {
     /// `review_icon` 工具使用的 LLM 评审服务（宿主注入，可空）。
     static var designReviewLLM: (any IconDesignReviewLLMProviding)?
 
-    private static var projectObserver: IconDesignerProjectObserver?
     static let projectFolderName = "app-icon-designer"
 
     static func configure(kernel: KernelCoreContainer, pluginID: String) {
         let appDirectory = kernel.resolveProvider((any StorageProviding).self)?
             .pluginDataDirectory(for: pluginID)
         configure(appStorageDirectory: appDirectory)
-        installProjectObserver(kernel: kernel)
+        updateProjectStorageDirectory(
+            projectPath: kernel.resolveProvider((any ProjectProviding).self)?.currentProject?.path
+        )
     }
 
     static func configure(appStorageDirectory: URL?) {
@@ -60,26 +61,10 @@ enum IconDesignerRuntime {
         IconDocumentStore.shared.setAppStorage(appStorageDirectory: resolved)
     }
 
-    private static func installProjectObserver(kernel: KernelCoreContainer) {
-        projectObserver?.cancel()
-        projectObserver = nil
-        guard let project = kernel.resolveProvider((any ProjectProviding).self) else {
-            currentProjectPath = nil
-            updateProjectStorageDirectory(projectPath: nil)
-            return
-        }
-
-        let initialPath = project.currentProject?.path
-        currentProjectPath = initialPath
-        updateProjectStorageDirectory(projectPath: initialPath)
-        projectObserver = IconDesignerProjectObserver(project: project) { newPath in
-            guard newPath != currentProjectPath else { return }
-            currentProjectPath = newPath
-            updateProjectStorageDirectory(projectPath: newPath)
-        }
-    }
-
-    private static func updateProjectStorageDirectory(projectPath: String?) {
+    /// Called by the plugin-owned project observer when the active project changes.
+    static func updateProjectStorageDirectory(projectPath: String?) {
+        guard projectPath != currentProjectPath else { return }
+        currentProjectPath = projectPath
         let resolved: URL?
         if let projectPath, !projectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             resolved = URL(fileURLWithPath: projectPath, isDirectory: true)
@@ -109,8 +94,6 @@ enum IconDesignerRuntime {
     }
 
     static func reset() {
-        projectObserver?.cancel()
-        projectObserver = nil
         appStorageDirectory = nil
         projectStorageDirectory = nil
         currentProjectPath = nil

@@ -17,30 +17,27 @@ struct ConversationInputView: View {
     let input: (any ConversationInputProviding)?
     let sender: (any MessageSendingProviding)?
     let metrics: (any PerformanceMetricsProviding)?
-    @State private var errorMessage: String?
-    /// 输入 Provider 的 `objectWillChange` 不会自动让这个 View 重建，
-    /// 而 `ComposerView` 依赖的是普通 Binding；用 revision 让文本变化触发
-    /// `ChatInputEditorView.updateNSView`，及时把 NSTextView 同步到 Provider。
-    @State private var inputRevision = 0
+    @ObservedObject var state: ConversationInputViewState
 
     init(
         input: (any ConversationInputProviding)?,
         sender: (any MessageSendingProviding)?,
-        metrics: (any PerformanceMetricsProviding)? = nil
+        metrics: (any PerformanceMetricsProviding)? = nil,
+        state: ConversationInputViewState
     ) {
         self.input = input
         self.sender = sender
         self.metrics = metrics
-        _errorMessage = State(initialValue: input?.errorMessage)
+        _state = ObservedObject(wrappedValue: state)
     }
 
     var body: some View {
-        let _ = inputRevision
+        let _ = state.revision
 
         VStack(spacing: 0) {
             AppDivider()
 
-            if let errorMessage {
+            if let errorMessage = state.errorMessage {
                 InputErrorView(message: errorMessage, onDismiss: {
                     input?.errorMessage = nil
                 })
@@ -54,18 +51,6 @@ struct ConversationInputView: View {
             )
         }
         .background(theme.background)
-        .onReceive(input?.objectWillChange ?? ObservableObjectPublisher()) { _ in
-            // ObservableObjectPublisher 在 @Published 写入前发送，延迟一拍
-            // 才能读取到新的错误值；同时递增 revision，确保输入文本变化
-            // 也会触发 ComposerView 的 NSView 同步。
-            DispatchQueue.main.async {
-                inputRevision &+= 1
-                let newValue = input?.errorMessage
-                if errorMessage != newValue {
-                    errorMessage = newValue
-                }
-            }
-        }
     }
 
     /// 发送当前输入框文本

@@ -26,6 +26,9 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
+    private var downloadViewModels: [String: ProviderModelDownloadViewModel] = [:]
+    private var downloadObservers: [String: ProviderModelDownloadObserver] = [:]
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -34,6 +37,18 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve LLMManaging, SettingViewProviding from kernel")
             return
         }
+        downloadObservers.values.forEach { $0.cancel() }
+        downloadObservers.removeAll()
+        downloadViewModels.removeAll()
+        for provider in manager.allProviders() {
+            guard let downloader = provider as? any LLMModelDownloadProviding else { continue }
+            let viewModel = ProviderModelDownloadViewModel(initialState: downloader.downloadState)
+            downloadViewModels[provider.providerInfo.id] = viewModel
+            downloadObservers[provider.providerInfo.id] = ProviderModelDownloadObserver(
+                downloader: downloader,
+                viewModel: viewModel
+            )
+        }
         settings.addEntries([
             SettingEntryItem(
                 id: "\(id).remote-providers",
@@ -41,7 +56,12 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
                 systemImage: "cloud",
                 order: 100
             ) {
-                CloudProviderSettingsPage(manager: manager)
+                CloudProviderSettingsPage(
+                    manager: manager,
+                    downloadViewModel: { [weak self] providerID in
+                        self?.downloadViewModels[providerID]
+                    }
+                )
             },
             SettingEntryItem(
                 id: "\(id).local-providers",
@@ -49,12 +69,20 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
                 systemImage: "cpu",
                 order: 101
             ) {
-                LocalProviderSettingsPage(manager: manager)
+                LocalProviderSettingsPage(
+                    manager: manager,
+                    downloadViewModel: { [weak self] providerID in
+                        self?.downloadViewModels[providerID]
+                    }
+                )
             },
         ])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        downloadObservers.values.forEach { $0.cancel() }
+        downloadObservers.removeAll()
+        downloadViewModels.removeAll()
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).remote-providers", "\(id).local-providers"])
     }

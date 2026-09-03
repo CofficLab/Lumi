@@ -5,7 +5,12 @@ struct HeaderBarView: View {
     /// 是否仅展示当前项目下的会话。
     let scopeToCurrentProject: Bool
     /// 用于解析当前项目名称（当 `scopeToCurrentProject == true` 时使用）。
-    let context: ConversationListContext
+    @ObservedObject private var context: ConversationListContext
+
+    init(scopeToCurrentProject: Bool, context: ConversationListContext) {
+        self.scopeToCurrentProject = scopeToCurrentProject
+        self._context = ObservedObject(wrappedValue: context)
+    }
 
     /// 全库对话是否来自多个项目。
     /// 默认隐藏，避免数据加载期间短暂显示单项目场景下无意义的提示。
@@ -34,7 +39,7 @@ struct HeaderBarView: View {
         .task {
             await refreshProjectVisibility()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiConversationsDidChange)) { _ in
+        .onChange(of: context.conversationsRevision) { _, _ in
             Task { await refreshProjectVisibility() }
         }
     }

@@ -51,10 +51,71 @@ struct SkillPluginTests {
         #expect(prompt.contains("debugger"))
     }
 
+    @Test("SkillMergePolicy 合并内置与项目技能，同名项目优先")
+    func mergePolicy() {
+        let builtin = [
+            SkillMetadata(name: "swiftui-standards", title: "SwiftUI Standards", description: "内置规范"),
+            SkillMetadata(name: "planner", title: "Planner", description: "内置规划"),
+        ]
+        let project = [
+            SkillMetadata(name: "swiftui-standards", title: "项目定制 SwiftUI", description: "项目覆盖版本"),
+            SkillMetadata(name: "architect", title: "Architect", description: "项目架构"),
+        ]
+        let merged = SkillMergePolicy.merge(builtin: builtin, project: project)
+        // 去重：同名只保留项目版本
+        #expect(merged.count == 3)
+        let names = Set(merged.map(\.name))
+        #expect(names == ["swiftui-standards", "planner", "architect"])
+        // 项目覆盖内置
+        #expect(merged.first { $0.name == "swiftui-standards" }?.title == "项目定制 SwiftUI")
+        // 排序稳定
+        #expect(merged.map(\.name) == ["architect", "planner", "swiftui-standards"])
+    }
+
+    @Test("SkillService 合并内置与项目技能")
+    func serviceMergesBuiltin() async {
+        class FakeBuiltin: BuiltinSkillProviding, @unchecked Sendable {
+            func builtinSkills() -> [SkillMetadata] {
+                [SkillMetadata(name: "swiftui-standards", title: "SwiftUI Standards", description: "内置规范")]
+            }
+        }
+        struct FakeScanner: SkillScanning {
+            func scanSkills(projectPath: String) -> [SkillMetadata] {
+                [SkillMetadata(name: "architect", title: "Architect", description: "项目架构")]
+            }
+        }
+        let service = SkillService(scanner: FakeScanner(), builtinProvider: FakeBuiltin())
+        let skills = await service.listSkills(projectPath: "/tmp/proj")
+        #expect(skills.count == 2)
+        #expect(skills.contains { $0.name == "swiftui-standards" })
+        #expect(skills.contains { $0.name == "architect" })
+    }
+
+    @Test("SkillService 空项目路径时仅返回内置技能")
+    func serviceEmptyProjectPath() async {
+        class FakeBuiltin: BuiltinSkillProviding, @unchecked Sendable {
+            func builtinSkills() -> [SkillMetadata] {
+                [SkillMetadata(name: "swiftui-standards", title: "SwiftUI Standards", description: "内置规范")]
+            }
+        }
+        struct FakeScanner: SkillScanning {
+            func scanSkills(projectPath: String) -> [SkillMetadata] {
+                [SkillMetadata(name: "architect", title: "Architect", description: "项目架构")]
+            }
+        }
+        let service = SkillService(scanner: FakeScanner(), builtinProvider: FakeBuiltin())
+        let skills = await service.listSkills(projectPath: "")
+        #expect(skills.count == 1)
+        #expect(skills.first?.name == "swiftui-standards")
+    }
+
     @Test("SkillService 扫描并缓存")
     func serviceScansAndCaches() async {
+        struct EmptyBuiltin: BuiltinSkillProviding {
+            func builtinSkills() -> [SkillMetadata] { [] }
+        }
         let skills = [SkillMetadata(name: "a", title: "A", description: "desc")]
-        let service = SkillService(scanner: MockScanner(skills: skills))
+        let service = SkillService(scanner: MockScanner(skills: skills), builtinProvider: EmptyBuiltin())
         let first = await service.listSkills(projectPath: "/tmp/proj")
         #expect(first.count == 1)
         #expect(first.first?.name == "a")

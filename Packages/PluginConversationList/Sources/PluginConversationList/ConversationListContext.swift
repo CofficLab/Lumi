@@ -24,6 +24,9 @@ final class ConversationListContext: ObservableObject {
     /// 视图通过 `@ObservedObject` 直接观察此属性，无需间接读取
     /// `conversations.selectedConversationID`（协议存在类型，SwiftUI 难以追踪）。
     @Published var selectedConversationID: UUID?
+    /// Monotonic revision for structural conversation changes. Views observe
+    /// this value instead of subscribing to a global notification channel.
+    @Published private(set) var conversationsRevision = 0
 
     init(
         conversations: any ConversationManaging,
@@ -48,5 +51,9 @@ final class ConversationListContext: ObservableObject {
     /// 当前选中的项目名；用于分段标题与 HeaderBar。
     var currentProjectName: String? {
         project?.currentProject?.name ?? currentProjectPath
+    }
+
+    func markConversationsChanged() {
+        conversationsRevision &+= 1
     }
 }

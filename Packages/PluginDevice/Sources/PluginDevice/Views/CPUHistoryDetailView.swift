@@ -2,8 +2,12 @@ import SwiftUI
 import LumiUI
 
 struct CPUHistoryDetailView: View {
-    @ObservedObject private var historyService = CPUHistoryService.shared
+    @ObservedObject private var viewModel: DeviceHistoryViewModel<CPUDataPoint>
     @State private var selectedRange: CPUTimeRange = .hour1
+
+    init(viewModel: DeviceHistoryViewModel<CPUDataPoint>) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -31,7 +35,7 @@ struct CPUHistoryDetailView: View {
             // Graph
             VStack(spacing: 0) {
                 CPUHistoryGraphView(
-                    dataPoints: historyService.getData(for: selectedRange),
+                    dataPoints: selectedRange == .hour1 ? viewModel.recentHistory : viewModel.longTermHistory,
                     timeRange: selectedRange
                 )
             }

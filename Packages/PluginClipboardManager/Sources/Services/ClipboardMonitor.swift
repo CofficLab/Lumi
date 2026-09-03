@@ -13,7 +13,6 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
     public static let shared = ClipboardMonitor()
 
     @Published var lastChangeCount: Int
-    private var timer: Timer?
     private let pasteboard = NSPasteboard.general
 
     // Dependencies
@@ -24,22 +23,17 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
     }
 
     public func startMonitoring() {
-        guard timer == nil else { return }
-
         lastChangeCount = pasteboard.changeCount
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.checkForChanges()
-            }
-        }
     }
 
     public func stopMonitoring() {
-        timer?.invalidate()
-        timer = nil
         if Self.verbose {
             Self.logger.info("\(Self.t)🛑 Clipboard monitoring stopped")
         }
+    }
+
+    func poll() {
+        checkForChanges()
     }
 
     private func checkForChanges() {
@@ -59,7 +53,7 @@ public class ClipboardMonitor: ObservableObject, SuperLog {
             for item in items {
                 await storage.add(item: item)
                 await MainActor.run {
-                    NotificationCenter.default.post(name: .clipboardHistoryDidUpdate, object: nil)
+                    ClipboardHistoryChangeCenter.shared.notify()
                 }
 
                 if Self.verbose {

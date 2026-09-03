@@ -30,6 +30,8 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
     )
 
     private var eventObserver: IdleTimeEventObserver?
+    private var snapshotObserver: IdleTimeSnapshotObserver?
+    private var viewModel: AppIdleTimeVM?
     private var provider: (any IdleTimeProviding)?
 
     public init() {}
@@ -49,11 +51,19 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
         // 2. 注册活动事件监听（替代旧版 IdleTimeRootObserver 的职责）。
         if let provider {
             eventObserver = IdleTimeEventObserver(provider: provider)
+            let viewModel = AppIdleTimeVM(provider: provider)
+            self.viewModel = viewModel
+            snapshotObserver = IdleTimeSnapshotObserver { [weak viewModel] in
+                Task { @MainActor in
+                    viewModel?.refresh()
+                }
+            }
         }
 
         // 3. 设置页：休息窗口详情 + 打开数据目录。
         if let settings = kernel.resolveProvider((any SettingViewProviding).self),
-           let storage = kernel.resolveProvider((any StorageProviding).self) {
+           let storage = kernel.resolveProvider((any StorageProviding).self),
+           let viewModel {
             let dataDirectory = storage.pluginDataDirectory(for: "IdleTime")
             let entry = SettingEntryItem(
                 id: "\(id).settings",
@@ -61,7 +71,7 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
                 systemImage: "moon.zzz",
                 order: order
             ) {
-                IdleTimeSettingsView(provider: provider, dataDirectory: dataDirectory)
+                IdleTimeSettingsView(viewModel: viewModel, dataDirectory: dataDirectory)
             }
             settings.addEntries([entry])
         }
@@ -71,6 +81,9 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
         // 撤回事件监听。
         eventObserver?.cancel()
         eventObserver = nil
+        snapshotObserver?.cancel()
+        snapshotObserver = nil
+        viewModel = nil
         provider = nil
 
         kernel.resolveProvider((any SettingViewProviding).self)?

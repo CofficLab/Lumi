@@ -45,6 +45,10 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
     }
 
     private var httpExchangeStore: HTTPExchangeStore?
+    private var httpExchangeObserver: HTTPExchangeObserver?
+    private var httpExchangeSettingsState: HTTPExchangeSettingsState?
+    private var viewModels: NetworkPluginViewModels?
+    private var metricsObserver: NetworkMetricsObserver?
 
     public init() {}
 
@@ -58,6 +62,10 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
     // MARK: - SuperPlugin
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        let viewModels = NetworkPluginViewModels()
+        self.viewModels = viewModels
+        metricsObserver?.cancel()
+        metricsObserver = NetworkMetricsObserver(viewModels: viewModels)
         // 1. 初始化 HTTPExchangeStore
         let exchangeStore: HTTPExchangeStore?
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
@@ -67,6 +75,15 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
             exchangeStore = nil
         }
         httpExchangeStore = exchangeStore
+        if let exchangeStore {
+            let settingsState = HTTPExchangeSettingsState()
+            httpExchangeSettingsState = settingsState
+            httpExchangeObserver = HTTPExchangeObserver(store: exchangeStore) { [weak settingsState] in
+                Task { @MainActor in
+                    settingsState?.refresh()
+                }
+            }
+        }
         NetworkService.shared.configureHTTPExchangeStore(exchangeStore)
 
         // 2. 注册 NetworkProviding 到内核（替换默认实现，附带 exchangeStore）
@@ -100,14 +117,14 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
                 title: LumiPluginLocalization.string("Network Speed", bundle: .module),
                 order: order
             ) {
-                NetworkMenuBarContentView()
+                NetworkMenuBarContentView(viewModel: viewModels.network)
             })
             menuBar.addPopup(MenuBarPopupItem(
                 id: "\(id).popup",
                 title: LumiPluginLocalization.string("Network Monitor", bundle: .module),
                 order: order
             ) {
-                NetworkMenuBarPopupView()
+                NetworkMenuBarPopupView(viewModel: viewModels.network, historyViewModel: viewModels.history)
             })
         }
 
@@ -121,13 +138,19 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
                     systemImage: "arrow.up.arrow.down.circle",
                     order: order
                 ) {
-                    HTTPExchangeSettingsView(store: httpExchangeStore)
+                    HTTPExchangeSettingsView(
+                        store: httpExchangeStore,
+                        state: self.httpExchangeSettingsState ?? HTTPExchangeSettingsState()
+                    )
                 },
             ])
         }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        metricsObserver?.cancel()
+        metricsObserver = nil
+        viewModels = nil
         // 撤回 Agent 工具
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
@@ -142,6 +165,12 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
         // 撤回设置入口
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
+
+        httpExchangeObserver?.cancel()
+        httpExchangeObserver = nil
+        httpExchangeSettingsState = nil
+        httpExchangeStore = nil
+        NetworkService.shared.configureHTTPExchangeStore(nil)
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

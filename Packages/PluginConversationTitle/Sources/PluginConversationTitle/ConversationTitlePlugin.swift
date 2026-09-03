@@ -31,6 +31,8 @@ public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
     )
 
     private var autoTitleService: TitleService?
+    private let headerState = ConversationTitleHeaderState()
+    private var headerObserver: ConversationTitleHeaderObserver?
 
     public init() {}
 
@@ -58,6 +60,13 @@ public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
             messages: messages,
             llmProvider: llmProvider
         )
+        headerObserver?.cancel()
+        headerObserver = ConversationTitleHeaderObserver(
+            conversations: conversations,
+            onChange: { [weak self] in
+                self?.headerState.title = conversations.currentTitle
+            }
+        )
 
         // 注册标题更新 Agent 工具。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
@@ -75,12 +84,14 @@ public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
                 order: 0,
                 placement: .header
             ) {
-                HeaderView(conversations: conversations)
+                HeaderView(state: self.headerState)
             },
         ])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        headerObserver?.cancel()
+        headerObserver = nil
         if let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
             chat.removeBarItem(id: "\(id).header")
         } else {
@@ -99,4 +110,9 @@ public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
         }
         toolManager.remove(id: TitleUpdateTool.toolName)
     }
+}
+
+@MainActor
+final class ConversationTitleHeaderState: ObservableObject {
+    @Published var title = ""
 }

@@ -666,7 +666,8 @@ private struct ToolCallResultLazyPopover: View {
         ToolDetailPopoverView(
             title: "调用结果",
             systemImage: visualState.systemImage,
-            isError: visualState.isFailure
+            isError: visualState.isFailure,
+            minHeight: 0
         ) {
             ToolCallResultView(
                 result: result,

@@ -409,13 +409,8 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
                 try store.insertMessage(message)
                 // dequeuePending 是 nonisolated + 锁保护,可在本队列直接调用。
                 self?.dequeuePending(id: message.id, conversationID: conversationID)
-                if message.role == .user {
-                    Task { @MainActor [weak self] in
-                        self?.postMessageSavedNotification(
-                            message: message,
-                            conversationID: conversationID
-                        )
-                    }
+                Task { @MainActor [weak self] in
+                    self?.notifyMessageChange(.persisted(message, conversationID: conversationID))
                 }
             } catch {
                 if Self.verbose {
@@ -423,19 +418,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
                 }
             }
         }
-    }
-
-    private func postMessageSavedNotification(message: Message, conversationID: UUID) {
-        let userInfo: [AnyHashable: Any] = [
-            "conversationID": conversationID,
-            "messageID": message.id,
-            "role": message.role.rawValue,
-        ]
-        NotificationCenter.default.post(
-            name: Notification.Name("com.coffic.lumi.messageSaved"),
-            object: nil,
-            userInfo: userInfo
-        )
     }
 
     public func updateMessage(id: UUID, in conversationID: UUID, content: String) {
@@ -452,6 +434,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             _ = store?.updateMessage(id: id, content: content)
         }
         notifyMessagesDidChange(conversationID: conversationID)
+        notifyMessageChange(.updated(conversationID: conversationID))
     }
 
     public func deleteMessage(id: UUID, in conversationID: UUID) {
@@ -465,6 +448,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             _ = store?.deleteMessage(id: id)
         }
         notifyMessagesDidChange(conversationID: conversationID)
+        notifyMessageChange(.deleted(messageID: id, conversationID: conversationID))
     }
 
     public func clearMessages(in conversationID: UUID) {
@@ -478,6 +462,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             pending.clear(conversationID: conversationID)
         }
         notifyMessagesDidChange(conversationID: conversationID)
+        notifyMessageChange(.cleared(conversationID: conversationID))
     }
 
     // MARK: - Tool Call Result Update
@@ -525,6 +510,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         }
 
         notifyMessagesDidChange(conversationID: conversationID)
+        notifyMessageChange(.updated(conversationID: conversationID))
     }
 
     private func persistUpdatedMessage(

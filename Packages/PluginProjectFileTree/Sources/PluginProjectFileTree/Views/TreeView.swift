@@ -25,14 +25,16 @@ public struct TreeView: View, SuperLog {
     @StateObject private var selectionState = SelectionState()
 
     /// 刷新协调器
-    @StateObject private var coordinator = RefreshCoordinator()
+    @ObservedObject var coordinator: RefreshCoordinator
 
     /// Swift Package Dependencies 数据源
-    @StateObject private var packageStore = PackageDependencyStore()
+    @ObservedObject var packageStore: PackageDependencyStore
 
-    init(context: FileTreeContext, viewModel: ProjectFileTreeViewModel) {
+    init(context: FileTreeContext, viewModel: ProjectFileTreeViewModel, coordinator: RefreshCoordinator, packageStore: PackageDependencyStore) {
         self.context = context
         self.viewModel = viewModel
+        self.coordinator = coordinator
+        self.packageStore = packageStore
     }
 
     public var body: some View {

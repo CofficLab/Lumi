@@ -29,6 +29,9 @@ public final class ConversationContextSizePlugin: SuperPlugin, SuperLog {
         policy: .required
     )
 
+    private let toolbarState = ContextSizeToolbarState()
+    private var observer: ContextSizeObserver?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -40,6 +43,23 @@ public final class ConversationContextSizePlugin: SuperPlugin, SuperLog {
             return
         }
 
+        observer?.cancel()
+        observer = ContextSizeObserver(
+            conversations: conversations,
+            messages: messages,
+            llmManager: llmManager,
+            onConversationChange: { [weak toolbarState] newID in
+                toolbarState?.selectedConversationID = newID
+            },
+            onMessageInsert: { [weak toolbarState] conversationID in
+                guard conversationID == toolbarState?.selectedConversationID else { return }
+                toolbarState?.messageRefreshRevision &+= 1
+            },
+            onLLMChange: { [weak toolbarState] in
+                toolbarState?.messageRefreshRevision &+= 1
+            }
+        )
+
         chat.addBarItems([
             ChatSectionBarItem(
                 id: "\(id).toolbar-button",
@@ -49,14 +69,23 @@ public final class ConversationContextSizePlugin: SuperPlugin, SuperLog {
                 ContextSizeToolbarView(
                     conversations: conversations,
                     messages: messages,
-                    llmManager: llmManager
+                    llmManager: llmManager,
+                    state: self.toolbarState
                 )
             },
         ])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        observer?.cancel()
+        observer = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar-button")
     }
+}
+
+@MainActor
+final class ContextSizeToolbarState: ObservableObject {
+    @Published var selectedConversationID: UUID?
+    @Published var messageRefreshRevision = 0
 }

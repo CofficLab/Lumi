@@ -44,6 +44,17 @@ struct PluginLLMManagerTests {
         #expect((missing?.order ?? 0) > 300)
     }
 
+    @Test("旧版 missingAPIKey 文本消息也能命中 API Key 渲染器")
+    func legacyMissingAPIKeyMessageMatchesRenderer() {
+        let message = Message(
+            conversationID: UUID(),
+            role: .error,
+            content: "missingAPIKey(\"OpenCode Go\")"
+        )
+
+        #expect(LLMProviderAPIKeyMessage.isMissingAPIKeyMessage(message))
+    }
+
     /// 自研管理器转发注册/选中/路由：注册一个回显供应商后，
     /// complete 应命中该供应商并返回内容。
     @Test("CustomLLMManager 转发注册与路由")

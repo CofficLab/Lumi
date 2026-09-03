@@ -12,7 +12,7 @@ import SwiftUI
 /// 切换 Tab 时通过 `if` 分支保留两个 `ListView` 的视图身份,
 /// 让各自的滚动位置、分页状态和加载任务互不干扰。
 struct ToolbarPopoverContent: View {
-    let context: ConversationListContext
+    @ObservedObject private var context: ConversationListContext
     @ObservedObject var attentionStore: ConversationAttentionStore
     @ObservedObject var sortStabilizer: ConversationSortStabilizer
 
@@ -28,6 +28,16 @@ struct ToolbarPopoverContent: View {
     /// 当前项目的对话数是否 >0。
     /// 默认 false（先隐藏），异步查得数量后再决定，避免短暂展示一个空入口。
     @State private var currentProjectHasConversations = false
+
+    init(
+        context: ConversationListContext,
+        attentionStore: ConversationAttentionStore,
+        sortStabilizer: ConversationSortStabilizer
+    ) {
+        self._context = ObservedObject(wrappedValue: context)
+        self.attentionStore = attentionStore
+        self.sortStabilizer = sortStabilizer
+    }
 
     /// 当前项目路径；`nil` 表示未选中项目。
     private var currentProjectPath: String? {
@@ -59,7 +69,7 @@ struct ToolbarPopoverContent: View {
         .task(id: currentProjectPath) {
             await refreshProjectScopeVisibility()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .lumiConversationsDidChange)) { _ in
+        .onChange(of: context.conversationsRevision) { _, _ in
             Task { await refreshProjectScopeVisibility() }
         }
         .onChange(of: showsCurrentProjectScope) { _, visible in

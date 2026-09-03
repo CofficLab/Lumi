@@ -4,9 +4,9 @@ import Testing
 @testable import PluginMessageList
 
 @MainActor
-@Suite("V1 timeline event presentation")
+@Suite("V1 presentation")
 struct ListV1PresentationTests {
-    @Test("压缩事件作为独立行按时间插入 Agent Turn")
+    @Test("实际压缩事件作为独立行按时间插入 Agent Turn")
     func contextCompactionEventIsAnIndependentRow() {
         let conversationID = UUID()
         let olderTurn = AgentTurnPresentationItem(
@@ -35,10 +35,11 @@ struct ListV1PresentationTests {
             createdAt: Date(timeIntervalSince1970: 20),
             metadata: [
                 MessageTimelineEvent.metadataKey: MessageTimelineEvent.contextCompaction,
+                MessageTimelineEvent.actualContextCompactionKey:
+                    MessageTimelineEvent.actualContextCompactionValue,
             ],
             renderKind: MessageTimelineEvent.contextCompactionRenderKind
         )
-
         let presentation = ListV1Presentation(
             agentTurns: [olderTurn],
             timelineEvents: [event]

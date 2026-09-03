@@ -3,6 +3,7 @@ import KernelCore
 import KitAgentTool
 import KitSuperLog
 import os
+import ProviderMessageRendering
 import ProviderProject
 import ProviderToolManager
 
@@ -40,7 +41,7 @@ public final class GitSourceControlSuperPlugin: SuperPlugin, SuperLog {
         let tools: [any SuperAgentTool] = [
             GitStatusV2Tool(project: project),
             GitDiffV2Tool(project: project),
-            GitLogV2Tool(project: project),
+            GitLogTool(project: project),
             GitShowV2Tool(project: project),
             GitBranchV2Tool(project: project),
             GitCommitV2Tool(project: project),
@@ -54,6 +55,11 @@ public final class GitSourceControlSuperPlugin: SuperPlugin, SuperLog {
             toolManager.add(tool, pluginID: id)
         }
         
+        // 注册 git_log 工具结果的专用行渲染器：
+        // LLM 调用 git_log 后，消息列表以 commit 卡片形式展示最近提交。
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?
+            .register(GitLogRowRenderer())
+        
         if Self.verbose {
             Self.logger.info("\(Self.t)Registered Git source-control provider and \(tools.count) tools")
         }
@@ -62,6 +68,8 @@ public final class GitSourceControlSuperPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         Self.logger.info("\(Self.t)Shutting down Git source-control plugin")
         kernel.unregisterProvider((any SourceControlProviding).self)
+        kernel.resolveProvider((any ToolCallRenderingProviding).self)?
+            .unregister(id: GitLogRowRenderer.id)
         for name in GitV2ToolNames.all {
             kernel.resolveProvider((any ToolManagerProviding).self)?.remove(id: name)
         }

@@ -5,8 +5,12 @@ import LumiUI
 public struct RClickSettingsView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @StateObject private var configManager = RClickConfigManager.shared
+    @ObservedObject private var configManager: RClickConfigManager
     @State private var showingAddTemplateSheet = false
+
+    init(configManager: RClickConfigManager) {
+        self.configManager = configManager
+    }
 
     public var body: some View {
         PluginSettingsScaffold(

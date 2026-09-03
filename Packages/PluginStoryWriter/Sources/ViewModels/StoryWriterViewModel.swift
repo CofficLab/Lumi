@@ -25,22 +25,6 @@ public final class StoryWriterViewModel: ObservableObject, SuperLog {
 
     public init(store: StoryStore) {
         self.store = store
-        observeExternalChanges()
-    }
-
-    // MARK: - External change observation
-
-    private var changeObserver: StoryWriterChangeObserver?
-
-    private func observeExternalChanges() {
-        // Agent tools post this notification after mutating the on-disk story
-        // store. Reload everything to stay in sync.
-        changeObserver = StoryWriterChangeObserver { [weak self] in
-            guard let self else { return }
-            Task { @MainActor in
-                await self.reloadFromDisk()
-            }
-        }
     }
 
     /// Reload the in-memory snapshot from disk, preserving the current

@@ -4,6 +4,9 @@ import Foundation
 @MainActor
 public enum ConversationEvent: Sendable, Equatable {
     case created(UUID)
+    /// A structural change that does not belong to one conversation, such as
+    /// an initial reload or a bulk mutation.
+    case listChanged
     case selected(UUID?)
     case deleted(UUID)
     case updated(UUID)

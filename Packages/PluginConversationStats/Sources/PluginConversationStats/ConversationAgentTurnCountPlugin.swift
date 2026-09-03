@@ -28,8 +28,10 @@ public final class ConversationAgentTurnCountPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
-    public init() {}
+    private let toolbarState = AgentTurnStatusToolbarState()
+    private var observer: AgentTurnStatusObserver?
 
+    public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
@@ -39,6 +41,20 @@ public final class ConversationAgentTurnCountPlugin: SuperPlugin, SuperLog {
             return
         }
 
+        observer?.cancel()
+        observer = AgentTurnStatusObserver(
+            conversations: conversations,
+            agentLoop: agentLoop,
+            onConversationChange: { [weak toolbarState] newID in
+                toolbarState?.selectedConversationID = newID
+                toolbarState?.revision &+= 1
+            },
+            onAgentLoopChange: { [weak toolbarState] conversationID in
+                guard conversationID == toolbarState?.selectedConversationID else { return }
+                toolbarState?.revision &+= 1
+            }
+        )
+
         chat.addBarItems([
             ChatSectionBarItem(
                 id: "\(id).toolbar-button",
@@ -46,15 +62,23 @@ public final class ConversationAgentTurnCountPlugin: SuperPlugin, SuperLog {
                 placement: .toolbarLeading
             ) {
                 AgentTurnStatusToolbarView(
-                    conversations: conversations,
-                    agentLoop: agentLoop
+                    agentLoop: agentLoop,
+                    state: self.toolbarState
                 )
             },
         ])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        observer?.cancel()
+        observer = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar-button")
     }
+}
+
+@MainActor
+final class AgentTurnStatusToolbarState: ObservableObject {
+    @Published var selectedConversationID: UUID?
+    @Published var revision = 0
 }

@@ -4,15 +4,11 @@ import SwiftUI
 
 /// 消息计数工具栏视图
 struct MessageCountToolbarView: View {
-    let conversations: any ConversationManaging
     let messages: any MessageManaging
+    @ObservedObject var state: MessageCountToolbarState
 
-    @State private var selectedConversationID: UUID?
     @State private var count: Int = 0
     @State private var isPopoverPresented = false
-
-    // 持有观察者令牌，随视图生命周期自动释放
-    @State private var observer: MessageCountObserver?
 
     var body: some View {
         Button {
@@ -39,37 +35,15 @@ struct MessageCountToolbarView: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             MessageCountPopover(count: count)
         }
-        .task {
-            observer = MessageCountObserver(
-                conversations: conversations,
-                messages: messages,
-                onConversationChange: { newID in
-                selectedConversationID = newID
-                },
-                onMessageInsert: { conversationID in
-                    if conversationID == selectedConversationID || selectedConversationID == nil {
-                        Task(priority: .utility) { @MainActor in
-                            await Task.yield()
-                            guard !Task.isCancelled else { return }
-                            refreshCount()
-                        }
-                    }
-                }
-            )
-        }
-        .task(id: selectedConversationID) {
+        .task(id: "\(state.selectedConversationID?.uuidString ?? "nil")-\(state.messageRefreshRevision)") {
             await Task.yield()
             guard !Task.isCancelled else { return }
             refreshCount()
         }
-        .onDisappear {
-            observer?.cancel()
-            observer = nil
-        }
     }
 
     private func refreshCount() {
-        guard let conversationID = selectedConversationID else {
+        guard let conversationID = state.selectedConversationID else {
             count = 0
             return
         }

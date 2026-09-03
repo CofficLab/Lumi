@@ -40,7 +40,10 @@ private enum GoalTaskToolSupport {
 
     static func manager() -> GoalStateManager? { Plugin.currentManager() }
     static func changed(_ conversationId: String) {
-        NotificationCenter.default.post(name: .goalDidChange, object: nil, userInfo: ["conversationId": conversationId])
+        guard let conversationID = UUID(uuidString: conversationId) else { return }
+        Task { @MainActor in
+            GoalChangeCenter.shared.notify(conversationID: conversationID)
+        }
     }
 }
 

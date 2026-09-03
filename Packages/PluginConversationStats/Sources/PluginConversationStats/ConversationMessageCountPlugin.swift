@@ -29,8 +29,10 @@ public final class ConversationMessageCountPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
-    public init() {}
+    private let toolbarState = MessageCountToolbarState()
+    private var observer: MessageCountObserver?
 
+    public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
@@ -40,6 +42,19 @@ public final class ConversationMessageCountPlugin: SuperPlugin, SuperLog {
             return
         }
 
+        observer?.cancel()
+        observer = MessageCountObserver(
+            conversations: conversations,
+            messages: messages,
+            onConversationChange: { [weak toolbarState] newID in
+                toolbarState?.selectedConversationID = newID
+            },
+            onMessageInsert: { [weak toolbarState] conversationID in
+                guard conversationID == toolbarState?.selectedConversationID else { return }
+                toolbarState?.messageRefreshRevision &+= 1
+            }
+        )
+
         chat.addBarItems([
             ChatSectionBarItem(
                 id: "\(id).toolbar-button",
@@ -47,15 +62,23 @@ public final class ConversationMessageCountPlugin: SuperPlugin, SuperLog {
                 placement: .toolbarLeading
             ) {
                 MessageCountToolbarView(
-                    conversations: conversations,
-                    messages: messages
+                    messages: messages,
+                    state: self.toolbarState
                 )
             },
         ])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        observer?.cancel()
+        observer = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar-button")
     }
+}
+
+@MainActor
+final class MessageCountToolbarState: ObservableObject {
+    @Published var selectedConversationID: UUID?
+    @Published var messageRefreshRevision = 0
 }

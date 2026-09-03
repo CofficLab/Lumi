@@ -32,10 +32,5 @@ final class ComputerUseAuthorizationStore: @unchecked Sendable {
             }
             defaults.set(values.sorted(), forKey: key)
         }
-        NotificationCenter.default.post(name: .computerUseAuthorizationChanged, object: nil)
     }
-}
-
-extension Notification.Name {
-    static let computerUseAuthorizationChanged = Notification.Name("ComputerUse.authorizationChanged")
 }

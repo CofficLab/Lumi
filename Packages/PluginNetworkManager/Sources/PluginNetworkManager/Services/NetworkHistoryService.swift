@@ -48,9 +48,6 @@ public class NetworkHistoryService: ObservableObject, SuperLog {
     // Long term history (low resolution: 1 point per minute for last 30 days)
     @Published var longTermHistory: [NetworkDataPoint] = []
     
-    private var recordingCancellables = Set<AnyCancellable>()
-    private var autosaveCancellable: AnyCancellable?
-    private var isRecording = false
     private var lastMinuteSampleTime: TimeInterval = 0
     private var minuteAccumulator: (down: Double, up: Double, count: Int) = (0, 0, 0)
     
@@ -91,49 +88,19 @@ public class NetworkHistoryService: ObservableObject, SuperLog {
         } else {
             loadHistory()
         }
-        if autoStartRecording {
-            startRecording()
-        }
+        // NetworkMetricsObserver owns the source subscription and recording
+        // lifecycle for the plugin.
     }
     
     public func startRecording() {
-        guard !isRecording else { return }
-        isRecording = true
-
-        NetworkService.shared.startMonitoring()
-        NetworkService.shared.$downloadSpeed
-            .combineLatest(NetworkService.shared.$uploadSpeed)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] (down, up) in
-                self?.recordDataPoint(down: down, up: up)
-            }
-            .store(in: &recordingCancellables)
-
-        startAutosave()
+        // Source observation is owned by NetworkMetricsObserver.
     }
 
     public func stopRecording() {
-        guard isRecording else { return }
-
         saveHistory()
-        isRecording = false
-        recordingCancellables.removeAll()
-        autosaveCancellable?.cancel()
-        autosaveCancellable = nil
-        NetworkService.shared.stopMonitoring()
-    }
-
-    private func startAutosave() {
-        guard autosaveCancellable == nil else { return }
-
-        autosaveCancellable = Timer.publish(every: 300, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                self?.saveHistory()
-            }
     }
     
-    private func recordDataPoint(down: Double, up: Double) {
+    func recordDataPoint(down: Double, up: Double) {
         let now = Date().timeIntervalSince1970
         let point = NetworkDataPoint(timestamp: now, downloadSpeed: down, uploadSpeed: up)
         
@@ -197,7 +164,7 @@ public class NetworkHistoryService: ObservableObject, SuperLog {
         }
     }
     
-    private func saveHistory() {
+    func saveHistory() {
         guard let url = storageURL else { return }
         Task.detached(priority: .background) { [history = self.longTermHistory] in
             Self.persistHistory(history, to: url)

@@ -14,4 +14,9 @@ final class ThemeSettingsObservationModel: ObservableObject {
         }
     }
 
+    func cancel() {
+        handle?.cancel()
+        handle = nil
+    }
+
 }

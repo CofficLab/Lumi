@@ -60,9 +60,6 @@ public struct SidebarView: View {
                 }
             }
         }
-        .onDisappear {
-            viewModel.removeObserver()
-        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(LumiPluginLocalization.string("Goal & Tasks", bundle: .module))
     }

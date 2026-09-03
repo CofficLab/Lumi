@@ -8,10 +8,15 @@ struct ContextCompactionMessageView: View {
 
     let message: Message
 
+    /// 时间线横线的固定高度选 1pt，与 `AppLabeledDivider` 的风格一致。
+    /// 避免裸 `Rectangle()` 在 HStack 中横向拉伸时被撑到整行高度（显得过粗）。
+    private let dividerHeight: CGFloat = 1
+
     var body: some View {
         HStack(spacing: 8) {
             Rectangle()
                 .fill(theme.divider.opacity(0.7))
+                .frame(height: dividerHeight)
                 .frame(maxWidth: .infinity)
 
             Image(systemName: "arrow.triangle.2.circlepath")
@@ -27,6 +32,7 @@ struct ContextCompactionMessageView: View {
 
             Rectangle()
                 .fill(theme.divider.opacity(0.7))
+                .frame(height: dividerHeight)
                 .frame(maxWidth: .infinity)
         }
         .foregroundStyle(theme.textSecondary)

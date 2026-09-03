@@ -46,7 +46,6 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     /// Stored on the MainActor-isolated service because the closure itself
     /// is non-Sendable (it may touch AppKit).
     private var pendingImmediateInstallHandler: (() -> Void)?
-    private var requestObserver: UpdateRequestObserver?
 
     /// Convenience access to the underlying `SPUUpdater`.
     public var updater: SPUUpdater? {
@@ -55,10 +54,6 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
 
     override init() {
         super.init()
-        requestObserver = UpdateRequestObserver(
-            onCheckForUpdates: { [weak self] in self?.checkForUpdates() },
-            onInstallPreparedUpdate: { [weak self] in self?.handleInstallPreparedAppUpdateRequest() }
-        )
     }
 
     // MARK: - Public API
@@ -162,11 +157,11 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
 
     // MARK: - Notification Handlers
 
-    @objc private func handleCheckForUpdatesRequest() {
+    @objc func handleCheckForUpdatesRequest() {
         checkForUpdates()
     }
 
-    @objc private func handleInstallPreparedAppUpdateRequest() {
+    @objc func handleInstallPreparedAppUpdateRequest() {
         guard let handler = pendingImmediateInstallHandler else { return }
         pendingImmediateInstallHandler = nil
         Task {

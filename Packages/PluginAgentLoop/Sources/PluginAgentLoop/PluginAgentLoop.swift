@@ -41,6 +41,7 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
 
     private var messageObserver: MessageObserver?
     private var toolManagerObserver: ToolManagerObserver?
+    private var toolJobObserver: ToolJobObserver?
 
     public init() {}
 
@@ -80,6 +81,9 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
             conversations: conversations,
             contextProvider: contextProvider
         )
+        toolJobObserver = ToolJobObserver(toolManager: toolManager) { [weak agentLoop] event in
+            agentLoop?.handleToolJobEvent(event)
+        }
         agentLoop.setLifecycleHooks(kernel.resolveProvider((any LifecycleHooksProviding).self))
 
         // 3. 注销默认的 AgentLoopProviding
@@ -95,6 +99,8 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
         messageObserver = nil
         toolManagerObserver?.cancel()
         toolManagerObserver = nil
+        toolJobObserver?.cancel()
+        toolJobObserver = nil
         // 插件卸载时，内核会自动按归属移除 Provider
     }
 

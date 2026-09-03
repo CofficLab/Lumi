@@ -80,7 +80,11 @@ struct LLMContextPluginTests {
         let conversationID = UUID()
         for index in 0...LLMContextProvider.compactionMessageThreshold {
             messages.insertMessage(
-                Message(conversationID: conversationID, role: .user, content: "消息 \(index)"),
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "历史内容 ", count: 100) + "\(index)"
+                ),
                 to: conversationID
             )
         }
@@ -88,17 +92,34 @@ struct LLMContextPluginTests {
         // 第一次请求不等待摘要，触发后台刷新。
         let initial = await provider.messagesForLLM(in: conversationID)
         #expect(initial.count == LLMContextProvider.compactionMessageThreshold + 1)
+        #expect(!messages.messages(for: conversationID).contains {
+            MessageTimelineEvent.isActualContextCompaction($0)
+        })
 
         for _ in 0..<12 {
             try await Task.sleep(nanoseconds: 100_000_000)
-            let compacted = await provider.messagesForLLM(in: conversationID)
-            if compacted.contains(where: { $0.metadata["llmContext"] == "summary" }) {
-                #expect(compacted.count < initial.count)
-                #expect(compacted.contains { $0.content.contains("摘要结果") })
+            if summaryProvider.completeCalls == 1 {
+                let request = LLMContextPreparationRequest(
+                    conversationID: conversationID,
+                    providerID: summaryProvider.providerID,
+                    model: "summary-model",
+                    budget: LLMContextBudget(
+                        contextWindowTokens: 5_000,
+                        reservedOutputTokens: 500,
+                        safetyMarginTokens: 500
+                    ),
+                    mode: .beforeSend
+                )
+                let compacted = await provider.prepareContext(for: request)
+                #expect(compacted.didCompact)
+                #expect(compacted.messages.contains { $0.metadata["llmContext"] == "summary" })
                 #expect(messages.messages(for: conversationID).contains {
-                    MessageTimelineEvent.isContextCompaction($0)
+                    MessageTimelineEvent.isActualContextCompaction($0)
                 })
-                #expect(!compacted.contains(where: MessageTimelineEvent.isContextCompaction))
+                #expect(!messages.messages(for: conversationID).contains {
+                    MessageTimelineEvent.isContextCompaction($0)
+                        && !MessageTimelineEvent.isActualContextCompaction($0)
+                })
                 #expect(summaryProvider.completeCalls == 1)
                 return
             }
@@ -150,6 +171,9 @@ struct LLMContextPluginTests {
         #expect(!result.didFallback)
         #expect(result.estimatedInputTokens <= result.inputTokenLimit)
         #expect(result.messages.contains { $0.metadata["llmContext"] == "summary" })
+        #expect(messages.messages(for: conversationID).contains {
+            MessageTimelineEvent.isActualContextCompaction($0)
+        })
     }
 
     @Test("超过原先消息上限后仍能滚动生成摘要")
@@ -194,10 +218,7 @@ struct LLMContextPluginTests {
         for _ in 0..<20 {
             try await Task.sleep(nanoseconds: 100_000_000)
             _ = await provider.prepareContext(for: request)
-            let compactionCount = messages.messages(for: conversationID)
-                .filter(MessageTimelineEvent.isContextCompaction)
-                .count
-            if compactionCount >= 2 {
+            if summaryProvider.completeCalls >= 2 {
                 #expect(summaryProvider.completeCalls >= 2)
                 return
             }
@@ -221,7 +242,11 @@ struct LLMContextPluginTests {
         let conversationID = UUID()
         for index in 0...LLMContextProvider.compactionMessageThreshold {
             messages.insertMessage(
-                Message(conversationID: conversationID, role: .user, content: "消息 \(index)"),
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "持久化摘要内容 ", count: 100) + "\(index)"
+                ),
                 to: conversationID
             )
         }

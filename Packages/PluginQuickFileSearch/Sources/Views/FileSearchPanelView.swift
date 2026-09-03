@@ -7,16 +7,22 @@ import AppKit
 ///
 /// 悬浮在应用主界面之上的文件搜索框
 public struct FileSearchPanelView: View {
-    @StateObject private var hotkeyManager = FileSearchHotkeyManager.shared
-    @StateObject private var searchService = FileSearchService.shared
+    @ObservedObject private var hotkeyManager: FileSearchHotkeyManager
+    @ObservedObject private var searchService: FileSearchService
 
     private let windowIdProvider: () -> UUID?
 
     @FocusState private var isSearchFocused: Bool
     @State private var selectedIndex: Int = 0
 
-    public init(windowIdProvider: @escaping () -> UUID? = { nil }) {
+    public init(
+        windowIdProvider: @escaping () -> UUID? = { nil },
+        hotkeyManager: FileSearchHotkeyManager,
+        searchService: FileSearchService
+    ) {
         self.windowIdProvider = windowIdProvider
+        self.hotkeyManager = hotkeyManager
+        self.searchService = searchService
     }
 
     public var body: some View {
@@ -233,13 +239,19 @@ public struct FileSearchPanelView: View {
 // MARK: - Preview
 
 #Preview("File Search Panel - Empty") {
-    FileSearchPanelView()
+    FileSearchPanelView(
+        hotkeyManager: FileSearchHotkeyManager.shared,
+        searchService: FileSearchService.shared
+    )
         .inRootView()
         .frame(width: 500, height: 200)
 }
 
 #Preview("File Search Panel - With Results") {
-    FileSearchPanelView()
+    FileSearchPanelView(
+        hotkeyManager: FileSearchHotkeyManager.shared,
+        searchService: FileSearchService.shared
+    )
         .inRootView()
         .frame(width: 800, height: 500)
 }

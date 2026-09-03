@@ -9,17 +9,14 @@ public final class ProjectRAGProvider: ProjectRAGProviding {
     private let service: RAGService
     private weak var project: (any ProjectProviding)?
     private var observers: [UUID: (ProjectRAGEvent) -> Void] = [:]
-    private var projectObserver: ProjectRAGProjectObserver?
 
     public init(service: RAGService, project: (any ProjectProviding)?) {
         self.service = service
         self.project = project
-        if let project {
-            projectObserver = ProjectRAGProjectObserver(project: project) { [weak self] in
-                guard let self else { return }
-                self.notify(.projectChanged(self.currentProjectPath))
-            }
-        }
+    }
+
+    func handleProjectChange() {
+        notify(.projectChanged(currentProjectPath))
     }
 
     @discardableResult

@@ -4,15 +4,11 @@ import SwiftUI
 
 /// 缓存命中率工具栏视图。
 struct CacheHitRateToolbarView: View {
-    let conversations: any ConversationManaging
     let messages: any MessageManaging
+    @ObservedObject var state: CacheHitRateToolbarState
 
-    @State private var selectedConversationID: UUID?
     @State private var stats = CacheHitRateStats.empty
     @State private var isPopoverPresented = false
-    @State private var messageRefreshRevision = 0
-
-    @State private var observer: CacheHitRateObserver?
 
     var body: some View {
         Group {
@@ -44,28 +40,10 @@ struct CacheHitRateToolbarView: View {
                 }
             }
         }
-        .task {
-            observer = CacheHitRateObserver(
-                conversations: conversations,
-                messages: messages,
-                onConversationChange: { newID in
-                selectedConversationID = newID
-                },
-                onMessageInsert: { conversationID in
-                    if conversationID == selectedConversationID {
-                        messageRefreshRevision &+= 1
-                    }
-                }
-            )
-        }
-        .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(messageRefreshRevision)") {
+        .task(id: "\(state.selectedConversationID?.uuidString ?? "nil")-\(state.messageRefreshRevision)") {
             try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled else { return }
             await refresh()
-        }
-        .onDisappear {
-            observer?.cancel()
-            observer = nil
         }
     }
 
@@ -78,12 +56,12 @@ struct CacheHitRateToolbarView: View {
     }
 
     private func refresh() async {
-        guard let conversationID = selectedConversationID else {
+        guard let conversationID = state.selectedConversationID else {
             stats = .empty
             return
         }
         let snapshot = await messages.messagesSnapshot(in: conversationID)
-        guard conversationID == selectedConversationID else { return }
+        guard conversationID == state.selectedConversationID else { return }
         stats = CacheHitRateStats.compute(messages: snapshot)
     }
 }

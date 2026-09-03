@@ -25,7 +25,6 @@ final class SendActionBarViewModel: SuperLog {
     private let sender: any MessageSendingProviding
     private let conversations: any ConversationManaging
     private let conversationState: any ConversationStateProviding
-    private var conversationObserver: SendActionBarConversationObserver?
 
     private(set) var state: SendActionBarState
 
@@ -48,11 +47,6 @@ final class SendActionBarViewModel: SuperLog {
                 hasAttachments: !sender.pendingImageAttachments.isEmpty || !sender.pendingFileAttachments.isEmpty
             )
         )
-        conversationObserver = SendActionBarConversationObserver(
-            conversations: conversations,
-            conversationState: conversationState,
-            onChange: { [weak self] in self?.refreshConversationState() }
-        )
     }
 
     // MARK: - State updates
@@ -71,17 +65,12 @@ final class SendActionBarViewModel: SuperLog {
         )
     }
 
-    private func refreshConversationState() {
+    func refreshConversationState() {
         guard let conversationID = conversations.selectedConversationID else {
             state.isSending = false
             return
         }
         state.isSending = conversationState.state(for: conversationID).isSending
-    }
-
-    func stopObservingConversationState() {
-        conversationObserver?.cancel()
-        conversationObserver = nil
     }
 
     // MARK: - Actions

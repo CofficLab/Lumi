@@ -4,8 +4,12 @@ import LumiUI
 import KitSuperLog
 
 struct BrewManagerView: View {
-    @StateObject private var viewModel = BrewManagerViewModel()
+    @ObservedObject private var viewModel: BrewManagerViewModel
     @State private var selectedTab: BrewTab = .installed
+
+    init(viewModel: BrewManagerViewModel) {
+        self.viewModel = viewModel
+    }
 
     enum BrewTab: String, CaseIterable, Identifiable {
         case installed = "Installed"
@@ -46,9 +50,6 @@ struct BrewManagerView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.errorMessage)
-        .onReceive(NotificationCenter.default.publisher(for: .brewManagerRefreshRequested)) { _ in
-            Task { await viewModel.refresh() }
-        }
     }
 
     private var content: some View {

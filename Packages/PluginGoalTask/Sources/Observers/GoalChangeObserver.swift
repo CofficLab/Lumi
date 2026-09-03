@@ -1,24 +1,52 @@
 import Foundation
 
-/// Observes goal-change notifications emitted by Goal Task tools.
+/// Typed, plugin-local change channel for Goal Task mutations.
 @MainActor
-final class GoalChangeObserver {
-    private var token: NSObjectProtocol?
+final class GoalChangeCenter {
+    static let shared = GoalChangeCenter()
 
-    init(onChange: @escaping (Notification) -> Void) {
-        token = NotificationCenter.default.addObserver(
-            forName: .goalDidChange,
-            object: nil,
-            queue: .main
-        ) { notification in
-            onChange(notification)
+    private var callbacks: [UUID: (UUID) -> Void] = [:]
+
+    @discardableResult
+    func addObserver(_ callback: @escaping (UUID) -> Void) -> GoalChangeToken {
+        let id = UUID()
+        callbacks[id] = callback
+        return GoalChangeToken { [weak self] in
+            self?.callbacks[id] = nil
         }
     }
 
+    func notify(conversationID: UUID) {
+        callbacks.values.forEach { $0(conversationID) }
+    }
+}
+
+@MainActor
+final class GoalChangeToken {
+    private var cancellation: (() -> Void)?
+
+    init(cancellation: @escaping () -> Void) {
+        self.cancellation = cancellation
+    }
+
     func cancel() {
-        if let token {
-            NotificationCenter.default.removeObserver(token)
-            self.token = nil
-        }
+        cancellation?()
+        cancellation = nil
+    }
+
+}
+
+/// Observes goal-change notifications emitted by Goal Task tools.
+@MainActor
+final class GoalChangeObserver {
+    private var token: GoalChangeToken?
+
+    init(onChange: @escaping (UUID) -> Void) {
+        token = GoalChangeCenter.shared.addObserver(onChange)
+    }
+
+    func cancel() {
+        token?.cancel()
+        token = nil
     }
 }

@@ -7,12 +7,18 @@ import Combine
 public struct DeviceInfoMenuBarPopupView: View {
     // MARK: - Properties
 
-    @StateObject private var viewModel = CPUManagerViewModel()
+    @ObservedObject private var viewModel: CPUManagerViewModel
+    private let historyViewModel: DeviceHistoryViewModel<CPUDataPoint>
+
+    init(viewModel: CPUManagerViewModel, historyViewModel: DeviceHistoryViewModel<CPUDataPoint>) {
+        self.viewModel = viewModel
+        self.historyViewModel = historyViewModel
+    }
 
     // MARK: - Body
 
     public var body: some View {
-        HoverableContainerView(detailView: CPUHistoryDetailView()) {
+        HoverableContainerView(detailView: CPUHistoryDetailView(viewModel: historyViewModel)) {
             VStack(spacing: 0) {
                 // 实时 CPU 负载显示
                 liveCpuView

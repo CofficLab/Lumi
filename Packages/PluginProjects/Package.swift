@@ -13,6 +13,7 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../KitLLM"),
         .package(path: "../KitLocalization"),
+        .package(path: "../ProviderConversation"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderProjectRAG"),
@@ -33,6 +34,7 @@ let package = Package(
                 "KitLLM",
                 "KitLocalization",
                 "LumiUI",
+                "ProviderConversation",
                 "ProviderProject",
                 "ProviderProjectRAG",
                 "ProviderSettingView",
@@ -50,6 +52,7 @@ let package = Package(
             dependencies: [
                 "PluginProjects",
                 .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
             ]
         ),
     ]

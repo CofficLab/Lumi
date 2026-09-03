@@ -12,7 +12,11 @@ public struct DeviceInfoMenuBarContentView: View {
     // MARK: - Properties
 
     // 共享 ViewModel 保证 CPU/内存指标持续更新。
-    @ObservedObject private var viewModel = DeviceInfoMenuBarContentViewModel.shared
+    @ObservedObject private var viewModel: DeviceInfoMenuBarContentViewModel
+
+    init(viewModel: DeviceInfoMenuBarContentViewModel) {
+        self.viewModel = viewModel
+    }
 
     // MARK: - Body
 

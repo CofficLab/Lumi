@@ -27,6 +27,9 @@ public final class ConversationCacheHitRatePlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
+    private let toolbarState = CacheHitRateToolbarState()
+    private var observer: CacheHitRateObserver?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -37,6 +40,19 @@ public final class ConversationCacheHitRatePlugin: SuperPlugin, SuperLog {
             return
         }
 
+        observer?.cancel()
+        observer = CacheHitRateObserver(
+            conversations: conversations,
+            messages: messages,
+            onConversationChange: { [weak toolbarState] newID in
+                toolbarState?.selectedConversationID = newID
+            },
+            onMessageInsert: { [weak toolbarState] conversationID in
+                guard conversationID == toolbarState?.selectedConversationID else { return }
+                toolbarState?.messageRefreshRevision &+= 1
+            }
+        )
+
         chat.addBarItems([
             ChatSectionBarItem(
                 id: "\(id).toolbar-button",
@@ -44,17 +60,25 @@ public final class ConversationCacheHitRatePlugin: SuperPlugin, SuperLog {
                 placement: .toolbarLeading
             ) {
                 CacheHitRateToolbarView(
-                    conversations: conversations,
-                    messages: messages
+                    messages: messages,
+                    state: self.toolbarState
                 )
             },
         ])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        observer?.cancel()
+        observer = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar-button")
     }
+}
+
+@MainActor
+final class CacheHitRateToolbarState: ObservableObject {
+    @Published var selectedConversationID: UUID?
+    @Published var messageRefreshRevision = 0
 }
 
 // MARK: - Cache Hit Rate Stats

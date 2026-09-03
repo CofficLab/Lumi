@@ -6,13 +6,20 @@ import KernelCore
 public struct NetworkMenuBarPopupView: View {
     // MARK: - Properties
 
-    @ObservedObject private var viewModel = NetworkManagerViewModel.shared
-    @ObservedObject private var historyService = NetworkHistoryService.shared
+    @ObservedObject private var viewModel: NetworkManagerViewModel
+    @ObservedObject private var historyViewModel: NetworkHistoryViewModel
+
+    init(viewModel: NetworkManagerViewModel, historyViewModel: NetworkHistoryViewModel) {
+        self.viewModel = viewModel
+        self.historyViewModel = historyViewModel
+    }
+
+    init() { self.init(viewModel: NetworkManagerViewModel(), historyViewModel: NetworkHistoryViewModel()) }
 
     // MARK: - Body
 
     public var body: some View {
-        HoverableContainerView(detailView: NetworkHistoryDetailView()) {
+        HoverableContainerView(detailView: NetworkHistoryDetailView(viewModel: viewModel, historyViewModel: historyViewModel)) {
             VStack(spacing: 0) {
                 // Real-time speed display
                 liveSpeedView
@@ -66,7 +73,7 @@ public struct NetworkMenuBarPopupView: View {
     // MARK: - Mini Trend View
 
     private var miniTrendView: some View {
-        let recentData = Array(historyService.recentHistory.suffix(60))
+        let recentData = Array(historyViewModel.recentHistory.suffix(60))
         let maxSpeed = max(
             recentData.map(\.downloadSpeed).max() ?? 0,
             recentData.map(\.uploadSpeed).max() ?? 0,

@@ -1,6 +1,7 @@
 import Foundation
 import ProviderAgentLoop
 import ProviderMessage
+import ProviderMessageStreaming
 
 /// V1-only data source that pages message windows and projects each visible
 /// window into AgentTurns. Persisted process messages are rebuilt from the
@@ -25,16 +26,12 @@ final class ListV1ViewModel: ObservableObject {
     private let pagination: MessageListPaginationService
     private let refreshGate = MessageListTailRefreshGate()
     private var records: [AgentTurnRecord] = [] // newest first
+    private var agentTurnViewModels: [UUID: AgentTurnViewModel] = [:]
     /// 当前已加载的消息窗口，按时间升序排列。
     private var messageWindow: [Message] = []
     private var activeConversationID: UUID?
     /// 激活序列号，用于防止并发 activate 的竞态。
     private var activationSequence: UInt64 = 0
-    private let servicesObserver = MessageListServicesObserver()
-    private var didBindMessageChanges = false
-    /// objectWillChange remains the compatibility fallback for edits/deletes;
-    /// insertion events already carry the complete message payload.
-    private var pendingInsertionFallbacksToSkip = 0
 
     init(services: MessageListServices, pageSize: Int = 40) {
         self.services = services
@@ -64,19 +61,27 @@ final class ListV1ViewModel: ObservableObject {
 
     var hasVisibleContent: Bool { !rows.isEmpty }
 
+    func agentTurnViewModel(for item: AgentTurnPresentationItem) -> AgentTurnViewModel {
+        if let viewModel = agentTurnViewModels[item.id] {
+            Task { @MainActor in await viewModel.update(item: item) }
+            return viewModel
+        }
+        let viewModel = AgentTurnViewModel(services: services, item: item)
+        agentTurnViewModels[item.id] = viewModel
+        return viewModel
+    }
+
     /// 用户当前选中的对话 ID（来自内核状态，反映真实意图）。
     var selectedConversationID: UUID? {
         services.selectedConversationID
     }
 
     func activate(conversationID: UUID?) async {
-        bindServicesIfNeeded()
         // 记录当前激活序列号，用于后续异步操作完成后检查是否过期
         activationSequence &+= 1
         let mySequence = activationSequence
 
         activeConversationID = conversationID
-        pendingInsertionFallbacksToSkip = 0
         isLoading = true
         defer { isLoading = false }
 
@@ -227,7 +232,8 @@ final class ListV1ViewModel: ObservableObject {
         summaryItems = turnItems
         pendingUserSnapshot = pendingUserMessages
         pendingStatusSnapshot = pendingStatusMessage
-        let timelineEvents = messageWindow.filter(MessageTimelineEvent.isContextCompaction)
+        // 仅展示确实用于一次上下文压缩的事件；旧版本的预热事件继续隐藏。
+        let timelineEvents = messageWindow.filter(MessageTimelineEvent.isActualContextCompaction)
         presentation = ListV1Presentation(
             agentTurns: agentTurns,
             timelineEvents: timelineEvents
@@ -239,47 +245,45 @@ final class ListV1ViewModel: ObservableObject {
         return lhs.startedAt > rhs.startedAt
     }
 
-    private func bindServicesIfNeeded() {
-        // 必须由 ViewModel 自己监听：空对话时 List 尚未创建，View 内的监听器不存在。
-        // 第一条用户消息正是在这个阶段到达。
-        guard !didBindMessageChanges else { return }
-        guard let messages = services.messages else { return }
-        servicesObserver.bindMessages(
-            messages,
-            onChange: { [weak self] change in
-                self?.handleMessageChange(change)
-            },
-            onWillChange: { [weak self] in
-                guard let self else { return }
-                if self.consumePendingInsertionFallback() {
-                    return
-                }
-                Task { @MainActor [weak self] in
-                    await self?.refresh()
-                }
-            }
-        )
-        didBindMessageChanges = true
+    func handleSelectedConversationChange(_ conversationID: UUID?) {
+        refreshAgentTurnViewModels()
+        Task { @MainActor [weak self] in
+            await self?.activate(conversationID: conversationID)
+        }
+    }
+
+    func handleStreamingChange(_ change: MessageStreamingChange) {
+        guard case let .updated(conversationID) = change,
+              conversationID == selectedConversationID else { return }
+        refreshAgentTurnViewModels()
     }
 
     /// 将插入事件直接应用到当前消息窗口，避免新消息到达时重读数据库。
-    private func handleMessageChange(_ change: MessageChange) {
-        guard case let .inserted(message, conversationID) = change else { return }
-        pendingInsertionFallbacksToSkip += 1
-        guard conversationID == activeConversationID else { return }
-
-        if let index = messageWindow.firstIndex(where: { $0.id == message.id }) {
-            messageWindow[index] = message
-        } else {
-            messageWindow.append(message)
-            messageWindow.sort(by: messageOrdering)
+    func handleMessageChange(_ change: MessageChange) {
+        switch change {
+        case let .inserted(message, conversationID):
+            guard conversationID == activeConversationID else { return }
+            if let index = messageWindow.firstIndex(where: { $0.id == message.id }) {
+                messageWindow[index] = message
+            } else {
+                messageWindow.append(message)
+                messageWindow.sort(by: messageOrdering)
+            }
+            rebuildWindow(for: conversationID, sequence: activationSequence)
+            refreshAgentTurnViewModels()
+        case let .persisted(_, conversationID),
+             let .updated(conversationID: conversationID),
+             let .deleted(_, conversationID: conversationID),
+             let .cleared(conversationID: conversationID):
+            guard conversationID == activeConversationID else { return }
+            Task { @MainActor [weak self] in await self?.refresh() }
+            refreshAgentTurnViewModels()
         }
-        rebuildWindow(for: conversationID, sequence: activationSequence)
     }
 
-    private func consumePendingInsertionFallback() -> Bool {
-        guard pendingInsertionFallbacksToSkip > 0 else { return false }
-        pendingInsertionFallbacksToSkip -= 1
-        return true
+    private func refreshAgentTurnViewModels() {
+        for viewModel in agentTurnViewModels.values {
+            Task { @MainActor in await viewModel.refresh() }
+        }
     }
 }

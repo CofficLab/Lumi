@@ -3,12 +3,6 @@ import KitFileSystem
 import KitSuperLog
 import os
 
-/// 弱引用盒子，用于解决 init 中闭包捕获 self 的顺序问题
-private final class WeakBox<T: AnyObject>: @unchecked Sendable {
-    weak var value: T?
-    public init(_ value: T? = nil) { self.value = value }
-}
-
 /// 文件树刷新协调器
 ///
 /// 作为 FileTreeKit.FileTreeWatcher 和 SwiftUI 视图之间的桥梁：
@@ -59,8 +53,8 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// 当前已展开的目录相对路径集合
     private var expandedPaths: Set<String> = []
 
-    /// 文件系统监听器（来自 FileTreeKit）
-    private let watcher: FileTreeWatcher
+    /// 插件入口注入的文件系统观察器。
+    private weak var observer: FileTreeObserver?
 
     /// Git 状态提供器（线程安全，无 MainActor 依赖）
     private let gitStatusProvider = GitStatusProvider()
@@ -98,15 +92,13 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     // MARK: - Init
 
     public init() {
-        let weakBox = WeakBox<RefreshCoordinator>()
-        watcher = FileTreeWatcher { changedURL in
-            weakBox.value?.handleDirectoryChanged(url: changedURL)
-        }
-        weakBox.value = self
+    }
+
+    func attach(observer: FileTreeObserver) {
+        self.observer = observer
     }
 
     deinit {
-        watcher.stopAll()
         gitStatusRefreshTask?.cancel()
         gitStatusDebounceTask?.cancel()
     }
@@ -118,7 +110,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
         guard path != projectRootPath else { return }
 
         // 清理旧项目的状态
-        watcher.stopAll()
+        observer?.stopWatching()
         expandedPaths.removeAll()
         pendingChangedPaths.removeAll()
         isDebouncePending = false
@@ -150,7 +142,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
 
     /// 停止所有监听（视图消失时调用）
     public func stop() {
-        watcher.stopAll()
+        observer?.stopWatching()
         debounceTask?.cancel()
         pendingChangedPaths.removeAll()
         isDebouncePending = false
@@ -197,7 +189,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     /// 将已展开的相对路径列表转换为绝对 URL 并更新 watcher
     private func updateWatcher() {
         guard !projectRootPath.isEmpty else {
-            watcher.stopAll()
+            observer?.stopWatching()
             return
         }
 
@@ -241,7 +233,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
             directoryURLs.insert(gitDir)
         }
 
-        watcher.updateWatchedDirectories(directoryURLs)
+        observer?.updateWatchedDirectories(directoryURLs)
 
         if Self.verbose {
             Self.logger.info("\(Self.t)📡 已更新监控列表：\(directoryURLs.count) 个目录")
@@ -284,7 +276,7 @@ public final class RefreshCoordinator: ObservableObject, @unchecked Sendable, Su
     }
 
     /// 处理目录变化事件
-    private func handleDirectoryChanged(url: URL) {
+    func handleDirectoryChanged(url: URL) {
         // .git 内部变化只影响 Git 状态标记，不应触发文件树内容重载（否则会把 .git
         // 当成普通变更目录下发，导致节点无谓地重新加载子项）。
         let normalizedPath = PathFormatter.normalizedFilePath(url)

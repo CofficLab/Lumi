@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import ProviderAgentLoop
 import ProviderChatSection
@@ -31,7 +30,6 @@ struct MessageListServices {
     let project: (any ProjectProviding)?
     let toolbar: (any ToolbarProviding)?
     let chat: (any ChatSectionProviding)?
-
     var selectedConversationID: UUID? {
         conversations?.selectedConversationID
     }
@@ -65,34 +63,4 @@ struct MessageListServices {
         return Message(conversationID: conversationID, role: .status, content: content)
     }
 
-    /// 注册选中对话变化观察者（替代旧版 `.lumiSelectedConversationDidChange` 通知）。
-    ///
-    /// 由 `ConversationManaging` 的新 callback 机制驱动，仅在选中值实际变化时回调。
-    /// 无会话 Provider 时返回 no-op 令牌（不接收任何通知），与旧版降级行为一致。
-    @discardableResult
-    func addSelectedConversationObserver(
-        _ callback: @escaping (UUID?) -> Void
-    ) -> (any SelectedConversationObserverHandle)? {
-        conversations?.addSelectedConversationObserver(callback)
-    }
-
-    /// 会话状态变化（列表/设置项变化）的窄播，替代旧版 `.lumiConversationsDidChange` 通知。
-    ///
-    /// 订阅 `ConversationManaging.objectWillChange`：任何会话级 @Published 变化都会触发，
-    /// 包括列表刷新、verbosity 等设置更新。`receive(on:)` 让回调在属性写入完成后执行。
-    var conversationsChangesPublisher: AnyPublisher<Void, Never> {
-        guard let conversations else { return Empty().eraseToAnyPublisher() }
-        return conversations.objectWillChange
-            .map { _ in () }
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
-    }
-
-    /// 提示词贡献变化（插件启停或贡献重建时刷新空态）。
-    var promptSuggestionsChangesPublisher: AnyPublisher<Void, Never> {
-        guard let promptSuggestions else { return Empty().eraseToAnyPublisher() }
-        return promptSuggestions.changes
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
-    }
 }

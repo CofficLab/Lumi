@@ -31,6 +31,7 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
         stage: .preview,
         policy: .disabledByDefault
     )
+    private let projectObserver = TerminalV2ProjectObserver(project: nil)
 
     public init() {}
 
@@ -51,6 +52,8 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let project = kernel.resolveProvider((any ProjectProviding).self)
+        projectObserver.bind(project: project)
+        let terminalProjectObserver = projectObserver
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
@@ -67,7 +70,7 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
                     chat?.setVisible(false)
                     rootView?.setRailView(nil)
                     rootView?.setContentHeaderViewHidden(true)
-                    content?.setContentView(AnyView(TerminalV2MainView(project: project)))
+                    content?.setContentView(AnyView(TerminalV2MainView(observer: terminalProjectObserver)))
                 } else {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     chat?.setVisible(true)
@@ -80,6 +83,7 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        projectObserver.cancel()
         TerminalTabsViewModel.shared.closeAllSessions()
         TerminalTabsViewModel.bottomPanel.closeAllSessions()
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
@@ -105,10 +109,10 @@ public final class TerminalSuperPlugin: SuperPlugin, SuperLog {
 
 @MainActor
 private struct TerminalV2MainView: View {
-    @StateObject private var observer: TerminalV2ProjectObserver
+    @ObservedObject private var observer: TerminalV2ProjectObserver
 
-    init(project: (any ProjectProviding)?) {
-        self._observer = StateObject(wrappedValue: TerminalV2ProjectObserver(project: project))
+    init(observer: TerminalV2ProjectObserver) {
+        self._observer = ObservedObject(wrappedValue: observer)
     }
 
     var body: some View {

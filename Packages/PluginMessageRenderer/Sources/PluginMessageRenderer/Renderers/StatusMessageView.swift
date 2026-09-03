@@ -17,6 +17,9 @@ struct StatusMessageView: View {
     let message: Message
     let verbosity: ResponseVerbosity
     @State private var showInfoPopover = false
+    /// 悬停态:时间戳与操作按钮仅在悬停(或 info popover 打开)时物化,
+    /// 与 `MessageViewChrome` 的 header 行为保持一致。
+    @State private var isHovered = false
 
     var body: some View {
         CompactMessageHeaderView {
@@ -36,10 +39,14 @@ struct StatusMessageView: View {
             }
         } trailing: {
             HStack(alignment: .center, spacing: 12) {
-                AppIdentityRow(
-                    title: MessageViewHelpers.formatTimestamp(message.createdAt),
-                    titleColor: theme.textSecondary
-                )
+                // 时间戳与操作按钮仅在悬停(或 info popover 打开)时物化,
+                // 与 `MessageViewChrome` 的 header 行为保持一致。
+                if isHovered || showInfoPopover {
+                    AppIdentityRow(
+                        title: MessageViewHelpers.formatTimestamp(message.createdAt),
+                        titleColor: theme.textSecondary
+                    )
+                }
 
                 if message.role != .status {
                     MessageInfoButton(
@@ -48,6 +55,9 @@ struct StatusMessageView: View {
                     )
                 }
             }
+        }
+        .onHover { hovering in
+            isHovered = hovering
         }
     }
 }

@@ -6,7 +6,7 @@ struct ListV1Presentation: Equatable {
     var agentTurns: [AgentTurnPresentationItem] = []
     var timelineEvents: [Message] = []
 
-    /// V1 按 Agent Turn 聚合，但时间线事件必须保持为独立行。
+    /// V1 按 Agent Turn 聚合，真正发生上下文压缩时的事件保持为独立行。
     var rows: [ListV1PresentationRow] {
         (agentTurns.map(ListV1PresentationRow.agentTurn)
             + timelineEvents.map(ListV1PresentationRow.timelineEvent))

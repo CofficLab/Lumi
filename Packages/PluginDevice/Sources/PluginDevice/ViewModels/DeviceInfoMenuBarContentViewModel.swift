@@ -11,8 +11,6 @@ import SwiftUI
 /// 生成 `DeviceInfoMenuBarSnapshot`（内含预渲染的 NSImage）。
 @MainActor
 final class DeviceInfoMenuBarContentViewModel: ObservableObject, SuperLog {
-    static let shared = DeviceInfoMenuBarContentViewModel()
-
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "devicemenubar.view")
     nonisolated public static let emoji = "📊"
     nonisolated(unsafe) static var verbose: Bool = false
@@ -20,82 +18,41 @@ final class DeviceInfoMenuBarContentViewModel: ObservableObject, SuperLog {
     @Published private(set) var snapshot = DeviceInfoMenuBarSnapshot(metrics: .empty)
 
     private var lastMetrics = DeviceInfoMenuBarMetrics.empty
-    private var cancellables = Set<AnyCancellable>()
-    private var appearanceObserver: MenuBarAppearanceObserver?
 
     /// 心跳节流计数：Combine sink 每触发一次自增，每 N 次打一条日志，
     /// 避免每秒 12 条心跳刷屏。用于排查 CPU 占用持续 100% 时确认本链路是否在狂跑。
-    private var sinkTickCount = 0
-    private let sinkTickLogEvery = 10
-
-    private init() {
-        if Self.verbose { Self.logger.info("\(Self.t)ViewModel init，启动监控") }
-        startMonitoring()
-        appearanceObserver = MenuBarAppearanceObserver { [weak self] button in
-            guard let self else { return }
-            if Self.verbose { Self.logger.info("\(self.t)收到外观变更通知，刷新快照") }
-            if let button {
-                let appearance = button.window?.effectiveAppearance ?? button.effectiveAppearance
-                appearance.performAsCurrentDrawingAppearance {
-                    self.refreshSnapshotForCurrentAppearance()
-                }
-            } else {
-                self.refreshSnapshotForCurrentAppearance()
-            }
-        }
-    }
+    init() {}
 
     func refreshSnapshotForCurrentAppearance() {
         snapshot = DeviceInfoMenuBarSnapshot(metrics: lastMetrics)
     }
 
-    private func startMonitoring() {
-        CPUService.shared.startMonitoring()
-        MemoryService.shared.startMonitoring()
-        if Self.verbose { Self.logger.info("\(Self.t)订阅 CPU/Memory 发布者，启动 Combine 链(debounce 80ms)") }
-
-        let cpuMetrics = Publishers.CombineLatest3(
-            CPUService.shared.$cpuUsage,
-            CPUService.shared.$perCoreUsage,
-            CPUService.shared.$loadAverage
-        )
-        .map { usage, perCoreUsage, _ in
-            DeviceInfoMenuBarCPUMetrics(
+    func applyCPU(usage: Double, perCoreUsage: [Double]) {
+        updateMetrics(
+            cpu: DeviceInfoMenuBarCPUMetrics(
                 usagePercent: Int(usage.rounded()),
                 perCoreUsagePercent: perCoreUsage.map { Int($0.rounded()) }
-            )
-        }
-
-        let memoryMetrics = Publishers.CombineLatest3(
-            MemoryService.shared.$memoryUsagePercentage,
-            MemoryService.shared.$usedMemory,
-            MemoryService.shared.$totalMemory
+            ),
+            memory: lastMetrics.memory
         )
-        .map { usage, used, total in
-            DeviceInfoMenuBarMemoryMetrics(
-                usagePercent: Int(usage.rounded()),
+    }
+
+    func applyMemory(percentage: Double, used: UInt64, total: UInt64) {
+        updateMetrics(
+            cpu: lastMetrics.cpu,
+            memory: DeviceInfoMenuBarMemoryMetrics(
+                usagePercent: Int(percentage.rounded()),
                 usedMemory: ByteCountFormatter.string(fromByteCount: Int64(used), countStyle: .memory),
                 totalMemory: ByteCountFormatter.string(fromByteCount: Int64(total), countStyle: .memory)
             )
-        }
+        )
+    }
 
-        cpuMetrics
-            .combineLatest(memoryMetrics)
-            .debounce(for: .milliseconds(80), scheduler: RunLoop.main)
-            .map { DeviceInfoMenuBarMetrics(cpu: $0, memory: $1) }
-            .removeDuplicates()
-            .sink { [weak self] metrics in
-                guard let self else { return }
-                self.lastMetrics = metrics
-                self.snapshot = DeviceInfoMenuBarSnapshot(metrics: metrics)
-                // 节流心跳：每 N 次重绘打一条，确认本链路是否持续在重生成 NSImage。
-                // 若这里高频触发，说明上游 CPU/Memory 发布者在持续推送，是 100% CPU 的直接信号。
-                self.sinkTickCount += 1
-                if Self.verbose, self.sinkTickCount % self.sinkTickLogEvery == 0 {
-                    Self.logger.info("\(self.t)tick #\(self.sinkTickCount) 刷新快照，cpu=\(metrics.cpu.usagePercent)%，mem=\(metrics.memory.usagePercent)%")
-                }
-            }
-            .store(in: &cancellables)
+    private func updateMetrics(cpu: DeviceInfoMenuBarCPUMetrics, memory: DeviceInfoMenuBarMemoryMetrics) {
+        let metrics = DeviceInfoMenuBarMetrics(cpu: cpu, memory: memory)
+        guard metrics != lastMetrics else { return }
+        lastMetrics = metrics
+        snapshot = DeviceInfoMenuBarSnapshot(metrics: metrics)
     }
 }
 

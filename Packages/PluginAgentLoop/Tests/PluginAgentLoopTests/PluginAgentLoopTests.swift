@@ -81,6 +81,24 @@ func testRetryableLLMFailureRetriesCurrentTurn() {
     #expect(exhausted.0.phase == .failed(reason: "incomplete tool call"))
 }
 
+@Test("LLM 失败结果保留原始错误供专用渲染器使用")
+func testLLMFailureKeepsStructuredError() throws {
+    let result = AgentLoopManager.LLMRequestResult.failure(
+        error: VendorAPIError.missingAPIKey("OpenCode Go"),
+        recoverable: false
+    )
+
+    guard case let .failure(error, recoverable) = result else {
+        Issue.record("Expected an LLM failure result")
+        return
+    }
+
+    let vendorError = try #require(error as? VendorAPIError)
+    #expect(!recoverable)
+    #expect(vendorError.renderKind == LLMErrorRenderKind.apiKeyMissing)
+    #expect(vendorError.rawErrorDetail == "Missing API key for: OpenCode Go")
+}
+
 @Test("LLM 成功响应会清除工具协议恢复状态")
 func testSuccessfulLLMResponseClearsRecoveryState() {
     let turnID = UUID()

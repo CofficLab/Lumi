@@ -43,6 +43,7 @@ public final class FileSearchService: NSObject, ObservableObject, SuperLog {
     private var activeQuery: NSMetadataQuery?
     private var searchTask: Task<Void, Never>?
     private var generation = 0
+    private var gatheringObserverFactory: ((NSMetadataQuery, TimeInterval) -> SpotlightGatheringObserver)?
 
     /// 单次查询超时（秒）——Spotlight 未命中时降级返回空
     private let queryTimeout: TimeInterval = 1.5
@@ -53,6 +54,12 @@ public final class FileSearchService: NSObject, ObservableObject, SuperLog {
 
     private override init() {
         super.init()
+    }
+
+    func configureGatheringObserverFactory(
+        _ factory: @escaping (NSMetadataQuery, TimeInterval) -> SpotlightGatheringObserver
+    ) {
+        gatheringObserverFactory = factory
     }
 
     // MARK: - Search
@@ -104,7 +111,13 @@ public final class FileSearchService: NSObject, ObservableObject, SuperLog {
 
         // 首批 gathering 完成 / 超时 / Task 取消，三者任一先到即恢复
         let timeout = queryTimeout
-        let gatheringObserver = SpotlightGatheringObserver(query: metadataQuery, timeout: timeout)
+        guard let gatheringObserverFactory else {
+            metadataQuery.stop()
+            activeQuery = nil
+            isSearching = false
+            return
+        }
+        let gatheringObserver = gatheringObserverFactory(metadataQuery, timeout)
         for await _ in gatheringObserver.stream {
             break
         }

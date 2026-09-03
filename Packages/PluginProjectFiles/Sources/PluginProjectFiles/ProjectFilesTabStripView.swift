@@ -1,14 +1,13 @@
 import LumiUI
-import ProviderProject
 import SwiftUI
 
 /// `ProjectProviding` 的当前打开文件标签栏。
 public struct ProjectFilesTabStripView: View {
-    @StateObject private var viewModel: ProjectFilesTabViewModel
+    @ObservedObject private var viewModel: ProjectFilesTabViewModel
     @LumiTheme private var theme
 
-    public init(project: any ProjectProviding) {
-        _viewModel = StateObject(wrappedValue: ProjectFilesTabViewModel(project: project))
+    public init(viewModel: ProjectFilesTabViewModel) {
+        self.viewModel = viewModel
     }
 
     public var body: some View {

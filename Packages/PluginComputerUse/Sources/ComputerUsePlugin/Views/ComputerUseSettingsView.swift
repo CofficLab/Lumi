@@ -4,12 +4,17 @@ import SwiftUI
 
 @MainActor
 struct ComputerUseSettingsView: View {
+    @ObservedObject private var state: ComputerUseSettingsState
     @LumiTheme private var theme
     @State private var applications: [RunningApplicationItem] = []
     @State private var selectedBundleIdentifier: String?
     @State private var screenRecordingAllowed = false
     @State private var accessibilityAllowed = false
     @State private var revision = 0
+
+    init(state: ComputerUseSettingsState) {
+        self._state = ObservedObject(wrappedValue: state)
+    }
 
     private var selectedApplication: RunningApplicationItem? {
         guard let selectedBundleIdentifier else { return nil }
@@ -28,7 +33,7 @@ struct ComputerUseSettingsView: View {
         }
         .id(revision)
         .onAppear(perform: refresh)
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in refresh() }
+        .onChange(of: state.revision) { _, _ in refresh() }
     }
 
     private var permissionsSection: some View {

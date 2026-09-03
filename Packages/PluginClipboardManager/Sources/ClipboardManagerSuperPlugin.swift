@@ -28,6 +28,10 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
         policy: .disabledByDefault
     )
 
+    private var viewModel: ClipboardManagerViewModel?
+    private var historyObserver: ClipboardHistoryObserver?
+    private var monitorObserver: ClipboardMonitorObserver?
+
     public init() {}
 
     public func onRegister(kernel: KernelCoreContainer) throws {
@@ -42,7 +46,13 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        ClipboardMonitor.shared.startMonitoring()
+        monitorObserver?.cancel()
+        monitorObserver = ClipboardMonitorObserver()
+        let viewModel = ClipboardManagerViewModel()
+        self.viewModel = viewModel
+        historyObserver = ClipboardHistoryObserver { [weak viewModel] in
+            viewModel?.refresh()
+        }
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
@@ -61,7 +71,7 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
                 ) { state in
                     if state == .activated {
                         toolbar?.setVisibleCategories([.global, .system])
-                        content?.setContentView(AnyView(ClipboardHistoryView()))
+                        content?.setContentView(AnyView(ClipboardHistoryView(viewModel: viewModel)))
                         chat?.setVisible(false)
                         rootView?.setRailView(nil)
                         rootView?.setContentHeaderViewHidden(true)
@@ -74,12 +84,16 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
                 },
             ])
         } else {
-            content?.setContentView(AnyView(ClipboardHistoryView()))
+            content?.setContentView(AnyView(ClipboardHistoryView(viewModel: viewModel)))
         }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        ClipboardMonitor.shared.stopMonitoring()
+        monitorObserver?.cancel()
+        monitorObserver = nil
+        historyObserver?.cancel()
+        historyObserver = nil
+        viewModel = nil
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         activityBar?.removeItems(ids: ["\(id).entry"])

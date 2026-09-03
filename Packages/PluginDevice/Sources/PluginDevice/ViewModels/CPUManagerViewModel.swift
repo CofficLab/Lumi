@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 
 @MainActor
 class CPUManagerViewModel: ObservableObject {
@@ -16,65 +15,28 @@ class CPUManagerViewModel: ObservableObject {
     @Published var systemUsage: Double = 0.0
     @Published var idleUsage: Double = 100.0
     
-    private var cancellables = Set<AnyCancellable>()
     private let monitorsProcesses: Bool
     
     // MARK: - Initialization
     
     init(monitorsProcesses: Bool = true) {
         self.monitorsProcesses = monitorsProcesses
-        startMonitoring()
-    }
-
-    deinit {
-        let monitorsProcesses = monitorsProcesses
-        Task { @MainActor in
-            CPUService.shared.stopMonitoring()
-            if monitorsProcesses {
-                ProcessService.shared.stopMonitoring()
-            }
-        }
     }
     
     // MARK: - Public Methods
     
-    func startMonitoring() {
-        CPUService.shared.startMonitoring()
-        if monitorsProcesses {
-            ProcessService.shared.startMonitoring()
-        }
+    func apply(usage: Double, perCoreUsage: [Double], loadAverage: [Double], user: Double, system: Double, idle: Double) {
+        cpuUsage = usage
+        self.perCoreUsage = perCoreUsage
+        self.loadAverage = loadAverage
+        userUsage = user
+        systemUsage = system
+        idleUsage = idle
+    }
 
-        Publishers.CombineLatest3(
-            CPUService.shared.$cpuUsage,
-            CPUService.shared.$perCoreUsage,
-            CPUService.shared.$loadAverage
-        )
-        .receive(on: DispatchQueue.main)
-        .sink { [weak self] usage, perCoreUsage, load in
-            self?.cpuUsage = usage
-            self?.perCoreUsage = perCoreUsage
-            self?.loadAverage = load
-        }
-        .store(in: &cancellables)
-
-        Publishers.CombineLatest3(
-            CPUService.shared.$userUsage,
-            CPUService.shared.$systemUsage,
-            CPUService.shared.$idleUsage
-        )
-        .receive(on: DispatchQueue.main)
-        .sink { [weak self] user, system, idle in
-            self?.userUsage = user
-            self?.systemUsage = system
-            self?.idleUsage = idle
-        }
-        .store(in: &cancellables)
-
-        if monitorsProcesses {
-            ProcessService.shared.$topProcesses
-                .receive(on: DispatchQueue.main)
-                .assign(to: &$topProcesses)
-        }
+    func apply(topProcesses: [ProcessMetric]) {
+        guard monitorsProcesses else { return }
+        self.topProcesses = topProcesses
     }
     
     // MARK: - Computed Properties

@@ -17,15 +17,11 @@ final class AgentTurnViewModel: ObservableObject {
 
     private let services: MessageListServices
     private var item: AgentTurnPresentationItem
-    private let servicesObserver = MessageListServicesObserver()
-    private var didBindStreaming = false
-    private var streamingRefreshTask: Task<Void, Never>?
     private var refreshSequence: UInt64 = 0
 
     init(services: MessageListServices, item: AgentTurnPresentationItem) {
         self.services = services
         self.item = item
-        bindNotifications()
     }
 
     func activate() async {
@@ -37,7 +33,6 @@ final class AgentTurnViewModel: ObservableObject {
     func update(item: AgentTurnPresentationItem) async {
         guard self.item != item else { return }
         self.item = item
-        bindStreamingIfNeeded()
         await refresh()
     }
 
@@ -146,40 +141,6 @@ final class AgentTurnViewModel: ObservableObject {
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
         return minutes == 0 ? "\(hours)小时" : "\(hours)小时\(minutes)分钟"
-    }
-
-    private func bindNotifications() {
-        // 新版无 `.lumiMessagesDidChange` 通知：订阅消息服务的窄播。
-        guard let messages = services.messages else { return }
-        servicesObserver.bindMessages(
-            messages,
-            onChange: nil,
-            onWillChange: { [weak self] in
-                Task { @MainActor [weak self] in await self?.refresh() }
-            }
-        )
-
-        bindStreamingIfNeeded()
-    }
-
-    private func bindStreamingIfNeeded() {
-        guard !didBindStreaming,
-              item.acceptsLiveActivity,
-              let streaming = services.streaming else { return }
-        servicesObserver.bindStreaming(streaming) { [weak self] in
-            self?.scheduleStreamingRefresh()
-        }
-        didBindStreaming = true
-    }
-
-    private func scheduleStreamingRefresh() {
-        guard streamingRefreshTask == nil else { return }
-        streamingRefreshTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 16_000_000)
-            guard !Task.isCancelled, let self else { return }
-            self.streamingRefreshTask = nil
-            await self.refresh()
-        }
     }
 
     private func currentStreamingMessage() -> Message? {

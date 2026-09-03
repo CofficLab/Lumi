@@ -31,6 +31,8 @@ public final class ThemePackPlugin: SuperPlugin, SuperLog {
         policy: .required
     )
 
+    private var themeObservation: ThemeSettingsObservationModel?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -41,6 +43,9 @@ public final class ThemePackPlugin: SuperPlugin, SuperLog {
         for legacy in LegacyThemeCatalog.all {
             theme.registerTheme(legacy)
         }
+        themeObservation?.cancel()
+        let themeObservation = ThemeSettingsObservationModel(theme: theme)
+        self.themeObservation = themeObservation
 
         if let commands = kernel.resolveProvider((any CommandProviding).self) {
             commands.registerCommandGroup(Self.makeCommandGroup(theme: theme))
@@ -55,13 +60,15 @@ public final class ThemePackPlugin: SuperPlugin, SuperLog {
                     systemImage: "paintpalette",
                     order: 2
                 ) {
-                    ThemeSettingsDetailView(theme: theme)
+                    ThemeSettingsDetailView(theme: theme, observation: themeObservation)
                 },
             ])
         }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        themeObservation?.cancel()
+        themeObservation = nil
         kernel.resolveProvider((any CommandProviding).self)?
             .unregisterCommandGroup(id: Self.commandGroupID)
         if let theme = kernel.resolveProvider((any ThemeProviding).self) {

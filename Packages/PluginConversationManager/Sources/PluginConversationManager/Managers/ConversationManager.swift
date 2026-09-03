@@ -150,6 +150,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         // 避免一次变更产生重复的侧栏刷新。
         conversationsChangeTask?.cancel()
         conversationsChangeTask = nil
+        notifyConversationObservers(.listChanged)
         eventBus?.publishAsLegacy(
             ConversationsDidChangeEvent(),
             notificationName: .lumiConversationsDidChange

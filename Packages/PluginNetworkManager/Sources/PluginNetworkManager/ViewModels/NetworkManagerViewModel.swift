@@ -5,7 +5,6 @@ import Combine
 @MainActor
 public class NetworkManagerViewModel: ObservableObject, SuperLog {
     public static let shared = NetworkManagerViewModel()
-
     public nonisolated static let emoji = "🌐"
     public nonisolated static let verbose: Bool = false
     @Published var networkState = NetworkState()
@@ -60,76 +59,35 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
         return result
     }
 
-    private var timer: Timer?
-    private var isMonitoring = false
     private var isProcessMonitoringActive = false
-    private var networkCancellables = Set<AnyCancellable>()
-    private var processCancellables = Set<AnyCancellable>()
-    private let processMonitoringStarter: @MainActor () -> Void
-    private let processMonitoringStopper: @MainActor () -> Void
 
     public init(
-        autoStartMonitoring: Bool = true,
+        autoStartMonitoring: Bool = false,
         publicIPProvider: @escaping @Sendable () async -> String? = {
             await NetworkService.shared.getPublicIP()
         },
-        processMonitoringStarter: @escaping @MainActor () -> Void = {
-            ProcessMonitorService.shared.startMonitoring()
-        },
-        processMonitoringStopper: @escaping @MainActor () -> Void = {
-            ProcessMonitorService.shared.stopMonitoring()
-        }
+        processMonitoringStarter: @escaping @MainActor () -> Void = { ProcessMonitorService.shared.startMonitoring() },
+        processMonitoringStopper: @escaping @MainActor () -> Void = { ProcessMonitorService.shared.stopMonitoring() }
     ) {
         self.publicIPProvider = publicIPProvider
-        self.processMonitoringStarter = processMonitoringStarter
-        self.processMonitoringStopper = processMonitoringStopper
 
         if Self.verbose {
             if NetworkManagerPlugin.verbose {
                             NetworkManagerPlugin.logger.info("\(self.t)NetworkManagerViewModel initialized")
             }
         }
-        if autoStartMonitoring {
-            startMonitoring()
-        }
     }
 
-    private func bindProcessUpdatesIfNeeded() {
-        guard processCancellables.isEmpty else { return }
-
-        ProcessMonitorService.shared.$processes
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] processes in
-                if Self.verbose {
-                    if NetworkManagerPlugin.verbose {
-                                            NetworkManagerPlugin.logger.info("\(self?.t ?? NetworkManagerViewModel.t)Received process updates: \(processes.count)")
-                    }
-                }
-                self?.processes = processes
-            }
-            .store(in: &processCancellables)
-    }
-    
-    deinit {
-        Task { @MainActor [weak self] in
-            self?.stopProcessMonitoring()
-            self?.stopMonitoring()
-        }
-    }
-    
     public func startProcessMonitoring() {
         guard !isProcessMonitoringActive else { return }
         isProcessMonitoringActive = true
-        bindProcessUpdatesIfNeeded()
-        processMonitoringStarter()
+        ProcessMonitorService.shared.startMonitoring()
     }
     
     public func stopProcessMonitoring() {
         guard isProcessMonitoringActive else { return }
         isProcessMonitoringActive = false
-        processMonitoringStopper()
-        processCancellables.removeAll()
-        processes = []
+        ProcessMonitorService.shared.stopMonitoring()
     }
 
     public func updateProcesses(_ processes: [NetworkProcess]) {
@@ -137,52 +95,15 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     }
 
     public func startMonitoring() {
-        guard !isMonitoring else { return }
-        isMonitoring = true
-
         if Self.verbose {
             if NetworkManagerPlugin.verbose {
                             NetworkManagerPlugin.logger.info("\(self.t)Starting network monitoring")
             }
         }
 
-        // Subscribe to NetworkService updates
-        NetworkService.shared.startMonitoring()
-
-        NetworkService.shared.$downloadSpeed
-            .combineLatest(NetworkService.shared.$uploadSpeed, NetworkService.shared.$totalDownload, NetworkService.shared.$totalUpload)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] (down, up, totalDown, totalUp) in
-                self?.applyNetworkUsage(
-                    downloadSpeed: down,
-                    uploadSpeed: up,
-                    totalDownload: totalDown,
-                    totalUpload: totalUp
-                )
-            }
-            .store(in: &networkCancellables)
-
-        // Initial slow fetch
-        Task {
-            await updateSlowStats()
-        }
-
-        // Slower update for IP/WiFi/Ping (every 10s)
-        timer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                await self?.updateSlowStats()
-            }
-        }
     }
 
     public func stopMonitoring() {
-        guard isMonitoring else { return }
-        isMonitoring = false
-
-        timer?.invalidate()
-        timer = nil
-        networkCancellables.removeAll()
-        NetworkService.shared.stopMonitoring()
     }
     
     // Removed updateStats() as it is replaced by Combine subscription
@@ -201,7 +122,17 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
         networkState = updatedState
     }
     
-    private func updateSlowStats() async {
+    func applySlowStats(wifiSSID: String?, wifiSignalStrength: Int, ping: Double, localIP: String?, publicIP: String?) {
+        var updatedState = networkState
+        updatedState.wifiSSID = wifiSSID
+        updatedState.wifiSignalStrength = wifiSignalStrength
+        updatedState.ping = ping
+        updatedState.localIP = localIP
+        if let publicIP { updatedState.publicIP = publicIP }
+        networkState = updatedState
+    }
+
+    func updateSlowStats() async {
         // WiFi
         let (ssid, rssi) = await NetworkService.shared.getWifiInfo()
         var updatedState = networkState
@@ -219,7 +150,13 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
             updatedState.publicIP = cachedIP
         }
 
-        networkState = updatedState
+        applySlowStats(
+            wifiSSID: updatedState.wifiSSID,
+            wifiSignalStrength: updatedState.wifiSignalStrength,
+            ping: updatedState.ping,
+            localIP: updatedState.localIP,
+            publicIP: updatedState.publicIP
+        )
     }
 
     public func refreshPublicIPIfNeeded(force: Bool = false) async {

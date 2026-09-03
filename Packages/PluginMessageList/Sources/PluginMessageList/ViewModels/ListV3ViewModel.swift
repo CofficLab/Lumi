@@ -1,6 +1,7 @@
 import Foundation
 import KitMarkdown
 import ProviderConversation
+import ProviderConversationState
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
@@ -82,13 +83,7 @@ final class ListV3ViewModel: ObservableObject {
 
     /// 切换会话时记录的目标会话，用于丢弃过期的后台读结果。
     private var activeConversationID: UUID?
-    private let servicesObserver = MessageListServicesObserver()
-    /// objectWillChange remains a compatibility fallback for updates/deletes.
-    private var pendingInsertionFallbacksToSkip = 0
-    private var didBindServices = false
-    /// 流式服务是否已订阅；尚未就绪时由 `activate` 重试。
-    private var didBindStreaming = false
-    /// 单飞帧门禁：把逐 token 广播合并成每帧（~16ms）最多一次刷新。
+    /// 单飞帧门禁：把逐 token 事件合并成每帧（~16ms）最多一次刷新。
     private var streamingRefreshTask: Task<Void, Never>?
     /// 流式行上次的可见性（nil↔非 nil），用于在切换时重算历史行。
     private var streamingRowWasVisible = false
@@ -134,9 +129,8 @@ final class ListV3ViewModel: ObservableObject {
 
     // MARK: - Lifecycle
 
-    /// 切换/进入会话：绑定服务订阅（幂等），记录目标会话，加载最近一页。
+    /// 切换/进入会话：记录目标会话并加载最近一页；外部订阅由插件维护。
     func activate(conversationID: UUID?) async {
-        bindServicesIfNeeded()
         activeConversationID = conversationID
         latestUserMessageID = nil
         // 切换会话：清掉上一会话的流式行残留。
@@ -279,77 +273,52 @@ final class ListV3ViewModel: ObservableObject {
         }
     }
 
-    /// 订阅发送服务 / 流式服务的窄播（绕开全局广播），变化时重算展示行。
-    /// 语义与实现同 V2；详见 `ListV2ViewModel.bindServicesIfNeeded`。
-    private func bindServicesIfNeeded() {
-        guard !didBindServices else { return }
-        if let messages = services.messages {
-            servicesObserver.bindMessages(
-                messages,
-                onChange: { [weak self] change in
-                    self?.handleMessageChange(change)
-                },
-                onWillChange: { [weak self] in
-                    guard let self else { return }
-                    if self.consumePendingInsertionFallback() {
-                        return
-                    }
-                    Task { @MainActor [weak self] in
-                        await self?.refreshTail()
-                    }
-                }
-            )
+    func handleSelectedConversationChange(_ conversationID: UUID?) {
+        Task { @MainActor [weak self] in
+            await self?.activate(conversationID: conversationID)
         }
-        if let state = services.conversationState {
-            servicesObserver.bindConversationState(state) { [weak self] in
-                    guard let self else { return }
-                    self.activityMessage = self.services.activityMessage(for: self.selectedConversationID)
-            }
-        }
-        // 发送状态不触发历史尾部刷新；activity 由 conversationState 单独更新。
-        didBindServices = services.messages != nil || services.conversationState != nil
+    }
 
-        // 流式逐字显示：订阅 streaming，帧门禁合并。详见 V2。
-        guard !didBindStreaming else { return }
-        guard let streaming = services.streaming else { return }
-        servicesObserver.bindStreaming(streaming) { [weak self] in
-                self?.scheduleStreamingRefresh()
-        }
-        didBindStreaming = true
+    func handleConversationStateChange(_ event: ConversationStateEvent) {
+        guard case let .updated(conversationID) = event,
+              conversationID == selectedConversationID else { return }
+        activityMessage = services.activityMessage(for: conversationID)
+    }
+
+    func handleStreamingChange(_ change: MessageStreamingChange) {
+        guard case let .updated(conversationID) = change,
+              conversationID == selectedConversationID else { return }
+        scheduleStreamingRefresh()
     }
 
     /// Applies an insertion directly from the in-memory message event.
-    private func handleMessageChange(_ change: MessageChange) {
-        guard case let .inserted(message, conversationID) = change else { return }
-        pendingInsertionFallbacksToSkip += 1
-        guard conversationID == selectedConversationID,
-              message.role != .tool else { return }
-
-        if message.role == .user {
-            latestUserMessageID = message.id
-        }
-
-        var next = persistedMessages
-        if let index = next.firstIndex(where: { $0.id == message.id }) {
-            next[index] = message
-        } else {
-            next.append(message)
-            next.sort {
-                if $0.createdAt == $1.createdAt { return $0.id < $1.id }
-                return $0.createdAt < $1.createdAt
+    func handleMessageChange(_ change: MessageChange) {
+        switch change {
+        case let .inserted(message, conversationID):
+            guard conversationID == selectedConversationID,
+                  message.role != .tool else { return }
+            if message.role == .user { latestUserMessageID = message.id }
+            var next = persistedMessages
+            if let index = next.firstIndex(where: { $0.id == message.id }) {
+                next[index] = message
+            } else {
+                next.append(message)
+                next.sort {
+                    if $0.createdAt == $1.createdAt { return $0.id < $1.id }
+                    return $0.createdAt < $1.createdAt
+                }
             }
+            if next.count > pagination.maxRetainedCount {
+                next.removeFirst(next.count - pagination.maxRetainedCount)
+            }
+            persistedMessages = next
+        case let .persisted(_, conversationID),
+             let .updated(conversationID: conversationID),
+             let .deleted(_, conversationID: conversationID),
+             let .cleared(conversationID: conversationID):
+            guard conversationID == selectedConversationID else { return }
+            Task { @MainActor [weak self] in await self?.refreshTail() }
         }
-        if next.count > pagination.maxRetainedCount {
-            next.removeFirst(next.count - pagination.maxRetainedCount)
-        }
-        persistedMessages = next
-    }
-
-    /// Consumed by the ViewModel's objectWillChange compatibility path.
-    private func consumePendingInsertionFallback() -> Bool {
-        guard pendingInsertionFallbacksToSkip > 0 else { return false }
-        pendingInsertionFallbacksToSkip -= 1
-        return true
     }
 
     /// 帧门禁：把逐 token 的流式广播合并成每帧（~16ms）最多一次刷新。

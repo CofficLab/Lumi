@@ -39,11 +39,14 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
         LumiPluginLocalization.string("Agent Rules", bundle: .module)
     }
 
+    private var projectObserver: AgentRulesProjectObserver?
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 配置运行时：项目服务（工具 fallback 到当前项目路径）。
         let project = kernel.resolveProvider((any ProjectProviding).self)
         AgentRulesRuntime.configure(project: project)
+        let projectObserver = AgentRulesProjectObserver(projectProvider: project)
+        self.projectObserver = projectObserver
 
         // 注册 Agent 工具。
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
@@ -61,7 +64,7 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
                     systemImage: "doc.text",
                     order: order
                 ) {
-                    AgentRulesSettingsView(projectProvider: project)
+                    AgentRulesSettingsView(projectObserver: projectObserver)
                 },
             ])
         }
@@ -75,6 +78,8 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
         }
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).settings"])
+        projectObserver?.cancel()
+        projectObserver = nil
         AgentRulesRuntime.reset()
     }
 

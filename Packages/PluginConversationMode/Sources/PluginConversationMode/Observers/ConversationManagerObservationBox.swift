@@ -18,4 +18,9 @@ final class ConversationManagerObservationBox: ObservableObject {
                 self?.revision += 1
             }
     }
+
+    func cancel() {
+        cancellable?.cancel()
+        cancellable = nil
+    }
 }

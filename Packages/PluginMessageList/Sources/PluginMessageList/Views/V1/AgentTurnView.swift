@@ -14,20 +14,21 @@ struct AgentTurnView: View {
     let lastAgentTurnID: UUID?
     let verbosity: ResponseVerbosity
 
-    @StateObject private var viewModel: AgentTurnViewModel
+    @ObservedObject private var viewModel: AgentTurnViewModel
     @State private var isProcessExpanded = false
 
     init(
         services: MessageListServices,
         item: AgentTurnPresentationItem,
         lastAgentTurnID: UUID?,
-        verbosity: ResponseVerbosity
+        verbosity: ResponseVerbosity,
+        viewModel: AgentTurnViewModel
     ) {
         self.services = services
         self.item = item
         self.lastAgentTurnID = lastAgentTurnID
         self.verbosity = verbosity
-        _viewModel = StateObject(wrappedValue: AgentTurnViewModel(services: services, item: item))
+        _viewModel = ObservedObject(wrappedValue: viewModel)
     }
 
     var body: some View {

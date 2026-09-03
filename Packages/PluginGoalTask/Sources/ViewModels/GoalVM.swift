@@ -13,7 +13,7 @@ import KitSuperLog
 ///   - 工具栏弹窗(`GoalPopoverContent`)直接消费 `goals`
 ///   - 侧栏(`SidebarView`)消费由 `goals` 派生的 `activeGoal` / `activeTasks` /
 ///     `hasActiveWork` / `progressText`
-/// - 订阅 `.goalDidChange`,匹配当前会话时自动 reload
+/// - 由插件入口持有 `GoalChangeObserver`,匹配当前会话时自动 reload
 ///
 /// 并发:与 `Plugin` 同处 `MainActor`。每次加载都用 `expectedID` 守卫,在每个
 /// `await` 边界之后重新比对 `currentConversationID`,丢弃已被新切换覆盖的陈旧响应,
@@ -26,9 +26,6 @@ final class GoalVM: ObservableObject, SuperLog {
 
     /// 数据源提供器;注入点允许外部传入自定义 `GoalStateManager`(测试 / 多实例场景)。
     private let managerProvider: () -> GoalStateManager?
-
-    /// 通知观察者持有者,懒加载绑定 `.goalDidChange`。
-    private var goalChangeObserver: GoalChangeObserver?
 
     @Published var currentConversationID: UUID?
 
@@ -110,17 +107,12 @@ final class GoalVM: ObservableObject, SuperLog {
         }
     }
 
-    /// 移除 `.goalDidChange` 观察者。通常由视图 `onDisappear` 调用。
-    public func removeObserver() {
-        goalChangeObserver?.cancel()
-        goalChangeObserver = nil
-    }
-
     /// 刷新当前对话的 Goal 列表。
     ///
     /// - 无 `currentConversationID` 时清空 `goals` 并直接返回。
     /// - 无 `managerProvider` 时静默跳过(由调用方按需决定是否降级)。
-    /// - 首次调用时懒加载绑定 `.goalDidChange`;当变更会话与当前会话匹配时自动 reload。
+    /// - 外部变更由插件入口持有的 `GoalChangeObserver` 转发到
+    ///   `refreshIfCurrentConversation(_:)`。
     /// - 每次 `await` 后用 `expectedID` 守卫,丢弃陈旧响应,避免快速切换残留。
     public func refresh() async {
         guard managerProvider() != nil else {
@@ -135,27 +127,20 @@ final class GoalVM: ObservableObject, SuperLog {
             return
         }
 
-        // 首次绑定 `.goalDidChange`(懒加载,后续 refresh 复用同一观察者)。
-        if goalChangeObserver == nil {
-            goalChangeObserver = GoalChangeObserver { [weak self] notification in
-                let changedCid = notification.userInfo?["conversationId"] as? String
-                Task { @MainActor [weak self] in
-                    guard let self else { return }
-                    // 通知回调触发时,以触发瞬间的 cid 为期望值,丢弃陈旧响应。
-                    if let changedCid,
-                       changedCid == self.currentConversationID?.uuidString,
-                       let expectedID = UUID(uuidString: changedCid) {
-                        await self.reloadFromDB(expectedID: expectedID)
-                    }
-                }
-            }
-        }
-
         isLoading = true
         await reloadFromDB(expectedID: conversationID)
         // 最后再做一次守卫:若本次 refresh 已被新切换覆盖,把 isLoading 留给最新 task 接管。
         guard currentConversationID == conversationID else { return }
         isLoading = false
+    }
+
+    /// Refreshes only when a plugin-owned observer reports the active
+    /// conversation has changed.
+    func refreshIfCurrentConversation(_ conversationID: UUID) {
+        guard currentConversationID == conversationID else { return }
+        Task { [weak self] in
+            await self?.refresh()
+        }
     }
 
     /// 从数据库重新加载当前会话的 Goal 列表。
