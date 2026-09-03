@@ -87,10 +87,17 @@ struct ListV3View: View {
                     .accessibilityHidden(true)
                     .plainMessageListRow(insets: EdgeInsets())
                     .onChange(of: scrollTick) { _, _ in
-                        proxy.scrollTo(
-                            MessageListScrollCoordinator.bottomAnchorID,
-                            anchor: .bottom
-                        )
+                        // 新消息行可能还没有完成尺寸布局；立即 scrollTo 会把
+                        // 锚点停在旧的内容底部，导致最后一行被输入框截断。
+                        // 等布局完成后滚动，并保留协调器的重试，确保真正钉到底部。
+                        Task { @MainActor in
+                            await scrollCoordinator.scrollToBottomAfterLayout(
+                                proxy: proxy,
+                                messages: viewModel.historyRows,
+                                animated: false,
+                                condition: { true }
+                            )
+                        }
                     }
             }
             .listStyle(.plain)
