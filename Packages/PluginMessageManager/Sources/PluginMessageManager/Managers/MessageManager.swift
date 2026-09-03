@@ -434,6 +434,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             _ = store?.updateMessage(id: id, content: content)
         }
         notifyMessagesDidChange(conversationID: conversationID)
+        notifyMessageChange(.updated(conversationID: conversationID))
     }
 
     public func deleteMessage(id: UUID, in conversationID: UUID) {
@@ -447,6 +448,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             _ = store?.deleteMessage(id: id)
         }
         notifyMessagesDidChange(conversationID: conversationID)
+        notifyMessageChange(.deleted(messageID: id, conversationID: conversationID))
     }
 
     public func clearMessages(in conversationID: UUID) {
@@ -460,6 +462,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             pending.clear(conversationID: conversationID)
         }
         notifyMessagesDidChange(conversationID: conversationID)
+        notifyMessageChange(.cleared(conversationID: conversationID))
     }
 
     // MARK: - Tool Call Result Update
@@ -507,6 +510,7 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         }
 
         notifyMessagesDidChange(conversationID: conversationID)
+        notifyMessageChange(.updated(conversationID: conversationID))
     }
 
     private func persistUpdatedMessage(

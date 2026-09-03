@@ -1,4 +1,3 @@
-import Combine
 import ProviderProject
 import ProviderToolbar
 
@@ -8,12 +7,11 @@ import ProviderToolbar
 /// 没有可管理的内容，因此只在空态存活期间隐藏 `.project` 分类。ActivityBar
 /// 仍然负责设置基础上下文，ToolbarProviding 会将两者合并。
 @MainActor
-final class NoConversationSelectedToolbarCoordinator: ObservableObject {
+final class NoConversationSelectedToolbarCoordinator {
     static let source = "com.coffic.lumi.plugin.message-list.no-conversation-empty-state"
 
     private let project: (any ProjectProviding)?
     private let toolbar: (any ToolbarProviding)?
-    private var projectObserver: (any ProjectProvidingObserverHandle)?
     private var isActive = false
 
     init(
@@ -22,9 +20,6 @@ final class NoConversationSelectedToolbarCoordinator: ObservableObject {
     ) {
         self.project = project
         self.toolbar = toolbar
-        projectObserver = project?.addObserver { [weak self] _ in
-            self?.refresh()
-        }
     }
 
     func activate() {
@@ -37,7 +32,7 @@ final class NoConversationSelectedToolbarCoordinator: ObservableObject {
         toolbar?.setHiddenCategories([], for: Self.source)
     }
 
-    private func refresh() {
+    func refresh() {
         guard isActive else { return }
         let shouldHideProjectCategory = project?.projects.isEmpty == true
         toolbar?.setHiddenCategories(

@@ -13,7 +13,8 @@ struct ListV2View: View, SuperLog {
     nonisolated static let verbose = false
 
     let services: MessageListServices
-    @StateObject private var viewModel: ListV2ViewModel
+    @ObservedObject private var viewModel: ListV2ViewModel
+    let guideState: MessageListGuideState
 
     @LumiTheme private var theme
 
@@ -25,12 +26,14 @@ struct ListV2View: View, SuperLog {
     /// 内容就绪信号：historyRows 首尾消息 id 变化时 +1。
     @State private var scrollTick: Int = 0
 
-    /// 选中对话变化观察者令牌：视图消失时释放（自动注销）。
-    @State private var observerHandle: MessageListObserverHubHandle?
-
-    init(services: MessageListServices) {
+    init(
+        services: MessageListServices,
+        viewModel: ListV2ViewModel,
+        guideState: MessageListGuideState
+    ) {
         self.services = services
-        _viewModel = StateObject(wrappedValue: ListV2ViewModel(services: services))
+        _viewModel = ObservedObject(wrappedValue: viewModel)
+        self.guideState = guideState
         if Self.verbose {
             Self.logger.info("\(Self.t)ListV2View initialized: selectedConversation=\(services.selectedConversationID?.uuidString ?? "nil")")
         }
@@ -44,7 +47,7 @@ struct ListV2View: View, SuperLog {
             } else {
                 MessageEmptyStateView(
                     services: services,
-                    guideState: services.guideState!
+                    guideState: guideState
                 )
             }
             if viewModel.isLoading {
@@ -60,34 +63,6 @@ struct ListV2View: View, SuperLog {
                 Self.logger.debug("\(Self.t)activate conversation: \(viewModel.selectedConversationID?.uuidString ?? "nil")")
             }
             await viewModel.activate(conversationID: viewModel.selectedConversationID)
-        }
-        // 选中对话变化：callback 机制（替代旧版 `.lumiSelectedConversationDidChange` 通知）。
-        // 视图消失时释放令牌自动注销，无需手动反注册。
-        .onAppear {
-            if Self.verbose {
-                Self.logger.debug("\(Self.t)onAppear: registering selected conversation observer")
-            }
-            observerHandle = services.observerHub?.addConsumer(
-                onSelectedConversationChange: { newID in
-                if Self.verbose {
-                    Self.logger.debug("\(Self.t)selected conversation changed: \(newID?.uuidString ?? "nil")")
-                }
-                atBottomBox.value = true
-                Task(priority: .userInitiated) { @MainActor in
-                    await viewModel.activate(conversationID: newID)
-                }
-                },
-                onConversationChange: {
-                    if Self.verbose {
-                        Self.logger.debug("\(Self.t)conversation settings changed, refreshing")
-                    }
-                    viewModel.refreshConversationSettingsIfNeeded()
-                }
-            )
-        }
-        .onDisappear {
-            observerHandle?.cancel()
-            observerHandle = nil
         }
     }
 
@@ -160,8 +135,7 @@ struct ListV2View: View, SuperLog {
                     scrollTick &+= 1
                 }
             }
-            // 用户消息已经由 ViewModel 从内存事件直接应用；这里仅负责滚到底部，
-            // 不再监听 objectWillChange 触发数据库尾部查询。
+            // 用户消息已经由插件转发的类型化事件直接应用；这里仅负责滚到底部。
             .onChange(of: viewModel.latestUserMessageID) { _, newID in
                 guard newID != nil else { return }
                 atBottomBox.value = true

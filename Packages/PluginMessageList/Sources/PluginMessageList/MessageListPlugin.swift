@@ -1,3 +1,4 @@
+import Combine
 import os
 import KernelCore
 import KitSuperLog
@@ -31,7 +32,15 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
-    private var observerHub: MessageListObserverHub?
+    private var viewModels: MessageListViewModels?
+    private var messageChangeObserver: (any MessageChangeObserverHandle)?
+    private var conversationStateObserver: (any ConversationStateObserverHandle)?
+    private var streamingObserver: (any MessageStreamingObserverHandle)?
+    private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
+    private var conversationObserver: (any ConversationObserverHandle)?
+    private var projectObserver: (any ProjectProvidingObserverHandle)?
+    private var chatObserver: (any ChatSectionProvidingObserverHandle)?
+    private var promptSuggestionsCancellable: AnyCancellable?
 
     public init() {}
 
@@ -40,7 +49,7 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding from kernel")
             return
         }
-        var services = MessageListServices(
+        let services = MessageListServices(
             conversations: kernel.resolveProvider((any ConversationManaging).self),
             conversationState: kernel.resolveProvider((any ConversationStateProviding).self),
             messages: kernel.resolveProvider((any MessageManaging).self),
@@ -54,30 +63,73 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
             toolbar: kernel.resolveProvider((any ToolbarProviding).self),
             chat: chat,
         )
-        let promptObserver = PromptSuggestionsObserver(provider: services.promptSuggestions)
-        let contextObserver = ChatContextObserver(chat: services.chat)
-        let projectObserver = ProjectObserver(project: services.project)
         let toolbarCoordinator = NoConversationSelectedToolbarCoordinator(
             project: services.project,
             toolbar: services.toolbar
         )
-        services.guideState = MessageListGuideState(
-            promptObserver: promptObserver,
-            contextObserver: contextObserver,
-            projectObserver: projectObserver,
+        let guideState = MessageListGuideState(
+            context: chat.activeContext,
+            project: services.project,
             toolbarCoordinator: toolbarCoordinator
         )
-        let observerHub = MessageListObserverHub(services: services)
-        services.observerHub = observerHub
-        self.observerHub = observerHub
+        let viewModels = MessageListViewModels(services: services, guide: guideState)
+        self.viewModels = viewModels
+
+        if let messages = services.messages {
+            messageChangeObserver = messages.addMessageChangeObserver { [weak viewModels] change in
+                viewModels?.handleMessageChange(change)
+            }
+        }
+        if let conversationState = services.conversationState {
+            conversationStateObserver = conversationState.addConversationStateObserver { [weak viewModels] event in
+                viewModels?.handleConversationStateChange(event)
+            }
+        }
+        if let streaming = services.streaming {
+            streamingObserver = streaming.addMessageStreamingObserver { [weak viewModels] change in
+                viewModels?.handleStreamingChange(change)
+            }
+        }
+        if let conversations = services.conversations {
+            selectedConversationObserver = conversations.addSelectedConversationObserver { [weak viewModels] conversationID in
+                viewModels?.handleSelectedConversationChange(conversationID)
+            }
+            conversationObserver = conversations.addConversationObserver { [weak viewModels] _ in
+                viewModels?.handleConversationChange()
+            }
+        }
+        projectObserver = services.project?.addObserver { [weak viewModels, weak project = services.project] _ in
+            viewModels?.guide.handleProjectChange(project)
+        }
+        chatObserver = chat.addObserver { [weak viewModels] event in
+            guard case let .activeContextChanged(context) = event else { return }
+            viewModels?.guide.handleContextChange(context)
+        }
+        promptSuggestionsCancellable = services.promptSuggestions?.changes.sink { [weak viewModels] _ in
+            viewModels?.guide.handlePromptSuggestionsChange()
+        }
         chat.addItems([ChatSectionItem(id: id, order: 100, fillsRemainingHeight: true) {
-            ListView(services: services)
+            ListView(services: services, viewModels: viewModels)
         }])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        observerHub?.cancel()
-        observerHub = nil
+        messageChangeObserver?.cancel()
+        messageChangeObserver = nil
+        conversationStateObserver?.cancel()
+        conversationStateObserver = nil
+        streamingObserver?.cancel()
+        streamingObserver = nil
+        selectedConversationObserver?.cancel()
+        selectedConversationObserver = nil
+        conversationObserver?.cancel()
+        conversationObserver = nil
+        projectObserver?.cancel()
+        projectObserver = nil
+        chatObserver?.cancel()
+        chatObserver = nil
+        promptSuggestionsCancellable = nil
+        viewModels = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?.removeItem(id: id)
     }
 

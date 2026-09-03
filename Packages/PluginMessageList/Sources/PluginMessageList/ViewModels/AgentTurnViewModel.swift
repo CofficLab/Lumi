@@ -17,14 +17,11 @@ final class AgentTurnViewModel: ObservableObject {
 
     private let services: MessageListServices
     private var item: AgentTurnPresentationItem
-    private var observerHandle: MessageListObserverHubHandle?
-    private var streamingRefreshTask: Task<Void, Never>?
     private var refreshSequence: UInt64 = 0
 
     init(services: MessageListServices, item: AgentTurnPresentationItem) {
         self.services = services
         self.item = item
-        bindNotifications()
     }
 
     func activate() async {
@@ -144,31 +141,6 @@ final class AgentTurnViewModel: ObservableObject {
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
         return minutes == 0 ? "\(hours)小时" : "\(hours)小时\(minutes)分钟"
-    }
-
-    private func bindNotifications() {
-        // The plugin-owned hub owns every Provider subscription. This view model
-        // only consumes the narrow events it needs for its turn projection.
-        guard let hub = services.observerHub else { return }
-        observerHandle = hub.addConsumer(
-            onMessagesWillChange: { [weak self] in
-                Task { @MainActor [weak self] in await self?.refresh() }
-            },
-            onStreamingChange: { [weak self] in
-                guard self?.item.acceptsLiveActivity == true else { return }
-                self?.scheduleStreamingRefresh()
-            }
-        )
-    }
-
-    private func scheduleStreamingRefresh() {
-        guard streamingRefreshTask == nil else { return }
-        streamingRefreshTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 16_000_000)
-            guard !Task.isCancelled, let self else { return }
-            self.streamingRefreshTask = nil
-            await self.refresh()
-        }
     }
 
     private func currentStreamingMessage() -> Message? {

@@ -1,6 +1,7 @@
 import Foundation
 import KitMarkdown
 import ProviderConversation
+import ProviderConversationState
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
@@ -47,9 +48,8 @@ private struct MessageFingerprint: Equatable {
 /// - **渲染器分发**：View 直接从 `MessageRenderingProviding` 获取渲染器，
 ///   并透传 `verbosity`，本 viewmodel 不参与渲染。
 ///
-/// 事件感知（新版无 `.lumiMessagesDidChange` 通知）：`messages` 的插入优先消费
-/// 结构化事件，编辑/删除再回退到 Provider 的 `objectWillChange` 窄播；发送状态由
-/// `conversationState` 负责，`streaming` 负责流式 token，`toolManager` 负责工具活动。
+/// 事件感知由插件注册 Provider 的类型化观察器，再调用本 ViewModel 的处理方法；
+/// 消息、会话状态和流式 token 都不通过 ViewModel 自行订阅外部对象。
 @MainActor
 final class ListV2ViewModel: ObservableObject {
     /// 流式逐字显示开关。
@@ -98,13 +98,7 @@ final class ListV2ViewModel: ObservableObject {
 
     /// 切换会话时记录的目标会话，用于丢弃过期的后台读结果。
     private var activeConversationID: UUID?
-    private var observerHandle: MessageListObserverHubHandle?
-    /// objectWillChange remains a compatibility fallback for updates/deletes. An
-    /// insertion event already carries the complete message, so its matching
-    /// fallback refresh must be skipped.
-    private var pendingInsertionFallbacksToSkip = 0
-    private var didBindServices = false
-    /// 单飞帧门禁：把逐 token 的 `objectWillChange` 广播合并成每帧（~16ms）最多一次刷新。
+    /// 单飞帧门禁：把逐 token 的类型化事件合并成每帧（~16ms）最多一次刷新。
     private var streamingRefreshTask: Task<Void, Never>?
     /// 流式行上次的可见性（nil↔非 nil），用于在切换时重算历史行（隐藏/恢复 status 行）。
     private var streamingRowWasVisible = false
@@ -153,9 +147,8 @@ final class ListV2ViewModel: ObservableObject {
 
     // MARK: - Lifecycle
 
-    /// 切换/进入会话：绑定服务订阅（幂等），记录目标会话，加载最近一页。
+    /// 切换/进入会话：记录目标会话并加载最近一页。
     func activate(conversationID: UUID?) async {
-        bindServicesIfNeeded()
         activeConversationID = conversationID
         latestUserMessageID = nil
         // 切换会话：清掉上一会话的流式行残留，并重置可见性记忆。
@@ -298,79 +291,55 @@ final class ListV2ViewModel: ObservableObject {
         }
     }
 
-    /// 订阅消息 / 会话状态 / 流式服务的窄播。
-    ///
-    /// 历史行由落库快照和结构化插入事件共同驱动：新增消息直接应用事件 payload，
-    /// 编辑/删除仍由 `messages.objectWillChange` → `refreshTail()` 路径刷新，
-    /// `refreshTurnActivitySummaries` 也随之更新（新版 `ToolManagerProviding`
-    /// 协议无 objectWillChange 通道，工具活动摘要只在消息落库时刷新）。
-    /// 流式逐字显示通过独立订阅 `streaming.objectWillChange` 实现：
-    /// 逐 token 广播经帧门禁（`scheduleStreamingRefresh`）合并成每帧最多一次刷新，
-    /// 只更新独立的 `streamingRow`，不触碰 `historyRows`（避免活锁）。
-    ///
-    /// `receive(on:)` 让 sink 在属性写入完成后异步执行
-    /// （objectWillChange 在 willSet 触发，同步读取会拿到旧值）。
-    /// 幂等：消息服务 / streaming 各绑定一次；尚未就绪时由下次 `activate` 重试。
-    private func bindServicesIfNeeded() {
-        guard !didBindServices, let hub = services.observerHub else { return }
-        observerHandle = hub.addConsumer(
-            onMessageChange: { [weak self] change in
-                self?.handleMessageChange(change)
-            },
-            onMessagesWillChange: { [weak self] in
-                guard let self else { return }
-                if self.consumePendingInsertionFallback() { return }
-                Task { @MainActor [weak self] in
-                    await self?.refreshTail()
-                }
-            },
-            onConversationStateChange: { [weak self] in
-                guard let self else { return }
-                self.activityMessage = self.services.activityMessage(for: self.selectedConversationID)
-            },
-            onStreamingChange: { [weak self] in
-                self?.scheduleStreamingRefresh()
-            }
-        )
-        // The hub owns Provider subscriptions; this model only consumes its events.
-        didBindServices = true
+    func handleSelectedConversationChange(_ conversationID: UUID?) {
+        Task { @MainActor [weak self] in
+            await self?.activate(conversationID: conversationID)
+        }
+    }
+
+    func handleConversationStateChange(_ event: ConversationStateEvent) {
+        guard case let .updated(conversationID) = event,
+              conversationID == selectedConversationID else { return }
+        activityMessage = services.activityMessage(for: conversationID)
+    }
+
+    func handleStreamingChange(_ change: MessageStreamingChange) {
+        guard case let .updated(conversationID) = change,
+              conversationID == selectedConversationID else { return }
+        scheduleStreamingRefresh()
     }
 
     /// Applies an insertion directly from the in-memory message event.
     ///
     /// The event is emitted after MessageManager updates its pending buffer,
     /// so this path is independent of database persistence timing.
-    private func handleMessageChange(_ change: MessageChange) {
-        guard case let .inserted(message, conversationID) = change else { return }
-        pendingInsertionFallbacksToSkip += 1
-        guard conversationID == selectedConversationID,
-              message.role != .tool else { return }
-
-        if message.role == .user {
-            latestUserMessageID = message.id
-        }
-
-        var next = persistedMessages
-        if let index = next.firstIndex(where: { $0.id == message.id }) {
-            next[index] = message
-        } else {
-            next.append(message)
-            next.sort {
-                if $0.createdAt == $1.createdAt { return $0.id < $1.id }
-                return $0.createdAt < $1.createdAt
+    func handleMessageChange(_ change: MessageChange) {
+        switch change {
+        case let .inserted(message, conversationID):
+            guard conversationID == selectedConversationID,
+                  message.role != .tool else { return }
+            if message.role == .user { latestUserMessageID = message.id }
+            var next = persistedMessages
+            if let index = next.firstIndex(where: { $0.id == message.id }) {
+                next[index] = message
+            } else {
+                next.append(message)
+                next.sort {
+                    if $0.createdAt == $1.createdAt { return $0.id < $1.id }
+                    return $0.createdAt < $1.createdAt
+                }
             }
+            if next.count > pagination.maxRetainedCount {
+                next.removeFirst(next.count - pagination.maxRetainedCount)
+            }
+            persistedMessages = next
+        case let .persisted(_, conversationID),
+             let .updated(conversationID: conversationID),
+             let .deleted(_, conversationID: conversationID),
+             let .cleared(conversationID: conversationID):
+            guard conversationID == selectedConversationID else { return }
+            Task { @MainActor [weak self] in await self?.refreshTail() }
         }
-        if next.count > pagination.maxRetainedCount {
-            next.removeFirst(next.count - pagination.maxRetainedCount)
-        }
-        persistedMessages = next
-    }
-
-    /// Consumed by the ViewModel's objectWillChange compatibility path.
-    private func consumePendingInsertionFallback() -> Bool {
-        guard pendingInsertionFallbacksToSkip > 0 else { return false }
-        pendingInsertionFallbacksToSkip -= 1
-        return true
     }
 
     /// 帧门禁：把逐 token 的流式广播合并成每帧（~16ms）最多一次刷新。
