@@ -14,6 +14,8 @@ public enum LLMProviderAPIKeyMessage {
     public static let accessFailedRenderKind = LLMErrorRenderKind.apiKeyAccessFailed
     /// 原始错误前缀（供应商/旧链路直接抛出的裸文本）。
     public static let rawErrorPrefix = "Missing API key for:"
+    /// 旧 AgentLoop 使用 `String(describing:)` 后持久化的错误格式。
+    public static let legacyErrorPrefix = "missingAPIKey(\""
 
     /// 是否属于「API Key 缺失」错误：显式 renderKind、后缀匹配或裸错误前缀。
     public static func isMissingAPIKeyMessage(_ message: Message) -> Bool {
@@ -24,7 +26,11 @@ public enum LLMProviderAPIKeyMessage {
         if message.renderKind?.hasSuffix("api-key-missing") == true {
             return true
         }
-        return message.rawErrorDetail?.hasPrefix(rawErrorPrefix) == true
+        if message.rawErrorDetail?.hasPrefix(rawErrorPrefix) == true {
+            return true
+        }
+        // 兼容修复前已经落库的 `missingAPIKey("Provider")` 消息。
+        return message.content.hasPrefix(legacyErrorPrefix)
     }
 
     /// 是否属于「API Key 无法读取（Keychain 访问失败）」错误。

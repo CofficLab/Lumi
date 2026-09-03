@@ -458,7 +458,8 @@ extension AgentLoopManager {
 
     enum LLMRequestResult {
         case success(LLMResponse, assistantMessageID: UUID)
-        case failure(reason: String, recoverable: Bool)
+        /// 保留原始错误，避免在落库前丢失专用 renderer 所需的元数据。
+        case failure(error: Error, recoverable: Bool)
         case cancelled
     }
 
@@ -572,7 +573,7 @@ extension AgentLoopManager {
         guard let streamingManager = llmManager as? any LLMStreamingProviding else {
             streaming.end(conversationID: conversationID)
             let error = AgentLoopError.unsupportedStreaming
-            return .failure(reason: "unsupported streaming: \(error.localizedDescription)", recoverable: false)
+            return .failure(error: error, recoverable: false)
         }
 
         let timingRecorder = LLMStreamTimingRecorder()
@@ -715,7 +716,7 @@ extension AgentLoopManager {
                     "\(Self.t)LLM request failed recoverable=\(recoverable), conversation=\(conversationID.uuidString.prefix(8)), turn=\(turnID.uuidString.prefix(8)), error=\(error.localizedDescription)"
                 )
             }
-            return .failure(reason: String(describing: error), recoverable: recoverable)
+            return .failure(error: error, recoverable: recoverable)
         }
     }
 

@@ -243,14 +243,15 @@ extension AgentLoopManager {
                         ) } ?? []
                     )
                 }
-            case .failure(let reason, let recoverable):
+            case .failure(let error, let recoverable):
+                let reason = String(describing: error)
                 let event: TurnEvent = recoverable
                     ? .llmRetryableFailure(reason: reason)
                     : .llmFailed(reason: reason)
                 let (updated, outcome) = TurnReducer.reduce(current, event: event)
                 runtimes[conversationID] = updated
                 if let outcome {
-                    await appendError(in: conversationID, content: reason, turnID: currentTurnID)
+                    await appendError(in: conversationID, error: error, turnID: currentTurnID)
                     finishTurn(conversationID: conversationID, turnID: currentTurnID, outcome: outcome)
                 } else {
                     // 当前任务仍在进行中；释放本轮 Task 后再启动下一次 LLM 请求。
