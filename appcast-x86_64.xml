@@ -3,37 +3,36 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.22.0</title>
-            <pubDate>Wed, 02 Sep 2026 10:17:23 +0000</pubDate>
-            <sparkle:version>623</sparkle:version>
-            <sparkle:shortVersionString>5.22.0</sparkle:shortVersionString>
+            <title>5.22.1</title>
+            <pubDate>Thu, 03 Sep 2026 07:39:06 +0000</pubDate>
+            <sparkle:version>624</sparkle:version>
+            <sparkle:shortVersionString>5.22.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.22.0</h2>
-<h3>Changes since v5.21.0</h3>
+            <description><![CDATA[<h2>Release v5.22.1</h2>
+<h3>Changes since v5.22.0</h3>
 <ul>
-<li>docs(agent-loop): add tool job orchestration plan</li>
-<li>docs(tool-job): document runtime operations and recovery</li>
-<li>feat: add agent plan storage plugin</li>
-<li>feat: add always allow tool approval action</li>
-<li>feat: optimize context compaction lifecycle</li>
-<li>feat: show context compaction timeline events</li>
-<li>feat(agent-loop): resume turns from tool job events</li>
-<li>feat(agent-tool): add cancellable execution context</li>
-<li>feat(app-store-connect): restore App Store Connect plugin</li>
-<li>feat(model-selector): notify model switch via kernel toast</li>
-<li>feat(perf): add centralized metrics provider</li>
-<li>feat(PluginAppStoreConnect): localize size and relation format strings</li>
-<li>feat(PluginChatPanel): persist and restore active Rail tab on Chat activation</li>
-<li>feat(PluginConversationContextSize): add token usage and context window localization</li>
-<li>feat(RailView): add Observer event mechanism and remove ObservableObject from protocol</li>
-<li>feat(RailView): add Observer event mechanism to RailViewProviding</li>
-<li>feat(shell-tool): stream output through tool context</li>
-<li>feat(tool-job): add cancellable execution manager</li>
-<li>feat(tool-job): define observable tool job contracts</li>
-<li>feat(tool-job): persist and recover execution state</li>
+<li>docs: define plugin observer ownership rule</li>
+<li>feat(i18n): add localization strings for PluginGit and PluginSkill</li>
+<li>feat(PluginConversationManager): switch current project when selected conversation changes</li>
+<li>feat(PluginGit): add git_log custom message renderer and split tools into Tools directory</li>
+<li>feat(PluginMessageRenderer): reveal header timestamp on hover</li>
+<li>feat(PluginSkill): support built-in skills bundled with the app</li>
+<li>fix: show compaction timeline only for actual compression</li>
+<li>fix(agent-loop): preserve api key error metadata</li>
+<li>fix(chat): scroll message list after layout</li>
+<li>fix(message-renderer): fit tool result popover height</li>
+<li>fix(message-sender): close pending queue race</li>
+<li>fix(PluginMessageRenderer): make compaction timeline divider thinner</li>
+<li>refactor: centralize plugin external observers</li>
+<li>refactor: centralize remaining plugin observers</li>
+<li>refactor: enforce plugin-owned observer architecture</li>
+<li>refactor: keep only OpenAI protocol variant for MiniMax provider</li>
+<li>refactor: let MessageList plugin own view models</li>
+<li>refactor(PluginGit): remove superseded GitV2Tools.swift after splitting into Tools directory</li>
+<li>refactor(PluginProjects): observe conversation selection to switch current project</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.22.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.22.0/Lumi_5.22.0_x86_64.dmg" length="46038311" type="application/octet-stream" sparkle:edSignature="8Iy/+/cv2rVRKdmyBlF/vjpUBOIyG1skAtIyg3vct+eZ24OKvOMfXKMVTXUQlPgaUjsGHopW9px4at0KZGxIBQ=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.22.1</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/CofficLab/Lumi/releases/download/v5.22.1/Lumi_5.22.1_x86_64.dmg" length="45976121" type="application/octet-stream" sparkle:edSignature="kqVQVbPdOEx+E8gQ5q9317e6ox0QKgOMTtUqylZ++GfKNp8j3WHsbn8Ua3ua6fA22z5DnBY/1ZurqYd0IABpDQ=="/>
         </item>
     </channel>
 </rss>
