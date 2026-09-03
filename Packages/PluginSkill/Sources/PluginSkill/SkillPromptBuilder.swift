@@ -1,4 +1,5 @@
 import Foundation
+import ProviderSkill
 
 /// 把项目 Skill 列表构造成注入 LLM 的 system prompt。
 public enum SkillPromptBuilder {

@@ -28,6 +28,7 @@ import ProviderPromptSuggestion
 import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
+import ProviderSkill
 import ProviderStorage
 import ProviderTheme
 import ProviderToast
@@ -136,6 +137,12 @@ public protocol ProviderFactory {
 
     /// 产出 `LifecycleHooksProviding` 实现（统一管理生命周期钩子）。
     func makeLifecycleHooksProvider() -> any LifecycleHooksProviding
+
+    /// 产出 `SkillProviding` 实现（插件技能贡献注册表）。
+    ///
+    /// 默认实现 `DefaultSkillProvider` 只维护注册表；插件在 `onBoot` 解析
+    /// 它并注入自己的技能，`PluginSkill` 负责把内置 / 项目层合入 system prompt。
+    func makeSkillProvider() -> any SkillProviding
 
     /// 装配并注册全部默认 Provider 到内核。
     ///

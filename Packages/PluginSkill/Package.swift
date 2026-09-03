@@ -15,6 +15,7 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderProject"),
+        .package(path: "../ProviderSkill"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../KitLocalization"),
@@ -27,6 +28,7 @@ let package = Package(
                 "ProviderChatSection",
                 "ProviderLifecycleHooks",
                 "ProviderProject",
+                "ProviderSkill",
                 "KitLocalization",
             ],
             path: "Sources/PluginSkill",
@@ -46,6 +48,7 @@ let package = Package(
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
+                .product(name: "ProviderSkill", package: "ProviderSkill"),
             ],
             path: "Tests/PluginSkillTests"
         ),

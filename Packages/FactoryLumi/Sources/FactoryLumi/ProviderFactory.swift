@@ -15,6 +15,7 @@ import ProviderProject
 import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
+import ProviderSkill
 import ProviderStorage
 import ProviderTheme
 import ProviderToast
@@ -242,6 +243,11 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultLifecycleHooksProvider()
     }
 
+    /// 产出 `SkillProviding` 实现（插件技能贡献注册表）。
+    public func makeSkillProvider() -> any SkillProviding {
+        DefaultSkillProvider()
+    }
+
     // MARK: - Provider Registration
 
     /// 装配并注册全部默认 Provider，完成依赖接线。
@@ -385,5 +391,8 @@ public struct DefaultProviderFactory: ProviderFactory {
         try kernel.registerProvider((any ActivityBarProviding).self, makeActivityBarProvider())
         try kernel.registerProvider((any RailViewProviding).self, makeRailViewProvider())
         try kernel.registerProvider((any SettingViewProviding).self, makeSettingViewProvider())
+        // Skill 管理：插件技能贡献注册表。必须在插件启动前注册，
+        // 使各插件在 onBoot 中能解析到 SkillProviding 并注入技能。
+        try kernel.registerProvider((any SkillProviding).self, makeSkillProvider())
     }
 }
