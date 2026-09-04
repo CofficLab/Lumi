@@ -49,6 +49,28 @@ struct ConversationPendingMessagePluginTests {
         let box = ObservableMessageSendingBox(sender: sender)
         #expect(box.sender.isSending == false)
     }
+
+    @Test("pending UI 的会话选择桥接会跟随快速切换")
+    func selectionBoxTracksConversationSwitches() throws {
+        let conversations = DefaultConversationManager()
+        let first = try conversations.createConversation(
+            title: "A", projectPath: nil, providerID: nil, modelName: nil
+        )
+        let second = try conversations.createConversation(
+            title: "B", projectPath: nil, providerID: nil, modelName: nil
+        )
+        conversations.selectConversation(id: first)
+
+        let box = ObservableConversationSelectionBox(conversations: conversations)
+        #expect(box.selectedConversationID == first)
+
+        conversations.selectConversation(id: second)
+        #expect(box.selectedConversationID == second)
+
+        conversations.selectConversation(id: first)
+        #expect(box.selectedConversationID == first)
+        box.cancel()
+    }
 }
 
 /// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。

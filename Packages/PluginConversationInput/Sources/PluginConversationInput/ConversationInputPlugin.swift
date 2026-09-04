@@ -152,7 +152,8 @@ public final class ConversationInputPlugin: SuperPlugin, SuperLog {
         if let conversations = kernel.resolveProvider((any ConversationManaging).self) {
             actionBarConversationObserver = ActionBarConversationObserver(
                 conversations: conversations,
-                input: input
+                input: input,
+                sender: sender
             )
         }
     }

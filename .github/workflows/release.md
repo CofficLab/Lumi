@@ -29,7 +29,7 @@
 | Key | Value |
 | --- | --- |
 | SUPublicEDKey | Sparkle 自动更新系统的公钥，配合私钥使用，私钥保存在 GitHub Actions |
-| SUFeedURL | https://raw.githubusercontent.com/CofficLab/Lumi/main/appcast.xml |
+| SUFeedURL | 由 `AppUpdatePlugin` 按架构使用 `https://s.kuaiyizhi.cn/lumi/appcast-*.xml` |
 | SUEnableInstallerLauncherService | true |
 
 `SPARKLE_PRIVATE_KEY` 和 `SUPublicEDKey` 最好每个APP都有一对。如果同一个组织下的多个APP共用一对，技术上可行，实践上不推荐。

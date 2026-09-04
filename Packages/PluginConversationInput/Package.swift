@@ -16,6 +16,8 @@ let package = Package(
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderConversationState"),
         .package(path: "../ProviderConversationInput"),
+        .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageSender"),
         .package(path: "../ProviderPerformanceMetrics"),
@@ -44,6 +46,12 @@ let package = Package(
             name: "PluginConversationInputTests",
             dependencies: [
                 "PluginConversationInput",
+                .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
+                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
             ]
         ),
     ]

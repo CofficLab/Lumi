@@ -69,7 +69,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
         if let idleTime {
             let idleTimeState = ActivityHeatmapIdleTimeState(provider: idleTime)
             self.idleTimeState = idleTimeState
-            idleTimeObserver = ActivityHeatmapIdleTimeObserver { [weak idleTimeState] in
+            idleTimeObserver = ActivityHeatmapIdleTimeObserver(provider: idleTime) { [weak idleTimeState] in
                 Task { @MainActor in
                     idleTimeState?.refresh()
                 }
