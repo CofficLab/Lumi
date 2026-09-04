@@ -53,7 +53,7 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
             eventObserver = IdleTimeEventObserver(provider: provider)
             let viewModel = AppIdleTimeVM(provider: provider)
             self.viewModel = viewModel
-            snapshotObserver = IdleTimeSnapshotObserver { [weak viewModel] in
+            snapshotObserver = IdleTimeSnapshotObserver(provider: provider) { [weak viewModel] in
                 Task { @MainActor in
                     viewModel?.refresh()
                 }

@@ -23,10 +23,10 @@ public final class ActivityHeatmapIdleTimeState: ObservableObject {
 /// The plugin entry point owns this observer.
 @MainActor
 final class ActivityHeatmapIdleTimeObserver {
-    private var handle: IdleTimeSnapshotChangeHandle?
+    private var handle: IdleTimeProvidingObserverHandle?
 
-    init(onChange: @escaping @Sendable () -> Void) {
-        handle = IdleTimeSnapshotChangeCenter.shared.addObserver {
+    init(provider: any IdleTimeProviding, onChange: @escaping @Sendable () -> Void) {
+        handle = provider.addObserver { _ in
             Task { @MainActor in onChange() }
         }
     }

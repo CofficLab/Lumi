@@ -101,11 +101,41 @@ public struct PerformanceMetricsReport: Codable, Equatable, Sendable {
     }
 }
 
+/// 性能指标的语义变更事件。
+///
+/// 与其它 Providing 的 typed event 机制一致：消费者通过
+/// `PerformanceMetricsProviding.addObserver(_:)` 注册回调，实时感知新指标
+/// 记录，无需轮询 `report()`。
+public enum PerformanceMetricsProvidingEvent: Sendable {
+    /// 新记录了一条指标（`begin`/`mark`/`end`/`record` 落库后触发）。
+    /// 回调在非主线程的任意线程执行，消费方（通常是 UI）应自行 hop 到主线程。
+    case didRecord(PerformanceMetricEvent)
+    /// 指标被清除。
+    case didClear
+}
+
+/// 性能指标观察句柄。
+///
+/// 在释放或显式调用 `cancel()` 后自动停止接收通知。
+public protocol PerformanceMetricsObserverHandle: AnyObject, Sendable {
+    /// 停止接收后续指标通知。重复调用无副作用。
+    func cancel()
+}
+
+/// 不需要语义事件实现的轻量替身兼容句柄。
+public final class NoopPerformanceMetricsObserverHandle: PerformanceMetricsObserverHandle, @unchecked Sendable {
+    public init() {}
+    public func cancel() {}
+}
+
 /// Central low-overhead performance reporting contract.
 ///
 /// `begin`, `mark`, `end`, and `record` are synchronous by design. They only
 /// update a bounded in-memory buffer; persistence and report generation are
 /// moved to a utility-priority queue.
+///
+/// State changes (new metrics / clear) are published through
+/// `addObserver(_:)`; consumers no longer need to poll `report()`.
 public protocol PerformanceMetricsProviding: AnyObject, Sendable {
     @discardableResult
     func begin(operation: String, metadata: [String: String]) -> PerformanceTrace
@@ -131,6 +161,18 @@ public protocol PerformanceMetricsProviding: AnyObject, Sendable {
     func report() async -> PerformanceMetricsReport
 
     func clear()
+
+    // MARK: - Observation
+
+    /// 注册性能指标观察者。
+    ///
+    /// 回调为 `@Sendable`，在记录指标的那个（非主）线程同步执行；回调执行时
+    /// 指标已写入内存缓冲（`report()` 可读到）。返回句柄在释放或显式调用
+    /// `cancel()` 后自动停止接收通知。
+    @discardableResult
+    func addObserver(
+        _ callback: @escaping @Sendable (PerformanceMetricsProvidingEvent) -> Void
+    ) -> any PerformanceMetricsObserverHandle
 }
 
 public extension PerformanceMetricsProviding {
@@ -174,6 +216,7 @@ public final class DefaultPerformanceMetricsProvider: PerformanceMetricsProvidin
     private var events: [PerformanceMetricEvent] = []
     private var pendingWriteCount = 0
     private var persistenceScheduled = false
+    private var observers: [UUID: @Sendable (PerformanceMetricsProvidingEvent) -> Void] = [:]
 
     public init(directoryURL: URL? = nil, maxEventCount: Int = 2_000) {
         self.fileURL = directoryURL?.appendingPathComponent("performance-metrics.json")
@@ -243,7 +286,13 @@ public final class DefaultPerformanceMetricsProvider: PerformanceMetricsProvidin
         if shouldSchedulePersistence {
             persistenceScheduled = true
         }
+        let observerCallbacks = Array(observers.values)
         lock.unlock()
+
+        // Notify outside the lock so observers can safely re-enter the provider.
+        for callback in observerCallbacks {
+            callback(.didRecord(event))
+        }
 
         if shouldSchedulePersistence {
             persistenceQueue.asyncAfter(deadline: .now() + Self.persistenceDelay) { [weak self] in
@@ -272,12 +321,33 @@ public final class DefaultPerformanceMetricsProvider: PerformanceMetricsProvidin
         }
     }
 
+    @discardableResult
+    public func addObserver(
+        _ callback: @escaping @Sendable (PerformanceMetricsProvidingEvent) -> Void
+    ) -> any PerformanceMetricsObserverHandle {
+        let id = UUID()
+        lock.lock()
+        observers[id] = callback
+        lock.unlock()
+        return DefaultPerformanceMetricsObserverHandle { [weak self] in
+            self?.lock.lock()
+            self?.observers.removeValue(forKey: id)
+            self?.lock.unlock()
+        }
+    }
+
     public func clear() {
         lock.lock()
         events.removeAll(keepingCapacity: true)
         pendingWriteCount = 0
         persistenceScheduled = false
+        let observerCallbacks = Array(observers.values)
         lock.unlock()
+
+        // Notify outside the lock so observers can safely re-enter the provider.
+        for callback in observerCallbacks {
+            callback(.didClear)
+        }
 
         persistenceQueue.async { [weak self] in
             guard let fileURL = self?.fileURL else { return }
@@ -394,5 +464,20 @@ public final class DefaultPerformanceMetricsProvider: PerformanceMetricsProvidin
             guard !key.isEmpty, !value.isEmpty else { return }
             result[key] = value
         }
+    }
+}
+
+/// `DefaultPerformanceMetricsProvider.addObserver` 返回的句柄：取消时从
+/// provider 的观察者表中移除对应回调。
+private final class DefaultPerformanceMetricsObserverHandle: PerformanceMetricsObserverHandle, @unchecked Sendable {
+    private var cancelAction: (() -> Void)?
+
+    fileprivate init(cancel: @escaping () -> Void) {
+        self.cancelAction = cancel
+    }
+
+    public func cancel() {
+        cancelAction?()
+        cancelAction = nil
     }
 }
