@@ -5,6 +5,7 @@ import GitPlugin
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
+import ProviderGitRepositoryWatch
 import ProviderProject
 import ProviderRailView
 import ProviderRootView
@@ -26,14 +27,17 @@ public final class GitWorkspacePlugin: SuperPlugin, SuperLog {
     public nonisolated static let emoji = "🌿"
     public let id = "com.coffic.lumi.plugin.git-workspace"
     public let order = 12
-    public let dependencies = ["com.coffic.lumi.plugin.git"]
+    public let dependencies = [
+        "com.coffic.lumi.plugin.git",
+        "com.coffic.lumi.plugin.git-repository-watch",
+    ]
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.git-workspace",
         name: "Git Workspace",
         description: "View the current project's commit history and working tree status.",
         category: .project,
         stage: .stable,
-        policy: .disabledByDefault
+        policy: .enabledByDefault
     )
 
     public init() {}
@@ -50,8 +54,9 @@ public final class GitWorkspacePlugin: SuperPlugin, SuperLog {
         let rail = kernel.resolveProvider((any RailViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let gitWatch = kernel.resolveProvider((any GitRepositoryWatching).self)
         let entryID = "\(id).entry"
-        let view = AnyView(GitWorkspaceView(project: project))
+        let view = AnyView(GitWorkspaceView(project: project, gitWatch: gitWatch))
 
         activityBar?.addItems([
             ActivityBarItem(

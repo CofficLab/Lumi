@@ -1,22 +1,29 @@
 import GitPlugin
+import ProviderGitRepositoryWatch
 import ProviderProject
 import SwiftUI
 
 @MainActor
 private final class GitWorkspaceProjectObserver: ObservableObject {
     @Published private(set) var revision = 0
-    private var handle: (any ProjectProvidingObserverHandle)?
+    private var projectHandle: (any ProjectProvidingObserverHandle)?
+    private var gitWatchHandle: (any GitRepositoryWatchingObserverHandle)?
 
-    init(project: any ProjectProviding) {
-        handle = project.addObserver { [weak self] event in
+    init(project: any ProjectProviding, gitWatch: (any GitRepositoryWatching)?) {
+        projectHandle = project.addObserver { [weak self] event in
             guard case .currentProjectChanged = event else { return }
+            self?.revision += 1
+        }
+        gitWatchHandle = gitWatch?.addObserver { [weak self] _ in
             self?.revision += 1
         }
     }
 
     func cancel() {
-        handle?.cancel()
-        handle = nil
+        projectHandle?.cancel()
+        projectHandle = nil
+        gitWatchHandle?.cancel()
+        gitWatchHandle = nil
     }
 }
 
@@ -29,9 +36,11 @@ public struct GitWorkspaceView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
 
-    public init(project: any ProjectProviding) {
+    public init(project: any ProjectProviding, gitWatch: (any GitRepositoryWatching)? = nil) {
         self.project = project
-        _projectObserver = StateObject(wrappedValue: GitWorkspaceProjectObserver(project: project))
+        _projectObserver = StateObject(
+            wrappedValue: GitWorkspaceProjectObserver(project: project, gitWatch: gitWatch)
+        )
     }
 
     public var body: some View {
