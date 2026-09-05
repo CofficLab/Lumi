@@ -30,6 +30,7 @@ import TextActionsPlugin
 import TerminalPlugin
 import DatabaseManagerPlugin
 import GitPlugin
+import PluginGitWorkspace
 import GoalTaskPlugin
 import PluginStorage
 import PluginToast
@@ -239,6 +240,7 @@ public struct DefaultPluginFactory: PluginFactory {
             TerminalSuperPlugin(),
             DatabaseManagerSuperPlugin(),
             GitSourceControlSuperPlugin(),
+            GitWorkspacePlugin(),
             GoalTaskSuperPlugin(),
             NettoSuperPlugin(),
             SkillPlugin(),
