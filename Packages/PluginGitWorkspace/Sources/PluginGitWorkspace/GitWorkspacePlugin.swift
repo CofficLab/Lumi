@@ -33,8 +33,8 @@ public final class GitWorkspacePlugin: SuperPlugin, SuperLog {
     ]
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.git-workspace",
-        name: "Git Workspace",
-        description: "View the current project's commit history and working tree status.",
+        name: String(localized: "Git Workspace", bundle: .module),
+        description: String(localized: "View the current project's commit history and working tree status.", bundle: .module),
         category: .project,
         stage: .stable,
         policy: .enabledByDefault

@@ -51,14 +51,18 @@ public struct GitWorkspaceView: View {
             if project.currentProject == nil {
                 emptyState(
                     icon: "folder",
-                    title: "Select a Project",
-                    message: "Choose a project to view its Git history and working tree."
+                    title: String(localized: "Select a Project", bundle: .module),
+                    message: String(localized: "Choose a project to view its Git history and working tree.", bundle: .module)
                 )
             } else if isLoading && status == nil && commits.isEmpty {
-                ProgressView("Loading Git status…")
+                ProgressView(String(localized: "Loading Git status…", bundle: .module))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let errorMessage, status == nil && commits.isEmpty {
-                emptyState(icon: "exclamationmark.triangle", title: "Unable to Load Git", message: errorMessage)
+                emptyState(
+                    icon: "exclamationmark.triangle",
+                    title: String(localized: "Unable to Load Git", bundle: .module),
+                    message: errorMessage
+                )
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
@@ -88,9 +92,9 @@ public struct GitWorkspaceView: View {
                 .font(.title3)
                 .foregroundStyle(.tint)
             VStack(alignment: .leading, spacing: 2) {
-                Text(project.currentProject?.name ?? "Git Workspace")
+                Text(project.currentProject?.name ?? String(localized: "Git Workspace", bundle: .module))
                     .font(.headline)
-                Text(project.currentProject?.path ?? "No project selected")
+                Text(project.currentProject?.path ?? String(localized: "No project selected", bundle: .module))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -104,7 +108,7 @@ public struct GitWorkspaceView: View {
             Button {
                 Task { await reload(force: true) }
             } label: {
-                Label("Refresh", systemImage: "arrow.clockwise")
+                Label(String(localized: "Refresh", bundle: .module), systemImage: "arrow.clockwise")
             }
             .buttonStyle(.borderless)
             .disabled(project.currentProject == nil || isLoading)
@@ -117,13 +121,31 @@ public struct GitWorkspaceView: View {
     private var statusSection: some View {
         if let status {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Repository Status")
+                Text(String(localized: "Repository Status", bundle: .module))
                     .font(.title3.weight(.semibold))
                 HStack(spacing: 12) {
-                    statusCard("Branch", value: status.branch.isEmpty ? "Detached HEAD" : status.branch, icon: "arrow.triangle.branch")
-                    statusCard("Staged", value: "\(status.staged.count)", icon: "checkmark.circle")
-                    statusCard("Changes", value: "\(workingTreeFileCount(status))", icon: "pencil.circle")
-                    statusCard("Remote", value: status.remote ?? "None", icon: "cloud")
+                    statusCard(
+                        String(localized: "Branch", bundle: .module),
+                        value: status.branch.isEmpty
+                            ? String(localized: "Detached HEAD", bundle: .module)
+                            : status.branch,
+                        icon: "arrow.triangle.branch"
+                    )
+                    statusCard(
+                        String(localized: "Staged", bundle: .module),
+                        value: "\(status.staged.count)",
+                        icon: "checkmark.circle"
+                    )
+                    statusCard(
+                        String(localized: "Changes", bundle: .module),
+                        value: "\(workingTreeFileCount(status))",
+                        icon: "pencil.circle"
+                    )
+                    statusCard(
+                        String(localized: "Remote", bundle: .module),
+                        value: status.remote ?? String(localized: "None", bundle: .module),
+                        icon: "cloud"
+                    )
                 }
             }
         }
@@ -147,9 +169,9 @@ public struct GitWorkspaceView: View {
     @ViewBuilder
     private var workingTreeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Working Tree", count: workingTreeFiles.count)
+            sectionTitle(String(localized: "Working Tree", bundle: .module), count: workingTreeFiles.count)
             if workingTreeFiles.isEmpty {
-                Label("Working tree is clean", systemImage: "checkmark.circle.fill")
+                Label(String(localized: "Working tree is clean", bundle: .module), systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                     .padding(.vertical, 8)
             } else {
@@ -178,9 +200,9 @@ public struct GitWorkspaceView: View {
 
     private var commitsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Recent Commits", count: commits.count)
+            sectionTitle(String(localized: "Recent Commits", bundle: .module), count: commits.count)
             if commits.isEmpty {
-                Text("No commits yet.")
+                Text(String(localized: "No commits yet.", bundle: .module))
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 8)
             } else {

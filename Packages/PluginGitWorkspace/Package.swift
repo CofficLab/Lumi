@@ -42,7 +42,8 @@ let package = Package(
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
             ],
-            path: "Sources/PluginGitWorkspace"
+            path: "Sources/PluginGitWorkspace",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginGitWorkspaceTests",
