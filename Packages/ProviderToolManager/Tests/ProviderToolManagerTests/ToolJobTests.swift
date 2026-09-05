@@ -13,6 +13,7 @@ struct ToolJobStatusTests {
         #expect(!ToolJobStatus.queued.isTerminal)
         #expect(!ToolJobStatus.running.isTerminal)
         #expect(!ToolJobStatus.waitingForUser.isTerminal)
+        #expect(!ToolJobStatus.cancelling.isTerminal)
     }
 
     @Test("Job 状态只能按执行生命周期向前转换")
@@ -23,6 +24,8 @@ struct ToolJobStatusTests {
         #expect(ToolJobStatus.running.canTransition(to: .failed))
         #expect(ToolJobStatus.running.canTransition(to: .timedOut))
         #expect(ToolJobStatus.running.canTransition(to: .cancelled))
+        #expect(ToolJobStatus.running.canTransition(to: .cancelling))
+        #expect(ToolJobStatus.cancelling.canTransition(to: .cancelled))
         #expect(ToolJobStatus.completed.canTransition(to: .completed))
 
         #expect(!ToolJobStatus.completed.canTransition(to: .running))

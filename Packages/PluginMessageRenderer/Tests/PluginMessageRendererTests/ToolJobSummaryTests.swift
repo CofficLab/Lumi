@@ -14,6 +14,7 @@ struct ToolJobSummaryTests {
             (.queued, "排队中"),
             (.running, "执行中"),
             (.waitingForUser, "等待用户"),
+            (.cancelling, "停止中"),
             (.completed, "已完成"),
             (.failed, "失败"),
             (.cancelled, "已停止"),
@@ -47,7 +48,7 @@ struct ToolJobSummaryTests {
 
     @Test("终态 Job 不再显示停止操作")
     func terminalJobCannotStop() {
-        for status in [ToolJobStatus.completed, .failed, .cancelled, .timedOut] {
+        for status in [ToolJobStatus.completed, .failed, .cancelled, .timedOut, .cancelling] {
             #expect(ToolJobActivityProjection(job: makeJob(status: status)).canStop == false)
         }
     }

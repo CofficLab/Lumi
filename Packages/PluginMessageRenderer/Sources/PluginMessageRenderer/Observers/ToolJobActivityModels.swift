@@ -21,8 +21,9 @@ final class ToolJobActivityModel: ObservableObject {
     }
 
     func cancel() {
-        handle?.cancel()
-        handle = nil
+        // Keep observing while the manager transitions through `cancelling`
+        // and publishes the actual terminal event. Cancelling the observer
+        // here would leave the row stuck on the old running snapshot.
         manager?.cancelJob(jobID)
     }
 

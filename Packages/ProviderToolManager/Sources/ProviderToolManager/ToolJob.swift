@@ -6,6 +6,7 @@ public enum ToolJobStatus: String, Codable, Sendable, Equatable {
     case queued
     case running
     case waitingForUser
+    case cancelling
     case completed
     case failed
     case cancelled
@@ -16,7 +17,7 @@ public enum ToolJobStatus: String, Codable, Sendable, Equatable {
         switch self {
         case .completed, .failed, .cancelled, .timedOut:
             return true
-        case .queued, .running, .waitingForUser:
+        case .queued, .running, .waitingForUser, .cancelling:
             return false
         }
     }
@@ -31,20 +32,27 @@ public enum ToolJobStatus: String, Codable, Sendable, Equatable {
         case .queued:
             return next == .running
                 || next == .waitingForUser
+                || next == .cancelling
                 || next == .failed
                 || next == .cancelled
                 || next == .timedOut
         case .running:
             return next == .waitingForUser
+                || next == .cancelling
                 || next == .completed
                 || next == .failed
                 || next == .cancelled
                 || next == .timedOut
         case .waitingForUser:
             return next == .running
+                || next == .cancelling
                 || next == .completed
                 || next == .failed
                 || next == .cancelled
+                || next == .timedOut
+        case .cancelling:
+            return next == .cancelled
+                || next == .failed
                 || next == .timedOut
         case .completed, .failed, .cancelled, .timedOut:
             return false

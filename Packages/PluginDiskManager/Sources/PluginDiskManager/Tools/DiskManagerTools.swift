@@ -173,9 +173,11 @@ struct ScanLargeFilesTool: SuperAgentTool {
 struct ScanDirectoryTreeTool: SuperAgentTool {
     let name = "disk-manager.scan-directory-tree"
 
+    var executionCapability: ToolExecutionCapability { .parallelReadOnly }
+
     func description(for language: LanguagePreference) -> String {
         PluginDiskManagerLocalization.string(
-            "Analyze a directory tree and return the largest immediate subdirectories by size. Defaults to the home directory."
+            "Analyze a directory and return the largest immediate subdirectories by size. Defaults to the home directory and stops after 30 seconds or 500,000 entries."
         )
     }
 
@@ -213,7 +215,7 @@ struct ScanDirectoryTreeTool: SuperAgentTool {
 
         let entries: [DirectoryEntry]
         do {
-            entries = try await DirectoryTreeService.shared.scanDirectoryTree(atPath: path)
+            entries = try await DirectoryTreeService.shared.scanTopLevelDirectoryUsage(atPath: path)
         } catch {
             return "Failed to analyze directory tree at \(path): \(error.localizedDescription)"
         }
@@ -227,6 +229,53 @@ struct ScanDirectoryTreeTool: SuperAgentTool {
             return "- \(DiskManagerToolSupport.formatBytes(entry.size)) · \(kind) · `\(entry.path)`"
         }
         return ([header] + lines).joined(separator: "\n")
+    }
+
+    func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        let path = DiskManagerToolSupport.resolveScanPath(DiskManagerToolSupport.string(arguments, "path"))
+        let limit = min(max(DiskManagerToolSupport.int(arguments, "limit") ?? 20, 1), 100)
+        let service = DirectoryTreeService.shared
+
+        do {
+            let entries = try await withTaskCancellationHandler(operation: {
+                try await service.scanTopLevelDirectoryUsage(
+                    atPath: path,
+                    onProgress: { progress in
+                        let scanned = progress.scannedFiles + progress.scannedDirectories
+                        let location = URL(fileURLWithPath: progress.currentPath).lastPathComponent
+                        await context.reportProgress(
+                            ToolExecutionProgress(
+                                message: "Scanning \(location) · \(scanned) entries · \(DiskManagerToolSupport.formatBytes(progress.scannedBytes))",
+                                completed: scanned
+                            )
+                        )
+                    }
+                )
+            }, onCancel: {
+                Task { await service.cancelScan() }
+            })
+
+            guard !entries.isEmpty else {
+                return ToolCallResult(content: "No entries were found under \(path).")
+            }
+            let shown = Array(entries.prefix(limit))
+            let header = "Top directories under `\(path)` (showing \(shown.count) of \(entries.count)):\n"
+            let lines = shown.map { entry in
+                let kind = entry.isDirectory ? "dir " : "file"
+                return "- \(DiskManagerToolSupport.formatBytes(entry.size)) · \(kind) · `\(entry.path)`"
+            }
+            return ToolCallResult(content: header + lines.joined(separator: "\n"))
+        } catch is CancellationError {
+            return ToolCallResult(content: "Tool execution cancelled.", isError: true)
+        } catch {
+            return ToolCallResult(
+                content: "Failed to analyze directory tree at \(path): \(error.localizedDescription)",
+                isError: true
+            )
+        }
     }
 }
 

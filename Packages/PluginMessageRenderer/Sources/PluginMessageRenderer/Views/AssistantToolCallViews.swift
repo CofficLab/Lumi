@@ -314,7 +314,17 @@ struct ToolCallRowView: View {
             }
 
             if let projection = jobProjection, toolCall.result == nil {
-                liveJobDetails(projection)
+                if let job = jobActivity.job, job.status.isTerminal {
+                    liveJobDetails(projection)
+                } else {
+                    TimelineView(.periodic(from: .now, by: 1)) { timeline in
+                        if let job = jobActivity.job {
+                            liveJobDetails(
+                                ToolJobActivityProjection(job: job, now: timeline.date)
+                            )
+                        }
+                    }
+                }
             }
         }
         .modifier(ToolCallRowContainerModifier(
@@ -342,6 +352,12 @@ struct ToolCallRowView: View {
                     .font(.appMicro)
                     .foregroundColor(theme.textSecondary)
                     .lineLimit(1)
+            }
+
+            if projection.isStale {
+                Text("暂无新进度")
+                    .font(.appMicro)
+                    .foregroundColor(theme.warning)
             }
 
             Spacer(minLength: 8)
