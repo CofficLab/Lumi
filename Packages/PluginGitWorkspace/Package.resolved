@@ -1,0 +1,33 @@
+{
+  "originHash" : "1ae7859098274e17718a09ddb8459749249ea47c2bf915e388ce0906280c18b6",
+  "pins" : [
+    {
+      "identity" : "libgit2swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/LibGit2Swift",
+      "state" : {
+        "branch" : "main",
+        "revision" : "7005a7383c4b29a91da418bf24a534992ff5cf27"
+      }
+    },
+    {
+      "identity" : "lumiui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CofficLab/LumiUI.git",
+      "state" : {
+        "revision" : "22eaba744553dc9e83766a237ac7ca2a44f4feff",
+        "version" : "1.2.1"
+      }
+    },
+    {
+      "identity" : "magiclog",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nookery/MagicLog.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "f3680135b72e6c2158d21fba5769f17ba77798e5"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -156,17 +156,33 @@ final class ToolExecutionManager {
     func cancelJob(_ jobID: String) {
         guard let job = jobsByID[jobID], !job.status.isTerminal else { return }
         cancelRequestedJobIDs.insert(jobID)
-        Task { await runtime.cancel(jobID: jobID) }
-        let result = ToolCallResult(content: "Tool execution cancelled.", isError: true)
-        finish(
-            jobID: jobID,
-            result: result,
-            status: .cancelled,
-            errorMessage: result.content
-        )
-        if !runningJobIDs.contains(jobID) {
+
+        guard job.status != .queued else {
+            let result = ToolCallResult(content: "Tool execution cancelled.", isError: true)
+            finish(
+                jobID: jobID,
+                result: result,
+                status: .cancelled,
+                errorMessage: result.content
+            )
             releaseExecution(jobID: jobID)
+            return
         }
+
+        var cancellingJob = job
+        cancellingJob.status = .cancelling
+        cancellingJob.updatedAt = Date()
+        cancellingJob.latestProgress = ToolJobProgress(message: "正在停止…")
+        jobsByID[jobID] = cancellingJob
+        persist(cancellingJob)
+        emit(
+            .progress(
+                jobID: jobID,
+                progress: cancellingJob.latestProgress!,
+                snapshot: cancellingJob
+            )
+        )
+        Task { await runtime.cancel(jobID: jobID) }
     }
 
     func cancelJobs(forTurnID turnID: UUID) {
@@ -245,7 +261,9 @@ final class ToolExecutionManager {
                 }
             }
 
-            if self.jobsByID[job.id]?.status.isTerminal == true {
+            if self.jobsByID[job.id]?.status.isTerminal == true ||
+                self.cancelRequestedJobIDs.contains(job.id) ||
+                self.jobsByID[job.id]?.status == .cancelling {
                 await self.runtime.cancel(jobID: job.id)
             }
             guard let outcome = await self.runtime.wait(for: job.id) else {
@@ -258,24 +276,29 @@ final class ToolExecutionManager {
 
     private func apply(outcome: ToolExecutionOutcome, jobID: String) {
         if let job = jobsByID[jobID], !job.status.isTerminal {
-            switch outcome {
-            case .completed(let result):
-                finish(jobID: jobID, result: result, status: .completed, errorMessage: nil)
-            case .failed(let message):
-                let result = ToolCallResult(
-                    content: "Tool execution failed: \(message)",
-                    isError: true
-                )
-                finish(jobID: jobID, result: result, status: .failed, errorMessage: message)
-            case .cancelled(let message):
+            if cancelRequestedJobIDs.contains(jobID) || job.status == .cancelling {
                 let result = ToolCallResult(content: "Tool execution cancelled.", isError: true)
-                finish(jobID: jobID, result: result, status: .cancelled, errorMessage: message)
-            case .timedOut(let message):
-                let result = ToolCallResult(
-                    content: "Tool execution timed out: \(message)",
-                    isError: true
-                )
-                finish(jobID: jobID, result: result, status: .timedOut, errorMessage: message)
+                finish(jobID: jobID, result: result, status: .cancelled, errorMessage: result.content)
+            } else {
+                switch outcome {
+                case .completed(let result):
+                    finish(jobID: jobID, result: result, status: .completed, errorMessage: nil)
+                case .failed(let message):
+                    let result = ToolCallResult(
+                        content: "Tool execution failed: \(message)",
+                        isError: true
+                    )
+                    finish(jobID: jobID, result: result, status: .failed, errorMessage: message)
+                case .cancelled(let message):
+                    let result = ToolCallResult(content: "Tool execution cancelled.", isError: true)
+                    finish(jobID: jobID, result: result, status: .cancelled, errorMessage: message)
+                case .timedOut(let message):
+                    let result = ToolCallResult(
+                        content: "Tool execution timed out: \(message)",
+                        isError: true
+                    )
+                    finish(jobID: jobID, result: result, status: .timedOut, errorMessage: message)
+                }
             }
         }
         releaseExecution(jobID: jobID)
@@ -356,6 +379,7 @@ final class ToolExecutionManager {
         pendingExecutions.removeValue(forKey: jobID)
         runningJobIDs.remove(jobID)
         executionMetadata.removeValue(forKey: jobID)
+        cancelRequestedJobIDs.remove(jobID)
         schedule()
     }
 
@@ -422,7 +446,7 @@ final class ToolExecutionManager {
             emit(.cancelled(jobID: jobID, result: result, snapshot: snapshot))
         case .timedOut:
             emit(.timedOut(jobID: jobID, result: result, snapshot: snapshot))
-        case .queued, .running, .waitingForUser:
+        case .queued, .running, .waitingForUser, .cancelling:
             break
         }
     }

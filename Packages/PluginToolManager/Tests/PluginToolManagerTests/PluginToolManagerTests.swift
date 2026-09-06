@@ -246,6 +246,18 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
         if case .cancelled = event { cancelledEvents += 1 }
     }
     defer { handle.cancel() }
+    var observedStatuses: [ToolJobStatus] = []
+    let statusHandle = manager.addToolJobObserver { event in
+        switch event {
+        case .created(let job), .started(let job), .waitingForUser(let job):
+            observedStatuses.append(job.status)
+        case .progress(_, _, let snapshot), .output(_, _, _, let snapshot),
+             .completed(_, _, let snapshot), .failed(_, _, let snapshot),
+             .cancelled(_, _, let snapshot), .timedOut(_, _, let snapshot):
+            observedStatuses.append(snapshot.status)
+        }
+    }
+    defer { statusHandle.cancel() }
 
     _ = manager.submit(
         [call],
@@ -258,6 +270,7 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
     let result = await manager.waitForJobResult(jobID: call.id)
     #expect(result?.isError == true)
     #expect(manager.job(for: call.id)?.status == .cancelled)
+    #expect(observedStatuses.contains(.cancelling))
     #expect(cancelledEvents == 1)
 }
 
