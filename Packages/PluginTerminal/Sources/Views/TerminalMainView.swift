@@ -3,11 +3,10 @@ import SwiftTerm
 import SwiftUI
 import LumiUI
 import KitTerminalCore
-import ProviderProject
 
 public struct TerminalMainView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
-    let projectProvider: (any ProjectProviding)?
+    let projectProvider: (any TerminalProjectCapability)?
     let projectPath: String?
 
     /// 使用单例 ViewModel，无论 TerminalMainView 被重建多少次，都共享同一份终端会话状态。
@@ -16,7 +15,7 @@ public struct TerminalMainView: View {
     @ObservedObject private var viewModel: TerminalTabsViewModel
 
     public init(
-        projectProvider: (any ProjectProviding)? = nil,
+        projectProvider: (any TerminalProjectCapability)? = nil,
         viewModel: TerminalTabsViewModel = .shared
     ) {
         self.projectProvider = projectProvider
@@ -38,7 +37,7 @@ public struct TerminalMainView: View {
     }
 
     private var currentProjectPathForTerminal: String? {
-        let path = projectPath ?? projectProvider?.currentProject?.path ?? ""
+        let path = projectPath ?? projectProvider?.currentProjectPath ?? ""
         let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
@@ -97,7 +96,7 @@ public struct TerminalMainView: View {
         .onAppear {
             viewModel.ensureInitialSession(workingDirectory: currentProjectPathForTerminal)
         }
-        .onChange(of: projectProvider?.currentProject?.path) { _, _ in
+        .onChange(of: projectProvider?.currentProjectPath) { _, _ in
             viewModel.updateDefaultWorkingDirectory(currentProjectPathForTerminal)
         }
         .onChange(of: projectPath) { _, _ in
