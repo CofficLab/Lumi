@@ -1,16 +1,16 @@
 import Foundation
 import ProviderProject
 
-/// 展示 `ProjectProviding` 中当前打开文件的轻量投影。
+/// 展示当前项目打开文件的轻量投影。
 public struct ProjectFilesTabState: Equatable, Sendable {
     public let fileURLs: [URL]
     public let currentFileURL: URL?
 
     @MainActor
-    public init(project: any ProjectProviding) {
+    init(projectCapability: any ProjectFilesProjectCapability) {
         self.init(
-            openFileURLs: project.openFileURLs,
-            currentFileURL: project.currentFileURL
+            openFileURLs: projectCapability.openFileURLs,
+            currentFileURL: projectCapability.currentFileURL
         )
     }
 
