@@ -89,7 +89,10 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
         let storedCurrentProject = store.loadCurrentProject(from: storedProjects)
 
         // 4. 初始化 ViewModel，并注册 Provider → ViewModel observer。
-        let viewModel = ProjectsViewModel(store: store, projectProvider: projectProvider)
+        let viewModel = ProjectsViewModel(
+            store: store,
+            projectCapability: ProjectsProjectCapabilityAdapter(project: projectProvider)
+        )
         self.viewModel = viewModel
         projectObserver?.cancel()
         openedFilesPersistence?.cancel()
