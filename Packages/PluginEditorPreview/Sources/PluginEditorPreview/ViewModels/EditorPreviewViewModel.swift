@@ -1,5 +1,4 @@
 import Foundation
-import ProviderProject
 
 public enum EditorPreviewState: Equatable, Sendable {
     case empty
@@ -28,8 +27,9 @@ public enum EditorPreviewFileKind: Equatable, Sendable {
 
 /// View-facing state for the editor preview.
 ///
-/// ProjectProviding remains the source of truth for the selected file. The
-/// ViewModel owns file loading so the SwiftUI view only observes published
+/// The selected file's source of truth stays in the kernel Provider; the
+/// ViewModel observes the current file through the plugin's narrowed project
+/// capability, owns file loading so the SwiftUI view only observes published
 /// state and never reaches into a Provider directly.
 @MainActor
 public final class EditorPreviewViewModel: ObservableObject {
@@ -38,8 +38,8 @@ public final class EditorPreviewViewModel: ObservableObject {
     private var loadTask: Task<Void, Never>?
     private var loadGeneration = 0
 
-    public init(project: any ProjectProviding) {
-        updateCurrentFile(project.currentFileURL)
+    init(projectCapability: any EditorPreviewProjectCapability) {
+        updateCurrentFile(projectCapability.currentFileURL)
     }
 
     func updateCurrentFile(_ fileURL: URL?) {

@@ -35,7 +35,9 @@ struct EditorPreviewTests {
     @Test("observes the current file from ProjectProviding")
     func projectObserverUpdatesViewModel() async throws {
         let project = DefaultProjectProvider()
-        let viewModel = EditorPreviewViewModel(project: project)
+        let viewModel = EditorPreviewViewModel(
+            projectCapability: EditorPreviewProjectCapabilityAdapter(project: project)
+        )
         let observer = EditorPreviewProjectObserver(project: project, viewModel: viewModel)
 
         let filename = "lumi-editor-preview-" + UUID().uuidString + ".md"
