@@ -11,7 +11,10 @@ struct NoConversationSelectedToolbarCoordinatorTests {
         let project = DefaultProjectProvider()
         let toolbar = DefaultToolbarProviding()
         toolbar.setVisibleCategories([.global, .chat, .project])
-        let coordinator = NoConversationSelectedToolbarCoordinator(project: project, toolbar: toolbar)
+        let coordinator = NoConversationSelectedToolbarCoordinator(
+            project: MessageListProjectCapabilityAdapter(project: project),
+            toolbar: MessageListToolbarCapabilityAdapter(toolbar: toolbar)
+        )
         let projectObserver = project.addObserver { _ in coordinator.refresh() }
         defer { projectObserver.cancel() }
 

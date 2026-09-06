@@ -15,9 +15,9 @@ struct MessageListChangeEventTests {
         conversations.selectConversation(id: conversationID)
 
         let services = MessageListServices(
-            conversations: conversations,
+            conversations: MessageListConversationCapabilityAdapter(conversations: conversations),
             conversationState: nil,
-            messages: messages,
+            messages: MessageListMessageCapabilityAdapter(messages: messages),
             rendering: nil,
             streaming: nil,
             toolManager: nil,
