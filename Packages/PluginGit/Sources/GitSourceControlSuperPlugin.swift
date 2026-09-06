@@ -38,14 +38,15 @@ public final class GitSourceControlSuperPlugin: SuperPlugin, SuperLog {
         
         try kernel.registerProvider((any SourceControlProviding).self, GitSourceControlAdapter())
         let project = kernel.resolveProvider((any ProjectProviding).self)
+        let projectCapability = project.map { GitProjectCapabilityAdapter(project: $0) }
         let tools: [any SuperAgentTool] = [
-            GitStatusV2Tool(project: project),
-            GitDiffV2Tool(project: project),
-            GitLogTool(project: project),
-            GitShowV2Tool(project: project),
-            GitBranchV2Tool(project: project),
-            GitCommitV2Tool(project: project),
-            GitUnpushedV2Tool(project: project),
+            GitStatusV2Tool(project: projectCapability),
+            GitDiffV2Tool(project: projectCapability),
+            GitLogTool(project: projectCapability),
+            GitShowV2Tool(project: projectCapability),
+            GitBranchV2Tool(project: projectCapability),
+            GitCommitV2Tool(project: projectCapability),
+            GitUnpushedV2Tool(project: projectCapability),
         ]
         guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding; Git tools were not registered")

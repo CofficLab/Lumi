@@ -1,6 +1,5 @@
 import Foundation
 import KitAgentTool
-import ProviderProject
 
 /// 查看 Git 提交历史，支持限制数量、指定分支和文件。
 ///
@@ -11,8 +10,8 @@ import ProviderProject
 public struct GitLogTool: SuperAgentTool, @unchecked Sendable {
     public static let toolName = "git_log"
     public let name = Self.toolName
-    private let project: (any ProjectProviding)?
-    public init(project: (any ProjectProviding)? = nil) { self.project = project }
+    private let project: (any GitProjectCapability)?
+    public init(project: (any GitProjectCapability)? = nil) { self.project = project }
     public func description(for language: LanguagePreference) -> String { "View Git commit history. Supports limiting the number of commits and viewing logs for a specific branch or file." }
     public func inputSchema(for language: LanguagePreference) -> [String: Any] { GitV2ToolSupport.schema(["path": GitV2ToolSupport.pathProperty(), "count": ["type": "integer", "description": "Number of commits to display, default 10, range 1-50.", "minimum": 1, "maximum": 50], "branch": ["type": "string", "description": "Optional, view logs for a specific branch."], "file": ["type": "string", "description": "Optional, view commit history for a specific file."]]) }
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "查看提交历史" }
