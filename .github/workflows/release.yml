@@ -422,7 +422,7 @@ jobs:
             NOTES="## Release ${{ env.tag }}\n\nInitial release"
           else
             CHANGES=$(git log v${PREVIOUS_TAG}..HEAD --no-merges --pretty=format:'- %s' \
-              | grep -Ev '^- (ci|chore|build|style|test)(\(|:)' \
+              | grep -Ev '^- (ci|chore|build|style|test|docs)(\(|:)' \
               | grep -Ev '^- 👷 CI:' \
               | sort -u \
               | sed -n '1,20p')
