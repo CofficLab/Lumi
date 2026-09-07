@@ -1,6 +1,7 @@
 import KernelCore
 import LumiUI
 import ProviderCommand
+import ProviderDiagnostics
 import ProviderDocsView
 import ProviderSettingView
 import SwiftUI
@@ -66,16 +67,18 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
 
         // 捕获 docs provider 引用，供详情视图读取。
         let docsProvider = kernel.resolveProvider((any DocsViewProviding).self)
+        let diagnosticsProvider = kernel.resolveProvider((any DiagnosticsProviding).self)
 
         let entry = SettingEntryItem(
             id: "general",
             title: "通用",
             systemImage: "gearshape",
             order: 1
-        ) { [versionProvider, docsProvider] in
+        ) { [versionProvider, docsProvider, diagnosticsProvider] in
             GeneralSettingsDetailView(
                 version: versionProvider(),
-                docsProvider: docsProvider
+                docsProvider: docsProvider,
+                diagnosticsProvider: diagnosticsProvider
             )
         }
 

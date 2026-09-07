@@ -1,15 +1,20 @@
 import AppKit
 import LumiUI
+import ProviderDiagnostics
 import ProviderDocsView
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// 通用设置详情视图 —— 设置窗口「通用」标签页：四个分组卡片。
 struct GeneralSettingsDetailView: View {
     let version: String?
     let docsProvider: (any DocsViewProviding)?
+    let diagnosticsProvider: (any DiagnosticsProviding)?
 
     /// 是否展示说明书浏览器。
     @State private var isPresentingManuals = false
+    @State private var isExportingDiagnostics = false
+    @State private var diagnosticsFeedback: String?
 
     /// App bundle 元数据（名称 / 包名 / 版本 / 构建）。
     private let bundleInfo = AppBundleInfo()
@@ -29,6 +34,7 @@ struct GeneralSettingsDetailView: View {
                 lumiSection
                 websiteSection
                 updatesSection
+                diagnosticsSection
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -205,6 +211,81 @@ struct GeneralSettingsDetailView: View {
                         object: nil
                     )
                 }
+            }
+        }
+    }
+
+    // MARK: - 诊断日志
+
+    private var diagnosticsSection: some View {
+        AppSettingSection(
+            title: "诊断日志",
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: "导出日志",
+                    description: "打包最近的运行日志，便于提交问题反馈。",
+                    icon: "doc.badge.arrow.up"
+                ) {
+                    AppButton(
+                        isExportingDiagnostics ? "导出中…" : "导出",
+                        systemImage: isExportingDiagnostics ? "hourglass" : "square.and.arrow.up",
+                        style: .secondary,
+                        size: .small
+                    ) {
+                        exportDiagnostics()
+                    }
+                    .disabled(isExportingDiagnostics || diagnosticsProvider == nil)
+                }
+
+                if let diagnosticsFeedback {
+                    Divider()
+                        .padding(.vertical, 8)
+                    Text(diagnosticsFeedback)
+                        .font(.appCaption)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func exportDiagnostics() {
+        guard let diagnosticsProvider else {
+            diagnosticsFeedback = "日志服务暂不可用。"
+            return
+        }
+
+        isExportingDiagnostics = true
+        diagnosticsFeedback = nil
+
+        Task { @MainActor in
+            defer { isExportingDiagnostics = false }
+
+            do {
+                let archive = try await diagnosticsProvider.makeDiagnosticsArchive()
+                defer { try? FileManager.default.removeItem(at: archive.url) }
+                let panel = NSSavePanel()
+                panel.allowedContentTypes = [.zip]
+                panel.canCreateDirectories = true
+                panel.nameFieldStringValue = archive.filename
+                panel.message = "选择诊断日志保存位置"
+
+                guard panel.runModal() == .OK, let destination = panel.url else {
+                    diagnosticsFeedback = "已取消导出。"
+                    return
+                }
+
+                if FileManager.default.fileExists(atPath: destination.path) {
+                    try FileManager.default.removeItem(at: destination)
+                }
+                try FileManager.default.copyItem(at: archive.url, to: destination)
+                diagnosticsFeedback = "日志已导出：\(destination.lastPathComponent)"
+            } catch {
+                diagnosticsFeedback = "导出失败：\(error.localizedDescription)"
             }
         }
     }

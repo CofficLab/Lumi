@@ -1,10 +1,11 @@
 import Foundation
 import OSLog
 import KitSuperLog
+import ProviderDiagnostics
 
 /// 磁盘日志协调器
 ///
-/// 通过 OSLogStore 订阅 subsystem == "com.coffic.lumi" 的日志条目，
+/// 通过 OSLogStore 订阅 Lumi 及其插件子 subsystem 的日志条目，
 /// 异步写入磁盘文件。支持自动轮转和过期清理。
 ///
 /// ## 设计
@@ -21,12 +22,12 @@ import KitSuperLog
 /// FileLogCoordinator（OSLogStore 轮询）
 ///         │
 ///         ▼
-/// ~/Library/Application Support/com.coffic.Lumi/db_debug_v1/FileLog/
+/// ~/Library/Application Support/com.coffic.Lumi/db_debug_v1/com.coffic.lumi.plugin.file-log/
 ///   ├── 2026-05-02_10-36-00.log
 ///   ├── 2026-05-02_11-02-33.log
 ///   └── ...
 /// ```
-final class FileLogCoordinator: @unchecked Sendable, SuperLog {
+final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProviding {
     static let shared = FileLogCoordinator()
 
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.file-log")
@@ -37,6 +38,7 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog {
 
     private let subsystem = "com.coffic.lumi"
     private let maxFileSize: Int = 5 * 1024 * 1024  // 5 MB
+    private let maxDirectorySize: Int = 50 * 1024 * 1024  // 50 MB
     private let maxRetentionDays: Int = 7
     private let pollInterval: TimeInterval = 2.0
     private let writeDelay: TimeInterval = 3.0
@@ -59,17 +61,26 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog {
     private var pollTickCount = 0
     private let pollTickLogEvery = 10
 
+    private static let includedSubsystemPrefixes = [
+        "com.coffic.lumi",
+        "com.kit.llm",
+    ]
+
     // MARK: - Log Directory
 
     private var logsDirectory: URL {
         FileLogRuntimeBridge.logsDirectory ?? fallbackDirectory
     }
 
+    var logsDirectoryURL: URL { logsDirectory }
+
     private var fallbackDirectory: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
-        return appSupport.appendingPathComponent(bundleID, isDirectory: true).appendingPathComponent("FileLog", isDirectory: true)
+        return appSupport
+            .appendingPathComponent(bundleID, isDirectory: true)
+            .appendingPathComponent(FileLogPlugin.pluginID, isDirectory: true)
     }
 
     // MARK: - Public Lifecycle
@@ -87,6 +98,7 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog {
             seenRecordKeys = []
             if Self.verbose { Self.logger.info("\(Self.t)启动 OSLog 轮询(间隔 \(self.pollInterval)s)，写入 \(self.logsDirectory.path)") }
             purgeExpiredLogs()
+            purgeOversizedLogs()
             rotateLogFile()
             schedulePollTimer()
         }
@@ -249,7 +261,7 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog {
         let position = store.position(date: date)
         guard let entries = try? store.getEntries(
             at: position,
-            matching: NSPredicate(format: "subsystem == %@", subsystem)
+            matching: Self.subsystemPredicate(for: subsystem)
         ) else { return nil }
 
         let formatter = DateFormatter()
@@ -318,6 +330,17 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog {
         return "\(entry.date.timeIntervalSinceReferenceDate)|\(category)|\(entry.composedMessage)"
     }
 
+    static func subsystemPredicate(for rootSubsystem: String) -> NSPredicate {
+        let prefixes = includedSubsystemPrefixes.map { prefix in
+            let effectivePrefix = prefix == "com.coffic.lumi" ? rootSubsystem : prefix
+            return NSCompoundPredicate(orPredicateWithSubpredicates: [
+                NSPredicate(format: "subsystem == %@", effectivePrefix),
+                NSPredicate(format: "subsystem BEGINSWITH %@", "\(effectivePrefix)."),
+            ])
+        }
+        return NSCompoundPredicate(orPredicateWithSubpredicates: prefixes)
+    }
+
     static func logFilename(for date: Date, processID: Int32) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
@@ -375,16 +398,13 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog {
               let size = attrs[.size] as? Int,
               size > maxFileSize else { return }
         rotateLogFile()
+        purgeOversizedLogs()
     }
 
     // MARK: - Cleanup
 
     private func purgeExpiredLogs() {
-        guard let files = try? FileManager.default.contentsOfDirectory(
-            at: logsDirectory,
-            includingPropertiesForKeys: [.creationDateKey],
-            options: .skipsHiddenFiles
-        ) else { return }
+        let files = logFiles(in: logsDirectory)
 
         let cutoff = Calendar.current.date(
             byAdding: .day, value: -maxRetentionDays, to: Date()
@@ -395,6 +415,188 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog {
                   let creationDate = attrs[.creationDate] as? Date,
                   creationDate < cutoff else { continue }
             try? FileManager.default.removeItem(at: file)
+        }
+    }
+
+    private func purgeOversizedLogs() {
+        var files = logFiles(in: logsDirectory)
+        var totalSize = files.reduce(0) { total, file in
+            total + ((try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+        }
+
+        guard totalSize > maxDirectorySize else { return }
+
+        files.sort { lhs, rhs in
+            let lhsDate = (try? lhs.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
+            let rhsDate = (try? rhs.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
+            return lhsDate < rhsDate
+        }
+
+        for file in files where totalSize > maxDirectorySize {
+            let size = (try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            try? FileManager.default.removeItem(at: file)
+            totalSize -= size
+        }
+    }
+
+    private func logFiles(in directory: URL) -> [URL] {
+        (try? FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.creationDateKey, .fileSizeKey],
+            options: .skipsHiddenFiles
+        ))?.filter { $0.pathExtension.lowercased() == "log" } ?? []
+    }
+
+    static func migrateLegacyDirectory(
+        from legacyDirectory: URL,
+        to currentDirectory: URL,
+        fileManager: FileManager = .default
+    ) throws {
+        guard legacyDirectory.standardizedFileURL != currentDirectory.standardizedFileURL,
+              fileManager.fileExists(atPath: legacyDirectory.path) else { return }
+
+        try prepareLogsDirectory(currentDirectory, fileManager: fileManager)
+        let legacyFiles = try fileManager.contentsOfDirectory(
+            at: legacyDirectory,
+            includingPropertiesForKeys: nil,
+            options: .skipsHiddenFiles
+        ).filter { $0.pathExtension.lowercased() == "log" }
+
+        for legacyFile in legacyFiles {
+            var destination = currentDirectory.appendingPathComponent(legacyFile.lastPathComponent)
+            if fileManager.fileExists(atPath: destination.path) {
+                let baseName = legacyFile.deletingPathExtension().lastPathComponent
+                let extensionName = legacyFile.pathExtension
+                let suffix = UUID().uuidString
+                let migratedName = extensionName.isEmpty
+                    ? "\(baseName)-legacy-\(suffix)"
+                    : "\(baseName)-legacy-\(suffix).\(extensionName)"
+                destination = currentDirectory.appendingPathComponent(migratedName)
+            }
+            try fileManager.moveItem(at: legacyFile, to: destination)
+        }
+
+        if (try? fileManager.contentsOfDirectory(
+            at: legacyDirectory,
+            includingPropertiesForKeys: nil,
+            options: .skipsHiddenFiles
+        ).isEmpty) == true {
+            try? fileManager.removeItem(at: legacyDirectory)
+        }
+    }
+
+    // MARK: - Diagnostics Export
+
+    func makeDiagnosticsArchive() async throws -> DiagnosticsArchive {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<DiagnosticsArchive, Error>) in
+            queue.async { [self] in
+                do {
+                    _ = writePendingRecords(upTo: .distantFuture)
+                    flushCurrentFile()
+                    let archive = try makeDiagnosticsArchiveOnQueue()
+                    continuation.resume(returning: archive)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    private func makeDiagnosticsArchiveOnQueue() throws -> DiagnosticsArchive {
+        let fileManager = FileManager.default
+        let stagingDirectory = fileManager.temporaryDirectory
+            .appendingPathComponent("LumiDiagnostics-\(UUID().uuidString)", isDirectory: true)
+        let stagedLogsDirectory = stagingDirectory.appendingPathComponent("logs", isDirectory: true)
+        try fileManager.createDirectory(at: stagedLogsDirectory, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: stagingDirectory) }
+
+        for source in logFiles(in: logsDirectory) {
+            let destination = stagedLogsDirectory.appendingPathComponent(source.lastPathComponent)
+            try fileManager.copyItem(at: source, to: destination)
+        }
+
+        let manifest = DiagnosticManifest(
+            exportedAt: Date(),
+            version: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown",
+            build: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown",
+            environment: Self.environmentName,
+            operatingSystem: ProcessInfo.processInfo.operatingSystemVersionString,
+            architecture: Self.architectureName,
+            processID: ProcessInfo.processInfo.processIdentifier,
+            logFileCount: logFiles(in: logsDirectory).count
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let manifestData = try encoder.encode(manifest)
+        try manifestData.write(to: stagingDirectory.appendingPathComponent("manifest.json"), options: .atomic)
+
+        let filename = "Lumi-Diagnostics-\(Self.archiveTimestamp()).zip"
+        let archiveURL = fileManager.temporaryDirectory.appendingPathComponent(filename)
+        try? fileManager.removeItem(at: archiveURL)
+        try runDittoArchive(source: stagingDirectory, destination: archiveURL)
+        return DiagnosticsArchive(url: archiveURL, filename: filename)
+    }
+
+    private func runDittoArchive(source: URL, destination: URL) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+        process.arguments = ["-c", "-k", "--sequesterRsrc", "--keepParent", source.path, destination.path]
+        let errorPipe = Pipe()
+        process.standardError = errorPipe
+        try process.run()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else {
+            let error = String(data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)
+                ?? "ditto exited with status \(process.terminationStatus)"
+            throw FileLogError.archiveCreationFailed(error.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+    }
+
+    private static var environmentName: String {
+        #if DEBUG
+        return "Debug"
+        #else
+        return "Production"
+        #endif
+    }
+
+    private static var architectureName: String {
+        #if arch(arm64)
+        return "arm64"
+        #elseif arch(x86_64)
+        return "x86_64"
+        #else
+        return "unknown"
+        #endif
+    }
+
+    private static func archiveTimestamp() -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        return formatter.string(from: Date())
+    }
+
+    private struct DiagnosticManifest: Codable {
+        let exportedAt: Date
+        let version: String
+        let build: String
+        let environment: String
+        let operatingSystem: String
+        let architecture: String
+        let processID: Int32
+        let logFileCount: Int
+    }
+
+    private enum FileLogError: LocalizedError {
+        case archiveCreationFailed(String)
+
+        var errorDescription: String? {
+            switch self {
+            case let .archiveCreationFailed(message):
+                return "无法创建诊断日志压缩包：\(message)"
+            }
         }
     }
 }
