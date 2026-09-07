@@ -68,6 +68,12 @@ struct PDFDocumentOverviewView: View {
                         Label(BookletLocalization.string("Replace PDF…"), systemImage: "arrow.triangle.2.circlepath")
                     }
 
+                    NavigationLink {
+                        BookletHelpMobileView()
+                    } label: {
+                        Label(BookletLocalization.string("Help"), systemImage: "questionmark.circle")
+                    }
+
                     Button(role: .destructive) {
                         feature.closeDocument()
                     } label: {

@@ -41,8 +41,8 @@ struct BookletWelcomeView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button {
-                        // 帮助与关于在 T6 接入
+                    NavigationLink {
+                        BookletHelpMobileView()
                     } label: {
                         Label(BookletLocalization.string("Help"), systemImage: "questionmark.circle")
                     }

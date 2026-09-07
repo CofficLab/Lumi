@@ -8,7 +8,6 @@ struct BookletPreviewMobileView: View {
     let onExport: () -> Void
 
     @State private var readingSegment: ReadingSegment = .layout
-    @State private var currentStage: BookletStage = .printLayout
 
     enum ReadingSegment: String, CaseIterable, Identifiable {
         case layout = "layout"
@@ -36,16 +35,7 @@ struct BookletPreviewMobileView: View {
             case .layout:
                 BookletPreviewStageView(
                     viewModel: viewModel,
-                    onStageChange: { stage in
-                        currentStage = stage
-                        // T6 补齐 paperSelection / cuttingMarks / bindingEffect
-                        // 的原生编辑控件；当前先回到拼版预览或进入导出总览。
-                        if stage == .export || stage == .review {
-                            currentStage = stage
-                        } else {
-                            currentStage = .printLayout
-                        }
-                    }
+                    onExport: onExport
                 )
             case .source:
                 SourcePDFReadingView(document: viewModel.currentDocument)

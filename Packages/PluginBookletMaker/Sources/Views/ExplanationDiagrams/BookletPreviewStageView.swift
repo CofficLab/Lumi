@@ -3,9 +3,12 @@ import SwiftUI
 
 /// 拼版预览阶段：按打印面顺序展示每一张纸的正反两面，
 /// 提供纸张快捷选择；页序由 `BookletLayoutEngine` 单一生效。
+/// 顶部为六阶段导航（参数 / 裁切 / 装订 / 总览 / 导出）。
 struct BookletPreviewStageView: View {
     @ObservedObject var viewModel: BookletMakerViewModel
-    let onStageChange: (BookletStage) -> Void
+    let onExport: () -> Void
+
+    @State private var currentStage: BookletStage = .printLayout
 
     private var outputSides: [OutputSheet] {
         BookletLayoutEngine.buildOutputSides(
@@ -15,60 +18,88 @@ struct BookletPreviewStageView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                stageIndicator
+        VStack(spacing: 0) {
+            stageIndicator
 
-                summaryCard
+            Divider()
 
-                paperPickerCard
+            stageContent
+        }
+    }
 
-                sheetGrid
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+    // MARK: - Stage routing
+
+    @ViewBuilder
+    private var stageContent: some View {
+        switch currentStage {
+        case .printLayout:
+            printLayoutContent
+        case .paperSelection, .cuttingMarks:
+            BookletParameterPanelView(viewModel: viewModel)
+        case .bindingEffect:
+            BookletBindingEffectView(viewModel: viewModel)
+        case .review, .export:
+            reviewContent
         }
     }
 
     // MARK: - Stage indicator
 
     private var stageIndicator: some View {
-        HStack(spacing: 0) {
-            ForEach(Array(BookletStage.allCases.enumerated()), id: \.element) { index, stage in
-                Button {
-                    onStageChange(stage)
-                } label: {
-                    VStack(spacing: 3) {
-                        Image(systemName: stage.systemImage)
-                            .font(.footnote)
-                        Text("\(stage.stepNumber)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 0) {
+                ForEach(Array(BookletStage.allCases.enumerated()), id: \.element) { index, stage in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            currentStage = stage
+                        }
+                    } label: {
+                        VStack(spacing: 3) {
+                            Image(systemName: stage.systemImage)
+                                .font(.footnote)
+                            Text(stage.title)
+                                .font(.caption2)
+                                .lineLimit(1)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            stage == currentStage
+                                ? Color.accentColor.opacity(0.14)
+                                : Color.clear,
+                            in: RoundedRectangle(cornerRadius: 8)
+                        )
+                        .foregroundStyle(stage == currentStage ? Color.accentColor : Color.secondary)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
-                    .background(
-                        stage == .printLayout
-                            ? Color.accentColor.opacity(0.14)
-                            : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 8)
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(stage.title)
-                .accessibilityAddTraits(stage == .printLayout ? .isSelected : [])
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(stage.title)
+                    .accessibilityAddTraits(stage == currentStage ? .isSelected : [])
 
-                if index < BookletStage.allCases.count - 1 {
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.25))
-                        .frame(width: 8, height: 1)
+                    if index < BookletStage.allCases.count - 1 {
+                        Rectangle()
+                            .fill(Color.secondary.opacity(0.25))
+                            .frame(width: 6, height: 1)
+                    }
                 }
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
         }
-        .padding(.vertical, 4)
     }
 
-    // MARK: - Summary
+    // MARK: - Print layout
+
+    private var printLayoutContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                summaryCard
+                paperPickerCard
+                sheetGrid
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+    }
 
     private var summaryCard: some View {
         HStack(spacing: 10) {
@@ -87,8 +118,6 @@ struct BookletPreviewStageView: View {
         .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
     }
 
-    // MARK: - Paper picker
-
     private var paperPickerCard: some View {
         HStack {
             Label(BookletLocalization.string("Paper"), systemImage: "rectangle.portrait.on.rectangle.portrait")
@@ -103,8 +132,6 @@ struct BookletPreviewStageView: View {
         .padding(10)
         .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
     }
-
-    // MARK: - Sheets grid
 
     private var sheetGrid: some View {
         LazyVGrid(
@@ -167,6 +194,72 @@ struct BookletPreviewStageView: View {
         BookletLocalization.string("Pages %lld + %lld",
                                    Int64(sheet.leftPage),
                                    Int64(sheet.rightPage))
+    }
+
+    // MARK: - Review
+
+    private var reviewContent: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                VStack(spacing: 10) {
+                    reviewRow(
+                        BookletLocalization.string("Paper"),
+                        value: viewModel.settings.outputPaper.displayName,
+                        systemImage: "rectangle.portrait.on.rectangle.portrait"
+                    )
+                    reviewRow(
+                        BookletLocalization.string("Layout"),
+                        value: viewModel.settings.layout == .bookletFold
+                            ? BookletLocalization.string("Booklet Fold")
+                            : BookletLocalization.string("Simple Pair"),
+                        systemImage: "rectangle.split.2x1"
+                    )
+                    reviewRow(
+                        BookletLocalization.string("Margin"),
+                        value: BookletLocalization.string("%lld mm", Int64(viewModel.settings.marginMM)),
+                        systemImage: "arrow.left.and.right"
+                    )
+                    reviewRow(
+                        BookletLocalization.string("Gutter"),
+                        value: BookletLocalization.string("%lld mm", Int64(viewModel.settings.gutterMM)),
+                        systemImage: "arrow.left.and.right.square"
+                    )
+                    reviewRow(
+                        BookletLocalization.string("Cut marks"),
+                        value: viewModel.settings.addCutMarks
+                            ? BookletLocalization.string("On")
+                            : BookletLocalization.string("Off"),
+                        systemImage: "scissors"
+                    )
+                }
+                .padding(12)
+                .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+
+                summaryCard
+
+                Button(action: onExport) {
+                    Label(BookletLocalization.string("Make Booklet"), systemImage: "book.closed")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(!viewModel.canExportBooklet)
+            }
+            .padding(16)
+        }
+    }
+
+    private func reviewRow(_ title: String, value: String, systemImage: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .frame(width: 22)
+                .foregroundStyle(.secondary)
+            Text(title)
+            Spacer()
+            Text(value)
+                .foregroundStyle(.secondary)
+        }
+        .font(.body)
     }
 }
 #endif
