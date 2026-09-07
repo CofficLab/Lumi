@@ -44,6 +44,7 @@ enum ToolJobVisualState: Equatable {
     case queued
     case running
     case waitingForUser
+    case cancelling
     case completed
     case failed
     case cancelled
@@ -54,6 +55,7 @@ enum ToolJobVisualState: Equatable {
         case .queued: self = .queued
         case .running: self = .running
         case .waitingForUser: self = .waitingForUser
+        case .cancelling: self = .cancelling
         case .completed: self = .completed
         case .failed: self = .failed
         case .cancelled: self = .cancelled
@@ -66,6 +68,7 @@ enum ToolJobVisualState: Equatable {
         case .queued: "排队中"
         case .running: "执行中"
         case .waitingForUser: "等待用户"
+        case .cancelling: "停止中"
         case .completed: "已完成"
         case .failed: "失败"
         case .cancelled: "已停止"
@@ -86,6 +89,7 @@ struct ToolJobActivityProjection: Equatable {
     let progressText: String?
     let outputTail: String
     let canStop: Bool
+    let isStale: Bool
 
     init(job: ToolJob, now: Date = Date()) {
         state = ToolJobVisualState(status: job.status)
@@ -95,7 +99,8 @@ struct ToolJobActivityProjection: Equatable {
         duration = max(0, end.timeIntervalSince(start))
         progressText = Self.progressText(for: job.latestProgress)
         outputTail = job.latestOutput
-        canStop = !job.status.isTerminal
+        canStop = !job.status.isTerminal && job.status != .cancelling
+        isStale = !job.status.isTerminal && now.timeIntervalSince(job.updatedAt) > 10
     }
 
     private static func progressText(for progress: ToolJobProgress?) -> String? {

@@ -3,11 +3,7 @@ import Foundation
 import KitAgentTool
 @testable import PluginDiskManager
 
-/// Pure-logic tests for the Disk Manager agent-tool support helpers.
-///
-/// Tool end-to-end execution touches the live file system, so these tests
-/// only cover the deterministic helpers (`formatBytes`, `formatDate`, path
-/// resolution) plus a sanity check that the plugin registers the expected tools.
+/// Deterministic tests for the Disk Manager agent-tool support helpers.
 @Suite struct DiskManagerToolSupportTests {
 
     @Test func formatBytesProducesHumanReadableString() {
@@ -43,6 +39,73 @@ import KitAgentTool
         #expect(DiskManagerToolSupport.resolveScanPath("~") == home)
         #expect(DiskManagerToolSupport.resolveScanPath("~/Downloads") == "\(home)/Downloads")
     }
+}
+
+@Suite(.serialized)
+struct DirectoryTreeServiceTests {
+
+    @Test func topLevelScanAggregatesNestedUsageWithoutMaterializingTree() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let nested = root.appendingPathComponent("Applications/Nested", isDirectory: true)
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        try Data(repeating: 1, count: 11).write(to: nested.appendingPathComponent("one.bin"))
+        try Data(repeating: 2, count: 23).write(to: root.appendingPathComponent("Downloads.bin"))
+        try Data(repeating: 3, count: 7).write(to: root.appendingPathComponent("root.bin"))
+
+        let progress = ProgressRecorder()
+        let entries = try await DirectoryTreeService().scanTopLevelDirectoryUsage(
+            atPath: root.path,
+            maxDuration: 10,
+            onProgress: { value in await progress.record(value) }
+        )
+
+        let byName = Dictionary(uniqueKeysWithValues: entries.map { ($0.name, $0) })
+        #expect(byName["Applications"]?.isDirectory == true)
+        #expect(byName["Applications"]?.size == 11)
+        #expect(byName["Downloads.bin"]?.size == 23)
+        #expect(byName["root.bin"]?.size == 7)
+        #expect(await progress.count >= 2)
+    }
+
+    @Test func topLevelScanStopsAtEntryBudget() async throws {
+        let root = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data(repeating: 1, count: 1).write(to: root.appendingPathComponent("file-a.bin"))
+        try Data(repeating: 2, count: 1).write(to: root.appendingPathComponent("file-b.bin"))
+
+        do {
+            _ = try await DirectoryTreeService().scanTopLevelDirectoryUsage(
+                atPath: root.path,
+                maxEntries: 1,
+                maxDuration: 10
+            )
+            Issue.record("Expected the scan to stop at the configured entry budget")
+        } catch let error as DirectoryTreeScanError {
+            guard case .budgetExceeded = error else {
+                Issue.record("Unexpected scan error: \(error)")
+                return
+            }
+        }
+    }
+
+    private func makeTemporaryDirectory() throws -> URL {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lumi-directory-scan-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        return root
+    }
+}
+
+private actor ProgressRecorder {
+    private(set) var values: [ScanProgress] = []
+
+    func record(_ value: ScanProgress) {
+        values.append(value)
+    }
+
+    var count: Int { values.count }
 }
 
 @MainActor
