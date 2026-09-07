@@ -76,6 +76,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"BookletMaker-Info.plist",
+				"BookletMaker-iOS-Info.plist",
 			);
 			target = BM0000000000000000000009 /* BookletMaker */;
 		};
