@@ -44,43 +44,21 @@ public struct DefaultUninstallKeychainManager: UninstallKeychainManaging {
 /// The provider intentionally uses exact names and boundary checks. It never
 /// performs a fuzzy scan such as deleting every directory containing "Lumi".
 public final class DefaultUninstallProvider: UninstallProviding, @unchecked Sendable {
-    public static let supportedBundleIdentifiers = [
-        "com.coffic.lumi",
-        "com.coffic.lumi.debug",
-        "com.coffic.Lumi"
-    ]
-
-    public static let supportedAppGroupIdentifiers = [
-        "group.com.coffic.lumi",
-        "group.com.coffic.lumi.debug"
-    ]
-
-    public static let supportedPreferenceDomains = [
-        "com.coffic.lumi",
-        "com.coffic.lumi.debug",
-        "com.coffic.Lumi"
-    ]
-
-    public static let supportedKeychainServices = [
-        "com.coffic.lumi.apikey",
-        "com.coffic.lumi.database-manager",
-        "com.coffic.lumi.database-manager.debug",
-        "com.coffic.lumi.appstoreconnect",
-        "com.kit.llm.apikey"
-    ]
-
     private let locations: UninstallLocations
+    private let scope: UninstallScope
     private let persistentDomainRemover: any UninstallPersistentDomainRemoving
     private let keychainManager: any UninstallKeychainManaging
     private let fileManager: FileManager
 
     public init(
         locations: UninstallLocations = .live(),
+        scope: UninstallScope = .live(),
         persistentDomainRemover: any UninstallPersistentDomainRemoving = DefaultUninstallPersistentDomainRemover(),
         keychainManager: any UninstallKeychainManaging = DefaultUninstallKeychainManager(),
         fileManager: FileManager = .default
     ) {
         self.locations = locations
+        self.scope = scope
         self.persistentDomainRemover = persistentDomainRemover
         self.keychainManager = keychainManager
         self.fileManager = fileManager
@@ -162,7 +140,7 @@ public final class DefaultUninstallProvider: UninstallProviding, @unchecked Send
         }
 
         let appSupport = locations.applicationSupportDirectory
-        for bundleID in Self.supportedBundleIdentifiers {
+        for bundleID in scope.bundleIdentifiers {
             let url = appSupport.appendingPathComponent(bundleID, isDirectory: true)
             appendPath(
                 id: "application-support.\(bundleID)",
@@ -171,16 +149,15 @@ public final class DefaultUninstallProvider: UninstallProviding, @unchecked Send
             )
         }
 
-        let legacySupportPaths = [
-            ("application-support.Lumi", "Lumi"),
-            ("application-support.LumiMinimal", "LumiMinimal")
-        ]
+        let legacySupportPaths = scope.legacyApplicationSupportDirectories.map {
+            ("application-support.\($0)", $0)
+        }
         for (id, name) in legacySupportPaths {
             let url = appSupport.appendingPathComponent(name, isDirectory: true)
             appendPath(id: id, url: url, kind: .legacyData)
         }
 
-        for bundleID in ["com.coffic.lumi", "com.coffic.lumi.debug", "com.coffic.Lumi"] {
+        for bundleID in scope.cacheBundleIdentifiers {
             let cacheURL = locations.cachesDirectory.appendingPathComponent(bundleID, isDirectory: true)
             appendPath(id: "cache.\(bundleID)", url: cacheURL, kind: .caches)
 
@@ -199,12 +176,12 @@ public final class DefaultUninstallProvider: UninstallProviding, @unchecked Send
             appendPath(id: "cookie.\(bundleID)", url: cookieURL, kind: .caches)
         }
 
-        for groupID in Self.supportedAppGroupIdentifiers {
+        for groupID in scope.appGroupIdentifiers {
             let url = locations.groupContainersDirectory.appendingPathComponent(groupID, isDirectory: true)
             appendPath(id: "app-group.\(groupID)", url: url, kind: .appGroup)
         }
 
-        for domain in Self.supportedPreferenceDomains {
+        for domain in scope.preferenceDomains {
             let url = locations.preferencesDirectory.appendingPathComponent("\(domain).plist", isDirectory: false)
             let exists = fileManager.fileExists(atPath: url.path)
                 || persistentDomainHasValues(domain)
@@ -217,7 +194,7 @@ public final class DefaultUninstallProvider: UninstallProviding, @unchecked Send
             ), exists: exists)
         }
 
-        for service in Self.supportedKeychainServices where keychainManager.containsItems(forService: service) {
+        for service in scope.keychainServices where keychainManager.containsItems(forService: service) {
             append(UninstallTarget(
                 id: "keychain.\(service)",
                 kind: .keychain,

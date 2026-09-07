@@ -72,6 +72,12 @@ struct UninstallProviderTests {
         }
     }
 
+    @Test("根据 Bundle ID 选择正确的卸载 scope")
+    func liveScopeMatchesBundleIdentifier() {
+        #expect(UninstallScope.live(bundleIdentifier: "com.coffic.lumi.debug") == .debug)
+        #expect(UninstallScope.live(bundleIdentifier: "com.coffic.lumi") == .production)
+    }
+
     @Test("扫描只发现 Lumi 白名单目标")
     func scanFindsOnlyLumiOwnedTargets() async throws {
         let fixture = try Fixture()
@@ -142,5 +148,41 @@ struct UninstallProviderTests {
         }
 
         #expect(FileManager.default.fileExists(atPath: fixture.locations.applicationSupportDirectory.appendingPathComponent("com.coffic.lumi/data.txt").path))
+    }
+
+    @Test("Debug 卸载不会删除 Release 数据")
+    func debugScopeDoesNotDeleteProductionData() async throws {
+        let fixture = try Fixture()
+        try fixture.write("Library/Application Support/com.coffic.lumi/db_production_v5/production.sqlite")
+        try fixture.write("Library/Application Support/com.coffic.lumi.debug/db_debug_v5/debug.sqlite")
+        try fixture.write("Library/Group Containers/group.com.coffic.lumi/RClickConfig.json")
+        try fixture.write("Library/Group Containers/group.com.coffic.lumi.debug/RClickConfig.json")
+        try fixture.write("Library/Preferences/com.coffic.lumi.plist")
+        try fixture.write("Library/Preferences/com.coffic.lumi.debug.plist")
+
+        let keychain = RecordingKeychainManager(existingServices: [
+            "com.coffic.lumi.apikey",
+            "com.coffic.lumi.database-manager.debug"
+        ])
+        let provider = DefaultUninstallProvider(
+            locations: fixture.locations,
+            scope: .debug,
+            persistentDomainRemover: RecordingDomainRemover(),
+            keychainManager: keychain
+        )
+
+        let result = try await provider.uninstall(options: UninstallOptions(
+            confirmation: UninstallOptions.confirmationPhrase,
+            removeKeychainCredentials: true,
+            removeApplication: false
+        ))
+
+        #expect(result.succeeded)
+        #expect(FileManager.default.fileExists(atPath: fixture.locations.applicationSupportDirectory.appendingPathComponent("com.coffic.lumi/db_production_v5").path))
+        #expect(!FileManager.default.fileExists(atPath: fixture.locations.applicationSupportDirectory.appendingPathComponent("com.coffic.lumi.debug/db_debug_v5").path))
+        #expect(FileManager.default.fileExists(atPath: fixture.locations.groupContainersDirectory.appendingPathComponent("group.com.coffic.lumi").path))
+        #expect(!FileManager.default.fileExists(atPath: fixture.locations.groupContainersDirectory.appendingPathComponent("group.com.coffic.lumi.debug").path))
+        #expect(keychain.existingServices.contains("com.coffic.lumi.apikey"))
+        #expect(!keychain.existingServices.contains("com.coffic.lumi.database-manager.debug"))
     }
 }

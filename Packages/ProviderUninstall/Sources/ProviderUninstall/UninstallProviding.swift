@@ -194,6 +194,64 @@ public struct UninstallLocations: Sendable, Equatable {
     }
 }
 
+/// The storage namespace that belongs to the currently running Lumi build.
+///
+/// Debug and Release intentionally do not share filesystem targets. Some old
+/// API-key services are shared by both builds and therefore are only removable
+/// from the production scope, where deleting them cannot affect a debug-only
+/// installation.
+public struct UninstallScope: Sendable, Equatable {
+    public let bundleIdentifiers: [String]
+    public let appGroupIdentifiers: [String]
+    public let preferenceDomains: [String]
+    public let cacheBundleIdentifiers: [String]
+    public let legacyApplicationSupportDirectories: [String]
+    public let keychainServices: [String]
+
+    public init(
+        bundleIdentifiers: [String],
+        appGroupIdentifiers: [String],
+        preferenceDomains: [String],
+        cacheBundleIdentifiers: [String],
+        legacyApplicationSupportDirectories: [String],
+        keychainServices: [String]
+    ) {
+        self.bundleIdentifiers = bundleIdentifiers
+        self.appGroupIdentifiers = appGroupIdentifiers
+        self.preferenceDomains = preferenceDomains
+        self.cacheBundleIdentifiers = cacheBundleIdentifiers
+        self.legacyApplicationSupportDirectories = legacyApplicationSupportDirectories
+        self.keychainServices = keychainServices
+    }
+
+    public static let production = Self(
+        bundleIdentifiers: ["com.coffic.lumi", "com.coffic.Lumi"],
+        appGroupIdentifiers: ["group.com.coffic.lumi"],
+        preferenceDomains: ["com.coffic.lumi", "com.coffic.Lumi"],
+        cacheBundleIdentifiers: ["com.coffic.lumi", "com.coffic.Lumi"],
+        legacyApplicationSupportDirectories: ["Lumi", "LumiMinimal"],
+        keychainServices: [
+            "com.coffic.lumi.apikey",
+            "com.coffic.lumi.database-manager",
+            "com.coffic.lumi.appstoreconnect",
+            "com.kit.llm.apikey"
+        ]
+    )
+
+    public static let debug = Self(
+        bundleIdentifiers: ["com.coffic.lumi.debug"],
+        appGroupIdentifiers: ["group.com.coffic.lumi.debug"],
+        preferenceDomains: ["com.coffic.lumi.debug"],
+        cacheBundleIdentifiers: ["com.coffic.lumi.debug"],
+        legacyApplicationSupportDirectories: [],
+        keychainServices: ["com.coffic.lumi.database-manager.debug"]
+    )
+
+    public static func live(bundleIdentifier: String? = Bundle.main.bundleIdentifier) -> Self {
+        bundleIdentifier == "com.coffic.lumi.debug" ? .debug : .production
+    }
+}
+
 public protocol UninstallPersistentDomainRemoving: Sendable {
     func removePersistentDomain(named name: String) throws
 }

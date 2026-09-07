@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import LumiUI
 import ProviderDiagnostics
 import ProviderDocsView
@@ -343,7 +344,9 @@ struct GeneralSettingsDetailView: View {
                     isPresentingUninstall = false
                 }
                 AppButton(
-                    isUninstalling ? "卸载中…" : "永久删除并卸载",
+                    isUninstalling
+                        ? "卸载中…"
+                        : (removeApplication ? "永久删除并卸载" : "清除数据并退出"),
                     systemImage: isUninstalling ? "hourglass" : "trash.fill",
                     style: .destructive,
                     size: .small
@@ -424,6 +427,9 @@ struct GeneralSettingsDetailView: View {
 
         isUninstalling = true
         uninstallFeedback = nil
+        // 内核停止后设置窗口可能暂时失去内容。先隐藏应用，避免用户看到
+        // 已经进入卸载流程但仍在运行的空壳窗口。
+        NSApp.hide(nil)
         NotificationCenter.default.post(name: .lumiWillUninstall, object: nil)
 
         Task { @MainActor in
@@ -439,19 +445,41 @@ struct GeneralSettingsDetailView: View {
                 if result.succeeded {
                     uninstallFeedback = result.applicationMovedToTrash
                         ? "Lumi 已卸载，应用已移到废纸篓。"
-                        : "Lumi 数据已清除。"
-                    if result.applicationMovedToTrash {
-                        try? await Task.sleep(for: .milliseconds(700))
-                        NSApplication.shared.terminate(nil)
-                    }
+                        : "Lumi 数据已清除，应用即将退出。"
+                    terminateAfterUninstall()
                 } else {
+                    restoreApplicationAfterUninstallFailure()
                     uninstallFeedback = "部分数据未能清除，应用未移除：\n"
                         + result.failures.map { "\($0.location)：\($0.message)" }.joined(separator: "\n")
                 }
             } catch {
+                restoreApplicationAfterUninstallFailure()
                 uninstallFeedback = "卸载失败：\(error.localizedDescription)"
             }
         }
+    }
+
+    /// 卸载结束后退出当前进程。应用本体已经移到废纸篓时不能再依赖
+    /// SwiftUI 窗口生命周期来触发退出，否则可能留下一个空壳窗口。
+    @MainActor
+    private func terminateAfterUninstall() {
+        NSApp.hide(nil)
+        NSApp.terminate(nil)
+
+        // 如果某个 AppKit/第三方组件延迟了终止请求，短暂兜底后强制结束。
+        // 卸载前内核已经完成 shutdown，数据清理也已经完成。
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            if NSApp.isRunning {
+                Darwin.exit(EXIT_SUCCESS)
+            }
+        }
+    }
+
+    @MainActor
+    private func restoreApplicationAfterUninstallFailure() {
+        NSApp.unhide(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.windows.first(where: { $0.canBecomeKey })?.makeKeyAndOrderFront(nil)
     }
 
     private func formattedBytes(_ bytes: Int64) -> String {
