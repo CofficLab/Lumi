@@ -175,37 +175,37 @@
         }
       }
     },
-    "Version" : {
+    "Settings..." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Version"
+            "value" : "Settings..."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "版本"
+            "value" : "设置…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "版本"
+            "value" : "设置…"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "版本"
+            "value" : "设置…"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "版本"
+            "value" : "设置…"
           }
         }
       }
@@ -245,40 +245,62 @@
         }
       }
     },
-    "Settings..." : {
+    "Version" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Settings..."
+            "value" : "Version"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "设置…"
+            "value" : "版本"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "设置…"
+            "value" : "版本"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "设置…"
+            "value" : "版本"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "设置…"
+            "value" : "版本"
           }
         }
       }
+    },
+    "删除 Lumi 数据" : {
+
+    },
+    "同时删除 Keychain 中的 API Key、密码和凭据" : {
+
+    },
+    "同时将 Lumi 应用移到废纸篓" : {
+
+    },
+    "将处理 %lld 项 Lumi 数据，总计 %@。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "将处理 %1$lld 项 Lumi 数据，总计 %2$@。"
+          }
+        }
+      }
+    },
+    "彻底卸载 Lumi" : {
+
     },
     "暂时还没有说明书。" : {
       "extractionState" : "manual",
@@ -315,6 +337,12 @@
         }
       }
     },
+    "正在检查 Lumi 数据…" : {
+
+    },
+    "此操作会永久删除 Lumi 自己保存的数据。用户项目、源码和导出的文件不会被删除。" : {
+
+    },
     "说明书" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -349,6 +377,12 @@
           }
         }
       }
+    },
+    "请输入“删除 Lumi 数据”以确认" : {
+
+    },
+    "还有 %lld 项，将在确认后一起处理。" : {
+
     }
   },
   "version" : "1.0"

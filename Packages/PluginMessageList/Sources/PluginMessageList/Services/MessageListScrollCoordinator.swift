@@ -16,7 +16,7 @@ import SwiftUI
 /// 集中持有的魔法数字（进入/离开容差、30ms / 50ms 延迟）来自原 `MessageListView`
 /// 长期线上观察的经验值，保留注释以便调优时定位。
 @MainActor
-struct MessageListScrollCoordinator {
+final class MessageListScrollCoordinator {
     /// 底部锚点行 id，用于 `ScrollViewProxy.scrollTo`（占位行挂在 List 末尾）。
     static let bottomAnchorID = "message-list-bottom-anchor"
 
@@ -33,6 +33,21 @@ struct MessageListScrollCoordinator {
     /// macOS 14 上 List 尚未完成首次布局时，`scrollTo` 会静默失败；补一次重试。
     static let scrollRetryDelayNs: UInt64 = 100_000_000
 
+    private var pendingBottomScrollTask: Task<Void, Never>?
+
+    deinit {
+        pendingBottomScrollTask?.cancel()
+    }
+
+    /// 取消所有可能持有旧 `ScrollViewProxy` 的延迟操作。
+    ///
+    /// SwiftUI 重建或销毁 List 时，旧 proxy 不能再参与下一轮 AttributeGraph
+    /// 更新。所有列表宿主都在消失时调用此方法。
+    func cancelPendingTasks() {
+        pendingBottomScrollTask?.cancel()
+        pendingBottomScrollTask = nil
+    }
+
     /// 滚动到底部锚点。
     ///
     /// `animated == true` 时裹一层 `.easeOut(0.2s)`；
@@ -44,14 +59,21 @@ struct MessageListScrollCoordinator {
         animated: Bool,
         condition: @escaping @MainActor () -> Bool = { true }
     ) {
+        pendingBottomScrollTask?.cancel()
+        pendingBottomScrollTask = nil
         guard !messages.isEmpty, condition() else { return }
         performScrollToBottom(proxy: proxy, animated: animated)
         // macOS 14 首次布局未完成时 scrollTo 会静默丢失，补一次重试。
         // 重试前再次检查条件 —— 用户可能在 100ms 窗口内手动滚离了底部。
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: Self.scrollRetryDelayNs)
+        pendingBottomScrollTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: Self.scrollRetryDelayNs)
+            } catch {
+                return
+            }
+            guard let self, !Task.isCancelled else { return }
             guard condition() else { return }
-            performScrollToBottom(proxy: proxy, animated: animated)
+            self.performScrollToBottom(proxy: proxy, animated: animated)
         }
     }
 
@@ -67,16 +89,30 @@ struct MessageListScrollCoordinator {
 
     /// 等待 `postAppendDelayNs` 让新内容完成布局，再滚到底。
     ///
+    /// 新请求会取消旧请求，避免多个延迟 `scrollTo` 同时操作同一个 macOS List。
     /// 流式期间（`animated == false`）不要动画：tail 刷新在流式中每条消息都会
     /// 触发，带动画的 `scrollTo` 会不断把目标重定到正在增长的底部，动画永不收敛。
-    func scrollToBottomAfterLayout(
+    func scheduleScrollToBottomAfterLayout(
         proxy: ScrollViewProxy,
         messages: [Message],
         animated: Bool = true,
         condition: @escaping @MainActor () -> Bool = { true }
-    ) async {
-        try? await Task.sleep(nanoseconds: Self.postAppendDelayNs)
-        scrollToBottom(proxy: proxy, messages: messages, animated: animated, condition: condition)
+    ) {
+        pendingBottomScrollTask?.cancel()
+        pendingBottomScrollTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: Self.postAppendDelayNs)
+            } catch {
+                return
+            }
+            guard let self, !Task.isCancelled else { return }
+            self.scrollToBottom(
+                proxy: proxy,
+                messages: messages,
+                animated: animated,
+                condition: condition
+            )
+        }
     }
 
     /// 等待 `postPrependDelayNs` 让 prepend 的新行完成布局，再把指定 id 钉回视口顶部。

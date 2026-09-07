@@ -1,5 +1,7 @@
 import Foundation
 import KernelCore
+import ProviderDiagnostics
+import ProviderUninstall
 import ProviderStorage
 import KitSuperLog
 import os
@@ -15,8 +17,10 @@ import os
 /// 插件关闭时停止协调器。
 @MainActor
 public final class FileLogPlugin: SuperPlugin, SuperLog {
+    nonisolated public static let pluginID = "com.coffic.lumi.plugin.file-log"
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.file-log", category: "FileLog")
-    public let id = "com.coffic.lumi.plugin.file-log"
+    public let id = FileLogPlugin.pluginID
+    public let order = 1
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.file-log",
         name: "File Log",
@@ -26,18 +30,40 @@ public final class FileLogPlugin: SuperPlugin, SuperLog {
         policy: .required
     )
 
+    private var uninstallObserver: NSObjectProtocol?
+
 
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 从 StorageProviding 获取日志目录
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
-            FileLogRuntimeBridge.logsDirectory = storage.pluginDataDirectory(for: "FileLog")
+            let currentDirectory = storage.pluginDataDirectory(for: Self.pluginID)
+            let legacyDirectory = currentDirectory.deletingLastPathComponent()
+                .appendingPathComponent("FileLog", isDirectory: true)
+            try? FileLogCoordinator.migrateLegacyDirectory(
+                from: legacyDirectory,
+                to: currentDirectory
+            )
+            FileLogRuntimeBridge.logsDirectory = currentDirectory
         }
         FileLogCoordinator.shared.start()
+        uninstallObserver = NotificationCenter.default.addObserver(
+            forName: .lumiWillUninstall,
+            object: nil,
+            queue: nil
+        ) { _ in
+            FileLogCoordinator.shared.stopAndWait()
+        }
+        kernel.unregisterProvider((any DiagnosticsProviding).self)
+        try kernel.registerProvider((any DiagnosticsProviding).self, FileLogCoordinator.shared)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        if let uninstallObserver {
+            NotificationCenter.default.removeObserver(uninstallObserver)
+            self.uninstallObserver = nil
+        }
         FileLogCoordinator.shared.stop()
     }
 }

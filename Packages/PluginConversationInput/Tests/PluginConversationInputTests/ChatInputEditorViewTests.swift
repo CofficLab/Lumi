@@ -148,6 +148,32 @@ struct ChatInputEditorViewTests {
         #expect(height == ChatInputEditorView.minHeight)
     }
 
+    @Test("active editor applies deferred height bindings")
+    func activeEditorAppliesDeferredHeightBinding() async {
+        var draft = ""
+        var height: CGFloat = ChatInputEditorView.minHeight
+        var focused = false
+        var cursor = 0
+        var dragging = false
+
+        let view = ChatInputEditorView(
+            text: Binding(get: { draft }, set: { draft = $0 }),
+            height: Binding(get: { height }, set: { height = $0 }),
+            onSubmit: {},
+            isFocused: Binding(get: { focused }, set: { focused = $0 }),
+            cursorPosition: Binding(get: { cursor }, set: { cursor = $0 }),
+            isImageDragHovering: Binding(get: { dragging }, set: { dragging = $0 })
+        )
+        let coordinator = view.makeCoordinator()
+        let textView = MarkedTextTestView()
+        coordinator.attach(to: textView)
+
+        coordinator.scheduleHeightBindingUpdate(ChatInputEditorView.maxHeight)
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(height == ChatInputEditorView.maxHeight)
+    }
+
     @Test("Return publishes the current committed editor text before sending")
     func returnPublishesDraftBeforeSubmit() {
         var draft = ""

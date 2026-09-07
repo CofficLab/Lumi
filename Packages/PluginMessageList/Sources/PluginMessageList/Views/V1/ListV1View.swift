@@ -92,14 +92,12 @@ struct ListV1View: View {
             // 因此再按实际可见行边界跟随一次，确保用户消息/Status 更新始终可见。
             .onChange(of: visibleRowIDs) { _, _ in
                 guard atBottomBox.value else { return }
-                Task { @MainActor in
-                    await scrollCoordinator.scrollToBottomAfterLayout(
-                        proxy: proxy,
-                        messages: displayedHistoryMessages,
-                        animated: false,
-                        condition: { atBottomBox.value }
-                    )
-                }
+                scrollCoordinator.scheduleScrollToBottomAfterLayout(
+                    proxy: proxy,
+                    messages: displayedHistoryMessages,
+                    animated: false,
+                    condition: { atBottomBox.value }
+                )
             }
             // 切会话/首屏加载完成：messageScrollView 在 isLoading 翻转时会销毁重建，
             // 重建后 onAppear 触发。此时 atBottomBox 已被事件 handler 重置为 true，
@@ -112,6 +110,9 @@ struct ListV1View: View {
                         animated: false
                     )
                 }
+            }
+            .onDisappear {
+                scrollCoordinator.cancelPendingTasks()
             }
         }
     }
@@ -148,7 +149,7 @@ struct ListV1View: View {
             // 首次 scrollTo 常落点偏上，此时内容底沿超出视口 > 离开阈值
             // 会让 tracker 把 atBottomBox 翻成 false，从而取消本应修正
             // 落点的 +100ms 重试，导致列表停在半路（「有时不滚到底部」）。
-            await scrollCoordinator.scrollToBottomAfterLayout(
+            scrollCoordinator.scheduleScrollToBottomAfterLayout(
                 proxy: proxy,
                 messages: displayedHistoryMessages,
                 animated: false,
