@@ -100,7 +100,7 @@ struct BookletBindingEffectView: View {
                 HStack {
                     Text(BookletLocalization.string("Fold angle"))
                     Spacer()
-                    Text(BookletLocalization.string("%lld°", Int64(foldAngle)))
+                    Text(BookletLocalization.string("%lld degrees", Int64(foldAngle)))
                         .font(.footnote)
                         .monospacedDigit()
                         .foregroundStyle(.secondary)

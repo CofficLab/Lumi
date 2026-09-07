@@ -10,6 +10,7 @@ import UniformTypeIdentifiers
 /// NavigationStack。
 public struct BookletMakerMobileRootView: View {
     @StateObject public var feature: BookletMakerMobileFeature
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var isImporterPresented = false
     @State private var saveDocument: PDFFileDocument?
     @State private var saveFilename = "booklet"
@@ -19,21 +20,34 @@ public struct BookletMakerMobileRootView: View {
         _feature = StateObject(wrappedValue: feature)
     }
 
+    private var isDocumentPhase: Bool {
+        switch feature.workspace.phase {
+        case .ready, .generating, .cancelling, .resultReady: true
+        case .welcome, .importing, .failed: false
+        }
+    }
+
     public var body: some View {
-        NavigationStack {
-            content
-                .fileImporter(
-                    isPresented: $isImporterPresented,
-                    allowedContentTypes: [.pdf],
-                    allowsMultipleSelection: false
-                ) { result in
-                    guard case .success(let urls) = result, let url = urls.first else {
-                        return // 选择器取消：不改变当前内容
-                    }
-                    Task { @MainActor in
-                        await feature.importDocument(from: url)
-                    }
+        Group {
+            if horizontalSizeClass == .regular, isDocumentPhase {
+                iPadSplitView
+            } else {
+                NavigationStack {
+                    content
                 }
+            }
+        }
+        .fileImporter(
+            isPresented: $isImporterPresented,
+            allowedContentTypes: [.pdf],
+            allowsMultipleSelection: false
+        ) { result in
+            guard case .success(let urls) = result, let url = urls.first else {
+                return // 选择器取消：不改变当前内容
+            }
+            Task { @MainActor in
+                await feature.importDocument(from: url)
+            }
         }
         .sheet(item: exportOutcomeBinding) { outcome in
             BookletExportResultMobileView(feature: feature, outcome: outcome)
@@ -72,6 +86,80 @@ public struct BookletMakerMobileRootView: View {
         }
     }
 
+    // MARK: - iPad split view
+
+    /// 宽屏（iPad 常规尺寸类）：侧栏为文档与工具选择，详情为工具页。
+    /// 折叠/展开只影响外观，feature 始终唯一，不会复制路径或 VM。
+    private var iPadSplitView: some View {
+        NavigationSplitView {
+            iPadSidebar
+                .navigationTitle(BookletLocalization.string("Booklet Maker"))
+                .navigationBarTitleDisplayMode(.inline)
+        } detail: {
+            NavigationStack {
+                feature.makeContentView()
+            }
+        }
+    }
+
+    private var iPadSidebar: some View {
+        List {
+            Section {
+                HStack(spacing: 12) {
+                    PDFDocumentPageView(
+                        documentURL: feature.viewModel.currentDocument.url,
+                        pageNumber: 1
+                    )
+                    .frame(width: 44, height: 58)
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(feature.documentName)
+                            .font(.headline)
+                            .lineLimit(2)
+                        Text(BookletLocalization.string(
+                            "%lld pages",
+                            Int64(feature.pageCount)
+                        ))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
+            Section {
+                toolRow(.booklet)
+                toolRow(.split)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        isImporterPresented = true
+                    } label: {
+                        Label(BookletLocalization.string("Replace PDF…"), systemImage: "arrow.triangle.2.circlepath")
+                    }
+                    NavigationLink {
+                        BookletHelpMobileView()
+                    } label: {
+                        Label(BookletLocalization.string("Help"), systemImage: "questionmark.circle")
+                    }
+                    Button(role: .destructive) {
+                        feature.closeDocument()
+                    } label: {
+                        Label(BookletLocalization.string("Close Current PDF"), systemImage: "xmark.circle")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityLabel(BookletLocalization.string("Document menu"))
+            }
+        }
+    }
+
+    // MARK: - Result & presentation bindings
+
     private var exportOutcomeBinding: Binding<BookletMakerMobileFeature.ExportOutcome?> {
         Binding(
             get: { feature.exportOutcome },
@@ -80,6 +168,22 @@ public struct BookletMakerMobileRootView: View {
                     feature.dismissExportResult()
                 }
             }
+        )
+    }
+
+    private func toolRow(_ tool: BookletMakerMobileFeature.Tool) -> some View {
+        Button {
+            feature.selectedTool = tool
+        } label: {
+            Label(tool.title, systemImage: tool.systemImage)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(
+            feature.selectedTool == tool
+                ? Color.accentColor
+                : Color.primary
         )
     }
 
@@ -111,7 +215,7 @@ public struct BookletMakerMobileRootView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .navigationTitle(BookletLocalization.string("BookletMaker"))
+        .navigationTitle(BookletLocalization.string("Booklet Maker"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }

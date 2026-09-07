@@ -36,7 +36,7 @@ struct BookletWelcomeView: View {
                 .controlSize(.large)
             }
         }
-        .navigationTitle(BookletLocalization.string("BookletMaker"))
+        .navigationTitle(BookletLocalization.string("Booklet Maker"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

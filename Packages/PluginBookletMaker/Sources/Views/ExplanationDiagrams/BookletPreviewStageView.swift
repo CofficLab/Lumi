@@ -6,6 +6,7 @@ import SwiftUI
 /// 顶部为六阶段导航（参数 / 裁切 / 装订 / 总览 / 导出）。
 struct BookletPreviewStageView: View {
     @ObservedObject var viewModel: BookletMakerViewModel
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     let onExport: () -> Void
 
     @State private var currentStage: BookletStage = .printLayout
@@ -15,6 +16,18 @@ struct BookletPreviewStageView: View {
             inputPageCount: viewModel.currentDocument.pageCount,
             settings: viewModel.settings
         )
+    }
+
+    private var gridColumns: [GridItem] {
+        switch horizontalSizeClass {
+        case .regular:
+            [GridItem(.flexible(), spacing: 12),
+             GridItem(.flexible(), spacing: 12),
+             GridItem(.flexible())]
+        default:
+            [GridItem(.flexible(), spacing: 12),
+             GridItem(.flexible())]
+        }
     }
 
     var body: some View {
@@ -134,10 +147,7 @@ struct BookletPreviewStageView: View {
     }
 
     private var sheetGrid: some View {
-        LazyVGrid(
-            columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible())],
-            spacing: 16
-        ) {
+        LazyVGrid(columns: gridColumns, spacing: 16) {
             ForEach(outputSides, id: \.index) { outputSide in
                 outputSideCard(outputSide)
             }
@@ -191,7 +201,7 @@ struct BookletPreviewStageView: View {
     }
 
     private func pairCaption(_ sheet: OutputSheet) -> String {
-        BookletLocalization.string("Pages %lld + %lld",
+        BookletLocalization.string("Pages %lld and %lld",
                                    Int64(sheet.leftPage),
                                    Int64(sheet.rightPage))
     }
@@ -225,7 +235,7 @@ struct BookletPreviewStageView: View {
                         systemImage: "arrow.left.and.right.square"
                     )
                     reviewRow(
-                        BookletLocalization.string("Cut marks"),
+                        BookletLocalization.string("Cut Marks"),
                         value: viewModel.settings.addCutMarks
                             ? BookletLocalization.string("On")
                             : BookletLocalization.string("Off"),
