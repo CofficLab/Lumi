@@ -107,14 +107,25 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
     /// 停止磁盘日志收集并 flush 剩余条目
     func stop() {
         queue.async { [self] in
-            guard isRunning else { return }
-            isRunning = false
-            pollTimer?.cancel()
-            pollTimer = nil
-            writePendingRecords(upTo: .distantFuture)
-            flushCurrentFile()
-            closeCurrentFile()
+            stopOnQueue()
         }
+    }
+
+    /// 同步停止日志收集，用于卸载前确保文件句柄已经关闭。
+    func stopAndWait() {
+        queue.sync { [self] in
+            stopOnQueue()
+        }
+    }
+
+    private func stopOnQueue() {
+        guard isRunning else { return }
+        isRunning = false
+        pollTimer?.cancel()
+        pollTimer = nil
+        writePendingRecords(upTo: .distantFuture)
+        flushCurrentFile()
+        closeCurrentFile()
     }
 
     // MARK: - Log Rotation

@@ -1,6 +1,7 @@
 import Foundation
 import KernelCore
 import ProviderDiagnostics
+import ProviderUninstall
 import ProviderStorage
 import KitSuperLog
 import os
@@ -29,6 +30,8 @@ public final class FileLogPlugin: SuperPlugin, SuperLog {
         policy: .required
     )
 
+    private var uninstallObserver: NSObjectProtocol?
+
 
     public init() {}
 
@@ -45,11 +48,22 @@ public final class FileLogPlugin: SuperPlugin, SuperLog {
             FileLogRuntimeBridge.logsDirectory = currentDirectory
         }
         FileLogCoordinator.shared.start()
+        uninstallObserver = NotificationCenter.default.addObserver(
+            forName: .lumiWillUninstall,
+            object: nil,
+            queue: nil
+        ) { _ in
+            FileLogCoordinator.shared.stopAndWait()
+        }
         kernel.unregisterProvider((any DiagnosticsProviding).self)
         try kernel.registerProvider((any DiagnosticsProviding).self, FileLogCoordinator.shared)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        if let uninstallObserver {
+            NotificationCenter.default.removeObserver(uninstallObserver)
+            self.uninstallObserver = nil
+        }
         FileLogCoordinator.shared.stop()
     }
 }

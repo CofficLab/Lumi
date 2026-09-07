@@ -3,6 +3,7 @@ import LumiUI
 import ProviderCommand
 import ProviderDiagnostics
 import ProviderDocsView
+import ProviderUninstall
 import ProviderSettingView
 import SwiftUI
 import KitSuperLog
@@ -33,9 +34,14 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
 
     /// 版本字符串提供器；默认读取 App bundle 版本，可注入以便测试。
     private let versionProvider: @MainActor () -> String?
+    private let uninstallProvider: any UninstallProviding
 
-    public init(versionProvider: @escaping @MainActor () -> String? = { AppVersion.current }) {
+    public init(
+        versionProvider: @escaping @MainActor () -> String? = { AppVersion.current },
+        uninstallProvider: any UninstallProviding = DefaultUninstallProvider()
+    ) {
         self.versionProvider = versionProvider
+        self.uninstallProvider = uninstallProvider
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -68,17 +74,23 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
         // 捕获 docs provider 引用，供详情视图读取。
         let docsProvider = kernel.resolveProvider((any DocsViewProviding).self)
         let diagnosticsProvider = kernel.resolveProvider((any DiagnosticsProviding).self)
+        let uninstallProvider = self.uninstallProvider
+        let prepareForUninstall: @MainActor () async -> Void = {
+            try? await kernel.stopAsync()
+        }
 
         let entry = SettingEntryItem(
             id: "general",
             title: "通用",
             systemImage: "gearshape",
             order: 1
-        ) { [versionProvider, docsProvider, diagnosticsProvider] in
+        ) { [versionProvider, docsProvider, diagnosticsProvider, uninstallProvider, prepareForUninstall] in
             GeneralSettingsDetailView(
                 version: versionProvider(),
                 docsProvider: docsProvider,
-                diagnosticsProvider: diagnosticsProvider
+                diagnosticsProvider: diagnosticsProvider,
+                uninstallProvider: uninstallProvider,
+                prepareForUninstall: prepareForUninstall
             )
         }
 
