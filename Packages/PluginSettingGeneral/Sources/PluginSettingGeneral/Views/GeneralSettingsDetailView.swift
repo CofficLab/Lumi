@@ -24,11 +24,29 @@ struct GeneralSettingsDetailView: View {
     @State private var isUninstalling = false
     @State private var uninstallScan: UninstallScan?
     @State private var uninstallFeedback: String?
+    @State private var uninstallFeedbackKind: UninstallFeedbackKind = .info
     @State private var removeKeychainCredentials = true
     @State private var removeApplication = true
 
     /// App bundle 元数据（名称 / 包名 / 版本 / 构建）。
     private let bundleInfo = AppBundleInfo()
+
+    /// 卸载反馈的语义类型，决定反馈横幅（`AppStatusBanner`）的样式。
+    private enum UninstallFeedbackKind {
+        case info
+        case success
+        case warning
+        case error
+
+        var bannerKind: AppStatusBanner.Kind {
+            switch self {
+            case .info: return .info
+            case .success: return .success
+            case .warning: return .warning
+            case .error: return .error
+            }
+        }
+    }
 
     /// 所有提供了说明书的文档条目（来自 `DocsViewProviding`）。
     private var manuals: [DocsEntry] {
@@ -301,33 +319,31 @@ struct GeneralSettingsDetailView: View {
                 .foregroundStyle(.secondary)
 
             if isScanningUninstall {
-                HStack(spacing: 8) {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text("正在检查 Lumi 数据…")
-                        .font(.appCaption)
-                        .foregroundStyle(.secondary)
-                }
+                AppStatusBanner(kind: .loading, title: "正在检查 Lumi 数据…")
             } else if let uninstallScan {
                 uninstallSummary(scan: uninstallScan)
             }
 
             if let uninstallFeedback {
-                Text(uninstallFeedback)
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
+                AppStatusBanner(kind: uninstallFeedbackKind.bannerKind, title: uninstallFeedback)
                     .textSelection(.enabled)
             }
 
-            Divider()
+            AppDivider()
 
             if let uninstallScan, uninstallScan.keychainTargetCount > 0 {
-                Toggle("同时删除 Keychain 中的 API Key、密码和凭据", isOn: $removeKeychainCredentials)
-                    .font(.appCaption)
+                AppToggleRow(
+                    title: "同时删除 Keychain 中的 API Key、密码和凭据",
+                    systemImage: "key.fill",
+                    isOn: $removeKeychainCredentials
+                )
             }
 
-            Toggle("同时将 Lumi 应用移到废纸篓", isOn: $removeApplication)
-                .font(.appCaption)
+            AppToggleRow(
+                title: "同时将 Lumi 应用移到废纸篓",
+                systemImage: "trash",
+                isOn: $removeApplication
+            )
 
             HStack {
                 Spacer()
@@ -357,44 +373,45 @@ struct GeneralSettingsDetailView: View {
 
     @ViewBuilder
     private func uninstallSummary(scan: UninstallScan) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("将处理 \(scan.targets.count) 项 Lumi 数据，总计 \(formattedBytes(scan.totalSizeInBytes))。")
-                .font(.appBody)
+        AppCard(
+            style: .subtle,
+            cornerRadius: 10,
+            padding: EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12),
+            showShadow: false
+        ) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("将处理 \(scan.targets.count) 项 Lumi 数据，总计 \(formattedBytes(scan.totalSizeInBytes))。")
+                    .font(.appBody)
 
-            ForEach(scan.targets.prefix(8)) { target in
-                HStack(spacing: 8) {
-                    Image(systemName: target.isSensitive ? "key.fill" : "folder")
-                        .foregroundStyle(target.isSensitive ? .orange : .secondary)
-                    Text(target.kind.displayName)
+                ForEach(scan.targets.prefix(8)) { target in
+                    AppInfoRow(
+                        icon: target.isSensitive ? "key.fill" : "folder",
+                        title: target.kind.displayName,
+                        description: target.sizeInBytes > 0 ? formattedBytes(target.sizeInBytes) : "—",
+                        tint: target.isSensitive ? .orange : .secondary
+                    )
+                }
+
+                if scan.targets.count > 8 {
+                    Text("还有 \(scan.targets.count - 8) 项，将在确认后一起处理。")
                         .font(.appCaption)
-                    Spacer()
-                    if target.sizeInBytes > 0 {
-                        Text(formattedBytes(target.sizeInBytes))
-                            .font(.appCaption)
-                            .foregroundStyle(.secondary)
-                    }
+                        .foregroundStyle(.secondary)
                 }
             }
-
-            if scan.targets.count > 8 {
-                Text("还有 \(scan.targets.count - 8) 项，将在确认后一起处理。")
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-            }
         }
-        .padding(12)
-        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
     }
 
     @MainActor
     private func beginUninstall() {
         guard let uninstallProvider else {
             uninstallFeedback = "卸载服务暂不可用。"
+            uninstallFeedbackKind = .warning
             isPresentingUninstall = true
             return
         }
 
         uninstallFeedback = nil
+        uninstallFeedbackKind = .info
         removeKeychainCredentials = true
         removeApplication = true
         uninstallScan = nil
@@ -411,11 +428,13 @@ struct GeneralSettingsDetailView: View {
     private func performUninstall() {
         guard let uninstallProvider else {
             uninstallFeedback = "卸载服务暂不可用。"
+            uninstallFeedbackKind = .warning
             return
         }
 
         isUninstalling = true
         uninstallFeedback = nil
+        uninstallFeedbackKind = .info
         // 内核停止后设置窗口可能暂时失去内容。先隐藏应用，避免用户看到
         // 已经进入卸载流程但仍在运行的空壳窗口。
         NSApp.hide(nil)
@@ -435,15 +454,18 @@ struct GeneralSettingsDetailView: View {
                     uninstallFeedback = result.applicationMovedToTrash
                         ? "Lumi 已卸载，应用已移到废纸篓。"
                         : "Lumi 数据已清除，应用即将退出。"
+                    uninstallFeedbackKind = .success
                     terminateAfterUninstall()
                 } else {
                     restoreApplicationAfterUninstallFailure()
                     uninstallFeedback = "部分数据未能清除，应用未移除：\n"
                         + result.failures.map { "\($0.location)：\($0.message)" }.joined(separator: "\n")
+                    uninstallFeedbackKind = .error
                 }
             } catch {
                 restoreApplicationAfterUninstallFailure()
                 uninstallFeedback = "卸载失败：\(error.localizedDescription)"
+                uninstallFeedbackKind = .error
             }
         }
     }
