@@ -1,8 +1,35 @@
 import Foundation
 import PDFKit
 
+// MARK: - Splitter Protocol
+
+/// Splitting contract used by the view model.
+///
+/// The protocol exists so tests can inject a splitter whose completion
+/// order is controlled, which is required to verify that a late old job
+/// cannot overwrite a newer job's state.
+protocol PDFSplitting: Sendable {
+    /// Write one PDF per planned range and return the produced URLs.
+    ///
+    /// - Parameters:
+    ///   - sourceURL: the input PDF.
+    ///   - outputDirectory: existing or to-be-created directory for outputs.
+    ///   - outputs: the planned page ranges and file names.
+    ///   - progress: called with values in `0.0 ... 1.0`. May be called from
+    ///     a background context.
+    /// - Returns: the URLs of the files written, in plan order.
+    /// - Throws: `CancellationError` if cancelled, or
+    ///   `PDFSplitter.SplitError` describing the failure.
+    func split(sourceURL: URL,
+               outputDirectory: URL,
+               outputs: [PDFSplitOutput],
+               progress: @escaping @Sendable (Double) -> Void) async throws -> [URL]
+}
+
+// MARK: - PDF Splitter
+
 /// Writes page ranges from one source PDF into separate vector PDF files.
-final class PDFSplitter: @unchecked Sendable {
+final class PDFSplitter: PDFSplitting, @unchecked Sendable {
     enum SplitError: LocalizedError {
         case sourceUnreadable(URL)
         case outputContextFailed(URL)
@@ -27,20 +54,27 @@ final class PDFSplitter: @unchecked Sendable {
                outputDirectory: URL,
                outputs: [PDFSplitOutput],
                progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws -> [URL] {
-        try await Task.detached(priority: .userInitiated) {
+        try Task.checkCancellation()
+
+        let worker = Task.detached(priority: .userInitiated) {
             try Self.runSplit(
                 sourceURL: sourceURL,
                 outputDirectory: outputDirectory,
                 outputs: outputs,
                 progress: progress
             )
-        }.value
+        }
+        return try await withTaskCancellationHandler {
+            try await worker.value
+        } onCancel: {
+            worker.cancel()
+        }
     }
 
     private static func runSplit(sourceURL: URL,
                                  outputDirectory: URL,
                                  outputs: [PDFSplitOutput],
-                                 progress: @escaping @Sendable (Double) -> Void) throws -> [URL] {
+                                 progress: @Sendable (Double) -> Void) throws -> [URL] {
         progress(0.05)
         guard let source = PDFDocument(url: sourceURL),
               !source.isLocked,
@@ -65,11 +99,12 @@ final class PDFSplitter: @unchecked Sendable {
         var completed: [URL] = []
         do {
             for (index, pair) in zip(outputs, outputURLs).enumerated() {
-                if Task.isCancelled { throw CancellationError() }
+                try Task.checkCancellation()
                 let (plannedOutput, outputURL) = pair
                 let output = PDFDocument()
 
                 for pageNumber in plannedOutput.segment.startPage ... plannedOutput.segment.endPage {
+                    try Task.checkCancellation()
                     guard let page = source.page(at: pageNumber - 1)?.copy() as? PDFPage else {
                         throw SplitError.sourceUnreadable(sourceURL)
                     }
@@ -90,6 +125,8 @@ final class PDFSplitter: @unchecked Sendable {
             progress(1)
             return completed
         } catch {
+            // Remove every partially written file so a cancelled or failed
+            // job never leaves half of its output behind.
             for url in completed {
                 try? FileManager.default.removeItem(at: url)
             }

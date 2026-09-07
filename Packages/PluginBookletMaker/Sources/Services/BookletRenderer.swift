@@ -3,15 +3,41 @@ import Foundation
 import os
 import KitSuperLog
 
+// MARK: - Renderer Protocol
+
+/// Rendering contract used by the view model.
+///
+/// The protocol exists so tests can inject a renderer whose completion
+/// order is controlled, which is required to verify that a late old job
+/// cannot overwrite a newer job's state.
+protocol BookletRendering: Sendable {
+    /// Render the impositioned PDF and return the output URL on success.
+    ///
+    /// - Parameters:
+    ///   - sourceURL: the input PDF.
+    ///   - outputURL: where to write the result (will be overwritten).
+    ///   - settings: imposition parameters.
+    ///   - progress: called with values in `0.0 ... 1.0`. May be called from
+    ///     a background context.
+    /// - Returns: `outputURL` after the file has been fully written.
+    /// - Throws: `CancellationError` if the task is cancelled, or a
+    ///   `BookletRenderer.RenderError` describing the failure.
+    func render(sourceURL: URL,
+                outputURL: URL,
+                settings: BookletSettings,
+                progress: @escaping @Sendable (Double) -> Void) async throws -> URL
+}
+
 // MARK: - Booklet Renderer
 
 /// Renders an impositioned PDF using CoreGraphics.
 ///
 /// The renderer streams the source PDF page by page and writes one
 /// output sheet at a time, so memory usage stays roughly constant
-/// regardless of input size. It exposes progress through an
-/// `AsyncStream<Double>` so the UI can render a progress bar.
-final class BookletRenderer: SuperLog, @unchecked Sendable {
+/// regardless of input size. Progress is delivered through a callback and
+/// success is returned explicitly; the caller never infers success from
+/// file existence.
+final class BookletRenderer: BookletRendering, SuperLog, @unchecked Sendable {
 
     // MARK: - Identity
 
@@ -47,24 +73,26 @@ final class BookletRenderer: SuperLog, @unchecked Sendable {
 
     /// Render an impositioned PDF.
     ///
-    /// - Parameters:
-    ///   - sourceURL: the input PDF.
-    ///   - outputURL: where to write the result (will be overwritten).
-    ///   - settings: imposition parameters.
-    /// - Returns: an `AsyncStream<Double>` yielding progress values in
-    ///   `0.0 ... 1.0`. The stream finishes after the file has been
-    ///   written or after an error has been logged.
+    /// The work runs on a detached worker. The outer task's cancellation is
+    /// explicitly propagated to the worker through a cancellation handler so
+    /// that cancelling the caller actually stops the rendering, and the
+    /// partially written output file is removed.
     func render(sourceURL: URL,
                 outputURL: URL,
-                settings: BookletSettings) -> AsyncStream<Double> {
-        AsyncStream { continuation in
-            let task = Task.detached(priority: .userInitiated) {
-                await Self.runRender(sourceURL: sourceURL,
-                                     outputURL: outputURL,
-                                     settings: settings,
-                                     continuation: continuation)
-            }
-            continuation.onTermination = { _ in task.cancel() }
+                settings: BookletSettings,
+                progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws -> URL {
+        try Task.checkCancellation()
+
+        let worker = Task.detached(priority: .userInitiated) {
+            try Self.runRender(sourceURL: sourceURL,
+                               outputURL: outputURL,
+                               settings: settings,
+                               progress: progress)
+        }
+        return try await withTaskCancellationHandler {
+            try await worker.value
+        } onCancel: {
+            worker.cancel()
         }
     }
 
@@ -73,114 +101,104 @@ final class BookletRenderer: SuperLog, @unchecked Sendable {
     private static func runRender(sourceURL: URL,
                                   outputURL: URL,
                                   settings: BookletSettings,
-                                  continuation: AsyncStream<Double>.Continuation) async {
-        do {
-            continuation.yield(0.05)
+                                  progress: @Sendable (Double) -> Void) throws -> URL {
+        progress(0.05)
 
-            // 1. Open the source.
-            guard let sourceDoc = CGPDFDocument(sourceURL as CFURL) else {
-                throw RenderError.sourceUnreadable(sourceURL)
-            }
-            if sourceDoc.isEncrypted {
-                throw RenderError.sourceUnreadable(sourceURL)
-            }
-            let rawCount = sourceDoc.numberOfPages
-            guard rawCount > 0 else {
-                throw RenderError.sourceUnreadable(sourceURL)
-            }
-
-            // 2. Plan the output PDF pages. In booklet mode consecutive
-            // pages are the front and back of one physical sheet.
-            let outputSides = BookletLayoutEngine.buildOutputSides(
-                inputPageCount: rawCount,
-                settings: settings
-            )
-            guard !outputSides.isEmpty else {
-                throw RenderError.sourceUnreadable(sourceURL)
-            }
-
-            // 3. Build the output PDF context.
-            let outputData = NSMutableData()
-            guard let consumer = CGDataConsumer(data: outputData) else {
-                throw RenderError.outputContextFailed(outputURL)
-            }
-            // Booklet sheets are printed in landscape so the two reduced
-            // portrait source pages sit side by side across the long edge.
-            var mediaBox = CGRect(origin: .zero,
-                                  size: settings.outputPaper.landscapeSizeInPoints)
-            guard let ctx = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else {
-                throw RenderError.outputContextFailed(outputURL)
-            }
-
-            // 4. Render every print side as one output PDF page.
-            let total = outputSides.count
-            for (i, outputSide) in outputSides.enumerated() {
-                try Task.checkCancellation()
-
-                ctx.beginPDFPage(nil)
-
-                // Source pages may differ in size; we read each one
-                // and fit it into the corresponding cell.
-                let leftRect  = BookletLayoutEngine.leftRect(for: settings)
-                let rightRect = BookletLayoutEngine.rightRect(for: settings)
-
-                drawPage(from: sourceDoc,
-                         pageNumber: outputSide.leftPage,
-                         into: leftRect,
-                         context: ctx)
-
-                drawPage(from: sourceDoc,
-                         pageNumber: outputSide.rightPage,
-                         into: rightRect,
-                         context: ctx)
-
-                if settings.addCutMarks {
-                    drawCutMarks(in: leftRect, context: ctx)
-                    drawCutMarks(in: rightRect, context: ctx)
-                }
-
-                ctx.endPDFPage()
-
-                // Progress: 5% reserved for setup, 90% for rendering,
-                // 5% reserved for finalisation.
-                let p = 0.05 + 0.90 * Double(i + 1) / Double(total)
-                continuation.yield(p)
-            }
-
-            try Task.checkCancellation()
-            ctx.closePDF()
-
-            // 5. Write to disk.
-            do {
-                try FileManager.default.createDirectory(
-                    at: outputURL.deletingLastPathComponent(),
-                    withIntermediateDirectories: true)
-                try (outputData as Data).write(to: outputURL, options: .atomic)
-            } catch {
-                throw RenderError.writeFailed(outputURL)
-            }
-
-            continuation.yield(1.0)
-
-            if Self.verbose {
-                let physicalSheets = BookletLayoutEngine.buildPhysicalSheets(
-                    inputPageCount: rawCount,
-                    settings: settings
-                ).count
-                Self.logger.info("\(Self.t)Imposed \(rawCount) source pages → \(physicalSheets) physical sheets / \(total) print sides → \(outputURL.lastPathComponent)")
-            }
-        } catch {
-            try? FileManager.default.removeItem(at: outputURL)
-            if error is CancellationError {
-                continuation.finish()
-                return
-            }
-            let message = (error as? LocalizedError)?.errorDescription
-                ?? error.localizedDescription
-            Self.logger.error("\(Self.t)Render failed: \(message)")
+        // 1. Open the source.
+        guard let sourceDoc = CGPDFDocument(sourceURL as CFURL) else {
+            throw RenderError.sourceUnreadable(sourceURL)
+        }
+        if sourceDoc.isEncrypted {
+            throw RenderError.sourceUnreadable(sourceURL)
+        }
+        let rawCount = sourceDoc.numberOfPages
+        guard rawCount > 0 else {
+            throw RenderError.sourceUnreadable(sourceURL)
         }
 
-        continuation.finish()
+        // 2. Plan the output PDF pages. In booklet mode consecutive
+        // pages are the front and back of one physical sheet.
+        let outputSides = BookletLayoutEngine.buildOutputSides(
+            inputPageCount: rawCount,
+            settings: settings
+        )
+        guard !outputSides.isEmpty else {
+            throw RenderError.sourceUnreadable(sourceURL)
+        }
+
+        // 3. Build the output PDF context.
+        let outputData = NSMutableData()
+        guard let consumer = CGDataConsumer(data: outputData) else {
+            throw RenderError.outputContextFailed(outputURL)
+        }
+        // Booklet sheets are printed in landscape so the two reduced
+        // portrait source pages sit side by side across the long edge.
+        var mediaBox = CGRect(origin: .zero,
+                              size: settings.outputPaper.landscapeSizeInPoints)
+        guard let ctx = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else {
+            throw RenderError.outputContextFailed(outputURL)
+        }
+
+        // 4. Render every print side as one output PDF page.
+        let total = outputSides.count
+        for (i, outputSide) in outputSides.enumerated() {
+            try Task.checkCancellation()
+
+            ctx.beginPDFPage(nil)
+
+            // Source pages may differ in size; we read each one
+            // and fit it into the corresponding cell.
+            let leftRect  = BookletLayoutEngine.leftRect(for: settings)
+            let rightRect = BookletLayoutEngine.rightRect(for: settings)
+
+            drawPage(from: sourceDoc,
+                     pageNumber: outputSide.leftPage,
+                     into: leftRect,
+                     context: ctx)
+
+            drawPage(from: sourceDoc,
+                     pageNumber: outputSide.rightPage,
+                     into: rightRect,
+                     context: ctx)
+
+            if settings.addCutMarks {
+                drawCutMarks(in: leftRect, context: ctx)
+                drawCutMarks(in: rightRect, context: ctx)
+            }
+
+            ctx.endPDFPage()
+
+            // Progress: 5% reserved for setup, 90% for rendering,
+            // 5% reserved for finalisation.
+            let p = 0.05 + 0.90 * Double(i + 1) / Double(total)
+            progress(p)
+        }
+
+        try Task.checkCancellation()
+        ctx.closePDF()
+
+        // 5. Write to disk.
+        do {
+            try FileManager.default.createDirectory(
+                at: outputURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true)
+            try (outputData as Data).write(to: outputURL, options: .atomic)
+        } catch {
+            try? FileManager.default.removeItem(at: outputURL)
+            throw RenderError.writeFailed(outputURL)
+        }
+
+        progress(1.0)
+
+        if Self.verbose {
+            let physicalSheets = BookletLayoutEngine.buildPhysicalSheets(
+                inputPageCount: rawCount,
+                settings: settings
+            ).count
+            Self.logger.info("\(Self.t)Imposed \(rawCount) source pages → \(physicalSheets) physical sheets / \(total) print sides → \(outputURL.lastPathComponent)")
+        }
+
+        return outputURL
     }
 
     // MARK: - Drawing helpers
