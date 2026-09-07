@@ -141,7 +141,10 @@ public final class BookletMakerMobileFeature: ObservableObject {
         case .split:
             AnyView(PDFSplitMobileView(viewModel: viewModel))
         case .booklet:
-            AnyView(BookletPreviewMobileView(viewModel: viewModel))
+            AnyView(BookletPreviewMobileView(
+                viewModel: viewModel,
+                onExport: { [weak self] in self?.exportBooklet() }
+            ))
         }
     }
 
