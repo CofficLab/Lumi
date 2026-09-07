@@ -10,7 +10,7 @@ public final class TokenHubProvider: VendorLLMProvider {
         super.init(
             info: LLMProviderInfo(
                 id: "tencent",
-                displayName: "腾讯云TokenHub",
+                displayName: "腾讯云 TokenHub",
                 description: "Tencent Cloud TokenHub",
                 defaultModel: "hy4-preview",
                 models: [
