@@ -87,6 +87,7 @@ struct BookletPreviewStageView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(stage.title)
                     .accessibilityAddTraits(stage == currentStage ? .isSelected : [])
+                    .accessibilityIdentifier("stage.\(stage.stepNumber)")
 
                     if index < BookletStage.allCases.count - 1 {
                         Rectangle()

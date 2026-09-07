@@ -34,6 +34,7 @@ struct PDFDocumentOverviewView: View {
                         systemImage: "book.closed"
                     )
                 }
+                .accessibilityIdentifier("overview.bookletTool")
 
                 NavigationLink(value: MobileWorkspaceState.Tool.split) {
                     toolRow(
@@ -42,6 +43,7 @@ struct PDFDocumentOverviewView: View {
                         systemImage: "scissors"
                     )
                 }
+                .accessibilityIdentifier("overview.splitTool")
             }
         }
         .navigationTitle(BookletLocalization.string("Document"))

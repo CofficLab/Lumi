@@ -99,4 +99,140 @@ xcodebuild -project Lumi.xcodeproj -scheme BookletMaker \
 
 ---
 
-<!-- T2 及后续任务完成后在此追加 -->
+## T2. 移动会话与可靠导入（2026-09-07）
+
+### 改动
+
+- 新建 `Sources/Mobile/MobileDocumentStore.swift`（@MainActor）：每个会话一个唯一目录（`Caches/BookletMakerMobile/<uuid>/`，inbox 与 output 子目录）；`importPDF` = 打开安全作用域 → 后台 detached 复制到 `inbox/.candidate` → inspector 检查 → 成功 move 为原文件名（保留用户文件名）→ 失败删除 candidate 且不触碰旧文档；`clearSession()` / `cleanupStaleSessions(keeping:)`。
+- 新建 `Sources/Mobile/MobileWorkspaceState.swift`：`Phase`（welcome/importing/ready/generating/cancelling/resultReady/failed）、`Tool` 路由、单一 `Presentation` 枚举（bookletOptions/splitBatchInput/splitRename/splitRename(PDFSplitSegment)/help/shareBooklet(URL)/shareSplit([URL])/saveBooklet(URL)/saveSplit([URL])）。
+- 测试：`MobileDocumentStoreTests`（5 用例，含 corrupt/missing 文件断言失败无残留、文件名保留）与 `MobileWorkspaceStateTests`（7 用例）。
+
+### 验证
+
+- `swift test --package-path Packages/PluginBookletMaker`：51 个测试全过。
+- 提交：`d021aec3b`。
+
+---
+
+## T3. 新根导航、欢迎页与文档概览（2026-09-07）
+
+### 改动
+
+- `Sources/Mobile/BookletMakerMobileFeature.swift` 重写为 public @MainActor ObservableObject：public `Tool` 枚举（split/booklet，title/systemImage）、viewModel/workspace/documentStore、观察者驱动 objectWillChange、`sessionErrorMessage`；`openSampleDocument` / `importDocument(from:)` / `closeDocument` / `dismissSessionError`；`exportBooklet` 导出到临时目录后分享，`exportSplit` 导出到 `outputDirectory/split-<uuid>` 后分享（T7 改为结果页驱动）。
+- 新建 `BookletMakerMobileRootView.swift`（唯一 NavigationStack + 根级 `fileImporter(.pdf)`）、`BookletWelcomeView.swift`（ContentUnavailableView + Open PDF / Use Sample PDF + session 错误 banner）、`PDFDocumentOverviewView.swift`（文件信息 + 首页缩略图 + 两个工具 NavigationLink + 工具栏菜单）。
+- App 入口瘦身：`BookletMakerIOSApp.swift` 仅 `FactoryBookletMakerIOS.makeMobileRootView()`；Factory 新增 `makeMobileRootView()`。RootView 因被 Factory 引用改为 public。
+- 修过一轮：`public var selectedTool` 直接暴露 workspace 内部类型报 internal 类型错误，改为 get/set 双 switch 桥接。
+
+### 验证
+
+- PluginBookletMaker 与 FactoryBookletMakerIOS 的 xcodebuild iOS Simulator 构建均 `BUILD SUCCEEDED`。
+- macOS 51 测试过。
+- 提交：`604d6ad8f`。
+
+---
+
+## T4. 拼版预览与原稿阅读（2026-09-07）
+
+### 改动
+
+- 新建 `Sources/Models/BookletStage.swift`（printLayout/paperSelection/cuttingMarks/bindingEffect/review/export，stepNumber 1–6）+ 测试 `BookletStageTests.swift`。
+- `BookletLayoutEngine.swift` 新增共享显示度量（paperDisplaySize/landscapePaperDisplaySize/displayUnit），macOS `SheetPreviewView` 复用。
+- 新建 `BookletPreviewStageView.swift`（第一版：stageIndicator、summaryCard、paperPickerCard、outputSideCard 网格 + sideBadge 前后标 + pairCaption）与 `SourcePDFReadingView.swift`（真页只读、MagnificationGesture 1–5x 缩放 + 双方向 pan、页导航 + confirmationDialog 跳页）。
+- `BookletPreviewMobileView.swift` 重建：layout/source 分段 + 底部 summary/Make Booklet/Cancel 栏（isBusy 时 ProgressView(value:)+Cancel，isCancelling 文案）。
+
+### 验证
+
+- 包 iOS 构建成功；macOS 51+3 测试过。
+- 提交：`5f4440f27`。
+
+---
+
+## T5. 拆分浏览、输入与命名（2026-09-07）
+
+### 改动
+
+- `PDFSplitSegment` 增加 `rangeLabel`（单页 "Page %lld"，多页 "Pages %lld–%lld"）。
+- 新建 `PDFSplitPlanEditorView.swift`：批量分隔输入卡片（TextField 绑定 splitCutPointsText）、页序卡片（≤10 页缩略图网格 3 列点击 toggleSplit + 剪刀角标；>10 页紧凑行列表）、命名卡片（每段 rangeLabel + TextField 绑定 stem）。
+- `PDFSplitMobileView.swift` 重建：plan/source 分段 + 底部 summary（"Add at least one split" / "%lld pages → %lld files"）+ Split/Cancel 栏。
+- 测试新增：`testDuplicateSplitFileNamesAreRejected`、`testSplitSegmentRangeLabel`。
+
+### 验证
+
+- macOS 56 测试全过；iOS 构建成功。
+- 提交：`d5903789f`。
+
+---
+
+## T6. 原生参数、装订效果与帮助（2026-09-07）
+
+### 改动
+
+- 新建 `BookletParameterPanelView.swift`：Output（Paper Picker/Layout Picker）、Spacing（Margin/Gutter Slider 0–30 步进 1，值 "%lld mm"）、Print Options（Add cut marks / Pad with blank page Toggle，bookletFold 时 pad 禁用）。
+- 新建 `BookletBindingEffectView.swift`：bookletFold 时 rotation3DEffect 折叠动画（foldAngle 0–180 Slider + Play fold 按钮 1.6s linear 动画，left 页绕 trailing 轴转 -foldAngle，right 页固定宽 100；PDFDocumentPageView 100×140）；simplePair 并排示意；说明文案按 layout 切换。
+- 新建 `BookletHelpMobileView.swift`：List 四 Section（Make a Booklet / Split a PDF / Privacy / About，About 含 CFBundleShortVersionString/CFBundleVersion）。
+- `BookletPreviewStageView.swift` 重写为六阶段导航（横向 ScrollView + step 按钮 + switch 分发）：.printLayout 原拼版网格；.paperSelection/.cuttingMarks 参数面板；.bindingEffect 装订效果；.review/.export 参数 reviewRow 列表 + summaryCard + Make Booklet（onExport）。init 改为 `(viewModel:onExport:)`。
+- `BookletPreviewMobileView.swift` 传 onExport 给 StageView；帮助入口接入欢迎页与文档菜单。
+
+### 验证
+
+- 包 iOS 构建 `BUILD SUCCEEDED`；macOS 56 测试过。
+- 提交：`0c6973408`。
+
+---
+
+## T7. 完整结果页、保存与分享（2026-09-07）
+
+### 改动
+
+- Feature 增加导出结果状态机 `exportOutcome`（.success(urls) / .failure(message)）；导出完成后结果页在根视图以 sheet 呈现；取消导出不显示结果页。
+- 新建 `BookletExportResultMobileView.swift`：成功展示每个产物（PDFDocumentPageView 缩略图、文件名、ByteCountFormatter 大小、页数）+ Share / Save to Files / Done；失败展示原因 + Done。
+- `SharePresenter` 重构：新增 SwiftUI 可嵌入多文件 `ShareSheet`（UIViewControllerRepresentable，经 `.sheet` 呈现，不再查找前台窗口）；旧窗口查找路径与旧 iOS 插件分支在 T9 一并移除。
+- 单文件保存走系统 `fileExporter`（保留输出文件名），多文件保存走 ShareSheet（系统含"存储到文件"）。
+
+### 验证
+
+- 包 iOS 构建 `BUILD SUCCEEDED`；macOS 56 测试过。
+- 提交：`e5dcb985e`。
+
+---
+
+## T8. iPad、性能、本地化与无障碍（2026-09-07）
+
+### 改动
+
+- iPad 宽屏：RootView 在 regular 尺寸类且处于文档阶段时用 `NavigationSplitView`（侧栏 = 文档信息 + 两个工具按钮，详情 = 工具页）；折叠/展开只影响外观，feature 唯一，不复制路径或 VM。工具切换用显式两行 Button（规避 `List(selection:)` + ForEach 的类型推断问题）。
+- 拼版网格列数随尺寸类自适应（iPad 3 列）。
+- 本地化：为 65 个新增字符串补 en/zh-Hans/zh-HK/zh-TW 翻译（xcstrings 224 keys）；归一化与既有 key 符号冲突的条目（`BookletMaker`→既有 `Booklet Maker`、`Cut marks`→`Cut Marks`、`Pages %lld + %lld`→`Pages %lld and %lld`、`%lld°`→`%lld degrees`）。
+- 无障碍：图标控件补 accessibilityLabel；动态字体与对比度沿用系统默认。
+
+### 验证
+
+- 包 iOS 构建 `BUILD SUCCEEDED`（修复 xcstrings 符号冲突与 ForEach 推断问题后）；Factory iOS 构建 `BUILD SUCCEEDED`；macOS 56 测试过。
+- 提交：`eeaeee0e3`。
+
+---
+
+## T9. 集成测试、清理与交付（2026-09-07）
+
+### 改动
+
+- 清理：`BookletMakerPlugin` 的旧 iOS 分支（presentSavePanel/presentSplitDirectoryPanel 的 `#else` 分享面板路径）移除，方法仅保留 macOS 实现；`SharePresenter.share(fileURL:)`（窗口查找路径）移除；`BookletMakerMobileFeature.makeSettingsView()` 与 `BookletMakerMobileSettingsView.swift`（旧控件路径，无引用）删除。
+- 新增 iOS UI 测试 target：`BookletMakerUITests`（`com.apple.product-type.bundle.ui-testing`，TEST_TARGET_NAME=BookletMaker，bundle id `com.coffic.bookletmaker.uitests`，SWIFT_VERSION 6.0，部署目标 17.0）；`BookletMaker.xcscheme` TestAction 挂载该测试（此前为空）；`BookletMakerUITests/BookletMakerIOSFlowTests.swift` 覆盖：欢迎页 → Use Sample PDF → 概览工具入口、拼版预览六阶段导航。
+- 整仓 iOS Simulator App 构建此前多轮因远程 SwiftPM 依赖下载中断失败；T9 重试已成功：**`BUILD SUCCEEDED`**（`/tmp/ios-build-t9.log`），环境网络问题已恢复，不作为代码结论。
+
+### 验证
+
+- macOS：`swift test --package-path Packages/PluginBookletMaker` **56 tests, 0 failures**。
+- 包级 iOS 构建：PluginBookletMaker 与 FactoryBookletMakerIOS 均 `BUILD SUCCEEDED`。
+- 整仓 App iOS Simulator 构建：`BUILD SUCCEEDED`（`EXIT=0`）。
+- UI 测试（新增 `BookletMakerUITests` target，scheme TestAction 挂载）：
+  - `testSamplePDFOpensOverviewWithTools` **passed**（8.6s）：欢迎页 → Use Sample PDF → 概览两个工具入口。
+  - `testBookletPreviewStagesNavigable` **passed**（14.2s）：进入拼版 → 六阶段导航 → 纸张阶段原生参数面板 → 返回打印布局。
+  - 环境故障记录：首次运行因 CoreSimulator 设备克隆卡死（`Failed to clone device ... stuck in creation state`）失败，属模拟器服务状态问题；`shutdown all` + 重启 CoreSimulatorService + scheme `parallelizable=NO`（禁用并行设备克隆）后通过。
+  - 断言全部基于稳定 accessibilityIdentifier（`welcome.useSample` / `overview.bookletTool` / `overview.splitTool` / `stage.1…6`），不依赖文本语言与截图坐标。
+- 手工验收（系统 UI，不做自动化伪装）：文件选择器（fileImporter）、第三方 File Provider、系统分享面板目标选择、实体打印效果。
+
+### 提交
+
+- `e16969ca0`（计划 baseline）→ `3c6c368e9`（T0）→ `8acdd835d`（T1）→ `d021aec3b`（T2）→ `604d6ad8f`（T3）→ `5f4440f27`（T4）→ `d5903789f`（T5）→ `0c6973408`（T6）→ `e5dcb985e`（T7）→ `eeaeee0e3`（T8）→ T9（本文档提交时）。
+

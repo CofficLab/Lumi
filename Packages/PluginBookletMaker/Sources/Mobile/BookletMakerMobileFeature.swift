@@ -166,10 +166,6 @@ public final class BookletMakerMobileFeature: ObservableObject {
         }
     }
 
-    public func makeSettingsView() -> AnyView {
-        AnyView(BookletMakerMobileSettingsView(viewModel: viewModel))
-    }
-
     public func export() {
         switch workspace.selectedTool {
         case .booklet: exportBooklet()

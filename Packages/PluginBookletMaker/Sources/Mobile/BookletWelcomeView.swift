@@ -24,6 +24,7 @@ struct BookletWelcomeView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+                .accessibilityIdentifier("welcome.openPDF")
 
                 Button(action: { feature.openSampleDocument() }) {
                     Label(
@@ -34,6 +35,7 @@ struct BookletWelcomeView: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
+                .accessibilityIdentifier("welcome.useSample")
             }
         }
         .navigationTitle(BookletLocalization.string("Booklet Maker"))
