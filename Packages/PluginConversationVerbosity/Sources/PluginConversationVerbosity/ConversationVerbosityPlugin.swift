@@ -10,7 +10,7 @@ import SwiftUI
 /// 会话详细程度控制插件（V1 简洁 / V2 标准 / V3 详细）。
 ///
 /// 复刻自旧版 `Plugins/ConversationVerbosityPlugin`：
-/// - 在 Chat 分区工具栏注册详细度 chip（`ChatSectionBarPlacement.toolbarLeading`）；
+/// - 在 Chat 分区工具栏注册详细度 chip（`ChatSectionBarPlacement.toolbarTrailing`）；
 /// - 仅把详细度交给消息列表和消息渲染器，V1/V2/V3 不修改发送给 LLM 的提示词。
 @MainActor
 public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
@@ -28,8 +28,10 @@ public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
-    public init() {}
+    private var capabilityAdapter: ConversationVerbosityCapabilityAdapter?
+    private var conversationObservation: ConversationManagerObservationBox?
 
+    public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
@@ -37,6 +39,11 @@ public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding, ConversationManaging from kernel")
             return
         }
+        let adapter = ConversationVerbosityCapabilityAdapter(conversations: conversations)
+        capabilityAdapter = adapter
+        conversationObservation?.cancel()
+        let observation = ConversationManagerObservationBox(capability: adapter)
+        conversationObservation = observation
 
         chat.addBarItems([
             ChatSectionBarItem(
@@ -45,7 +52,7 @@ public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
                 placement: .toolbarTrailing
             ) {
                 VerbosityToolbarView(
-                    conversations: conversations,
+                    observation: observation,
                     toast: kernel.resolveProvider((any ToastProviding).self)
                 )
             },
@@ -53,6 +60,9 @@ public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        conversationObservation?.cancel()
+        conversationObservation = nil
+        capabilityAdapter = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar-button")
     }

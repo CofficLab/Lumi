@@ -1,27 +1,33 @@
+import Combine
 import ProviderConversation
 import ProviderToast
 import SwiftUI
 
 /// 详细度 chip：显示当前会话的 verbosity，点击弹出三档选择。
 struct VerbosityToolbarView: View {
-    let conversations: any ConversationManaging
+    @ObservedObject private var conversationObservation: ConversationManagerObservationBox
     let toast: (any ToastProviding)?
 
     @State private var isPopoverPresented = false
 
-    init(conversations: any ConversationManaging, toast: (any ToastProviding)? = nil) {
-        self.conversations = conversations
+    init(observation: ConversationManagerObservationBox, toast: (any ToastProviding)? = nil) {
+        self.conversationObservation = observation
         self.toast = toast
     }
 
+    private var capability: any ConversationVerbosityCapability {
+        conversationObservation.capability
+    }
+
     private var selectedVerbosity: ResponseVerbosity {
-        if let id = conversations.selectedConversationID {
-            return conversations.verbosity(for: id)
+        if let id = capability.selectedConversationID {
+            return capability.verbosity(for: id)
         }
-        return conversations.globalVerbosity
+        return capability.globalVerbosity
     }
 
     var body: some View {
+        let _ = conversationObservation.revision
         Button {
             isPopoverPresented.toggle()
         } label: {
@@ -40,11 +46,11 @@ struct VerbosityToolbarView: View {
         .help(selectedVerbosity.description)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VerbosityPopover(selected: selectedVerbosity) { level in
-                if let conversationID = conversations.selectedConversationID {
-                    conversations.setVerbosity(level, for: conversationID)
+                if let conversationID = capability.selectedConversationID {
+                    capability.setVerbosity(level, for: conversationID)
                 }
-                conversations.setGlobalVerbosity(level)
-                ConversationBehaviorToast.show(
+                capability.setGlobalVerbosity(level)
+                ConversationVerbosityToast.show(
                     toast,
                     title: LumiPluginLocalization.string("Response Detail", bundle: .module),
                     detail: level.levelCode,
