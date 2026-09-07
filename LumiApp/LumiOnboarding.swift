@@ -1,5 +1,6 @@
 import LumiUI
 import ProviderOnboarding
+import ProviderRootView
 import SwiftUI
 
 /// Onboarding Provider 的局部观察模型。页面注册/撤销只刷新 onboarding 宿主，
@@ -76,14 +77,14 @@ struct OnboardingSheet: View {
         let safeIndex = min(max(index, 0), max(pages.count - 1, 0))
         VStack(spacing: 0) {
             HStack {
-                Label("Getting started", systemImage: "graduationcap.fill")
+                Label(LumiPluginLocalization.string("Getting started", bundle: .module), systemImage: "graduationcap.fill")
                     .font(DesignTokens.Typography.bodyEmphasized)
                     .foregroundStyle(theme.textSecondary)
                 Spacer()
                 Text("\(safeIndex + 1) of \(pages.count)")
                     .font(DesignTokens.Typography.caption1)
                     .foregroundStyle(theme.textTertiary)
-                AppButton("Skip", style: .tonal, size: .small, action: finish)
+                AppButton(LumiPluginLocalization.string("Skip", bundle: .module), style: .tonal, size: .small, action: finish)
             }
             .padding(.horizontal, DesignTokens.Spacing.lg)
             .padding(.vertical, DesignTokens.Spacing.md + 4)
@@ -97,7 +98,7 @@ struct OnboardingSheet: View {
             Divider()
             HStack {
                 AppButton(
-                    "Back",
+                    LumiPluginLocalization.string("Back", bundle: .module),
                     systemImage: "chevron.left",
                     style: .ghost,
                     size: .small,
@@ -108,7 +109,7 @@ struct OnboardingSheet: View {
                 Spacer()
 
                 AppButton(
-                    safeIndex == pages.count - 1 ? "Finish" : "Continue",
+                    safeIndex == pages.count - 1 ? LumiPluginLocalization.string("Finish", bundle: .module) : LumiPluginLocalization.string("Continue", bundle: .module),
                     systemImage: safeIndex == pages.count - 1 ? nil : "chevron.right",
                     style: .primary,
                     action: {
