@@ -9,7 +9,8 @@
 /* Begin PBXBuildFile section */
 		0B7F9C3C30306DC5001526F4 /* AppUpdatePlugin in Frameworks */ = {isa = PBXBuildFile; productRef = F5CBA1A13020000000425FF6 /* AppUpdatePlugin */; };
 		AI2AFB000000000000000001 /* FactoryAppIconDesigner in Frameworks */ = {isa = PBXBuildFile; productRef = AI2AFD000000000000000001 /* FactoryAppIconDesigner */; };
-		BM2BFB000000000000000B001 /* FactoryBookletMaker in Frameworks */ = {isa = PBXBuildFile; productRef = BM2AFB0000000000000000001 /* FactoryBookletMaker */; };
+		BM2BFB000000000000000B002 /* FactoryBookletMakerMac in Frameworks */ = {isa = PBXBuildFile; productRef = BM2AFB0000000000000000002 /* FactoryBookletMakerMac */; };
+		BM2BFB000000000000000B003 /* FactoryBookletMakerIOS in Frameworks */ = {isa = PBXBuildFile; productRef = BM2AFB0000000000000000003 /* FactoryBookletMakerIOS */; };
 		CD2AFB000000000000000001 /* FactoryCADDesigner in Frameworks */ = {isa = PBXBuildFile; productRef = CD2AFD000000000000000001 /* FactoryCADDesigner */; };
 		DB2AFB000000000000000001 /* FactoryDatabaseManager in Frameworks */ = {isa = PBXBuildFile; productRef = DB2AFD000000000000000001 /* FactoryDatabaseManager */; };
 		F53C3ED12F1A3CB000929321 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F53C3ECB2F1A3CB000929321 /* Assets.xcassets */; };
@@ -174,7 +175,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BM2BFB000000000000000B001 /* FactoryBookletMaker in Frameworks */,
+				BM2BFB000000000000000B002 /* FactoryBookletMakerMac in Frameworks */,
+				BM2BFB000000000000000B003 /* FactoryBookletMakerIOS in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -296,7 +298,8 @@
 			);
 			name = BookletMaker;
 			packageProductDependencies = (
-				BM2AFB0000000000000000001 /* FactoryBookletMaker */,
+				BM2AFB0000000000000000002 /* FactoryBookletMakerMac */,
+				BM2AFB0000000000000000003 /* FactoryBookletMakerIOS */,
 			);
 			productName = BookletMaker;
 			productReference = BM0000000000000000000002 /* BookletMaker.app */;
@@ -803,10 +806,15 @@
 			package = AI2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryAppIconDesigner" */;
 			productName = FactoryAppIconDesigner;
 		};
-		BM2AFB0000000000000000001 /* FactoryBookletMaker */ = {
+		BM2AFB0000000000000000002 /* FactoryBookletMakerMac */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */;
-			productName = FactoryBookletMaker;
+			productName = FactoryBookletMakerMac;
+		};
+		BM2AFB0000000000000000003 /* FactoryBookletMakerIOS */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BM2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryBookletMaker" */;
+			productName = FactoryBookletMakerIOS;
 		};
 		CD2AFD000000000000000001 /* FactoryCADDesigner */ = {
 			isa = XCSwiftPackageProductDependency;

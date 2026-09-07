@@ -12,7 +12,7 @@ import ProviderTheme
 import ProviderToolbar
 import PluginSettingView
 import Testing
-@testable import FactoryBookletMaker
+@testable import FactoryBookletMakerMac
 
 /// KernelFactory 装配逻辑的测试：makeKernel 注册 BookletMaker 所需 Provider，
 /// 主视图与设置视图组装不崩溃。

@@ -1,10 +1,10 @@
 #if !os(macOS)
-import FactoryBookletMaker
+import FactoryBookletMakerIOS
 import SwiftUI
 import UniformTypeIdentifiers
 
 struct BookletMakerIOSApp: App {
-    @StateObject private var feature = FactoryBookletMaker.makeMobileFeature()
+    @StateObject private var feature = FactoryBookletMakerIOS.makeMobileFeature()
     @State private var isImporterPresented = false
     @State private var isSettingsPresented = false
 

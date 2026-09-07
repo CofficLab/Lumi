@@ -1,5 +1,5 @@
 #if os(macOS)
-import FactoryBookletMaker
+import FactoryBookletMakerMac
 import KernelCore
 import ProviderSettingView
 import SwiftUI
@@ -11,11 +11,11 @@ struct BookletMakerMacApp: App {
     @Environment(\.openWindow) private var openWindow
 
     init() {
-        if let assembledKernel = try? FactoryBookletMaker.makeKernel() {
+        if let assembledKernel = try? FactoryBookletMakerMac.makeKernel() {
             kernel = assembledKernel
-            mainView = (try? FactoryBookletMaker.makeMainView(kernel: assembledKernel))
+            mainView = (try? FactoryBookletMakerMac.makeMainView(kernel: assembledKernel))
                 ?? AnyView(Text("Failed to assemble main view"))
-            settingsView = (try? FactoryBookletMaker.makeSettingsView(kernel: assembledKernel))
+            settingsView = (try? FactoryBookletMakerMac.makeSettingsView(kernel: assembledKernel))
                 ?? AnyView(Text("Failed to assemble settings view"))
         } else {
             let fallbackKernel = KernelCoreContainer()
