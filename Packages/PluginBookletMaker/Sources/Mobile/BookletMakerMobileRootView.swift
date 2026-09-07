@@ -5,11 +5,15 @@ import UniformTypeIdentifiers
 /// BookletMaker 移动端根视图。
 ///
 /// 每个 scene 对应一个移动会话：`@StateObject` 持有 feature（业务 VM +
-/// 工作区状态机 + 文件生命周期），系统文件选择器在此统一挂载，避免
-/// App 与 Mobile 各嵌一层 NavigationStack。
+/// 工作区状态机 + 文件生命周期），系统文件选择器、导出结果页、
+/// 分享面板与保存到文件统一在此挂载，避免 App 与 Mobile 各嵌一层
+/// NavigationStack。
 public struct BookletMakerMobileRootView: View {
     @StateObject public var feature: BookletMakerMobileFeature
     @State private var isImporterPresented = false
+    @State private var saveDocument: PDFFileDocument?
+    @State private var saveFilename = "booklet"
+    @State private var isSavingPresented = false
 
     public init(feature: BookletMakerMobileFeature) {
         _feature = StateObject(wrappedValue: feature)
@@ -31,6 +35,59 @@ public struct BookletMakerMobileRootView: View {
                     }
                 }
         }
+        .sheet(item: exportOutcomeBinding) { outcome in
+            BookletExportResultMobileView(feature: feature, outcome: outcome)
+        }
+        .sheet(item: presentationBinding) { presentation in
+            switch presentation {
+            case .shareBooklet(let url):
+                SharePresenter.ShareSheet(urls: [url])
+                    .presentationDetents([.medium, .large])
+            case .shareSplit(let urls):
+                SharePresenter.ShareSheet(urls: urls)
+                    .presentationDetents([.medium, .large])
+            case .saveSplit(let urls):
+                SharePresenter.ShareSheet(urls: urls)
+                    .presentationDetents([.medium, .large])
+            case .saveBooklet(let url):
+                // 单文件：直接进入系统“保存到文件”对话框。
+                Color.clear
+                    .onAppear {
+                        saveDocument = PDFFileDocument(url: url)
+                        saveFilename = url.deletingPathExtension().lastPathComponent
+                        isSavingPresented = true
+                        feature.workspace.present(nil)
+                    }
+            case .bookletOptions, .splitBatchInput, .splitRename, .help:
+                EmptyView()
+            }
+        }
+        .fileExporter(
+            isPresented: $isSavingPresented,
+            document: saveDocument,
+            contentType: .pdf,
+            defaultFilename: saveFilename
+        ) { _ in
+            feature.workspace.present(nil)
+        }
+    }
+
+    private var exportOutcomeBinding: Binding<BookletMakerMobileFeature.ExportOutcome?> {
+        Binding(
+            get: { feature.exportOutcome },
+            set: { newValue in
+                if newValue == nil {
+                    feature.dismissExportResult()
+                }
+            }
+        )
+    }
+
+    private var presentationBinding: Binding<MobileWorkspaceState.Presentation?> {
+        Binding(
+            get: { feature.workspace.presentation },
+            set: { feature.workspace.present($0) }
+        )
     }
 
     @ViewBuilder
@@ -56,6 +113,25 @@ public struct BookletMakerMobileRootView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationTitle(BookletLocalization.string("BookletMaker"))
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// 用于系统“保存到文件”的 PDF 文档封装。
+struct PDFFileDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.pdf] }
+
+    let url: URL
+
+    init(url: URL) {
+        self.url = url
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        throw CocoaError(.featureUnsupported)
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        try FileWrapper(url: url)
     }
 }
 #endif

@@ -37,6 +37,21 @@ public final class BookletMakerMobileFeature: ObservableObject {
     /// `viewModel.errorMessage`.
     @Published private(set) var sessionErrorMessage: String?
 
+    /// The outcome of the most recent export, driving the result sheet.
+    @Published private(set) var exportOutcome: ExportOutcome?
+
+    enum ExportOutcome: Identifiable, Equatable {
+        case success(urls: [URL])
+        case failure(message: String)
+
+        var id: String {
+            switch self {
+            case .success(let urls): "success-\(urls.map(\.path).joined(separator: "|"))"
+            case .failure(let message): "failure-\(message)"
+            }
+        }
+    }
+
     public init() {
         let viewModel = BookletMakerViewModel()
         self.viewModel = viewModel
@@ -168,7 +183,7 @@ public final class BookletMakerMobileFeature: ObservableObject {
                 .appendingPathComponent("\(viewModel.currentDocument.baseFileName)-booklet.pdf")
             try? FileManager.default.removeItem(at: url)
             await viewModel.export(to: url)
-            if viewModel.lastOutputURL != nil { SharePresenter.share(fileURL: url) }
+            applyExportOutcome(urls: viewModel.lastOutputURL.map { [$0] } ?? [])
         }
     }
 
@@ -178,11 +193,61 @@ public final class BookletMakerMobileFeature: ObservableObject {
                 .appendingPathComponent("split-\(UUID().uuidString)", isDirectory: true)
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             await viewModel.exportSplit(to: directory)
-            if !viewModel.lastSplitOutputURLs.isEmpty {
-                // T7 改为按实际文件 URL 数组分享；当前保持旧路径可用。
-                SharePresenter.share(fileURL: directory)
-            }
+            applyExportOutcome(urls: viewModel.lastSplitOutputURLs)
         }
+    }
+
+    private func applyExportOutcome(urls: [URL]) {
+        if !urls.isEmpty {
+            workspace.generationFinished()
+            exportOutcome = .success(urls: urls)
+        } else if let message = viewModel.errorMessage {
+            workspace.generationFailed()
+            exportOutcome = .failure(message: message)
+        } else {
+            // Cancelled or silent failure: no result sheet.
+            workspace.generationCancelled()
+        }
+    }
+
+    // MARK: - Export result actions
+
+    public var exportedFileCount: Int {
+        if case .success(let urls) = exportOutcome { return urls.count }
+        return 0
+    }
+
+    public func exportedURLs() -> [URL] {
+        if case .success(let urls) = exportOutcome { return urls }
+        return []
+    }
+
+    /// Present the system share sheet for the produced files.
+    public func presentShare() {
+        let urls = exportedURLs()
+        guard !urls.isEmpty else { return }
+        if urls.count == 1 {
+            workspace.present(.shareBooklet(urls[0]))
+        } else {
+            workspace.present(.shareSplit(urls))
+        }
+    }
+
+    /// Present a save destination for the produced files.
+    public func presentSave() {
+        let urls = exportedURLs()
+        guard !urls.isEmpty else { return }
+        if urls.count == 1 {
+            workspace.present(.saveBooklet(urls[0]))
+        } else {
+            workspace.present(.saveSplit(urls))
+        }
+    }
+
+    /// Close the result sheet and return to the working state.
+    public func dismissExportResult() {
+        exportOutcome = nil
+        workspace.generationCancelled()
     }
 }
 #endif
