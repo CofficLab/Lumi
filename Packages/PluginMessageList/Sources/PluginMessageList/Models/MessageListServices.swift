@@ -1,35 +1,29 @@
 import Foundation
-import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
 import ProviderConversationState
 import ProviderMessage
-import ProviderMessageRendering
-import ProviderMessageStreaming
-import ProviderPromptSuggestion
-import ProviderProject
-import ProviderToolbar
-import ProviderToolManager
 
 /// 新版 PluginMessageList 的服务容器。
 ///
 /// 旧版 ViewModel 直接持有 `KernelLumi` 并访问 `kernel.messageManager` 等；
-/// 新版改为在插件 `onBoot` 时解析全部 Provider，集中在这里传给各视图模型。
+/// 新版改为在插件 `onBoot` 时解析全部 Provider，经 `Capabilities/` 收窄为
+/// 最小能力协议后集中在这里传给各视图模型。
 /// 全部为可选，允许部分 Provider 尚未注入时优雅降级（与旧版一致）。
 @MainActor
 struct MessageListServices {
-    let conversations: (any ConversationManaging)?
-    let conversationState: (any ConversationStateProviding)?
-    let messages: (any MessageManaging)?
-    let rendering: (any MessageRenderingProviding)?
-    let streaming: (any MessageStreamingProviding)?
-    let toolManager: (any ToolManagerProviding)?
-    let agentTurn: (any AgentLoopProviding)?
-    let promptSuggestions: (any PromptSuggestionProviding)?
-    let promptSuggestionExecutor: (any PromptSuggestionExecuting)?
-    let project: (any ProjectProviding)?
-    let toolbar: (any ToolbarProviding)?
-    let chat: (any ChatSectionProviding)?
+    let conversations: (any MessageListConversationCapability)?
+    let conversationState: (any MessageListConversationStateCapability)?
+    let messages: (any MessageListMessageCapability)?
+    let rendering: (any MessageListRenderingCapability)?
+    let streaming: (any MessageListStreamingCapability)?
+    let toolManager: (any MessageListToolManagerCapability)?
+    let agentTurn: (any MessageListAgentLoopCapability)?
+    let promptSuggestions: (any MessageListPromptSuggestionCapability)?
+    let promptSuggestionExecutor: (any MessageListPromptSuggestionExecutorCapability)?
+    let project: (any MessageListProjectCapability)?
+    let toolbar: (any MessageListToolbarCapability)?
+    let chat: (any MessageListChatSectionCapability)?
     var selectedConversationID: UUID? {
         conversations?.selectedConversationID
     }

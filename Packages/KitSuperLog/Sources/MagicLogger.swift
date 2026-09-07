@@ -145,16 +145,17 @@ public class MagicLogger: ObservableObject, @unchecked Sendable {
         var title = "\(entry.caller.withContextEmoji):\(entry.line ?? 0)"
         title = title.padding(toLength: 30, withPad: " ", startingAt: 0)
 
-        let formatted = "\(Thread.currentQosDescription) | \(title) | \(entry.originalMessage.withContextEmoji)"
+        let prefix = "\(Thread.currentQosDescription) | \(title) |"
+        let message = entry.originalMessage.withContextEmoji
         switch entry.level {
         case .info:
-            Self.logger.info("\(formatted, privacy: .public)")
+            Self.logger.info("\(prefix, privacy: .public) \(message, privacy: .private)")
         case .warning:
-            Self.logger.warning("\(formatted, privacy: .public)")
+            Self.logger.warning("\(prefix, privacy: .public) \(message, privacy: .private)")
         case .error:
-            Self.logger.error("\(formatted, privacy: .public)")
+            Self.logger.error("\(prefix, privacy: .public) \(message, privacy: .private)")
         case .debug:
-            Self.logger.debug("\(formatted, privacy: .public)")
+            Self.logger.debug("\(prefix, privacy: .public) \(message, privacy: .private)")
         }
     }
 }

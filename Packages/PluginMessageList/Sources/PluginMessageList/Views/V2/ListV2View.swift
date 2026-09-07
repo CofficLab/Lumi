@@ -102,15 +102,14 @@ struct ListV2View: View, SuperLog {
                     .onChange(of: scrollTick) { _, _ in
                         // 新消息行可能还没有完成尺寸布局；立即 scrollTo 会把
                         // 锚点停在旧的内容底部，导致最后一行被输入框截断。
-                        // 等布局完成后滚动，并保留协调器的重试，确保真正钉到底部。
-                        Task { @MainActor in
-                            await scrollCoordinator.scrollToBottomAfterLayout(
-                                proxy: proxy,
-                                messages: viewModel.historyRows,
-                                animated: false,
-                                condition: { true }
-                            )
-                        }
+                        // 等布局完成后只保留最后一次滚动请求，避免多个
+                        // scrollTo 同时驱动 macOS List 的行 materialize。
+                        scrollCoordinator.scheduleScrollToBottomAfterLayout(
+                            proxy: proxy,
+                            messages: viewModel.historyRows,
+                            animated: false,
+                            condition: { true }
+                        )
                     }
             }
             .listStyle(.plain)
@@ -147,6 +146,9 @@ struct ListV2View: View, SuperLog {
                 guard newID != nil else { return }
                 atBottomBox.value = true
                 scrollTick &+= 1
+            }
+            .onDisappear {
+                scrollCoordinator.cancelPendingTasks()
             }
         }
     }

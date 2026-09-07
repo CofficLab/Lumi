@@ -1,12 +1,11 @@
 import Foundation
 import KitAgentTool
-import ProviderProject
 
 /// 查看、创建、切换 Git 分支。
 public struct GitBranchV2Tool: SuperAgentTool, @unchecked Sendable {
     public let name = "git_branch"
-    private let project: (any ProjectProviding)?
-    public init(project: (any ProjectProviding)? = nil) { self.project = project }
+    private let project: (any GitProjectCapability)?
+    public init(project: (any GitProjectCapability)? = nil) { self.project = project }
     public func description(for language: LanguagePreference) -> String { "List, create, or switch Git branches. Defaults to listing local branches when no action is specified." }
     public func inputSchema(for language: LanguagePreference) -> [String: Any] { GitV2ToolSupport.schema(["path": GitV2ToolSupport.pathProperty(), "action": ["type": "string", "enum": ["list", "create", "checkout"], "description": "Action: list (default), create, or checkout."], "name": ["type": "string", "description": "Branch name (required for create/checkout)."], "remote": ["type": "boolean", "description": "Whether to include remote branches (list only), default false."]]) }
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { switch GitV2ToolSupport.string(arguments, "action") ?? "list" { case "create": "创建分支"; case "checkout": "切换分支"; default: "查看分支" } }

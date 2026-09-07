@@ -39,7 +39,9 @@ public final class EditorPreviewSuperPlugin: SuperPlugin {
             throw KernelCoreError.providerNotRegistered(type: (any RootViewProviding).self)
         }
 
-        let viewModel = EditorPreviewViewModel(project: project)
+        let viewModel = EditorPreviewViewModel(
+            projectCapability: EditorPreviewProjectCapabilityAdapter(project: project)
+        )
         let observer = EditorPreviewProjectObserver(
             project: project,
             viewModel: viewModel

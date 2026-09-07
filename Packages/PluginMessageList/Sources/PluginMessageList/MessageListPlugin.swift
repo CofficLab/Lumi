@@ -49,19 +49,33 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding from kernel")
             return
         }
+        // 入口解析全部 Provider：Observer 安装使用完整 Provider，
+        // 业务层（services）只接收经 Capabilities/ 收窄后的最小能力。
+        let conversations = kernel.resolveProvider((any ConversationManaging).self)
+        let conversationState = kernel.resolveProvider((any ConversationStateProviding).self)
+        let messages = kernel.resolveProvider((any MessageManaging).self)
+        let rendering = kernel.resolveProvider((any MessageRenderingProviding).self)
+        let streaming = kernel.resolveProvider((any MessageStreamingProviding).self)
+        let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
+        let agentTurn = kernel.resolveProvider((any AgentLoopProviding).self)
+        let promptSuggestions = kernel.resolveProvider((any PromptSuggestionProviding).self)
+        let promptSuggestionExecutor = kernel.resolveProvider((any PromptSuggestionExecuting).self)
+        let project = kernel.resolveProvider((any ProjectProviding).self)
+        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+
         let services = MessageListServices(
-            conversations: kernel.resolveProvider((any ConversationManaging).self),
-            conversationState: kernel.resolveProvider((any ConversationStateProviding).self),
-            messages: kernel.resolveProvider((any MessageManaging).self),
-            rendering: kernel.resolveProvider((any MessageRenderingProviding).self),
-            streaming: kernel.resolveProvider((any MessageStreamingProviding).self),
-            toolManager: kernel.resolveProvider((any ToolManagerProviding).self),
-            agentTurn: kernel.resolveProvider((any AgentLoopProviding).self),
-            promptSuggestions: kernel.resolveProvider((any PromptSuggestionProviding).self),
-            promptSuggestionExecutor: kernel.resolveProvider((any PromptSuggestionExecuting).self),
-            project: kernel.resolveProvider((any ProjectProviding).self),
-            toolbar: kernel.resolveProvider((any ToolbarProviding).self),
-            chat: chat,
+            conversations: conversations.map(MessageListConversationCapabilityAdapter.init(conversations:)),
+            conversationState: conversationState.map(MessageListConversationStateCapabilityAdapter.init(conversationState:)),
+            messages: messages.map(MessageListMessageCapabilityAdapter.init(messages:)),
+            rendering: rendering.map(MessageListRenderingCapabilityAdapter.init(rendering:)),
+            streaming: streaming.map(MessageListStreamingCapabilityAdapter.init(streaming:)),
+            toolManager: toolManager.map(MessageListToolManagerCapabilityAdapter.init(toolManager:)),
+            agentTurn: agentTurn.map(MessageListAgentLoopCapabilityAdapter.init(agentTurn:)),
+            promptSuggestions: promptSuggestions.map(MessageListPromptSuggestionCapabilityAdapter.init(promptSuggestions:)),
+            promptSuggestionExecutor: promptSuggestionExecutor.map(MessageListPromptSuggestionExecutorCapabilityAdapter.init(executor:)),
+            project: project.map(MessageListProjectCapabilityAdapter.init(project:)),
+            toolbar: toolbar.map(MessageListToolbarCapabilityAdapter.init(toolbar:)),
+            chat: MessageListChatSectionCapabilityAdapter(chat: chat),
         )
         let toolbarCoordinator = NoConversationSelectedToolbarCoordinator(
             project: services.project,
@@ -75,22 +89,22 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
         let viewModels = MessageListViewModels(services: services, guide: guideState)
         self.viewModels = viewModels
 
-        if let messages = services.messages {
+        if let messages {
             messageChangeObserver = messages.addMessageChangeObserver { [weak viewModels] change in
                 viewModels?.handleMessageChange(change)
             }
         }
-        if let conversationState = services.conversationState {
+        if let conversationState {
             conversationStateObserver = conversationState.addConversationStateObserver { [weak viewModels] event in
                 viewModels?.handleConversationStateChange(event)
             }
         }
-        if let streaming = services.streaming {
+        if let streaming {
             streamingObserver = streaming.addMessageStreamingObserver { [weak viewModels] change in
                 viewModels?.handleStreamingChange(change)
             }
         }
-        if let conversations = services.conversations {
+        if let conversations {
             selectedConversationObserver = conversations.addSelectedConversationObserver { [weak viewModels] conversationID in
                 viewModels?.handleSelectedConversationChange(conversationID)
             }
@@ -98,14 +112,14 @@ public final class MessageListPlugin: SuperPlugin, SuperLog {
                 viewModels?.handleConversationChange()
             }
         }
-        projectObserver = services.project?.addObserver { [weak viewModels, weak project = services.project] _ in
-            viewModels?.guide.handleProjectChange(project)
+        projectObserver = project?.addObserver { [weak viewModels, projectCapability = services.project] _ in
+            viewModels?.guide.handleProjectChange(projectCapability)
         }
         chatObserver = chat.addObserver { [weak viewModels] event in
             guard case let .activeContextChanged(context) = event else { return }
             viewModels?.guide.handleContextChange(context)
         }
-        promptSuggestionsCancellable = services.promptSuggestions?.changes.sink { [weak viewModels] _ in
+        promptSuggestionsCancellable = promptSuggestions?.changes.sink { [weak viewModels] _ in
             viewModels?.guide.handlePromptSuggestionsChange()
         }
         chat.addItems([ChatSectionItem(id: id, order: 100, fillsRemainingHeight: true) {

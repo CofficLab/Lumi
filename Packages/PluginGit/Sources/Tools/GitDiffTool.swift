@@ -1,12 +1,11 @@
 import Foundation
 import KitAgentTool
-import ProviderProject
 
 /// 查看 Git 代码变更：工作区或暂存区的 diff 与统计。
 public struct GitDiffV2Tool: SuperAgentTool, @unchecked Sendable {
     public let name = "git_diff"
-    private let project: (any ProjectProviding)?
-    public init(project: (any ProjectProviding)? = nil) { self.project = project }
+    private let project: (any GitProjectCapability)?
+    public init(project: (any GitProjectCapability)? = nil) { self.project = project }
     public func description(for language: LanguagePreference) -> String { "View code changes in a Git repository. Supports working tree changes and staged changes." }
     public func inputSchema(for language: LanguagePreference) -> [String: Any] { GitV2ToolSupport.schema(["path": GitV2ToolSupport.pathProperty(), "staged": ["type": "boolean", "description": "Whether to view staged changes. false means viewing working tree changes."], "file": ["type": "string", "description": "Optional, only view changes for the specified file."]]) }
     public func displayDescription(for arguments: [String: ToolArgument]) -> String { "查看代码变更" }

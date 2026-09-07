@@ -6,7 +6,8 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
-        .library(name: "FactoryBookletMaker", targets: ["FactoryBookletMaker"]),
+        .library(name: "FactoryBookletMakerMac", targets: ["FactoryBookletMakerMac"]),
+        .library(name: "FactoryBookletMakerIOS", targets: ["FactoryBookletMakerIOS"]),
     ],
     dependencies: [
         .package(path: "../KernelCore"),
@@ -34,7 +35,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "FactoryBookletMaker",
+            name: "FactoryBookletMakerMac",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
@@ -59,12 +60,19 @@ let package = Package(
                 .product(name: "ProviderCommand", package: "ProviderCommand", condition: .when(platforms: [.macOS])),
                 .product(name: "ProviderLogo", package: "ProviderLogo", condition: .when(platforms: [.macOS])),
             ],
-            path: "Sources/FactoryBookletMaker",
+            path: "Sources/FactoryBookletMakerMac",
             resources: [.process("../../Resources/Localizable.xcstrings")]
+        ),
+        .target(
+            name: "FactoryBookletMakerIOS",
+            dependencies: [
+                .product(name: "PluginBookletMaker", package: "PluginBookletMaker"),
+            ],
+            path: "Sources/FactoryBookletMakerIOS"
         ),
         .testTarget(
             name: "FactoryBookletMakerTests",
-            dependencies: ["FactoryBookletMaker"],
+            dependencies: ["FactoryBookletMakerMac"],
             path: "Tests/FactoryBookletMakerTests"
         ),
     ]

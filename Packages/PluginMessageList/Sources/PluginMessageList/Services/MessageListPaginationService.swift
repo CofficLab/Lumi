@@ -30,7 +30,7 @@ struct MessageListPaginationService {
     /// 加载首屏（最近一页）+ 是否还有更早消息。
     func loadFirstPage(
         conversationID: UUID,
-        messageManager: (any MessageManaging)?
+        messageManager: (any MessageListMessageCapability)?
     ) async -> LoadFirstPageResult {
         guard let messageManager else {
             return LoadFirstPageResult(messages: [], hasEarlierMessages: false)
@@ -51,7 +51,7 @@ struct MessageListPaginationService {
     /// 返回 `nil` 表示"无需操作"：无更早消息 / 无当前消息基准 / 更早一页为空。
     func loadEarlier(
         conversationID: UUID,
-        messageManager: (any MessageManaging)?,
+        messageManager: (any MessageListMessageCapability)?,
         currentFirstID: UUID?,
         hasEarlier: Bool
     ) async -> LoadEarlierResult? {
@@ -83,7 +83,7 @@ struct MessageListPaginationService {
     /// 与当前 `messages` 完全无重叠且当前有内容（避免破坏用户翻历史的视觉位置）。
     func refreshTail(
         conversationID: UUID,
-        messageManager: (any MessageManaging)?,
+        messageManager: (any MessageListMessageCapability)?,
         current: [Message]
     ) async -> RefreshTailResult? {
         guard let messageManager else { return nil }

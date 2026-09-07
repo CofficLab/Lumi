@@ -425,7 +425,7 @@ jobs:
               | grep -Ev '^- (ci|chore|build|style|test|docs)(\(|:)' \
               | grep -Ev '^- 👷 CI:' \
               | sort -u \
-              | sed -n '1,20p')
+              | sed -n '1,20p') || true
             if [ -z "$CHANGES" ]; then
               CHANGES="- Maintenance and stability improvements"
             fi

@@ -17,7 +17,7 @@ final class MessageListGuideState: ObservableObject {
 
     init(
         context: ChatContext?,
-        project: (any ProjectProviding)?,
+        project: (any MessageListProjectCapability)?,
         toolbarCoordinator: NoConversationSelectedToolbarCoordinator
     ) {
         self.context = context
@@ -30,7 +30,7 @@ final class MessageListGuideState: ObservableObject {
         self.context = context
     }
 
-    func handleProjectChange(_ project: (any ProjectProviding)?) {
+    func handleProjectChange(_ project: (any MessageListProjectCapability)?) {
         currentProject = project?.currentProject
         projects = project?.projects ?? []
         toolbarCoordinator.refresh()

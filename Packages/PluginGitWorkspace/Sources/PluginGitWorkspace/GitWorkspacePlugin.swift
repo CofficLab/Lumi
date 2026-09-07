@@ -37,7 +37,7 @@ public final class GitWorkspacePlugin: SuperPlugin, SuperLog {
         description: String(localized: "View the current project's commit history and working tree status.", bundle: .module),
         category: .project,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public init() {}

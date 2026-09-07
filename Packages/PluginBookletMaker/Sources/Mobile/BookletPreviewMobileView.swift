@@ -1,98 +1,118 @@
 #if os(iOS)
-import LumiUI
 import SwiftUI
 
+/// Booklet 工具移动端页面：拼版预览与原稿阅读分段切换，
+/// 底部为参数摘要与生成/取消操作。
 struct BookletPreviewMobileView: View {
-    enum Stage: String, CaseIterable, Identifiable {
-        case original = "Original"
-        case imposed = "Print Layout"
+    @ObservedObject var viewModel: BookletMakerViewModel
+    let onExport: () -> Void
+
+    @State private var readingSegment: ReadingSegment = .layout
+
+    enum ReadingSegment: String, CaseIterable, Identifiable {
+        case layout = "layout"
+        case source = "source"
 
         var id: String { rawValue }
 
-        /// rawValue 只作为稳定标识，展示文案必须走本地化目录。
-        var title: String { BookletLocalization.string(rawValue) }
+        var title: String {
+            switch self {
+            case .layout: BookletLocalization.string("Print Layout")
+            case .source: BookletLocalization.string("Original PDF")
+            }
+        }
     }
-
-    @ObservedObject var viewModel: BookletMakerViewModel
-    @State private var stage: Stage = .imposed
-    @LumiTheme private var theme
 
     var body: some View {
         VStack(spacing: 0) {
-            AppSegmentedControl(
-                Stage.allCases.map(\.title),
-                selection: stageSelection
-            )
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
+            segmentPicker
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
 
-            Group {
-                switch stage {
-                case .original: originalPages
-                case .imposed: imposedSheets
-                }
+            Divider()
+
+            switch readingSegment {
+            case .layout:
+                BookletPreviewStageView(
+                    viewModel: viewModel,
+                    onExport: onExport
+                )
+            case .source:
+                SourcePDFReadingView(document: viewModel.currentDocument)
             }
+
+            Divider()
+
+            bottomBar
         }
-        .appSurface(style: .panel, cornerRadius: 0)
+        .navigationTitle(viewModel.currentDocument.baseFileName)
     }
 
-    private var originalPages: some View {
-        GeometryReader { proxy in
-            let width = min(proxy.size.width - 40, 520)
-            ScrollView {
-                LazyVStack(spacing: 16) {
-                    ForEach(1 ... viewModel.currentDocument.pageCount, id: \.self) { page in
-                        PDFDocumentPageView(
-                            documentURL: viewModel.currentDocument.url,
-                            pageNumber: page
-                        )
-                        .frame(width: width, height: width / viewModel.currentDocument.pageAspectRatio)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(20)
+    // MARK: - Segments
+
+    private var segmentPicker: some View {
+        Picker(BookletLocalization.string("View"), selection: $readingSegment) {
+            ForEach(ReadingSegment.allCases) { segment in
+                Text(segment.title).tag(segment)
             }
         }
+        .pickerStyle(.segmented)
     }
 
-    private var imposedSheets: some View {
-        VStack(spacing: 0) {
-            AppCard(style: .subtle, cornerRadius: DesignTokens.Radius.sm, showShadow: false) {
-                HStack {
-                    Label(
-                        BookletLocalization.string("%lld sheets", Int64(viewModel.expectedSheetCount)),
-                        systemImage: "rectangle.stack"
-                    )
+    // MARK: - Bottom bar
+
+    private var bottomBar: some View {
+        VStack(spacing: 8) {
+            if viewModel.isBusy {
+                busyView
+            } else {
+                HStack(spacing: 12) {
+                    summaryText
                     Spacer()
-                    Text(BookletLocalization.string(
-                        "%lld print sides",
-                        Int64(viewModel.expectedOutputPageCount)
-                    ))
+                    Button(action: onExport) {
+                        Label(BookletLocalization.string("Make Booklet"), systemImage: "book.closed")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(!viewModel.canExportBooklet)
                 }
-                .font(DesignTokens.Typography.subheadline)
-                .foregroundStyle(theme.textSecondary)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 8)
-
-            SheetPreviewView(
-                document: viewModel.currentDocument,
-                settings: viewModel.settings
-            )
-            .padding(20)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.bar)
     }
 
-    private var stageSelection: Binding<Int> {
-        Binding(
-            get: { Stage.allCases.firstIndex(of: stage) ?? 0 },
-            set: { index in
-                guard Stage.allCases.indices.contains(index) else { return }
-                stage = Stage.allCases[index]
+    private var summaryText: some View {
+        Text(BookletLocalization.string(
+            "%lld pages · %lld sheets · %@",
+            Int64(viewModel.currentDocument.pageCount),
+            Int64(viewModel.expectedSheetCount),
+            viewModel.settings.outputPaper.displayName
+        ))
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
+    }
+
+    private var busyView: some View {
+        VStack(spacing: 8) {
+            ProgressView(value: viewModel.progress)
+            HStack {
+                Text(viewModel.isCancelling
+                     ? BookletLocalization.string("Cancelling…")
+                     : BookletLocalization.string("Generating…"))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if !viewModel.isCancelling {
+                    Button(BookletLocalization.string("Cancel")) {
+                        viewModel.cancel()
+                    }
+                    .font(.footnote)
+                }
             }
-        )
+        }
     }
 }
 #endif

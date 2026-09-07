@@ -43,7 +43,9 @@ public final class ProjectFilesSuperPlugin: SuperPlugin {
             throw KernelCoreError.providerNotRegistered(type: (any RootViewProviding).self)
         }
 
-        let tabViewModel = ProjectFilesTabViewModel(project: project)
+        let tabViewModel = ProjectFilesTabViewModel(
+            projectCapability: ProjectFilesProjectCapabilityAdapter(project: project)
+        )
         let projectObserver = ProjectFilesProjectObserver(project: project) { [weak self] in
             tabViewModel.reload()
             self?.updateHeaderVisibility(for: project)

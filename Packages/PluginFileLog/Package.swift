@@ -16,6 +16,8 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../KitSuperLog"),
+        .package(path: "../ProviderDiagnostics"),
+        .package(path: "../ProviderUninstall"),
         .package(path: "../ProviderStorage"),
     ],
     targets: [
@@ -24,6 +26,8 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "ProviderDiagnostics", package: "ProviderDiagnostics"),
+                .product(name: "ProviderUninstall", package: "ProviderUninstall"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
             ],
             path: "Sources/PluginFileLog"

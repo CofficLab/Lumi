@@ -62,9 +62,9 @@ private struct WelcomePage: View {
                     .foregroundStyle(theme.textSecondary)
             }
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm + 4) {
-                feature("bubble.left.and.bubble.right", "Conversations", "Keep context, files, and preferences with every chat.")
-                feature("folder", "Projects", "Connect conversations to the project you are working on.")
-                feature("wrench.and.screwdriver", "Tools", "Use built-in skills and agent tools when you need them.")
+                feature("bubble.left.and.bubble.right", LumiPluginLocalization.string("Conversations", bundle: .module), LumiPluginLocalization.string("Keep context, files, and preferences with every chat.", bundle: .module))
+                feature("folder", LumiPluginLocalization.string("Projects", bundle: .module), LumiPluginLocalization.string("Connect conversations to the project you are working on.", bundle: .module))
+                feature("wrench.and.screwdriver", LumiPluginLocalization.string("Tools", bundle: .module), LumiPluginLocalization.string("Use built-in skills and agent tools when you need them.", bundle: .module))
             }
             .padding(DesignTokens.Spacing.md + 2)
             .background(

@@ -1,5 +1,5 @@
 import Foundation
-import PluginProjectFiles
+@testable import PluginProjectFiles
 import ProviderProject
 import Testing
 
@@ -31,7 +31,13 @@ struct ProjectFilesTabStateTests {
     @Test("ProjectFiles tab updates when multiple files are pinned")
     func observesMultiplePinnedFiles() {
         let project = DefaultProjectProvider()
-        let viewModel = ProjectFilesTabViewModel(project: project)
+        let viewModel = ProjectFilesTabViewModel(
+            projectCapability: ProjectFilesProjectCapabilityAdapter(project: project)
+        )
+        // 与插件入口的装配一致：Observer 驱动 ViewModel reload。
+        let observer = ProjectFilesProjectObserver(project: project) { [weak viewModel] in
+            viewModel?.reload()
+        }
         let first = URL(fileURLWithPath: "/tmp/First.swift")
         let second = URL(fileURLWithPath: "/tmp/Second.swift")
 
@@ -43,5 +49,7 @@ struct ProjectFilesTabStateTests {
             second.standardizedFileURL,
         ])
         #expect(viewModel.tabState.activeFileURL == second.standardizedFileURL)
+
+        observer.cancel()
     }
 }

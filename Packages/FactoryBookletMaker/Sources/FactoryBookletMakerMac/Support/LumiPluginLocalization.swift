@@ -8,7 +8,7 @@ private final class FactoryBookletMakerBundleFinder {}
 /// 委托 `LumiLocalization` 按插件 bundle 的 Localizable 表查找。
 public enum LumiPluginLocalization {
     public static let bundle: Bundle = {
-        let bundleName = "FactoryBookletMaker_FactoryBookletMaker"
+        let bundleName = "FactoryBookletMakerMac_FactoryBookletMakerMac"
         let overrideURLs = [
             ProcessInfo.processInfo.environment["PACKAGE_RESOURCE_BUNDLE_PATH"],
             ProcessInfo.processInfo.environment["PACKAGE_RESOURCE_BUNDLE_URL"],

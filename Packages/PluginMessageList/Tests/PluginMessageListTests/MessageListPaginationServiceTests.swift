@@ -26,7 +26,7 @@ struct MessageListPaginationServiceTests {
         let pagination = MessageListPaginationService(pageSize: 40, maxRetainedCount: 300)
         let first = await pagination.loadFirstPage(
             conversationID: conversationID,
-            messageManager: manager
+            messageManager: MessageListMessageCapabilityAdapter(messages: manager)
         )
 
         #expect(first.messages.count == 40)
@@ -36,7 +36,7 @@ struct MessageListPaginationServiceTests {
 
         let middle = await pagination.loadEarlier(
             conversationID: conversationID,
-            messageManager: manager,
+            messageManager: MessageListMessageCapabilityAdapter(messages: manager),
             currentFirstID: first.messages.first?.id,
             hasEarlier: first.hasEarlierMessages
         )
@@ -47,7 +47,7 @@ struct MessageListPaginationServiceTests {
 
         let oldest = await pagination.loadEarlier(
             conversationID: conversationID,
-            messageManager: manager,
+            messageManager: MessageListMessageCapabilityAdapter(messages: manager),
             currentFirstID: middle?.earlier.first?.id,
             hasEarlier: middle?.hasEarlierMessages == true
         )

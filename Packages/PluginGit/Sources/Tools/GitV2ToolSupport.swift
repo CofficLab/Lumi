@@ -1,6 +1,5 @@
 import Foundation
 import KitAgentTool
-import ProviderProject
 
 /// Git 工具名称清单：LLM 可调用的全部 Git 工具。
 enum GitV2ToolNames {
@@ -40,11 +39,11 @@ enum GitV2ToolSupport {
     }
 
     @MainActor
-    static func path(_ arguments: [String: ToolArgument], project: (any ProjectProviding)?) throws -> String {
+    static func path(_ arguments: [String: ToolArgument], project: (any GitProjectCapability)?) throws -> String {
         let requested = string(arguments, "path")?.trimmingCharacters(in: .whitespacesAndNewlines)
         let candidate = requested?.isEmpty == false
             ? requested
-            : project?.currentProject?.path
+            : project?.currentProjectPath
         return try GitService.validatePath(candidate, allowedDirectories: [])
     }
 

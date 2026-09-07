@@ -4,6 +4,65 @@ import PDFKit
 import XCTest
 @testable import BookletMakerPlugin
 
+// MARK: - Controlled service doubles
+
+/// A renderer stub whose completion is controlled by the test. It is not
+/// cancellation-cooperative on purpose: a late successful return simulates
+/// a service that finished after being cancelled, which the view model must
+/// refuse to apply.
+@MainActor
+private final class ControlledRenderer: BookletRendering {
+    struct Call {
+        let sourceURL: URL
+        let outputURL: URL
+        let settings: BookletSettings
+        let progress: @Sendable (Double) -> Void
+    }
+
+    private(set) var calls: [Call] = []
+    var onRender: ((Call) async throws -> URL)?
+
+    func render(sourceURL: URL,
+                outputURL: URL,
+                settings: BookletSettings,
+                progress: @escaping @Sendable (Double) -> Void) async throws -> URL {
+        let call = Call(sourceURL: sourceURL, outputURL: outputURL, settings: settings, progress: progress)
+        calls.append(call)
+        guard let onRender else {
+            throw BookletRenderer.RenderError.sourceUnreadable(sourceURL)
+        }
+        return try await onRender(call)
+    }
+}
+
+/// A splitter stub with the same controlled-completion semantics.
+@MainActor
+private final class ControlledSplitter: PDFSplitting {
+    struct Call {
+        let sourceURL: URL
+        let outputDirectory: URL
+        let outputs: [PDFSplitOutput]
+        let progress: @Sendable (Double) -> Void
+    }
+
+    private(set) var calls: [Call] = []
+    var onSplit: ((Call) async throws -> [URL])?
+
+    func split(sourceURL: URL,
+               outputDirectory: URL,
+               outputs: [PDFSplitOutput],
+               progress: @escaping @Sendable (Double) -> Void) async throws -> [URL] {
+        let call = Call(sourceURL: sourceURL, outputDirectory: outputDirectory, outputs: outputs, progress: progress)
+        calls.append(call)
+        guard let onSplit else {
+            throw PDFSplitter.SplitError.sourceUnreadable(sourceURL)
+        }
+        return try await onSplit(call)
+    }
+}
+
+// MARK: - View Model Tests
+
 @MainActor
 final class BookletMakerViewModelTests: XCTestCase {
     func testStartsWithExportableDemoDocument() {
@@ -123,6 +182,172 @@ final class BookletMakerViewModelTests: XCTestCase {
         viewModel.toggleSplit(after: 2)
         XCTAssertEqual(viewModel.splitCutPointsText, "5")
         XCTAssertEqual(viewModel.splitSegments.map(\.pageCount), [5, 3])
+    }
+
+    func testDuplicateSplitFileNamesAreRejected() {
+        let viewModel = BookletMakerViewModel()
+        viewModel.selectedTool = .split
+        viewModel.splitCutPointsText = "2"
+        XCTAssertEqual(viewModel.splitSegments.count, 2)
+
+        let first = viewModel.splitSegments[0]
+        let second = viewModel.splitSegments[1]
+        viewModel.renameSplitOutputStem(first, to: "same-name")
+        viewModel.renameSplitOutputStem(second, to: "same-name")
+
+        XCTAssertNotNil(viewModel.splitFileNameValidationMessage)
+        XCTAssertFalse(viewModel.canExportSplit)
+
+        viewModel.renameSplitOutputStem(second, to: "other-name")
+        XCTAssertNil(viewModel.splitFileNameValidationMessage)
+        XCTAssertTrue(viewModel.canExportSplit)
+    }
+
+    func testSplitSegmentRangeLabel() {
+        let segment = PDFSplitSegment(index: 0, startPage: 3, endPage: 5)
+        XCTAssertEqual(segment.pageCount, 3)
+        XCTAssertEqual(segment.rangeKey, "3-5")
+        XCTAssertFalse(segment.rangeLabel.isEmpty)
+
+        let single = PDFSplitSegment(index: 1, startPage: 7, endPage: 7)
+        XCTAssertFalse(single.rangeLabel.isEmpty)
+    }
+
+    // MARK: - Export job isolation and cancellation
+
+    func testLateOldExportCannotOverwriteNewerExport() async throws {
+        let renderer = ControlledRenderer()
+        let viewModel = BookletMakerViewModel(renderer: renderer)
+
+        // Job A hangs until the test releases it.
+        var releaseA: CheckedContinuation<Void, Never>?
+        renderer.onRender = { call in
+            await withCheckedContinuation { releaseA = $0 }
+            return call.outputURL
+        }
+
+        let outputA = FileManager.default.temporaryDirectory
+            .appendingPathComponent("late-old-a-\(UUID().uuidString).pdf")
+        let outputB = FileManager.default.temporaryDirectory
+            .appendingPathComponent("late-old-b-\(UUID().uuidString).pdf")
+        defer {
+            try? FileManager.default.removeItem(at: outputA)
+            try? FileManager.default.removeItem(at: outputB)
+        }
+
+        let exportA = Task { await viewModel.export(to: outputA) }
+        while renderer.calls.isEmpty { await Task.yield() }
+        XCTAssertTrue(viewModel.isRendering)
+
+        // Job B starts (cancelling A internally) and completes immediately.
+        renderer.onRender = { call in call.outputURL }
+        await viewModel.export(to: outputB)
+        XCTAssertEqual(viewModel.lastOutputURL, outputB)
+        XCTAssertFalse(viewModel.isRendering)
+
+        // Stale A finally "completes" — it must not touch any state.
+        releaseA?.resume()
+        await exportA.value
+        XCTAssertEqual(viewModel.lastOutputURL, outputB)
+        XCTAssertFalse(viewModel.isRendering)
+        XCTAssertNil(viewModel.errorMessage)
+    }
+
+    func testCancelledExportHasNoSuccessResult() async throws {
+        let renderer = ControlledRenderer()
+        let viewModel = BookletMakerViewModel(renderer: renderer)
+
+        var releaseA: CheckedContinuation<Void, Never>?
+        renderer.onRender = { call in
+            await withCheckedContinuation { releaseA = $0 }
+            return call.outputURL
+        }
+
+        let outputA = FileManager.default.temporaryDirectory
+            .appendingPathComponent("cancelled-a-\(UUID().uuidString).pdf")
+        defer { try? FileManager.default.removeItem(at: outputA) }
+
+        let exportTask = Task { await viewModel.export(to: outputA) }
+        while renderer.calls.isEmpty { await Task.yield() }
+
+        viewModel.cancel()
+        XCTAssertTrue(viewModel.isCancelling)
+
+        // The worker still returns a URL, but the job was cancelled.
+        releaseA?.resume()
+        await exportTask.value
+
+        XCTAssertNil(viewModel.lastOutputURL)
+        XCTAssertFalse(viewModel.isRendering)
+        XCTAssertFalse(viewModel.isCancelling)
+        XCTAssertNil(viewModel.errorMessage)
+    }
+
+    func testExportFailureSurfacesErrorAndClearsBusyState() async throws {
+        let renderer = ControlledRenderer()
+        let viewModel = BookletMakerViewModel(renderer: renderer)
+        renderer.onRender = { call in
+            throw BookletRenderer.RenderError.writeFailed(call.outputURL)
+        }
+
+        let outputURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("failed-export-\(UUID().uuidString).pdf")
+        defer { try? FileManager.default.removeItem(at: outputURL) }
+
+        await viewModel.export(to: outputURL)
+
+        XCTAssertNil(viewModel.lastOutputURL)
+        XCTAssertFalse(viewModel.isRendering)
+        XCTAssertNotNil(viewModel.errorMessage)
+    }
+
+    func testCancelledSplitThenNewSplitCompletesCleanly() async throws {
+        let splitter = ControlledSplitter()
+        let viewModel = BookletMakerViewModel(splitter: splitter)
+        viewModel.selectedTool = .split
+        viewModel.splitCutPointsText = "2, 5"
+
+        var releaseA: CheckedContinuation<Void, Never>?
+        splitter.onSplit = { call in
+            await withCheckedContinuation { releaseA = $0 }
+            return call.outputs.map { call.outputDirectory.appendingPathComponent($0.fileName) }
+        }
+
+        let directoryA = FileManager.default.temporaryDirectory
+            .appendingPathComponent("late-old-split-a-\(UUID().uuidString)", isDirectory: true)
+        let directoryB = FileManager.default.temporaryDirectory
+            .appendingPathComponent("late-old-split-b-\(UUID().uuidString)", isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: directoryA)
+            try? FileManager.default.removeItem(at: directoryB)
+        }
+
+        // Job A hangs until cancelled.
+        let exportA = Task { await viewModel.exportSplit(to: directoryA) }
+        while splitter.calls.isEmpty { await Task.yield() }
+        XCTAssertTrue(viewModel.isRendering)
+
+        // User cancels A; the worker still returns late, but no success may
+        // be recorded and the busy state must unwind.
+        viewModel.cancel()
+        XCTAssertTrue(viewModel.isCancelling)
+        releaseA?.resume()
+        await exportA.value
+
+        XCTAssertTrue(viewModel.lastSplitOutputURLs.isEmpty)
+        XCTAssertFalse(viewModel.isRendering)
+        XCTAssertFalse(viewModel.isCancelling)
+
+        // A newer job B then runs to completion with fresh results.
+        splitter.onSplit = { call in
+            call.outputs.map { call.outputDirectory.appendingPathComponent($0.fileName) }
+        }
+        await viewModel.exportSplit(to: directoryB)
+
+        XCTAssertEqual(viewModel.lastSplitOutputURLs.count, 3)
+        XCTAssertTrue(viewModel.lastSplitOutputURLs[0].path.hasPrefix(directoryB.path))
+        XCTAssertFalse(viewModel.isRendering)
+        XCTAssertNil(viewModel.errorMessage)
     }
 
     private func makeSourcePDF(pageCount: Int) throws -> URL {

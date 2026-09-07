@@ -6,11 +6,12 @@ import ProviderProject
 /// 项目视图模型，持有插件视图状态并暴露 Intent 给视图。
 ///
 /// 职责：
-/// - 缓存 `ProjectProviding` 的项目状态供视图观察
+/// - 缓存项目状态（经由 `ProjectsProjectCapability` 收窄的项目能力）供视图观察
 /// - 暴露 Intent 方法供视图调用
 /// - 调用 Store 持久化数据
 ///
-/// 注意：`ProjectProviding` 是项目列表和当前项目的唯一运行时来源；
+/// 注意：项目列表和当前项目的唯一运行时来源是内核 Provider；ViewModel 通过
+/// 插件自有的能力协议读写它，不直接持有 `ProjectProviding` 具体类型，
 /// ViewModel 不向外提供另一套项目状态，只保存 Provider 的视图快照。
 @MainActor
 public final class ProjectsViewModel: ObservableObject, SuperLog {
@@ -32,19 +33,18 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     // MARK: - Dependencies
 
     public let store: ProjectsStore
-    private let projectProvider: any ProjectProviding
+    private let projectCapability: any ProjectsProjectCapability
 
     // MARK: - Init
 
-    public init(store: ProjectsStore, projectProvider: any ProjectProviding) {
+    init(store: ProjectsStore, projectCapability: any ProjectsProjectCapability) {
         if Self.verbose {
             Self.logger.info("\(Self.t)初始化开始")
         }
 
         self.store = store
-        self.projectProvider = projectProvider
-
-        // 运行时状态从 ProjectProviding 读取；Store 只由 ProjectsPlugin 在启动时
+        self.projectCapability = projectCapability
+        // 运行时状态从项目能力读取；Store 只由 ProjectsPlugin 在启动时
         // 用于恢复 Provider，并在 Provider 事件后保存快照。
         self.projects = []
         self.currentProject = nil
@@ -56,14 +56,14 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
 
     // MARK: - Intents
 
-    /// 从 ProjectProviding 同步插件所需的项目快照。
+    /// 从项目能力同步插件所需的项目快照。
     ///
-    /// 该方法只读取 Provider，不向 Provider 写回项目状态。
+    /// 该方法只读取能力，不向 Provider 写回项目状态。
     func syncFromProvider(persist: Bool = true) {
         let previousByPath = Dictionary(
             uniqueKeysWithValues: projects.map { ($0.path, $0) }
         )
-        let syncedProjects = projectProvider.projects.map { info in
+        let syncedProjects = projectCapability.projects.map { info in
             ProjectEntry(
                 name: info.name,
                 path: info.path,
@@ -73,7 +73,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         }
 
         projects = syncedProjects
-        if let info = projectProvider.currentProject {
+        if let info = projectCapability.currentProject {
             currentProject = ProjectEntry(
                 name: info.name,
                 path: info.path,
@@ -89,7 +89,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         }
     }
 
-    /// 选中项目：请求 ProjectProviding 打开项目。
+    /// 选中项目：请求项目能力打开项目。
     public func select(_ project: ProjectEntry) {
         if Self.verbose {
             Self.logger.info("\(Self.t)select: \(project.name) @ \(project.path)")
@@ -111,12 +111,12 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         if shouldSelect {
             openProject(at: project.path)
         } else {
-            var providerProjects = projectProvider.projects
+            var providerProjects = projectCapability.projects
             if !providerProjects.contains(where: { $0.path == projectInfo.path }) {
                 providerProjects.insert(projectInfo, at: 0)
-                projectProvider.synchronizeProjects(providerProjects)
+                projectCapability.synchronizeProjects(providerProjects)
             }
-            if projectProvider.currentProject == nil, let first = providerProjects.first {
+            if projectCapability.currentProject == nil, let first = providerProjects.first {
                 openProject(at: first.path)
             }
         }
@@ -130,16 +130,16 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
             Self.logger.info("\(Self.t)remove: \(project.name) @ \(project.path)")
         }
 
-        let wasCurrentProject = projectProvider.currentProject?.path == project.path
-        let remaining = projectProvider.projects.filter { $0.path != project.path }
-        projectProvider.synchronizeProjects(remaining)
+        let wasCurrentProject = projectCapability.currentProject?.path == project.path
+        let remaining = projectCapability.projects.filter { $0.path != project.path }
+        projectCapability.synchronizeProjects(remaining)
 
         if wasCurrentProject {
             if let first = remaining.first {
                 openProject(at: first.path)
             } else {
-                Task { @MainActor [projectProvider] in
-                    await projectProvider.closeProject()
+                Task { @MainActor [projectCapability] in
+                    await projectCapability.closeProject()
                 }
             }
         }
@@ -155,8 +155,8 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
 
         // 空/空白路径 → "无项目"态
         guard !trimmed.isEmpty else {
-            Task { @MainActor [projectProvider] in
-                await projectProvider.closeProject()
+            Task { @MainActor [projectCapability] in
+                await projectCapability.closeProject()
             }
             return
         }
@@ -165,7 +165,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         let normalized = ProjectsStore.normalizedPath(trimmed)
 
         // 查找已存在的项目
-        if let existing = projectProvider.projects.first(where: { $0.path == normalized }) ?? projectProvider.projects.first(where: { $0.path == trimmed }) {
+        if let existing = projectCapability.projects.first(where: { $0.path == normalized }) ?? projectCapability.projects.first(where: { $0.path == trimmed }) {
             openProject(at: existing.path)
             return
         }
@@ -186,9 +186,9 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
     }
 
     private func openProject(at path: String) {
-        Task { @MainActor [projectProvider] in
+        Task { @MainActor [projectCapability] in
             do {
-                try await projectProvider.openProject(at: path)
+                try await projectCapability.openProject(at: path)
             } catch {
                 Self.logger.error("\(Self.t)打开项目失败: \(error.localizedDescription)")
             }
