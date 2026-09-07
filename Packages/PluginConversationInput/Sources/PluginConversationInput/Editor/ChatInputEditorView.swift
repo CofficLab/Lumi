@@ -148,7 +148,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
     public func updateNSView(_ nsView: NSScrollView, context: Context) {
         guard let textView = nsView.documentView as? EditorTextView else { return }
 
-        context.coordinator.parent = self
+        context.coordinator.updateParent(self)
 
         if textView.textColor != textColor {
             textView.textColor = textColor
@@ -257,6 +257,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
 }
 
 extension ChatInputEditorView {
+    @MainActor
     public final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: ChatInputEditorView
         var lastSyncedCursorPosition: Int?
@@ -265,18 +266,24 @@ extension ChatInputEditorView {
         private var heightScheduleID = UUID()
         private weak var representedTextView: NSTextView?
         private(set) var isActive = true
+        private let heightBindingGate = HeightBindingGate()
+        private var heightBinding: Binding<CGFloat>
 
         init(_ parent: ChatInputEditorView) {
             self.parent = parent
+            self.heightBinding = parent.$height
         }
 
-        deinit {
-            invalidate()
+        func updateParent(_ parent: ChatInputEditorView) {
+            self.parent = parent
+            heightBinding = parent.$height
         }
 
         func attach(to textView: NSTextView) {
             representedTextView = textView
             isActive = true
+            heightBindingGate.isActive = true
+            heightBindingGate.generation = heightScheduleID
         }
 
         func accepts(_ textView: NSTextView) -> Bool {
@@ -284,6 +291,8 @@ extension ChatInputEditorView {
         }
 
         func invalidate() {
+            heightBindingGate.isActive = false
+            heightBindingGate.generation = UUID()
             guard isActive || pendingHeightWorkItem != nil || pendingHeightBindingWorkItem != nil else { return }
             isActive = false
             representedTextView = nil
@@ -300,6 +309,7 @@ extension ChatInputEditorView {
             pendingHeightWorkItem?.cancel()
             pendingHeightBindingWorkItem?.cancel()
             heightScheduleID = UUID()
+            heightBindingGate.generation = heightScheduleID
             let scheduleID = heightScheduleID
 
             guard !textView.hasMarkedText() else {
@@ -340,12 +350,18 @@ extension ChatInputEditorView {
         func scheduleHeightBindingUpdate(_ height: CGFloat) {
             guard isActive else { return }
             pendingHeightBindingWorkItem?.cancel()
+            heightScheduleID = UUID()
+            heightBindingGate.generation = heightScheduleID
             let scheduleID = heightScheduleID
-            let workItem = DispatchWorkItem { [weak self] in
-                guard let self,
-                      self.isActive,
-                      self.heightScheduleID == scheduleID else { return }
-                self.parent.height = height
+            let binding = heightBinding
+            let gate = heightBindingGate
+            let workItem = DispatchWorkItem { [binding, gate] in
+                // Do not access `self.parent` while writing the Binding. SwiftUI can
+                // synchronously dismantle this representable as a consequence of
+                // the write; keeping the Binding and lifecycle gate independent
+                // avoids an overlapping access to the Coordinator's parent value.
+                guard gate.isActive, gate.generation == scheduleID else { return }
+                binding.wrappedValue = height
             }
             pendingHeightBindingWorkItem = workItem
             DispatchQueue.main.async(execute: workItem)
@@ -482,6 +498,11 @@ extension ChatInputEditorView {
             parent.onSubmit()
             return true
         }
+    }
+
+    private final class HeightBindingGate {
+        var isActive = true
+        var generation = UUID()
     }
 }
 
