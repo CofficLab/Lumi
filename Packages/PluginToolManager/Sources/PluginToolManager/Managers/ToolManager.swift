@@ -85,6 +85,18 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
         toolExecutionManager.jobs(for: turnID)
     }
 
+    public func job(
+        forToolCallID toolCallID: String,
+        conversationID: UUID,
+        turnID: UUID?
+    ) -> ToolJob? {
+        toolExecutionManager.job(
+            forToolCallID: toolCallID,
+            conversationID: conversationID,
+            turnID: turnID
+        )
+    }
+
     public func cancelJob(_ jobID: String) {
         toolExecutionManager.cancelJob(jobID)
     }

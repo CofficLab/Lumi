@@ -62,7 +62,8 @@ public enum ToolJobStatus: String, Codable, Sendable, Equatable {
 
 /// 工具调用的可观察运行快照。
 ///
-/// `id` 与 `toolCall.id` 保持一致，保证消息、运行状态和恢复逻辑使用同一个幂等键。
+/// `id` 是宿主内部的执行 ID；`toolCall.id` 保留模型协议中的原始调用 ID。
+/// 两者必须分开，否则模型跨回合复用同一个 ID 时会错误命中旧 Job。
 public struct ToolJob: Identifiable, Codable, Sendable, Equatable {
     public let id: String
     public let conversationID: UUID
@@ -81,6 +82,7 @@ public struct ToolJob: Identifiable, Codable, Sendable, Equatable {
     public var errorMessage: String?
 
     public init(
+        id: String? = nil,
         conversationID: UUID,
         turnID: UUID? = nil,
         toolCall: ToolCall,
@@ -95,7 +97,7 @@ public struct ToolJob: Identifiable, Codable, Sendable, Equatable {
         exitCode: Int32? = nil,
         errorMessage: String? = nil
     ) {
-        self.id = toolCall.id
+        self.id = id ?? toolCall.id
         self.conversationID = conversationID
         self.turnID = turnID
         self.toolCall = toolCall
@@ -132,11 +134,9 @@ public struct ToolJob: Identifiable, Codable, Sendable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let toolCall = try container.decode(ToolCall.self, forKey: .toolCall)
 
-        // `toolCall.id` is the source of truth. Decode the legacy field only
-        // to keep old snapshots readable, but never allow it to override the
-        // identity used for job deduplication.
-        _ = try container.decodeIfPresent(String.self, forKey: .id)
-        self.id = toolCall.id
+        // Older snapshots used `toolCall.id` as the Job ID. Keep that fallback
+        // while preserving the explicit internal ID in newer snapshots.
+        self.id = try container.decodeIfPresent(String.self, forKey: .id) ?? toolCall.id
         self.conversationID = try container.decode(UUID.self, forKey: .conversationID)
         self.turnID = try container.decodeIfPresent(UUID.self, forKey: .turnID)
         self.toolCall = toolCall

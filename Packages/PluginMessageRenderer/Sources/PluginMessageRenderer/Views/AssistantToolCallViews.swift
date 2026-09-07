@@ -132,7 +132,11 @@ struct ToolCallRowsView: View {
         var resolved = message.toolCalls ?? []
         var didResolveAnyResult = false
         for index in resolved.indices where resolved[index].result == nil {
-            if let raw = await manager.toolCallResult(for: resolved[index].id),
+            if let raw = await manager.toolCallResult(
+                for: resolved[index].id,
+                conversationID: message.conversationID,
+                turnID: message.turnID
+            ),
                let converted = MessageToolResult(toolCallResult: raw) {
                 resolved[index].result = converted
                 didResolveAnyResult = true
@@ -223,7 +227,9 @@ struct ToolCallRowView: View {
         self._resultPopoverToolCallID = resultPopoverToolCallID
         self._jobActivity = StateObject(wrappedValue: ToolJobActivityModel(
             manager: kernel.resolveProvider((any ToolManagerProviding).self),
-            jobID: toolCall.id
+            toolCallID: toolCall.id,
+            conversationID: message.conversationID,
+            turnID: message.turnID
         ))
     }
 
@@ -425,6 +431,8 @@ struct ToolCallRowView: View {
             ToolCallResultLazyPopover(
                 kernel: kernel,
                 toolCallID: toolCall.id,
+                conversationID: message.conversationID,
+                turnID: message.turnID,
                 fallbackResult: toolCall.result
             )
         }
@@ -665,6 +673,8 @@ private struct ToolDurationRowView: View {
 private struct ToolCallResultLazyPopover: View {
     let kernel: KernelCoreContainer
     let toolCallID: String
+    let conversationID: UUID
+    let turnID: UUID?
     let fallbackResult: MessageToolResult?
 
     @State private var result: MessageToolResult?
@@ -693,7 +703,11 @@ private struct ToolCallResultLazyPopover: View {
         }
         .task {
             guard !didLoad else { return }
-            let resolved = await kernel.resolveProvider((any ToolManagerProviding).self)?.toolCallResult(for: toolCallID)
+            let resolved = await kernel.resolveProvider((any ToolManagerProviding).self)?.toolCallResult(
+                for: toolCallID,
+                conversationID: conversationID,
+                turnID: turnID
+            )
             result = resolved.flatMap(MessageToolResult.init(toolCallResult:)) ?? fallbackResult
             didLoad = true
         }

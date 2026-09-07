@@ -43,7 +43,9 @@ extension AgentLoopManager {
         }
         let (updated, _) = TurnReducer.reduce(
             runtime,
-            event: .toolJobCreated(jobID: job.id)
+            // Turn FSM IDs are model-facing ToolCall IDs. ToolJob.id is an
+            // internal execution identity and may differ from this value.
+            event: .toolJobCreated(jobID: job.toolCall.id)
         )
         runtime = updated
         runtimes[job.conversationID] = runtime
@@ -68,6 +70,7 @@ extension AgentLoopManager {
             return
         }
 
+        let toolCallID = snapshot.toolCall.id
         let pendingToolCallIDs: Set<String>
         switch runtime.phase {
         case .executingTools(_, _, let pending),
@@ -77,7 +80,7 @@ extension AgentLoopManager {
         default:
             return
         }
-        guard pendingToolCallIDs.contains(jobID) else {
+        guard pendingToolCallIDs.contains(toolCallID) else {
             // 终态事件可能因为重试或取消重复到达；pending 已移除时直接忽略。
             return
         }
@@ -85,28 +88,28 @@ extension AgentLoopManager {
         let result = convertResult(toolResult)
         messages.updateToolCallResult(
             result,
-            toolCallID: jobID,
+            toolCallID: toolCallID,
             assistantMessageID: assistantMessageID,
             in: snapshot.conversationID
         )
         insertToolResultMessage(
             result,
-            toolCallID: jobID,
+            toolCallID: toolCallID,
             conversationID: snapshot.conversationID,
             turnID: jobTurnID
         )
 
         if result.awaitingUserResponse {
             let suspension = AgentLoopSuspension(
-                suspensionID: "userInput:\(jobID)",
+                suspensionID: "userInput:\(toolCallID)",
                 conversationID: snapshot.conversationID,
-                toolCallID: jobID,
+                toolCallID: toolCallID,
                 kind: "userInput",
                 payload: result.content
             )
             let (updated, outcome) = TurnReducer.reduce(
                 runtime,
-                event: .toolNeedsUserInput(toolCallID: jobID, suspension: suspension)
+                event: .toolNeedsUserInput(toolCallID: toolCallID, suspension: suspension)
             )
             runtimes[snapshot.conversationID] = updated
             if let outcome {
@@ -117,7 +120,7 @@ extension AgentLoopManager {
 
         let (updated, outcome) = TurnReducer.reduce(
             runtime,
-            event: .toolJobCompleted(toolCallID: jobID, result: result)
+            event: .toolJobCompleted(toolCallID: toolCallID, result: result)
         )
         runtimes[snapshot.conversationID] = updated
         if let outcome {
