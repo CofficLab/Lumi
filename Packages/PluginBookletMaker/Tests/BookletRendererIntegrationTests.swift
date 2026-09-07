@@ -11,7 +11,7 @@ import XCTest
 /// of output pages.
 final class BookletRendererIntegrationTests: XCTestCase {
 
-    func testRenderProducesExpectedSheetCount() async throws {
+    func testRenderReturnsURLAndProducesExpectedSheetCount() async throws {
         // 1. Build a 6-page source PDF on disk.
         let sourceURL = try makeSourcePDF(pageCount: 6)
         defer { try? FileManager.default.removeItem(at: sourceURL) }
@@ -20,16 +20,16 @@ final class BookletRendererIntegrationTests: XCTestCase {
             .appendingPathComponent("booklet-renderer-test-\(UUID().uuidString).pdf")
         defer { try? FileManager.default.removeItem(at: outputURL) }
 
-        // 2. Render.
+        // 2. Render with the new explicit-result API.
         let renderer = BookletRenderer()
-        let stream = renderer.render(
+        let result = try await renderer.render(
             sourceURL: sourceURL,
             outputURL: outputURL,
             settings: BookletSettings() // defaults: bookletFold, A4, pad=true
-        )
-        for await _ in stream { /* drain progress */ }
+        ) { _ in }
 
-        // 3. Validate.
+        // 3. Validate: success is the returned URL, not file existence.
+        XCTAssertEqual(result, outputURL)
         XCTAssertTrue(FileManager.default.fileExists(atPath: outputURL.path))
         guard let outDoc = PDFDocument(url: outputURL) else {
             XCTFail("Output PDF cannot be opened")
@@ -53,13 +53,13 @@ final class BookletRendererIntegrationTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: outputURL) }
 
         let renderer = BookletRenderer()
-        let stream = renderer.render(
+        let result = try await renderer.render(
             sourceURL: sourceURL,
             outputURL: outputURL,
             settings: BookletSettings()
         )
-        for await _ in stream {}
 
+        XCTAssertEqual(result, outputURL)
         guard let outDoc = PDFDocument(url: outputURL) else {
             XCTFail("Output PDF cannot be opened")
             return
@@ -67,6 +67,67 @@ final class BookletRendererIntegrationTests: XCTestCase {
         // 5 source pages → pad to 8 slots → 2 physical sheets /
         // 4 output PDF pages.
         XCTAssertEqual(outDoc.pageCount, 4)
+    }
+
+    func testCancelledRenderLeavesNoPartialOutput() async throws {
+        let sourceURL = try makeSourcePDF(pageCount: 40)
+        defer { try? FileManager.default.removeItem(at: sourceURL) }
+
+        let outputURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("booklet-renderer-cancel-\(UUID().uuidString).pdf")
+        defer { try? FileManager.default.removeItem(at: outputURL) }
+
+        let renderer = BookletRenderer()
+        // Signal emitted once the renderer is mid-flight (past initial setup).
+        let (started, startedContinuation) = AsyncStream.makeStream(of: Void.self)
+        let worker = Task {
+            try await renderer.render(
+                sourceURL: sourceURL,
+                outputURL: outputURL,
+                settings: BookletSettings()
+            ) { value in
+                if value >= 0.09 {
+                    startedContinuation.yield(())
+                }
+            }
+        }
+
+        for await _ in started { break }
+        worker.cancel()
+        startedContinuation.finish()
+
+        do {
+            _ = try await worker.value
+            XCTFail("Expected cancellation to surface")
+        } catch is CancellationError {
+            // Expected: cancellation propagates to the consumer.
+        }
+
+        // A cancelled render must not leave a partial output behind.
+        XCTAssertFalse(FileManager.default.fileExists(atPath: outputURL.path))
+    }
+
+    func testRenderWriteFailureThrows() async throws {
+        let sourceURL = try makeSourcePDF(pageCount: 3)
+        defer { try? FileManager.default.removeItem(at: sourceURL) }
+
+        // Point the output at an existing directory so the atomic write fails.
+        let bogusOutput = FileManager.default.temporaryDirectory
+            .appendingPathComponent("booklet-renderer-dir-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: bogusOutput, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: bogusOutput) }
+
+        let renderer = BookletRenderer()
+        do {
+            _ = try await renderer.render(
+                sourceURL: sourceURL,
+                outputURL: bogusOutput,
+                settings: BookletSettings()
+            )
+            XCTFail("Expected write failure to throw")
+        } catch {
+            XCTAssertTrue(error is BookletRenderer.RenderError)
+        }
     }
 
     // MARK: - Helpers

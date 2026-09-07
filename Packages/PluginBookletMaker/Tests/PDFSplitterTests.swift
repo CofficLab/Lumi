@@ -63,6 +63,86 @@ final class PDFSplitterTests: XCTestCase {
         }
     }
 
+    func testCancelledSplitSurfacesCancellationAndCleansUpPartialFiles() async throws {
+        let sourceURL = try makeSourcePDF(pageCount: 30)
+        let outputDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("pdf-splitter-cancel-\(UUID().uuidString)", isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: sourceURL)
+            try? FileManager.default.removeItem(at: outputDirectory)
+        }
+
+        let outputs = PDFSplitPlan.segments(pageCount: 30, cutPoints: [10, 20]).map {
+            PDFSplitOutput(segment: $0, fileName: $0.fileName(baseName: "story"))
+        }
+        let splitter = PDFSplitter()
+        // Signal emitted after the first output file has been written
+        // (progress 0.05 + 0.90/3 ≈ 0.35).
+        let (firstFileWritten, firstFileContinuation) = AsyncStream.makeStream(of: Void.self)
+
+        let worker = Task {
+            try await splitter.split(
+                sourceURL: sourceURL,
+                outputDirectory: outputDirectory,
+                outputs: outputs,
+                progress: { value in
+                    if value >= 0.3 {
+                        firstFileContinuation.yield(())
+                    }
+                }
+            )
+        }
+
+        for await _ in firstFileWritten { break }
+        worker.cancel()
+
+        do {
+            _ = try await worker.value
+            XCTFail("Expected cancellation to surface")
+        } catch is CancellationError {
+            // Expected.
+        }
+        firstFileContinuation.finish()
+
+        // The already-written first file must have been cleaned up.
+        let remaining = try FileManager.default.contentsOfDirectory(atPath: outputDirectory.path)
+        XCTAssertTrue(remaining.isEmpty, "Expected no leftover files, found \(remaining)")
+    }
+
+    func testWriteFailureCleansUpAlreadyCompletedFiles() async throws {
+        let sourceURL = try makeSourcePDF(pageCount: 8)
+        let outputDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("pdf-splitter-cleanup-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: sourceURL)
+            try? FileManager.default.removeItem(at: outputDirectory)
+        }
+
+        // Second output lives in a non-existent subdirectory: its write must
+        // fail after the first file has already been written.
+        let segments = PDFSplitPlan.segments(pageCount: 8, cutPoints: [4])
+        let outputs = [
+            PDFSplitOutput(segment: segments[0], fileName: "story-part-1.pdf"),
+            PDFSplitOutput(segment: segments[1], fileName: "nested/story-part-2.pdf"),
+        ]
+
+        do {
+            _ = try await PDFSplitter().split(
+                sourceURL: sourceURL,
+                outputDirectory: outputDirectory,
+                outputs: outputs
+            )
+            XCTFail("Expected the nested write to fail")
+        } catch {
+            XCTAssertTrue(error is PDFSplitter.SplitError)
+        }
+
+        // The completed first file must have been cleaned up.
+        let remaining = try FileManager.default.contentsOfDirectory(atPath: outputDirectory.path)
+        XCTAssertTrue(remaining.isEmpty, "Expected no leftover files, found \(remaining)")
+    }
+
     private func makeSourcePDF(pageCount: Int) throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("split-source-\(UUID().uuidString).pdf")

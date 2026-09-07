@@ -34,14 +34,16 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     // MARK: - Collaborators
 
     private let inspector  = PDFInspector()
-    private let renderer   = BookletRenderer()
-    private let splitter   = PDFSplitter()
+    private let renderer: any BookletRendering
+    private let splitter: any PDFSplitting
     private let thumbnailer = BookletThumbnailer()
     private let demoDocument: CurrentPDFDocument
 
-    private var renderTask: Task<Void, Never>?
+    private var renderTask: Task<URL, Error>?
     private var splitTask: Task<[URL], Error>?
+    private var thumbnailTask: Task<Void, Never>?
     private var loadRequestID = UUID()
+    private var activeExportJobID: UUID?
     private var securityScopedURL: URL?
 
     // MARK: - Published state
@@ -76,6 +78,9 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     /// True while the exported PDF is being prepared for preview.
     @Published private(set) var isPreparingPreview: Bool = false
 
+    /// True from a user-initiated cancel until the in-flight worker unwinds.
+    @Published private(set) var isCancelling: Bool = false
+
     /// URL of the most recent successful export.
     @Published private(set) var lastOutputURL: URL?
 
@@ -90,7 +95,13 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
 
     // MARK: - Init
 
-    init() {
+    /// - Parameters:
+    ///   - renderer: renderer override for tests. Defaults to `BookletRenderer`.
+    ///   - splitter: splitter override for tests. Defaults to `PDFSplitter`.
+    init(renderer: (any BookletRendering)? = nil,
+         splitter: (any PDFSplitting)? = nil) {
+        self.renderer = renderer ?? BookletRenderer()
+        self.splitter = splitter ?? PDFSplitter()
         do {
             let demo = try DemoPDFProvider.makeDocument()
             demoDocument = demo
@@ -179,7 +190,8 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
 
     /// Load a PDF. Cancels any in-flight work, then inspects the file.
     func loadPDF(_ url: URL) async {
-        cancel()
+        cancelInternal()
+        activeExportJobID = nil
         errorMessage = nil
         progress = 0
         thumbnails = []
@@ -220,7 +232,8 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     /// Clear the user selection and return to the built-in demo document.
     func clear() {
         loadRequestID = UUID()
-        cancel()
+        cancelInternal()
+        activeExportJobID = nil
         releaseSecurityScope()
         currentDocument = demoDocument
         progress = 0
@@ -235,103 +248,137 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
     // MARK: - Export
 
     /// Render the impositioned PDF to `outputURL`.
+    ///
+    /// The job captures an immutable snapshot of the document and settings.
+    /// Success is only recorded for the job that is still active; a late
+    /// old job can never overwrite a newer job's state.
     func export(to outputURL: URL) async {
-        let inputURL = currentDocument.url
+        cancelInternal()
 
-        cancel()
-        isRendering = true
-        isPreparingPreview = false
+        let jobID = UUID()
+        activeExportJobID = jobID
+        let sourceURL = currentDocument.url
+        let settings = self.settings
         progress = 0
         thumbnails = []
         lastOutputURL = nil
         lastSplitOutputURLs = []
         errorMessage = nil
+        isRendering = true
+        isPreparingPreview = false
+        isCancelling = false
 
-        let settings = self.settings
-        let stream = renderer.render(sourceURL: inputURL,
-                                     outputURL: outputURL,
-                                     settings: settings)
-        renderTask = Task { [weak self] in
-            for await p in stream {
-                guard let self else { return }
-                await MainActor.run {
-                    self.progress = p
+        do {
+            let task = Task { [renderer] in
+                try await renderer.render(
+                    sourceURL: sourceURL,
+                    outputURL: outputURL,
+                    settings: settings
+                ) { [weak self] value in
+                    Task { @MainActor in
+                        guard let self,
+                              self.activeExportJobID == jobID,
+                              !self.isCancelling else { return }
+                        self.progress = value
+                    }
                 }
             }
-            // Render is finished (or errored). Decide outcome.
-            await MainActor.run { [weak self] in
-                guard let self else { return }
-                self.isRendering = false
-                let fileExists = FileManager.default.fileExists(atPath: outputURL.path)
-                if fileExists {
-                    self.lastOutputURL = outputURL
-                    Self.logger.info("\(Self.t)Export complete: \(outputURL.lastPathComponent)")
-                } else {
-                    self.errorMessage = BookletLocalization.string("Export failed — see log for details.")
-                }
-            }
-        }
+            renderTask = task
+            let result = try await task.value
+            renderTask = nil
 
-        // Wait for the task to finish before kicking off thumbnails.
-        await renderTask?.value
-        if let _ = lastOutputURL {
-            isPreparingPreview = true
-            await refreshThumbnails(for: outputURL)
-            isPreparingPreview = false
+            guard activeExportJobID == jobID else { return }
+            if Task.isCancelled || isCancelling {
+                // This job was cancelled; clean up its own state. A newer
+                // job is never touched because it would own the active ID.
+                isRendering = false
+                isCancelling = false
+                return
+            }
+            lastOutputURL = result
+            isRendering = false
+            progress = 1
+            Self.logger.info("\(Self.t)Export complete: \(result.lastPathComponent)")
+            // Thumbnails are prepared separately and must never turn a
+            // successful export into a failure.
+            startThumbnailPreparation(for: result, jobID: jobID)
+        } catch is CancellationError {
+            renderTask = nil
+            guard activeExportJobID == jobID else { return }
+            isRendering = false
+            isCancelling = false
+        } catch {
+            renderTask = nil
+            guard activeExportJobID == jobID else { return }
+            errorMessage = (error as? LocalizedError)?.errorDescription
+                ?? error.localizedDescription
+            isRendering = false
+            isCancelling = false
+            Self.logger.error("\(Self.t)Export failed: \(error.localizedDescription)")
         }
     }
 
     /// Export all currently planned page ranges into `outputDirectory`.
     func exportSplit(to outputDirectory: URL) async {
         guard canExportSplit else { return }
+        cancelInternal()
+
+        let jobID = UUID()
+        activeExportJobID = jobID
         let outputs = splitOutputs
         let sourceURL = currentDocument.url
-
-        cancel()
-        isRendering = true
-        isPreparingPreview = false
         progress = 0
+        thumbnails = []
         lastOutputURL = nil
         lastSplitOutputURLs = []
         errorMessage = nil
-
-        let splitter = self.splitter
-        let progressStream = AsyncStream<Double>.makeStream()
-        let progressTask = Task { [weak self] in
-            for await value in progressStream.stream {
-                guard let self else { return }
-                self.progress = value
-            }
-        }
-        let task = Task {
-            try await splitter.split(
-                sourceURL: sourceURL,
-                outputDirectory: outputDirectory,
-                outputs: outputs,
-                progress: { progressStream.continuation.yield($0) }
-            )
-        }
-        splitTask = task
+        isRendering = true
+        isPreparingPreview = false
+        isCancelling = false
 
         do {
-            let urls = try await task.value
-            if !Task.isCancelled {
-                lastSplitOutputURLs = urls
-                progress = 1
-                Self.logger.info("\(Self.t)Split export complete: \(urls.count) files")
+            let task = Task { [splitter] in
+                try await splitter.split(
+                    sourceURL: sourceURL,
+                    outputDirectory: outputDirectory,
+                    outputs: outputs
+                ) { [weak self] value in
+                    Task { @MainActor in
+                        guard let self,
+                              self.activeExportJobID == jobID,
+                              !self.isCancelling else { return }
+                        self.progress = value
+                    }
+                }
             }
+            splitTask = task
+            let urls = try await task.value
+            splitTask = nil
+
+            guard activeExportJobID == jobID else { return }
+            if Task.isCancelled || isCancelling {
+                isRendering = false
+                isCancelling = false
+                return
+            }
+            lastSplitOutputURLs = urls
+            progress = 1
+            isRendering = false
+            Self.logger.info("\(Self.t)Split export complete: \(urls.count) files")
         } catch is CancellationError {
-            // Cancellation is an expected result when switching documents/tools.
+            splitTask = nil
+            guard activeExportJobID == jobID else { return }
+            isRendering = false
+            isCancelling = false
         } catch {
+            splitTask = nil
+            guard activeExportJobID == jobID else { return }
             errorMessage = (error as? LocalizedError)?.errorDescription
                 ?? error.localizedDescription
-            Self.logger.error("\(Self.t)Split export failed: \(self.errorMessage ?? "unknown error")")
+            isRendering = false
+            isCancelling = false
+            Self.logger.error("\(Self.t)Split export failed: \(error.localizedDescription)")
         }
-        progressStream.continuation.finish()
-        await progressTask.value
-        splitTask = nil
-        isRendering = false
-        isPreparingPreview = false
     }
 
     /// Add or remove a split immediately after `pageNumber`.
@@ -410,28 +457,65 @@ final class BookletMakerViewModel: ObservableObject, SuperLog {
         return trimmed + ".pdf"
     }
 
-    /// Cancel the current render, if any.
+    // MARK: - Cancel
+
+    /// Cancel the in-flight export (user-initiated).
+    ///
+    /// `isCancelling` stays true until the worker unwinds so the UI never
+    /// pretends to be idle while a background task may still be writing.
     func cancel() {
+        guard isRendering || isPreparingPreview else { return }
+        isCancelling = true
+        renderTask?.cancel()
+        splitTask?.cancel()
+        thumbnailTask?.cancel()
+    }
+
+    /// Cancel and forget any in-flight work without entering the
+    /// user-visible `cancelling` state. Used when switching documents,
+    /// clearing, or starting a newer job.
+    private func cancelInternal() {
         renderTask?.cancel()
         renderTask = nil
         splitTask?.cancel()
         splitTask = nil
-        isRendering = false
-        isPreparingPreview = false
+        thumbnailTask?.cancel()
+        thumbnailTask = nil
+        isCancelling = false
     }
 
     // MARK: - Thumbnails
 
-    /// Re-render the preview thumbnails for the just-exported PDF.
-    private func refreshThumbnails(for outputURL: URL) async {
-        let dir = BookletMakerRuntimeBridge.directoryURL
-            ?? FileManager.default.temporaryDirectory
-            .appendingPathComponent("BookletMakerThumbnails", isDirectory: true)
-        thumbnails = await thumbnailer.makeThumbnails(
-            fromPDF: outputURL,
-            count: 5,
-            outputDirectory: dir
-        )
+    /// Re-render the preview thumbnails for the just-exported PDF in the
+    /// background. Thumbnail failure must not invalidate an export that
+    /// already succeeded; results are only applied while the same job is
+    /// still active.
+    private func startThumbnailPreparation(for outputURL: URL, jobID: UUID) {
+        isPreparingPreview = true
+        thumbnailTask = Task { [weak self] in
+            guard let self else { return }
+            let dir = BookletMakerRuntimeBridge.directoryURL
+                ?? FileManager.default.temporaryDirectory
+                    .appendingPathComponent("BookletMakerThumbnails", isDirectory: true)
+            let thumbs = await self.thumbnailer.makeThumbnails(
+                fromPDF: outputURL,
+                count: 5,
+                outputDirectory: dir
+            )
+            // A newer job (or document switch) owns the active ID; leave
+            // every state transition to it. Otherwise clean up our own.
+            guard self.activeExportJobID == jobID else {
+                self.isPreparingPreview = false
+                return
+            }
+            if self.isCancelling {
+                self.isPreparingPreview = false
+                self.isCancelling = false
+                return
+            }
+            self.thumbnails = thumbs
+            self.isPreparingPreview = false
+        }
     }
 
     // MARK: - Finder helper

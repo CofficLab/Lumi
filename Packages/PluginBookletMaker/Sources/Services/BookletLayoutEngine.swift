@@ -176,4 +176,43 @@ enum BookletLayoutEngine {
                              y: target.midY - size.height / 2)
         return CGRect(origin: origin, size: size)
     }
+
+    // MARK: - Display metrics (shared by macOS + iOS previews)
+
+    /// Portrait display size of `paper` fitted into `bounds`,
+    /// preserving the physical paper aspect ratio.
+    static func paperDisplaySize(paper: PaperSize,
+                                 within bounds: CGSize) -> CGSize {
+        let aspect = paper.widthMM / paper.heightMM
+        guard aspect > 0, bounds.width > 0, bounds.height > 0 else {
+            return bounds
+        }
+        var size = CGSize(width: bounds.width, height: bounds.width / aspect)
+        if size.height > bounds.height {
+            size = CGSize(width: bounds.height * aspect, height: bounds.height)
+        }
+        return size
+    }
+
+    /// Landscape display size of `paper` (the orientation used for a
+    /// booklet print side) fitted into `bounds`.
+    static func landscapePaperDisplaySize(paper: PaperSize,
+                                          within bounds: CGSize) -> CGSize {
+        let aspect = paper.heightMM / paper.widthMM // width = long edge
+        guard aspect > 0, bounds.width > 0, bounds.height > 0 else {
+            return bounds
+        }
+        var size = CGSize(width: bounds.width, height: bounds.width * aspect)
+        if size.height > bounds.height {
+            size = CGSize(width: bounds.height / aspect, height: bounds.height)
+        }
+        return size
+    }
+
+    /// Per-millimetre display scale for a rendered paper width.
+    static func displayUnit(for paperWidth: CGFloat,
+                            paper: PaperSize) -> CGFloat {
+        guard paper.heightMM > 0 else { return 1 }
+        return paperWidth / paper.heightMM
+    }
 }

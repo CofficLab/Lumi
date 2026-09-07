@@ -1,145 +1,112 @@
 #if os(iOS)
-import LumiUI
 import SwiftUI
 
+/// 拆分工具移动端页面：拆分计划与原稿阅读分段切换，
+/// 底部为结果摘要与生成/取消操作。
 struct PDFSplitMobileView: View {
-    @LumiTheme private var theme
-
     @ObservedObject var viewModel: BookletMakerViewModel
+    let onExport: () -> Void
+
+    @State private var readingSegment: ReadingSegment = .plan
+
+    enum ReadingSegment: String, CaseIterable, Identifiable {
+        case plan = "plan"
+        case source = "source"
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .plan: BookletLocalization.string("Split Plan")
+            case .source: BookletLocalization.string("Original PDF")
+            }
+        }
+    }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(BookletLocalization.string("Choose where to split"))
-                        .font(DesignTokens.Typography.title2)
-                    Text(BookletLocalization.string(
-                        "Tap a gap between pages. Blue scissors mark a split point."
-                    ))
-                    .font(DesignTokens.Typography.subheadline)
-                    .foregroundStyle(theme.textSecondary)
+        VStack(spacing: 0) {
+            Picker(BookletLocalization.string("View"), selection: $readingSegment) {
+                ForEach(ReadingSegment.allCases) { segment in
+                    Text(segment.title).tag(segment)
                 }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
 
-                pageStrip
+            Divider()
 
-                HStack {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(BookletLocalization.string("Output"))
-                            .font(DesignTokens.Typography.title3)
-                        Text(BookletLocalization.string(
-                            "%lld PDF files",
-                            Int64(viewModel.splitSegments.count)
-                        ))
-                        .foregroundStyle(theme.textSecondary)
-                    }
+            switch readingSegment {
+            case .plan:
+                PDFSplitPlanEditorView(viewModel: viewModel)
+            case .source:
+                SourcePDFReadingView(document: viewModel.currentDocument)
+            }
+
+            Divider()
+
+            bottomBar
+        }
+        .navigationTitle(viewModel.currentDocument.baseFileName)
+    }
+
+    // MARK: - Bottom bar
+
+    private var bottomBar: some View {
+        VStack(spacing: 8) {
+            if viewModel.isBusy {
+                busyView
+            } else {
+                HStack(spacing: 12) {
+                    summaryText
                     Spacer()
-                    if viewModel.splitCutPoints.isEmpty {
-                        Label(BookletLocalization.string("Add a split"), systemImage: "info.circle")
-                            .font(DesignTokens.Typography.caption1)
-                            .foregroundStyle(theme.textSecondary)
+                    Button(action: onExport) {
+                        Label(BookletLocalization.string("Split"), systemImage: "scissors")
                     }
-                }
-
-                LazyVStack(spacing: 12) {
-                    ForEach(viewModel.splitSegments) { segment in
-                        resultCard(segment)
-                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(!viewModel.canExportSplit)
                 }
             }
-            .padding(20)
         }
-        .appSurface(style: .panel, cornerRadius: 0)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.bar)
     }
 
-    private var pageStrip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: 0) {
-                ForEach(1 ... viewModel.currentDocument.pageCount, id: \.self) { page in
-                    pageCard(page)
-                    if page < viewModel.currentDocument.pageCount {
-                        splitButton(after: page)
+    @ViewBuilder
+    private var summaryText: some View {
+        if viewModel.splitSegments.isEmpty {
+            Text(BookletLocalization.string("Add at least one split"))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        } else {
+            Text(BookletLocalization.string(
+                "%lld pages → %lld files",
+                Int64(viewModel.currentDocument.pageCount),
+                Int64(viewModel.splitSegments.count)
+            ))
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+        }
+    }
+
+    private var busyView: some View {
+        VStack(spacing: 8) {
+            ProgressView(value: viewModel.progress)
+            HStack {
+                Text(viewModel.isCancelling
+                     ? BookletLocalization.string("Cancelling…")
+                     : BookletLocalization.string("Generating…"))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if !viewModel.isCancelling {
+                    Button(BookletLocalization.string("Cancel")) {
+                        viewModel.cancel()
                     }
-                }
-            }
-            .padding(14)
-        }
-        .frame(height: 230)
-        .appSurface(style: .subtle, cornerRadius: DesignTokens.Radius.md)
-    }
-
-    private func pageCard(_ page: Int) -> some View {
-        ZStack(alignment: .bottomLeading) {
-            PDFDocumentPageView(documentURL: viewModel.currentDocument.url, pageNumber: page)
-                .frame(width: 112, height: 166)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-                .shadow(color: .black.opacity(0.12), radius: 3, y: 2)
-
-            Text("\(page)")
-                .font(DesignTokens.Typography.caption2)
-                .foregroundStyle(.white)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 4)
-                .background(.black.opacity(0.7), in: Capsule())
-                .padding(7)
-        }
-        .accessibilityLabel(BookletLocalization.string("Page %lld", Int64(page)))
-    }
-
-    private func splitButton(after page: Int) -> some View {
-        let selected = viewModel.splitCutPoints.contains(page)
-        return Button {
-            withAnimation(.snappy) { viewModel.toggleSplit(after: page) }
-        } label: {
-            VStack(spacing: 7) {
-                Rectangle()
-                    .fill(selected ? Color.accentColor : .secondary.opacity(0.2))
-                    .frame(width: selected ? 3 : 1, height: 52)
-                Image(systemName: selected ? "scissors.circle.fill" : "plus.circle")
-                    .font(.title3)
-                    .foregroundStyle(selected ? Color.accentColor : .secondary)
-                Rectangle()
-                    .fill(selected ? Color.accentColor : .secondary.opacity(0.2))
-                    .frame(width: selected ? 3 : 1, height: 52)
-            }
-            .frame(width: 48, height: 166)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(BookletLocalization.string("Split after page %lld", Int64(page)))
-        .accessibilityValue(BookletLocalization.string(selected ? "Selected" : "Not selected"))
-    }
-
-    private func resultCard(_ segment: PDFSplitSegment) -> some View {
-        AppCard(style: .subtle, cornerRadius: DesignTokens.Radius.md, showShadow: false) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Label(
-                        BookletLocalization.string(
-                            "Pages range %lld–%lld",
-                            Int64(segment.startPage),
-                            Int64(segment.endPage)
-                        ),
-                        systemImage: "doc.richtext"
-                    )
-                    .font(DesignTokens.Typography.bodyEmphasized)
-                    Spacer()
-                    AppTag(BookletLocalization.string("%lld pages", Int64(segment.pageCount)))
-                }
-
-                HStack(spacing: 6) {
-                    AppInputField(
-                        LocalizedStringKey(BookletLocalization.string("File name")),
-                        text: Binding(
-                            get: { viewModel.splitFileNameStem(for: segment) },
-                            set: { viewModel.renameSplitOutputStem(segment, to: $0) }
-                        )
-                    )
-                    Text(".pdf")
-                        .foregroundStyle(theme.textSecondary)
-                }
-
-                if let message = viewModel.splitFileNameValidationMessage(for: segment) {
-                    AppErrorBanner(message: LocalizedStringKey(message))
+                    .font(.footnote)
                 }
             }
         }

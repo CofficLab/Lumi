@@ -120,12 +120,18 @@ struct OutputSheetView: View {
     var body: some View {
         GeometryReader { geo in
             // 横向纸张比例：长边为宽
-            let paperAspect = settings.outputPaper.widthMM / settings.outputPaper.heightMM
-            let paperWidth = min(geo.size.width, geo.size.height / paperAspect)
-            let paperHeight = paperWidth * paperAspect
+            let paperSize = BookletLayoutEngine.landscapePaperDisplaySize(
+                paper: settings.outputPaper,
+                within: geo.size
+            )
+            let paperWidth = paperSize.width
+            let paperHeight = paperSize.height
 
             // 边距与装订线按纸张宽度等比缩放
-            let unit = paperWidth / settings.outputPaper.heightMM  // 1mm 对应的显示点数
+            let unit = BookletLayoutEngine.displayUnit(
+                for: paperWidth,
+                paper: settings.outputPaper
+            )
             let margin = max(1.5, settings.marginMM * unit)
             let gutter = max(1, settings.gutterMM * unit)
 
