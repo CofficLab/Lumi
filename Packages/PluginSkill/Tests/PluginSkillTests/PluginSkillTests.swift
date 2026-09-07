@@ -7,6 +7,7 @@ import ProviderLifecycleHooks
 import ProviderAgentLoop
 import ProviderMessage
 import ProviderProject
+import ProviderSkill
 
 @testable import PluginSkill
 
@@ -72,48 +73,41 @@ struct SkillPluginTests {
         #expect(merged.map(\.name) == ["architect", "planner", "swiftui-standards"])
     }
 
-    @Test("SkillService 合并内置与项目技能")
+    @Test("SkillService 合并底座与项目技能")
     func serviceMergesBuiltin() async {
-        class FakeBuiltin: BuiltinSkillProviding, @unchecked Sendable {
-            func builtinSkills() -> [SkillMetadata] {
-                [SkillMetadata(name: "swiftui-standards", title: "SwiftUI Standards", description: "内置规范")]
-            }
-        }
         struct FakeScanner: SkillScanning {
             func scanSkills(projectPath: String) -> [SkillMetadata] {
                 [SkillMetadata(name: "architect", title: "Architect", description: "项目架构")]
             }
         }
-        let service = SkillService(scanner: FakeScanner(), builtinProvider: FakeBuiltin())
-        let skills = await service.listSkills(projectPath: "/tmp/proj")
+        let service = SkillService(scanner: FakeScanner(), builtinProvider: EmptyBuiltin())
+        let base = [
+            SkillMetadata(name: "swiftui-standards", title: "SwiftUI Standards", description: "内置规范"),
+        ]
+        let skills = await service.listSkills(projectPath: "/tmp/proj", baseSkills: base)
         #expect(skills.count == 2)
         #expect(skills.contains { $0.name == "swiftui-standards" })
         #expect(skills.contains { $0.name == "architect" })
     }
 
-    @Test("SkillService 空项目路径时仅返回内置技能")
+    @Test("SkillService 空项目路径时仅返回底座")
     func serviceEmptyProjectPath() async {
-        class FakeBuiltin: BuiltinSkillProviding, @unchecked Sendable {
-            func builtinSkills() -> [SkillMetadata] {
-                [SkillMetadata(name: "swiftui-standards", title: "SwiftUI Standards", description: "内置规范")]
-            }
-        }
         struct FakeScanner: SkillScanning {
             func scanSkills(projectPath: String) -> [SkillMetadata] {
                 [SkillMetadata(name: "architect", title: "Architect", description: "项目架构")]
             }
         }
-        let service = SkillService(scanner: FakeScanner(), builtinProvider: FakeBuiltin())
-        let skills = await service.listSkills(projectPath: "")
+        let service = SkillService(scanner: FakeScanner(), builtinProvider: EmptyBuiltin())
+        let base = [
+            SkillMetadata(name: "swiftui-standards", title: "SwiftUI Standards", description: "内置规范"),
+        ]
+        let skills = await service.listSkills(projectPath: "", baseSkills: base)
         #expect(skills.count == 1)
         #expect(skills.first?.name == "swiftui-standards")
     }
 
     @Test("SkillService 扫描并缓存")
     func serviceScansAndCaches() async {
-        struct EmptyBuiltin: BuiltinSkillProviding {
-            func builtinSkills() -> [SkillMetadata] { [] }
-        }
         let skills = [SkillMetadata(name: "a", title: "A", description: "desc")]
         let service = SkillService(scanner: MockScanner(skills: skills), builtinProvider: EmptyBuiltin())
         let first = await service.listSkills(projectPath: "/tmp/proj")
@@ -141,6 +135,11 @@ struct SkillPluginTests {
         #expect(kernel.resolveProvider((any ProjectProviding).self) != nil)
         try plugin.onShutdown(kernel: kernel)
     }
+}
+
+/// 测试用空内置提供者。
+private struct EmptyBuiltin: BuiltinSkillProviding {
+    func builtinSkills() -> [SkillMetadata] { [] }
 }
 
 /// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。

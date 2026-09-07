@@ -32,6 +32,7 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
 
     public init() {}
     private var sendingBox: ObservableMessageSendingBox? = nil
+    private var selectionBox: ObservableConversationSelectionBox? = nil
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
@@ -42,7 +43,9 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
         }
 
         let box = ObservableMessageSendingBox(sender: sender)
+        let selectionBox = ObservableConversationSelectionBox(conversations: conversations)
         sendingBox = box
+        self.selectionBox = selectionBox
         chat.addItems([
             ChatSectionItem(
                 id: "\(id).pending-list",
@@ -51,7 +54,7 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
             ) {
-                PendingMessageListView(box: box, conversations: conversations)
+                PendingMessageListView(box: box, selection: selectionBox)
             },
         ])
     }
@@ -59,6 +62,8 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         sendingBox?.cancel()
         sendingBox = nil
+        selectionBox?.cancel()
+        selectionBox = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeItem(id: "\(id).pending-list")
     }
@@ -67,11 +72,11 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
 /// 待发消息列表视图。
 struct PendingMessageListView: View {
     @ObservedObject var box: ObservableMessageSendingBox
-    let conversations: any ConversationManaging
+    @ObservedObject var selection: ObservableConversationSelectionBox
 
     var body: some View {
         // 仅当选中会话有待发消息时显示。
-        if let conversationID = conversations.selectedConversationID {
+        if let conversationID = selection.selectedConversationID {
             let pending = box.sender.pendingMessages(for: conversationID)
             if !pending.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {

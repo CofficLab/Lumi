@@ -181,6 +181,10 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         fileAttachments: [UserFileAttachment],
         conversationID: UUID?
     ) async throws -> MessageSendCommit? {
+        // Resolve the target before the detached metadata work. The user may
+        // switch conversations while attachments are being encoded; the
+        // message must stay assigned to the conversation active at send time.
+        let targetID = try resolveTargetConversationID(conversationID)
         let metadata = await Task.detached(priority: .utility) {
             Self.encodeAttachmentMetadata(
                 imageAttachments: imageAttachments,
@@ -191,8 +195,23 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
             content,
             imageAttachments: imageAttachments,
             fileAttachments: fileAttachments,
-            conversationID: conversationID,
-            metadata: metadata
+            conversationID: targetID,
+            metadata: metadata,
+            // Preserve the existing behavior for callers that explicitly
+            // provide a conversation; implicit sends should not jump back to
+            // an old selection after the user switches during encoding.
+            selectTarget: conversationID != nil
+        )
+    }
+
+    private func resolveTargetConversationID(_ conversationID: UUID?) throws -> UUID {
+        if let conversationID { return conversationID }
+        if let selected = conversations.selectedConversationID { return selected }
+        return try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: nil,
+            modelName: nil
         )
     }
 
@@ -201,7 +220,8 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         imageAttachments: [UserImageAttachment],
         fileAttachments: [UserFileAttachment],
         conversationID: UUID?,
-        metadata: [String: String]?
+        metadata: [String: String]?,
+        selectTarget: Bool = true
     ) throws -> MessageSendCommit? {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         let hasAttachments = !imageAttachments.isEmpty || !fileAttachments.isEmpty
@@ -212,24 +232,9 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
             return nil
         }
 
-        let targetID: UUID
-        if let conversationID {
-            targetID = conversationID
-        } else if let selected = conversations.selectedConversationID {
-            targetID = selected
-        } else {
-            targetID = try conversations.createConversation(
-                title: nil,
-                projectPath: nil,
-                providerID: nil,
-                modelName: nil
-            )
-            if Self.verbose {
-                Self.logger.info("\(self.t)created new conversation \(targetID.uuidString) for send")
-            }
-        }
+        let targetID = try resolveTargetConversationID(conversationID)
         // 新建会话必须成为当前时间线，否则消息落进不可见会话。
-        if conversations.selectedConversationID != targetID {
+        if selectTarget, conversations.selectedConversationID != targetID {
             conversations.selectConversation(id: targetID)
         }
 
@@ -310,16 +315,21 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         if Self.verbose {
             Self.logger.info("\(self.t)cancel current request: activeTasks=\(self.currentTasks.count)")
         }
-        for task in currentTasks.values {
-            task.cancel()
+        guard let conversationID = conversations.selectedConversationID,
+              currentTasks[conversationID] != nil || pendingTurnStarts.contains(conversationID) else {
+            return
         }
-        currentTasks.removeAll()
-        if let conversationID = conversations.selectedConversationID {
-            pendingTurnStarts.remove(conversationID)
-            agentLoop.cancelTurn(in: conversationID)
-            handleAgentLoopEvent(.cancelled(conversationID: conversationID, turnID: agentLoop.currentTurnID(for: conversationID)))
+        currentTasks[conversationID]?.cancel()
+        currentTasks.removeValue(forKey: conversationID)
+        pendingTurnStarts.remove(conversationID)
+        agentLoop.cancelTurn(in: conversationID)
+        handleAgentLoopEvent(.cancelled(
+            conversationID: conversationID,
+            turnID: agentLoop.currentTurnID(for: conversationID)
+        ))
+        if currentTasks.isEmpty && pendingTurnStarts.isEmpty {
+            isSending = false
         }
-        isSending = false
     }
 
     // MARK: - Resume
@@ -420,10 +430,13 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
             defer {
-                self.isSending = false
                 self.currentTasks.removeValue(forKey: conversationID)
                 // 队列消费：当前回合结束后发下一条。
                 self.drainPendingQueue(conversationID: conversationID)
+                // `currentTasks` is per conversation; one conversation
+                // finishing must not clear the global flag while another is
+                // still running.
+                self.isSending = !self.currentTasks.isEmpty || !self.pendingTurnStarts.isEmpty
             }
             do {
                 try Task.checkCancellation()

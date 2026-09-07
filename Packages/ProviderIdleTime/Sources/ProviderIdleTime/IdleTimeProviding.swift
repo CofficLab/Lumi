@@ -5,6 +5,9 @@ import Foundation
 /// 由旧版 `KernelLumi/Providers/IdleTimeProviding.swift` 迁移而来，
 /// 实现方（迁移后的 `IdleTimeService`）负责事件记录、休息窗口推断、
 /// 快照缓存与预测；消费方应解析本 Provider，而非依赖具体插件。
+///
+/// 状态变化（推断快照刷新）通过 `addObserver(_:)` 发布语义事件；
+/// 消费方不再需要依赖旁路的 `IdleTimeSnapshotChangeCenter`。
 public protocol IdleTimeProviding: AnyObject, Sendable {
     /// 记录一次开发者活动事件（带类型与时间）。
     func record(_ kind: IdleActivityKind, at date: Date) async
@@ -14,6 +17,16 @@ public protocol IdleTimeProviding: AnyObject, Sendable {
 
     /// 预测「从 date 起持续 duration 的区间」是否落在休息窗口内。
     func idlePrediction(for duration: TimeInterval, at date: Date) async -> IdlePrediction
+
+    // MARK: - Observation
+
+    /// 注册开发者活动状态观察者。
+    ///
+    /// 回调为 `@Sendable`，可能在任意线程执行；回调执行时 Provider 状态已经
+    /// 更新（`currentSnapshot()` 可读到最新值）。消费方应在回调内自行
+    /// hop 到主线程。返回句柄在释放或显式调用 `cancel()` 后自动停止接收通知。
+    @discardableResult
+    func addObserver(_ callback: @escaping @Sendable (IdleTimeProvidingEvent) -> Void) -> any IdleTimeProvidingObserverHandle
 }
 
 public extension IdleTimeProviding {
@@ -34,6 +47,14 @@ public extension IdleTimeProviding {
         for duration: TimeInterval = Self.defaultIdlePredictionDuration
     ) async -> IdlePrediction {
         await idlePrediction(for: duration, at: Date())
+    }
+
+    /// 轻量实现 / 测试替身的兼容默认实现：默认 no-op。
+    ///
+    /// 完整实现（如 `IdleTimeService`）应覆盖此方法并发出语义事件。
+    @discardableResult
+    func addObserver(_ callback: @escaping @Sendable (IdleTimeProvidingEvent) -> Void) -> any IdleTimeProvidingObserverHandle {
+        NoopIdleTimeProvidingObserverHandle()
     }
 }
 
@@ -72,5 +93,13 @@ public final actor DefaultIdleTimeProviding: IdleTimeProviding {
             confidence: 0,
             restWindow: nil
         )
+    }
+
+    /// 占位实现对快照变化无感知，注册观察者直接返回 no-op 句柄。
+    @discardableResult
+    public nonisolated func addObserver(
+        _ callback: @escaping @Sendable (IdleTimeProvidingEvent) -> Void
+    ) -> any IdleTimeProvidingObserverHandle {
+        NoopIdleTimeProvidingObserverHandle()
     }
 }

@@ -132,6 +132,7 @@ import PluginWebFetch
 import PluginWebSearch
 import PluginWebServer
 import PluginWhiteNoise
+import PluginXcodeBuild
 import NettoPlugin
 
 /// 默认 `PluginFactory` 实现：产出默认插件。
@@ -241,6 +242,7 @@ public struct DefaultPluginFactory: PluginFactory {
             GoalTaskSuperPlugin(),
             NettoSuperPlugin(),
             SkillPlugin(),
+            XcodeBuildPlugin(),
             OnboardingPlugin(),
             MemoryPlugin(),
             ModelSelectorPlugin(),

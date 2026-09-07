@@ -8,7 +8,9 @@ import os
 /// - 不再依赖 KernelLumi / KitSuperLog；日志改用系统 `os.Logger`，不再 conform `SuperLog`；
 /// - 存储目录由注入的 `IdleActivityStore` 决定（插件 onBoot 时用 StorageProviding
 ///   目录构造 store，不再依赖 `IdleTimeRuntimeBridge` 全局桥）；
-/// - 快照刷新后经 `IdleTimeSnapshotChangeCenter` 广播。
+/// - 快照刷新后经 `IdleTimeSnapshotChangeCenter` 广播，同时通过协议级
+///   `addObserver(_:)` 对外发布 `IdleTimeProvidingEvent.snapshotChanged`，
+///   消费方无需再依赖旁路 center。
 public actor IdleTimeService: IdleTimeProviding {
     public static let shared = IdleTimeService()
 
@@ -90,6 +92,20 @@ public actor IdleTimeService: IdleTimeProviding {
         )
     }
 
+    /// 注册开发者活动状态观察者。
+    ///
+    /// 快照刷新后回调收到 `.snapshotChanged`。底层复用
+    /// `IdleTimeSnapshotChangeCenter`（lock 保护的全局中心），因此可
+    /// nonisolated 安全调用；回调为 `@Sendable`，可能在任意线程执行。
+    public nonisolated func addObserver(
+        _ callback: @escaping @Sendable (IdleTimeProvidingEvent) -> Void
+    ) -> any IdleTimeProvidingObserverHandle {
+        let handle = IdleTimeSnapshotChangeCenter.shared.addObserver {
+            callback(.snapshotChanged)
+        }
+        return IdleTimeServiceObserverHandle(cancel: handle.cancel)
+    }
+
     private func refreshSnapshotIfNeeded(now: Date, force: Bool) async {
         if !force,
            let lastInferenceAt,
@@ -114,5 +130,20 @@ public actor IdleTimeService: IdleTimeProviding {
     private func prune(now: Date) async throws {
         let cutoff = Calendar.current.date(byAdding: .day, value: -35, to: now) ?? now.addingTimeInterval(-35 * 24 * 60 * 60)
         try await store.prune(before: cutoff)
+    }
+}
+
+/// `IdleTimeService.addObserver` 返回的句柄：包装底层
+/// `IdleTimeSnapshotChangeHandle` 的取消闭包。
+private final class IdleTimeServiceObserverHandle: IdleTimeProvidingObserverHandle, @unchecked Sendable {
+    private var cancelAction: (() -> Void)?
+
+    fileprivate init(cancel: @escaping () -> Void) {
+        self.cancelAction = cancel
+    }
+
+    public func cancel() {
+        cancelAction?()
+        cancelAction = nil
     }
 }

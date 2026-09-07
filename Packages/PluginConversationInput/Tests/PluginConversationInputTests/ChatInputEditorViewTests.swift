@@ -1,4 +1,10 @@
 import AppKit
+import ProviderAgentLoop
+import ProviderConversation
+import ProviderConversationInput
+import ProviderLifecycleHooks
+import ProviderMessage
+import ProviderMessageSender
 import SwiftUI
 import Testing
 @testable import PluginConversationInput
@@ -173,6 +179,46 @@ struct ChatInputEditorViewTests {
         #expect(draft == "你")
         #expect(submitCount == 1)
     }
+
+    @Test("switching conversations clears pre-commit attachments")
+    func switchingConversationsClearsAttachments() throws {
+        let conversations = DefaultConversationManager()
+        let first = try conversations.createConversation(
+            title: "A", projectPath: nil, providerID: nil, modelName: nil
+        )
+        let second = try conversations.createConversation(
+            title: "B", projectPath: nil, providerID: nil, modelName: nil
+        )
+        conversations.selectConversation(id: first)
+
+        let messages = DefaultMessageManager()
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: InputTestAgentLoop()
+        )
+        let input = DefaultConversationInputProvider()
+        let observer = ActionBarConversationObserver(
+            conversations: conversations,
+            input: input,
+            sender: sender
+        )
+
+        input.text = "draft"
+        sender.addImageAttachment(
+            UserImageAttachment(mimeType: "image/png", base64Data: "AAAA")
+        )
+        sender.addFileAttachment(
+            UserFileAttachment(fileName: "notes.txt", mimeType: "text/plain", textContent: "notes")
+        )
+
+        conversations.selectConversation(id: second)
+
+        #expect(input.text.isEmpty)
+        #expect(sender.pendingImageAttachments.isEmpty)
+        #expect(sender.pendingFileAttachments.isEmpty)
+        observer.cancel()
+    }
 }
 
 private final class MarkedTextTestView: NSTextView {
@@ -181,4 +227,32 @@ private final class MarkedTextTestView: NSTextView {
     override func hasMarkedText() -> Bool {
         isMarked
     }
+}
+
+@MainActor
+private final class InputTestAgentLoop: AgentLoopProviding {
+    func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle {
+        InputTestAgentLoopObserverHandle()
+    }
+
+    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome { .completed }
+
+    func resumeTurn(
+        in conversationID: UUID,
+        request: AgentTurnResumeRequest
+    ) async throws -> AgentLoopOutcome { .completed }
+
+    func cancelTurn(in conversationID: UUID) {}
+    func state(for conversationID: UUID) -> AgentLoopState { .idle }
+    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
+    func isRunning(for conversationID: UUID) -> Bool { false }
+    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
+    func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
+}
+
+@MainActor
+private final class InputTestAgentLoopObserverHandle: AgentLoopObserverHandle {
+    func cancel() {}
 }

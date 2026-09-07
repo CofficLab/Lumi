@@ -15,4 +15,10 @@ struct AppUpdatePluginTests {
         #expect(UpdateFeedURLProvider.primary(forArchitecture: "arm64").lastPathComponent == "appcast-arm64.xml")
         #expect(UpdateFeedURLProvider.fallback(forArchitecture: "x86_64").lastPathComponent == "appcast-x86_64.xml")
     }
+
+    @Test("uses the domestic primary feed and preserves GitHub fallback")
+    func keepsFeedHosts() {
+        #expect(UpdateFeedURLProvider.primary(forArchitecture: "arm64").host == "s.kuaiyizhi.cn")
+        #expect(UpdateFeedURLProvider.fallback(forArchitecture: "x86_64").host == "github.com")
+    }
 }

@@ -1,0 +1,7 @@
+{
+  "name": "xcode-build",
+  "title": "Xcode Build",
+  "description": "在涉及 Xcode 工程编译、构建错误、签名与模拟器问题时，按本规范引导构建流程。",
+  "triggers": ["xcode", "build", "编译", "签名", "模拟器"],
+  "version": "1.0.0"
+}
