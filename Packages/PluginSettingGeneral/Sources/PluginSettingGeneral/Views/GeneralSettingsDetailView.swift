@@ -24,7 +24,6 @@ struct GeneralSettingsDetailView: View {
     @State private var isUninstalling = false
     @State private var uninstallScan: UninstallScan?
     @State private var uninstallFeedback: String?
-    @State private var uninstallConfirmation = ""
     @State private var removeKeychainCredentials = true
     @State private var removeApplication = true
 
@@ -330,14 +329,6 @@ struct GeneralSettingsDetailView: View {
             Toggle("同时将 Lumi 应用移到废纸篓", isOn: $removeApplication)
                 .font(.appCaption)
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("请输入“删除 Lumi 数据”以确认")
-                    .font(.appCaption)
-                    .foregroundStyle(.secondary)
-                TextField("删除 Lumi 数据", text: $uninstallConfirmation)
-                    .textFieldStyle(.roundedBorder)
-            }
-
             HStack {
                 Spacer()
                 AppButton("取消", style: .ghost, size: .small) {
@@ -356,7 +347,6 @@ struct GeneralSettingsDetailView: View {
                 .disabled(
                     isScanningUninstall
                     || isUninstalling
-                    || uninstallConfirmation != UninstallOptions.confirmationPhrase
                     || uninstallProvider == nil
                 )
             }
@@ -405,7 +395,6 @@ struct GeneralSettingsDetailView: View {
         }
 
         uninstallFeedback = nil
-        uninstallConfirmation = ""
         removeKeychainCredentials = true
         removeApplication = true
         uninstallScan = nil
@@ -437,7 +426,7 @@ struct GeneralSettingsDetailView: View {
             do {
                 await prepareForUninstall?()
                 let result = try await uninstallProvider.uninstall(options: UninstallOptions(
-                    confirmation: uninstallConfirmation,
+                    confirmation: UninstallOptions.confirmationPhrase,
                     removeKeychainCredentials: removeKeychainCredentials,
                     removeApplication: removeApplication
                 ))
