@@ -139,7 +139,10 @@ public final class BookletMakerMobileFeature: ObservableObject {
     public func makeContentView() -> AnyView {
         switch workspace.selectedTool {
         case .split:
-            AnyView(PDFSplitMobileView(viewModel: viewModel))
+            AnyView(PDFSplitMobileView(
+                viewModel: viewModel,
+                onExport: { [weak self] in self?.exportSplit() }
+            ))
         case .booklet:
             AnyView(BookletPreviewMobileView(
                 viewModel: viewModel,

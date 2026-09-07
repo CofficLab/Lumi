@@ -9,6 +9,16 @@ struct PDFSplitSegment: Identifiable, Equatable, Sendable {
     var rangeKey: String { "\(startPage)-\(endPage)" }
     var pageCount: Int { endPage - startPage + 1 }
 
+    /// Localized label like "Pages 3–5" used in lists and editors.
+    var rangeLabel: String {
+        if startPage == endPage {
+            return BookletLocalization.string("Page %lld", Int64(startPage))
+        }
+        return BookletLocalization.string("Pages %lld–%lld",
+                                          Int64(startPage),
+                                          Int64(endPage))
+    }
+
     func fileName(baseName: String) -> String {
         "\(baseName)-part-\(index).pdf"
     }

@@ -184,6 +184,35 @@ final class BookletMakerViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.splitSegments.map(\.pageCount), [5, 3])
     }
 
+    func testDuplicateSplitFileNamesAreRejected() {
+        let viewModel = BookletMakerViewModel()
+        viewModel.selectedTool = .split
+        viewModel.splitCutPointsText = "2"
+        XCTAssertEqual(viewModel.splitSegments.count, 2)
+
+        let first = viewModel.splitSegments[0]
+        let second = viewModel.splitSegments[1]
+        viewModel.renameSplitOutputStem(first, to: "same-name")
+        viewModel.renameSplitOutputStem(second, to: "same-name")
+
+        XCTAssertNotNil(viewModel.splitFileNameValidationMessage)
+        XCTAssertFalse(viewModel.canExportSplit)
+
+        viewModel.renameSplitOutputStem(second, to: "other-name")
+        XCTAssertNil(viewModel.splitFileNameValidationMessage)
+        XCTAssertTrue(viewModel.canExportSplit)
+    }
+
+    func testSplitSegmentRangeLabel() {
+        let segment = PDFSplitSegment(index: 0, startPage: 3, endPage: 5)
+        XCTAssertEqual(segment.pageCount, 3)
+        XCTAssertEqual(segment.rangeKey, "3-5")
+        XCTAssertFalse(segment.rangeLabel.isEmpty)
+
+        let single = PDFSplitSegment(index: 1, startPage: 7, endPage: 7)
+        XCTAssertFalse(single.rangeLabel.isEmpty)
+    }
+
     // MARK: - Export job isolation and cancellation
 
     func testLateOldExportCannotOverwriteNewerExport() async throws {
