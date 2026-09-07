@@ -33,10 +33,6 @@ public struct ProviderDetailView: View {
     private var info: LLMProviderInfo { provider.providerInfo }
     private var isLocal: Bool { info.isLocal }
 
-    private var isSelectedProvider: Bool {
-        manager.selectedProviderID == info.id
-    }
-
     public var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             header
@@ -150,8 +146,7 @@ public struct ProviderDetailView: View {
 
     private var modelSection: some View {
         AppSettingsSection(
-            title: "可用模型",
-            subtitle: isSelectedProvider ? "当前供应商已选中" : "点击模型以切换选中"
+            title: "可用模型"
         ) {
             ForEach(info.models, id: \.id) { model in
                 modelRow(model)
@@ -160,14 +155,8 @@ public struct ProviderDetailView: View {
     }
 
     private func modelRow(_ model: LLMModelInfo) -> some View {
-        let isSelectedModel = isSelectedProvider && manager.selectedModel == model.id
-        return AppSettingsRow(isSelected: isSelectedModel, horizontalPadding: 10, verticalPadding: 10) {
+        AppSettingsRow(horizontalPadding: 10, verticalPadding: 10) {
             HStack(spacing: 10) {
-                Image(systemName: isSelectedModel ? "checkmark.circle.fill" : "circle")
-                    .font(.appCallout)
-                    .foregroundStyle(isSelectedModel ? theme.primary : theme.textTertiary)
-                    .frame(width: 24)
-
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.displayName)
                         .font(.appBody)
@@ -185,11 +174,6 @@ public struct ProviderDetailView: View {
                 }
             }
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            manager.select(providerID: info.id, model: model.id)
-        }
-        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - API Key Actions
