@@ -435,9 +435,19 @@ struct GeneralSettingsDetailView: View {
         isUninstalling = true
         uninstallFeedback = nil
         uninstallFeedbackKind = .info
-        // 内核停止后设置窗口可能暂时失去内容。先隐藏应用，避免用户看到
-        // 已经进入卸载流程但仍在运行的空壳窗口。
-        NSApp.hide(nil)
+
+        // 关闭确认弹窗，隐藏设置窗口，切换到与主窗口解耦的独立卸载浮层。
+        // 内核停止后设置窗口可能暂时失去内容，浮层负责承载后续所有阶段。
+        isPresentingUninstall = false
+        NSApp.windows.forEach { $0.orderOut(nil) }
+        UninstallOverlayWindowController.shared.show(
+            phase: .running,
+            onExit: { self.terminateAfterUninstall() },
+            onClose: {
+                UninstallOverlayWindowController.shared.close()
+                self.restoreApplicationAfterUninstallFailure()
+            }
+        )
         NotificationCenter.default.post(name: .lumiWillUninstall, object: nil)
 
         Task { @MainActor in
@@ -451,21 +461,21 @@ struct GeneralSettingsDetailView: View {
                 ))
 
                 if result.succeeded {
-                    uninstallFeedback = result.applicationMovedToTrash
-                        ? "Lumi 已卸载，应用已移到废纸篓。"
-                        : "Lumi 数据已清除，应用即将退出。"
-                    uninstallFeedbackKind = .success
-                    terminateAfterUninstall()
+                    UninstallOverlayWindowController.shared.update(
+                        phase: .succeeded(applicationMovedToTrash: result.applicationMovedToTrash)
+                    )
                 } else {
-                    restoreApplicationAfterUninstallFailure()
-                    uninstallFeedback = "部分数据未能清除，应用未移除：\n"
-                        + result.failures.map { "\($0.location)：\($0.message)" }.joined(separator: "\n")
-                    uninstallFeedbackKind = .error
+                    UninstallOverlayWindowController.shared.update(
+                        phase: .failed(
+                            detail: "部分数据未能清除，应用未移除：\n"
+                                + result.failures.map { "\($0.location)：\($0.message)" }.joined(separator: "\n")
+                        )
+                    )
                 }
             } catch {
-                restoreApplicationAfterUninstallFailure()
-                uninstallFeedback = "卸载失败：\(error.localizedDescription)"
-                uninstallFeedbackKind = .error
+                UninstallOverlayWindowController.shared.update(
+                    phase: .failed(detail: "卸载失败：\(error.localizedDescription)")
+                )
             }
         }
     }
