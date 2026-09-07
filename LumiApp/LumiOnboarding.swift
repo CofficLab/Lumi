@@ -77,14 +77,14 @@ struct OnboardingSheet: View {
         let safeIndex = min(max(index, 0), max(pages.count - 1, 0))
         VStack(spacing: 0) {
             HStack {
-                Label(LumiPluginLocalization.string("Getting started", bundle: .module), systemImage: "graduationcap.fill")
+                Label(LumiPluginLocalization.string("Getting started", bundle: LumiPluginLocalization.bundle), systemImage: "graduationcap.fill")
                     .font(DesignTokens.Typography.bodyEmphasized)
                     .foregroundStyle(theme.textSecondary)
                 Spacer()
                 Text("\(safeIndex + 1) of \(pages.count)")
                     .font(DesignTokens.Typography.caption1)
                     .foregroundStyle(theme.textTertiary)
-                AppButton(LumiPluginLocalization.string("Skip", bundle: .module), style: .tonal, size: .small, action: finish)
+                AppButton(LumiPluginLocalization.string("Skip", bundle: LumiPluginLocalization.bundle), style: .tonal, size: .small, action: finish)
             }
             .padding(.horizontal, DesignTokens.Spacing.lg)
             .padding(.vertical, DesignTokens.Spacing.md + 4)
@@ -98,7 +98,7 @@ struct OnboardingSheet: View {
             Divider()
             HStack {
                 AppButton(
-                    LumiPluginLocalization.string("Back", bundle: .module),
+                    LumiPluginLocalization.string("Back", bundle: LumiPluginLocalization.bundle),
                     systemImage: "chevron.left",
                     style: .ghost,
                     size: .small,
@@ -109,7 +109,7 @@ struct OnboardingSheet: View {
                 Spacer()
 
                 AppButton(
-                    safeIndex == pages.count - 1 ? LumiPluginLocalization.string("Finish", bundle: .module) : LumiPluginLocalization.string("Continue", bundle: .module),
+                    safeIndex == pages.count - 1 ? LumiPluginLocalization.string("Finish", bundle: LumiPluginLocalization.bundle) : LumiPluginLocalization.string("Continue", bundle: LumiPluginLocalization.bundle),
                     systemImage: safeIndex == pages.count - 1 ? nil : "chevron.right",
                     style: .primary,
                     action: {
