@@ -120,6 +120,8 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
 }
 
 /// Chat 工具栏技能入口：显示可用技能数量（插件贡献 + 内置 + 项目），点击弹出列表。
+///
+/// 样式与 ``SpeedToolbarView`` 保持一致。
 struct SkillChatToolbarView: View {
     @LumiTheme private var theme: any LumiUITheme
 
@@ -128,38 +130,31 @@ struct SkillChatToolbarView: View {
     let skillProvider: (any SkillProviding)?
 
     @State private var isPopoverPresented = false
-    @State private var isHovering = false
     @State private var skills: [SkillMetadata] = []
 
     var body: some View {
         Button {
             isPopoverPresented.toggle()
         } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: 3) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
+                    .font(.system(size: 10, weight: .medium))
 
                 if !skills.isEmpty {
                     Text("\(skills.count)")
-                        .font(.system(size: 12, weight: .medium))
-                        .lineLimit(1)
+                        .font(.system(size: 10, weight: .medium))
+                        .contentTransition(.numericText())
                 } else {
                     Text(LumiPluginLocalization.string("Skills", bundle: .module))
-                        .font(.system(size: 12, weight: .medium))
-                        .lineLimit(1)
+                        .font(.system(size: 10, weight: .medium))
                 }
             }
-            .foregroundStyle(theme.textPrimary)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 4)
+            .foregroundColor(Color.accentColor)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
             .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(isHovering ? theme.appAccentSoftFill : theme.textSecondary.opacity(0.08))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(isHovered ? theme.appHoverBorder : Color.clear, lineWidth: 1)
+                Color.accentColor.opacity(0.22),
+                in: RoundedRectangle(cornerRadius: 5, style: .continuous)
             )
         }
         .buttonStyle(.plain)
@@ -177,13 +172,6 @@ struct SkillChatToolbarView: View {
                 await refresh()
             }
         }
-        .onHover { hovering in
-            isHovering = hovering
-        }
-    }
-
-    private var isHovered: Bool {
-        isHovering || isPopoverPresented
     }
 
     private func refresh() async {
