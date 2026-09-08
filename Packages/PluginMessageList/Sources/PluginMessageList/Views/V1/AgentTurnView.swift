@@ -81,41 +81,45 @@ struct AgentTurnView: View {
     }
 
     private func processDisclosureButton(now: Date) -> some View {
-        HStack(spacing: 6) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isProcessExpanded.toggle()
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isProcessExpanded.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: isProcessExpanded ? "chevron.down" : "chevron.right")
+                        Text(AgentTurnViewModel.processDisclosureTitle(
+                            item: item,
+                            userMessages: viewModel.projection.userMessages,
+                            processCount: viewModel.projection.processMessages.count,
+                            now: now
+                        ))
+                    }
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+                    .contentShape(Rectangle())
                 }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: isProcessExpanded ? "chevron.down" : "chevron.right")
-                    Text(AgentTurnViewModel.processDisclosureTitle(
-                        item: item,
-                        userMessages: viewModel.projection.userMessages,
-                        processCount: viewModel.projection.processMessages.count,
-                        now: now
-                    ))
-                }
-                .font(.appCaption)
-                .foregroundStyle(.secondary)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
+                .buttonStyle(.plain)
 
-            Spacer(minLength: 8)
+                Spacer(minLength: 8)
 
-            if item.isShowingProcess,
-               let turnID = item.record?.id,
-               let toolManager = services.toolManager {
-                AppIconButton(
-                    systemImage: "stop.fill",
-                    tint: .red,
-                    size: .compact
-                ) {
-                    toolManager.cancelJobs(forTurnID: turnID)
+                if item.isShowingProcess,
+                   let turnID = item.record?.id,
+                   let toolManager = services.toolManager {
+                    AppIconButton(
+                        systemImage: "stop.fill",
+                        tint: .red,
+                        size: .compact
+                    ) {
+                        toolManager.cancelJobs(forTurnID: turnID)
+                    }
+                    .help("停止当前回合")
                 }
-                .help("停止当前回合")
             }
+
+            Divider()
         }
     }
 

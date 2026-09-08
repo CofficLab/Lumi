@@ -100,11 +100,7 @@ final class AgentTurnViewModel: ObservableObject {
         responseMessages.removeAll { $0.role == .tool || $0.role == .user || $0.role == .system }
         // 瞬时 Status 是独立的尾部动态提示，不再混入过程或最终消息。
         responseMessages.removeAll(where: isTransientStatus)
-        if let streamingMessage,
-           item.acceptsLiveActivity,
-           streamingMessage.conversationID == item.conversationID {
-            responseMessages.append(streamingMessage)
-        }
+        // V1 不将流式临时回复加入投影；仅在回合结束后展示完整落库消息。
         responseMessages = deduplicated(responseMessages.sorted(by: messageOrdering))
 
         return AgentTurnMessageProjection(
@@ -144,10 +140,9 @@ final class AgentTurnViewModel: ObservableObject {
     }
 
     private func currentStreamingMessage() -> Message? {
-        guard item.acceptsLiveActivity, let streaming = services.streaming else { return nil }
-        let stage = streaming.stage(for: item.conversationID)
-        guard stage == .thinking || stage == .generating else { return nil }
-        return streaming.streamingMessage(for: item.conversationID)
+        // V1 只展示回合状态，不展示逐字增长的临时回复；完整回复在回合结束后
+        // 通过消息变化写入并展示。V2/V3 仍由各自的 ViewModel 处理流式行。
+        return nil
     }
 
     private func currentStreamingStage() -> MessageStreamingStage {
