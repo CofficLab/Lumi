@@ -16,6 +16,7 @@ public enum RailViewProvidingEvent {
     case visibleTabIDChanged(String?)
     case visibilityChanged(Bool)
     case widthChanged(RailViewWidth)
+    case didAppear
 }
 
 /// Rail 视图状态观察句柄。

@@ -289,6 +289,7 @@ private struct RailView: View {
             }
             .frame(minWidth: 200, maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.surface)
+            .onAppear { provider.notify(.didAppear) }
         }
     }
 }
