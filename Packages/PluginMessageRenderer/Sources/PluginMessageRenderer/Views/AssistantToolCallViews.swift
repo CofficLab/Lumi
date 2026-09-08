@@ -555,9 +555,11 @@ private struct ToolDetailPopoverView<Content: View>: View {
             content
         }
         .padding(12)
-        .frame(width: 520)
-        .frame(minHeight: minHeight)
-        .appSurface(style: .popover, cornerRadius: 0, borderColor: theme.divider)
+        .frame(width: 500, alignment: .leading)
+        .frame(minHeight: minHeight, alignment: .top)
+        // Native popover 已提供外层容器；这里保留一个完整圆角 surface，
+        // 避免内容卡片与外层边框错位。
+        .appSurface(style: .popover, cornerRadius: 12, borderColor: theme.divider)
         .appThemedAppearance()
         .background {
             ThemeWindowAppearanceBridge()
@@ -611,17 +613,20 @@ private struct ToolCallResultView: View {
 
                 if result.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     if resultImageData.isEmpty {
-                        EmptyToolSectionView(
+                        ToolResultEmptyStateView(
                             systemImage: "info.circle",
                             text: visualState.isFailure ? "没有错误详情" : "暂无工具输出"
                         )
                     }
                 } else {
-                    ToolTextSectionView(content: result.content, isError: visualState.isFailure)
+                    VStack(alignment: .leading, spacing: 6) {
+                        ToolResultSectionLabel(title: "输出")
+                        ToolTextSectionView(content: result.content, isError: visualState.isFailure)
+                    }
                 }
             }
         } else {
-            EmptyToolSectionView(systemImage: "info.circle", text: "暂无工具输出")
+            ToolResultEmptyStateView(systemImage: "info.circle", text: "暂无工具输出")
         }
     }
 
@@ -657,14 +662,48 @@ private struct ToolDurationRowView: View {
                 .foregroundColor(isError ? theme.error : theme.textPrimary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .toolSubtleCard()
+        .padding(.vertical, 4)
+    }
+}
+
+/// 结果内容区的小节标题，避免把每一行元数据都渲染成完整卡片。
+private struct ToolResultSectionLabel: View {
+    @LumiTheme private var theme
+
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.appMicroEmphasized)
+            .foregroundColor(theme.textTertiary)
+    }
+}
+
+/// 结果缺少正文时的稳定空态，不使用会被弹层高度压缩的嵌套卡片。
+private struct ToolResultEmptyStateView: View {
+    @LumiTheme private var theme
+
+    let systemImage: String
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .foregroundColor(theme.textSecondary)
+
+            Text(text)
+                .font(.appCaption)
+                .foregroundColor(theme.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 16)
     }
 }
 
 // MARK: - ToolCallResultLazyPopover
 
-/// 结果按钮弹层:不在打开前持有数据。打开时先展示 loading,再去 kernel 查询该工具调用结果,
-/// 查到后再渲染。
+/// 结果按钮弹层:不在打开前持有数据。打开时优先使用行内结果作为即时内容，
+/// 同时去 kernel 查询持久化结果；没有行内结果时才展示 loading。
 ///
 /// `fallbackResult` 仅用于在 kernel 查询返回 nil(如结果尚未持久化、store 不可用)时,
 /// 复用行内已解析的结果作为兜底,避免空面板。
@@ -681,11 +720,16 @@ private struct ToolCallResultLazyPopover: View {
     @State private var didLoad = false
 
     private var isLoading: Bool {
-        !didLoad
+        !didLoad && fallbackResult == nil
+    }
+
+    /// 行内已经有结果时，先用它填充弹层，避免查询持久化结果期间出现空白 loading 卡片。
+    private var displayedResult: MessageToolResult? {
+        result ?? fallbackResult
     }
 
     private var visualState: ToolCallResultVisualState {
-        ToolCallResultVisualState(result: result, isLoading: isLoading)
+        ToolCallResultVisualState(result: displayedResult, isLoading: isLoading)
     }
 
     var body: some View {
@@ -693,10 +737,10 @@ private struct ToolCallResultLazyPopover: View {
             title: "调用结果",
             systemImage: visualState.systemImage,
             isError: visualState.isFailure,
-            minHeight: 0
+            minHeight: 128
         ) {
             ToolCallResultView(
-                result: result,
+                result: displayedResult,
                 isLoading: isLoading,
                 visualState: visualState
             )

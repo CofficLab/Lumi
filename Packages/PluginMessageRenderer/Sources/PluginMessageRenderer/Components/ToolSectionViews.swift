@@ -26,7 +26,7 @@ struct LoadingToolSectionView: View {
                 .foregroundColor(theme.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .toolSubtleCard()
+        .padding(.vertical, 20)
     }
 }
 
@@ -60,7 +60,7 @@ struct ToolTextSectionView: View {
     var body: some View {
         AppCard(
             style: .subtle,
-            padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 0)
+            padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
         ) {
             ScrollView(.vertical, showsIndicators: true) {
                 Text(content)
@@ -69,7 +69,7 @@ struct ToolTextSectionView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
             }
-            .frame(maxHeight: 360)
+            .frame(minHeight: 48, maxHeight: 360)
         }
     }
 }
