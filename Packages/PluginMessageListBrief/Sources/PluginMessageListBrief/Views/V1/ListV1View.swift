@@ -12,7 +12,6 @@ import SwiftUI
 struct ListV1View: View {
     let services: MessageListServices
     @ObservedObject private var turnViewModel: ListV1ViewModel
-    let guideState: MessageListGuideState
 
     @LumiTheme private var theme
 
@@ -30,28 +29,16 @@ struct ListV1View: View {
 
     init(
         services: MessageListServices,
-        viewModel: ListV1ViewModel,
-        guideState: MessageListGuideState
+        viewModel: ListV1ViewModel
     ) {
         self.services = services
         _turnViewModel = ObservedObject(wrappedValue: viewModel)
-        self.guideState = guideState
     }
 
     var body: some View {
         Group {
-            if selectedConversationID == nil {
-                NoConversationSelectedView(
-                    services: services,
-                    guideState: guideState
-                )
-            } else if turnViewModel.isLoading {
+            if turnViewModel.isLoading {
                 MessageLoadingView()
-            } else if !turnViewModel.hasVisibleContent {
-                MessageEmptyStateView(
-                    services: services,
-                    guideState: guideState
-                )
             } else {
                 messageScrollView
             }
@@ -106,6 +93,10 @@ struct ListV1View: View {
                 scrollCoordinator.cancelPendingTasks()
             }
         }
+    }
+
+    private var selectedConversationID: UUID? {
+        services.selectedConversationID
     }
 
     @ViewBuilder
@@ -163,10 +154,6 @@ struct ListV1View: View {
 
     private var visibleRowIDs: [UUID] {
         displayedHistoryMessages.map(\.id)
-    }
-
-    private var selectedConversationID: UUID? {
-        services.selectedConversationID
     }
 
     private var verbosity: ResponseVerbosity {

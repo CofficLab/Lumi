@@ -220,14 +220,25 @@ public struct ChatSectionHostView: View {
     }
 
     private var stackItems: [ChatSectionItem] {
-        provider.items.filter {
+        exclusiveItems(provider.items.filter {
             $0.placement == .stack && $0.scope.matches(provider.activeContext)
-        }
+        })
     }
 
     private var bottomItems: [ChatSectionItem] {
-        provider.items.filter {
+        exclusiveItems(provider.items.filter {
             $0.placement == .bottomFixed && $0.scope.matches(provider.activeContext)
+        })
+    }
+
+    /// Keeps only the first item in each exclusive group. `provider.items` is
+    /// already sorted by order and id, so the first item is the deterministic
+    /// winner while independently booted plugins can still register freely.
+    private func exclusiveItems(_ items: [ChatSectionItem]) -> [ChatSectionItem] {
+        var seenGroups = Set<String>()
+        return items.filter { item in
+            guard let group = item.exclusiveGroup else { return true }
+            return seenGroups.insert(group).inserted
         }
     }
 

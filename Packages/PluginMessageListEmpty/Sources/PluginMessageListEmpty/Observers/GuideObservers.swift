@@ -1,3 +1,4 @@
+import Foundation
 import ProviderChatSection
 import ProviderProject
 import SwiftUI
@@ -9,6 +10,7 @@ import SwiftUI
 @MainActor
 final class MessageListGuideState: ObservableObject {
     @Published private(set) var context: ChatContext?
+    @Published private(set) var selectedConversationID: UUID?
     @Published private(set) var currentProject: ProjectInfo?
     @Published private(set) var projects: [ProjectInfo] = []
     @Published private(set) var promptSuggestionsRevision = 0
@@ -17,10 +19,11 @@ final class MessageListGuideState: ObservableObject {
 
     init(
         context: ChatContext?,
-        project: (any MessageListProjectCapability)?,
+        project: (any ProjectProviding)?,
         toolbarCoordinator: NoConversationSelectedToolbarCoordinator
     ) {
         self.context = context
+        selectedConversationID = nil
         currentProject = project?.currentProject
         projects = project?.projects ?? []
         self.toolbarCoordinator = toolbarCoordinator
@@ -30,7 +33,11 @@ final class MessageListGuideState: ObservableObject {
         self.context = context
     }
 
-    func handleProjectChange(_ project: (any MessageListProjectCapability)?) {
+    func handleSelectionChange(_ conversationID: UUID?) {
+        selectedConversationID = conversationID
+    }
+
+    func handleProjectChange(_ project: (any ProjectProviding)?) {
         currentProject = project?.currentProject
         projects = project?.projects ?? []
         toolbarCoordinator.refresh()

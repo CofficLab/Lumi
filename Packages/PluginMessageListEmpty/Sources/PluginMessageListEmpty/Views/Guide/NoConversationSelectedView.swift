@@ -7,12 +7,12 @@ import UniformTypeIdentifiers
 
 struct NoConversationSelectedView: View {
     @LumiTheme private var theme
-    let services: MessageListServices
+    let services: MessageListEmptyServices
     @ObservedObject private var guideState: MessageListGuideState
     @State private var importingFolder = false
     @State private var projectError: String?
 
-    init(services: MessageListServices, guideState: MessageListGuideState) {
+    init(services: MessageListEmptyServices, guideState: MessageListGuideState) {
         self.services = services
         _guideState = ObservedObject(wrappedValue: guideState)
     }

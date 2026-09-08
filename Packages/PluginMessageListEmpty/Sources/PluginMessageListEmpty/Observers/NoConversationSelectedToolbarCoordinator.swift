@@ -1,3 +1,4 @@
+import ProviderProject
 import ProviderToolbar
 
 /// 管理无选中会话空态对工具栏分类的临时隐藏请求。
@@ -9,13 +10,13 @@ import ProviderToolbar
 final class NoConversationSelectedToolbarCoordinator {
     static let source = "com.coffic.lumi.plugin.message-list.no-conversation-empty-state"
 
-    private let project: (any MessageListProjectCapability)?
-    private let toolbar: (any MessageListToolbarCapability)?
+    private let project: (any ProjectProviding)?
+    private let toolbar: (any ToolbarProviding)?
     private var isActive = false
 
     init(
-        project: (any MessageListProjectCapability)?,
-        toolbar: (any MessageListToolbarCapability)?
+        project: (any ProjectProviding)?,
+        toolbar: (any ToolbarProviding)?
     ) {
         self.project = project
         self.toolbar = toolbar

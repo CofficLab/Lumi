@@ -3,7 +3,7 @@ import ProviderPromptSuggestion
 import SwiftUI
 
 @MainActor
-private func handlePromptTap(_ suggestion: PromptSuggestion, services: MessageListServices,
+private func handlePromptTap(_ suggestion: PromptSuggestion, services: MessageListEmptyServices,
                              pickFolder: (() -> Void)? = nil) {
     Task { @MainActor in
         await services.promptSuggestionExecutor?.execute(
@@ -15,7 +15,7 @@ private func handlePromptTap(_ suggestion: PromptSuggestion, services: MessageLi
 
 struct PromptSuggestionFlow: View {
     let suggestions: [PromptSuggestion]
-    let services: MessageListServices
+    let services: MessageListEmptyServices
     let pickFolder: (() -> Void)?
 
     var body: some View {

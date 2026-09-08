@@ -96,6 +96,7 @@ import PluginLogoCoffic
 import PluginLogoManager
 import PluginLogoSmartLight
 import PluginMemory
+import PluginMessageListEmpty
 import PluginMessageListBrief
 import PluginMessageListStandard
 import PluginMessageListDetailed
@@ -253,6 +254,7 @@ public struct DefaultPluginFactory: PluginFactory {
             OnboardingPlugin(),
             MemoryPlugin(),
             ModelSelectorPlugin(),
+            PluginMessageListEmptyPlugin(),
             PluginMessageListBriefPlugin(),
             PluginMessageListStandardPlugin(),
             PluginMessageListDetailedPlugin(),

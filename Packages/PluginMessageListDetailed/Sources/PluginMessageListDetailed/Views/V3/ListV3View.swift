@@ -18,7 +18,6 @@ import SwiftUI
 struct ListV3View: View {
     let services: MessageListServices
     @ObservedObject private var viewModel: ListV3ViewModel
-    let guideState: MessageListGuideState
 
     @LumiTheme private var theme
 
@@ -33,29 +32,15 @@ struct ListV3View: View {
 
     init(
         services: MessageListServices,
-        viewModel: ListV3ViewModel,
-        guideState: MessageListGuideState
+        viewModel: ListV3ViewModel
     ) {
         self.services = services
         _viewModel = ObservedObject(wrappedValue: viewModel)
-        self.guideState = guideState
     }
 
     var body: some View {
         ZStack {
-            if viewModel.selectedConversationID == nil {
-                NoConversationSelectedView(
-                    services: services,
-                    guideState: guideState
-                )
-            } else if viewModel.hasPersistedMessages {
-                messageScrollView
-            } else {
-                MessageEmptyStateView(
-                    services: services,
-                    guideState: guideState
-                )
-            }
+            messageScrollView
             if viewModel.isLoading {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -14,7 +14,6 @@ struct ListV2View: View, SuperLog {
 
     let services: MessageListServices
     @ObservedObject private var viewModel: ListV2ViewModel
-    let guideState: MessageListGuideState
 
     @LumiTheme private var theme
 
@@ -29,12 +28,10 @@ struct ListV2View: View, SuperLog {
 
     init(
         services: MessageListServices,
-        viewModel: ListV2ViewModel,
-        guideState: MessageListGuideState
+        viewModel: ListV2ViewModel
     ) {
         self.services = services
         _viewModel = ObservedObject(wrappedValue: viewModel)
-        self.guideState = guideState
         if Self.verbose {
             Self.logger.info("\(Self.t)ListV2View initialized: selectedConversation=\(services.selectedConversationID?.uuidString ?? "nil")")
         }
@@ -43,19 +40,7 @@ struct ListV2View: View, SuperLog {
     var body: some View {
         let _ = logContentDecision()
         ZStack {
-            if viewModel.selectedConversationID == nil {
-                NoConversationSelectedView(
-                    services: services,
-                    guideState: guideState
-                )
-            } else if viewModel.hasPersistedMessages {
-                messageScrollView
-            } else {
-                MessageEmptyStateView(
-                    services: services,
-                    guideState: guideState
-                )
-            }
+            messageScrollView
             if viewModel.isLoading {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -76,7 +61,7 @@ struct ListV2View: View, SuperLog {
     @discardableResult
     private func logContentDecision() -> String {
         guard Self.verbose else { return "" }
-        let state = viewModel.hasPersistedMessages ? "list" : (viewModel.isLoading ? "loading" : "empty")
+        let state = viewModel.isLoading ? "loading" : "list"
         let message = "\(Self.t)content decision: \(state), historyRows=\(viewModel.historyRows.count), isLoading=\(viewModel.isLoading)"
         Self.logger.debug("\(message)")
         return message

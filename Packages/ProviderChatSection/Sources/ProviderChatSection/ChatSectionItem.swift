@@ -58,6 +58,9 @@ public struct ChatSectionItem: Identifiable, Sendable {
     public let id: String
     public var order: Int
     public let scope: ChatSectionScope
+    /// Items in the same exclusive group compete for one rendered slot.
+    /// The lowest-order item wins; ungrouped items keep the existing behavior.
+    public let exclusiveGroup: String?
     public let placement: ChatSectionPlacement
     public let fillsRemainingHeight: Bool
     public let showsTrailingDivider: Bool
@@ -67,6 +70,7 @@ public struct ChatSectionItem: Identifiable, Sendable {
         id: String,
         order: Int = 200,
         scope: ChatSectionScope = .global,
+        exclusiveGroup: String? = nil,
         placement: ChatSectionPlacement = .stack,
         fillsRemainingHeight: Bool = false,
         showsTrailingDivider: Bool = true,
@@ -75,6 +79,7 @@ public struct ChatSectionItem: Identifiable, Sendable {
         self.id = id
         self.order = order
         self.scope = scope
+        self.exclusiveGroup = exclusiveGroup
         self.placement = placement
         self.fillsRemainingHeight = fillsRemainingHeight
         self.showsTrailingDivider = showsTrailingDivider

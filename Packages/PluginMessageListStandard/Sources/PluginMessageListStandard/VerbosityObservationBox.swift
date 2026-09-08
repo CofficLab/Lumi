@@ -58,11 +58,9 @@ final class VerbosityObservationBox {
     private func reevaluate() {
         let selectedID = conversations?.selectedConversationID
         let verbosity = conversations?.verbosity(for: selectedID) ?? .standard
-        // 始终注册当前详细程度对应的内容项。会话选择可能在启动后异步恢复；
-        // 如果此时因为 selectedID == nil 不注册，Chat 区会暂时没有消息列表，
-        // 且后续若选择值没有发生变化也无法触发补注册。具体视图负责展示
-        // NoConversationSelectedView。
-        let shouldShow = verbosity == expectedVerbosity
+        // 空态由独立的 PluginMessageListEmptyPlugin 接管；列表插件只在有选中
+        // 会话时注册自己的消息列表内容项。
+        let shouldShow = verbosity == expectedVerbosity && selectedID != nil
 
         if shouldShow, !isRegistered {
             chat.addItems([
@@ -70,6 +68,7 @@ final class VerbosityObservationBox {
                     id: pluginID,
                     order: 82,
                     scope: .global,
+                    exclusiveGroup: "message-list",
                     fillsRemainingHeight: true,
                     content: makeView
                 )

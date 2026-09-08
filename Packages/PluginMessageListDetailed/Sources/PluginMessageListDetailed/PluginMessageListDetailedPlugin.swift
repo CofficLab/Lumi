@@ -1,4 +1,3 @@
-import Combine
 import os
 import KernelCore
 import KitSuperLog
@@ -34,16 +33,11 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
     )
 
     private var viewModel: ListV3ViewModel?
-    /// Retained because the registered ChatSection content closure captures it weakly.
-    private var guideState: MessageListGuideState?
     private var messageChangeObserver: (any MessageChangeObserverHandle)?
     private var conversationStateObserver: (any ConversationStateObserverHandle)?
     private var streamingObserver: (any MessageStreamingObserverHandle)?
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
     private var conversationObserver: (any ConversationObserverHandle)?
-    private var projectObserver: (any ProjectProvidingObserverHandle)?
-    private var chatObserver: (any ChatSectionProvidingObserverHandle)?
-    private var promptSuggestionsCancellable: AnyCancellable?
     private var verbosityObservation: VerbosityObservationBox?
 
     public init() {}
@@ -79,30 +73,19 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
             toolbar: toolbar.map(MessageListToolbarCapabilityAdapter.init(toolbar:)),
             chat: MessageListChatSectionCapabilityAdapter(chat: chat),
         )
-        let toolbarCoordinator = NoConversationSelectedToolbarCoordinator(
-            project: services.project,
-            toolbar: services.toolbar
-        )
-        let guideState = MessageListGuideState(
-            context: chat.activeContext,
-            project: services.project,
-            toolbarCoordinator: toolbarCoordinator
-        )
         let viewModel = ListV3ViewModel(services: services)
         self.viewModel = viewModel
-        self.guideState = guideState
 
         let verbosityObservation = VerbosityObservationBox(
             conversations: conversations,
             chat: chat,
             pluginID: id,
             expectedVerbosity: .detailed,
-            makeView: { [weak viewModel, weak guideState, services] in
-                guard let viewModel, let guideState else { return AnyView(EmptyView()) }
+            makeView: { [weak viewModel, services] in
+                guard let viewModel else { return AnyView(EmptyView()) }
                 return AnyView(ListV3View(
                     services: services,
-                    viewModel: viewModel,
-                    guideState: guideState
+                    viewModel: viewModel
                 ))
             }
         )
@@ -131,16 +114,6 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
                 viewModel?.refreshConversationSettingsIfNeeded()
             }
         }
-        projectObserver = project?.addObserver { [weak guideState, projectCapability = services.project] _ in
-            guideState?.handleProjectChange(projectCapability)
-        }
-        chatObserver = chat.addObserver { [weak guideState] event in
-            guard case let .activeContextChanged(context) = event else { return }
-            guideState?.handleContextChange(context)
-        }
-        promptSuggestionsCancellable = promptSuggestions?.changes.sink { [weak guideState] _ in
-            guideState?.handlePromptSuggestionsChange()
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -154,14 +127,8 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
         selectedConversationObserver = nil
         conversationObserver?.cancel()
         conversationObserver = nil
-        projectObserver?.cancel()
-        projectObserver = nil
-        chatObserver?.cancel()
-        chatObserver = nil
-        promptSuggestionsCancellable = nil
         verbosityObservation?.cancel()
         verbosityObservation = nil
-        guideState = nil
         viewModel = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeItem(id: id)
