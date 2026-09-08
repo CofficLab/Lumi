@@ -1,0 +1,7 @@
+{
+  "name": "mind-map-designer",
+  "title": "Mind Map Designer",
+  "description": "指导 AI 使用 Mind Map Designer 的 Agent 工具创建和编辑思维导图，包括节点增删改、布局调整、大纲导入和导出。",
+  "triggers": ["mind map", "思维导图", "brainstorm", "brain storm", "脑暴", "知识图谱", "node graph", "组织架构图", "outline"],
+  "version": "1.0.0"
+}
