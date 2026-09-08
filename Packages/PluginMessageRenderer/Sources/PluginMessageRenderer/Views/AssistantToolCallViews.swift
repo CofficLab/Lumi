@@ -172,6 +172,7 @@ struct ToolCallRowsView: View {
                 toolCall: toolCall.agentToolCall,
                 message: rowContext
             )
+            .toolCallRendererIdBadge(type(of: customRenderer).id)
         } else {
             ToolCallRowView(
                 kernel: kernel,
@@ -755,5 +756,70 @@ private struct ToolCallResultLazyPopover: View {
             result = resolved.flatMap(MessageToolResult.init(toolCallResult:)) ?? fallbackResult
             didLoad = true
         }
+    }
+}
+
+// MARK: - Tool Call Renderer Debug Badge
+
+/// Tool call renderer ID 调试徽章。
+/// 在 Debug 构建下，在工具调用行右上角显示渲染器 ID，便于调试。
+private struct ToolCallRendererIdBadge: View {
+    @LumiTheme private var theme
+
+    let id: String
+
+    private var rendererColor: Color {
+        ToolCallRendererDebugColor.color(for: id)
+    }
+
+    var body: some View {
+        Text(id)
+            .font(.system(size: 9, weight: .medium, design: .monospaced))
+            .foregroundColor(theme.textSecondary)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(
+                rendererColor.opacity(0.10),
+                in: Capsule(style: .continuous)
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(rendererColor.opacity(0.45), lineWidth: 0.5)
+            )
+            .fixedSize()
+    }
+}
+
+extension View {
+    /// 在工具调用行右上角叠加当前 tool call renderer 的 `id` 徽章。
+    /// 仅 Debug 构建有效；Release 构建下此方法为 no-op。
+    func toolCallRendererIdBadge(_ id: String) -> some View {
+        #if DEBUG
+            overlay(alignment: .topTrailing) {
+                ToolCallRendererIdBadge(id: id)
+                    .padding(4)
+            }
+        #else
+            self
+        #endif
+    }
+}
+
+private enum ToolCallRendererDebugColor {
+    static func color(for id: String) -> Color {
+        Color(
+            hue: hue(for: id),
+            saturation: 0.65,
+            brightness: 0.85
+        )
+    }
+
+    private static func hue(for id: String) -> Double {
+        var hash: UInt32 = 2_166_136_261
+        for byte in id.utf8 {
+            hash ^= UInt32(byte)
+            hash = hash &* 16_777_619
+        }
+        return Double(hash) / Double(UInt32.max)
     }
 }
