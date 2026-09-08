@@ -95,7 +95,7 @@ struct ToolCallRowsView: View {
     var body: some View {
         Group {
             if verbosity == .brief {
-                // V1:ChatGPT 风格的「可折叠工具步骤组」——进行中展开,完成后收起成一行摘要。
+                // V1:直接逐行显示默认工具调用，不使用自定义 renderer 或折叠摘要。
                 CollapsibleToolStepGroup(
                     kernel: kernel,
                     message: message,

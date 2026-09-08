@@ -1,32 +1,22 @@
 import os
 import KitAgentTool
 import KernelCore
-import KitLocalization
 import LumiUI
-import KitMarkdown
 import ProviderConversation
 import ProviderMessage
-import ProviderMessageSender
 import ProviderToolManager
-import KitAgentTool
-import LumiUI
 import SwiftUI
 
-/// V1 (brief) 模式下的「可折叠工具步骤组」(ChatGPT/Codex 风格)。
+/// V1 (brief) 模式下的默认工具调用行列表。
 ///
-/// 把一条助手消息内联的多个工具调用包成一个可折叠的整体:
-/// - 多个调用默认**收起**成一行摘要(`数量 + 总耗时`),点击可重新展开。
-/// - 只有一个调用时直接显示工具行,不增加无意义的折叠/展开层级。
+/// 多个工具调用直接逐行显示，不使用汇总文案或折叠/展开交互。
 ///
-/// 用户随时可点击表头手动展开/收起多个工具调用组成的步骤组;手动操作存于本地 `@State`。
-///
-/// 展开态复用既有 `ToolCallRowView`，传入 `showsDetails: false` 以隐藏耗时与参数/结果按钮，
+/// 复用既有 `ToolCallRowView`，传入 `showsDetails: false` 以隐藏耗时与参数/结果按钮，
 /// 保持 V1 的 inline 极简风格；V1 不走自定义 ToolCall renderer。
 struct CollapsibleToolStepGroup: View {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-renderer", category: "CollapsibleToolStepGroup")
 
     let kernel: KernelCoreContainer
-    @LumiTheme private var theme
 
     let message: Message
     let toolCalls: [MessageToolCall]
@@ -34,15 +24,7 @@ struct CollapsibleToolStepGroup: View {
 
     @State private var parameterPopoverToolCallID: String?
     @State private var resultPopoverToolCallID: String?
-
-    /// 用户的手动展开/收起覆盖;`nil` 表示沿用默认收起态。
-    @State private var userOverride: Bool?
-
-    /// 表头悬停态;仅用于显隐 chevron。
-    @State private var isHovering = false
     @State private var resolvedToolCalls: [MessageToolCall]?
-    @State private var isLoadingResults = false
-    @StateObject private var jobActivity: ToolJobGroupActivityModel
 
     init(
         kernel: KernelCoreContainer,
@@ -54,20 +36,10 @@ struct CollapsibleToolStepGroup: View {
         self.message = message
         self.toolCalls = toolCalls
         self.verbosity = verbosity
-        self._jobActivity = StateObject(wrappedValue: ToolJobGroupActivityModel(
-            manager: kernel.resolveProvider((any ToolManagerProviding).self),
-            toolCallIDs: toolCalls.map(\.id),
-            conversationID: message.conversationID,
-            turnID: message.turnID
-        ))
     }
 
     private var displayedToolCalls: [MessageToolCall] {
         resolvedToolCalls ?? toolCalls
-    }
-
-    private var isSingleToolCall: Bool {
-        toolCalls.count == 1
     }
 
     private var resolutionTaskID: String {
@@ -76,127 +48,15 @@ struct CollapsibleToolStepGroup: View {
             .joined(separator: "|")
     }
 
-    /// 组内是否存在「正在等待用户作答」的交互式工具调用(如 ask_user)。
-    /// 新版 `MessageToolResult` 不携带 `AgentTurnControl`，此判断降级为 false
-    /// （等待态由 `ToolCallResult.awaitingUserResponse` 经自定义行渲染器呈现）。
-    private var hasAwaitingInteraction: Bool {
-        false
-    }
-
-    /// 有效折叠态:用户覆盖优先;默认收起。
-    /// 例外:存在等待用户作答的交互式调用时,强制展开(不可收起),保证交互入口可见。
-    private var isCollapsed: Bool {
-        if hasAwaitingInteraction { return false }
-        return userOverride ?? true
-    }
-
     var body: some View {
-        Group {
-            if isSingleToolCall, let toolCall = displayedToolCalls.first {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(displayedToolCalls) { toolCall in
                 toolCallRow(for: toolCall)
-            } else {
-                VStack(alignment: .leading, spacing: 0) {
-                    summaryHeader
-
-                    if !isCollapsed {
-                        VStack(alignment: .leading, spacing: 10) {
-                            if isLoadingResults {
-                                ToolResultsLoadingView()
-                            }
-                            ForEach(displayedToolCalls) { toolCall in
-                                toolCallRow(for: toolCall)
-                            }
-                        }
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                    }
-                }
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: isCollapsed)
         .task(id: resolutionTaskID) {
-            // 单个工具直接显示工具行，也需要主动回填尚未落库的结果。
-            // 多个工具仅在展开组时加载结果；等待态仍由展开逻辑处理。
-            if isSingleToolCall || !isCollapsed {
-                await resolveResults()
-            }
+            await resolveResults()
         }
-    }
-
-    // MARK: - Header (折叠态/展开态共用的一行摘要)
-
-    private var summaryHeader: some View {
-        Button {
-            let willExpand = isCollapsed
-            withAnimation(.easeInOut(duration: 0.2)) {
-                userOverride = !isCollapsed
-            }
-            if willExpand {
-                Task { await resolveResults() }
-            }
-        } label: {
-            HStack(spacing: 6) {
-                statusIcon
-
-                Text(summaryText)
-                    .font(.appCaption)
-                    .foregroundColor(summaryColor)
-                    .lineLimit(1)
-
-                // chevron 紧贴摘要文字右侧(不再用 Spacer 推到行尾);默认隐藏,悬停时显现。
-                Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
-                    .font(.appMicro)
-                    .foregroundColor(theme.textTertiary)
-                    .opacity(isHovering ? 1 : 0)
-            }
-            .padding(.vertical, 5)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            isHovering = hovering
-        }
-        .animation(.easeOut(duration: 0.12), value: isHovering)
-    }
-
-    private var statusIcon: some View {
-        Group {
-            if aggregateState == .loading {
-                ProgressView().controlSize(.small)
-            } else {
-                Image(systemName: aggregateState.systemImage)
-                    .font(.appCaptionEmphasized)
-                    .foregroundColor(aggregateState.isFailure ? theme.error : theme.textSecondary)
-            }
-        }
-        .frame(width: 14, height: 14)
-    }
-
-    private var summaryColor: Color {
-        aggregateState.isFailure ? theme.error : theme.textSecondary
-    }
-
-    /// 组内任一调用仍在执行 → loading;否则任一失败 → failed;否则 completed。
-    private var aggregateState: ToolCallResultVisualState {
-        if isLoadingResults { return .loading }
-        if jobActivity.jobs.contains(where: { $0.status == .failed || $0.status == .timedOut }) {
-            return .failed
-        }
-        if jobActivity.jobs.contains(where: { !$0.status.isTerminal }) {
-            return .loading
-        }
-        return ToolStepGroupSummary.aggregateState(for: displayedToolCalls)
-    }
-
-    /// 折叠态摘要文案(用户选定的"数量 + 总耗时"样式)。
-    /// - 进行中:`执行中 · 已完成 k/N`
-    /// - 全部完成:`执行了 N 个步骤 · <总耗时>`(有失败则追加 `· X 失败`)
-    private var summaryText: String {
-        if !jobActivity.jobs.isEmpty {
-            return ToolStepGroupSummary.summaryText(for: jobActivity.jobs)
-        }
-        return ToolStepGroupSummary.summaryText(for: displayedToolCalls)
     }
 
     @MainActor
@@ -214,9 +74,6 @@ struct CollapsibleToolStepGroup: View {
             resolvedToolCalls = cached
             return
         }
-
-        isLoadingResults = true
-        defer { isLoadingResults = false }
 
         var resolved = toolCalls
         var didResolveAnyResult = false
@@ -254,16 +111,5 @@ struct CollapsibleToolStepGroup: View {
             parameterPopoverToolCallID: $parameterPopoverToolCallID,
             resultPopoverToolCallID: $resultPopoverToolCallID
         )
-    }
-}
-
-private struct ToolResultsLoadingView: View {
-    var body: some View {
-        HStack(spacing: 8) {
-            ProgressView().controlSize(.small)
-            Text("正在加载工具结果…")
-                .font(.appCaption)
-                .foregroundColor(.secondary)
-        }
     }
 }
