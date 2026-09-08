@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import ProviderConversation
 
@@ -23,8 +22,8 @@ protocol ConversationVerbosityCapability: AnyObject {
     /// 设置全局详细程度。
     func setGlobalVerbosity(_ verbosity: ResponseVerbosity)
 
-    /// 底层 `ConversationManaging` 的变更发布器，供 Observer 订阅。
-    var objectWillChange: ObservableObjectPublisher { get }
+    /// 注册对话领域事件观察者，用于将 Provider 事件转换为插件内部状态。
+    func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle
 }
 
 /// 将内核的 `ConversationManaging` 收窄为 Verbosity 插件的会话能力。
@@ -56,7 +55,7 @@ final class ConversationVerbosityCapabilityAdapter: ConversationVerbosityCapabil
         conversations.setGlobalVerbosity(verbosity)
     }
 
-    var objectWillChange: ObservableObjectPublisher {
-        conversations.objectWillChange
+    func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle {
+        conversations.addConversationObserver(callback)
     }
 }
