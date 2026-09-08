@@ -60,11 +60,29 @@ extension ConversationManager {
     }
 
     public func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {
-        guard let conversationID else {
-            return
+        guard let conversationID = applyVerbosity(verbosity, for: conversationID) else { return }
+        Task { await store?.updateConversationPreferences(id: conversationID, verbosity: verbosity) }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setVerbosity: conversation=\(conversationID.uuidString.prefix(8)), verbosity=\(verbosity.rawValue)")
         }
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
+    }
+
+    /// 设置详细程度并等待数据库写入完成，供需要在退出前确认保存结果的调用方使用。
+    public func setVerbosityAndWait(_ verbosity: ResponseVerbosity, for conversationID: UUID?) async {
+        guard let conversationID = applyVerbosity(verbosity, for: conversationID) else { return }
+        _ = await store?.updateConversationPreferences(id: conversationID, verbosity: verbosity)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setVerbosityAndWait: conversation=\(conversationID.uuidString.prefix(8)), verbosity=\(verbosity.rawValue)")
+        }
+    }
+
+    /// 先更新内存并通知 UI，再由调用方决定是否等待持久化。
+    private func applyVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) -> UUID? {
+        guard let conversationID,
+              let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return nil
         }
         conversations[index].verbosity = verbosity
         // 重新赋值触发 @Published，并广播变更通知，使依赖该会话 verbosity 的视图
@@ -73,14 +91,7 @@ extension ConversationManager {
         conversations = conversations
         notifyConversationObservers(.verbosityChanged(conversationID))
         notifyConversationsChanged()
-
-        Task {
-            await store?.updateConversationPreferences(id: conversationID, verbosity: verbosity)
-        }
-
-        if Self.verbose {
-            Self.logger.info("\(Self.t)setVerbosity: conversation=\(conversationID.uuidString.prefix(8)), verbosity=\(verbosity.rawValue)")
-        }
+        return conversationID
     }
 
     // MARK: - Reasoning Effort

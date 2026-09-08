@@ -100,7 +100,7 @@ public actor ConversationStore: SuperLog {
 
     /// Create a new conversation with specific ID
     @discardableResult
-    func createConversation(id: UUID, title: String?, preview: String = "", createdAt: Date = Date(), providerID: String? = nil, modelName: String? = nil, projectPath: String? = nil, parentConversationID: UUID? = nil, reasoningEffort: ReasoningEffort? = nil, automationLevel: AutomationLevel? = nil) throws -> ConversationModel {
+    func createConversation(id: UUID, title: String?, preview: String = "", createdAt: Date = Date(), verbosity: ResponseVerbosity? = nil, providerID: String? = nil, modelName: String? = nil, projectPath: String? = nil, parentConversationID: UUID? = nil, reasoningEffort: ReasoningEffort? = nil, automationLevel: AutomationLevel? = nil) throws -> ConversationModel {
         let context = ModelContext(container)
         let now = createdAt.timeIntervalSince1970
         let model = ConversationModel(
@@ -109,6 +109,7 @@ public actor ConversationStore: SuperLog {
             preview: preview,
             createdAt: now,
             updatedAt: now,
+            verbosityRaw: verbosity?.rawValue,
             reasoningEffortRaw: reasoningEffort?.rawValue,
             automationLevelRaw: automationLevel?.rawValue,
             providerId: providerID,

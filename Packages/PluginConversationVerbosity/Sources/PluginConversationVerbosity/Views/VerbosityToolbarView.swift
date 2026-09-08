@@ -46,10 +46,12 @@ struct VerbosityToolbarView: View {
         .help(selectedVerbosity.description)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VerbosityPopover(selected: selectedVerbosity) { level in
-                if let conversationID = capability.selectedConversationID {
-                    capability.setVerbosity(level, for: conversationID)
-                }
                 capability.setGlobalVerbosity(level)
+                if let conversationID = capability.selectedConversationID {
+                    Task { @MainActor in
+                        await capability.setVerbosityAndWait(level, for: conversationID)
+                    }
+                }
                 ConversationVerbosityToast.show(
                     toast,
                     title: LumiPluginLocalization.string("Response Detail", bundle: .module),

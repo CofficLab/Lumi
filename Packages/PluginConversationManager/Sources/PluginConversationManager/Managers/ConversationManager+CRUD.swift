@@ -83,6 +83,7 @@ extension ConversationManager {
                     title: normalizedTitle,
                     preview: "",
                     createdAt: now,
+                    verbosity: effectiveVerbosity,
                     providerID: effectiveProviderID,
                     modelName: effectiveModelName,
                     projectPath: effectiveProjectPath,

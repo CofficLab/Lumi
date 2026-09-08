@@ -23,6 +23,7 @@ struct ConversationStoreTests {
         try await store.createConversation(
             id: UUID(),
             title: "测试对话",
+            verbosity: .brief,
             providerID: "openai",
             modelName: "gpt-4",
             projectPath: "/tmp/project-a"
@@ -30,8 +31,38 @@ struct ConversationStoreTests {
         let page = await store.fetchConversationPage(limit: 40)
         #expect(page.count == 1)
         #expect(page.first?.title == "测试对话")
+        #expect(page.first?.verbosity == .brief)
         #expect(page.first?.projectPath == "/tmp/project-a")
         #expect(page.first?.providerID == "openai")
+    }
+
+    @Test("更新会话详细程度后可持久化")
+    func updateVerbosity() async throws {
+        let (store, dir) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let id = UUID()
+        try await store.createConversation(id: id, title: "详细程度测试", verbosity: .standard)
+
+        let updated = await store.updateConversationPreferences(id: id, verbosity: .brief)
+        #expect(updated)
+        #expect(await store.fetchConversation(id: id)?.verbosity == .brief)
+    }
+
+    @Test("ConversationManager 等待详细程度写入完成")
+    @MainActor
+    func managerSetVerbosityAndWaitPersists() async throws {
+        let (store, dir) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let id = UUID()
+        try await store.createConversation(id: id, title: "管理器测试", verbosity: .standard)
+        let manager = ConversationManager(store: store, dataDirectory: dir)
+        manager.conversations = [ConversationSummary(id: id, verbosity: .standard)]
+
+        await manager.setVerbosityAndWait(.brief, for: id)
+
+        #expect(await store.fetchConversation(id: id)?.verbosity == .brief)
     }
 
     @Test("迁移导入按 id 去重（幂等）")

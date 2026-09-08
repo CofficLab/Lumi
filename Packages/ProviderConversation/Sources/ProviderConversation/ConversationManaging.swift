@@ -164,6 +164,10 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     /// 获取指定对话的详细程度
     func verbosity(for conversationID: UUID?) -> ResponseVerbosity
 
+    /// 更新指定对话的详细程度，并等待持久化完成（如实现支持持久化）。
+    /// 轻量实现可直接复用同步 setter。
+    func setVerbosityAndWait(_ verbosity: ResponseVerbosity, for conversationID: UUID?) async
+
     // MARK: - Reasoning Effort
 
     /// 全局推理强度（用于新对话的默认值；nil 表示关闭思考）。
@@ -218,6 +222,10 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
 /// Lightweight compatibility defaults for providers and test doubles that do
 /// not need paginated conversation storage.
 public extension ConversationManaging {
+    func setVerbosityAndWait(_ verbosity: ResponseVerbosity, for conversationID: UUID?) async {
+        setVerbosity(verbosity, for: conversationID)
+    }
+
     func transferObservers(to replacement: any ConversationManaging) {}
 
     func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle {
