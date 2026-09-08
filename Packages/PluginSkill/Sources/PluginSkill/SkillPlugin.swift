@@ -3,6 +3,7 @@ import Foundation
 import KitLLM
 import KernelCore
 import KitSuperLog
+import LumiUI
 import ProviderLifecycleHooks
 import ProviderChatSection
 import ProviderProject
@@ -120,68 +121,54 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
 
 /// Chat 工具栏技能入口：显示可用技能数量（插件贡献 + 内置 + 项目），点击弹出列表。
 struct SkillChatToolbarView: View {
+    @LumiTheme private var theme: any LumiUITheme
+    @LumiMotionPreferenceReader private var motionPreference
+
     let project: any ProjectProviding
     let skillService: SkillService
     let skillProvider: (any SkillProviding)?
 
     @State private var isPopoverPresented = false
+    @State private var isHovering = false
     @State private var skills: [SkillMetadata] = []
 
     var body: some View {
         Button {
             isPopoverPresented.toggle()
         } label: {
-            HStack(spacing: 3) {
+            HStack(spacing: 6) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: 12, weight: .semibold))
+
                 if !skills.isEmpty {
                     Text("\(skills.count)")
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
+                        .lineLimit(1)
+                } else {
+                    Text(LumiPluginLocalization.string("Skills", bundle: .module))
+                        .font(.system(size: 13, weight: .medium))
+                        .lineLimit(1)
                 }
+
+                Image(systemName: isPopoverPresented ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(theme.textSecondary)
             }
-            .foregroundColor(.secondary)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .foregroundStyle(theme.textPrimary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .appSurface(
+                style: isHighlighted ? .listRowHover : .listRow,
+                cornerRadius: 6,
+                borderColor: isHighlighted ? theme.appHoverBorder : nil
+            )
         }
         .buttonStyle(.plain)
-        .help(skills.isEmpty ? "无可用技能" : "\(skills.count) 个可用技能")
+        .help(Text(skills.isEmpty ? "无可用技能" : "\(skills.count) 个可用技能"))
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(LumiPluginLocalization.string("Skills", bundle: .module))
-                    .font(.system(size: 12, weight: .semibold))
-                if skills.isEmpty {
-                    Text("当前没有可用技能")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 4) {
-                            ForEach(skills, id: \.id) { skill in
-                                HStack(alignment: .top, spacing: 8) {
-                                    Image(systemName: "sparkles")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.accentColor)
-                                        .frame(width: 16)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(skill.title)
-                                            .font(.system(size: 11, weight: .medium))
-                                        Text(skill.description)
-                                            .font(.system(size: 10))
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 5)
-                                .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                            }
-                        }
-                    }
-                    .frame(maxHeight: 240)
-                }
-            }
-            .padding(10)
-            .frame(width: 280)
+            SkillListView(skills: skills)
+                .frame(width: 320)
+                .frame(minHeight: 220, maxHeight: 420)
         }
         .task {
             await refresh()
@@ -191,6 +178,16 @@ struct SkillChatToolbarView: View {
                 await refresh()
             }
         }
+        .onHover { hovering in
+            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
+                isHovering = hovering
+            }
+        }
+        .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: isHighlighted)
+    }
+
+    private var isHighlighted: Bool {
+        isHovering || isPopoverPresented
     }
 
     private func refresh() async {
