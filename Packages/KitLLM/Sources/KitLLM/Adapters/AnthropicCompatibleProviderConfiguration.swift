@@ -20,17 +20,24 @@ public struct AnthropicCompatibleProviderConfiguration: Sendable, Equatable {
     /// 默认最大输出 token 数
     public let defaultMaxTokens: Int
 
+    /// 是否在每次请求的最后一个可复用文本块上设置显式缓存边界。
+    ///
+    /// 兼容端点对显式缓存的支持并不完全一致，因此默认关闭，由供应商显式选择加入。
+    public let enablesPromptCaching: Bool
+
     public init(
         baseURL: String,
         fallbackBaseURLs: [String] = [],
         additionalHeaders: [String: String] = [:],
         apiVersion: String = "2023-06-01",
-        defaultMaxTokens: Int = 8192
+        defaultMaxTokens: Int = 8192,
+        enablesPromptCaching: Bool = false
     ) {
         self.baseURL = baseURL
         self.fallbackBaseURLs = fallbackBaseURLs
         self.additionalHeaders = additionalHeaders
         self.apiVersion = apiVersion
         self.defaultMaxTokens = defaultMaxTokens
+        self.enablesPromptCaching = enablesPromptCaching
     }
 }

@@ -47,7 +47,7 @@ public final class ConversationCacheHitRatePlugin: SuperPlugin, SuperLog {
             onConversationChange: { [weak toolbarState] newID in
                 toolbarState?.selectedConversationID = newID
             },
-            onMessageInsert: { [weak toolbarState] conversationID in
+            onMessageChange: { [weak toolbarState] conversationID in
                 guard conversationID == toolbarState?.selectedConversationID else { return }
                 toolbarState?.messageRefreshRevision &+= 1
             }
@@ -100,11 +100,11 @@ struct CacheHitRateStats: Equatable {
     }
 
     var percentText: String {
-        String(format: "%.0f%%", averageHitRate * 100)
+        String(format: "%.0f%%", weightedHitRate * 100)
     }
 
     var precisePercentText: String {
-        String(format: "%.1f%%", averageHitRate * 100)
+        String(format: "%.1f%%", weightedHitRate * 100)
     }
 
     static let empty = CacheHitRateStats(
@@ -161,5 +161,25 @@ struct CacheHitRateStats: Equatable {
         key: String
     ) -> Int? {
         value ?? metadata[key].flatMap(Int.init)
+    }
+}
+
+// MARK: - Cache Hit Rate Availability
+
+/// 缓存率暂不可用时的可解释原因。
+enum CacheHitRateUnavailability: Equatable {
+    case noConversationSelected
+    case waitingForResponse
+    case providerDidNotReportUsage
+
+    var localizedExplanation: String {
+        switch self {
+        case .noConversationSelected:
+            return "No conversation selected. Select a conversation to see cache hit rate."
+        case .waitingForResponse:
+            return "Waiting for the first assistant response with cache usage data."
+        case .providerDidNotReportUsage:
+            return "The provider did not report cache token usage for this conversation. The model or endpoint may not support caching, the stable prefix may be too short, or no cache has been created yet."
+        }
     }
 }

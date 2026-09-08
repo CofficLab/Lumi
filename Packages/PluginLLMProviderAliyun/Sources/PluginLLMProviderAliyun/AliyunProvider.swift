@@ -35,7 +35,8 @@ public final class AliyunProvider: VendorLLMProvider {
 
     public override var anthropicConfiguration: AnthropicCompatibleProviderConfiguration? {
         AnthropicCompatibleProviderConfiguration(
-            baseURL: "https://coding.dashscope.aliyuncs.com/apps/anthropic/v1/messages"
+            baseURL: "https://coding.dashscope.aliyuncs.com/apps/anthropic/v1/messages",
+            enablesPromptCaching: true
         )
     }
 

@@ -196,6 +196,44 @@ struct KitLLMTests {
         #expect(body["system"] as? String == "You are helpful")
     }
 
+    @Test("Anthropic 缓存配置在最后文本块添加显式边界")
+    func anthropicAdapterAddsPromptCacheBoundaryWhenEnabled() throws {
+        let adapter = AnthropicCompatibleProviderAdapter(
+            configuration: AnthropicCompatibleProviderConfiguration(
+                baseURL: "https://example.com",
+                enablesPromptCaching: true
+            )
+        )
+        let body = try adapter.buildRequestBody(
+            messages: [LLMMessage(role: .user, content: "stable context")],
+            model: "qwen3.7-plus",
+            tools: nil,
+            systemPrompt: ""
+        )
+
+        let messages = body["messages"] as? [[String: Any]]
+        let content = messages?.last?["content"] as? [[String: Any]]
+        #expect(content?.last?["cache_control"] as? [String: String] == ["type": "ephemeral"])
+    }
+
+    @Test("Anthropic usage 兼容阿里云缓存读取和创建字段")
+    func anthropicAdapterParsesCacheUsage() throws {
+        let adapter = AnthropicCompatibleProviderAdapter(
+            configuration: AnthropicCompatibleProviderConfiguration(baseURL: "https://example.com")
+        )
+        let event = """
+        event: message_start
+        data: {"type":"message_start","message":{"usage":{"input_tokens":82,"cache_creation_input_tokens":1536,"cache_read_input_tokens":0}}}
+
+        """
+        let chunk = try adapter.parseStreamChunk(data: Data(event.utf8))
+
+        #expect(chunk?.inputTokens == 82)
+        #expect(chunk?.cachedInputTokens == 0)
+        #expect(chunk?.cacheWriteInputTokens == 1536)
+        #expect(chunk?.cacheTotalInputTokens == 1618)
+    }
+
     @Test("VendorAPIKeyTools set/get/remove")
     func apiKeyTools() {
         VendorAPIKeyTools.keychainService = "com.kit.llm.test.\(UUID().uuidString)"

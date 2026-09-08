@@ -4,16 +4,6 @@
     "%lld requests in this conversation" : {
 
     },
-    "Average cache hit rate: %@ (%lld requests)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Average cache hit rate: %1$@ (%2$lld requests)"
-          }
-        }
-      }
-    },
     "Cache Hit Rate" : {
       "localizations" : {
         "en" : {
@@ -30,6 +20,9 @@
         }
       }
     },
+    "Cache hit rate unavailable" : {
+
+    },
     "Cached tokens" : {
       "localizations" : {
         "en" : {
@@ -42,6 +35,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已缓存令牌"
+          }
+        }
+      }
+    },
+    "Token-weighted cache hit rate: %@ (%lld requests)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Token-weighted cache hit rate: %1$@ (%2$lld requests)"
           }
         }
       }
@@ -78,7 +81,7 @@
         }
       }
     },
-    "命中率 = 每条请求从缓存读取的 tokens ÷ 总输入 tokens 的算术平均。缓存命中越高，重复上下文计费越低、响应越快。" : {
+    "命中率 = 缓存读取 tokens ÷ 总输入 tokens。该数值按 token 加权，缓存命中越高，重复上下文计费越低、响应越快。" : {
 
     }
   },

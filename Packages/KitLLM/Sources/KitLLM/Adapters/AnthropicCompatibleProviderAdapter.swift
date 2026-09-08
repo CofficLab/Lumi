@@ -53,9 +53,11 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             ? systemPrompt
             : systemParts.joined(separator: "\n\n")
 
-        let conversationMessages = transformMessages(
+        var conversationMessages = transformMessages(
             messages.filter { $0.role != .system }
         )
+
+        addPromptCacheBoundary(to: &conversationMessages)
 
         var body: [String: Any] = [
             "model": model,
@@ -77,6 +79,32 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                 try toolCall.validateArguments()
             }
         }
+    }
+
+    /// Anthropic 的显式缓存边界必须位于 content block 上。
+    /// 将标记放在本轮最后一个文本块上，可以让下一轮复用本轮之前的完整前缀，
+    /// 同时把本轮新增内容作为下一次缓存的候选前缀。
+    private func addPromptCacheBoundary(to messages: inout [[String: Any]]) {
+        guard configuration.enablesPromptCaching,
+              let lastMessageIndex = messages.indices.last else { return }
+
+        guard let rawContent = messages[lastMessageIndex]["content"] else { return }
+
+        if let text = rawContent as? String, !text.isEmpty {
+            messages[lastMessageIndex]["content"] = [[
+                "type": "text",
+                "text": text,
+                "cache_control": ["type": "ephemeral"],
+            ]]
+            return
+        }
+
+        guard var blocks = rawContent as? [[String: Any]],
+              let textIndex = blocks.lastIndex(where: { $0["type"] as? String == "text" }) else {
+            return
+        }
+        blocks[textIndex]["cache_control"] = ["type": "ephemeral"]
+        messages[lastMessageIndex]["content"] = blocks
     }
 
     /// 构建流式请求体
@@ -250,8 +278,9 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                 if let message = json["message"] as? [String: Any],
                    let usage = message["usage"] as? [String: Any] {
                     inputTokens = usage["input_tokens"] as? Int
-                    cachedInputTokens = usage["cache_read_input_tokens"] as? Int
-                    cacheWriteInputTokens = usage["cache_creation_input_tokens"] as? Int
+                    cacheWriteInputTokens = Self.cacheWriteInputTokens(from: usage)
+                    cachedInputTokens = Self.cacheReadInputTokens(from: usage)
+                        ?? (cacheWriteInputTokens == nil ? nil : 0)
                 }
                 return StreamChunk(
                     eventType: .messageStart,
@@ -279,8 +308,9 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
                 if let usage = json["usage"] as? [String: Any] {
                     inputTokens = usage["input_tokens"] as? Int
                     outputTokens = usage["output_tokens"] as? Int
-                    cachedInputTokens = usage["cache_read_input_tokens"] as? Int
-                    cacheWriteInputTokens = usage["cache_creation_input_tokens"] as? Int
+                    cacheWriteInputTokens = Self.cacheWriteInputTokens(from: usage)
+                    cachedInputTokens = Self.cacheReadInputTokens(from: usage)
+                        ?? (cacheWriteInputTokens == nil ? nil : 0)
                 }
                 return StreamChunk(
                     eventType: .messageDelta,
@@ -394,7 +424,7 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
     ///   （例：总 580 = input 68 + read 512，此时 input < read）。
     /// 用 `input_tokens` 与 `cache_read + cache_creation` 的大小关系做启发式区分。
     /// 切勿无条件把三者相加——那会让官方语义下的分母被重复放大、缓存率系统性低估。
-    private static func cacheTotalInputTokens(
+    static func cacheTotalInputTokens(
         inputTokens: Int?,
         cachedInputTokens: Int?,
         cacheWriteInputTokens: Int?
@@ -410,6 +440,21 @@ public struct AnthropicCompatibleProviderAdapter: Sendable {
             return inputTokens + read + write
         }
         return inputTokens
+    }
+
+    /// 兼容阿里云不同协议入口及网关转发时使用的缓存字段路径。
+    static func cacheReadInputTokens(from usage: [String: Any]) -> Int? {
+        usage["cache_read_input_tokens"] as? Int
+            ?? usage["cached_tokens"] as? Int
+            ?? (usage["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
+            ?? (usage["input_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
+    }
+
+    static func cacheWriteInputTokens(from usage: [String: Any]) -> Int? {
+        usage["cache_creation_input_tokens"] as? Int
+            ?? usage["cache_write_input_tokens"] as? Int
+            ?? (usage["prompt_tokens_details"] as? [String: Any])?["cache_creation_input_tokens"] as? Int
+            ?? (usage["input_tokens_details"] as? [String: Any])?["cache_write_tokens"] as? Int
     }
 
     // MARK: - 消息转换
