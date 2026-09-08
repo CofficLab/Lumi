@@ -73,6 +73,9 @@ struct ListV1View: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+            // Code blocks must keep only horizontal scrolling. Let the List
+            // own vertical scrolling, matching V2/V3 behavior.
+            .environment(\.preferOuterScroll, true)
             .background(
                 ScrollViewBottomTracker(
                     onChange: { atBottomBox.value = $0 },
