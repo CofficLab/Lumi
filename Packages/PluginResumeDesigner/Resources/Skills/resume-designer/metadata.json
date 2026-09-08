@@ -1,0 +1,7 @@
+{
+  "name": "resume-designer",
+  "title": "Resume Designer",
+  "description": "指导 AI 使用 Resume Designer 的 Agent 工具创建和编辑简历，包括文档创建、HTML 编辑、资源导入、质量检查和导出。",
+  "triggers": ["resume", "简历", "cv", "curriculum vitae", "design resume", "设计简历", "export resume", "导出简历"],
+  "version": "1.0.0"
+}
