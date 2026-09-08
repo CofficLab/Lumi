@@ -101,11 +101,6 @@ struct ModelListView: View {
     @State private var searchText = ""
     @State private var selectedCategory: ModelCategory = .all
 
-    /// 当前选中供应商的显示名称
-    private var selectedProviderDisplayName: String? {
-        box.providerInfo(id: selectedProviderID ?? "")?.displayName
-    }
-
     /// 当前选中供应商的模型元数据字典（id → LLMModelInfo）
     private var selectedProviderModelInfos: [String: LLMModelInfo] {
         guard let providerID = selectedProviderID,
@@ -118,18 +113,6 @@ struct ModelListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text(selectedProviderDisplayName ?? "Models")
-                    .font(.appCallout)
-                Spacer()
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(theme.surface)
-
-            AppDivider()
-
             // Category filter
             ModelCategoryFilterBar(selectedCategory: $selectedCategory)
 
@@ -162,7 +145,7 @@ struct ModelListView: View {
                                 modelInfo: modelInfo,
                                 onSelect: {
                                     onSelect?(providerID, model)
-                                    box.manager.select(providerID: providerID, model: model)
+                                    box.select(providerID: providerID, model: model)
                                     // 通过内核 Toast 能力通知用户模型已切换
                                     let providerDisplayName = box.providerInfo(id: providerID)?.displayName ?? providerID
                                     let modelDisplayName = modelInfo?.displayName ?? model
