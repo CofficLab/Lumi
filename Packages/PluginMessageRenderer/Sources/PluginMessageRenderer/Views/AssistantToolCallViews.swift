@@ -166,7 +166,10 @@ struct ToolCallRowsView: View {
 
     @ViewBuilder
     private func toolCallRow(for toolCall: MessageToolCall) -> some View {
-        if let rendering = kernel.resolveProvider((any ToolCallRenderingProviding).self),
+        // V1 (brief) 模式不使用自定义工具渲染器，统一走默认卡片路径。
+        let useCustomRenderer = verbosity != .brief
+        if useCustomRenderer,
+           let rendering = kernel.resolveProvider((any ToolCallRenderingProviding).self),
            let customRenderer = rendering.renderer(for: toolCall.agentToolCall) {
             customRenderer.render(
                 toolCall: toolCall.agentToolCall,
