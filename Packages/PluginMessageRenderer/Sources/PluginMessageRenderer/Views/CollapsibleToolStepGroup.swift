@@ -255,6 +255,7 @@ struct CollapsibleToolStepGroup: View {
                     verbosityRawValue: verbosity.rawValue
                 )
             )
+            .toolCallRendererIdBadge(type(of: customRenderer).id)
         } else {
             ToolCallRowView(
                 kernel: kernel,

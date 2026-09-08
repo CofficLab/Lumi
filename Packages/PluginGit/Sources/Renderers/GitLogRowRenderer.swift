@@ -28,21 +28,30 @@ public struct GitLogRowRenderer: ToolCallRowRenderer {
 
     @MainActor
     public func render(toolCall: ToolCall, message: ToolCallRowMessageContext) -> AnyView {
+        // V1 (brief) 模式下放弃自定义渲染，回退到原始文本视图。
+        guard message.verbosityRawValue != "v1" else {
+            return fallbackTextView(content: toolCall.result?.content)
+        }
+
         guard let content = toolCall.result?.content,
               let json = Self.extractJSON(from: content),
               let data = json.data(using: .utf8),
               let commits = try? JSONDecoder().decode([GitCommitLog].self, from: data),
               !commits.isEmpty else {
-            // 回退：仍然展示工具返回的原始文本，避免信息丢失。
-            return AnyView(
-                Text(toolCall.result?.content ?? "Git 提交历史")
-                    .font(.appCaption)
-                    .foregroundColor(.secondary)
-                    .textSelection(.enabled)
-            )
+            return fallbackTextView(content: toolCall.result?.content)
         }
 
         return AnyView(GitLogCardList(commits: commits))
+    }
+
+    @MainActor
+    private func fallbackTextView(content: String?) -> AnyView {
+        AnyView(
+            Text(content ?? "Git 提交历史")
+                .font(.appCaption)
+                .foregroundColor(.secondary)
+                .textSelection(.enabled)
+        )
     }
 
     /// 从工具返回内容中提取第一个 ```json ... ``` 代码块的内容。
