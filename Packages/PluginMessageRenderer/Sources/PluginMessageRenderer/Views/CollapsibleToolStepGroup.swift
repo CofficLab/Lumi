@@ -15,11 +15,11 @@ import SwiftUI
 
 /// V1 (brief) 模式下的「可折叠工具步骤组」(ChatGPT/Codex 风格)。
 ///
-/// 把一条助手消息内联的若干工具调用包成一个可折叠的整体:
-/// - 所有状态下都默认**收起**成一行摘要(`数量 + 总耗时`),点击可重新展开。
+/// 把一条助手消息内联的多个工具调用包成一个可折叠的整体:
+/// - 多个调用默认**收起**成一行摘要(`数量 + 总耗时`),点击可重新展开。
+/// - 只有一个调用时直接显示工具行,不增加无意义的折叠/展开层级。
 ///
-/// 用户随时可点击表头手动展开/收起任意步骤组;手动操作存于本地 `@State`,
-/// 当本组从"进行中"变为"已完成"(`isActive` 由 true→false)时清空覆盖,回归默认收起态。
+/// 用户随时可点击表头手动展开/收起多个工具调用组成的步骤组;手动操作存于本地 `@State`。
 ///
 /// 展开态复用既有 `ToolCallRowView`(经工具渲染 Provider 优先走自定义渲染器),
 /// 传入 `showsDetails: false` 以隐藏耗时与参数/结果按钮,保持 V1 的 inline 极简风格。
@@ -36,7 +36,7 @@ struct CollapsibleToolStepGroup: View {
     @State private var parameterPopoverToolCallID: String?
     @State private var resultPopoverToolCallID: String?
 
-    /// 用户的手动展开/收起覆盖;`nil` 表示沿用默认(由 `isActive` 决定)。
+    /// 用户的手动展开/收起覆盖;`nil` 表示沿用默认收起态。
     @State private var userOverride: Bool?
 
     /// 表头悬停态;仅用于显隐 chevron。
@@ -67,6 +67,10 @@ struct CollapsibleToolStepGroup: View {
         resolvedToolCalls ?? toolCalls
     }
 
+    private var isSingleToolCall: Bool {
+        toolCalls.count == 1
+    }
+
     private var resolutionTaskID: String {
         toolCalls
             .map { "\($0.id):\($0.result != nil)" }
@@ -80,7 +84,7 @@ struct CollapsibleToolStepGroup: View {
         false
     }
 
-    /// 有效折叠态:用户覆盖优先;否则进行中展开、结束后收起。
+    /// 有效折叠态:用户覆盖优先;默认收起。
     /// 例外:存在等待用户作答的交互式调用时,强制展开(不可收起),保证交互入口可见。
     private var isCollapsed: Bool {
         if hasAwaitingInteraction { return false }
@@ -88,28 +92,34 @@ struct CollapsibleToolStepGroup: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            summaryHeader
+        Group {
+            if isSingleToolCall, let toolCall = displayedToolCalls.first {
+                toolCallRow(for: toolCall)
+            } else {
+                VStack(alignment: .leading, spacing: 0) {
+                    summaryHeader
 
-            if !isCollapsed {
-                VStack(alignment: .leading, spacing: 10) {
-                    if isLoadingResults {
-                        ToolResultsLoadingView()
-                    }
-                    ForEach(displayedToolCalls) { toolCall in
-                        toolCallRow(for: toolCall)
+                    if !isCollapsed {
+                        VStack(alignment: .leading, spacing: 10) {
+                            if isLoadingResults {
+                                ToolResultsLoadingView()
+                            }
+                            ForEach(displayedToolCalls) { toolCall in
+                                toolCallRow(for: toolCall)
+                            }
+                        }
+                        .padding(.top, 8)
+                        .padding(.bottom, 4)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                 }
-                .padding(.top, 8)
-                .padding(.bottom, 4)
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .animation(.easeInOut(duration: 0.2), value: isCollapsed)
         .task(id: resolutionTaskID) {
-            // Suspended interactive tools force the group open; load their result
-            // even though there is no header click to trigger the lazy lookup.
-            if !isCollapsed {
+            // 单个工具直接显示工具行，也需要主动回填尚未落库的结果。
+            // 多个工具仅在展开组时加载结果；等待态仍由展开逻辑处理。
+            if isSingleToolCall || !isCollapsed {
                 await resolveResults()
             }
         }
@@ -251,7 +261,7 @@ struct CollapsibleToolStepGroup: View {
                 message: message,
                 toolCall: toolCall,
                 verbosity: verbosity,
-                // V1 展开态只显示工具名(+ loading/失败颜色),不带耗时与参数/结果按钮,
+                // V1 只显示工具名(+ loading/失败颜色),不带耗时与参数/结果按钮,
                 // 以完全融入正文列。
                 showsDetails: false,
                 parameterPopoverToolCallID: $parameterPopoverToolCallID,
