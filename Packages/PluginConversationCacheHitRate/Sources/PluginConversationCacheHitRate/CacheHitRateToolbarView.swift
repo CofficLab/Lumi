@@ -65,9 +65,9 @@ struct CacheHitRateToolbarView: View {
 
     private var helpText: String {
         if stats.sampleCount > 0 {
-            return "Token-weighted cache hit rate: \(stats.percentText) (\(stats.sampleCount) requests)"
+            return String(format: LumiPluginLocalization.string("Token-weighted cache hit rate: %@ (%lld requests)", bundle: .module), stats.percentText, stats.sampleCount)
         }
-        return "Cache hit rate unavailable: click for details"
+        return LumiPluginLocalization.string("Cache hit rate unavailable: click for details", bundle: .module)
     }
 
     private func refresh() async {
@@ -110,7 +110,7 @@ private struct CacheHitRatePopover: View {
                     .monospacedDigit()
                     .foregroundColor(hitRateColor)
 
-                Text("\(stats.sampleCount) requests in this conversation")
+                Text(String(format: LumiPluginLocalization.string("%lld requests in this conversation", bundle: .module), stats.sampleCount))
                     .font(.caption)
                     .foregroundColor(.secondary)
             } else {
@@ -137,7 +137,7 @@ private struct CacheHitRatePopover: View {
                 )
                 statRow(
                     icon: "chart.bar",
-                    label: "Per-request average",
+                    label: LumiPluginLocalization.string("Per-request average", bundle: .module),
                     value: String(format: "%.1f%%", stats.averageHitRate * 100)
                 )
 
@@ -159,7 +159,7 @@ private struct CacheHitRatePopover: View {
                 .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Cache hit rate unavailable")
+                Text(LumiPluginLocalization.string("Cache hit rate unavailable", bundle: .module))
                     .font(.subheadline.weight(.semibold))
                 Text(unavailabilityReason.localizedExplanation)
                     .font(.callout)
