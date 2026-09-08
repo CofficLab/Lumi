@@ -16,7 +16,8 @@ private struct ToolInteractionPayload: Codable {
 
 extension ToolManager {
     public func execute(_ toolCall: ToolCall, conversationID: UUID, turnID: UUID?) async -> ToolCallResult {
-        if let cached = resultCache[toolCall.id] {
+        let cacheKey = resultCacheKey(toolCallID: toolCall.id, conversationID: conversationID, turnID: turnID)
+        if let cached = resultCache[cacheKey] {
             return cached
         }
 
@@ -31,7 +32,7 @@ extension ToolManager {
         }
         guard !deletedConversationIDs.contains(conversationID) else {
             let result = ToolCallResult(content: "Conversation was deleted", isError: true)
-            cache(result, for: toolCall.id, conversationID: conversationID)
+            cache(result, for: toolCall.id, conversationID: conversationID, turnID: turnID)
             return finish(result)
         }
 
@@ -47,11 +48,11 @@ extension ToolManager {
         guard let job = jobs.first,
               let result = await waitForJobResult(jobID: job.id) else {
             let result = ToolCallResult(content: "Tool execution could not be scheduled.", isError: true)
-            cache(result, for: toolCall.id, conversationID: conversationID)
+            cache(result, for: toolCall.id, conversationID: conversationID, turnID: turnID)
             return finish(result)
         }
 
-        cache(result, for: toolCall.id, conversationID: conversationID)
+        cache(result, for: toolCall.id, conversationID: conversationID, turnID: turnID)
         let tool = registeredTools[toolCall.name]
         let arguments = try? ToolArgumentCoding.decode(toolCall.arguments)
         logToolCall(
@@ -142,7 +143,11 @@ extension ToolManager {
         authorizedToolCall.authorizationState = .userApproved
         // 授权界面可能在应用重启后再次出现。若工具已在上一个进程中完成，
         // 直接复用持久化/内存结果，避免再次产生文件修改等副作用。
-        if let existingResult = await toolCallResult(for: toolCall.id) {
+        if let existingResult = await toolCallResult(
+            for: toolCall.id,
+            conversationID: conversationID,
+            turnID: turnID
+        ) {
             eventManager.send(.authorizedCompleted(
                 conversationID: conversationID,
                 turnID: turnID,
@@ -184,8 +189,31 @@ extension ToolManager {
     }
 
     public func toolCallResult(for toolCallID: String) async -> ToolCallResult? {
-        if let cached = resultCache[toolCallID] { return cached }
         guard let record = await recordStore?.fetchRecord(forToolCallID: toolCallID) else { return nil }
+        return result(from: record)
+    }
+
+    public func toolCallResult(
+        for toolCallID: String,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult? {
+        let cacheKey = resultCacheKey(toolCallID: toolCallID, conversationID: conversationID, turnID: turnID)
+        if let cached = resultCache[cacheKey] { return cached }
+
+        let records: [ToolCallRecord]
+        if let turnID {
+            records = await recordStore?.fetchRecords(forTurnID: turnID) ?? []
+        } else {
+            records = await recordStore?.fetchRecords(for: conversationID) ?? []
+        }
+        guard let record = records.first(where: {
+            $0.conversationID == conversationID && $0.toolCallID == toolCallID
+        }) else { return nil }
+        return result(from: record)
+    }
+
+    private func result(from record: ToolCallRecord) -> ToolCallResult {
         if let json = record.resultJSON, let data = json.data(using: .utf8), let result = try? JSONDecoder().decode(ToolCallResult.self, from: data) { return result }
         return ToolCallResult(content: record.resultContent, isError: record.resultIsError, duration: record.duration)
     }
@@ -196,18 +224,20 @@ extension ToolManager {
         // 写入输出，或在删除完成后通过迟到事件唤醒 AgentLoop。
         cancelJobs(forConversationID: conversationID)
         await jobRecordStore?.deleteAll(for: conversationID)
-        if let records = await recordStore?.fetchRecords(for: conversationID) {
-            for record in records { if let toolCallID = record.toolCallID { resultCache.removeValue(forKey: toolCallID) } }
-        }
         resultCacheConversationIDs = resultCacheConversationIDs.filter { $0.value != conversationID }
         resultCache = resultCache.filter { resultCacheConversationIDs[$0.key] != nil }
         await recordStore?.deleteAll(for: conversationID)
     }
 
-    func cache(_ result: ToolCallResult, for toolCallID: String, conversationID: UUID) {
+    func cache(_ result: ToolCallResult, for toolCallID: String, conversationID: UUID, turnID: UUID?) {
         guard !deletedConversationIDs.contains(conversationID) else { return }
-        resultCache[toolCallID] = result
-        resultCacheConversationIDs[toolCallID] = conversationID
+        let key = resultCacheKey(toolCallID: toolCallID, conversationID: conversationID, turnID: turnID)
+        resultCache[key] = result
+        resultCacheConversationIDs[key] = conversationID
+    }
+
+    private func resultCacheKey(toolCallID: String, conversationID: UUID, turnID: UUID?) -> String {
+        conversationID.uuidString + "|" + (turnID?.uuidString ?? "nil") + "|" + toolCallID
     }
 
     func logToolCall(toolCallID: String, toolName: String, toolDisplayName: String, turnID: UUID?, conversationID: UUID, createdAt: Date, startedAt: Date, completedAt: Date?, duration: TimeInterval?, argumentsJSON: String, resultContent: String, result: ToolCallResult, resultIsError: Bool, riskLevel: String) {

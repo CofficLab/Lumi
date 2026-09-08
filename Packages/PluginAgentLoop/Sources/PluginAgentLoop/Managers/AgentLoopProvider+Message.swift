@@ -69,13 +69,15 @@ extension AgentLoopManager {
     }
 
     func incompleteToolCallMessage(messages: [Message]) -> Message? {
-        let completedToolCallIDs = Set(
-            messages.compactMap { message in
-                message.role == .tool ? message.toolCallID : nil
-            }
-        )
         return messages.reversed().first { message in
-            message.role == .assistant
+            let completedToolCallIDs: Set<String> = Set(
+                messages.compactMap { (toolMessage: Message) -> String? in
+                    guard toolMessage.role == .tool,
+                          toolMessage.turnID == message.turnID else { return nil }
+                    return toolMessage.toolCallID
+                }
+            )
+            return message.role == .assistant
                 && message.toolCalls?.contains(where: {
                     $0.result == nil && !completedToolCallIDs.contains($0.id)
                 }) == true

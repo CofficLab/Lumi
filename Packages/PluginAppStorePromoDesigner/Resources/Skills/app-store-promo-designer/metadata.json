@@ -1,0 +1,7 @@
+{
+  "name": "app-store-promo-designer",
+  "title": "App Store Promo Designer",
+  "description": "指导 AI 使用 App Store Promo Designer 的 Agent 工具创建和编辑 App Store 促销图，包括任务管理、HTML 图片编辑、资源导入、预览和导出。",
+  "triggers": ["promo", "促销图", "app store promo", "app store screenshot", "营销图", "store listing", "app store artwork"],
+  "version": "1.0.0"
+}

@@ -8,8 +8,9 @@ import KitSuperLog
 ///
 /// 独立实现完整的供应商注册表、选中持久化与请求路由，并提供插件化的扩展点：
 ///
-/// - `routingOverride`：自定义「请求 → 供应商」解析（如按会话路由）。返回
-///   `(provider, model)` 时优先使用，`nil` 时回退默认（选中项 > 首个注册项）。
+/// - `routingOverride`：为未显式指定供应商的请求提供自定义「请求 → 供应商」
+///   解析。返回 `(provider, model)` 时使用，`nil` 时回退默认（选中项 > 首个
+///   注册项）；对话显式绑定的供应商始终优先。
 @MainActor
 public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvider, LLMStreamingProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-manager", category: "CustomLLMManager")
@@ -166,10 +167,23 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
 
     /// 把请求路由到选中的供应商；请求未显式指定模型时补上解析出的模型。
     ///
-    /// 解析优先级：routingOverride > 请求自带模型（须属于路由到的供应商）>
-    /// 选中模型（若属于选中供应商）> 默认模型。
+    /// 解析优先级：请求显式供应商 > routingOverride > 请求自带模型（须属于
+    /// 路由到的供应商）> 选中模型（若属于选中供应商）> 默认模型。
     /// 没有任何已注册供应商时抛 `noProviderConfigured`。
     public func complete(_ request: LLMRequest) async throws -> LLMResponse {
+        if request.providerID != nil {
+            let resolved = try resolveSelected(providerID: request.providerID)
+            let model = routedModel(requested: request.model, resolvedProvider: resolved.provider, resolvedModel: resolved.model)
+            let routed = LLMRequest(
+                conversationID: request.conversationID,
+                providerID: resolved.provider.providerInfo.id,
+                messages: request.messages,
+                model: model,
+                tools: request.tools,
+                reasoningEffort: request.reasoningEffort
+            )
+            return try await resolved.provider.complete(routed)
+        }
         // 自定义路由优先
         if let (provider, model) = routingOverride?(request) {
             if Self.verbose {
@@ -177,6 +191,7 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
             }
             let routed = LLMRequest(
                 conversationID: request.conversationID,
+                providerID: provider.providerInfo.id,
                 messages: request.messages,
                 model: model ?? request.model,
                 tools: request.tools,
@@ -189,6 +204,7 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
         let model = routedModel(requested: request.model, resolvedProvider: resolved.provider, resolvedModel: resolved.model)
         let routedRequest = LLMRequest(
             conversationID: request.conversationID,
+            providerID: resolved.provider.providerInfo.id,
             messages: request.messages,
             model: model,
             tools: request.tools,
@@ -208,6 +224,22 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
         _ request: LLMRequest,
         onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
     ) async throws -> LLMResponse {
+        if request.providerID != nil {
+            let resolved = try resolveSelected(providerID: request.providerID)
+            let model = routedModel(requested: request.model, resolvedProvider: resolved.provider, resolvedModel: resolved.model)
+            let routed = LLMRequest(
+                conversationID: request.conversationID,
+                providerID: resolved.provider.providerInfo.id,
+                messages: request.messages,
+                model: model,
+                tools: request.tools,
+                reasoningEffort: request.reasoningEffort
+            )
+            if let streamingProvider = resolved.provider as? any LLMStreamingProviding {
+                return try await streamingProvider.streamComplete(routed, onChunk: onChunk)
+            }
+            return try await resolved.provider.complete(routed)
+        }
         // 自定义路由优先
         if let (provider, model) = routingOverride?(request) {
             if Self.verbose {
@@ -215,6 +247,7 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
             }
             let routed = LLMRequest(
                 conversationID: request.conversationID,
+                providerID: provider.providerInfo.id,
                 messages: request.messages,
                 model: model ?? request.model,
                 tools: request.tools,
@@ -230,6 +263,7 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
         let model = routedModel(requested: request.model, resolvedProvider: resolved.provider, resolvedModel: resolved.model)
         let routedRequest = LLMRequest(
             conversationID: request.conversationID,
+            providerID: resolved.provider.providerInfo.id,
             messages: request.messages,
             model: model,
             tools: request.tools,
@@ -271,9 +305,15 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
     /// 供应商：选中项 > 第一个注册项；模型：选中模型（属于该供应商）>
     /// 默认模型 > 第一个模型。与旧版 `ensureValidSelection` 的语义一致，
     /// 且不会改变持久化状态（纯读取）。
-    private func resolveSelected() throws -> (provider: any SuperLLMProvider, model: String?) {
+    private func resolveSelected(providerID requestedProviderID: String? = nil) throws -> (provider: any SuperLLMProvider, model: String?) {
         let provider: any SuperLLMProvider
-        if let selectedProviderID, let found = providers[selectedProviderID] {
+        if let requestedProviderID {
+            guard let found = providers[requestedProviderID] else {
+                Self.logger.error("\(Self.t)requested provider not found: \(requestedProviderID, privacy: .public)")
+                throw LLMProviderManagerError.providerNotFound(requestedProviderID)
+            }
+            provider = found
+        } else if let selectedProviderID, let found = providers[selectedProviderID] {
             provider = found
         } else if let firstID = providerOrder.first, let first = providers[firstID] {
             provider = first
@@ -287,7 +327,7 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
 
         let info = provider.providerInfo
         let model: String?
-        if let selectedModel, info.contains(model: selectedModel) {
+        if requestedProviderID == nil, let selectedModel, info.contains(model: selectedModel) {
             model = selectedModel
         } else if !info.defaultModel.isEmpty {
             model = info.defaultModel

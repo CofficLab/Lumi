@@ -161,10 +161,11 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
     /// 模型名）时回退到解析模型，避免把不认识的模型透传给供应商。
     /// 没有任何已注册供应商时抛 `noProviderConfigured`。
     public func complete(_ request: LLMRequest) async throws -> LLMResponse {
-        let resolved = try resolveSelected()
+        let resolved = try resolveSelected(providerID: request.providerID)
         let model = routedModel(requested: request.model, resolvedProvider: resolved.provider, resolvedModel: resolved.model)
         let routedRequest = LLMRequest(
             conversationID: request.conversationID,
+            providerID: resolved.provider.providerInfo.id,
             messages: request.messages,
             model: model,
             tools: request.tools,
@@ -184,10 +185,11 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
         _ request: LLMRequest,
         onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
     ) async throws -> LLMResponse {
-        let resolved = try resolveSelected()
+        let resolved = try resolveSelected(providerID: request.providerID)
         let model = routedModel(requested: request.model, resolvedProvider: resolved.provider, resolvedModel: resolved.model)
         let routedRequest = LLMRequest(
             conversationID: request.conversationID,
+            providerID: resolved.provider.providerInfo.id,
             messages: request.messages,
             model: model,
             tools: request.tools,
@@ -229,9 +231,15 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
     /// 供应商：选中项 > 第一个注册项；模型：选中模型（属于该供应商）>
     /// 默认模型 > 第一个模型。与旧版 `ensureValidSelection` 的语义一致，
     /// 且不会改变持久化状态（纯读取）。
-    private func resolveSelected() throws -> (provider: any SuperLLMProvider, model: String?) {
+    private func resolveSelected(providerID requestedProviderID: String? = nil) throws -> (provider: any SuperLLMProvider, model: String?) {
         let provider: any SuperLLMProvider
-        if let selectedProviderID, let found = providers[selectedProviderID] {
+        if let requestedProviderID {
+            guard let found = providers[requestedProviderID] else {
+                Self.logger.error("\(Self.t)requested provider not found: \(requestedProviderID, privacy: .public)")
+                throw LLMProviderManagerError.providerNotFound(requestedProviderID)
+            }
+            provider = found
+        } else if let selectedProviderID, let found = providers[selectedProviderID] {
             provider = found
         } else if let firstID = providerOrder.first, let first = providers[firstID] {
             provider = first
@@ -245,7 +253,7 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
 
         let info = provider.providerInfo
         let model: String?
-        if let selectedModel, info.contains(model: selectedModel) {
+        if requestedProviderID == nil, let selectedModel, info.contains(model: selectedModel) {
             model = selectedModel
         } else if !info.defaultModel.isEmpty {
             model = info.defaultModel

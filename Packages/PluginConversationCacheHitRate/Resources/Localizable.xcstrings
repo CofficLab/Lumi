@@ -2,14 +2,17 @@
   "sourceLanguage" : "en",
   "strings" : {
     "%lld requests in this conversation" : {
-
-    },
-    "Average cache hit rate: %@ (%lld requests)" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Average cache hit rate: %1$@ (%2$lld requests)"
+            "state" : "translated",
+            "value" : "%lld requests in this conversation"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本对话共 %lld 条请求"
           }
         }
       }
@@ -30,6 +33,38 @@
         }
       }
     },
+    "Cache hit rate unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cache hit rate unavailable"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缓存命中率暂不可用"
+          }
+        }
+      }
+    },
+    "Cache hit rate unavailable: click for details" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cache hit rate unavailable: click for details"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缓存命中率暂不可用：点击查看详情"
+          }
+        }
+      }
+    },
     "Cached tokens" : {
       "localizations" : {
         "en" : {
@@ -42,6 +77,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已缓存令牌"
+          }
+        }
+      }
+    },
+    "No conversation selected. Select a conversation to see cache hit rate." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No conversation selected. Select a conversation to see cache hit rate."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择对话。选择一个对话以查看缓存命中率。"
+          }
+        }
+      }
+    },
+    "Per-request average" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per-request average"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单次请求平均"
+          }
+        }
+      }
+    },
+    "The provider did not report cache token usage for this conversation. The model or endpoint may not support caching, the stable prefix may be too short, or no cache has been created yet." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The provider did not report cache token usage for this conversation. The model or endpoint may not support caching, the stable prefix may be too short, or no cache has been created yet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务提供商未报告本次对话的缓存令牌用量。该模型或端点可能不支持缓存，稳定前缀可能过短，或缓存尚未创建。"
+          }
+        }
+      }
+    },
+    "Token-weighted cache hit rate: %@ (%lld requests)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token-weighted cache hit rate: %1$@ (%2$lld requests)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按令牌加权的缓存命中率：%1$@（%2$lld 条请求）"
           }
         }
       }
@@ -78,8 +177,37 @@
         }
       }
     },
-    "命中率 = 每条请求从缓存读取的 tokens ÷ 总输入 tokens 的算术平均。缓存命中越高，重复上下文计费越低、响应越快。" : {
-
+    "Waiting for the first assistant response with cache usage data." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for the first assistant response with cache usage data."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待第一条包含缓存用量数据的助手回复。"
+          }
+        }
+      }
+    },
+    "命中率 = 缓存读取 tokens ÷ 总输入 tokens。该数值按 token 加权，缓存命中越高，重复上下文计费越低、响应越快。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hit rate = cached tokens ÷ total input tokens. This value is token-weighted: higher cache hits mean lower repeated context costs and faster responses."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "命中率 = 缓存读取 tokens ÷ 总输入 tokens。该数值按 token 加权，缓存命中越高，重复上下文计费越低、响应越快。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

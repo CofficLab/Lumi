@@ -19,6 +19,7 @@ let package = Package(
         .package(path: "../EditorContracts"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderProject"),
+        .package(path: "../ProviderSkill"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../KitLocalization"),        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
@@ -34,6 +35,7 @@ let package = Package(
                 .product(name: "EditorContracts", package: "EditorContracts"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderSkill", package: "ProviderSkill"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderMessageRendering", package: "ProviderMessageRendering"),
                 .product(name: "KitLocalization", package: "KitLocalization"),                .product(name: "LumiUI", package: "LumiUI"),
@@ -42,7 +44,9 @@ let package = Package(
             ],
             path: "Sources",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../Resources/Localizable.xcstrings"),
+                // 保留 Skills 目录结构（.copy），否则 Bundle.module 遍历会失败。
+                .copy("../Resources/Skills")
             ]
         ),
         .testTarget(

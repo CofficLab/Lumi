@@ -18,6 +18,7 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderLLMManager"),
+        .package(path: "../ProviderStorage"),
         .package(path: "../KitLLM"),
     ],
     targets: [
@@ -30,6 +31,7 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "KitLLM", package: "KitLLM"),
             ],
             path: "Sources/PluginLLMProviderSettings",
@@ -42,6 +44,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "KitLLM", package: "KitLLM"),
             ],
             path: "Tests/PluginLLMProviderSettingsTests"

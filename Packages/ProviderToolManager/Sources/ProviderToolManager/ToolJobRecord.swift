@@ -7,6 +7,8 @@ import KitAgentTool
 /// ToolJobRecord 是执行期间以及终态都需要保留的运行状态。
 public struct ToolJobRecord: Codable, Sendable, Equatable, Identifiable {
     public let id: String
+    /// 原始模型 ToolCall.id；旧记录没有此字段时由恢复逻辑回退到 `id`。
+    public let toolCallID: String?
     public let conversationID: UUID
     public let turnID: UUID?
     public let toolName: String
@@ -27,6 +29,7 @@ public struct ToolJobRecord: Codable, Sendable, Equatable, Identifiable {
 
     public init(
         id: String,
+        toolCallID: String? = nil,
         conversationID: UUID,
         turnID: UUID?,
         toolName: String,
@@ -45,6 +48,7 @@ public struct ToolJobRecord: Codable, Sendable, Equatable, Identifiable {
         errorMessage: String? = nil
     ) {
         self.id = id
+        self.toolCallID = toolCallID
         self.conversationID = conversationID
         self.turnID = turnID
         self.toolName = toolName

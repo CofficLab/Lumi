@@ -48,6 +48,55 @@ func testMessageFromLLMMessagePreservesToolCalls() {
     #expect(restored.reasoningContent == "先检查状态")
 }
 
+@Test("provider-reused tool-call IDs are normalized across the conversation")
+func testToolCallIdentityNormalizerAvoidsConversationCollisions() {
+    let response = LLMResponse(
+        content: "",
+        model: "kimi-k3",
+        toolCalls: [
+            LLMToolCall(id: "ls_0", name: "ls", arguments: "{\"path\":\"/app\"}"),
+            LLMToolCall(id: "ls_1", name: "ls", arguments: "{\"path\":\"/packages\"}")
+        ],
+        rawResponseJSON: "original-response",
+        rawStreamEventsJSON: "original-events",
+        stopReason: "tool_calls"
+    )
+
+    let normalized = ToolCallIdentityNormalizer.normalize(
+        response,
+        avoiding: ["ls_0"]
+    )
+    let toolCalls = normalized.toolCalls ?? []
+
+    #expect(toolCalls.count == 2)
+    #expect(toolCalls[0].id != "ls_0")
+    #expect(toolCalls[0].id != toolCalls[1].id)
+    #expect(toolCalls[1].id == "ls_1")
+    #expect(toolCalls.map(\.arguments) == ["{\"path\":\"/app\"}", "{\"path\":\"/packages\"}"])
+    #expect(normalized.rawResponseJSON == "original-response")
+    #expect(normalized.rawStreamEventsJSON == "original-events")
+    #expect(normalized.stopReason == "tool_calls")
+}
+
+@Test("duplicate tool-call IDs within one provider response are normalized")
+func testToolCallIdentityNormalizerAvoidsResponseCollisions() {
+    let normalized = ToolCallIdentityNormalizer.normalize(
+        LLMResponse(
+            content: "",
+            toolCalls: [
+                LLMToolCall(id: "same", name: "ls", arguments: "{}"),
+                LLMToolCall(id: "same", name: "read_file", arguments: "{}")
+            ]
+        ),
+        avoiding: []
+    )
+
+    let toolCalls = normalized.toolCalls ?? []
+    #expect(toolCalls.map(\.id).count == Set(toolCalls.map(\.id)).count)
+    #expect(toolCalls[0].id == "same")
+    #expect(toolCalls[1].id != "same")
+}
+
 @Test("可恢复的 LLM 工具协议错误会重试当前回合")
 func testRetryableLLMFailureRetriesCurrentTurn() {
     let turnID = UUID()
@@ -201,6 +250,35 @@ func testMessageObserverResumesSuspendedTurnWhenUserContinuesChatting() async th
     let request = try #require(loop.resumeRequests.first)
     #expect(request.suspensionID == "userInput:ask-1")
     #expect(request.answer.contains("without answering"))
+}
+
+@MainActor
+@Test("AgentLoop 始终把当前对话的供应商和模型传给请求")
+func testAgentLoopUsesConversationProviderAndModel() async throws {
+    let messages = DefaultMessageManager()
+    let conversations = DefaultConversationManager()
+    let llmManager = RoutingRecordingLLMManager()
+    let conversationID = try conversations.createConversation(
+        title: nil,
+        projectPath: nil,
+        providerID: "conversation-provider",
+        modelName: "conversation-model"
+    )
+    let loop = AgentLoopManager(
+        messages: messages,
+        llmManager: llmManager,
+        toolManager: DefaultToolManagerProviding(),
+        streaming: DefaultMessageStreamingProviding(),
+        conversations: conversations,
+        contextProvider: PassthroughLLMContextProvider(messages: messages)
+    )
+
+    let outcome = try await loop.runTurn(in: conversationID)
+
+    #expect(outcome == .completed)
+    let request = try #require(llmManager.requests.first)
+    #expect(request.providerID == "conversation-provider")
+    #expect(request.model == "conversation-model")
 }
 
 @MainActor
@@ -367,6 +445,63 @@ func testAuthorizedCompletionResumesSuspendedLoop() async {
         .toolCalls?.first(where: { $0.id == toolCallID })
     #expect(updatedToolCall?.result?.content == "edited")
     #expect(loop.currentTurnID(for: conversationID) == turnID)
+}
+
+@MainActor
+private final class RoutingRecordingLLMManager: LLMManaging, LLMStreamingProviding, @unchecked Sendable {
+    private let providersByID: [String: RoutingRecordingProvider] = [
+        "global-provider": RoutingRecordingProvider(id: "global-provider", model: "global-model"),
+        "conversation-provider": RoutingRecordingProvider(id: "conversation-provider", model: "conversation-model"),
+    ]
+    private(set) var requests: [LLMRequest] = []
+
+    var providerID: String { Self.managerProviderID }
+    var providerInfo: LLMProviderInfo {
+        LLMProviderInfo(id: providerID, displayName: "Test Manager", defaultModel: "", models: [], isLocal: true)
+    }
+
+    func complete(_ request: LLMRequest) async throws -> LLMResponse {
+        requests.append(request)
+        return LLMResponse(content: "ok", model: request.model)
+    }
+
+    func streamComplete(
+        _ request: LLMRequest,
+        onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
+    ) async throws -> LLMResponse {
+        try await complete(request)
+    }
+
+    func allProviders() -> [any SuperLLMProvider] { Array(providersByID.values) }
+    func provider(id: String) -> (any SuperLLMProvider)? { providersByID[id] }
+    var providerCount: Int { providersByID.count }
+    func register(_ provider: any SuperLLMProvider) throws {}
+    func unregister(id: String) {}
+    var selectedProviderID: String? { "global-provider" }
+    var selectedModel: String? { "global-model" }
+    func models(for providerID: String) -> [String] { providersByID[providerID]?.providerInfo.modelIDs ?? [] }
+    func select(providerID: String, model: String?) {}
+}
+
+@MainActor
+private final class RoutingRecordingProvider: SuperLLMProvider {
+    let providerInfo: LLMProviderInfo
+
+    init(id: String, model: String) {
+        providerInfo = LLMProviderInfo(
+            id: id,
+            displayName: id,
+            defaultModel: model,
+            models: [LLMModelInfo(id: model)],
+            isLocal: true
+        )
+    }
+
+    var providerID: String { providerInfo.id }
+
+    func complete(_ request: LLMRequest) async throws -> LLMResponse {
+        LLMResponse(content: "ok", model: request.model)
+    }
 }
 
 @MainActor

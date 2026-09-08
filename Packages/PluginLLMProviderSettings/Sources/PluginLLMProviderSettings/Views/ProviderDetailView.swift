@@ -14,28 +14,29 @@ public struct ProviderDetailView: View {
 
     private let manager: any LLMManaging
     private let provider: any SuperLLMProvider
+    private let customProviderStore: UserDefinedCloudProviderStore
     private let downloadViewModel: ProviderModelDownloadViewModel?
 
     @State private var apiKey: String = ""
     @State private var savedAPIKey: String = ""
     @State private var apiKeySaveError: String?
+    @State private var isEditorPresented = false
+    @State private var isDeleteConfirmationPresented = false
 
     public init(
         manager: any LLMManaging,
         provider: any SuperLLMProvider,
+        customProviderStore: UserDefinedCloudProviderStore,
         downloadViewModel: ProviderModelDownloadViewModel? = nil
     ) {
         self.manager = manager
         self.provider = provider
+        self.customProviderStore = customProviderStore
         self.downloadViewModel = downloadViewModel
     }
 
     private var info: LLMProviderInfo { provider.providerInfo }
     private var isLocal: Bool { info.isLocal }
-
-    private var isSelectedProvider: Bool {
-        manager.selectedProviderID == info.id
-    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -66,6 +67,24 @@ public struct ProviderDetailView: View {
         .onChange(of: provider.providerInfo.id) { _, _ in
             loadAPIKey()
         }
+        .sheet(isPresented: $isEditorPresented) {
+            if let configuration = customProviderStore.configurations.first(where: { $0.id == info.id }) {
+                CustomCloudProviderEditor(store: customProviderStore, configuration: configuration)
+                    .frame(width: 580, height: 640)
+            }
+        }
+        .confirmationDialog(
+            "删除自定义供应商？",
+            isPresented: $isDeleteConfirmationPresented,
+            titleVisibility: .visible
+        ) {
+            Button("删除", role: .destructive) {
+                try? customProviderStore.remove(id: info.id)
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("这会移除供应商配置和对应的 API Key。")
+        }
     }
 
     // MARK: - Header
@@ -78,13 +97,20 @@ public struct ProviderDetailView: View {
                     .foregroundStyle(theme.primary)
                 Text(info.displayName)
                     .font(.appTitle)
-                AppTag(info.providerType.displayName, systemImage: info.providerType.systemImage)
                 Spacer()
                 if let url = info.websiteURL {
                     Link(destination: url) {
                         AppTag("访问官网", systemImage: "arrow.up.right.square", style: .accent)
                     }
                     .buttonStyle(.plain)
+                }
+                if customProviderStore.isCustomProvider(id: info.id) {
+                    AppButton("编辑", systemImage: "pencil", style: .secondary, size: .small) {
+                        isEditorPresented = true
+                    }
+                    AppButton("删除", systemImage: "trash", style: .destructive, size: .small) {
+                        isDeleteConfirmationPresented = true
+                    }
                 }
             }
             if !info.description.isEmpty {
@@ -151,8 +177,7 @@ public struct ProviderDetailView: View {
 
     private var modelSection: some View {
         AppSettingsSection(
-            title: "可用模型",
-            subtitle: isSelectedProvider ? "当前供应商已选中" : "点击模型以切换选中"
+            title: "可用模型"
         ) {
             ForEach(info.models, id: \.id) { model in
                 modelRow(model)
@@ -161,14 +186,8 @@ public struct ProviderDetailView: View {
     }
 
     private func modelRow(_ model: LLMModelInfo) -> some View {
-        let isSelectedModel = isSelectedProvider && manager.selectedModel == model.id
-        return AppSettingsRow(isSelected: isSelectedModel, horizontalPadding: 10, verticalPadding: 10) {
+        AppSettingsRow(horizontalPadding: 10, verticalPadding: 10) {
             HStack(spacing: 10) {
-                Image(systemName: isSelectedModel ? "checkmark.circle.fill" : "circle")
-                    .font(.appCallout)
-                    .foregroundStyle(isSelectedModel ? theme.primary : theme.textTertiary)
-                    .frame(width: 24)
-
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.displayName)
                         .font(.appBody)
@@ -186,11 +205,6 @@ public struct ProviderDetailView: View {
                 }
             }
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            manager.select(providerID: info.id, model: model.id)
-        }
-        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - API Key Actions

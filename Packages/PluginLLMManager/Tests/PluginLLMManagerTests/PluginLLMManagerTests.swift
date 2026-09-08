@@ -71,7 +71,33 @@ struct PluginLLMManagerTests {
             conversationID: UUID(),
             messages: [LLMMessage(role: .user, content: "ping")]
         ))
-        #expect(response.content == "ping")
+        #expect(response.content == "echo:ping")
+    }
+
+    @Test("请求显式供应商时不会被 CustomLLMManager 的全局选择覆盖")
+    func customManagerRoutesToExplicitProvider() async throws {
+        let manager = CustomLLMManager()
+        let global = EchoProvider(id: "global", model: "global-model")
+        let conversation = EchoProvider(id: "conversation", model: "conversation-model")
+        try manager.register(global)
+        try manager.register(conversation)
+        manager.select(providerID: "global", model: "global-model")
+
+        let response = try await manager.streamComplete(
+            LLMRequest(
+                conversationID: UUID(),
+                providerID: "conversation",
+                messages: [LLMMessage(role: .user, content: "ping")],
+                model: "conversation-model"
+            ),
+            onChunk: { _ in }
+        )
+
+        #expect(response.content == "conversation:ping")
+        #expect(global.receivedModels.isEmpty)
+        #expect(conversation.receivedModels == ["conversation-model"])
+        #expect(manager.selectedProviderID == "global")
+        #expect(manager.selectedModel == "global-model")
     }
 
     /// 路由扩展点：routingOverride 优先于引擎默认路由。
@@ -94,9 +120,9 @@ struct PluginLLMManagerTests {
         #expect(usedOverride)
     }
 
-    /// 切换当前对话时,插件应把会话绑定的供应商/模型同步到 LLMManaging 选中值。
-    @Test("切换对话同步会话绑定的供应商/模型到选中")
-    func switchingConversationSyncsSelection() throws {
+    /// 对话绑定通过请求显式路由，不应覆盖全局供应商/模型选择。
+    @Test("切换对话不会改写全局供应商/模型选择")
+    func switchingConversationDoesNotMutateGlobalSelection() throws {
         let kernel = KernelCoreContainer()
         // LLMManaging 由 plugin.onBoot 注册,这里不预注册,避免与插件内部实例分叉。
         let conversations = DefaultConversationManager()
@@ -106,20 +132,22 @@ struct PluginLLMManagerTests {
         try plugin.onBoot(kernel: kernel)
         try plugin.onReady(kernel: kernel)
 
-        // 从内核取出插件注册的 manager,并注册供应商(select 才会生效)。
+        // 从内核取出插件注册的 manager,并注册全局与对话供应商。
         let manager = try #require(kernel.resolveProvider((any LLMManaging).self))
-        try manager.register(EchoProvider(id: "deepseek"))
+        try manager.register(EchoProvider(id: "global"))
+        try manager.register(EchoProvider(id: "conversation"))
+        manager.select(providerID: "global", model: "echo-1")
 
-        // 顶层对话创建后自动选中 → didSet 触发 observer → 同步选中。
+        // 顶层对话创建后自动选中，但不能改写全局选择。
         let id = try conversations.createConversation(
             title: nil,
             projectPath: nil,
-            providerID: "deepseek",
-            modelName: "deepseek-v4-flash"
+            providerID: "conversation",
+            modelName: "echo-1"
         )
         #expect(conversations.selectedConversationID == id)
-        #expect(manager.selectedProviderID == "deepseek")
-        #expect(manager.selectedModel == "deepseek-v4-flash")
+        #expect(manager.selectedProviderID == "global")
+        #expect(manager.selectedModel == "echo-1")
     }
 
     /// 测试用最小 LLM 供应商：回显最后一条用户消息。
@@ -128,18 +156,21 @@ struct PluginLLMManagerTests {
         let providerInfo: LLMProviderInfo
         var providerID: String { providerInfo.id }
 
-        init(id: String = "echo") {
+        private(set) var receivedModels: [String] = []
+
+        init(id: String = "echo", model: String = "echo-1") {
             providerInfo = LLMProviderInfo(
                 id: id,
                 displayName: "Echo",
-                defaultModel: "echo-1",
-                models: [LLMModelInfo(id: "echo-1")]
+                defaultModel: model,
+                models: [LLMModelInfo(id: model)]
             )
         }
 
         func complete(_ request: LLMRequest) async throws -> LLMResponse {
+            receivedModels.append(request.model ?? "")
             let content = request.messages.compactMap(\.content).last ?? ""
-            return LLMResponse(content: content, model: "echo-1")
+            return LLMResponse(content: "\(providerInfo.id):\(content)", model: request.model)
         }
     }
 }

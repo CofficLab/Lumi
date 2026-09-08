@@ -3,6 +3,7 @@ import Foundation
 import KitLLM
 import KernelCore
 import KitSuperLog
+import LumiUI
 import ProviderLifecycleHooks
 import ProviderChatSection
 import ProviderProject
@@ -119,7 +120,11 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
 }
 
 /// Chat 工具栏技能入口：显示可用技能数量（插件贡献 + 内置 + 项目），点击弹出列表。
+///
+/// 样式与 ``SpeedToolbarView`` 保持一致。
 struct SkillChatToolbarView: View {
+    @LumiTheme private var theme: any LumiUITheme
+
     let project: any ProjectProviding
     let skillService: SkillService
     let skillProvider: (any SkillProviding)?
@@ -134,54 +139,30 @@ struct SkillChatToolbarView: View {
             HStack(spacing: 3) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 10, weight: .medium))
+
                 if !skills.isEmpty {
                     Text("\(skills.count)")
                         .font(.system(size: 10, weight: .medium))
+                        .contentTransition(.numericText())
+                } else {
+                    Text(LumiPluginLocalization.string("Skills", bundle: .module))
+                        .font(.system(size: 10, weight: .medium))
                 }
             }
-            .foregroundColor(.secondary)
+            .foregroundColor(Color.accentColor)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
-            .background(Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .background(
+                Color.accentColor.opacity(0.22),
+                in: RoundedRectangle(cornerRadius: 5, style: .continuous)
+            )
         }
         .buttonStyle(.plain)
-        .help(skills.isEmpty ? "无可用技能" : "\(skills.count) 个可用技能")
+        .help(Text(skills.isEmpty ? "无可用技能" : "\(skills.count) 个可用技能"))
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(LumiPluginLocalization.string("Skills", bundle: .module))
-                    .font(.system(size: 12, weight: .semibold))
-                if skills.isEmpty {
-                    Text("当前没有可用技能")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 4) {
-                            ForEach(skills, id: \.id) { skill in
-                                HStack(alignment: .top, spacing: 8) {
-                                    Image(systemName: "sparkles")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.accentColor)
-                                        .frame(width: 16)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(skill.title)
-                                            .font(.system(size: 11, weight: .medium))
-                                        Text(skill.description)
-                                            .font(.system(size: 10))
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 5)
-                                .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                            }
-                        }
-                    }
-                    .frame(maxHeight: 240)
-                }
-            }
-            .padding(10)
-            .frame(width: 280)
+            SkillListView(skills: skills)
+                .frame(width: 320)
+                .frame(minHeight: 220, maxHeight: 420)
         }
         .task {
             await refresh()

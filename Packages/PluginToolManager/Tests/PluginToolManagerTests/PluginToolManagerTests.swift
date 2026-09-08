@@ -97,10 +97,11 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
     let counter = CountingTool.Counter()
     manager.add(CountingTool(name: "write_once", risk: .high, counter: counter), pluginID: "test")
     let conversationID = UUID()
+    let turnID = UUID()
     let call = ToolCall(id: "write-once-1", name: "write_once", arguments: "{}")
 
-    let first = await manager.executeAuthorized(call, conversationID: conversationID, turnID: UUID())
-    let second = await manager.executeAuthorized(call, conversationID: conversationID, turnID: UUID())
+    let first = await manager.executeAuthorized(call, conversationID: conversationID, turnID: turnID)
+    let second = await manager.executeAuthorized(call, conversationID: conversationID, turnID: turnID)
 
     #expect(first.content == "write_once")
     #expect(second == first)
@@ -222,9 +223,10 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
     #expect(jobs.count == 1)
     #expect(jobs.first?.status == .running)
 
-    let result = await manager.waitForJobResult(jobID: call.id)
+    let jobID = try #require(jobs.first?.id)
+    let result = await manager.waitForJobResult(jobID: jobID)
     #expect(result?.content == "finished")
-    #expect(manager.job(for: call.id)?.status == .completed)
+    #expect(manager.job(for: jobID)?.status == .completed)
     #expect(counter.value == 1)
     #expect(events.filter { if case .created = $0 { true } else { false } }.count == 1)
     #expect(events.filter { if case .started = $0 { true } else { false } }.count == 1)
@@ -259,17 +261,18 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
     }
     defer { statusHandle.cancel() }
 
-    _ = manager.submit(
+    let jobs = manager.submit(
         [call],
         policy: .autoExecute,
         conversationID: UUID(),
         turnID: UUID()
     )
-    manager.cancelJob(call.id)
+    let jobID = try #require(jobs.first?.id)
+    manager.cancelJob(jobID)
 
-    let result = await manager.waitForJobResult(jobID: call.id)
+    let result = await manager.waitForJobResult(jobID: jobID)
     #expect(result?.isError == true)
-    #expect(manager.job(for: call.id)?.status == .cancelled)
+    #expect(manager.job(for: jobID)?.status == .cancelled)
     #expect(observedStatuses.contains(.cancelling))
     #expect(cancelledEvents == 1)
 }
@@ -294,17 +297,18 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
     }
     defer { handle.cancel() }
 
-    _ = manager.submit(
+    let jobs = manager.submit(
         [call],
         policy: .autoExecute,
         conversationID: UUID(),
         turnID: UUID()
     )
 
-    let result = try #require(await manager.waitForJobResult(jobID: call.id))
+    let jobID = try #require(jobs.first?.id)
+    let result = try #require(await manager.waitForJobResult(jobID: jobID))
     #expect(result.isError)
     #expect(result.content.contains("timed out"))
-    #expect(manager.job(for: call.id)?.status == .timedOut)
+    #expect(manager.job(for: jobID)?.status == .timedOut)
     #expect(timedOutEvents == 1)
     #expect(failedEvents == 0)
 }
@@ -324,23 +328,48 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
     }
     defer { handle.cancel() }
 
+    let conversationID = UUID()
+    let turnID = UUID()
     let first = manager.submit(
         [call],
         policy: .autoExecute,
-        conversationID: UUID(),
-        turnID: nil
+        conversationID: conversationID,
+        turnID: turnID
     )
     let second = manager.submit(
         [call],
         policy: .autoExecute,
-        conversationID: UUID(),
-        turnID: nil
+        conversationID: conversationID,
+        turnID: turnID
     )
 
     #expect(first == second)
-    _ = await manager.waitForJobResult(jobID: call.id)
+    _ = await manager.waitForJobResult(jobID: try #require(first.first?.id))
     #expect(counter.value == 1)
     #expect(createdEvents == 1)
+}
+
+@MainActor
+@Test func duplicateToolCallIDAcrossTurnsCreatesIndependentJobs() async throws {
+    let manager = ToolManager()
+    let counter = CountingTool.Counter()
+    manager.add(CountingTool(name: "once-per-turn", risk: .low, counter: counter), pluginID: "test")
+    let conversationID = UUID()
+    let call = ToolCall(id: "reused-model-id", name: "once-per-turn", arguments: "{}")
+
+    let first = manager.submit(
+        [call], policy: .autoExecute, conversationID: conversationID, turnID: UUID()
+    )
+    let second = manager.submit(
+        [call], policy: .autoExecute, conversationID: conversationID, turnID: UUID()
+    )
+
+    let firstID = try #require(first.first?.id)
+    let secondID = try #require(second.first?.id)
+    #expect(firstID != secondID)
+    _ = await manager.waitForJobResult(jobID: firstID)
+    _ = await manager.waitForJobResult(jobID: secondID)
+    #expect(counter.value == 2)
 }
 
 @MainActor
@@ -377,9 +406,14 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
     ))
 
     #expect(Date().timeIntervalSince(startedAt) < 0.1)
-    #expect(manager.job(for: "observer-job-1")?.status == .running)
+    let job = try #require(manager.job(
+        forToolCallID: "observer-job-1",
+        conversationID: conversationID,
+        turnID: turnID
+    ))
+    #expect(job.status == .running)
 
-    let result = await manager.waitForJobResult(jobID: "observer-job-1")
+    let result = await manager.waitForJobResult(jobID: job.id)
     #expect(result?.content == "finished")
 }
 

@@ -62,27 +62,31 @@ struct ToolJobPersistenceTests {
         manager.jobRecordStore = store
         manager.add(PersistedDelayedTool(delayNanoseconds: 80_000_000), pluginID: "test")
         let call = ToolCall(id: "persisted-1", name: "persisted_delay", arguments: "{}")
+        let conversationID = UUID()
+        let turnID = UUID()
 
-        _ = manager.submit(
+        let jobs = manager.submit(
             [call],
             policy: .autoExecute,
-            conversationID: UUID(),
-            turnID: UUID()
+            conversationID: conversationID,
+            turnID: turnID
         )
-        let result = await manager.waitForJobResult(jobID: call.id)
-        let record = await waitForRecord(store, jobID: call.id, status: .completed)
+        let jobID = try #require(jobs.first?.id)
+        let result = await manager.waitForJobResult(jobID: jobID)
+        let record = await waitForRecord(store, jobID: jobID, status: .completed)
 
         #expect(result?.content == "done")
         #expect(record?.status == .completed)
         #expect(record?.result?.content == "done")
         #expect(record?.latestOutput == "persisted-output")
         #expect(record?.argumentsHash.isEmpty == false)
+        #expect(record?.toolCallID == call.id)
 
         let restartedManager = ToolManager()
         restartedManager.jobRecordStore = store
         var restored: ToolJob?
         for _ in 0..<40 {
-            restored = restartedManager.job(for: call.id)
+            restored = restartedManager.job(for: jobID)
             if restored?.status == .completed { break }
             try? await Task.sleep(nanoseconds: 25_000_000)
         }
@@ -93,11 +97,11 @@ struct ToolJobPersistenceTests {
         let reused = restartedManager.submit(
             [call],
             policy: .autoExecute,
-            conversationID: UUID(),
-            turnID: UUID()
+            conversationID: conversationID,
+            turnID: turnID
         )
         #expect(reused.first?.status == .completed)
-        #expect(await restartedManager.waitForJobResult(jobID: call.id) == result)
+        #expect(await restartedManager.waitForJobResult(jobID: jobID) == result)
     }
 
     @MainActor
@@ -161,22 +165,23 @@ struct ToolJobPersistenceTests {
             name: "persisted_delay",
             arguments: "{}"
         )
-        _ = manager.submit(
+        let jobs = manager.submit(
             [call],
             policy: .autoExecute,
             conversationID: conversationID,
             turnID: UUID()
         )
+        let jobID = try #require(jobs.first?.id)
 
-        let resultTask = Task { await manager.waitForJobResult(jobID: call.id) }
+        let resultTask = Task { await manager.waitForJobResult(jobID: jobID) }
         try await Task.sleep(nanoseconds: 50_000_000)
         await manager.deleteToolCalls(for: conversationID)
 
         let result = await resultTask.value
         #expect(result?.isError == true)
-        #expect(manager.job(for: call.id)?.status == .cancelled)
+        #expect(manager.job(for: jobID)?.status == .cancelled)
 
         try await Task.sleep(nanoseconds: 50_000_000)
-        #expect(await store.fetchRecord(forJobID: call.id) == nil)
+        #expect(await store.fetchRecord(forJobID: jobID) == nil)
     }
 }

@@ -9,6 +9,7 @@ import SwiftData
 @Model
 final class ToolJobRecordModel {
     var id: String
+    var toolCallID: String?
     var conversationID: String
     var turnID: String?
     var toolName: String
@@ -28,6 +29,7 @@ final class ToolJobRecordModel {
 
     init(record: ToolJobRecord) {
         self.id = record.id
+        self.toolCallID = record.toolCallID
         self.conversationID = record.conversationID.uuidString
         self.turnID = record.turnID?.uuidString
         self.toolName = record.toolName
@@ -48,6 +50,7 @@ final class ToolJobRecordModel {
 
     func update(with record: ToolJobRecord) {
         conversationID = record.conversationID.uuidString
+        toolCallID = record.toolCallID
         turnID = record.turnID?.uuidString
         toolName = record.toolName
         argumentsJSON = record.argumentsJSON
@@ -74,6 +77,7 @@ final class ToolJobRecordModel {
         let result = resultJSON.flatMap { Self.decodeResult($0) }
         return ToolJobRecord(
             id: id,
+            toolCallID: toolCallID,
             conversationID: conversationID,
             turnID: turnID.flatMap(UUID.init(uuidString:)),
             toolName: toolName,

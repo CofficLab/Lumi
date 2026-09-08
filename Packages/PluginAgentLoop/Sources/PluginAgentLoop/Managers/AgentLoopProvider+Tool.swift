@@ -43,7 +43,9 @@ extension AgentLoopManager {
         }
         let (updated, _) = TurnReducer.reduce(
             runtime,
-            event: .toolJobCreated(jobID: job.id)
+            // Turn FSM IDs are model-facing ToolCall IDs. ToolJob.id is an
+            // internal execution identity and may differ from this value.
+            event: .toolJobCreated(jobID: job.toolCall.id)
         )
         runtime = updated
         runtimes[job.conversationID] = runtime
@@ -68,6 +70,7 @@ extension AgentLoopManager {
             return
         }
 
+        let toolCallID = snapshot.toolCall.id
         let pendingToolCallIDs: Set<String>
         switch runtime.phase {
         case .executingTools(_, _, let pending),
@@ -77,7 +80,7 @@ extension AgentLoopManager {
         default:
             return
         }
-        guard pendingToolCallIDs.contains(jobID) else {
+        guard pendingToolCallIDs.contains(toolCallID) else {
             // 终态事件可能因为重试或取消重复到达；pending 已移除时直接忽略。
             return
         }
@@ -85,28 +88,28 @@ extension AgentLoopManager {
         let result = convertResult(toolResult)
         messages.updateToolCallResult(
             result,
-            toolCallID: jobID,
+            toolCallID: toolCallID,
             assistantMessageID: assistantMessageID,
             in: snapshot.conversationID
         )
         insertToolResultMessage(
             result,
-            toolCallID: jobID,
+            toolCallID: toolCallID,
             conversationID: snapshot.conversationID,
             turnID: jobTurnID
         )
 
         if result.awaitingUserResponse {
             let suspension = AgentLoopSuspension(
-                suspensionID: "userInput:\(jobID)",
+                suspensionID: "userInput:\(toolCallID)",
                 conversationID: snapshot.conversationID,
-                toolCallID: jobID,
+                toolCallID: toolCallID,
                 kind: "userInput",
                 payload: result.content
             )
             let (updated, outcome) = TurnReducer.reduce(
                 runtime,
-                event: .toolNeedsUserInput(toolCallID: jobID, suspension: suspension)
+                event: .toolNeedsUserInput(toolCallID: toolCallID, suspension: suspension)
             )
             runtimes[snapshot.conversationID] = updated
             if let outcome {
@@ -117,7 +120,7 @@ extension AgentLoopManager {
 
         let (updated, outcome) = TurnReducer.reduce(
             runtime,
-            event: .toolJobCompleted(toolCallID: jobID, result: result)
+            event: .toolJobCompleted(toolCallID: toolCallID, result: result)
         )
         runtimes[snapshot.conversationID] = updated
         if let outcome {
@@ -499,16 +502,19 @@ extension AgentLoopManager {
         let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
             .flatMap { $0.rawValue }
         let conversationProviderID = resolvedProviderID(for: conversationID)
-        let routingProviderID = llmManager.selectedProviderID
+        let routingProviderID = conversationProviderID
+            ?? llmManager.selectedProviderID
             ?? llmManager.allProviders().first?.providerInfo.id
-            ?? conversationProviderID
         let routingProvider = routingProviderID.flatMap { llmManager.provider(id: $0) }
         let requestedModel = conversations.modelName(for: conversationID)
         let modelName = routingProvider?.providerInfo.models.contains(where: { $0.id == requestedModel }) == true
             ? requestedModel
-            : llmManager.selectedModel
-                ?? routingProvider?.providerInfo.defaultModel
-                ?? requestedModel
+            : conversationProviderID == nil
+                ? llmManager.selectedModel
+                    ?? routingProvider?.providerInfo.defaultModel
+                    ?? requestedModel
+                : routingProvider?.providerInfo.defaultModel
+                    ?? requestedModel
         let modelInfo = routingProvider?.providerInfo.models.first { $0.id == modelName }
             ?? routingProvider?.providerInfo.models.first { $0.id == routingProvider?.providerInfo.defaultModel }
         let toolSchemaTokens = estimateToolSchemaTokens(schemas)
@@ -562,6 +568,7 @@ extension AgentLoopManager {
 
         let request = LLMRequest(
             conversationID: conversationID,
+            providerID: routingProviderID,
             messages: preparedMessages,
             model: modelName,
             tools: schemas.isEmpty ? nil : schemas,
@@ -578,8 +585,9 @@ extension AgentLoopManager {
 
         let timingRecorder = LLMStreamTimingRecorder()
         let bridge = StreamingBridge(streaming: streaming)
+        let existingToolCallIDs = ToolCallIdentityNormalizer.ids(in: llmHistory)
         do {
-            let response = try await streamingManager.streamComplete(request) { [weak bridge, timingRecorder] chunk in
+            let streamedResponse = try await streamingManager.streamComplete(request) { [weak bridge, timingRecorder] chunk in
                 if chunk.content?.isEmpty == false
                     || chunk.reasoningContent?.isEmpty == false
                     || !(chunk.toolCalls?.isEmpty ?? true) {
@@ -593,6 +601,14 @@ extension AgentLoopManager {
                     await bridge.appendContent(piece, conversationID: conversationID)
                 }
             }
+            // A few OpenAI-compatible gateways reuse short IDs such as
+            // `ls_0` for every response. Normalize them before the response
+            // enters the turn FSM, message history, or ToolManager so the
+            // current call cannot be mistaken for an earlier completed job.
+            let response = ToolCallIdentityNormalizer.normalize(
+                streamedResponse,
+                avoiding: existingToolCallIDs
+            )
 
             guard isActiveLLMRequest(conversationID: conversationID, turnID: turnID) else {
                 streaming.end(conversationID: conversationID)
@@ -652,7 +668,9 @@ extension AgentLoopManager {
                 timeToFirstTokenMs: timing.timeToFirstTokenMs,
                 streamingDurationMs: timing.streamingDurationMs
             )
-            assistant.providerID = conversationProviderID
+            // 记录本次请求实际使用的供应商。未绑定对话会走全局供应商，
+            // 因此这里不能只写 conversationProviderID（否则 UI 会丢失供应商）。
+            assistant.providerID = routingProviderID
             if let toolCalls = assistant.toolCalls {
                 assistant.toolCalls = toolCalls.map { toolCall in
                     var enriched = toolCall

@@ -5,13 +5,16 @@ import SwiftUI
 @MainActor
 public struct CloudProviderSettingsPage: View {
     private let manager: any LLMManaging
+    private let customProviderStore: UserDefinedCloudProviderStore
     private let downloadViewModel: (String) -> ProviderModelDownloadViewModel?
 
     public init(
         manager: any LLMManaging,
+        customProviderStore: UserDefinedCloudProviderStore,
         downloadViewModel: @escaping (String) -> ProviderModelDownloadViewModel? = { _ in nil }
     ) {
         self.manager = manager
+        self.customProviderStore = customProviderStore
         self.downloadViewModel = downloadViewModel
     }
 
@@ -19,6 +22,7 @@ public struct CloudProviderSettingsPage: View {
         ProviderSettingsPageContent(
             manager: manager,
             isLocal: false,
+            customProviderStore: customProviderStore,
             downloadViewModel: downloadViewModel
         )
     }

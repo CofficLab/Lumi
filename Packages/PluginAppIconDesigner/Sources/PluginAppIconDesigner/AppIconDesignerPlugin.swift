@@ -12,6 +12,7 @@ import ProviderProject
 import ProviderRailView
 import ProviderStorage
 import ProviderRootView
+import ProviderSkill
 import ProviderToolManager
 import SwiftUI
 
@@ -88,6 +89,15 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             }
         } else {
             Self.logger.error("\(Self.t) ToolManagerProviding not found")
+        }
+
+        // 注册 Skill 贡献者到 SkillProviding
+        if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
+            if !skillProvider.isProviderRegistered(providerID: id) {
+                let contributor = AppIconDesignerSkillContributor(providerID: id)
+                skillProvider.addProvider(contributor)
+                Self.logger.info("\(Self.t)Contributed \(contributor.allSkills.count) skill(s) via SkillProviding")
+            }
         }
 
         let contentView = kernel.resolveProvider((any ContentViewProviding).self)
@@ -217,6 +227,11 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             for tool in Self.agentTools {
                 toolManager.remove(id: tool.name)
             }
+        }
+
+        // 撤回 Skill 贡献。
+        if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
+            skillProvider.removeProvider(providerID: id)
         }
 
         kernel.resolveProvider((any RailViewProviding).self)?

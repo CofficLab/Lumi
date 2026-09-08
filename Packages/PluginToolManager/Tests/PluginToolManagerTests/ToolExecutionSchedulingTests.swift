@@ -83,15 +83,15 @@ func readOnlyJobsRunInParallelWithPerTurnLimit() async {
     let turnID = UUID()
     let calls = tools.map { ToolCall(id: $0.name, name: $0.name, arguments: "{}") }
     let startedAt = Date()
-    _ = manager.submit(
+    let jobs = manager.submit(
         calls,
         policy: .autoExecute,
         conversationID: conversationID,
         turnID: turnID
     )
 
-    for call in calls {
-        _ = await manager.waitForJobResult(jobID: call.id)
+    for job in jobs {
+        _ = await manager.waitForJobResult(jobID: job.id)
     }
 
     let duration = Date().timeIntervalSince(startedAt)
@@ -129,14 +129,14 @@ func sideEffectJobsCreateAnOrderingBarrier() async {
     }
 
     let calls = tools.map { ToolCall(id: $0.name, name: $0.name, arguments: "{}") }
-    _ = manager.submit(
+    let jobs = manager.submit(
         calls,
         policy: .autoExecute,
         conversationID: UUID(),
         turnID: UUID()
     )
-    for call in calls {
-        _ = await manager.waitForJobResult(jobID: call.id)
+    for job in jobs {
+        _ = await manager.waitForJobResult(jobID: job.id)
     }
 
     #expect(await probe.startOrder == ["read-before-write", "write-barrier", "read-after-write"])
@@ -162,9 +162,9 @@ func sideEffectJobsRemainOrdered() async {
     let calls = tools.map { ToolCall(id: $0.name, name: $0.name, arguments: "{}") }
     let conversationID = UUID()
     let turnID = UUID()
-    _ = manager.submit(calls, policy: .autoExecute, conversationID: conversationID, turnID: turnID)
-    for call in calls {
-        _ = await manager.waitForJobResult(jobID: call.id)
+    let jobs = manager.submit(calls, policy: .autoExecute, conversationID: conversationID, turnID: turnID)
+    for job in jobs {
+        _ = await manager.waitForJobResult(jobID: job.id)
     }
 
     #expect(await probe.maximumActiveCount == 1)
@@ -196,20 +196,20 @@ func differentConversationsCanRunInParallel() async {
         ToolCall(id: "conversation-b", name: second.name, arguments: "{}")
     ]
     let startedAt = Date()
-    _ = manager.submit(
+    let firstJobs = manager.submit(
         [calls[0]],
         policy: .autoExecute,
         conversationID: UUID(),
         turnID: UUID()
     )
-    _ = manager.submit(
+    let secondJobs = manager.submit(
         [calls[1]],
         policy: .autoExecute,
         conversationID: UUID(),
         turnID: UUID()
     )
-    for call in calls {
-        _ = await manager.waitForJobResult(jobID: call.id)
+    for job in firstJobs + secondJobs {
+        _ = await manager.waitForJobResult(jobID: job.id)
     }
 
     #expect(Date().timeIntervalSince(startedAt) < 0.35)
@@ -231,9 +231,9 @@ func customToolsDefaultToSerialSideEffect() async {
 
     let calls = tools.map { ToolCall(id: $0.name, name: $0.name, arguments: "{}") }
     let scope = UUID()
-    _ = manager.submit(calls, policy: .autoExecute, conversationID: scope, turnID: UUID())
-    for call in calls {
-        _ = await manager.waitForJobResult(jobID: call.id)
+    let jobs = manager.submit(calls, policy: .autoExecute, conversationID: scope, turnID: UUID())
+    for job in jobs {
+        _ = await manager.waitForJobResult(jobID: job.id)
     }
 
     #expect(await probe.maximumActiveCount == 1)

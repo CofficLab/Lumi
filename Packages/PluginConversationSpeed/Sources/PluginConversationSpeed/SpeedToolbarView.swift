@@ -53,6 +53,9 @@ struct SpeedToolbarView: View {
         guard let cachedTPS = viewModel.cachedTPS else {
             return "—"
         }
-        return String(format: "%.1f tok/s", cachedTPS)
+        return String(
+            format: LumiPluginLocalization.string("%.1f tok/s", bundle: .module),
+            cachedTPS
+        )
     }
 }

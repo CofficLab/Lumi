@@ -302,7 +302,9 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             let tokenCounts = Self.tokenCounts(from: usage)
             let inputTokens = tokenCounts.input
             let outputTokens = tokenCounts.output
-            let cachedInputTokens = Self.cachedInputTokens(from: usage)
+            let cacheWriteInputTokens = Self.cacheWriteInputTokens(from: usage)
+            let cachedInputTokens = Self.cacheReadInputTokens(from: usage)
+                ?? (cacheWriteInputTokens == nil ? nil : 0)
             let stopReason = delta["stop_reason"] as? String
                 ?? firstChoice["finish_reason"] as? String
 
@@ -316,6 +318,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                     inputTokens: inputTokens,
                     outputTokens: outputTokens,
                     cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
                     cacheTotalInputTokens: inputTokens,
                     stopReason: stopReason
                 )
@@ -329,6 +332,7 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
                     inputTokens: inputTokens,
                     outputTokens: outputTokens,
                     cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
                     cacheTotalInputTokens: inputTokens,
                     stopReason: stopReason
                 )
@@ -353,7 +357,9 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             return StreamChunk(
                 inputTokens: tokenCounts.input,
                 outputTokens: tokenCounts.output,
-                cachedInputTokens: Self.cachedInputTokens(from: usage),
+                cachedInputTokens: Self.cacheReadInputTokens(from: usage)
+                    ?? (Self.cacheWriteInputTokens(from: usage) == nil ? nil : 0),
+                cacheWriteInputTokens: Self.cacheWriteInputTokens(from: usage),
                 cacheTotalInputTokens: tokenCounts.input
             )
         }
@@ -393,11 +399,18 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         return dataLines.joined(separator: "\n")
     }
 
-    private static func cachedInputTokens(from usage: [String: Any]?) -> Int? {
-        guard let details = usage?["prompt_tokens_details"] as? [String: Any] else {
-            return nil
-        }
-        return details["cached_tokens"] as? Int
+    static func cacheReadInputTokens(from usage: [String: Any]?) -> Int? {
+        usage?["cached_tokens"] as? Int
+            ?? (usage?["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
+            ?? (usage?["input_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
+            ?? usage?["cache_read_input_tokens"] as? Int
+    }
+
+    static func cacheWriteInputTokens(from usage: [String: Any]?) -> Int? {
+        usage?["cache_write_tokens"] as? Int
+            ?? usage?["cache_creation_input_tokens"] as? Int
+            ?? (usage?["prompt_tokens_details"] as? [String: Any])?["cache_write_tokens"] as? Int
+            ?? (usage?["input_tokens_details"] as? [String: Any])?["cache_write_tokens"] as? Int
     }
 
     /// OpenAI-compatible gateways do not all use the same usage spelling.

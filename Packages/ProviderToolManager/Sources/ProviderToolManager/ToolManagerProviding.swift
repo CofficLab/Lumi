@@ -45,6 +45,14 @@ public protocol ToolManagerProviding: AnyObject {
     /// 查询指定 turn 的全部 Job，按创建时间排序。
     func jobs(for turnID: UUID) -> [ToolJob]
 
+    /// 按模型原始 ToolCall.id 和执行作用域查找 Job。
+    /// 该查找不能只使用原始 ID，因为不同回合可能复用同一个 ID。
+    func job(
+        forToolCallID toolCallID: String,
+        conversationID: UUID,
+        turnID: UUID?
+    ) -> ToolJob?
+
     /// 取消单个 Job；重复取消不会产生重复终态事件。
     func cancelJob(_ jobID: String)
 
@@ -144,6 +152,13 @@ public protocol ToolManagerProviding: AnyObject {
     /// 调用未知、尚未完成或结果存储不可用时返回 `nil`。
     func toolCallResult(for toolCallID: String) async -> ToolCallResult?
 
+    /// 在指定会话/回合中按原始 `ToolCall.id` 查询结果，避免跨回合 ID 复用串结果。
+    func toolCallResult(
+        for toolCallID: String,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult?
+
     /// 删除某个会话的全部工具调用记录。
     ///
     /// 会话删除时调用，保证工具结果不会比引用它的会话时间线更长寿。
@@ -178,6 +193,28 @@ public extension ToolManagerProviding {
     func jobs(for turnID: UUID) -> [ToolJob] {
         _ = turnID
         return []
+    }
+
+    func toolCallResult(
+        for toolCallID: String,
+        conversationID: UUID,
+        turnID: UUID?
+    ) async -> ToolCallResult? {
+        _ = toolCallID
+        _ = conversationID
+        _ = turnID
+        return nil
+    }
+
+    func job(
+        forToolCallID toolCallID: String,
+        conversationID: UUID,
+        turnID: UUID?
+    ) -> ToolJob? {
+        _ = toolCallID
+        _ = conversationID
+        _ = turnID
+        return nil
     }
 
     func cancelJob(_ jobID: String) {

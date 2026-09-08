@@ -73,7 +73,11 @@ final class ToolExecutionManager {
         guard policy == .autoExecute else { return [] }
 
         return toolCalls.map { toolCall in
-            if let existing = jobsByID[toolCall.id] {
+            if let existing = jobsByID.values.first(where: {
+                $0.conversationID == conversationID
+                    && $0.turnID == turnID
+                    && $0.toolCall.id == toolCall.id
+            }) {
                 return existing
             }
 
@@ -111,6 +115,7 @@ final class ToolExecutionManager {
             }
 
             let job = ToolJob(
+                id: UUID().uuidString,
                 conversationID: conversationID,
                 turnID: turnID,
                 toolCall: toolCall
@@ -137,6 +142,18 @@ final class ToolExecutionManager {
         jobsByID.values
             .filter { $0.turnID == turnID }
             .sorted { $0.createdAt < $1.createdAt }
+    }
+
+    func job(
+        forToolCallID toolCallID: String,
+        conversationID: UUID,
+        turnID: UUID?
+    ) -> ToolJob? {
+        jobsByID.values.first {
+            $0.conversationID == conversationID
+                && $0.turnID == turnID
+                && $0.toolCall.id == toolCallID
+        }
     }
 
     func waitForResult(jobID: String) async -> ToolCallResult? {
@@ -509,6 +526,7 @@ final class ToolExecutionManager {
         let argumentsJSON = job.toolCall.arguments
         let record = ToolJobRecord(
             id: job.id,
+            toolCallID: job.toolCall.id,
             conversationID: job.conversationID,
             turnID: job.turnID,
             toolName: job.toolCall.name,
@@ -541,11 +559,12 @@ final class ToolExecutionManager {
         for record in records where jobsByID[record.id] == nil {
             if record.status.isTerminal {
                 let toolCall = ToolCall(
-                    id: record.id,
+                    id: record.toolCallID ?? record.id,
                     name: record.toolName,
                     arguments: record.argumentsJSON
                 )
                 let job = ToolJob(
+                    id: record.id,
                     conversationID: record.conversationID,
                     turnID: record.turnID,
                     toolCall: toolCall,
@@ -568,11 +587,12 @@ final class ToolExecutionManager {
             let now = Date()
             let result = ToolCallResult(content: message, isError: true)
             let toolCall = ToolCall(
-                id: record.id,
+                id: record.toolCallID ?? record.id,
                 name: record.toolName,
                 arguments: record.argumentsJSON
             )
             let job = ToolJob(
+                id: record.id,
                 conversationID: record.conversationID,
                 turnID: record.turnID,
                 toolCall: toolCall,

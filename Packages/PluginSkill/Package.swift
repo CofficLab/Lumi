@@ -19,12 +19,14 @@ let package = Package(
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../KitLocalization"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
     ],
     targets: [
         .target(
             name: "PluginSkill",
             dependencies: [
                 "KernelCore",
+                "LumiUI",
                 "ProviderChatSection",
                 "ProviderLifecycleHooks",
                 "ProviderProject",

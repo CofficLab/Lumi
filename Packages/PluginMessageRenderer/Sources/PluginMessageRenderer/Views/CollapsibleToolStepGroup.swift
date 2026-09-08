@@ -57,7 +57,9 @@ struct CollapsibleToolStepGroup: View {
         self.verbosity = verbosity
         self._jobActivity = StateObject(wrappedValue: ToolJobGroupActivityModel(
             manager: kernel.resolveProvider((any ToolManagerProviding).self),
-            jobIDs: toolCalls.map(\.id)
+            toolCallIDs: toolCalls.map(\.id),
+            conversationID: message.conversationID,
+            turnID: message.turnID
         ))
     }
 
@@ -210,7 +212,11 @@ struct CollapsibleToolStepGroup: View {
         var resolved = toolCalls
         var didResolveAnyResult = false
         for index in resolved.indices where resolved[index].result == nil {
-            if let raw = await manager.toolCallResult(for: resolved[index].id),
+            if let raw = await manager.toolCallResult(
+                for: resolved[index].id,
+                conversationID: message.conversationID,
+                turnID: message.turnID
+            ),
                let converted = MessageToolResult(toolCallResult: raw) {
                 resolved[index].result = converted
                 didResolveAnyResult = true

@@ -242,6 +242,7 @@ func completedToolJobResumesAgentLoop() {
     )
 
     let job = ToolJob(
+        id: "internal-job-1",
         conversationID: conversationID,
         turnID: turnID,
         toolCall: KitAgentTool.ToolCall(id: toolCallID, name: "slow_tool", arguments: "{}"),
@@ -250,7 +251,7 @@ func completedToolJobResumesAgentLoop() {
     loop.handleToolJobEvent(.created(job))
     loop.handleToolJobEvent(
         .completed(
-            jobID: toolCallID,
+            jobID: job.id,
             result: ToolCallResult(content: "job result"),
             snapshot: job
         )

@@ -8,6 +8,7 @@ import ProviderDocsView
 import ProviderRailView
 import ProviderStorage
 import ProviderRootView
+import ProviderSkill
 import ProviderToolManager
 import ProviderPromptSuggestion
 import ProviderProject
@@ -85,6 +86,15 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
                 toolManager.add(tool, pluginID: id)
+            }
+        }
+
+        // 注册 Skill 贡献者到 SkillProviding
+        if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
+            if !skillProvider.isProviderRegistered(providerID: id) {
+                let contributor = AppStorePromoDesignerSkillContributor(providerID: id)
+                skillProvider.addProvider(contributor)
+                Self.logger.info("\(Self.t)Contributed \(contributor.allSkills.count) skill(s) via SkillProviding")
             }
         }
 
@@ -211,6 +221,11 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
             for tool in Self.agentTools {
                 toolManager.remove(id: tool.name)
             }
+        }
+
+        // 撤回 Skill 贡献。
+        if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
+            skillProvider.removeProvider(providerID: id)
         }
 
         kernel.resolveProvider((any RailViewProviding).self)?

@@ -1,0 +1,7 @@
+{
+  "name": "app-icon-designer",
+  "title": "App Icon Designer",
+  "description": "指导 AI 使用 App Icon Designer 的 Agent 工具完成应用图标设计，包括文档创建、形状编辑、样式调整、质量检查和导出。",
+  "triggers": ["icon", "图标", "app icon", "设计图标", "draw icon", "design icon", "export icon", "导出图标"],
+  "version": "1.0.0"
+}

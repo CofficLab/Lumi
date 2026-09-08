@@ -16,8 +16,7 @@ struct KimiCodeProviderPluginTests {
         let plugin = KimiCodeProviderPlugin()
         try plugin.onBoot(kernel: kernel)
 
-        #expect(manager.providerCount == 2)
+        #expect(manager.providerCount == 1)
         #expect(manager.provider(id: "kimi-code-openai")?.providerInfo.id == "kimi-code-openai")
-        #expect(manager.provider(id: "kimi-code-anthropic")?.providerInfo.id == "kimi-code-anthropic")
     }
 }

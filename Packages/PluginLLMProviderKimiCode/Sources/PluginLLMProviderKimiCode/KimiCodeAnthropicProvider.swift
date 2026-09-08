@@ -1,8 +1,12 @@
+/*
 import KitLLM
 import Foundation
 import ProviderLLMManager
 
 /// Kimi Code Anthropic 协议变体（迁移自旧 `KimiCodeAnthropicProvider`）。
+///
+/// 已停用：与 OpenAI 变体共享同一批模型与 API Key，当前仅保留 OpenAI 变体。
+/// 如需恢复，取消注释并在 KimiCodeProviderPlugin 中重新注册。
 @MainActor
 public final class KimiCodeAnthropicProvider: VendorLLMProvider {
 
@@ -34,3 +38,4 @@ public final class KimiCodeAnthropicProvider: VendorLLMProvider {
     }
 
 }
+*/

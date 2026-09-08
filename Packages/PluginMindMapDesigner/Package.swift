@@ -24,6 +24,7 @@ let package = Package(
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../ProviderSkill"),
     ],
     targets: [
         .target(
@@ -44,8 +45,12 @@ let package = Package(
                 "ProviderRootView",
                 "ProviderStorage",
                 "ProviderToolManager",
+                "ProviderSkill",
             ],
-            resources: [.process("../../Resources/Localizable.xcstrings")]
+            resources: [
+                .process("../../Resources/Localizable.xcstrings"),
+                .copy("../../Resources/Skills"),
+            ]
         ),
         .testTarget(
             name: "PluginMindMapDesignerTests",

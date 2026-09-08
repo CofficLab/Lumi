@@ -83,20 +83,16 @@ final class ListV1ViewModel: ObservableObject {
 
         activeConversationID = conversationID
         isLoading = true
-        defer { isLoading = false }
+        clearDisplayState()
+        defer {
+            if mySequence == activationSequence {
+                isLoading = false
+            }
+        }
 
         guard let conversationID,
               let messageManager = services.messages else {
-            // 无对话 ID 或无 messageManager 时，清空状态
-            if mySequence == activationSequence {
-                records = []
-                messageWindow = []
-                presentation = ListV1Presentation()
-                summaryItems = []
-                pendingUserSnapshot = []
-                pendingStatusSnapshot = nil
-                hasEarlierTurns = false
-            }
+            // 无对话 ID 或无 messageManager 时，状态已在激活开始时清空。
             return
         }
 
@@ -112,6 +108,17 @@ final class ListV1ViewModel: ObservableObject {
         messageWindow = page.messages
         hasEarlierTurns = page.hasEarlierMessages
         rebuildWindow(for: conversationID, sequence: mySequence)
+    }
+
+    /// 切换会话时先清空旧会话的展示快照，避免异步首屏加载期间继续显示旧行。
+    private func clearDisplayState() {
+        records = []
+        messageWindow = []
+        presentation = ListV1Presentation()
+        summaryItems = []
+        pendingUserSnapshot = []
+        pendingStatusSnapshot = nil
+        hasEarlierTurns = false
     }
 
     /// Refreshes the newest Turn page while retaining any earlier pages the

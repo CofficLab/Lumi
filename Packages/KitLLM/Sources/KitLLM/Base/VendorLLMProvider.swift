@@ -115,7 +115,9 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             reasoningContent: parsed.reasoningContent,
             inputTokenCount: tokenCounts.input,
             outputTokenCount: tokenCounts.output,
-            cachedInputTokenCount: tokenCounts.cachedInput
+            cachedInputTokenCount: tokenCounts.cachedInput,
+            cacheWriteInputTokenCount: tokenCounts.cacheWrite,
+            cacheTotalInputTokenCount: tokenCounts.cacheTotal
         )
     }
 
@@ -153,7 +155,9 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             toolCalls: parsed.toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
             inputTokenCount: tokenCounts.input,
             outputTokenCount: tokenCounts.output,
-            cachedInputTokenCount: tokenCounts.cachedInput
+            cachedInputTokenCount: tokenCounts.cachedInput,
+            cacheWriteInputTokenCount: tokenCounts.cacheWrite,
+            cacheTotalInputTokenCount: tokenCounts.cacheTotal
         )
     }
 
@@ -184,7 +188,9 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
             model: model,
             inputTokenCount: tokenCounts.input,
             outputTokenCount: tokenCounts.output,
-            cachedInputTokenCount: tokenCounts.cachedInput
+            cachedInputTokenCount: tokenCounts.cachedInput,
+            cacheWriteInputTokenCount: tokenCounts.cacheWrite,
+            cacheTotalInputTokenCount: tokenCounts.cacheTotal
         )
     }
 
@@ -330,11 +336,13 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
     private func tokenCounts(from data: Data, anthropic: Bool) -> (
         input: Int?,
         output: Int?,
-        cachedInput: Int?
+        cachedInput: Int?,
+        cacheWrite: Int?,
+        cacheTotal: Int?
     ) {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let usage = object["usage"] as? [String: Any] else {
-            return (nil, nil, nil)
+            return (nil, nil, nil, nil, nil)
         }
 
         let input: Int?
@@ -357,9 +365,20 @@ open class VendorLLMProvider: SuperLLMProvider, LLMStreamingProviding {
                 ?? usage["output_token_count"] as? Int
         }
 
-        let cachedInput = (usage["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
-            ?? usage["cache_read_input_tokens"] as? Int
-        return (input, output, cachedInput)
+        let cachedInput = anthropic
+            ? AnthropicCompatibleProviderAdapter.cacheReadInputTokens(from: usage)
+            : OpenAICompatibleProviderAdapter.cacheReadInputTokens(from: usage)
+        let cacheWrite = anthropic
+            ? AnthropicCompatibleProviderAdapter.cacheWriteInputTokens(from: usage)
+            : OpenAICompatibleProviderAdapter.cacheWriteInputTokens(from: usage)
+        let cacheTotal = anthropic
+            ? AnthropicCompatibleProviderAdapter.cacheTotalInputTokens(
+                inputTokens: input,
+                cachedInputTokens: cachedInput,
+                cacheWriteInputTokens: cacheWrite
+            )
+            : input
+        return (input, output, cachedInput, cacheWrite, cacheTotal)
     }
 }
 

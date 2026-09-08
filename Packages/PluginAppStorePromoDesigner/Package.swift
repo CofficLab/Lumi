@@ -28,6 +28,7 @@ let package = Package(
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
+        .package(path: "../ProviderSkill"),
     ],
     targets: [
         .target(
@@ -52,8 +53,12 @@ let package = Package(
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
                 .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
+                "ProviderSkill",
             ],
-            resources: [.process("../../Resources/Localizable.xcstrings")]
+            resources: [
+                .process("../../Resources/Localizable.xcstrings"),
+                .copy("../../Resources/Skills"),
+            ]
         ),
         .testTarget(
             name: "PluginAppStorePromoDesignerTests",

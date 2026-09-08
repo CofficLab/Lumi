@@ -3,6 +3,7 @@ import Foundation
 import KernelCore
 import KitSuperLog
 import ProviderChatSection
+import ProviderConversation
 import ProviderLLMManager
 import ProviderStorage
 import ProviderToast
@@ -13,15 +14,16 @@ import ProviderToast
 /// - 在 Chat 分区 Action Bar 的 leading 位置注册模型选择按钮（`ActionBarButton`）；
 /// - 按钮标签实时显示「当前供应商 + 模型」；
 /// - 点击弹出供应商 + 模型浏览器（云端/本地 + 搜索）；
-/// - 供应商/模型的选中与注册状态**完全直连内核 `LLMManaging` 读写**
-///   （`resolveProvider` + `select(providerID:model:)`），无旧版通知订阅。
+/// - 供应商目录读取内核 `LLMManaging`，选择写入通过注入的
+///   `ModelSelectionCapability` 路由到当前对话或全局设置；
+/// - 通过会话观察能力同步当前对话的供应商/模型显示状态。
 ///
 /// 与旧版的对应关系：
 /// - `chatSectionActionBarItems(.leading)` → `ChatSectionProviding.addBarItems(.actionLeading)`；
 /// - `kernel.resolveService((any LLMProviderManaging).self)` → 内核
 ///   `kernel.resolveProvider((any LLMManaging).self)`（FactoryLumi 已装配 `DefaultLLMManager`）；
 /// - 旧版 `.onLumiSelectedRemoteProviderIDDidChange` 等通知订阅 → SwiftUI 友好包装器
-///   `ObservableLLMProviderManagerBox`（订阅 `LLMManaging.addObserver` 事件）。
+///   `ObservableLLMProviderManagerBox`（同时订阅 LLM 注册表与模型选择 capability）。
 @MainActor
 public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.model-selector", category: "ModelSelector")
@@ -39,6 +41,8 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
     )
 
     private var usageStore: ProviderUsageStore?
+    private var selectionCapability: ModelSelectionCapabilityAdapter?
+    private var selectionBox: ObservableLLMProviderManagerBox?
 
     public init() {}
 
@@ -49,10 +53,17 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
-              let manager = kernel.resolveProvider((any LLMManaging).self) else {
-            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding, LLMManaging from kernel")
+              let manager = kernel.resolveProvider((any LLMManaging).self),
+              let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding, LLMManaging, ConversationManaging from kernel")
             return
         }
+
+        let selectionCapability = ModelSelectionCapabilityAdapter(
+            conversations: conversations,
+            llmManager: manager
+        )
+        self.selectionCapability = selectionCapability
 
         let usageStore: ProviderUsageStore
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
@@ -65,7 +76,11 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
         }
         self.usageStore = usageStore
 
-        let box = ObservableLLMProviderManagerBox(manager: manager)
+        let box = ObservableLLMProviderManagerBox(
+            manager: manager,
+            selection: selectionCapability
+        )
+        self.selectionBox = box
         let toast = kernel.resolveProvider((any ToastProviding).self)
 
         // Action Bar 模型选择按钮（沿用旧版 chatSectionActionBarItems .leading）。
@@ -80,6 +95,8 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        selectionBox = nil
+        selectionCapability = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).action-bar-button")
     }

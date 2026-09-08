@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import KitLLM
+import ProviderConversation
 import ProviderLLMManager
 
 /// SwiftUI 友好的内核 `LLMManaging` 包装器。
@@ -18,8 +19,10 @@ import ProviderLLMManager
 /// ```
 @MainActor
 public final class ObservableLLMProviderManagerBox: ObservableObject {
-    /// 被包装的 LLM Provider 管理器实例（写操作入口：`select(providerID:model:)` 等）。
+    /// 被包装的 LLM Provider 管理器实例（用于读取供应商与模型目录）。
     public let manager: any LLMManaging
+    /// 当前上下文的模型选择能力；写入会话/全局设置由 capability 路由。
+    let selection: any ModelSelectionCapability
 
     /// 当前选中的供应商 id 快照。
     @Published public private(set) var selectedProviderID: String?
@@ -34,14 +37,34 @@ public final class ObservableLLMProviderManagerBox: ObservableObject {
     @Published public private(set) var modelIDs: [String: [String]] = [:]
 
     private var observer: (any LLMManagerObserverHandle)?
+    private var conversationObserver: (any ConversationObserverHandle)?
 
-    public init(manager: any LLMManaging) {
+    public convenience init(manager: any LLMManaging) {
+        self.init(
+            manager: manager,
+            selection: ModelSelectionCapabilityAdapter(conversations: nil, llmManager: manager)
+        )
+    }
+
+    public init(
+        manager: any LLMManaging,
+        selection: any ModelSelectionCapability
+    ) {
         self.manager = manager
+        self.selection = selection
         refresh()
         // 经统一监听机制收到事件后刷新快照；弱引用避免 box 持有 manager 的
         // 回调导致循环引用。事件在 manager 状态变更后同步触发，快照始终一致。
         observer = manager.addObserver { [weak self] _ in
             self?.refresh()
+        }
+        conversationObserver = selection.addConversationObserver { [weak self] event in
+            switch event {
+            case .selected, .providerChanged, .created, .deleted, .updated, .listChanged:
+                self?.refresh()
+            default:
+                break
+            }
         }
     }
 
@@ -55,9 +78,14 @@ public final class ObservableLLMProviderManagerBox: ObservableObject {
         modelIDs[providerID] ?? []
     }
 
+    /// 在当前上下文中选择供应商与模型。
+    public func select(providerID: String, model: String?) {
+        selection.select(providerID: providerID, model: model)
+    }
+
     private func refresh() {
-        selectedProviderID = manager.selectedProviderID
-        selectedModel = manager.selectedModel
+        selectedProviderID = selection.selectedProviderID
+        selectedModel = selection.selectedModel
         providerInfos = manager.allProviders().map { $0.providerInfo }
         modelIDs = Dictionary(
             uniqueKeysWithValues: manager.allProviders().map {

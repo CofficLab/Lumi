@@ -20,7 +20,7 @@ struct TokenHubProviderPluginTests {
         #expect(manager.provider(id: "tencent")?.providerInfo.id == "tencent")
         #expect(manager.provider(id: "tencent")?.providerInfo.defaultModel == "hy4-preview")
         #expect(manager.provider(id: "tencent")?.providerInfo.modelIDs == [
-            "hy4-preview", "hy3", "kimi-k3", "deepseek-v4-pro-0813", "glm-5.3", "minimax-m3",
+            "hy4-preview", "hy3", "kimi-k3", "deepseek-v4-pro-202606", "deepseek-v4-pro-0813", "glm-5.3", "glm-5.2", "glm-5-turbo", "minimax-m3",
             "deepseek-v4-flash-0731", "hy-image-v3", "vidu-image-q2", "minimax-video-h3",
             "pixverse-video-c1", "kling-video-v3", "hy-3d-3.1", "hy-3d-3.0", "hy-3d-express",
             "deepseek/deepseek-v4-flash-vision-exp", "hy-vision-2.0-instruct", "glm-5.3-flash",

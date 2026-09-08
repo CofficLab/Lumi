@@ -44,7 +44,8 @@ public final class AliyunTokenPlanProvider: VendorLLMProvider {
 
     public override var anthropicConfiguration: AnthropicCompatibleProviderConfiguration? {
         AnthropicCompatibleProviderConfiguration(
-            baseURL: "https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic/v1/messages"
+            baseURL: "https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic/v1/messages",
+            enablesPromptCaching: true
         )
     }
 

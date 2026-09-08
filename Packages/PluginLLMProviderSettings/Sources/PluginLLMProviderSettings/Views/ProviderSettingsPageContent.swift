@@ -11,7 +11,9 @@ struct ProviderSettingsPageContent: View {
 
     private let manager: any LLMManaging
     private let isLocal: Bool
+    @ObservedObject private var customProviderStore: UserDefinedCloudProviderStore
     private let downloadViewModel: (String) -> ProviderModelDownloadViewModel?
+    @State private var isCustomProviderEditorPresented = false
 
     @State private var selectedProviderID: String?
     @State private var searchText: String = ""
@@ -19,10 +21,12 @@ struct ProviderSettingsPageContent: View {
     init(
         manager: any LLMManaging,
         isLocal: Bool,
+        customProviderStore: UserDefinedCloudProviderStore,
         downloadViewModel: @escaping (String) -> ProviderModelDownloadViewModel?
     ) {
         self.manager = manager
         self.isLocal = isLocal
+        self._customProviderStore = ObservedObject(wrappedValue: customProviderStore)
         self.downloadViewModel = downloadViewModel
     }
 
@@ -70,6 +74,10 @@ struct ProviderSettingsPageContent: View {
         }
         .padding(18)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .sheet(isPresented: $isCustomProviderEditorPresented) {
+            CustomCloudProviderEditor(store: customProviderStore)
+                .frame(width: 560, height: 620)
+        }
         .onChange(of: filteredProviders.map(\.providerInfo.id)) { _, ids in
             if let selectedProviderID, !ids.contains(selectedProviderID) {
                 self.selectedProviderID = ids.first
@@ -87,6 +95,11 @@ struct ProviderSettingsPageContent: View {
             )
             Text("\(selectedModelCount) 个模型")
             Spacer()
+            if !isLocal {
+                AppButton("添加供应商", systemImage: "plus", style: .primary, size: .small) {
+                    isCustomProviderEditorPresented = true
+                }
+            }
         }
         .font(.appCaption)
         .foregroundStyle(theme.textSecondary)
@@ -131,13 +144,10 @@ struct ProviderSettingsPageContent: View {
                     .frame(width: 22, height: 22)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(info.displayName)
-                            .font(.appCaptionEmphasized)
-                            .foregroundStyle(theme.textPrimary)
-                            .lineLimit(1)
-                        AppTag(info.providerType.displayName, systemImage: info.providerType.systemImage)
-                    }
+                    Text(info.displayName)
+                        .font(.appCaptionEmphasized)
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(1)
                     Text(info.description.isEmpty ? info.id : info.description)
                         .font(.appMicro)
                         .foregroundStyle(theme.textSecondary)
@@ -155,6 +165,7 @@ struct ProviderSettingsPageContent: View {
                 ProviderDetailView(
                     manager: manager,
                     provider: selectedProvider,
+                    customProviderStore: customProviderStore,
                     downloadViewModel: downloadViewModel(selectedProvider.providerInfo.id)
                 )
                     .padding(22)
