@@ -253,6 +253,35 @@ func testMessageObserverResumesSuspendedTurnWhenUserContinuesChatting() async th
 }
 
 @MainActor
+@Test("AgentLoop 始终把当前对话的供应商和模型传给请求")
+func testAgentLoopUsesConversationProviderAndModel() async throws {
+    let messages = DefaultMessageManager()
+    let conversations = DefaultConversationManager()
+    let llmManager = RoutingRecordingLLMManager()
+    let conversationID = try conversations.createConversation(
+        title: nil,
+        projectPath: nil,
+        providerID: "conversation-provider",
+        modelName: "conversation-model"
+    )
+    let loop = AgentLoopManager(
+        messages: messages,
+        llmManager: llmManager,
+        toolManager: DefaultToolManagerProviding(),
+        streaming: DefaultMessageStreamingProviding(),
+        conversations: conversations,
+        contextProvider: PassthroughLLMContextProvider(messages: messages)
+    )
+
+    let outcome = try await loop.runTurn(in: conversationID)
+
+    #expect(outcome == .completed)
+    let request = try #require(llmManager.requests.first)
+    #expect(request.providerID == "conversation-provider")
+    #expect(request.model == "conversation-model")
+}
+
+@MainActor
 @Test("挂起高风险工具审批时发送新消息不会绕过审批")
 func testMessageObserverDoesNotSkipNonAskUserSuspension() async throws {
     let messages = DefaultMessageManager()
@@ -416,6 +445,63 @@ func testAuthorizedCompletionResumesSuspendedLoop() async {
         .toolCalls?.first(where: { $0.id == toolCallID })
     #expect(updatedToolCall?.result?.content == "edited")
     #expect(loop.currentTurnID(for: conversationID) == turnID)
+}
+
+@MainActor
+private final class RoutingRecordingLLMManager: LLMManaging, LLMStreamingProviding, @unchecked Sendable {
+    private let providersByID: [String: RoutingRecordingProvider] = [
+        "global-provider": RoutingRecordingProvider(id: "global-provider", model: "global-model"),
+        "conversation-provider": RoutingRecordingProvider(id: "conversation-provider", model: "conversation-model"),
+    ]
+    private(set) var requests: [LLMRequest] = []
+
+    var providerID: String { Self.managerProviderID }
+    var providerInfo: LLMProviderInfo {
+        LLMProviderInfo(id: providerID, displayName: "Test Manager", defaultModel: "", models: [], isLocal: true)
+    }
+
+    func complete(_ request: LLMRequest) async throws -> LLMResponse {
+        requests.append(request)
+        return LLMResponse(content: "ok", model: request.model)
+    }
+
+    func streamComplete(
+        _ request: LLMRequest,
+        onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
+    ) async throws -> LLMResponse {
+        try await complete(request)
+    }
+
+    func allProviders() -> [any SuperLLMProvider] { Array(providersByID.values) }
+    func provider(id: String) -> (any SuperLLMProvider)? { providersByID[id] }
+    var providerCount: Int { providersByID.count }
+    func register(_ provider: any SuperLLMProvider) throws {}
+    func unregister(id: String) {}
+    var selectedProviderID: String? { "global-provider" }
+    var selectedModel: String? { "global-model" }
+    func models(for providerID: String) -> [String] { providersByID[providerID]?.providerInfo.modelIDs ?? [] }
+    func select(providerID: String, model: String?) {}
+}
+
+@MainActor
+private final class RoutingRecordingProvider: SuperLLMProvider {
+    let providerInfo: LLMProviderInfo
+
+    init(id: String, model: String) {
+        providerInfo = LLMProviderInfo(
+            id: id,
+            displayName: id,
+            defaultModel: model,
+            models: [LLMModelInfo(id: model)],
+            isLocal: true
+        )
+    }
+
+    var providerID: String { providerInfo.id }
+
+    func complete(_ request: LLMRequest) async throws -> LLMResponse {
+        LLMResponse(content: "ok", model: request.model)
+    }
 }
 
 @MainActor

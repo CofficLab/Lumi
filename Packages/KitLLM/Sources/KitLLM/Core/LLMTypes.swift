@@ -106,6 +106,9 @@ public struct LLMFunctionSchema: @unchecked Sendable, Equatable {
 /// LLM 完成请求。
 public struct LLMRequest: Sendable {
     public let conversationID: UUID
+    /// 可选的显式供应商路由。对话绑定供应商时由上层传入；为空时由
+    /// LLM 管理器使用全局选中供应商。
+    public let providerID: String?
     public let messages: [LLMMessage]
     public let model: String?
     public let tools: [LLMFunctionSchema]?
@@ -113,12 +116,14 @@ public struct LLMRequest: Sendable {
 
     public init(
         conversationID: UUID = UUID(),
+        providerID: String? = nil,
         messages: [LLMMessage],
         model: String? = nil,
         tools: [LLMFunctionSchema]? = nil,
         reasoningEffort: String? = nil
     ) {
         self.conversationID = conversationID
+        self.providerID = providerID
         self.messages = messages
         self.model = model
         self.tools = tools

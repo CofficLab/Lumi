@@ -502,16 +502,19 @@ extension AgentLoopManager {
         let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
             .flatMap { $0.rawValue }
         let conversationProviderID = resolvedProviderID(for: conversationID)
-        let routingProviderID = llmManager.selectedProviderID
+        let routingProviderID = conversationProviderID
+            ?? llmManager.selectedProviderID
             ?? llmManager.allProviders().first?.providerInfo.id
-            ?? conversationProviderID
         let routingProvider = routingProviderID.flatMap { llmManager.provider(id: $0) }
         let requestedModel = conversations.modelName(for: conversationID)
         let modelName = routingProvider?.providerInfo.models.contains(where: { $0.id == requestedModel }) == true
             ? requestedModel
-            : llmManager.selectedModel
-                ?? routingProvider?.providerInfo.defaultModel
-                ?? requestedModel
+            : conversationProviderID == nil
+                ? llmManager.selectedModel
+                    ?? routingProvider?.providerInfo.defaultModel
+                    ?? requestedModel
+                : routingProvider?.providerInfo.defaultModel
+                    ?? requestedModel
         let modelInfo = routingProvider?.providerInfo.models.first { $0.id == modelName }
             ?? routingProvider?.providerInfo.models.first { $0.id == routingProvider?.providerInfo.defaultModel }
         let toolSchemaTokens = estimateToolSchemaTokens(schemas)
@@ -565,6 +568,7 @@ extension AgentLoopManager {
 
         let request = LLMRequest(
             conversationID: conversationID,
+            providerID: routingProviderID,
             messages: preparedMessages,
             model: modelName,
             tools: schemas.isEmpty ? nil : schemas,
@@ -664,7 +668,9 @@ extension AgentLoopManager {
                 timeToFirstTokenMs: timing.timeToFirstTokenMs,
                 streamingDurationMs: timing.streamingDurationMs
             )
-            assistant.providerID = conversationProviderID
+            // 记录本次请求实际使用的供应商。未绑定对话会走全局供应商，
+            // 因此这里不能只写 conversationProviderID（否则 UI 会丢失供应商）。
+            assistant.providerID = routingProviderID
             if let toolCalls = assistant.toolCalls {
                 assistant.toolCalls = toolCalls.map { toolCall in
                     var enriched = toolCall

@@ -5,6 +5,7 @@ import Testing
 @testable import ProviderLLMManager
 
 @MainActor
+@Suite(.serialized)
 struct DefaultLLMProviderManagerProvidingTests {
 
     private func makeMessage(_ content: String) -> LLMMessage {
@@ -118,6 +119,31 @@ struct DefaultLLMProviderManagerProvidingTests {
         #expect(response.model == "b1")
         #expect(a.receivedModels.isEmpty)
         #expect(b.receivedModels == ["b1"])
+    }
+
+    @Test("请求显式供应商时优先于全局选中供应商")
+    func completeRoutesToExplicitProvider() async throws {
+        let manager = DefaultLLMProviderManagerProviding()
+        let global = MockManagedProvider(id: "global", models: ["global-model"], defaultModel: "global-model", prefix: "global")
+        let conversation = MockManagedProvider(id: "conversation", models: ["conversation-model"], defaultModel: "conversation-model", prefix: "conversation")
+        try manager.register(global)
+        try manager.register(conversation)
+        manager.select(providerID: "global", model: "global-model")
+
+        let response = try await manager.complete(
+            LLMRequest(
+                conversationID: UUID(),
+                providerID: "conversation",
+                messages: [makeMessage("ping")],
+                model: "conversation-model"
+            )
+        )
+
+        #expect(response.content == "conversation:ping")
+        #expect(global.receivedModels.isEmpty)
+        #expect(conversation.receivedModels == ["conversation-model"])
+        #expect(manager.selectedProviderID == "global")
+        #expect(manager.selectedModel == "global-model")
     }
 
     @Test("请求自带模型时优先使用，不覆盖选中模型")
