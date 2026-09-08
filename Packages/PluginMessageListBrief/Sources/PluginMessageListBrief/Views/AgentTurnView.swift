@@ -43,19 +43,16 @@ struct AgentTurnView: View {
 
             if let lastMessage = viewModel.projection.lastMessage {
                 messageRow(lastMessage)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
             if isConversationTail, let activityMessage = viewModel.projection.activityMessage {
                 messageRow(activityMessage)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
         }
         .task { await viewModel.activate() }
         .onChange(of: item) { _, newItem in
             Task { await viewModel.update(item: newItem) }
         }
-        .animation(.easeOut(duration: 0.18), value: visibleMessageIDs)
     }
 
     private var processDisclosure: some View {
@@ -72,21 +69,22 @@ struct AgentTurnView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(viewModel.projection.processMessages) { message in
                         messageRow(message)
-                            .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
+        // Only animate the disclosure container's height. Animating the whole
+        // turn by message IDs makes List re-layout every child row at once,
+        // which causes the surrounding rows to jump and the Markdown content
+        // to flash while the process section is inserted.
+        .animation(.easeInOut(duration: 0.2), value: isProcessExpanded)
     }
 
     private func processDisclosureButton(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isProcessExpanded.toggle()
-                    }
+                    isProcessExpanded.toggle()
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: isProcessExpanded ? "chevron.down" : "chevron.right")
@@ -125,13 +123,6 @@ struct AgentTurnView: View {
     /// List 只提供尾部身份；消息与活动状态仍由本 Turn 自行获取。
     private var isConversationTail: Bool {
         item.id == lastAgentTurnID
-    }
-
-    private var visibleMessageIDs: [UUID] {
-        viewModel.projection.userMessages.map(\.id)
-            + (isProcessExpanded ? viewModel.projection.processMessages.map(\.id) : [])
-            + (viewModel.projection.lastMessage.map { [$0.id] } ?? [])
-            + (isConversationTail ? viewModel.projection.activityMessage.map { [$0.id] } ?? [] : [])
     }
 
     private func messageRow(_ message: Message) -> some View {
