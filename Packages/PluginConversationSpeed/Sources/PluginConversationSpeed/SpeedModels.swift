@@ -1,4 +1,5 @@
 import Foundation
+import KitLocalization
 import ProviderMessage
 
 // MARK: - Message Speed Extension
@@ -103,15 +104,30 @@ enum SpeedUnavailability: String, Equatable {
     var localizedExplanation: String {
         switch self {
         case .noConversationSelected:
-            return "No conversation selected. Select a conversation to see streaming speed."
+            return LumiPluginLocalization.string(
+                "No conversation selected. Select a conversation to see streaming speed.",
+                bundle: .module
+            )
         case .waitingForResponse:
-            return "Waiting for the first assistant response with speed data."
+            return LumiPluginLocalization.string(
+                "Waiting for the first assistant response with speed data.",
+                bundle: .module
+            )
         case .missingOutputTokens:
-            return "The provider did not report output token count."
+            return LumiPluginLocalization.string(
+                "The provider did not report output token count.",
+                bundle: .module
+            )
         case .missingDuration:
-            return "The provider did not report streaming duration."
+            return LumiPluginLocalization.string(
+                "The provider did not report streaming duration.",
+                bundle: .module
+            )
         case .missingOutputTokensAndDuration:
-            return "The provider did not report output tokens or streaming duration."
+            return LumiPluginLocalization.string(
+                "The provider did not report output tokens or streaming duration.",
+                bundle: .module
+            )
         }
     }
 }

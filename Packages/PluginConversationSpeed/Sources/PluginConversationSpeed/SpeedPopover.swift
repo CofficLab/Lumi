@@ -45,19 +45,19 @@ struct SpeedPopover: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 if let modelName, !modelName.isEmpty {
-                    detailRow("Model", value: modelName)
+                    detailRow(LumiPluginLocalization.string("Model", bundle: .module), value: modelName)
                 }
                 if let outputTokens {
-                    detailRow("Output tokens", value: "\(outputTokens)")
+                    detailRow(LumiPluginLocalization.string("Output tokens", bundle: .module), value: "\(outputTokens)")
                 }
                 if let streamingDurationMs {
-                    detailRow("Streaming duration", value: formatDuration(streamingDurationMs))
+                    detailRow(LumiPluginLocalization.string("Streaming duration", bundle: .module), value: formatDuration(streamingDurationMs))
                 }
                 if let timeToFirstTokenMs {
-                    detailRow("Time to first token", value: formatDuration(timeToFirstTokenMs))
+                    detailRow(LumiPluginLocalization.string("Time to first token", bundle: .module), value: formatDuration(timeToFirstTokenMs))
                 }
                 if let providerID, !providerID.isEmpty {
-                    detailRow("Provider", value: providerID)
+                    detailRow(LumiPluginLocalization.string("Provider", bundle: .module), value: providerID)
                 }
             }
 
@@ -102,9 +102,9 @@ struct SpeedPopover: View {
 
     private func formatDuration(_ ms: Double) -> String {
         if ms >= 1000 {
-            return String(format: "%.2f s", ms / 1000.0)
+            return String(format: LumiPluginLocalization.string("%.2f s", bundle: .module), ms / 1000.0)
         }
-        return String(format: "%.0f ms", ms)
+        return String(format: LumiPluginLocalization.string("%.0f ms", bundle: .module), ms)
     }
 }
 
@@ -164,9 +164,15 @@ extension SpeedPopover {
                     .frame(height: 118)
 
                 HStack {
-                    Text(String(format: "Min %.1f", speedHistory.map(\.tokensPerSecond).min() ?? 0))
+                    Text(String(
+                        format: LumiPluginLocalization.string("Min %.1f", bundle: .module),
+                        speedHistory.map(\.tokensPerSecond).min() ?? 0
+                    ))
                     Spacer()
-                    Text(String(format: "Max %.1f", speedHistory.map(\.tokensPerSecond).max() ?? 0))
+                    Text(String(
+                        format: LumiPluginLocalization.string("Max %.1f", bundle: .module),
+                        speedHistory.map(\.tokensPerSecond).max() ?? 0
+                    ))
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
