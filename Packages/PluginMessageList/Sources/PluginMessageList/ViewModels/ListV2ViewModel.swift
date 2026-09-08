@@ -104,6 +104,8 @@ final class ListV2ViewModel: ObservableObject {
     private var streamingRowWasVisible = false
     /// Signature of the inputs used to build the last `historyRows`。
     private var lastHistoryBuildSignature: HistoryBuildSignature?
+    /// 激活序列号，用于防止并发切换时旧的异步加载结果回写。
+    private var activationSequence: UInt64 = 0
 
     /// 已预热过 Markdown 块级缓存的消息 id。
     private var warmedMarkdownMessageIDs: Set<UUID> = []
@@ -149,16 +151,29 @@ final class ListV2ViewModel: ObservableObject {
 
     /// 切换/进入会话：记录目标会话并加载最近一页。
     func activate(conversationID: UUID?) async {
+        activationSequence &+= 1
+        let mySequence = activationSequence
+
         activeConversationID = conversationID
         latestUserMessageID = nil
         // 切换会话：清掉上一会话的流式行残留，并重置可见性记忆。
         streamingRow = nil
         activityMessage = services.activityMessage(for: conversationID)
         streamingRowWasVisible = false
+        persistedMessages = []
+        hasEarlierMessages = false
+        turnActivitySummaries = [:]
         isLoading = true
-        await loadFirstPage(conversationID: conversationID)
+        defer {
+            if mySequence == activationSequence {
+                isLoading = false
+            }
+        }
+        await loadFirstPage(conversationID: conversationID, sequence: mySequence)
+        guard mySequence == activationSequence,
+              selectedConversationID == conversationID else { return }
         if let conversationID {
-            await refreshTurnActivitySummaries(conversationID: conversationID)
+            await refreshTurnActivitySummaries(conversationID: conversationID, sequence: mySequence)
         } else {
             turnActivitySummaries = [:]
         }
@@ -235,7 +250,7 @@ final class ListV2ViewModel: ObservableObject {
     // MARK: - Private
 
     /// 首屏：加载最近一页，并探测是否还有更早消息。
-    private func loadFirstPage(conversationID: UUID?) async {
+    private func loadFirstPage(conversationID: UUID?, sequence: UInt64) async {
         guard let conversationID else {
             persistedMessages = []
             hasEarlierMessages = false
@@ -247,14 +262,15 @@ final class ListV2ViewModel: ObservableObject {
             messageManager: services.messages
         )
         // 切换会话期间用户可能又选了别的会话，丢弃过期结果。
-        guard selectedConversationID == conversationID else { return }
+        guard sequence == activationSequence,
+              selectedConversationID == conversationID else { return }
         persistedMessages = result.messages
         hasEarlierMessages = result.hasEarlierMessages
         isLoading = false
     }
 
     /// Refreshes only the turns represented by the current message window.
-    private func refreshTurnActivitySummaries(conversationID: UUID) async {
+    private func refreshTurnActivitySummaries(conversationID: UUID, sequence: UInt64? = nil) async {
         guard let toolManager = services.toolManager else {
             if !turnActivitySummaries.isEmpty {
                 turnActivitySummaries = [:]
@@ -285,7 +301,8 @@ final class ListV2ViewModel: ObservableObject {
                 totalDuration: durations.isEmpty ? nil : durations.reduce(0, +)
             )
         }
-        guard selectedConversationID == conversationID else { return }
+        guard sequence.map({ $0 == activationSequence }) ?? true,
+              selectedConversationID == conversationID else { return }
         if turnActivitySummaries != summaries {
             turnActivitySummaries = summaries
         }
