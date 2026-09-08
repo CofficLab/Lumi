@@ -1,0 +1,7 @@
+{
+  "name": "git",
+  "title": "Git",
+  "description": "使用 Git 工具管理代码仓库，包括查看状态、差异、提交历史、分支操作、提交变更和检查未推送提交。",
+  "triggers": ["git", "commit", "branch", "diff", "merge", "checkout", "push", "pull", "仓库", "版本控制", "source control", "提交", "分支"],
+  "version": "1.0.0"
+}
