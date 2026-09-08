@@ -54,12 +54,14 @@ final class AgentTurnViewModel: ObservableObject {
         let conversationID = item.conversationID
         let messages = await messageManager.messagesSnapshot(in: conversationID)
         guard sequence == refreshSequence else { return }
-        projection = Self.project(
+        let nextProjection = Self.project(
             item: item,
             messages: messages,
             streamingMessage: currentStreamingMessage(),
             streamingStage: currentStreamingStage()
         )
+        guard nextProjection != projection else { return }
+        projection = nextProjection
     }
 
     nonisolated static func project(
@@ -171,7 +173,7 @@ final class AgentTurnViewModel: ObservableObject {
             conversationID: item.conversationID,
             role: .status,
             content: content,
-            createdAt: status?.createdAt ?? item.record?.startedAt ?? .now,
+            createdAt: status?.createdAt ?? item.startedAt,
             turnID: item.record?.id,
             metadata: ["isTransientStatus": "true"]
         )

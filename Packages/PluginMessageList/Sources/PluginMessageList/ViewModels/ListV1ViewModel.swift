@@ -30,6 +30,8 @@ final class ListV1ViewModel: ObservableObject {
     /// 当前已加载的消息窗口，按时间升序排列。
     private var messageWindow: [Message] = []
     private var activeConversationID: UUID?
+    /// V1 只需要响应流式阶段切换，不需要响应同一阶段内的逐片段通知。
+    private var lastStreamingStage: MessageStreamingStage = .idle
     /// 激活序列号，用于防止并发 activate 的竞态。
     private var activationSequence: UInt64 = 0
 
@@ -119,6 +121,7 @@ final class ListV1ViewModel: ObservableObject {
         pendingUserSnapshot = []
         pendingStatusSnapshot = nil
         hasEarlierTurns = false
+        lastStreamingStage = .idle
     }
 
     /// Refreshes the newest Turn page while retaining any earlier pages the
@@ -261,8 +264,17 @@ final class ListV1ViewModel: ObservableObject {
 
     func handleStreamingChange(_ change: MessageStreamingChange) {
         guard case let .updated(conversationID) = change,
-              conversationID == selectedConversationID else { return }
-        refreshAgentTurnViewModels()
+              conversationID == selectedConversationID,
+              let streaming = services.streaming else { return }
+
+        let stage = streaming.stage(for: conversationID)
+        guard stage != lastStreamingStage else { return }
+        lastStreamingStage = stage
+
+        // V1 不显示流式正文，只让当前活动回合在阶段切换时更新尾部提示。
+        guard let activeTurnID = agentTurns.last(where: \.acceptsLiveActivity)?.id,
+              let viewModel = agentTurnViewModels[activeTurnID] else { return }
+        Task { @MainActor in await viewModel.refresh() }
     }
 
     /// 将插入事件直接应用到当前消息窗口，避免新消息到达时重读数据库。
