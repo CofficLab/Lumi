@@ -116,7 +116,15 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         self.railView = railView
         self.activeTabStore = activeTabStore
         let railObserver = railView.flatMap { rail in
-            activeTabStore.map { ChatPanelRailObserver(rail: rail, activeTabStore: $0) }
+            activeTabStore.map { store in
+                ChatPanelRailObserver(
+                    rail: rail,
+                    activeTabStore: store,
+                    onRailStructureChanged: { [weak self] in
+                        self?.restoreSavedRailTab()
+                    }
+                )
+            }
         }
         self.railObserver = railObserver
 
@@ -153,7 +161,7 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
             railView?.setVisibleCategories(isChatActive ? [.chat, .fileTree] : Set(RailViewCategory.allCases))
             // Restore the last active tab when Chat becomes active.
             if isChatActive, let savedTabID = activeTabStore?.load() {
-                railView?.activateTab(id: savedTabID)
+                railView?.activateTabWhenAvailable(id: savedTabID)
             }
         }])
         
@@ -173,15 +181,18 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         )
         rootView.setContentHeaderViewHidden(true)
         railView?.setVisibleCategories([.chat, .fileTree])
-        // Tab restoration is deferred to onReady() so that other plugins
-        // have had a chance to register their tabs.
+        // Begin tab restoration in onReady(); RailView also retries when the
+        // view appears or dynamic tabs are registered later.
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {
-        // At this point all plugins have run onBoot, so tabs are registered.
-        if let savedTabID = activeTabStore?.load() {
-            railView?.activateTab(id: savedTabID)
-        }
+        // Start restoration now; some plugins may still add tabs asynchronously.
+        restoreSavedRailTab()
+    }
+
+    private func restoreSavedRailTab() {
+        guard let savedTabID = activeTabStore?.load() else { return }
+        railView?.activateTabWhenAvailable(id: savedTabID)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

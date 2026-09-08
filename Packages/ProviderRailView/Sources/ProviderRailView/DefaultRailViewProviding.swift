@@ -18,6 +18,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
     private let defaultWidthStore: (any RailViewWidthStoring)?
     private var activeWidthStore: (any RailViewWidthStoring)?
     private var activeWidthOwnerID: String?
+    private var pendingActiveTabID: String?
 
     private var observers: [WeakObserver] = []
 
@@ -35,6 +36,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         self.railWidth = .standard
         self.defaultWidthStore = widthStore
         self.activeWidthStore = nil
+        self.pendingActiveTabID = nil
     }
 
     public func registerTabs(_ tabs: [RailTabItem]) {
@@ -49,7 +51,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         if self.tabs.map(\.id) != oldTabs.map(\.id) {
             notify(.tabsChanged(self.tabs))
         }
-        if activeTabID != oldActiveTabID {
+        if activeTabID != oldActiveTabID, pendingActiveTabID == nil {
             notify(.activeTabChanged(activeTabID))
         }
         if hasVisibleTabs != oldHasVisibleTabs {
@@ -60,17 +62,37 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
     public func activateTab(id: String?) {
         let oldActiveTabID = activeTabID
         guard let id else {
+            let hadPendingActiveTab = pendingActiveTabID != nil
+            pendingActiveTabID = nil
             activeTabID = nil
-            if activeTabID != oldActiveTabID {
+            if activeTabID != oldActiveTabID || hadPendingActiveTab {
                 notify(.activeTabChanged(activeTabID))
             }
             return
         }
         guard visibleTabs.contains(where: { $0.id == id }) else { return }
+        let hadPendingActiveTab = pendingActiveTabID != nil
+        pendingActiveTabID = nil
         activeTabID = id
-        if activeTabID != oldActiveTabID {
+        if activeTabID != oldActiveTabID || hadPendingActiveTab {
             notify(.activeTabChanged(activeTabID))
         }
+    }
+
+    public func activateTabWhenAvailable(id: String?) {
+        guard let id else {
+            pendingActiveTabID = nil
+            activateTab(id: nil)
+            return
+        }
+
+        guard visibleTabs.contains(where: { $0.id == id }) else {
+            pendingActiveTabID = id
+            return
+        }
+
+        pendingActiveTabID = nil
+        activateTab(id: id)
     }
 
     public func setVisibleCategories(_ categories: Set<RailViewCategory>) {
@@ -90,7 +112,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         if visibleTabID != oldVisibleTabID {
             notify(.visibleTabIDChanged(visibleTabID))
         }
-        if activeTabID != oldActiveTabID {
+        if activeTabID != oldActiveTabID, pendingActiveTabID == nil {
             notify(.activeTabChanged(activeTabID))
         }
         if hasVisibleTabs != oldHasVisibleTabs {
@@ -108,7 +130,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         updateVisibleTabState()
 
         notify(.visibleTabIDChanged(visibleTabID))
-        if activeTabID != oldActiveTabID {
+        if activeTabID != oldActiveTabID, pendingActiveTabID == nil {
             notify(.activeTabChanged(activeTabID))
         }
         if hasVisibleTabs != oldHasVisibleTabs {
@@ -193,6 +215,12 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
     private func reconcileActiveTab() {
         guard !visibleTabs.isEmpty else {
             activeTabID = nil
+            return
+        }
+        if let pendingActiveTabID,
+           visibleTabs.contains(where: { $0.id == pendingActiveTabID }) {
+            activeTabID = pendingActiveTabID
+            self.pendingActiveTabID = nil
             return
         }
         if let activeTabID, visibleTabs.contains(where: { $0.id == activeTabID }) {

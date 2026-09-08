@@ -141,6 +141,34 @@ struct ProviderRailViewTests {
         #expect(provider.activeTabID == "a")
     }
 
+    @Test("恢复请求可等待尚未注册的标签")
+    func activatesPendingTabWhenItIsRegistered() {
+        let provider = DefaultRailViewProviding()
+        var activeTabChanges: [String?] = []
+        let handle = provider.addObserver { event in
+            if case .activeTabChanged(let tabID) = event {
+                activeTabChanges.append(tabID)
+            }
+        }
+        defer { handle.cancel() }
+
+        provider.activateTabWhenAvailable(id: "b")
+        provider.registerTabs([
+            RailTabItem(id: "a", category: .general, title: "A", systemImage: "a") { Text("A") },
+        ])
+
+        #expect(provider.activeTabID == "a")
+        #expect(activeTabChanges.isEmpty)
+
+        provider.registerTabs([
+            RailTabItem(id: "a", category: .general, title: "A", systemImage: "a") { Text("A") },
+            RailTabItem(id: "b", category: .general, title: "B", systemImage: "b") { Text("B") },
+        ])
+
+        #expect(provider.activeTabID == "b")
+        #expect(activeTabChanges == ["b"])
+    }
+
     @Test("追加与撤回贡献不覆盖其他插件")
     func addAndRemoveTabsAreContributionSafe() {
         let provider = DefaultRailViewProviding()

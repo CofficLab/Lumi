@@ -1,3 +1,4 @@
+import Foundation
 import KernelCore
 import PluginChatPanel
 import ProviderActivityBar
@@ -55,12 +56,16 @@ struct ChatPanelPluginTests {
 
     @Test("Chat 激活时恢复上次保存的 Rail active tab")
     func chatRestoresLastActiveRailTab() throws {
+        let storageRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ChatPanelPluginTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: storageRoot) }
+
         let kernel = KernelCoreContainer()
         let activityBar = DefaultActivityBarProviding()
         let chat = DefaultChatSectionProviding()
         let rootView = DefaultRootViewProvider()
         let railView = DefaultRailViewProviding()
-        let storage = DefaultStorageProvider()
+        let storage = DefaultStorageProvider(dataRootDirectory: storageRoot)
         try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any RootViewProviding).self, rootView)
@@ -94,5 +99,83 @@ struct ChatPanelPluginTests {
         #expect(railView.activeTabID == "chat.tab-b")
 
         try plugin.onShutdown(kernel: kernel)
+    }
+
+    @Test("Chat 在 tab 延迟注册后仍恢复保存的 Rail active tab")
+    func chatRestoresTabRegisteredAfterReady() throws {
+        let storageRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ChatPanelPluginDelayedRestoreTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: storageRoot) }
+
+        func registerProviders(
+            in kernel: KernelCoreContainer,
+            activityBar: DefaultActivityBarProviding,
+            chat: DefaultChatSectionProviding,
+            rootView: DefaultRootViewProvider,
+            railView: DefaultRailViewProviding,
+            storage: DefaultStorageProvider
+        ) throws {
+            try kernel.registerProvider((any ActivityBarProviding).self, activityBar)
+            try kernel.registerProvider((any ChatSectionProviding).self, chat)
+            try kernel.registerProvider((any RootViewProviding).self, rootView)
+            try kernel.registerProvider((any RailViewProviding).self, railView)
+            try kernel.registerProvider((any StorageProviding).self, storage)
+        }
+
+        let firstKernel = KernelCoreContainer()
+        let firstActivityBar = DefaultActivityBarProviding()
+        let firstChat = DefaultChatSectionProviding()
+        let firstRootView = DefaultRootViewProvider()
+        let firstRailView = DefaultRailViewProviding()
+        let storage = DefaultStorageProvider(dataRootDirectory: storageRoot)
+        try registerProviders(
+            in: firstKernel,
+            activityBar: firstActivityBar,
+            chat: firstChat,
+            rootView: firstRootView,
+            railView: firstRailView,
+            storage: storage
+        )
+
+        firstRailView.registerTabs([
+            RailTabItem(id: "chat.tab-a", category: .chat, title: "A", systemImage: "a.circle") { AnyView(EmptyView()) },
+            RailTabItem(id: "chat.tab-b", category: .chat, title: "B", systemImage: "b.circle") { AnyView(EmptyView()) },
+        ])
+        let firstPlugin = ChatPanelPlugin()
+        try firstPlugin.onBoot(kernel: firstKernel)
+        firstRailView.activateTab(id: "chat.tab-b")
+        try firstPlugin.onShutdown(kernel: firstKernel)
+
+        let secondKernel = KernelCoreContainer()
+        let secondActivityBar = DefaultActivityBarProviding()
+        let secondChat = DefaultChatSectionProviding()
+        let secondRootView = DefaultRootViewProvider()
+        let secondRailView = DefaultRailViewProviding()
+        try registerProviders(
+            in: secondKernel,
+            activityBar: secondActivityBar,
+            chat: secondChat,
+            rootView: secondRootView,
+            railView: secondRailView,
+            storage: DefaultStorageProvider(dataRootDirectory: storageRoot)
+        )
+
+        let secondPlugin = ChatPanelPlugin()
+        try secondPlugin.onBoot(kernel: secondKernel)
+        try secondPlugin.onReady(kernel: secondKernel)
+
+        // 模拟真实启动：ConversationListPlugin 在 ChatPanel onReady 之后才动态注入 tab。
+        secondRailView.registerTabs([
+            RailTabItem(id: "chat.tab-a", category: .chat, title: "A", systemImage: "a.circle") { AnyView(EmptyView()) },
+        ])
+        #expect(secondRailView.activeTabID == "chat.tab-a")
+
+        secondRailView.registerTabs([
+            RailTabItem(id: "chat.tab-a", category: .chat, title: "A", systemImage: "a.circle") { AnyView(EmptyView()) },
+            RailTabItem(id: "chat.tab-b", category: .chat, title: "B", systemImage: "b.circle") { AnyView(EmptyView()) },
+        ])
+
+        #expect(secondRailView.activeTabID == "chat.tab-b")
+        try secondPlugin.onShutdown(kernel: secondKernel)
     }
 }

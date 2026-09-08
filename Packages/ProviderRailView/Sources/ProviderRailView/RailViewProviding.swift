@@ -197,6 +197,11 @@ public protocol RailViewProviding: AnyObject {
     /// 切换标签；未知 id 将被忽略。
     func activateTab(id: String?)
 
+    /// 请求激活标签；标签尚未注册时暂存请求，待标签出现后自动激活。
+    ///
+    /// 用于启动恢复等“目标 tab 可能稍后动态注册”的场景。
+    func activateTabWhenAvailable(id: String?)
+
     /// 激活插件的 Rail 宽度配置。
     ///
     /// provider 会优先从插件注入的 store 恢复宽度；没有保存值时才使用
@@ -260,6 +265,10 @@ public extension RailViewProviding {
     func setVisibleTabID(_ id: String?) {}
 
     func activateTab(id: String?) {}
+
+    func activateTabWhenAvailable(id: String?) {
+        activateTab(id: id)
+    }
 
     func activateWidthProfile(ownerID: String, recommended: RailViewWidth) {
         activateWidthProfile(ownerID: ownerID, recommended: recommended, store: nil)
