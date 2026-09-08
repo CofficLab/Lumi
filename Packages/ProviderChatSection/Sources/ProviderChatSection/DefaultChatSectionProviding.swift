@@ -237,6 +237,17 @@ public struct ChatSectionHostView: View {
         }
     }
 
+    private var toolbarItems: [ChatSectionBarItem] {
+        provider.barItems.filter {
+            switch $0.placement {
+            case .toolbarLeading, .toolbarTrailing:
+                return $0.scope.matches(provider.activeContext)
+            default:
+                return false
+            }
+        }
+    }
+
     private var orderedRootWrappers: [ChatSectionRootWrapper] {
         provider.rootWrappers
             .filter { $0.scope.matches(provider.activeContext) }
@@ -262,10 +273,7 @@ public struct ChatSectionHostView: View {
                 VStack(spacing: 0) {
                     if provider.isContextActive, provider.isHeaderVisible {
                         ChatHeaderRow(items: bars(.header))
-                        ChatToolbarRow(
-                            leading: bars(.toolbarLeading),
-                            trailing: bars(.toolbarTrailing)
-                        )
+                        ChatToolbarRow(items: toolbarItems)
                     }
 
                     ChatStackView(items: stackItems)
@@ -359,8 +367,7 @@ private struct ChatHeaderRow: View {
 /// `.panel` 背景、breadcrumb 内边距、底部边框 + `shadowMd`）。
 @MainActor
 private struct ChatToolbarRow: View {
-    let leading: [ChatSectionBarItem]
-    let trailing: [ChatSectionBarItem]
+    let items: [ChatSectionBarItem]
 
     var body: some View {
         AppToolbarContainer(
@@ -374,11 +381,7 @@ private struct ChatToolbarRow: View {
             )
         ) {
             HStack(alignment: .center, spacing: 8) {
-                ForEach(leading) { $0.makeView() }
-                Spacer(minLength: 0)
-                HStack(spacing: 8) {
-                    ForEach(trailing) { $0.makeView() }
-                }
+                ForEach(items) { $0.makeView() }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: AppPanelChromeMetrics.breadcrumbContentHeight, alignment: .center)
