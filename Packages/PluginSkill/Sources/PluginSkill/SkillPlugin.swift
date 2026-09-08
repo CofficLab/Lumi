@@ -122,7 +122,6 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
 /// Chat 工具栏技能入口：显示可用技能数量（插件贡献 + 内置 + 项目），点击弹出列表。
 struct SkillChatToolbarView: View {
     @LumiTheme private var theme: any LumiUITheme
-    @LumiMotionPreferenceReader private var motionPreference
 
     let project: any ProjectProviding
     let skillService: SkillService
@@ -136,31 +135,31 @@ struct SkillChatToolbarView: View {
         Button {
             isPopoverPresented.toggle()
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
 
                 if !skills.isEmpty {
                     Text("\(skills.count)")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
                 } else {
                     Text(LumiPluginLocalization.string("Skills", bundle: .module))
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
                 }
-
-                Image(systemName: isPopoverPresented ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(theme.textSecondary)
             }
             .foregroundStyle(theme.textPrimary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .appSurface(
-                style: isHighlighted ? .listRowHover : .listRow,
-                cornerRadius: 6,
-                borderColor: isHighlighted ? theme.appHoverBorder : nil
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(isHovering ? theme.appAccentSoftFill : theme.textSecondary.opacity(0.08))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .stroke(isHovered ? theme.appHoverBorder : Color.clear, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -179,14 +178,11 @@ struct SkillChatToolbarView: View {
             }
         }
         .onHover { hovering in
-            LumiMotion.animate(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference)) {
-                isHovering = hovering
-            }
+            isHovering = hovering
         }
-        .animation(LumiMotion.enabled(LumiMotion.hover, preference: motionPreference), value: isHighlighted)
     }
 
-    private var isHighlighted: Bool {
+    private var isHovered: Bool {
         isHovering || isPopoverPresented
     }
 
