@@ -3,6 +3,7 @@ import Foundation
 import KernelCore
 import KitSuperLog
 import ProviderLLMManager
+import ProviderStorage
 import KitLLM
 import ProviderSettingView
 import SwiftUI
@@ -28,6 +29,7 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
 
     private var downloadViewModels: [String: ProviderModelDownloadViewModel] = [:]
     private var downloadObservers: [String: ProviderModelDownloadObserver] = [:]
+    private var userProviderStore: UserDefinedCloudProviderStore?
 
     public init() {}
 
@@ -37,6 +39,18 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve LLMManaging, SettingViewProviding from kernel")
             return
         }
+        let storage = kernel.resolveProvider((any StorageProviding).self)
+        let configURL = storage?
+            .pluginDataDirectory(for: id)
+            .appendingPathComponent("user-cloud-providers.json", isDirectory: false)
+        let store = UserDefinedCloudProviderStore(fileURL: configURL)
+        store.attach(
+            manager: manager,
+            apiService: VendorAPIService(
+                networkProvider: kernel.resolveProvider((any LLMNetworkProviding).self)
+            )
+        )
+        userProviderStore = store
         downloadObservers.values.forEach { $0.cancel() }
         downloadObservers.removeAll()
         downloadViewModels.removeAll()
@@ -58,6 +72,7 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
             ) {
                 CloudProviderSettingsPage(
                     manager: manager,
+                    customProviderStore: store,
                     downloadViewModel: { [weak self] providerID in
                         self?.downloadViewModels[providerID]
                     }
@@ -71,6 +86,7 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
             ) {
                 LocalProviderSettingsPage(
                     manager: manager,
+                    customProviderStore: store,
                     downloadViewModel: { [weak self] providerID in
                         self?.downloadViewModels[providerID]
                     }
@@ -83,6 +99,10 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
         downloadObservers.values.forEach { $0.cancel() }
         downloadObservers.removeAll()
         downloadViewModels.removeAll()
+        if let manager = kernel.resolveProvider((any LLMManaging).self) {
+            userProviderStore?.configurations.forEach { manager.unregister(id: $0.id) }
+        }
+        userProviderStore = nil
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).remote-providers", "\(id).local-providers"])
     }
