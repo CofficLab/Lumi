@@ -177,6 +177,19 @@ final class TrackerView: NSView {
         }
     }
 
+    override func viewDidMoveToSuperview() {
+        super.viewDidMoveToSuperview()
+        attachIfNeeded()
+    }
+
+    override func layout() {
+        super.layout()
+        // The tracker is installed as a SwiftUI background and may be laid out
+        // after it first enters the window. Retry here so the spatial lookup
+        // sees the final panel position without falling back to another pane.
+        attachIfNeeded()
+    }
+
     // MARK: - Live-resize 检测（NSResponder 方法，不依赖通知）
 
     override func viewWillStartLiveResize() {
@@ -223,29 +236,38 @@ final class TrackerView: NSView {
             return sv
         }
         guard let rootView = window?.contentView else { return nil }
-        return Self.findLargestScrollView(in: rootView)
+        // A background NSView is not always descended from the List's
+        // NSScrollView. Never choose a scroll view by document height: another
+        // pane (for example the conversation rail) can legitimately be larger.
+        // Instead, bind only to the scroll view whose viewport contains this
+        // tracker anchor point.
+        let anchorPoint = convert(NSPoint.zero, to: nil)
+        return Self.findScrollView(containing: anchorPoint, in: rootView)
     }
 
-    /// 递归查找所有 NSScrollView，返回 documentView 高度最大的那个。
-    private static func findLargestScrollView(in view: NSView) -> NSScrollView? {
-        var best: NSScrollView?
-        var bestHeight: CGFloat = 0
+    /// 递归查找包含 tracker 锚点的 NSScrollView。
+    ///
+    /// `List` 和会话侧栏都是窗口级 NSScrollView；按 document 高度选择会
+    /// 把消息列表的 tracker 绑定到侧栏。空间命中保证 tracker 只控制自己
+    /// 所在的面板。
+    private static func findScrollView(containing point: NSPoint, in view: NSView) -> NSScrollView? {
+        var match: NSScrollView?
 
         func visit(_ v: NSView) {
             if let sv = v as? NSScrollView {
-                let h = sv.documentView?.bounds.height ?? 0
-                if h > bestHeight {
-                    best = sv
-                    bestHeight = h
+                let viewport = sv.convert(sv.bounds, to: nil)
+                if viewport.contains(point) {
+                    match = sv
                 }
                 return // NSScrollView 的子视图不再深入（避免找到内部的 clipView 等）
             }
             for sub in v.subviews {
+                if match != nil { return }
                 visit(sub)
             }
         }
         visit(view)
-        return best
+        return match
     }
 
     fileprivate func stopObserving() {
