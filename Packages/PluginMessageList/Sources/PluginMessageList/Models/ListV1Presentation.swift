@@ -11,8 +11,8 @@ struct ListV1Presentation: Equatable {
         (agentTurns.map(ListV1PresentationRow.agentTurn)
             + timelineEvents.map(ListV1PresentationRow.timelineEvent))
             .sorted { lhs, rhs in
-                if lhs.createdAt == rhs.createdAt { return lhs.id.uuidString > rhs.id.uuidString }
-                return lhs.createdAt > rhs.createdAt
+                if lhs.createdAt == rhs.createdAt { return lhs.id.uuidString < rhs.id.uuidString }
+                return lhs.createdAt < rhs.createdAt
             }
     }
 }
