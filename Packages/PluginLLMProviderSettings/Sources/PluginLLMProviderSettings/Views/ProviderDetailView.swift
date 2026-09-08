@@ -70,7 +70,7 @@ public struct ProviderDetailView: View {
         .sheet(isPresented: $isEditorPresented) {
             if let configuration = customProviderStore.configurations.first(where: { $0.id == info.id }) {
                 CustomCloudProviderEditor(store: customProviderStore, configuration: configuration)
-                    .frame(width: 560, height: 620)
+                    .frame(width: 580, height: 640)
             }
         }
         .confirmationDialog(
