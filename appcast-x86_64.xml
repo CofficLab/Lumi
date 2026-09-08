@@ -3,37 +3,37 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.23.0</title>
-            <pubDate>Mon, 07 Sep 2026 11:12:05 +0000</pubDate>
-            <sparkle:version>627</sparkle:version>
-            <sparkle:shortVersionString>5.23.0</sparkle:shortVersionString>
+            <title>5.23.1</title>
+            <pubDate>Tue, 08 Sep 2026 05:06:29 +0000</pubDate>
+            <sparkle:version>628</sparkle:version>
+            <sparkle:shortVersionString>5.23.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.23.0</h2>
-<h3>Changes since v5.22.3</h3>
+            <description><![CDATA[<h2>Release v5.23.1</h2>
+<h3>Changes since v5.23.0</h3>
 <ul>
-<li>feat: add complete Lumi uninstall flow</li>
-<li>feat: add diagnostic log export</li>
-<li>feat(booklet-maker): add mobile session and reliable import (T2)</li>
-<li>feat(booklet-maker): complete export result page with save and share (T7)</li>
-<li>feat(booklet-maker): iPad layout, localization and polish (T8)</li>
-<li>feat(booklet-maker): native parameters, binding effect and help (T6)</li>
-<li>feat(booklet-maker): new root navigation, welcome screen and document overview (T3)</li>
-<li>feat(booklet-maker): redesign booklet preview and original reading (T4)</li>
-<li>feat(booklet-maker): rework split browsing, input and naming (T5)</li>
-<li>feat(booklet-maker): UI tests, cleanup and delivery (T9)</li>
-<li>feat(i18n): fix Onboarding UI localization</li>
-<li>feat(tencent): expand TokenHub model catalog</li>
-<li>feat(uninstall): add dedicated overlay for progress and result</li>
-<li>feat(uninstall): simplify uninstall confirmation flow</li>
-<li>fix: isolate debug and release uninstall data</li>
-<li>fix: prevent SwiftUI teardown crashes</li>
-<li>fix(booklet-maker): exclude iOS Info.plist from copy resources</li>
-<li>fix(booklet-maker): make export results and cancellation reliable (T1)</li>
-<li>fix(i18n): resolve module bundle access issue in LumiApp</li>
-<li>fix(kit-super-log): build valid iOS resource bundle</li>
+<li>feat(PluginAppIconDesigner): contribute app-icon-designer skill</li>
+<li>feat(PluginAppStorePromoDesigner): contribute app-store-promo-designer skill</li>
+<li>feat(PluginGit): contribute Git skill via SkillProviding</li>
+<li>feat(PluginLLMProviderTencent): add GLM-5-Turbo model</li>
+<li>feat(PluginLLMProviderTencent): add kimi-k2.7-code-highspeed model</li>
+<li>feat(PluginMindMapDesigner): contribute mind-map-designer skill</li>
+<li>feat(PluginModelSelector): Add model capability filter bar</li>
+<li>feat(PluginResumeDesigner): contribute resume-designer skill</li>
+<li>feat(settings): add custom cloud llm providers</li>
+<li>feat(tencent): add deepseek-v4-flash and hy-mt2-pro models</li>
+<li>feat(tencent): add deepseek-v4-pro-202606 model to TokenHub provider</li>
+<li>feat(tencent): add glm-5.1, glm-5, kimi-k2.5, kimi-k2.7-code, deepseek-v3.2, minimax-m2.7 models</li>
+<li>feat(tencent): add glm-5.2 model to TokenHub provider</li>
+<li>feat(tencent): add qwen3.5-plus model</li>
+<li>fix: clear stale messages when switching conversations</li>
+<li>fix: normalize reused tool call IDs</li>
+<li>fix: route LLM requests by conversation provider</li>
+<li>fix: route model selection through conversation capability</li>
+<li>fix: show Aliyun cache hit rate status</li>
+<li>fix(chat-toolbar): arrange buttons from left to right</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.23.0</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://s.kuaiyizhi.cn/lumi/Lumi_5.23.0_x86_64.dmg" length="45652556" type="application/octet-stream" sparkle:edSignature="30hwVVBpb4hYgPQ+1qFavBgXK/9FQdsQl9y4aRU0msk/+iv/54G6MrPRQOFaf6M4nWP6t/5b98Irygx4SxuTDg=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.23.1</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://s.kuaiyizhi.cn/lumi/Lumi_5.23.1_x86_64.dmg" length="46387494" type="application/octet-stream" sparkle:edSignature="i6Z0kHWjGq4c3UzDah+EccHJoQCTQnaVt34Vg0T9s8gpjLaQubSLyZXeH7UBhxW6DCB8pzBb0TceaOWbP/LtCQ=="/>
         </item>
     </channel>
 </rss>
