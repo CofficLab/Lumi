@@ -43,7 +43,12 @@ struct ListV2View: View, SuperLog {
     var body: some View {
         let _ = logContentDecision()
         ZStack {
-            if viewModel.hasPersistedMessages {
+            if viewModel.selectedConversationID == nil {
+                NoConversationSelectedView(
+                    services: services,
+                    guideState: guideState
+                )
+            } else if viewModel.hasPersistedMessages {
                 messageScrollView
             } else {
                 MessageEmptyStateView(

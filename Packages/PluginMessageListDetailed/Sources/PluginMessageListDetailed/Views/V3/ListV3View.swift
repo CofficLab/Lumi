@@ -43,7 +43,12 @@ struct ListV3View: View {
 
     var body: some View {
         ZStack {
-            if viewModel.hasPersistedMessages {
+            if viewModel.selectedConversationID == nil {
+                NoConversationSelectedView(
+                    services: services,
+                    guideState: guideState
+                )
+            } else if viewModel.hasPersistedMessages {
                 messageScrollView
             } else {
                 MessageEmptyStateView(

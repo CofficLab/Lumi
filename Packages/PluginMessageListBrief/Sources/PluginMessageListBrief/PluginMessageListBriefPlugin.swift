@@ -37,6 +37,8 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
     )
 
     private var viewModel: ListV1ViewModel?
+    /// Retained because the registered ChatSection content closure captures it weakly.
+    private var guideState: MessageListGuideState?
     private var messageChangeObserver: (any MessageChangeObserverHandle)?
     private var streamingObserver: (any MessageStreamingObserverHandle)?
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
@@ -90,6 +92,7 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         )
         let viewModel = ListV1ViewModel(services: services)
         self.viewModel = viewModel
+        self.guideState = guideState
 
         // 观察详细程度变化，仅 .brief 时注册自己
         let verbosityObservation = VerbosityObservationBox(
@@ -155,6 +158,7 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         promptSuggestionsCancellable = nil
         verbosityObservation?.cancel()
         verbosityObservation = nil
+        guideState = nil
         viewModel = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeItem(id: id)

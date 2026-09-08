@@ -40,7 +40,12 @@ struct ListV1View: View {
 
     var body: some View {
         Group {
-            if turnViewModel.isLoading {
+            if selectedConversationID == nil {
+                NoConversationSelectedView(
+                    services: services,
+                    guideState: guideState
+                )
+            } else if turnViewModel.isLoading {
                 MessageLoadingView()
             } else if !turnViewModel.hasVisibleContent {
                 MessageEmptyStateView(

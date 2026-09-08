@@ -34,6 +34,8 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
     )
 
     private var viewModel: ListV3ViewModel?
+    /// Retained because the registered ChatSection content closure captures it weakly.
+    private var guideState: MessageListGuideState?
     private var messageChangeObserver: (any MessageChangeObserverHandle)?
     private var conversationStateObserver: (any ConversationStateObserverHandle)?
     private var streamingObserver: (any MessageStreamingObserverHandle)?
@@ -88,6 +90,7 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
         )
         let viewModel = ListV3ViewModel(services: services)
         self.viewModel = viewModel
+        self.guideState = guideState
 
         let verbosityObservation = VerbosityObservationBox(
             conversations: conversations,
@@ -158,6 +161,7 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
         promptSuggestionsCancellable = nil
         verbosityObservation?.cancel()
         verbosityObservation = nil
+        guideState = nil
         viewModel = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeItem(id: id)
