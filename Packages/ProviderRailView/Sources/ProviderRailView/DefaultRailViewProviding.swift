@@ -171,7 +171,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         observers.removeAll { $0.observer === observer }
     }
 
-    private func notify(_ event: RailViewProvidingEvent) {
+    fileprivate func notify(_ event: RailViewProvidingEvent) {
         observers.removeAll { $0.observer == nil }
         let activeObservers = observers
         for observer in activeObservers {
