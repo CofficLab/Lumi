@@ -20,6 +20,7 @@ public final class TokenHubProvider: VendorLLMProvider {
                     LLMModelInfo(id: "kimi-k3", displayName: "Kimi K3", contextWindowSize: 1_000_000, supportsVision: true),
                     LLMModelInfo(id: "deepseek-v4-pro-0813", displayName: "DeepSeek-V4-Pro 0813 正式版", contextWindowSize: 1_000_000),
                     LLMModelInfo(id: "glm-5.3", displayName: "GLM-5.3", contextWindowSize: 1_000_000),
+                    LLMModelInfo(id: "glm-5.2", displayName: "GLM-5.2", contextWindowSize: 1_000_000),
                     LLMModelInfo(id: "glm-5-turbo", displayName: "GLM-5-Turbo", contextWindowSize: 128_000),
                     LLMModelInfo(id: "minimax-m3", displayName: "MiniMax-M3", contextWindowSize: 1_000_000, supportsVision: true),
                     LLMModelInfo(id: "deepseek-v4-flash-0731", displayName: "DeepSeek-V4-Flash 0731 正式版", contextWindowSize: 1_000_000),
