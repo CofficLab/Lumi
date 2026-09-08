@@ -1,40 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "%@: %lld %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$@: %2$lld %3$@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@：%lld %@"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@：%lld %@"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@：%lld %@"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@：%lld %@"
-          }
-        }
-      }
-    },
     "Active days": {
       "localizations": {
         "en": {

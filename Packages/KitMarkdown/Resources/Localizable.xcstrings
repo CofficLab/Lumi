@@ -1,34 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "%lld.": {
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld."
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld."
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld."
-          }
-        }
-      }
-    },
     "•": {
       "localizations": {
         "zh-Hans": {

@@ -1,40 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "%lld images": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld images"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld images"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld images"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld images"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld images"
-          }
-        }
-      }
-    },
     "Architecture": {
       "localizations": {
         "en": {
@@ -65,40 +31,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "架构"
-          }
-        }
-      }
-    },
-    "Are you sure you want to delete image %@? This action cannot be undone.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Are you sure you want to delete image %@? This action cannot be undone."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "确定要删除镜像 %@ 吗？此操作无法撤销。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "确定要删除镜像 %@ 吗？此操作无法撤销。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "确定要删除镜像 %@ 吗？此操作无法撤销。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "确定要删除镜像 %@ 吗？此操作无法撤销。"
           }
         }
       }

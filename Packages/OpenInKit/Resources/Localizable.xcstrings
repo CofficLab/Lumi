@@ -1,22 +1,6 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Open the current project or any specified path in %@.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open the current project or any specified path in %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 %@ 中打开当前项目或指定路径"
-          }
-        }
-      }
-    },
     "External App": {
       "localizations": {
         "en": {
@@ -93,22 +77,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "低"
-          }
-        }
-      }
-    },
-    "A direct handoff to %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A direct handoff to %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "直接交接到 %@"
           }
         }
       }
@@ -225,22 +193,6 @@
         }
       }
     },
-    "Only asks the operating system to open the target in %@.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Only asks the operating system to open the target in %@."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "仅请求操作系统在 %@ 中打开目标。"
-          }
-        }
-      }
-    },
     "How It Works": {
       "localizations": {
         "en": {
@@ -305,22 +257,6 @@
         }
       }
     },
-    "The plugin finds the installed %@ app and uses its standard open action.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The plugin finds the installed %@ app and uses its standard open action."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "插件会查找已安装的 %@ 应用并使用其标准打开操作。"
-          }
-        }
-      }
-    },
     "Continue in context": {
       "localizations": {
         "en": {
@@ -333,38 +269,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "在上下文中继续"
-          }
-        }
-      }
-    },
-    "The selected project or path opens directly in %@.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The selected project or path opens directly in %@."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "选中的项目或路径将直接在 %@ 中打开。"
-          }
-        }
-      }
-    },
-    "Open In %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open In %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 %@ 中打开"
           }
         }
       }
@@ -397,38 +301,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "概述"
-          }
-        }
-      }
-    },
-    "This manual covers the Open In %@ plugin, which opens the current project or a specified path in %@.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This manual covers the Open In %@ plugin, which opens the current project or a specified path in %@."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "本手册介绍 Open In %@ 插件，它可在 %@ 中打开当前项目或指定路径。"
-          }
-        }
-      }
-    },
-    "Tool name: `%@` — invoke this tool in the chat to open a project.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tool name: `%@` — invoke this tool in the chat to open a project."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "工具名称：`%@` — 在聊天中调用此工具打开项目。"
           }
         }
       }
@@ -481,22 +353,6 @@
         }
       }
     },
-    "Ask the AI to open the current project in %@.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ask the AI to open the current project in %@."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "让 AI 在 %@ 中打开当前项目。"
-          }
-        }
-      }
-    },
     "Optionally provide a specific path to open a different folder.": {
       "localizations": {
         "en": {
@@ -513,38 +369,6 @@
         }
       }
     },
-    "The plugin resolves the %@ application and sends the open command.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The plugin resolves the %@ application and sends the open command."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "插件会解析 %@ 应用并发送打开命令。"
-          }
-        }
-      }
-    },
-    "The project opens directly in %@.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The project opens directly in %@."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "项目将直接在 %@ 中打开。"
-          }
-        }
-      }
-    },
     "Notes": {
       "localizations": {
         "en": {
@@ -557,38 +381,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "注意事项"
-          }
-        }
-      }
-    },
-    "%@ must be installed on your Mac for this plugin to work.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ must be installed on your Mac for this plugin to work."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此插件需要您的 Mac 上已安装 %@。"
-          }
-        }
-      }
-    },
-    "This is a low-risk action — it only asks the OS to open the target in %@.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This is a low-risk action — it only asks the OS to open the target in %@."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "这是一个低风险操作 — 仅请求操作系统在 %@ 中打开目标。"
           }
         }
       }

@@ -1,410 +1,368 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "%lld" : {
-
-    },
-    "Build" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Build"
+  "sourceLanguage": "en",
+  "strings": {
+    "Build": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "构建"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "构建"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "构建"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "构建"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建"
           }
         }
       }
     },
-    "Check for Updates" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Check for Updates"
+    "Check for Updates": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for Updates"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查更新"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查更新"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查更新"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查更新"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查更新"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查更新"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查更新"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查更新"
           }
         }
       }
     },
-    "Check..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Check..."
+    "Check...": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查…"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查…"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查…"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查…"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查…"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查…"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查…"
           }
         }
       }
     },
-    "Lumi" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
+    "Lumi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi"
           }
         }
       }
     },
-    "Lumi 已从你的 Mac 移除，应用已移到废纸篓。" : {
-
-    },
-    "Lumi 数据已清除，应用即将退出。" : {
-
-    },
-    "Name" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Name"
+    "Lumi 已从你的 Mac 移除，应用已移到废纸篓。": {},
+    "Lumi 数据已清除，应用即将退出。": {},
+    "Name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "名称"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "名称"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "名称"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "名称"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称"
           }
         }
       }
     },
-    "Settings..." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings..."
+    "Settings...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings..."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置…"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置…"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置…"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置…"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置…"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置…"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设置…"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置…"
           }
         }
       }
     },
-    "Updates" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Updates"
+    "Updates": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更新"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
           }
         }
       }
     },
-    "Version" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Version"
+    "Version": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         }
       }
     },
-    "卸载完成" : {
-
-    },
-    "卸载未完成" : {
-
-    },
-    "同时删除 Keychain 中的 API Key、密码和凭据" : {
-
-    },
-    "同时将 Lumi 应用移到废纸篓" : {
-
-    },
-    "将处理 %lld 项 Lumi 数据，总计 %@。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "将处理 %1$lld 项 Lumi 数据，总计 %2$@。"
+    "卸载完成": {},
+    "卸载未完成": {},
+    "同时删除 Keychain 中的 API Key、密码和凭据": {},
+    "同时将 Lumi 应用移到废纸篓": {},
+    "彻底卸载 Lumi": {},
+    "暂时还没有说明书。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No user manual yet."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂时还没有说明书。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂时还没有说明书。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂时还没有说明书。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂时还没有说明书。"
           }
         }
       }
     },
-    "彻底卸载 Lumi" : {
-
-    },
-    "暂时还没有说明书。" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No user manual yet."
+    "正在卸载 Lumi…": {},
+    "正在清除插件数据、偏好设置、扩展数据和凭据。": {},
+    "此操作会永久删除 Lumi 自己保存的数据。用户项目、源码和导出的文件不会被删除。": {},
+    "此操作无法撤销": {},
+    "秒后自动退出": {},
+    "说明书": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User Manual"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂时还没有说明书。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "说明书"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂时还没有说明书。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "说明书"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂时还没有说明书。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "说明书"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂时还没有说明书。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "说明书"
           }
         }
       }
     },
-    "正在卸载 Lumi…" : {
-
-    },
-    "正在清除插件数据、偏好设置、扩展数据和凭据。" : {
-
-    },
-    "此操作会永久删除 Lumi 自己保存的数据。用户项目、源码和导出的文件不会被删除。" : {
-
-    },
-    "此操作无法撤销" : {
-
-    },
-    "秒后自动退出" : {
-
-    },
-    "说明书" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "User Manual"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "说明书"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "说明书"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "说明书"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "说明书"
-          }
-        }
-      }
-    },
-    "还有 %lld 项，将在确认后一起处理。" : {
-
-    },
-    "部分数据未能清除，应用未移除。" : {
-
-    }
+    "部分数据未能清除，应用未移除。": {}
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
