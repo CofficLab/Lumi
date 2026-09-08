@@ -62,6 +62,8 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
     private var railObserver: ChatPanelRailObserver?
+    private var activeTabStore: FileRailActiveTabStore?
+    private var railView: (any RailViewProviding)?
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -111,6 +113,8 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
 
         // The plugin owns the external Rail observer and controls whether it
         // is active while Chat owns the panel.
+        self.railView = railView
+        self.activeTabStore = activeTabStore
         let railObserver = railView.flatMap { rail in
             activeTabStore.map { ChatPanelRailObserver(rail: rail, activeTabStore: $0) }
         }
@@ -169,7 +173,12 @@ public final class ChatPanelPlugin: SuperPlugin, SuperLog {
         )
         rootView.setContentHeaderViewHidden(true)
         railView?.setVisibleCategories([.chat, .fileTree])
-        // Restore the last active tab on initial boot.
+        // Tab restoration is deferred to onReady() so that other plugins
+        // have had a chance to register their tabs.
+    }
+
+    public func onReady(kernel: KernelCoreContainer) throws {
+        // At this point all plugins have run onBoot, so tabs are registered.
         if let savedTabID = activeTabStore?.load() {
             railView?.activateTab(id: savedTabID)
         }
