@@ -7,7 +7,7 @@ import SwiftUI
 /// Message List V1 View (brief / 简洁模式)
 ///
 /// 每个 AgentTurn 渲染成一组：触发该 turn 的用户消息 + 稳定的 turn 容器。
-/// 运行中容器展示 status、思考、工具调用及流式正文（隐藏工具原始输出）；
+/// 运行中容器展示 status、思考、工具调用及最终回复（隐藏工具原始输出）；
 /// turn 结束时动画折叠，只保留最终回复。历史终态 turn 首次加载时直接显示结果。
 struct ListV1View: View {
     let services: MessageListServices
@@ -26,6 +26,10 @@ struct ListV1View: View {
     // MARK: - Services
 
     private let scrollCoordinator = MessageListScrollCoordinator()
+
+    /// 内容完成一次更新后的滚动信号。触发器挂在底部锚点行上，确保新行已经
+    /// 进入 List 布局后再执行 scrollTo，避免最后一行被底部输入框遮挡。
+    @State private var scrollTick: Int = 0
 
     init(
         services: MessageListServices,
@@ -82,6 +86,16 @@ struct ListV1View: View {
                     .id(MessageListScrollCoordinator.bottomAnchorID)
                     .accessibilityHidden(true)
                     .plainMessageListRow(insets: EdgeInsets())
+                    .onChange(of: scrollTick) { _, _ in
+                        // 新消息行可能还没有完成尺寸布局；将滚动动作绑定在锚点行
+                        // 上，等锚点完成布局后再滚到底部。
+                        scrollCoordinator.scheduleScrollToBottomAfterLayout(
+                            proxy: proxy,
+                            messages: displayedHistoryMessages,
+                            animated: false,
+                            condition: { true }
+                        )
+                    }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
@@ -91,24 +105,16 @@ struct ListV1View: View {
             // ViewModel 在空态也监听消息变化，可能会先于下方 View 事件完成刷新。
             // 因此再按实际可见行边界跟随一次，确保用户消息/Status 更新始终可见。
             .onChange(of: visibleRowIDs) { _, _ in
-                guard atBottomBox.value else { return }
-                scrollCoordinator.scheduleScrollToBottomAfterLayout(
-                    proxy: proxy,
-                    messages: displayedHistoryMessages,
-                    animated: false,
-                    condition: { atBottomBox.value }
-                )
+                if atBottomBox.value {
+                    scrollTick &+= 1
+                }
             }
             // 切会话/首屏加载完成：messageScrollView 在 isLoading 翻转时会销毁重建，
             // 重建后 onAppear 触发。此时 atBottomBox 已被事件 handler 重置为 true，
             // 内容就绪即滚到底 —— 不抢跑 scroll（避免打在旧会话布局上作废）。
             .onAppear {
                 if atBottomBox.value {
-                    scrollCoordinator.scrollToBottom(
-                        proxy: proxy,
-                        messages: displayedHistoryMessages,
-                        animated: false
-                    )
+                    scrollTick &+= 1
                 }
             }
             .onDisappear {
@@ -149,12 +155,7 @@ struct ListV1View: View {
             // 首次 scrollTo 常落点偏上，此时内容底沿超出视口 > 离开阈值
             // 会让 tracker 把 atBottomBox 翻成 false，从而取消本应修正
             // 落点的 +100ms 重试，导致列表停在半路（「有时不滚到底部」）。
-            scrollCoordinator.scheduleScrollToBottomAfterLayout(
-                proxy: proxy,
-                messages: displayedHistoryMessages,
-                animated: false,
-                condition: { true }
-            )
+            scrollTick &+= 1
         }
     }
 

@@ -93,7 +93,6 @@ struct AgentTurnView: View {
                         Text(AgentTurnViewModel.processDisclosureTitle(
                             item: item,
                             userMessages: viewModel.projection.userMessages,
-                            processCount: viewModel.projection.processMessages.count,
                             now: now
                         ))
                     }

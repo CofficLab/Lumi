@@ -118,13 +118,12 @@ final class AgentTurnViewModel: ObservableObject {
     nonisolated static func processDisclosureTitle(
         item: AgentTurnPresentationItem,
         userMessages: [Message],
-        processCount: Int,
         now: Date
     ) -> String {
         let startedAt = item.record?.startedAt ?? userMessages.first?.createdAt ?? now
         let endedAt = item.record?.endedAt ?? now
         let elapsed = max(0, endedAt.timeIntervalSince(startedAt))
-        return "耗时\(formattedDuration(elapsed)) \(processCount)条"
+        return "耗时\(formattedDuration(elapsed))"
     }
 
     private nonisolated static func formattedDuration(_ duration: TimeInterval) -> String {
