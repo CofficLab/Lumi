@@ -48,6 +48,55 @@ func testMessageFromLLMMessagePreservesToolCalls() {
     #expect(restored.reasoningContent == "先检查状态")
 }
 
+@Test("provider-reused tool-call IDs are normalized across the conversation")
+func testToolCallIdentityNormalizerAvoidsConversationCollisions() {
+    let response = LLMResponse(
+        content: "",
+        model: "kimi-k3",
+        toolCalls: [
+            LLMToolCall(id: "ls_0", name: "ls", arguments: "{\"path\":\"/app\"}"),
+            LLMToolCall(id: "ls_1", name: "ls", arguments: "{\"path\":\"/packages\"}")
+        ],
+        rawResponseJSON: "original-response",
+        rawStreamEventsJSON: "original-events",
+        stopReason: "tool_calls"
+    )
+
+    let normalized = ToolCallIdentityNormalizer.normalize(
+        response,
+        avoiding: ["ls_0"]
+    )
+    let toolCalls = normalized.toolCalls ?? []
+
+    #expect(toolCalls.count == 2)
+    #expect(toolCalls[0].id != "ls_0")
+    #expect(toolCalls[0].id != toolCalls[1].id)
+    #expect(toolCalls[1].id == "ls_1")
+    #expect(toolCalls.map(\.arguments) == ["{\"path\":\"/app\"}", "{\"path\":\"/packages\"}"])
+    #expect(normalized.rawResponseJSON == "original-response")
+    #expect(normalized.rawStreamEventsJSON == "original-events")
+    #expect(normalized.stopReason == "tool_calls")
+}
+
+@Test("duplicate tool-call IDs within one provider response are normalized")
+func testToolCallIdentityNormalizerAvoidsResponseCollisions() {
+    let normalized = ToolCallIdentityNormalizer.normalize(
+        LLMResponse(
+            content: "",
+            toolCalls: [
+                LLMToolCall(id: "same", name: "ls", arguments: "{}"),
+                LLMToolCall(id: "same", name: "read_file", arguments: "{}")
+            ]
+        ),
+        avoiding: []
+    )
+
+    let toolCalls = normalized.toolCalls ?? []
+    #expect(toolCalls.map(\.id).count == Set(toolCalls.map(\.id)).count)
+    #expect(toolCalls[0].id == "same")
+    #expect(toolCalls[1].id != "same")
+}
+
 @Test("可恢复的 LLM 工具协议错误会重试当前回合")
 func testRetryableLLMFailureRetriesCurrentTurn() {
     let turnID = UUID()

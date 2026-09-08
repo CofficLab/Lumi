@@ -581,8 +581,9 @@ extension AgentLoopManager {
 
         let timingRecorder = LLMStreamTimingRecorder()
         let bridge = StreamingBridge(streaming: streaming)
+        let existingToolCallIDs = ToolCallIdentityNormalizer.ids(in: llmHistory)
         do {
-            let response = try await streamingManager.streamComplete(request) { [weak bridge, timingRecorder] chunk in
+            let streamedResponse = try await streamingManager.streamComplete(request) { [weak bridge, timingRecorder] chunk in
                 if chunk.content?.isEmpty == false
                     || chunk.reasoningContent?.isEmpty == false
                     || !(chunk.toolCalls?.isEmpty ?? true) {
@@ -596,6 +597,14 @@ extension AgentLoopManager {
                     await bridge.appendContent(piece, conversationID: conversationID)
                 }
             }
+            // A few OpenAI-compatible gateways reuse short IDs such as
+            // `ls_0` for every response. Normalize them before the response
+            // enters the turn FSM, message history, or ToolManager so the
+            // current call cannot be mistaken for an earlier completed job.
+            let response = ToolCallIdentityNormalizer.normalize(
+                streamedResponse,
+                avoiding: existingToolCallIDs
+            )
 
             guard isActiveLLMRequest(conversationID: conversationID, turnID: turnID) else {
                 streaming.end(conversationID: conversationID)
