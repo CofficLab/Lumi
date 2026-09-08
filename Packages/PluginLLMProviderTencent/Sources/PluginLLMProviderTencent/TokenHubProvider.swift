@@ -31,6 +31,7 @@ public final class TokenHubProvider: VendorLLMProvider {
                     LLMModelInfo(id: "glm-5-turbo", displayName: "GLM-5-Turbo", contextWindowSize: 128_000),
                     LLMModelInfo(id: "minimax-m3", displayName: "MiniMax-M3", contextWindowSize: 1_000_000, supportsVision: true),
                     LLMModelInfo(id: "minimax-m2.7", displayName: "MiniMax-M2.7", contextWindowSize: 1_000_000),
+                    LLMModelInfo(id: "qwen3.5-plus", displayName: "Qwen3.5-Plus", contextWindowSize: 1_000_000),
                     LLMModelInfo(id: "deepseek-v4-flash-0731", displayName: "DeepSeek-V4-Flash 0731 正式版", contextWindowSize: 1_000_000),
                     // 图像生成
                     LLMModelInfo(id: "hy-image-v3", displayName: "Hy-Image-3.0"),
