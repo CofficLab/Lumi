@@ -23,15 +23,78 @@ import SwiftUI
 ///
 /// `makeNSView` 返回一个零尺寸、不参与布局的 NSView，仅用于拿到 window 后向上
 /// 查找 `enclosingScrollView`。它不会贡献任何尺寸或参与 SwiftUI 的尺寸协商。
+@MainActor
+final class ScrollViewBottomController {
+    struct Snapshot: Equatable {
+        let documentHeight: CGFloat
+        let visibleHeight: CGFloat
+        let offsetY: CGFloat
+    }
+
+    private weak var scrollView: NSScrollView?
+
+    var isAttached: Bool { scrollView != nil }
+
+    fileprivate func attach(to scrollView: NSScrollView) {
+        self.scrollView = scrollView
+    }
+
+    fileprivate func detach(from scrollView: NSScrollView) {
+        guard self.scrollView === scrollView else { return }
+        self.scrollView = nil
+    }
+
+    /// 钉住底层滚动视图的真实 document 底边，并返回当前几何快照。
+    /// SwiftUI proxy 可能使用尚未完成的 List 行布局；直接调整 clip view
+    /// 可以让调用方在 document 高度继续增长时重复收敛到真正的底部。
+    func pinToBottom() -> Snapshot? {
+        guard let scrollView,
+              let documentView = scrollView.documentView else { return nil }
+
+        let clipView = scrollView.contentView
+        let documentHeight = documentView.bounds.height
+        let visibleHeight = clipView.bounds.height
+        guard documentHeight.isFinite,
+              visibleHeight.isFinite,
+              visibleHeight > 0,
+              documentHeight < 10_000_000 else { return nil }
+
+        let maxOffsetY = max(0, documentHeight - visibleHeight)
+        var bounds = clipView.bounds
+        bounds.origin.y = maxOffsetY
+        clipView.bounds = bounds
+        scrollView.reflectScrolledClipView(clipView)
+
+        return Snapshot(
+            documentHeight: documentHeight,
+            visibleHeight: visibleHeight,
+            offsetY: clipView.bounds.origin.y
+        )
+    }
+}
+
 struct ScrollViewBottomTracker: NSViewRepresentable {
     /// 「是否在底部」布尔值翻转时回调。仅在真正翻转时调用，避免高频无意义触发。
     let onChange: (Bool) -> Void
+    /// 提供给滚动协调器的底层滚动控制器，不参与 SwiftUI 布局。
+    let controller: ScrollViewBottomController?
     /// Live-resize 结束时回调，参数为 resize **开始时**是否在底部。
     /// 宿主据此决定底部场景滚到底部（scrollTick）、非底部场景由 tracker 内部恢复 offset。
     var onLiveResizeEnd: ((Bool) -> Void)?
 
+    init(
+        onChange: @escaping (Bool) -> Void,
+        controller: ScrollViewBottomController? = nil,
+        onLiveResizeEnd: ((Bool) -> Void)? = nil
+    ) {
+        self.onChange = onChange
+        self.controller = controller
+        self.onLiveResizeEnd = onLiveResizeEnd
+    }
+
     func makeNSView(context: Context) -> TrackerView {
         let view = TrackerView()
+        view.bottomController = controller
         view.onChange = { [weak coordinator = context.coordinator] atBottom in
             coordinator?.onChange(atBottom)
         }
@@ -46,6 +109,7 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
         // SwiftUI 的尺寸协商，可能复活反馈环。仅同步回调句柄。
         context.coordinator.onChange = onChange
         context.coordinator.onLiveResizeEnd = onLiveResizeEnd
+        nsView.bottomController = controller
     }
 
     static func dismantleNSView(_ nsView: TrackerView, coordinator: Coordinator) {
@@ -71,6 +135,7 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
 final class TrackerView: NSView {
     fileprivate var onChange: ((Bool) -> Void)?
     fileprivate var onLiveResizeEnd: ((Bool) -> Void)?
+    fileprivate var bottomController: ScrollViewBottomController?
     private var observation: NSObjectProtocol?
     private weak var observedScrollView: NSScrollView?
     /// 上一次报告的「是否在底部」，用于迟滞判定、避免无谓回调。
@@ -134,6 +199,7 @@ final class TrackerView: NSView {
 
         stopObserving()
         observedScrollView = scrollView
+        bottomController?.attach(to: scrollView)
         let clipView = scrollView.contentView
         // postsBoundsChangedNotifications 默认对 NSClipView 为 true，显式确保。
         clipView.postsBoundsChangedNotifications = true
@@ -186,6 +252,9 @@ final class TrackerView: NSView {
         if let observation {
             NotificationCenter.default.removeObserver(observation)
             self.observation = nil
+        }
+        if let observedScrollView {
+            bottomController?.detach(from: observedScrollView)
         }
         observedScrollView = nil
     }

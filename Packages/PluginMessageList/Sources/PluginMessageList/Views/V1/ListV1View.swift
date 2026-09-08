@@ -30,6 +30,7 @@ struct ListV1View: View {
     /// 内容完成一次更新后的滚动信号。触发器挂在底部锚点行上，确保新行已经
     /// 进入 List 布局后再执行 scrollTo，避免最后一行被底部输入框遮挡。
     @State private var scrollTick: Int = 0
+    private let bottomScrollController = ScrollViewBottomController()
 
     init(
         services: MessageListServices,
@@ -93,6 +94,7 @@ struct ListV1View: View {
                             proxy: proxy,
                             messages: displayedHistoryMessages,
                             animated: false,
+                            controller: bottomScrollController,
                             condition: { true }
                         )
                     }
@@ -101,7 +103,12 @@ struct ListV1View: View {
             .scrollContentBackground(.hidden)
             // 「是否在底部」由观察 NSScrollView 的 tracker 报告，写入非 Observable
             // 的 `atBottomBox`，不触发 SwiftUI invalidation —— 切断布局反馈环。
-            .background(ScrollViewBottomTracker { atBottomBox.value = $0 })
+            .background(
+                ScrollViewBottomTracker(
+                    onChange: { atBottomBox.value = $0 },
+                    controller: bottomScrollController
+                )
+            )
             // ViewModel 在空态也监听消息变化，可能会先于下方 View 事件完成刷新。
             // 因此再按实际可见行边界跟随一次，确保用户消息/Status 更新始终可见。
             .onChange(of: visibleRowIDs) { _, _ in

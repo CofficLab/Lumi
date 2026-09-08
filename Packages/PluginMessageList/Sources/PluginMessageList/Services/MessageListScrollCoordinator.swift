@@ -32,6 +32,10 @@ final class MessageListScrollCoordinator {
     static let postPrependDelayNs: UInt64 = 50_000_000
     /// macOS 14 上 List 尚未完成首次布局时，`scrollTo` 会静默失败；补一次重试。
     static let scrollRetryDelayNs: UInt64 = 100_000_000
+    /// 富文本/懒加载行在滚动后仍可能继续改变 document 高度；持续钉底直到稳定。
+    static let bottomSettleDelayNs: UInt64 = 50_000_000
+    static let bottomSettleMaxAttempts = 24
+    static let bottomSettleStableFrames = 3
 
     private var pendingBottomScrollTask: Task<Void, Never>?
 
@@ -57,6 +61,7 @@ final class MessageListScrollCoordinator {
         proxy: ScrollViewProxy,
         messages: [Message],
         animated: Bool,
+        controller: ScrollViewBottomController? = nil,
         condition: @escaping @MainActor () -> Bool = { true }
     ) {
         pendingBottomScrollTask?.cancel()
@@ -73,7 +78,11 @@ final class MessageListScrollCoordinator {
             }
             guard let self, !Task.isCancelled else { return }
             guard condition() else { return }
-            self.performScrollToBottom(proxy: proxy, animated: animated)
+            if let controller, controller.isAttached {
+                await self.settleBottom(controller: controller, condition: condition)
+            } else {
+                self.performScrollToBottom(proxy: proxy, animated: animated)
+            }
         }
     }
 
@@ -87,6 +96,37 @@ final class MessageListScrollCoordinator {
         }
     }
 
+    /// 在底层滚动视图中反复钉住真实 document 底边，等待 List 的 lazy 行布局稳定。
+    private func settleBottom(
+        controller: ScrollViewBottomController,
+        condition: @escaping @MainActor () -> Bool
+    ) async {
+        var previous: ScrollViewBottomController.Snapshot?
+        var stableFrames = 0
+
+        for _ in 0..<Self.bottomSettleMaxAttempts {
+            guard !Task.isCancelled, condition() else { return }
+            guard let current = controller.pinToBottom() else { return }
+
+            if let previous,
+               abs(current.documentHeight - previous.documentHeight) < 0.5,
+               abs(current.visibleHeight - previous.visibleHeight) < 0.5,
+               abs(current.offsetY - previous.offsetY) < 0.5 {
+                stableFrames += 1
+                if stableFrames >= Self.bottomSettleStableFrames { return }
+            } else {
+                stableFrames = 0
+            }
+            previous = current
+
+            do {
+                try await Task.sleep(nanoseconds: Self.bottomSettleDelayNs)
+            } catch {
+                return
+            }
+        }
+    }
+
     /// 等待 `postAppendDelayNs` 让新内容完成布局，再滚到底。
     ///
     /// 新请求会取消旧请求，避免多个延迟 `scrollTo` 同时操作同一个 macOS List。
@@ -96,6 +136,7 @@ final class MessageListScrollCoordinator {
         proxy: ScrollViewProxy,
         messages: [Message],
         animated: Bool = true,
+        controller: ScrollViewBottomController? = nil,
         condition: @escaping @MainActor () -> Bool = { true }
     ) {
         pendingBottomScrollTask?.cancel()
@@ -110,6 +151,7 @@ final class MessageListScrollCoordinator {
                 proxy: proxy,
                 messages: messages,
                 animated: animated,
+                controller: controller,
                 condition: condition
             )
         }

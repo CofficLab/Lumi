@@ -29,6 +29,7 @@ struct ListV3View: View {
 
     /// 内容就绪信号：historyRows 首尾消息 id 变化时 +1。
     @State private var scrollTick: Int = 0
+    private let bottomScrollController = ScrollViewBottomController()
 
     init(
         services: MessageListServices,
@@ -95,6 +96,7 @@ struct ListV3View: View {
                             proxy: proxy,
                             messages: viewModel.historyRows,
                             animated: false,
+                            controller: bottomScrollController,
                             condition: { true }
                         )
                     }
@@ -105,7 +107,8 @@ struct ListV3View: View {
             .environment(\.preferOuterScroll, true)
             .background(
                 ScrollViewBottomTracker(
-                    onChange: { atBottomBox.value = $0 }
+                    onChange: { atBottomBox.value = $0 },
+                    controller: bottomScrollController
                 )
             )
             .onChange(of: historyBoundary) { _, _ in
