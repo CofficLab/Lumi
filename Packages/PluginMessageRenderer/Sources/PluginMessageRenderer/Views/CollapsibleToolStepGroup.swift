@@ -6,7 +6,6 @@ import LumiUI
 import KitMarkdown
 import ProviderConversation
 import ProviderMessage
-import ProviderMessageRendering
 import ProviderMessageSender
 import ProviderToolManager
 import KitAgentTool
@@ -21,8 +20,8 @@ import SwiftUI
 ///
 /// 用户随时可点击表头手动展开/收起多个工具调用组成的步骤组;手动操作存于本地 `@State`。
 ///
-/// 展开态复用既有 `ToolCallRowView`(经工具渲染 Provider 优先走自定义渲染器),
-/// 传入 `showsDetails: false` 以隐藏耗时与参数/结果按钮,保持 V1 的 inline 极简风格。
+/// 展开态复用既有 `ToolCallRowView`，传入 `showsDetails: false` 以隐藏耗时与参数/结果按钮，
+/// 保持 V1 的 inline 极简风格；V1 不走自定义 ToolCall renderer。
 struct CollapsibleToolStepGroup: View {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-renderer", category: "CollapsibleToolStepGroup")
 
@@ -241,34 +240,20 @@ struct CollapsibleToolStepGroup: View {
         }
     }
 
-    // MARK: - Expanded rows
+    // MARK: - Tool rows
 
-    @ViewBuilder
     private func toolCallRow(for toolCall: MessageToolCall) -> some View {
-        if let rendering = kernel.resolveProvider((any ToolCallRenderingProviding).self),
-           let customRenderer = rendering.renderer(for: toolCall.agentToolCall) {
-            customRenderer.render(
-                toolCall: toolCall.agentToolCall,
-                message: ToolCallRowMessageContext(
-                    conversationId: message.conversationID,
-                    assistantMessageId: message.id,
-                    verbosityRawValue: verbosity.rawValue
-                )
-            )
-            .toolCallRendererIdBadge(type(of: customRenderer).id)
-        } else {
-            ToolCallRowView(
-                kernel: kernel,
-                message: message,
-                toolCall: toolCall,
-                verbosity: verbosity,
-                // V1 只显示工具名(+ loading/失败颜色),不带耗时与参数/结果按钮,
-                // 以完全融入正文列。
-                showsDetails: false,
-                parameterPopoverToolCallID: $parameterPopoverToolCallID,
-                resultPopoverToolCallID: $resultPopoverToolCallID
-            )
-        }
+        ToolCallRowView(
+            kernel: kernel,
+            message: message,
+            toolCall: toolCall,
+            verbosity: verbosity,
+            // V1 只显示工具名(+ loading/失败颜色),不带耗时与参数/结果按钮,
+            // 以完全融入正文列。
+            showsDetails: false,
+            parameterPopoverToolCallID: $parameterPopoverToolCallID,
+            resultPopoverToolCallID: $resultPopoverToolCallID
+        )
     }
 }
 
