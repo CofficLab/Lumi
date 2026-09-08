@@ -96,7 +96,9 @@ import PluginLogoCoffic
 import PluginLogoManager
 import PluginLogoSmartLight
 import PluginMemory
-import PluginMessageList
+import PluginMessageListBrief
+import PluginMessageListStandard
+import PluginMessageListDetailed
 import PluginMessageManager
 import PluginMessageRenderer
 import PluginAgentLoop
@@ -251,7 +253,9 @@ public struct DefaultPluginFactory: PluginFactory {
             OnboardingPlugin(),
             MemoryPlugin(),
             ModelSelectorPlugin(),
-            MessageListPlugin(),
+            PluginMessageListBriefPlugin(),
+            PluginMessageListStandardPlugin(),
+            PluginMessageListDetailedPlugin(),
             MessageRendererPlugin(),
             ConversationInputPlugin(),
             ConversationListPlugin(),
