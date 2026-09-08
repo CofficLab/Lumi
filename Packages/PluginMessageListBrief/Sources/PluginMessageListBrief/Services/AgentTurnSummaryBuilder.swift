@@ -1,0 +1,151 @@
+import Foundation
+import ProviderMessage
+
+/// Projects the verbose message timeline into one user-facing row per
+/// AgentTurn for the brief (V1) presentation.
+///
+/// 每个 turn 产出**一个** `AgentTurnSummaryItem`，包含：
+/// - `userMessage`：触发该 turn 的用户消息（按时间回溯匹配，见下）；
+/// - `message`：该 turn 的最终回复，或运行中/无内容时的占位。
+///
+/// **用户消息关联**：用户消息不携带 turnID（发送器在 turnID 生成前已落库），
+/// 这里在展示层解决：把会话消息按时间排序后，对每个 record 取 `startedAt` 之前
+/// 最近的一条 `.user` 消息作为 `userMessage` —— 天然就是触发该 turn 的用户输入，
+/// 不依赖 turnID，也不动运行时与持久化。
+///
+/// **运行中 turn**：`processMessages` 暴露当前 turn 的助手工具调用、工具结果及
+/// 瞬时 status；视图展示这些过程。turn 进入终态后，视图折叠为 `message`。
+struct AgentTurnSummaryBuilder {
+    func build(
+        records: [AgentTurnRecord],
+        messages: [Message]
+    ) -> [AgentTurnSummaryItem] {
+        // turn 自身的消息仍按 turnID 分组（助手/工具/错误消息携带 turnID）。
+        let messagesByTurn = Dictionary(grouping: messages.compactMap { message in
+            message.turnID.map { ($0, message) }
+        }, by: \.0)
+
+        // 用户消息回溯匹配需要按时间升序的全量消息流。
+        let chronological = messages.sorted(by: messageOrdering)
+        // 无 turnID 的瞬时 status 属于当前会话而非某个历史 turn；只挂到最新活跃 turn。
+        let latestActiveTurnID = records
+            .filter { !$0.isFinished }
+            .max(by: recordOrdering)?
+            .id
+
+        return records
+            .sorted(by: recordOrdering)
+            .map { record -> AgentTurnSummaryItem in
+                let turnMessages = (messagesByTurn[record.id] ?? [])
+                    .map(\.1)
+                    .sorted(by: messageOrdering)
+                let user = userMessage(before: chronological, startedAt: record.startedAt)
+                let message = summaryMessage(for: record, messages: turnMessages)
+                    ?? placeholderMessage(for: record)
+                let transientStatuses = chronological.filter { candidate in
+                    candidate.role == .status
+                        && candidate.turnID == nil
+                        && candidate.conversationID == record.conversationID
+                        && record.id == latestActiveTurnID
+                }
+                let processMessages = (turnMessages + transientStatuses)
+                    .filter {
+                        $0.id != message.id
+                            && $0.role != .user
+                            && $0.role != .system
+                            // V1 只展示工具正在做什么，不暴露工具的原始返回内容。
+                            && $0.role != .tool
+                    }
+                    .sorted(by: messageOrdering)
+                return AgentTurnSummaryItem(
+                    record: record,
+                    userMessage: user,
+                    processMessages: processMessages,
+                    message: message
+                )
+            }
+    }
+
+    // MARK: - User message matching
+
+    /// 取 `startedAt` 之前（含同时刻）最近的一条 `.user` 消息。
+    private func userMessage(
+        before messages: [Message],
+        startedAt: Date
+    ) -> Message? {
+        for message in messages.reversed() where message.role == .user {
+            if message.createdAt <= startedAt {
+                return message
+            }
+        }
+        return nil
+    }
+
+    // MARK: - Summary message selection
+
+    private func summaryMessage(
+        for record: AgentTurnRecord,
+        messages: [Message]
+    ) -> Message? {
+        let finalAssistant = messages.last(where: isFinalAssistant)
+        let latestAssistant = messages.last(where: { $0.role == .assistant })
+        let latestError = messages.last(where: { $0.role == .error || $0.isError })
+
+        switch record.state {
+        case .completed:
+            if let latestError {
+                guard let finalAssistant else { return latestError }
+                if messageOrdering(finalAssistant, latestError) { return latestError }
+            }
+            return finalAssistant ?? latestError ?? latestAssistant
+        case .failed:
+            return latestError ?? finalAssistant ?? latestAssistant
+        case .suspended:
+            return latestAssistant ?? latestError
+        case .cancelled:
+            return finalAssistant ?? latestError
+        case .running:
+            // 运行中：只展示最终回复（无工具调用的助手消息），过程消息不暴露。
+            return finalAssistant ?? latestError
+        case .idle:
+            return finalAssistant ?? latestError
+        }
+    }
+
+    /// turn 运行中且尚无任何助手消息时，合成一条占位 status 消息。
+    /// 复用一个稳定的合成 id（由 turnID 派生），保证 SwiftUI ForEach diff 稳定。
+    private func placeholderMessage(for record: AgentTurnRecord) -> Message {
+        Message(
+            id: Self.placeholderMessageID(for: record.id),
+            conversationID: record.conversationID,
+            role: .status,
+            content: Self.placeholderContent,
+            createdAt: record.startedAt,
+            turnID: record.id
+        )
+    }
+
+    // MARK: - Helpers
+
+    private func isFinalAssistant(_ message: Message) -> Bool {
+        guard message.role == .assistant,
+              !message.isError,
+              message.toolCalls?.isEmpty != false else { return false }
+        return !message.isEmptyResponse
+    }
+
+    private func recordOrdering(_ lhs: AgentTurnRecord, _ rhs: AgentTurnRecord) -> Bool {
+        if lhs.startedAt == rhs.startedAt { return lhs.id.uuidString < rhs.id.uuidString }
+        return lhs.startedAt < rhs.startedAt
+    }
+
+    private static let placeholderContent = "…"
+
+    /// 由 turnID 确定性派生的占位消息 id。同一 turn 多次重建得到同一 id，
+    /// SwiftUI 不会把它当成新行重插。
+    private static func placeholderMessageID(for turnID: UUID) -> UUID {
+        var bytes = turnID.uuid
+        bytes.0 |= 0x80
+        return UUID(uuid: bytes)
+    }
+}
