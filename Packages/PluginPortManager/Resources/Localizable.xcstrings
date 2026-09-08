@@ -242,41 +242,6 @@
         }
       }
     },
-    "Failed to kill process: \\(error.localizedDescription)" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to kill process: \\(error.localizedDescription)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "终止进程失败：\\(error.localizedDescription)"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "终止进程失败：\\(error.localizedDescription)"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "终止进程失败：\\(error.localizedDescription)"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "终止进程失败：\\(error.localizedDescription)"
-          }
-        }
-      }
-    },
     "Failed to kill process: %@" : {
       "localizations" : {
         "en" : {

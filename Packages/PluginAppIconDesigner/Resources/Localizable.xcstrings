@@ -106,41 +106,6 @@
         }
       }
     },
-    "Add shapes and arrange layers to build your design" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add shapes and arrange layers to build your design"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加形状并排列图层以构建你的设计"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加形狀並排列圖層以構建你的設計"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加形狀並排列圖層以構建你的設計"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添加形狀並排列圖層以構建你的設計"
-          }
-        }
-      }
-    },
     "Adjust layers: fill (solid or gradient), stroke, shadow, blur, opacity, and rotation." : {
       "localizations" : {
         "en" : {
@@ -205,41 +170,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "AI 可執行的操作"
-          }
-        }
-      }
-    },
-    "AI-Powered Tools" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI-Powered Tools"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI 智能工具"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI 驅動的工具"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI 驅動的工具"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI 驅動的工具"
           }
         }
       }
@@ -482,41 +412,6 @@
         }
       }
     },
-    "Build complex icons with multiple layers. Control opacity, shadows, blur effects, and transform properties for each layer." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Build complex icons with multiple layers. Control opacity, shadows, blur effects, and transform properties for each layer."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用多个图层构建复杂图标。可控制每个图层的不透明度、阴影、模糊效果和变换属性。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用多個圖層建構複雜圖示。可控制每個圖層的不透明度、陰影、模糊效果與變形屬性。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用多個圖層建構複雜圖示。可控制每個圖層的不透明度、陰影、模糊效果與變形屬性。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用多個圖層建構複雜圖示。可控制每個圖層的不透明度、陰影、模糊效果與變形屬性。"
-          }
-        }
-      }
-    },
     "Canvas is not square. App icons work best on a square canvas." : {
       "localizations" : {
         "en" : {
@@ -547,41 +442,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "畫布不是正方形。App 圖示最適合使用正方形畫布。"
-          }
-        }
-      }
-    },
-    "Capsules" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Capsules"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "胶囊"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "膠囊"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "膠囊"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "膠囊"
           }
         }
       }
@@ -688,41 +548,6 @@
         }
       }
     },
-    "Circles & Ellipses" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Circles & Ellipses"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圆形和椭圆"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圓形與橢圓"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圓形與橢圓"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圓形與橢圓"
-          }
-        }
-      }
-    },
     "Click + to create a new icon document, or select an existing one from the list." : {
       "localizations" : {
         "en" : {
@@ -753,76 +578,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "點按 + 新增圖示檔案,或從列表中選擇已有檔案。"
-          }
-        }
-      }
-    },
-    "Create a new icon document or load an existing one" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create a new icon document or load an existing one"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "新建图标文档或加载已有文档"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "建立新的圖示文件或載入現有文件"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "建立新的圖示文件或載入現有文件"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "建立新的圖示文件或載入現有文件"
-          }
-        }
-      }
-    },
-    "Create app icons with precise vector shapes including rectangles, circles, capsules, triangles, lines, symbols, and text." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create app icons with precise vector shapes including rectangles, circles, capsules, triangles, lines, symbols, and text."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用精确的矢量形状创建应用图标，包括矩形、圆形、胶囊、三角形、线条、符号和文本。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用精確的向量圖形（矩形、圓形、膠囊、三角形、線條、符號與文字）建立應用程式圖示。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用精確的向量圖形（矩形、圓形、膠囊、三角形、線條、符號與文字）建立應用程式圖示。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用精確的向量圖形（矩形、圓形、膠囊、三角形、線條、符號與文字）建立應用程式圖示。"
           }
         }
       }
@@ -895,41 +650,6 @@
         }
       }
     },
-    "Customize fills, strokes, shadows, and transforms" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Customize fills, strokes, shadows, and transforms"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自定义填充、描边、阴影和变换"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自訂填色、描邊、陰影與變形"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自訂填色、描邊、陰影與變形"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "自訂填色、描邊、陰影與變形"
-          }
-        }
-      }
-    },
     "Describe what you need in the chat, and the AI will draw and revise the icon, e.g. \"a blue gradient background with a coffee cup symbol\"." : {
       "localizations" : {
         "en" : {
@@ -964,72 +684,36 @@
         }
       }
     },
-    "Describe what you need in the chat, and the AI will draw and revise the icon, e.g. \\\"a blue gradient background with a coffee cup symbol\\\"." : {
-      "extractionState" : "stale",
+    "Design app icons and export multiple sizes." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Describe what you need in the chat, and the AI will draw and revise the icon, e.g. \\\"a blue gradient background with a coffee cup symbol\\\"."
+            "value" : "Design app icons and export multiple sizes."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在对话框中描述你的需求，AI 会绘制并修改图标，例如「带咖啡杯图案的蓝色渐变背景」。"
+            "value" : "设计应用图标并导出多种尺寸。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在对话框中描述你的需求，AI 会绘制并修改图标，例如「带咖啡杯图案的蓝色渐变背景」。"
+            "value" : "設計應用程式圖示並匯出多種尺寸。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在对话框中描述你的需求，AI 会绘制并修改图标，例如「带咖啡杯图案的蓝色渐变背景」。"
+            "value" : "設計應用程式圖示並匯出多種尺寸。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在对话框中描述你的需求，AI 会绘制并修改图标，例如「带咖啡杯图案的蓝色渐变背景」。"
-          }
-        }
-      }
-    },
-    "Design app icons with shapes, layers, and export capabilities." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Design app icons with shapes, layers, and export capabilities."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设计应用图标，支持形状、图层和导出功能。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用圖形、圖層與匯出功能設計應用程式圖示。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用圖形、圖層與匯出功能設計應用程式圖示。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用圖形、圖層與匯出功能設計應用程式圖示。"
+            "value" : "設計應用程式圖示並匯出多種尺寸。"
           }
         }
       }
@@ -1136,41 +820,6 @@
         }
       }
     },
-    "Export as Xcode AppIcon set or SVG" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export as Xcode AppIcon set or SVG"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导出为 Xcode AppIcon 集或 SVG"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出為 Xcode AppIcon 套件或 SVG"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出為 Xcode AppIcon 套件或 SVG"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出為 Xcode AppIcon 套件或 SVG"
-          }
-        }
-      }
-    },
     "Export SVG" : {
       "localizations" : {
         "en" : {
@@ -1201,41 +850,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "匯出 SVG"
-          }
-        }
-      }
-    },
-    "Export vector graphics in SVG format for web, documentation, or further editing in design tools." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export vector graphics in SVG format for web, documentation, or further editing in design tools."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以 SVG 格式导出矢量图形，用于网页、文档或进一步在设计工具中编辑。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以 SVG 格式匯出向量圖形，用於網頁、文件或在設計工具中進一步編輯。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以 SVG 格式匯出向量圖形，用於網頁、文件或在設計工具中進一步編輯。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以 SVG 格式匯出向量圖形，用於網頁、文件或在設計工具中進一步編輯。"
           }
         }
       }
@@ -1376,41 +990,6 @@
         }
       }
     },
-    "Fill shapes with solid colors, linear gradients, or radial gradients. Add stroke outlines with customizable width and color." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fill shapes with solid colors, linear gradients, or radial gradients. Add stroke outlines with customizable width and color."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用纯色、线性渐变或径向渐变填充形状。可添加可自定义宽度和颜色的描边轮廓。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以實心色彩、線性漸層或放射狀漸層填滿圖形，並可自訂描邊寬度與顏色。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以實心色彩、線性漸層或放射狀漸層填滿圖形，並可自訂描邊寬度與顏色。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以實心色彩、線性漸層或放射狀漸層填滿圖形，並可自訂描邊寬度與顏色。"
-          }
-        }
-      }
-    },
     "Glass Tile" : {
       "localizations" : {
         "en" : {
@@ -1509,41 +1088,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "高對比圓環與發光字形。"
-          }
-        }
-      }
-    },
-    "How It Works" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "How It Works"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "工作原理"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "運作方式"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "運作方式"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "運作方式"
           }
         }
       }
@@ -1820,41 +1364,6 @@
         }
       }
     },
-    "Layer Management" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Layer Management"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "图层管理"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖層管理"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖層管理"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖層管理"
-          }
-        }
-      }
-    },
     "Layer scale is extremely small." : {
       "localizations" : {
         "en" : {
@@ -1923,76 +1432,6 @@
         }
       }
     },
-    "Let AI help generate icon presets, apply styling, and lint your designs for best practices." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Let AI help generate icon presets, apply styling, and lint your designs for best practices."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "让 AI 帮助生成图标预设、应用样式，并检查设计是否符合最佳实践。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "讓 AI 協助產生圖示預設、套用樣式，並依最佳實踐檢查你的設計。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "讓 AI 協助產生圖示預設、套用樣式，並依最佳實踐檢查你的設計。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "讓 AI 協助產生圖示預設、套用樣式，並依最佳實踐檢查你的設計。"
-          }
-        }
-      }
-    },
-    "Lines" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lines"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "线条"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "線條"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "線條"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "線條"
-          }
-        }
-      }
-    },
     "Lint" : {
       "localizations" : {
         "en" : {
@@ -2023,41 +1462,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "规范检查"
-          }
-        }
-      }
-    },
-    "macOS 14.0 or later" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 or later"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或更高版本"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或以上"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或以上"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或以上"
           }
         }
       }
@@ -2436,41 +1840,6 @@
         }
       }
     },
-    "Preview your icon at multiple sizes" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Preview your icon at multiple sizes"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在不同尺寸下预览图标"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以多種尺寸預覽你的圖示"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以多種尺寸預覽你的圖示"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "以多種尺寸預覽你的圖示"
-          }
-        }
-      }
-    },
     "Preview: shows the current icon with its size and layer count." : {
       "localizations" : {
         "en" : {
@@ -2573,146 +1942,6 @@
         }
       }
     },
-    "Prompt.Suggestion.Design" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Design an app icon for me"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "帮我设计一个应用图标"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "幫我設計一個應用圖示"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "幫我設計一個應用圖示"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "幫我設計一個應用圖示"
-          }
-        }
-      }
-    },
-    "Prompt.Suggestion.Export" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export as AppIcon.icon"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导出为 AppIcon.icon"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出為 AppIcon.icon"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出為 AppIcon.icon"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出為 AppIcon.icon"
-          }
-        }
-      }
-    },
-    "Prompt.Suggestion.Preset" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start from an icon preset"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从图标预设开始设计"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從圖示預設開始設計"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從圖示預設開始設計"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從圖示預設開始設計"
-          }
-        }
-      }
-    },
-    "Prompt.Suggestion.Review" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Review and refine my app icon"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检查并优化我的应用图标"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查並優化我的應用圖示"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查並優化我的應用圖示"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查並優化我的應用圖示"
-          }
-        }
-      }
-    },
     "Quiet monochrome mark for pro apps." : {
       "localizations" : {
         "en" : {
@@ -2747,111 +1976,6 @@
         }
       }
     },
-    "Rectangles & Rounded Corners" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rectangles & Rounded Corners"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "矩形和圆角"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "矩形與圓角"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "矩形與圓角"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "矩形與圓角"
-          }
-        }
-      }
-    },
-    "Requirements" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Requirements"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统要求"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系統需求"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系統需求"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系統需求"
-          }
-        }
-      }
-    },
-    "Rich Fill Options" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rich Fill Options"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "丰富的填充选项"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "豐富的填色選項"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "豐富的填色選項"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "豐富的填色選項"
-          }
-        }
-      }
-    },
     "Right-click a document in the list to delete it." : {
       "localizations" : {
         "en" : {
@@ -2882,41 +2006,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "右鍵點按列表中的檔案可將其刪除。"
-          }
-        }
-      }
-    },
-    "SF Symbols" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SF Symbols"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SF Symbols"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SF Symbols"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SF Symbols"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SF Symbols"
           }
         }
       }
@@ -3091,111 +2180,6 @@
         }
       }
     },
-    "Supported Shapes" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Supported Shapes"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持的形状"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援的圖形"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援的圖形"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援的圖形"
-          }
-        }
-      }
-    },
-    "SVG Export" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SVG Export"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SVG 导出"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SVG 匯出"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SVG 匯出"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SVG 匯出"
-          }
-        }
-      }
-    },
-    "Swift 6.0 or later" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 or later"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 或更高版本"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 或以上"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 或以上"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Swift 6.0 或以上"
-          }
-        }
-      }
-    },
     "Symbol" : {
       "localizations" : {
         "en" : {
@@ -3294,41 +2278,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "符號尺寸對 App 圖示來說太小。"
-          }
-        }
-      }
-    },
-    "Text Labels" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Text Labels"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文本标签"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文字標籤"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文字標籤"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "文字標籤"
           }
         }
       }
@@ -3503,41 +2452,6 @@
         }
       }
     },
-    "To make changes, state them in the conversation, e.g. \\\"change the background to green\\\"." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "To make changes, state them in the conversation, e.g. \\\"change the background to green\\\"."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "要修改，请在对话中说明，例如「将背景改为绿色」。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "要修改，请在对话中说明，例如「将背景改为绿色」。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "要修改，请在对话中说明，例如「将背景改为绿色」。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "要修改，请在对话中说明，例如「将背景改为绿色」。"
-          }
-        }
-      }
-    },
     "Toolbar" : {
       "localizations" : {
         "en" : {
@@ -3602,41 +2516,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "工具列:提供「匯出 SVG」與「匯出 Xcode 圖示」按鈕。"
-          }
-        }
-      }
-    },
-    "Triangles" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Triangles"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "三角形"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "三角形"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "三角形"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "三角形"
           }
         }
       }
@@ -3709,41 +2588,6 @@
         }
       }
     },
-    "Vector Icon Design" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vector Icon Design"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "矢量图标设计"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量圖示設計"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量圖示設計"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "向量圖示設計"
-          }
-        }
-      }
-    },
     "When the preview is correct, click Export SVG or Export Xcode Icon and choose where to save." : {
       "localizations" : {
         "en" : {
@@ -3774,110 +2618,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "預覽無誤後,點按「匯出 SVG」或「匯出 Xcode 圖示」,並選擇儲存位置。"
-          }
-        }
-      }
-    },
-    "Xcode 15.0+ (for AppIcon export)" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode 15.0+ (for AppIcon export)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode 15.0+（用于 AppIcon 导出）"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode 15.0 以上（用於 AppIcon 匯出）"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode 15.0 以上（用於 AppIcon 匯出）"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode 15.0 以上（用於 AppIcon 匯出）"
-          }
-        }
-      }
-    },
-    "Xcode Export" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode Export"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode 导出"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode 匯出"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode 匯出"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xcode 匯出"
-          }
-        }
-      }
-    },
-    "Design app icons and export multiple sizes." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Design app icons and export multiple sizes."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "设计应用图标并导出多种尺寸。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設計應用程式圖示並匯出多種尺寸。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設計應用程式圖示並匯出多種尺寸。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設計應用程式圖示並匯出多種尺寸。"
           }
         }
       }

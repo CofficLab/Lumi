@@ -1,1688 +1,1128 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+  "sourceLanguage": "en",
+  "strings": {
+    "%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        }
-      }
-    },
-    "%lld%%" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld%%"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
           }
         }
       }
     },
-    "Adjust brightness for external displays via DDC/CI protocol" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adjust brightness for external displays via DDC/CI protocol"
+    "%lld%%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过 DDC/CI 协议调节外接显示器亮度"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "透過 DDC/CI 協定調節外接顯示器亮度"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "透過 DDC/CI 協定調節外接顯示器亮度"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "透過 DDC/CI 協定調節外接顯示器亮度"
-          }
-        }
-      }
-    },
-    "Brightness" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Brightness"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "亮度"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "亮度"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "亮度"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "亮度"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         }
       }
     },
-    "Brightness Control" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Brightness Control"
+    "Brightness": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brightness"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "亮度控制"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "亮度"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "亮度控制"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "亮度"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "亮度控制"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "亮度"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "亮度控制"
-          }
-        }
-      }
-    },
-    "Brightness, Volume & Contrast" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Brightness, Volume & Contrast"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "亮度、音量与对比度"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "亮度、音量與對比度"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "亮度、音量與對比度"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "亮度、音量與對比度"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "亮度"
           }
         }
       }
     },
-    "Built-in" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Built-in"
+    "Brightness, Volume & Contrast": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brightness, Volume & Contrast"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "内置"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "亮度、音量与对比度"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "內建"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "亮度、音量與對比度"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "內置"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "亮度、音量與對比度"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "內建"
-          }
-        }
-      }
-    },
-    "Connect an external display or check your display connections." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connect an external display or check your display connections."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请连接外接显示器或检查显示器连接。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請連接外接顯示器或檢查顯示器連接。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請連接外接顯示器或檢查顯示器連接。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請連接外接顯示器或檢查顯示器連線。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "亮度、音量與對比度"
           }
         }
       }
     },
-    "Contrast" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contrast"
+    "Built-in": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built-in"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "对比度"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内置"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "對比度"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "內建"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "對比度"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "內置"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "對比度"
-          }
-        }
-      }
-    },
-    "Contrast Adjustment" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contrast Adjustment"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "对比度调节"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "對比度調節"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "對比度調節"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "對比度調節"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "內建"
           }
         }
       }
     },
-    "Control audio volume directly from your menu bar" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Control audio volume directly from your menu bar"
+    "Connect an external display or check your display connections.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect an external display or check your display connections."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接从菜单栏控制音量"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请连接外接显示器或检查显示器连接。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接從選單列控制音量"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請連接外接顯示器或檢查顯示器連接。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接從選單列控制音量"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請連接外接顯示器或檢查顯示器連接。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接從選單列控制音量"
-          }
-        }
-      }
-    },
-    "Detects connected displays with DDC/CI support" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Detects connected displays with DDC/CI support"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检测支持 DDC/CI 的已连接显示器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "偵測支援 DDC/CI 的已連接顯示器"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "偵測支援 DDC/CI 的已連接顯示器"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "偵測支援 DDC/CI 的已連接顯示器"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請連接外接顯示器或檢查顯示器連線。"
           }
         }
       }
     },
-    "Display Control" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Display Control"
+    "Contrast": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contrast"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示器控制"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "对比度"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示器控制"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "對比度"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示器控制"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "對比度"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示器控制"
-          }
-        }
-      }
-    },
-    "Displays" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Displays"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示器"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示器"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示器"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "對比度"
           }
         }
       }
     },
-    "External" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "External"
+    "Display Control": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display Control"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外接"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示器控制"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外接"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示器控制"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外接"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示器控制"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外接"
-          }
-        }
-      }
-    },
-    "External displays with DDC/CI support" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "External displays with DDC/CI support"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支持 DDC/CI 的外接显示器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援 DDC/CI 的外接顯示器"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援 DDC/CI 的外接顯示器"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "支援 DDC/CI 的外接顯示器"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示器控制"
           }
         }
       }
     },
-    "Fine-tune display contrast for optimal viewing" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fine-tune display contrast for optimal viewing"
+    "Displays": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Displays"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "微调显示对比度以获得最佳观看效果"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示器"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "微調顯示對比度以獲得最佳觀看效果"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示器"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "微調顯示對比度以獲得最佳觀看效果"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示器"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "微調顯示對比度以獲得最佳觀看效果"
-          }
-        }
-      }
-    },
-    "macOS 14.0 or later" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 or later"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或更高版本"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或更高版本"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或更高版本"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS 14.0 或更高版本"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示器"
           }
         }
       }
     },
-    "Manage multiple displays with individual controls" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manage multiple displays with individual controls"
+    "External": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "External"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "独立控制多个显示器"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外接"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "獨立控制多個顯示器"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外接"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "獨立控制多個顯示器"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外接"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "獨立控制多個顯示器"
-          }
-        }
-      }
-    },
-    "Multi-Display Support" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Multi-Display Support"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "多显示器支持"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "多顯示器支援"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "多顯示器支援"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "多顯示器支援"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外接"
           }
         }
       }
     },
-    "No displays detected" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No displays detected"
+    "No displays detected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No displays detected"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未检测到显示器"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未检测到显示器"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未偵測到顯示器"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未偵測到顯示器"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未偵測到顯示器"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未偵測到顯示器"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未偵測到顯示器"
-          }
-        }
-      }
-    },
-    "Provides brightness, volume, and contrast sliders" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Provides brightness, volume, and contrast sliders"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供亮度、音量和对比度滑块"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供亮度、音量和對比度滑桿"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供亮度、音量和對比度滑桿"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供亮度、音量和對比度滑桿"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未偵測到顯示器"
           }
         }
       }
     },
-    "Requirements" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Requirements"
+    "Restore": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系统要求"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系統需求"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢復"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系統需求"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢復"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "系統需求"
-          }
-        }
-      }
-    },
-    "Restore" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Restore"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "恢复"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "恢復"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "恢復"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "恢復"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢復"
           }
         }
       }
     },
-    "Restore Defaults" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Restore Defaults"
+    "Restore Defaults": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore Defaults"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "恢复默认值"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复默认值"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "恢復預設值"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢復預設值"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "恢復預設值"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢復預設值"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "恢復預設值"
-          }
-        }
-      }
-    },
-    "Stores preferences for each display" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stores preferences for each display"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "为每个显示器保存偏好设置"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "為每個顯示器儲存偏好設定"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "為每個顯示器儲存偏好設定"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "為每個顯示器儲存偏好設定"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢復預設值"
           }
         }
       }
     },
-    "Updates display settings in real-time" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Updates display settings in real-time"
+    "Volume": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volume"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "实时更新显示设置"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音量"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "即時更新顯示設定"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音量"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "即時更新顯示設定"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音量"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "即時更新顯示設定"
-          }
-        }
-      }
-    },
-    "USB-C or DisplayPort connection (recommended)" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "USB-C or DisplayPort connection (recommended)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "USB-C 或 DisplayPort 连接（推荐）"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "USB-C 或 DisplayPort 連接（建議）"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "USB-C 或 DisplayPort 連接（建議）"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "USB-C 或 DisplayPort 連接（建議）"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音量"
           }
         }
       }
     },
-    "Volume" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volume"
+    "User Manual": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User Manual"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音量"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用手册"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音量"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用手冊"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音量"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用手冊"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音量"
-          }
-        }
-      }
-    },
-    "Volume Control" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volume Control"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音量控制"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音量控制"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音量控制"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音量控制"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用手冊"
           }
         }
       }
     },
-    "User Manual" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "User Manual"
+    "Overview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overview"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用手册"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概述"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用手冊"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概述"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用手冊"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概述"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用手冊"
-          }
-        }
-      }
-    },
-    "Overview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Overview"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概述"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概述"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概述"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "概述"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概述"
           }
         }
       }
     },
-    "This manual covers the interface and basic operations of the Display Control: adjusting brightness, volume, and contrast for each connected display." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This manual covers the interface and basic operations of the Display Control: adjusting brightness, volume, and contrast for each connected display."
+    "This manual covers the interface and basic operations of the Display Control: adjusting brightness, volume, and contrast for each connected display.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This manual covers the interface and basic operations of the Display Control: adjusting brightness, volume, and contrast for each connected display."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本手册介绍显示器控制的界面与基本操作:为每台已连接的显示器调节亮度、音量与对比度。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手册介绍显示器控制的界面与基本操作:为每台已连接的显示器调节亮度、音量与对比度。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本手冊介紹顯示器控制的介面與基本操作:為每台已連接的顯示器調節亮度、音量與對比度。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手冊介紹顯示器控制的介面與基本操作:為每台已連接的顯示器調節亮度、音量與對比度。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本手冊介紹顯示器控制的介面與基本操作:為每台已連接的顯示器調節亮度、音量與對比度。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手冊介紹顯示器控制的介面與基本操作:為每台已連接的顯示器調節亮度、音量與對比度。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "本手冊介紹顯示器控制的介面與基本操作:為每台已連接的顯示器調節亮度、音量與對比度。"
-          }
-        }
-      }
-    },
-    "Interface" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Interface"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "界面说明"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "介面說明"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "介面說明"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "介面說明"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本手冊介紹顯示器控制的介面與基本操作:為每台已連接的顯示器調節亮度、音量與對比度。"
           }
         }
       }
     },
-    "Header card: shows the plugin name and a short description." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Header card: shows the plugin name and a short description."
+    "Interface": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interface"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "头部卡:显示插件名称与简要说明。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "界面说明"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "頭部卡:顯示外掛名稱與簡要說明。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "介面說明"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "頭部卡:顯示外掛名稱與簡要說明。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "介面說明"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "頭部卡:顯示外掛名稱與簡要說明。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "介面說明"
           }
         }
       }
     },
-    "Display card: one card per display, with the display name, a built-in or external badge, and Brightness, Volume, and Contrast sliders ranging from 0 to 100%." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Display card: one card per display, with the display name, a built-in or external badge, and Brightness, Volume, and Contrast sliders ranging from 0 to 100%."
+    "Header card: shows the plugin name and a short description.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Header card: shows the plugin name and a short description."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示器卡:每台显示器一张卡片,含显示器名称、内置或外接徽标,以及范围 0 到 100% 的「亮度」「音量」「对比度」滑杆。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "头部卡:显示插件名称与简要说明。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示器卡:每台顯示器一張卡片,含顯示器名稱、內建或外接徽標,以及範圍 0 到 100% 的「亮度」「音量」「對比度」滑桿。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "頭部卡:顯示外掛名稱與簡要說明。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示器卡:每台顯示器一張卡片,含顯示器名稱、內建或外接徽標,以及範圍 0 到 100% 的「亮度」「音量」「對比度」滑桿。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "頭部卡:顯示外掛名稱與簡要說明。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示器卡:每台顯示器一張卡片,含顯示器名稱、內建或外接徽標,以及範圍 0 到 100% 的「亮度」「音量」「對比度」滑桿。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "頭部卡:顯示外掛名稱與簡要說明。"
           }
         }
       }
     },
-    "Restore Defaults card: the Restore button resets every display to its default settings." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Restore Defaults card: the Restore button resets every display to its default settings."
+    "Display card: one card per display, with the display name, a built-in or external badge, and Brightness, Volume, and Contrast sliders ranging from 0 to 100%.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display card: one card per display, with the display name, a built-in or external badge, and Brightness, Volume, and Contrast sliders ranging from 0 to 100%."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "恢复默认卡:点击「恢复」按钮可将所有显示器重置为默认设置。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示器卡:每台显示器一张卡片,含显示器名称、内置或外接徽标,以及范围 0 到 100% 的「亮度」「音量」「对比度」滑杆。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "還原預設卡:點擊「還原」按鈕可將所有顯示器重置為預設設定。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示器卡:每台顯示器一張卡片,含顯示器名稱、內建或外接徽標,以及範圍 0 到 100% 的「亮度」「音量」「對比度」滑桿。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "還原預設卡:點擊「還原」按鈕可將所有顯示器重置為預設設定。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示器卡:每台顯示器一張卡片,含顯示器名稱、內建或外接徽標,以及範圍 0 到 100% 的「亮度」「音量」「對比度」滑桿。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "還原預設卡:點擊「還原」按鈕可將所有顯示器重置為預設設定。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示器卡:每台顯示器一張卡片,含顯示器名稱、內建或外接徽標,以及範圍 0 到 100% 的「亮度」「音量」「對比度」滑桿。"
           }
         }
       }
     },
-    "Figure 1: Interface layout" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Figure 1: Interface layout"
+    "Restore Defaults card: the Restore button resets every display to its default settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore Defaults card: the Restore button resets every display to its default settings."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "图 1 界面布局"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复默认卡:点击「恢复」按钮可将所有显示器重置为默认设置。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖 1 介面佈局"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還原預設卡:點擊「還原」按鈕可將所有顯示器重置為預設設定。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖 1 介面佈局"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還原預設卡:點擊「還原」按鈕可將所有顯示器重置為預設設定。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖 1 介面佈局"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還原預設卡:點擊「還原」按鈕可將所有顯示器重置為預設設定。"
           }
         }
       }
     },
-    "Header card" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Header card"
+    "Figure 1: Interface layout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Figure 1: Interface layout"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "头部卡"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图 1 界面布局"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "頭部卡"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖 1 介面佈局"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "頭部卡"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖 1 介面佈局"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "頭部卡"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖 1 介面佈局"
           }
         }
       }
     },
-    "Display card" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Display card"
+    "Header card": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Header card"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示器卡"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "头部卡"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示器卡"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "頭部卡"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示器卡"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "頭部卡"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示器卡"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "頭部卡"
           }
         }
       }
     },
-    "Restore Defaults card" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Restore Defaults card"
+    "Display card": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display card"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "恢复默认卡"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示器卡"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "還原預設卡"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示器卡"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "還原預設卡"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示器卡"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "還原預設卡"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示器卡"
           }
         }
       }
     },
-    "Basic Operations" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Basic Operations"
+    "Restore Defaults card": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore Defaults card"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复默认卡"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還原預設卡"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還原預設卡"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "基本操作"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "還原預設卡"
           }
         }
       }
     },
-    "Select the display card you want to adjust; each connected display has its own card." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select the display card you want to adjust; each connected display has its own card."
+    "Basic Operations": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basic Operations"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择要调节的显示器卡;每台已连接的显示器都有各自的卡片。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇要調節的顯示器卡;每台已連接的顯示器都有各自的卡片。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇要調節的顯示器卡;每台已連接的顯示器都有各自的卡片。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇要調節的顯示器卡;每台已連接的顯示器都有各自的卡片。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本操作"
           }
         }
       }
     },
-    "Drag the Brightness, Volume, or Contrast slider to adjust the value from 0 to 100%." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Drag the Brightness, Volume, or Contrast slider to adjust the value from 0 to 100%."
+    "Select the display card you want to adjust; each connected display has its own card.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select the display card you want to adjust; each connected display has its own card."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拖动「亮度」「音量」或「对比度」滑杆,在 0 到 100% 之间调节数值。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择要调节的显示器卡;每台已连接的显示器都有各自的卡片。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拖動「亮度」「音量」或「對比度」滑桿,在 0 到 100% 之間調節數值。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇要調節的顯示器卡;每台已連接的顯示器都有各自的卡片。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拖動「亮度」「音量」或「對比度」滑桿,在 0 到 100% 之間調節數值。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇要調節的顯示器卡;每台已連接的顯示器都有各自的卡片。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拖動「亮度」「音量」或「對比度」滑桿,在 0 到 100% 之間調節數值。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇要調節的顯示器卡;每台已連接的顯示器都有各自的卡片。"
           }
         }
       }
     },
-    "Click Restore in the Restore Defaults card to reset all displays." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Click Restore in the Restore Defaults card to reset all displays."
+    "Drag the Brightness, Volume, or Contrast slider to adjust the value from 0 to 100%.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag the Brightness, Volume, or Contrast slider to adjust the value from 0 to 100%."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在恢复默认卡中点击「恢复」,将所有显示器恢复为默认设置。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖动「亮度」「音量」或「对比度」滑杆,在 0 到 100% 之间调节数值。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在還原預設卡中點擊「還原」,將所有顯示器還原為預設設定。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖動「亮度」「音量」或「對比度」滑桿,在 0 到 100% 之間調節數值。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在還原預設卡中點擊「還原」,將所有顯示器還原為預設設定。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖動「亮度」「音量」或「對比度」滑桿,在 0 到 100% 之間調節數值。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在還原預設卡中點擊「還原」,將所有顯示器還原為預設設定。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖動「亮度」「音量」或「對比度」滑桿,在 0 到 100% 之間調節數值。"
           }
         }
       }
     },
-    "Notes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notes"
+    "Click Restore in the Restore Defaults card to reset all displays.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click Restore in the Restore Defaults card to reset all displays."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意事项"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在恢复默认卡中点击「恢复」,将所有显示器恢复为默认设置。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意事項"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在還原預設卡中點擊「還原」,將所有顯示器還原為預設設定。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意事項"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在還原預設卡中點擊「還原」,將所有顯示器還原為預設設定。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "注意事項"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在還原預設卡中點擊「還原」,將所有顯示器還原為預設設定。"
           }
         }
       }
     },
-    "Support for external displays depends on the display model; unavailable controls are shown dimmed." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Support for external displays depends on the display model; unavailable controls are shown dimmed."
+    "Notes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外接显示器的支持情况取决于显示器型号;不可用的控制项会以置灰显示。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事项"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外接顯示器的支援情況取決於顯示器型號;不可用的控制項會以置灰顯示。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事項"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外接顯示器的支援情況取決於顯示器型號;不可用的控制項會以置灰顯示。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事項"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "外接顯示器的支援情況取決於顯示器型號;不可用的控制項會以置灰顯示。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事項"
           }
         }
       }
     },
-    "If no displays are detected, check the display connections and reopen the tab." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "If no displays are detected, check the display connections and reopen the tab."
+    "Support for external displays depends on the display model; unavailable controls are shown dimmed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support for external displays depends on the display model; unavailable controls are shown dimmed."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "若未检测到显示器,请检查显示器连接后重新打开该标签页。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外接显示器的支持情况取决于显示器型号;不可用的控制项会以置灰显示。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "若未偵測到顯示器,請檢查顯示器連線後重新開啟該標籤頁。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外接顯示器的支援情況取決於顯示器型號;不可用的控制項會以置灰顯示。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "若未偵測到顯示器,請檢查顯示器連線後重新開啟該標籤頁。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外接顯示器的支援情況取決於顯示器型號;不可用的控制項會以置灰顯示。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "若未偵測到顯示器,請檢查顯示器連線後重新開啟該標籤頁。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外接顯示器的支援情況取決於顯示器型號;不可用的控制項會以置灰顯示。"
           }
         }
       }
     },
-    "Control brightness, volume, and contrast for external displays via DDC/CI." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Control brightness, volume, and contrast for external displays via DDC/CI."
+    "If no displays are detected, check the display connections and reopen the tab.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If no displays are detected, check the display connections and reopen the tab."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过 DDC/CI 控制外接显示器的亮度、音量与对比度。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "若未检测到显示器,请检查显示器连接后重新打开该标签页。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "透過 DDC/CI 控制外接顯示器的亮度、音量與對比度。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "若未偵測到顯示器,請檢查顯示器連線後重新開啟該標籤頁。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "透過 DDC/CI 控制外接顯示器的亮度、音量與對比度。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "若未偵測到顯示器,請檢查顯示器連線後重新開啟該標籤頁。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "透過 DDC/CI 控制外接顯示器的亮度、音量與對比度。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "若未偵測到顯示器,請檢查顯示器連線後重新開啟該標籤頁。"
+          }
+        }
+      }
+    },
+    "Control brightness, volume, and contrast for external displays via DDC/CI.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control brightness, volume, and contrast for external displays via DDC/CI."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过 DDC/CI 控制外接显示器的亮度、音量与对比度。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透過 DDC/CI 控制外接顯示器的亮度、音量與對比度。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透過 DDC/CI 控制外接顯示器的亮度、音量與對比度。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透過 DDC/CI 控制外接顯示器的亮度、音量與對比度。"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

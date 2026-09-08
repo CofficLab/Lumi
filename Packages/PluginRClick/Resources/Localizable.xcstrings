@@ -310,6 +310,40 @@
         }
       }
     },
+    "Configure right-click actions and preview their behavior." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure right-click actions and preview their behavior."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配置右键操作并预览其行为。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定右鍵操作並預覽其行為。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定右鍵操作並預覽其行為。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定右鍵操作並預覽其行為。"
+          }
+        }
+      }
+    },
     "Context Actions" : {
       "localizations" : {
         "en" : {
@@ -1292,41 +1326,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "即時預覽"
-          }
-        }
-      }
-    },
-    "Lumi" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
           }
         }
       }
@@ -2465,40 +2464,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用入口"
-          }
-        }
-      }
-    },
-    "Configure right-click actions and preview their behavior." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Configure right-click actions and preview their behavior."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "配置右键操作并预览其行为。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定右鍵操作並預覽其行為。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定右鍵操作並預覽其行為。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定右鍵操作並預覽其行為。"
           }
         }
       }

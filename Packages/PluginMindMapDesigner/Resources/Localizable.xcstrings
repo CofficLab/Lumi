@@ -256,41 +256,6 @@
         }
       }
     },
-    "Click New to create an empty mind map, or ask the agent in chat, e.g. \\\"create a mind map about Swift concurrency\\\"." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Click New to create an empty mind map, or ask the agent in chat, e.g. \\\"create a mind map about Swift concurrency\\\"."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "点击「新建」创建空白思维导图，或在对话中让智能体生成，例如「创建一张关于 Swift 并发的思维导图」。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "点击「新建」创建空白思维导图，或在对话中让智能体生成，例如「创建一张关于 Swift 并发的思维导图」。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "点击「新建」创建空白思维导图，或在对话中让智能体生成，例如「创建一张关于 Swift 并发的思维导图」。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "点击「新建」创建空白思维导图，或在对话中让智能体生成，例如「创建一张关于 Swift 并发的思维导图」。"
-          }
-        }
-      }
-    },
     "Click to select, click again to edit node text inline." : {
       "localizations" : {
         "en" : {
@@ -351,6 +316,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在对话中根据主题创建思维导图。"
+          }
+        }
+      }
+    },
+    "Create and edit mind maps." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create and edit mind maps."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建并编辑思维导图。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立並編輯心智圖。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立並編輯心智圖。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立並編輯心智圖。"
           }
         }
       }
@@ -1309,40 +1308,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "缩小"
-          }
-        }
-      }
-    },
-    "Create and edit mind maps." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create and edit mind maps."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "创建并编辑思维导图。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "建立並編輯心智圖。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "建立並編輯心智圖。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "建立並編輯心智圖。"
           }
         }
       }
