@@ -90,10 +90,6 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         notify(.headerVisibilityChanged(visible))
     }
 
-    public var chatSectionWidthPublisher: AnyPublisher<ChatSectionWidth, Never> {
-        $chatSectionWidth.eraseToAnyPublisher()
-    }
-
     public func activateWidthProfile(
         ownerID: String,
         recommended: ChatSectionWidth,
@@ -107,6 +103,7 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         let resolvedWidth = recommended.withIdealWidth(recommended.clamped(restoredWidth))
         if chatSectionWidth != resolvedWidth {
             chatSectionWidth = resolvedWidth
+            notify(.widthChanged(chatSectionWidth))
         }
     }
 
@@ -116,6 +113,7 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         activeWidthStore = nil
         if chatSectionWidth != .standard {
             chatSectionWidth = .standard
+            notify(.widthChanged(chatSectionWidth))
         }
     }
 
@@ -126,6 +124,7 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         let updatedWidth = chatSectionWidth.withIdealWidth(resolvedWidth)
         if chatSectionWidth != updatedWidth {
             chatSectionWidth = updatedWidth
+            notify(.widthChanged(chatSectionWidth))
         }
     }
 

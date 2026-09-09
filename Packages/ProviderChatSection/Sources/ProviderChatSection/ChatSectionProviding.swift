@@ -115,6 +115,7 @@ public enum ChatSectionProvidingEvent {
     case contextActiveChanged(Bool)
     case activeContextChanged(ChatContext?)
     case headerVisibilityChanged(Bool)
+    case widthChanged(ChatSectionWidth)
 }
 
 /// 聊天分区状态观察句柄。
@@ -183,9 +184,6 @@ public protocol ChatSectionProviding: AnyObject, ObservableObject
     /// 当前 ChatSection 的有效宽度。
     var chatSectionWidth: ChatSectionWidth { get }
 
-    /// ChatSection 宽度变化发布器。
-    var chatSectionWidthPublisher: AnyPublisher<ChatSectionWidth, Never> { get }
-
     /// 激活插件的 ChatSection 宽度配置。
     ///
     /// provider 会优先从插件注入的 store 恢复宽度；没有保存值时才使用
@@ -224,10 +222,6 @@ public extension ChatSectionProviding {
     func bindConversationSelection(_ conversations: any ConversationManaging) {}
 
     var chatSectionWidth: ChatSectionWidth { .standard }
-
-    var chatSectionWidthPublisher: AnyPublisher<ChatSectionWidth, Never> {
-        Just(chatSectionWidth).eraseToAnyPublisher()
-    }
 
     func activateWidthProfile(ownerID: String, recommended: ChatSectionWidth) {
         activateWidthProfile(ownerID: ownerID, recommended: recommended, store: nil)

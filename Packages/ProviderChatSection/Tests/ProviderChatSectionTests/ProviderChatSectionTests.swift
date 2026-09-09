@@ -44,6 +44,7 @@ struct ProviderChatSectionTests {
             case .contextActiveChanged: events.append("context")
             case .activeContextChanged: events.append("active-context")
             case .headerVisibilityChanged: events.append("header")
+            case .widthChanged: events.append("width")
             }
         }
 
@@ -54,12 +55,16 @@ struct ProviderChatSectionTests {
         provider.setContextActive(true)
         provider.setActiveContext(ChatContext(id: "plugin.story", title: "Story"))
         provider.setHeaderVisible(false)
+        provider.activateWidthProfile(
+            ownerID: "plugin.story",
+            recommended: ChatSectionWidth(minWidth: 280, idealWidth: 400, maxWidth: 560)
+        )
 
-        #expect(events == ["items", "bars", "wrappers", "visibility", "context", "active-context", "header"])
+        #expect(events == ["items", "bars", "wrappers", "visibility", "context", "active-context", "header", "width"])
 
         handle.cancel()
         provider.setVisible(true)
-        #expect(events == ["items", "bars", "wrappers", "visibility", "context", "active-context", "header"])
+        #expect(events == ["items", "bars", "wrappers", "visibility", "context", "active-context", "header", "width"])
     }
 
     @Test("贡献作用域只匹配当前聊天上下文")

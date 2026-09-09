@@ -47,7 +47,7 @@ public struct DefaultViewFactory: ViewFactory {
                 content: chat.makeChatSectionView()
             )
             trailingPane.bindVisibility(to: chat)
-            trailingPane.bindWidth(to: chat.chatSectionWidthPublisher, onResize: chat.saveCurrentWidth)
+            trailingPane.bindWidth(to: chat, onResize: chat.saveCurrentWidth)
             rootView.setTrailingPane(trailingPane)
         }
         return themed(rootView.makeRootView(), kernel: kernel)

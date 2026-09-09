@@ -66,7 +66,7 @@ public struct DefaultViewFactory: ViewFactory {
             )
             trailingPane.bindVisibility(to: chat)
             trailingPane.bindWidth(
-                to: chat.chatSectionWidthPublisher,
+                to: chat,
                 onResize: chat.saveCurrentWidth
             )
             rootView.setTrailingPane(trailingPane)

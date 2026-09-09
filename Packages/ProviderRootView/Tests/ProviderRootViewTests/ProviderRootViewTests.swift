@@ -70,7 +70,7 @@ struct ProviderRootViewTests {
     }
 
     @Test("ChatSection 宽度绑定到 trailing pane 并转发用户拖拽")
-    func trailingPaneFollowsChatSectionWidthAndForwardsResize() async {
+    func trailingPaneFollowsChatSectionWidthAndForwardsResize() {
         let chat = DefaultChatSectionProviding()
         let pane = RootTrailingPane(
             id: "chat",
@@ -79,17 +79,39 @@ struct ProviderRootViewTests {
         )
         var resizedWidth: CGFloat?
         pane.bindWidth(
-            to: chat.chatSectionWidthPublisher,
+            to: chat,
             onResize: { resizedWidth = $0 }
         )
 
         let customWidth = ChatSectionWidth(minWidth: 280, idealWidth: 400, maxWidth: 560)
         chat.activateWidthProfile(ownerID: "plugin.chat", recommended: customWidth)
-        await Task.yield()
         #expect(pane.width == customWidth)
 
         pane.saveWidth(460)
         #expect(resizedWidth == 460)
+    }
+
+    @Test("重新绑定 ChatSection 宽度时取消旧观察者")
+    func rebindingTrailingPaneWidthCancelsPreviousObserver() {
+        let firstChat = DefaultChatSectionProviding()
+        let secondChat = DefaultChatSectionProviding()
+        let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
+
+        let firstWidth = ChatSectionWidth(minWidth: 280, idealWidth: 380, maxWidth: 520)
+        firstChat.activateWidthProfile(ownerID: "plugin.first", recommended: firstWidth)
+        pane.bindWidth(to: firstChat, onResize: { _ in })
+        #expect(pane.width == firstWidth)
+
+        let secondWidth = ChatSectionWidth(minWidth: 280, idealWidth: 420, maxWidth: 560)
+        secondChat.activateWidthProfile(ownerID: "plugin.second", recommended: secondWidth)
+        pane.bindWidth(to: secondChat, onResize: { _ in })
+        #expect(pane.width == secondWidth)
+
+        firstChat.saveCurrentWidth(500)
+        #expect(pane.width == secondWidth)
+
+        secondChat.saveCurrentWidth(460)
+        #expect(pane.width == secondWidth.withIdealWidth(460))
     }
 
     @Test("Rail 可见性绑定到根布局")

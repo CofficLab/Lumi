@@ -187,7 +187,7 @@ public final class RootTrailingPane: ObservableObject {
 
     @Published public var isVisible: Bool
     private var visibilityObserver: (any ChatSectionProvidingObserverHandle)?
-    private var widthSubscription: AnyCancellable?
+    private var widthObserver: (any ChatSectionProvidingObserverHandle)?
     private var widthResizeHandler: (@MainActor (CGFloat) -> Void)?
 
     public init(
@@ -230,14 +230,15 @@ public final class RootTrailingPane: ObservableObject {
     /// 将面板宽度绑定到 ChatSection provider，并接收用户拖拽完成后的宽度。
     @MainActor
     public func bindWidth(
-        to publisher: AnyPublisher<ChatSectionWidth, Never>,
+        to provider: any ChatSectionProviding,
         onResize: @escaping @MainActor (CGFloat) -> Void
     ) {
+        widthObserver?.cancel()
         widthResizeHandler = onResize
-        widthSubscription = publisher.sink { [weak self] width in
-            Task { @MainActor [weak self] in
-                self?.width = width
-            }
+        width = provider.chatSectionWidth
+        widthObserver = provider.addObserver { [weak self] event in
+            guard case let .widthChanged(width) = event else { return }
+            self?.width = width
         }
     }
 
