@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 对话列表侧栏视图：组合 HeaderBarView 与 ListView。
 struct RailView: View {
-    @ObservedObject private var attentionStore: ConversationAttentionStore
+    private let attentionStore: ConversationAttentionStore
     @ObservedObject private var sortStabilizer: ConversationSortStabilizer
     private let context: ConversationListContext
     private let scopeToCurrentProject: Bool
@@ -14,7 +14,7 @@ struct RailView: View {
         scopeToCurrentProject: Bool = false
     ) {
         self.context = context
-        self._attentionStore = ObservedObject(wrappedValue: attentionStore)
+        self.attentionStore = attentionStore
         self._sortStabilizer = ObservedObject(wrappedValue: sortStabilizer)
         self.scopeToCurrentProject = scopeToCurrentProject
     }

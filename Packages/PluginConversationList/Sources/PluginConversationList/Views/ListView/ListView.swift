@@ -22,11 +22,13 @@ struct ListView: View {
     /// 链路，让选中高亮即时跟上点击；随后由 onChange 与管理器真实状态对齐。
     @State private var immediateSelectionID: UUID?
     private let context: ConversationListContext
-    @ObservedObject private var attentionStore: ConversationAttentionStore
+    private let attentionStore: ConversationAttentionStore
     @ObservedObject private var sortStabilizer: ConversationSortStabilizer
     @State private var contextRevision = 0
     @State private var observedSelectedConversationID: UUID?
     @State private var contextObserverHandle: (any ConversationListContext.ObserverHandle)?
+    @State private var attentionRevision = 0
+    @State private var attentionObserverHandle: (any ConversationAttentionStore.ObserverHandle)?
 
     /// The project path to filter by, or nil if showing all conversations.
     private let projectPath: String?
@@ -38,7 +40,7 @@ struct ListView: View {
         projectPath: String? = nil
     ) {
         self.context = context
-        self._attentionStore = ObservedObject(wrappedValue: attentionStore)
+        self.attentionStore = attentionStore
         self._sortStabilizer = ObservedObject(wrappedValue: sortStabilizer)
         self.projectPath = projectPath
     }
@@ -85,6 +87,16 @@ struct ListView: View {
             contextObserverHandle?.cancel()
             contextObserverHandle = nil
         }
+        .onAppear {
+            guard attentionObserverHandle == nil else { return }
+            attentionObserverHandle = attentionStore.addObserver { _ in
+                attentionRevision &+= 1
+            }
+        }
+        .onDisappear {
+            attentionObserverHandle?.cancel()
+            attentionObserverHandle = nil
+        }
     }
 
     @ViewBuilder
@@ -101,7 +113,7 @@ struct ListView: View {
                             conversation: conversation,
                             conversationState: context.conversationState?.state(for: conversation.id),
                             isSelected: (immediateSelectionID ?? context.selectedConversationID) == conversation.id,
-                            needsAttention: attentionStore.needsAttention(for: conversation.id),
+                            needsAttention: needsAttention(for: conversation.id),
                             onSelect: {
                                 // 先同步写入乐观选中，立刻高亮，不等管理器链路
                                 immediateSelectionID = conversation.id
@@ -131,6 +143,11 @@ struct ListView: View {
             }
             .scrollContentBackground(.hidden)
         }
+    }
+
+    private func needsAttention(for conversationID: UUID) -> Bool {
+        _ = attentionRevision
+        return attentionStore.needsAttention(for: conversationID)
     }
 
     private func reload() async {

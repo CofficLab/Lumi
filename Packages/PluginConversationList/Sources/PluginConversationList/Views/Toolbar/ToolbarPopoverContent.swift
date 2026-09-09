@@ -13,7 +13,7 @@ import SwiftUI
 /// 让各自的滚动位置、分页状态和加载任务互不干扰。
 struct ToolbarPopoverContent: View {
     private let context: ConversationListContext
-    @ObservedObject var attentionStore: ConversationAttentionStore
+    let attentionStore: ConversationAttentionStore
     @ObservedObject var sortStabilizer: ConversationSortStabilizer
 
     enum Scope: Hashable {
