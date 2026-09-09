@@ -33,4 +33,17 @@ struct ConversationModePluginTests {
         #expect(conversations.globalAutomationLevel == .autonomous)
         #expect(conversations.automationLevel(for: nil) == .autonomous)
     }
+
+    @Test("会话观察盒通过类型化事件刷新并支持取消")
+    func conversationObservationBoxUsesTypedEvents() {
+        let conversations = DefaultConversationManager()
+        let observation = ConversationManagerObservationBox(conversations: conversations)
+
+        conversations.setGlobalAutomationLevel(.autonomous)
+        #expect(observation.revision == 1)
+
+        observation.cancel()
+        conversations.setGlobalAutomationLevel(.chat)
+        #expect(observation.revision == 1)
+    }
 }
