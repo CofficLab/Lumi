@@ -10,9 +10,6 @@ import ProviderDeveloperMode
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
-import ProviderPromptSuggestion
-import ProviderProject
-import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
 
@@ -41,6 +38,7 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
     private var streamingObserver: StreamingObserver?
     private var conversationStateObserver: ConversationStateObserver?
     private var selectedConversationObserver: SelectedConversationObserver?
+    private var developerModeObserver: DeveloperModeObserver?
     private var verbosityObservation: VerbosityObservationBox?
 
     public init() {}
@@ -58,25 +56,16 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         let streaming = kernel.resolveProvider((any MessageStreamingProviding).self)
         let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
         let agentTurn = kernel.resolveProvider((any AgentLoopProviding).self)
-        let promptSuggestions = kernel.resolveProvider((any PromptSuggestionProviding).self)
-        let promptSuggestionExecutor = kernel.resolveProvider((any PromptSuggestionExecuting).self)
-        let project = kernel.resolveProvider((any ProjectProviding).self)
-        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
 
         let services = MessageListServices(
             conversations: conversations.map(MessageListConversationCapabilityAdapter.init(conversations:)),
             conversationState: conversationState.map(MessageListConversationStateCapabilityAdapter.init(conversationState:)),
-            developerMode: developerMode,
+            developerMode: developerMode.map(MessageListDeveloperModeCapabilityAdapter.init(developerMode:)),
             messages: messages.map(MessageListMessageCapabilityAdapter.init(messages:)),
             rendering: rendering.map(MessageListRenderingCapabilityAdapter.init(rendering:)),
             streaming: streaming.map(MessageListStreamingCapabilityAdapter.init(streaming:)),
             toolManager: toolManager.map(MessageListToolManagerCapabilityAdapter.init(toolManager:)),
             agentTurn: agentTurn.map(MessageListAgentLoopCapabilityAdapter.init(agentTurn:)),
-            promptSuggestions: promptSuggestions.map(MessageListPromptSuggestionCapabilityAdapter.init(promptSuggestions:)),
-            promptSuggestionExecutor: promptSuggestionExecutor.map(MessageListPromptSuggestionExecutorCapabilityAdapter.init(executor:)),
-            project: project.map(MessageListProjectCapabilityAdapter.init(project:)),
-            toolbar: toolbar.map(MessageListToolbarCapabilityAdapter.init(toolbar:)),
-            chat: MessageListChatSectionCapabilityAdapter(chat: chat),
         )
         let viewModel = ListV1ViewModel(services: services)
         self.viewModel = viewModel
@@ -96,6 +85,13 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
             }
         )
         self.verbosityObservation = verbosityObservation
+
+        if let developerMode = services.developerMode {
+            developerModeObserver = DeveloperModeObserver(
+                developerMode: developerMode,
+                viewModel: viewModel
+            )
+        }
 
         if let messages {
             messageObserver = MessageObserver(messages: messages, viewModel: viewModel)
@@ -123,6 +119,8 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         conversationStateObserver = nil
         selectedConversationObserver?.cancel()
         selectedConversationObserver = nil
+        developerModeObserver?.cancel()
+        developerModeObserver = nil
         verbosityObservation?.cancel()
         verbosityObservation = nil
         viewModel = nil

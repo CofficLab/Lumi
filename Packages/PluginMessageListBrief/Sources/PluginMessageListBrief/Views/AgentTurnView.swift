@@ -12,6 +12,7 @@ struct AgentTurnView: View {
     let services: MessageListServices
     let item: AgentTurnPresentationItem
     let verbosity: ResponseVerbosity
+    let isDeveloperModeEnabled: Bool
 
     let viewModel: AgentTurnViewModel
     let onDynamicContentChange: (@MainActor () -> Void)?
@@ -23,12 +24,14 @@ struct AgentTurnView: View {
         services: MessageListServices,
         item: AgentTurnPresentationItem,
         verbosity: ResponseVerbosity,
+        isDeveloperModeEnabled: Bool,
         viewModel: AgentTurnViewModel,
         onDynamicContentChange: (@MainActor () -> Void)? = nil
     ) {
         self.services = services
         self.item = item
         self.verbosity = verbosity
+        self.isDeveloperModeEnabled = isDeveloperModeEnabled
         self.viewModel = viewModel
         self.onDynamicContentChange = onDynamicContentChange
     }
@@ -142,7 +145,8 @@ struct AgentTurnView: View {
         MessageRowView(
             services: services,
             message: message,
-            verbosity: verbosity
+            verbosity: verbosity,
+            isDeveloperModeEnabled: isDeveloperModeEnabled
         )
         .id(message.id)
     }

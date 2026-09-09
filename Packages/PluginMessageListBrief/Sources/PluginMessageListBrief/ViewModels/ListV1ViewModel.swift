@@ -17,6 +17,7 @@ final class ListV1ViewModel: ObservableObject {
     @Published private(set) var isLoading = true
     @Published private(set) var isLoadingEarlier = false
     @Published private(set) var hasEarlierTurns = false
+    @Published private(set) var isDeveloperModeEnabled = false
     /// 仅供分页/滚动与既有回归测试使用，不传给 AgentTurnView。
     private var summaryItems: [AgentTurnSummaryItem] = []
     private var pendingUserSnapshot: [Message] = []
@@ -71,6 +72,11 @@ final class ListV1ViewModel: ObservableObject {
     /// 用户当前选中的对话 ID（来自内核状态，反映真实意图）。
     var selectedConversationID: UUID? {
         services.selectedConversationID
+    }
+
+    func updateDeveloperMode(enabled: Bool) {
+        guard isDeveloperModeEnabled != enabled else { return }
+        isDeveloperModeEnabled = enabled
     }
 
     func activate(conversationID: UUID?) async {

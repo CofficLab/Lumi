@@ -1,8 +1,6 @@
 import Foundation
-import ProviderChatSection
 import ProviderConversation
 import ProviderConversationState
-import ProviderDeveloperMode
 import ProviderMessage
 
 /// 新版 PluginMessageList 的服务容器。
@@ -15,27 +13,17 @@ import ProviderMessage
 struct MessageListServices {
     let conversations: (any MessageListConversationCapability)?
     let conversationState: (any MessageListConversationStateCapability)?
-    let developerMode: (any DeveloperModeProviding)?
+    let developerMode: (any MessageListDeveloperModeCapability)?
     let messages: (any MessageListMessageCapability)?
     let rendering: (any MessageListRenderingCapability)?
     let streaming: (any MessageListStreamingCapability)?
     let toolManager: (any MessageListToolManagerCapability)?
     let agentTurn: (any MessageListAgentLoopCapability)?
-    let promptSuggestions: (any MessageListPromptSuggestionCapability)?
-    let promptSuggestionExecutor: (any MessageListPromptSuggestionExecutorCapability)?
-    let project: (any MessageListProjectCapability)?
-    let toolbar: (any MessageListToolbarCapability)?
-    let chat: (any MessageListChatSectionCapability)?
     var selectedConversationID: UUID? {
         conversations?.selectedConversationID
-    }
-
-    var activeChatContext: ChatContext? {
-        chat?.activeContext
     }
 
     func verbosity(for conversationID: UUID?) -> ResponseVerbosity {
         conversations?.verbosity(for: conversationID) ?? .defaultVerbosity
     }
-
 }

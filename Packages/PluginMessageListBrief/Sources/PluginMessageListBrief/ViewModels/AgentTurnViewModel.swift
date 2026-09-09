@@ -11,7 +11,7 @@ struct AgentTurnMessageProjection: Equatable {
     var activity: AgentActivityProjection?
 }
 
-/// 单个 AgentTurnView 的消息数据源。它只接收 Turn 身份，自行读取、监听和投影消息。
+/// 单个 AgentTurnView 的消息数据源。它只接收 Turn 身份，读取并投影消息。
 @MainActor
 final class AgentTurnViewModel {
     enum Event {

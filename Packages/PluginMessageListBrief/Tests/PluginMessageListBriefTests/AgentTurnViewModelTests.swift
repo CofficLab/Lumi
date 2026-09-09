@@ -66,11 +66,6 @@ private final class StubStreamingCapability: MessageListStreamingCapability {
         streaming: streaming,
         toolManager: nil,
         agentTurn: nil,
-        promptSuggestions: nil,
-        promptSuggestionExecutor: nil,
-        project: nil,
-        toolbar: nil,
-        chat: nil
     )
     let item = AgentTurnPresentationItem(
         pendingUserMessages: [userMessage],

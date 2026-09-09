@@ -191,6 +191,7 @@ struct ListV1View: View {
                     services: services,
                     item: item,
                     verbosity: verbosity,
+                    isDeveloperModeEnabled: turnViewModel.isDeveloperModeEnabled,
                     viewModel: turnViewModel.agentTurnViewModel(for: item),
                     onDynamicContentChange: {
                         guard isInitialPositionReady, atBottomBox.value else { return }
@@ -203,7 +204,8 @@ struct ListV1View: View {
                 MessageRowView(
                     services: services,
                     message: message,
-                    verbosity: verbosity
+                    verbosity: verbosity,
+                    isDeveloperModeEnabled: turnViewModel.isDeveloperModeEnabled
                 )
                 .id(message.id)
                 .plainMessageListRow()
