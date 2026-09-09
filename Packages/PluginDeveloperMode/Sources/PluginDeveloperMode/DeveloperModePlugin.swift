@@ -46,7 +46,7 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
             return
         }
 
-        toolbar.addToolbarItems([
+        var toolbarItems = [
             ToolbarItem(
                 id: "\(id).toggle",
                 title: LumiPluginLocalization.string("Developer mode"),
@@ -56,16 +56,51 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
             ) {
                 DeveloperModeToggleView(provider: provider)
             },
-        ])
+        ]
+#if DEBUG
+        toolbarItems.append(
+            ToolbarItem(
+                id: "\(id).badge",
+                title: LumiPluginLocalization.string("Running a Debug build"),
+                placement: .leading,
+                category: .global,
+                order: 900
+            ) {
+                DebugBadgeView()
+            }
+        )
+#endif
+        toolbar.addToolbarItems(toolbarItems)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        var toolbarItemIDs = ["\(id).toggle"]
+#if DEBUG
+        toolbarItemIDs.append("\(id).badge")
+#endif
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(
-            ids: ["\(id).toggle"]
+            ids: Set(toolbarItemIDs)
         )
         provider = nil
     }
 }
+
+#if DEBUG
+/// Indicates that the app is running a Debug build.
+private struct DebugBadgeView: View {
+    @LumiTheme private var theme
+
+    var body: some View {
+        Text(LumiPluginLocalization.string("DEBUG"))
+            .font(.appMicroEmphasized)
+            .tracking(0.3)
+            .foregroundStyle(.white)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(theme.warning, in: Capsule())
+    }
+}
+#endif
 
 private struct DeveloperModeToggleView: View {
     @LumiTheme private var theme

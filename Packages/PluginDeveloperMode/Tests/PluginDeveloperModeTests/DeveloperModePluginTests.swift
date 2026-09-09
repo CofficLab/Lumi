@@ -19,7 +19,12 @@ struct DeveloperModePluginTests {
 
         let provider = try #require(kernel.resolveProvider((any DeveloperModeProviding).self))
         #expect(provider.isEnabled == false)
+#if DEBUG
+        #expect(toolbar.toolbarItems.count == 2)
+        #expect(toolbar.toolbarItems.map(\.id) == ["\(plugin.id).toggle", "\(plugin.id).badge"])
+#else
         #expect(toolbar.toolbarItems.count == 1)
+#endif
         #expect(toolbar.toolbarItems[0].placement == .leading)
         #expect(toolbar.toolbarItems[0].id == "\(plugin.id).toggle")
         #expect(type(of: toolbar.toolbarItems[0].makeView()) == AnyView.self)

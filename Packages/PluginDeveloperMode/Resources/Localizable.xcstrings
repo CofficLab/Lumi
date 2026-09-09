@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "DEBUG" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DEBUG"
+          }
+        }
+      }
+    },
     "Developer mode" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31,6 +42,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DEV"
+          }
+        }
+      }
+    },
+    "Running a Debug build" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running a Debug build"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前运行的是 Debug 构建"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前執行的是 Debug 建置"
           }
         }
       }
