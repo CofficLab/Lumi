@@ -15,7 +15,7 @@ extension KernelCoreContainer {
     /// 注册 Provider 实现。
     ///
     /// Kernel 只维护注册表，不发布 Provider 状态变化。需要响应变化的消费者
-    /// 必须直接观察具体 Provider 的精准观察接口或 `objectWillChange`。
+    /// 必须直接使用具体 Provider 的类型化观察接口。
     public func registerProvider<T>(_ type: T.Type, _ provider: T) throws {
         let key = ObjectIdentifier(type)
         guard providers[key] == nil else {
