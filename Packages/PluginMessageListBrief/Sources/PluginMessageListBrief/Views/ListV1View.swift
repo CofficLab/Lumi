@@ -29,7 +29,6 @@ struct ListV1View: View {
     /// 发送新消息后，临时把最新回合定位在视口上方约四分之一处。
     @State private var usesPostSendPositioning = false
     @State private var viewportHeight: CGFloat = 0
-    @State private var activeTurnHeight: CGFloat = 0
     @State private var isInitialPositionReady = false
     @State private var isPreparingInitialPosition = false
 
@@ -116,12 +115,8 @@ struct ListV1View: View {
             .onChange(of: turnViewModel.agentTurns) { _, items in
                 handleTurnLifecycleChange(items)
             }
-            .onPreferenceChange(ActiveTurnHeightPreferenceKey.self) { height in
-                updateActiveTurnHeight(height)
-            }
             .onChange(of: selectedConversationID) { _, _ in
                 usesPostSendPositioning = false
-                activeTurnHeight = 0
                 scrollCoordinator.cancelPendingTasks()
                 isInitialPositionReady = false
                 isPreparingInitialPosition = false
@@ -196,16 +191,6 @@ struct ListV1View: View {
                 )
                 .id(item.id)
                 .plainMessageListRow()
-                .background {
-                    if item.acceptsLiveActivity {
-                        GeometryReader { proxy in
-                            Color.clear.preference(
-                                key: ActiveTurnHeightPreferenceKey.self,
-                                value: proxy.size.height
-                            )
-                        }
-                    }
-                }
             case let .timelineEvent(message):
                 MessageRowView(
                     services: services,
@@ -262,9 +247,13 @@ struct ListV1View: View {
 
     private var postSendTailReserve: CGFloat {
         guard usesPostSendPositioning else { return 0 }
-        return MessageListSendPositioning.tailReserve(
-            viewportHeight: viewportHeight,
-            activeTurnHeight: activeTurnHeight
+        // Do not measure a live List row with GeometryReader + PreferenceKey.
+        // Its height changes on every streamed token and feeding that value
+        // back into List creates a layout feedback loop. A stable reserve
+        // still places a newly sent turn near the top of the viewport; normal
+        // bottom scrolling takes over once the turn finishes.
+        return MessageListSendPositioning.conservativeTailReserve(
+            viewportHeight: viewportHeight
         )
     }
 
@@ -299,7 +288,6 @@ struct ListV1View: View {
               !items.contains(where: \.acceptsLiveActivity) else { return }
 
         usesPostSendPositioning = false
-        activeTurnHeight = 0
         if atBottomBox.value {
             scrollTick &+= 1
         }
@@ -307,19 +295,7 @@ struct ListV1View: View {
 
     private func updateViewportHeight(_ height: CGFloat) {
         guard height.isFinite, height > 0 else { return }
+        guard abs(viewportHeight - height) >= 0.5 else { return }
         viewportHeight = height
-    }
-
-    private func updateActiveTurnHeight(_ height: CGFloat) {
-        guard height.isFinite, height >= 0 else { return }
-        activeTurnHeight = height
-    }
-}
-
-private struct ActiveTurnHeightPreferenceKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }

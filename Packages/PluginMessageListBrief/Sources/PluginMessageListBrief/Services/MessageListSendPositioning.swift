@@ -23,4 +23,14 @@ enum MessageListSendPositioning {
             viewportHeight * (1 - targetTopFraction) - activeTurnHeight
         )
     }
+
+    /// Conservative reserve used while the live turn is changing size.
+    ///
+    /// Measuring a streaming List row with a SwiftUI preference feeds every
+    /// token-sized change back into List layout. Keep the reserve independent
+    /// of row height so the layout has a stable value until the turn finishes.
+    static func conservativeTailReserve(viewportHeight: CGFloat) -> CGFloat {
+        guard viewportHeight.isFinite, viewportHeight > 0 else { return 0 }
+        return viewportHeight * (1 - targetTopFraction)
+    }
 }

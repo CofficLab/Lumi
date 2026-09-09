@@ -160,6 +160,11 @@ final class TrackerView: NSView {
     /// 上一次报告的「是否在底部」，用于迟滞判定、避免无谓回调。
     private var lastAtBottom: Bool = true
     private var lastVisibleHeight: CGFloat = 0
+    /// Layout callbacks must not synchronously mutate SwiftUI state while
+    /// AppKit is laying out the hosting view. Coalesce the latest viewport
+    /// height and deliver it on the next main-actor turn instead.
+    private var pendingViewportHeight: CGFloat?
+    private var viewportHeightUpdateTask: Task<Void, Never>?
 
     // MARK: - Live-resize 恢复
 
@@ -181,6 +186,10 @@ final class TrackerView: NSView {
         super.init(frame: .zero)
         // 不绘制、不参与命中测试，纯粹作为「挂在视图树里用来找 scrollView」的锚点。
         wantsLayer = false
+    }
+
+    deinit {
+        viewportHeightUpdateTask?.cancel()
     }
 
     @available(*, unavailable)
@@ -291,6 +300,9 @@ final class TrackerView: NSView {
     }
 
     fileprivate func stopObserving() {
+        viewportHeightUpdateTask?.cancel()
+        viewportHeightUpdateTask = nil
+        pendingViewportHeight = nil
         if let observation {
             NotificationCenter.default.removeObserver(observation)
             self.observation = nil
@@ -460,7 +472,7 @@ final class TrackerView: NSView {
 
         if abs(visibleHeight - lastVisibleHeight) >= 0.5 {
             lastVisibleHeight = visibleHeight
-            onViewportHeightChange?(visibleHeight)
+            scheduleViewportHeightUpdate(visibleHeight)
         }
 
         let distance = documentHeight - (offsetY + visibleHeight)
@@ -474,6 +486,24 @@ final class TrackerView: NSView {
         guard atBottom != lastAtBottom else { return }
         lastAtBottom = atBottom
         onChange?(atBottom)
+    }
+
+    /// Defer the SwiftUI-facing callback until the current AppKit layout pass
+    /// has returned. Without this hop, changing `viewportHeight` from inside
+    /// `layout()` can re-enter List's AttributeGraph layout and hit SwiftUI's
+    /// `DynamicLayoutViewChildGeometry` assertion.
+    private func scheduleViewportHeightUpdate(_ height: CGFloat) {
+        pendingViewportHeight = height
+        guard viewportHeightUpdateTask == nil else { return }
+
+        viewportHeightUpdateTask = Task { @MainActor [weak self] in
+            await Task.yield()
+            guard let self else { return }
+            self.viewportHeightUpdateTask = nil
+            guard let pendingViewportHeight = self.pendingViewportHeight else { return }
+            self.pendingViewportHeight = nil
+            self.onViewportHeightChange?(pendingViewportHeight)
+        }
     }
 
     /// 切换会话/重置滚动位置时由外部调用，把判定重置回「在底部」。
