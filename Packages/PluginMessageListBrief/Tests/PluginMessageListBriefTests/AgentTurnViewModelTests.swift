@@ -43,7 +43,7 @@ private final class StubStreamingCapability: MessageListStreamingCapability {
     func stage(for conversationID: UUID) -> MessageStreamingStage { currentStage }
 }
 
-@Test @MainActor func agentTurnViewModelForwardsProjectionEvents() async {
+@Test @MainActor func agentTurnViewModelPublishesProjectionChanges() async {
     let conversationID = UUID()
     let userMessage = Message(
         conversationID: conversationID,
@@ -73,26 +73,17 @@ private final class StubStreamingCapability: MessageListStreamingCapability {
     )
     let viewModel = AgentTurnViewModel(services: services, item: item)
 
-    var projections: [AgentTurnMessageProjection] = []
-    let handle = viewModel.addObserver { event in
-        switch event {
-        case let .projectionChanged(projection):
-            projections.append(projection)
-        }
-    }
-
     await viewModel.refresh()
+    #expect(viewModel.projection.userMessages.map(\.id) == [userMessage.id])
     messages.snapshot = [userMessage, statusMessage]
     streaming.currentStage = .thinking
     await viewModel.refresh()
-    #expect(projections.count == 2)
-    #expect(projections.last?.activity?.title == "正在思考…")
-    #expect(projections.last?.processMessages.isEmpty == true)
+    #expect(viewModel.projection.activity?.title == "正在思考…")
+    #expect(viewModel.projection.processMessages.isEmpty)
 
-    handle.cancel()
     messages.snapshot = []
     await viewModel.refresh()
-    #expect(projections.count == 2)
+    #expect(viewModel.projection.userMessages.isEmpty)
 }
 
 @Test @MainActor func activeToolCallStaysInsideProcessDisclosure() {

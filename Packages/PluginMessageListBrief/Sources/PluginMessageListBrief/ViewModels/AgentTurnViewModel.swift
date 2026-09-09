@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import ProviderConversationState
 import ProviderMessage
@@ -13,49 +14,16 @@ struct AgentTurnMessageProjection: Equatable {
 
 /// 单个 AgentTurnView 的消息数据源。它只接收 Turn 身份，读取并投影消息。
 @MainActor
-final class AgentTurnViewModel {
-    enum Event {
-        case projectionChanged(AgentTurnMessageProjection)
-    }
-
-    protocol ObserverHandle: AnyObject {
-        func cancel()
-    }
-
-    private final class Handle: ObserverHandle {
-        private let cancelAction: () -> Void
-        private var isCancelled = false
-
-        init(cancelAction: @escaping () -> Void) {
-            self.cancelAction = cancelAction
-        }
-
-        func cancel() {
-            guard !isCancelled else { return }
-            isCancelled = true
-            cancelAction()
-        }
-    }
-
-    private(set) var projection = AgentTurnMessageProjection()
+final class AgentTurnViewModel: ObservableObject {
+    @Published private(set) var projection = AgentTurnMessageProjection()
 
     private let services: MessageListServices
     private var item: AgentTurnPresentationItem
     private var refreshSequence: UInt64 = 0
-    private var observers: [UUID: (Event) -> Void] = [:]
 
     init(services: MessageListServices, item: AgentTurnPresentationItem) {
         self.services = services
         self.item = item
-    }
-
-    @discardableResult
-    func addObserver(_ callback: @escaping (Event) -> Void) -> any ObserverHandle {
-        let id = UUID()
-        observers[id] = callback
-        return Handle { [weak self] in
-            self?.observers.removeValue(forKey: id)
-        }
     }
 
     func activate() async {
@@ -92,13 +60,6 @@ final class AgentTurnViewModel {
     private func setProjection(_ nextProjection: AgentTurnMessageProjection) {
         guard nextProjection != projection else { return }
         projection = nextProjection
-        notify(.projectionChanged(nextProjection))
-    }
-
-    private func notify(_ event: Event) {
-        for callback in Array(observers.values) {
-            callback(event)
-        }
     }
 
     nonisolated static func project(
