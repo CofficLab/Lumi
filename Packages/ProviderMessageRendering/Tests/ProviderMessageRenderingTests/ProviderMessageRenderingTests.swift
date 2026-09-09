@@ -12,8 +12,10 @@ struct ProviderMessageRenderingTests {
     func messageRendererChangesAreObservable() {
         let provider = DefaultMessageRenderingProviding()
         var changeCount = 0
-        let cancellable = provider.objectWillChange.sink { _ in
-            changeCount += 1
+        let handle = provider.addMessageRenderingObserver { event in
+            if case .renderersChanged = event {
+                changeCount += 1
+            }
         }
 
         provider.register(makeMessageRenderer(id: "plain", order: 1))
@@ -31,7 +33,7 @@ struct ProviderMessageRenderingTests {
         #expect(provider.allRenderers.isEmpty)
         #expect(changeCount > countAfterReplace)
 
-        withExtendedLifetime(cancellable) {}
+        handle.cancel()
     }
 
     @Test("ToolCall 渲染器注册、替换和移除会发布观察事件")
