@@ -30,6 +30,8 @@ struct ListV1View: View {
     @State private var usesPostSendPositioning = false
     @State private var viewportHeight: CGFloat = 0
     @State private var activeTurnHeight: CGFloat = 0
+    @State private var isInitialPositionReady = false
+    @State private var isPreparingInitialPosition = false
 
     init(
         services: MessageListServices,
@@ -40,15 +42,20 @@ struct ListV1View: View {
     }
 
     var body: some View {
-        Group {
-            if turnViewModel.isLoading {
+        ZStack {
+            messageScrollView
+                .opacity(isInitialPositionReady ? 1 : 0)
+                .allowsHitTesting(isInitialPositionReady)
+            if turnViewModel.isLoading || !isInitialPositionReady {
                 MessageLoadingView()
-            } else {
-                messageScrollView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(theme.surface.opacity(0.6))
             }
         }
         .task {
             atBottomBox.value = true
+            isInitialPositionReady = false
+            isPreparingInitialPosition = false
             await turnViewModel.activate(conversationID: selectedConversationID)
         }
     }
@@ -73,6 +80,7 @@ struct ListV1View: View {
                     .accessibilityHidden(true)
                     .plainMessageListRow(insets: EdgeInsets())
                     .onChange(of: scrollTick) { _, _ in
+                        guard isInitialPositionReady else { return }
                         scrollCoordinator.scheduleScrollToBottomAfterLayout(
                             proxy: proxy,
                             messages: displayedHistoryMessages,
@@ -98,6 +106,9 @@ struct ListV1View: View {
                 if atBottomBox.value {
                     scrollTick &+= 1
                 }
+                if !isInitialPositionReady, !turnViewModel.isLoading {
+                    prepareInitialPosition(proxy: proxy, messages: displayedHistoryMessages)
+                }
             }
             .onChange(of: displayedUserMessageIDs) { oldIDs, newIDs in
                 handleUserMessageInsertion(oldIDs: oldIDs, newIDs: newIDs)
@@ -111,8 +122,23 @@ struct ListV1View: View {
             .onChange(of: selectedConversationID) { _, _ in
                 usesPostSendPositioning = false
                 activeTurnHeight = 0
+                scrollCoordinator.cancelPendingTasks()
+                isInitialPositionReady = false
+                isPreparingInitialPosition = false
+            }
+            .onChange(of: turnViewModel.isLoading) { _, isLoading in
+                if isLoading {
+                    scrollCoordinator.cancelPendingTasks()
+                    isInitialPositionReady = false
+                    isPreparingInitialPosition = false
+                } else {
+                    prepareInitialPosition(proxy: proxy, messages: displayedHistoryMessages)
+                }
             }
             .onAppear {
+                if !turnViewModel.isLoading {
+                    prepareInitialPosition(proxy: proxy, messages: displayedHistoryMessages)
+                }
                 if atBottomBox.value {
                     scrollTick &+= 1
                 }
@@ -125,6 +151,29 @@ struct ListV1View: View {
 
     private var selectedConversationID: UUID? {
         services.selectedConversationID
+    }
+
+    private func prepareInitialPosition(
+        proxy: ScrollViewProxy,
+        messages: [ProviderMessage.Message]
+    ) {
+        guard !isInitialPositionReady, !isPreparingInitialPosition else { return }
+        let conversationID = selectedConversationID
+        isPreparingInitialPosition = true
+        Task { @MainActor in
+            let ready = await scrollCoordinator.prepareInitialBottom(
+                proxy: proxy,
+                messages: messages,
+                controller: bottomScrollController,
+                condition: {
+                    conversationID == selectedConversationID && !turnViewModel.isLoading
+                }
+            )
+            isPreparingInitialPosition = false
+            if ready, conversationID == selectedConversationID, !turnViewModel.isLoading {
+                isInitialPositionReady = true
+            }
+        }
     }
 
     @ViewBuilder

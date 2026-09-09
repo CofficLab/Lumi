@@ -38,6 +38,7 @@ final class MessageListScrollCoordinator {
     static let bottomSettleStableFrames = 3
 
     private var pendingBottomScrollTask: Task<Void, Never>?
+    private var preparationSequence: UInt64 = 0
 
     deinit {
         pendingBottomScrollTask?.cancel()
@@ -50,6 +51,55 @@ final class MessageListScrollCoordinator {
     func cancelPendingTasks() {
         pendingBottomScrollTask?.cancel()
         pendingBottomScrollTask = nil
+        preparationSequence &+= 1
+    }
+
+    /// 在首次显示消息列表前完成布局并定位到底部。
+    ///
+    /// `List` 的首轮布局和懒加载行 materialize 都是异步的。调用方应在该方法
+    /// 返回 `true` 后再撤掉遮罩，否则用户可能先看到列表顶部，再看到它跳到底部。
+    func prepareInitialBottom(
+        proxy: ScrollViewProxy,
+        messages: [Message],
+        controller: ScrollViewBottomController? = nil,
+        condition: @escaping @MainActor () -> Bool = { true }
+    ) async -> Bool {
+        pendingBottomScrollTask?.cancel()
+        pendingBottomScrollTask = nil
+        preparationSequence &+= 1
+        let sequence = preparationSequence
+
+        guard !messages.isEmpty else { return true }
+
+        do {
+            try await Task.sleep(nanoseconds: Self.postAppendDelayNs)
+        } catch {
+            return false
+        }
+        guard isPreparationActive(sequence), condition() else { return false }
+
+        performScrollToBottom(proxy: proxy, animated: false)
+
+        do {
+            try await Task.sleep(nanoseconds: Self.scrollRetryDelayNs)
+        } catch {
+            return false
+        }
+        guard isPreparationActive(sequence), condition() else { return false }
+
+        if let controller, controller.isAttached {
+            await settleBottom(controller: controller) {
+                self.isPreparationActive(sequence) && condition()
+            }
+        } else if condition() {
+            performScrollToBottom(proxy: proxy, animated: false)
+        }
+
+        return isPreparationActive(sequence) && condition()
+    }
+
+    private func isPreparationActive(_ sequence: UInt64) -> Bool {
+        sequence == preparationSequence && !Task.isCancelled
     }
 
     /// 滚动到底部锚点。
