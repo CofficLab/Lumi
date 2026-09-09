@@ -10,6 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../KitLocalization"),
         .package(path: "../ProviderPerformanceMetrics"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderStorage"),
@@ -19,10 +20,12 @@ let package = Package(
             name: "PluginPerformanceMetrics",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "ProviderPerformanceMetrics", package: "ProviderPerformanceMetrics"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
-            ]
+            ],
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginPerformanceMetricsTests",
