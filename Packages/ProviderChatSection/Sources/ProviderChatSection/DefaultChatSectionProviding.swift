@@ -208,7 +208,9 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
 /// `AppPanelChromeMetrics`，与旧版高度、内边距、背景、边框、阴影一致。
 @MainActor
 public struct ChatSectionHostView: View {
-    @ObservedObject var provider: DefaultChatSectionProviding
+    let provider: DefaultChatSectionProviding
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any ChatSectionProvidingObserverHandle)?
 
     public init(provider: DefaultChatSectionProviding) {
         self.provider = provider
@@ -262,6 +264,17 @@ public struct ChatSectionHostView: View {
 
     public var body: some View {
         wrappedContent
+            .id(observationRevision)
+            .onAppear {
+                guard observerHandle == nil else { return }
+                observerHandle = provider.addObserver { _ in
+                    observationRevision += 1
+                }
+            }
+            .onDisappear {
+                observerHandle?.cancel()
+                observerHandle = nil
+            }
     }
 
     /// 根包装器链式叠加：order 升序，先注册的先包（最小 order 在最外层）。
