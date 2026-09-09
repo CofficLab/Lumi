@@ -1,18 +1,17 @@
-import Combine
 import LumiUI
 import ProviderConversation
 import SwiftUI
 
 @MainActor
-public final class DefaultChatSectionProviding: ChatSectionProviding, ObservableObject {
-    @Published public private(set) var isVisible: Bool = true
-    @Published public private(set) var isContextActive: Bool = false
-    @Published public private(set) var activeContext: ChatContext? = .defaultChat
-    @Published public private(set) var isHeaderVisible: Bool = true
-    @Published public private(set) var chatSectionWidth: ChatSectionWidth
-    @Published public private(set) var items: [ChatSectionItem] = []
-    @Published public private(set) var barItems: [ChatSectionBarItem] = []
-    @Published public private(set) var rootWrappers: [ChatSectionRootWrapper] = []
+public final class DefaultChatSectionProviding: ChatSectionProviding {
+    public private(set) var isVisible: Bool = true
+    public private(set) var isContextActive: Bool = false
+    public private(set) var activeContext: ChatContext? = .defaultChat
+    public private(set) var isHeaderVisible: Bool = true
+    public private(set) var chatSectionWidth: ChatSectionWidth
+    public private(set) var items: [ChatSectionItem] = []
+    public private(set) var barItems: [ChatSectionBarItem] = []
+    public private(set) var rootWrappers: [ChatSectionRootWrapper] = []
 
     /// 会话选择绑定句柄：随 Provider 生命周期持有（与内核同生命周期）。
     private var conversationSelectionObserver: (any SelectedConversationObserverHandle)?

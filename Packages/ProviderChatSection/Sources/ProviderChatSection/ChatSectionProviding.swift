@@ -1,5 +1,4 @@
 import ProviderConversation
-import Combine
 import Foundation
 import SwiftUI
 
@@ -136,8 +135,7 @@ public final class NoopChatSectionProvidingObserverHandle: ChatSectionProvidingO
 /// stack+bottomFixed / action bar），插件通过它注册内容区与各栏贡献；
 /// 宿主通过 `makeChatSectionView()` 渲染整个聊天分区。
 @MainActor
-public protocol ChatSectionProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol ChatSectionProviding: AnyObject {
     /// 聊天分区整体是否可见（由容器切换驱动）。
     var isVisible: Bool { get }
 
