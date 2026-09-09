@@ -18,7 +18,7 @@ import KitSuperLog
 public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-message-sender", category: "MessageSender")
     nonisolated public static let emoji = "📤"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private let conversations: any ConversationManaging
     private let messages: any MessageManaging

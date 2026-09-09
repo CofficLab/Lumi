@@ -19,12 +19,9 @@ public final class DefaultProjectProvider: ProjectProviding, SuperLog {
 
     private var observers: [WeakObserver] = []
 
-    public init() {
-        Self.logger.warning("\(Self.t)DefaultProjectProvider is an incomplete default implementation")
-    }
+    public init() {}
 
     public func openProject(at path: String) async throws {
-        Self.logger.warning("\(Self.t)DefaultProjectProvider.openProject uses in-memory state only; persistent project support is incomplete")
         let info = ProjectInfo(
             name: (path as NSString).lastPathComponent,
             path: path
