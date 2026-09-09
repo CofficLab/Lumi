@@ -65,7 +65,7 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
         self.context = context
 
         // 0. 选中对话观察：回调同步写入 context.selectedConversationID，
-        //    视图通过 @ObservedObject 直接观察，无需间接订阅 objectWillChange。
+        //    视图通过上下文观察状态事件，无需订阅 provider 的全局变化。
         contextObserver = ConversationListContextObserver(
             conversations: conversations,
             conversationState: conversationState,

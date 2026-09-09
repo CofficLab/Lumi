@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import KitSuperLog
 import os
@@ -18,7 +17,7 @@ public final class ConversationStateProvider: ConversationStateProviding, SuperL
     nonisolated public static let emoji = "📋"
     nonisolated public static let verbose = false
 
-    @Published public private(set) var states: [UUID: ConversationStateSnapshot] = [:]
+    public private(set) var states: [UUID: ConversationStateSnapshot] = [:]
     private var observers: [UUID: Observer] = [:]
 
     public init() {
@@ -40,7 +39,7 @@ public final class ConversationStateProvider: ConversationStateProviding, SuperL
         states[conversationID] ?? ConversationStateSnapshot(conversationID: conversationID)
     }
 
-    /// 合并指定会话的状态变化，并发布 `objectWillChange`。
+    /// 合并指定会话的状态变化，并发布结构化状态事件。
     public func update(
         conversationID: UUID,
         turnID: UUID? = nil,
