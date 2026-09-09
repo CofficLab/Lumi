@@ -3,6 +3,7 @@ import Darwin
 import LumiUI
 import ProviderDiagnostics
 import ProviderDocsView
+import ProviderOnboarding
 import ProviderUninstall
 import SwiftUI
 import UniformTypeIdentifiers
@@ -12,6 +13,7 @@ struct GeneralSettingsDetailView: View {
     let version: String?
     let docsProvider: (any DocsViewProviding)?
     let diagnosticsProvider: (any DiagnosticsProviding)?
+    let onboardingProvider: (any OnboardingProviding)?
     let uninstallProvider: (any UninstallProviding)?
     let prepareForUninstall: (@MainActor () async -> Void)?
 
@@ -111,13 +113,9 @@ struct GeneralSettingsDetailView: View {
                         style: .secondary,
                         size: .small
                     ) {
-                        // 广播重放引导请求，由宿主监听并展示。
-                        NotificationCenter.default.post(
-                            name: .lumiShowOnboarding,
-                            object: nil,
-                            userInfo: [LumiOnboardingNotification.resetKey: true]
-                        )
+                        onboardingProvider?.replay()
                     }
+                    .disabled(onboardingProvider == nil)
                 }
 
                 if !manuals.isEmpty {
@@ -558,17 +556,4 @@ struct GeneralSettingsDetailView: View {
         NSWorkspace.shared.open(url)
     }
     #endif
-}
-
-// MARK: - Onboarding 通知
-
-/// 通知名与重置 key。
-enum LumiOnboardingNotification {
-    /// 重放新手引导时置 true，宿主据此强制重置引导进度。
-    static let resetKey = "reset"
-}
-
-extension Notification.Name {
-    /// 请求展示/重放新手引导（`Onboarding.Show`）。
-    static let lumiShowOnboarding = Notification.Name("Onboarding.Show")
 }

@@ -24,7 +24,7 @@ import Testing
     let plugin = OnboardingPlugin()
     try plugin.onBoot(kernel: kernel)
     let onboarding = try #require(kernel.resolveProvider((any OnboardingProviding).self))
-    #expect(onboarding.allPages.map(\.id) == ["onboarding-welcome", "onboarding-ai-setup"])
+    #expect(onboarding.allPages.isEmpty)
     #expect(onboarding.isPresented)
     #expect(rootView.overlays.map(\.id) == ["com.coffic.lumi.plugin.onboarding.overlay"])
 
@@ -35,16 +35,15 @@ import Testing
 }
 
 @MainActor
-@Test func onboardingCompletionMarkerPersistsOnDisk() throws {
+@Test func onboardingReplayClearsCompletionAndShowsAgain() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("PluginOnboardingStoreTests-\(UUID().uuidString)")
-    let firstStore = OnboardingSeenStore(directory: directory)
-    #expect(!firstStore.hasSeen)
+    let store = OnboardingSeenStore(directory: directory)
+    store.markSeen()
+    #expect(store.hasSeen)
 
-    firstStore.markSeen()
-
-    let secondStore = OnboardingSeenStore(directory: directory)
-    #expect(secondStore.hasSeen)
-    secondStore.reset()
-    #expect(!secondStore.hasSeen)
+    let provider = DefaultOnboardingProviding(onReplay: store.reset)
+    provider.replay()
+    #expect(!store.hasSeen)
+    #expect(provider.isPresented)
 }

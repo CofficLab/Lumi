@@ -28,11 +28,8 @@ public final class OnboardingPlugin: SuperPlugin, SuperLog {
     )
 
     private static let overlayID = "com.coffic.lumi.plugin.onboarding.overlay"
-    private static let showNotification = Notification.Name("Onboarding.Show")
-
     private var onboardingProvider: DefaultOnboardingProviding?
     private var seenStore: OnboardingSeenStore?
-    private var showNotificationObserver: NSObjectProtocol?
 
     public init() {}
 
@@ -44,10 +41,12 @@ public final class OnboardingPlugin: SuperPlugin, SuperLog {
             throw KernelCoreError.providerNotRegistered(type: (any StorageProviding).self)
         }
 
-        let provider = DefaultOnboardingProviding()
+        let store = OnboardingSeenStore(directory: storage.pluginDataDirectory(for: id))
+        let provider = DefaultOnboardingProviding(onReplay: { [weak store] in
+            store?.reset()
+        })
         try kernel.registerProvider((any OnboardingProviding).self, provider)
 
-        let store = OnboardingSeenStore(directory: storage.pluginDataDirectory(for: id))
         onboardingProvider = provider
         seenStore = store
 
@@ -65,17 +64,6 @@ public final class OnboardingPlugin: SuperPlugin, SuperLog {
             }
         ])
 
-        showNotificationObserver = NotificationCenter.default.addObserver(
-            forName: Self.showNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            let shouldReset = notification.userInfo?["reset"] as? Bool == true
-            Task { @MainActor [weak self] in
-                self?.handleShowNotification(reset: shouldReset)
-            }
-        }
-
         if !store.hasSeen {
             provider.show()
         }
@@ -85,31 +73,13 @@ public final class OnboardingPlugin: SuperPlugin, SuperLog {
         if let rootView = kernel.resolveProvider((any RootViewProviding).self) {
             rootView.removeOverlays(ids: [Self.overlayID])
         }
-        removeShowNotificationObserver()
         onboardingProvider?.dismiss()
         kernel.unregisterProvider((any OnboardingProviding).self)
         onboardingProvider = nil
         seenStore = nil
     }
 
-    public func onUnregister(kernel: KernelCoreContainer) throws {
-        removeShowNotificationObserver()
-    }
-
-    private func handleShowNotification(reset: Bool) {
-        if reset {
-            seenStore?.reset()
-        }
-        guard let provider = onboardingProvider, !provider.allPages.isEmpty else { return }
-        provider.show()
-    }
-
-    private func removeShowNotificationObserver() {
-        if let showNotificationObserver {
-            NotificationCenter.default.removeObserver(showNotificationObserver)
-            self.showNotificationObserver = nil
-        }
-    }
+    public func onUnregister(kernel: KernelCoreContainer) throws {}
 }
 
 @MainActor

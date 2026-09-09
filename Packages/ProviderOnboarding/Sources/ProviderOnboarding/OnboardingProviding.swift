@@ -32,6 +32,9 @@ public protocol OnboardingProviding: AnyObject {
     func register(_ page: OnboardingPageItem)
     func unregister(id: String)
     func show()
+    /// Clears the persisted completion state through the owning implementation
+    /// and presents onboarding from the first page again.
+    func replay()
     func dismiss()
 
     @discardableResult
@@ -42,9 +45,12 @@ public protocol OnboardingProviding: AnyObject {
 public final class DefaultOnboardingProviding: OnboardingProviding {
     public private(set) var allPages: [OnboardingPageItem] = []
     public private(set) var isPresented = false
+    private let replayHandler: (@MainActor () -> Void)?
     private var observers: [WeakObserver] = []
 
-    public init() {}
+    public init(onReplay: (@MainActor () -> Void)? = nil) {
+        replayHandler = onReplay
+    }
 
     public func register(_ page: OnboardingPageItem) {
         allPages.removeAll { $0.id == page.id }
@@ -63,6 +69,15 @@ public final class DefaultOnboardingProviding: OnboardingProviding {
     public func show() {
         guard !isPresented else { return }
         isPresented = true
+        notify(.presentationChanged(isPresented: true))
+    }
+
+    public func replay() {
+        replayHandler?()
+        if !isPresented {
+            isPresented = true
+        }
+        // Always notify so an already visible onboarding resets to page one.
         notify(.presentationChanged(isPresented: true))
     }
 
