@@ -1,15 +1,11 @@
 import Combine
 import Foundation
-import ProviderConversationState
 import ProviderMessage
-import ProviderMessageStreaming
 
 struct AgentTurnMessageProjection: Equatable {
     var userMessages: [Message] = []
     var processMessages: [Message] = []
     var lastMessage: Message?
-    /// 会话当前活动的独立尾部状态，不属于消息时间线。
-    var activity: AgentActivityProjection?
 }
 
 /// 单个 AgentTurnView 的消息数据源。它只接收 Turn 身份，读取并投影消息。
@@ -50,9 +46,7 @@ final class AgentTurnViewModel: ObservableObject {
         guard sequence == refreshSequence else { return }
         let nextProjection = Self.project(
             item: item,
-            messages: messages,
-            conversationState: services.conversationState?.state(for: conversationID),
-            streamingStage: currentStreamingStage()
+            messages: messages
         )
         setProjection(nextProjection)
     }
@@ -64,9 +58,7 @@ final class AgentTurnViewModel: ObservableObject {
 
     nonisolated static func project(
         item: AgentTurnPresentationItem,
-        messages: [Message],
-        conversationState: ConversationStateSnapshot?,
-        streamingStage: MessageStreamingStage = .idle
+        messages: [Message]
     ) -> AgentTurnMessageProjection {
         let chronological = messages.sorted(by: messageOrdering)
         let userMessages: [Message]
@@ -120,13 +112,7 @@ final class AgentTurnViewModel: ObservableObject {
         return AgentTurnMessageProjection(
             userMessages: userMessages,
             processMessages: processMessages,
-            lastMessage: lastMessage,
-            activity: item.acceptsLiveActivity
-                ? AgentActivityProjection.resolve(
-                    conversationState: conversationState,
-                    streamingStage: streamingStage
-                )
-                : nil
+            lastMessage: lastMessage
         )
     }
 
@@ -165,11 +151,6 @@ final class AgentTurnViewModel: ObservableObject {
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
         return minutes == 0 ? "\(hours)小时" : "\(hours)小时\(minutes)分钟"
-    }
-
-    private func currentStreamingStage() -> MessageStreamingStage {
-        guard item.acceptsLiveActivity, let streaming = services.streaming else { return .idle }
-        return streaming.stage(for: item.conversationID)
     }
 
     private nonisolated static func isTransientStatus(_ message: Message) -> Bool {

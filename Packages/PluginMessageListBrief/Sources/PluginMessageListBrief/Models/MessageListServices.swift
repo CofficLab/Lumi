@@ -1,6 +1,5 @@
 import Foundation
 import ProviderConversation
-import ProviderConversationState
 import ProviderMessage
 
 /// 新版 PluginMessageList 的服务容器。
@@ -12,11 +11,9 @@ import ProviderMessage
 @MainActor
 struct MessageListServices {
     let conversations: (any MessageListConversationCapability)?
-    let conversationState: (any MessageListConversationStateCapability)?
     let developerMode: (any MessageListDeveloperModeCapability)?
     let messages: (any MessageListMessageCapability)?
     let rendering: (any MessageListRenderingCapability)?
-    let streaming: (any MessageListStreamingCapability)?
     let toolManager: (any MessageListToolManagerCapability)?
     let agentTurn: (any MessageListAgentLoopCapability)?
     var selectedConversationID: UUID? {

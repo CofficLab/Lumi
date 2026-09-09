@@ -1,7 +1,6 @@
 import Foundation
 import ProviderAgentLoop
 import ProviderMessage
-import ProviderMessageStreaming
 import Testing
 @testable import PluginMessageListBrief
 
@@ -35,14 +34,6 @@ private final class StubMessageCapability: MessageListMessageCapability {
     }
 }
 
-@MainActor
-private final class StubStreamingCapability: MessageListStreamingCapability {
-    var currentStage: MessageStreamingStage = .idle
-
-    func streamingMessage(for conversationID: UUID) -> Message? { nil }
-    func stage(for conversationID: UUID) -> MessageStreamingStage { currentStage }
-}
-
 @Test @MainActor func agentTurnViewModelPublishesProjectionChanges() async {
     let conversationID = UUID()
     let userMessage = Message(
@@ -50,20 +41,12 @@ private final class StubStreamingCapability: MessageListStreamingCapability {
         role: .user,
         content: "Hello"
     )
-    let statusMessage = Message(
-        conversationID: conversationID,
-        role: .status,
-        content: "Thinking"
-    )
     let messages = StubMessageCapability(snapshot: [userMessage])
-    let streaming = StubStreamingCapability()
     let services = MessageListServices(
         conversations: nil,
-        conversationState: nil,
         developerMode: nil,
         messages: messages,
         rendering: nil,
-        streaming: streaming,
         toolManager: nil,
         agentTurn: nil,
     )
@@ -75,10 +58,8 @@ private final class StubStreamingCapability: MessageListStreamingCapability {
 
     await viewModel.refresh()
     #expect(viewModel.projection.userMessages.map(\.id) == [userMessage.id])
-    messages.snapshot = [userMessage, statusMessage]
-    streaming.currentStage = .thinking
+    messages.snapshot = [userMessage]
     await viewModel.refresh()
-    #expect(viewModel.projection.activity?.title == "正在思考…")
     #expect(viewModel.projection.processMessages.isEmpty)
 
     messages.snapshot = []
@@ -125,14 +106,11 @@ private final class StubStreamingCapability: MessageListStreamingCapability {
 
     let projection = AgentTurnViewModel.project(
         item: item,
-        messages: [userMessage, toolMessage],
-        conversationState: nil,
-        streamingStage: .thinking
+        messages: [userMessage, toolMessage]
     )
 
     #expect(projection.processMessages.map(\.id) == [toolMessage.id])
     #expect(projection.lastMessage == nil)
-    #expect(projection.activity?.title == "正在思考…")
 }
 
 @Test @MainActor func pendingAndRecordedTurnKeepStableListIdentity() {

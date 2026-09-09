@@ -7,11 +7,12 @@ import SwiftUI
 /// Message List V1 View (brief / 简洁模式)
 ///
 /// 每个 AgentTurn 渲染成一组：触发该 turn 的用户消息 + 稳定的 turn 容器。
-/// 运行中容器展示 status、思考、工具调用及最终回复（隐藏工具原始输出）；
-/// turn 结束时动画折叠，只保留最终回复。历史终态 turn 首次加载时直接显示结果。
+/// 每个 AgentTurn 展示用户消息、思考/工具过程及最终回复（隐藏工具原始输出）；
+/// 当前对话状态由消息列表尾部的 ConversationStateView 独立展示。
 struct ListV1View: View {
     let services: MessageListServices
     @ObservedObject private var turnViewModel: ListV1ViewModel
+    @ObservedObject private var conversationStateViewModel: ConversationStateViewModel
 
     @LumiTheme private var theme
 
@@ -34,10 +35,12 @@ struct ListV1View: View {
 
     init(
         services: MessageListServices,
-        viewModel: ListV1ViewModel
+        viewModel: ListV1ViewModel,
+        conversationStateViewModel: ConversationStateViewModel
     ) {
         self.services = services
         _turnViewModel = ObservedObject(wrappedValue: viewModel)
+        _conversationStateViewModel = ObservedObject(wrappedValue: conversationStateViewModel)
     }
 
     var body: some View {
@@ -66,6 +69,11 @@ struct ListV1View: View {
         ScrollViewReader { proxy in
             List {
                 historyRows(proxy: proxy)
+
+                if conversationStateViewModel.activity != nil {
+                    ConversationStateView(viewModel: conversationStateViewModel)
+                        .plainMessageListRow()
+                }
 
                 if postSendTailReserve > 0 {
                     Color.clear
@@ -118,6 +126,10 @@ struct ListV1View: View {
             }
             .onChange(of: turnViewModel.agentTurns) { _, items in
                 handleTurnLifecycleChange(items)
+            }
+            .onChange(of: conversationStateViewModel.activity) { _, _ in
+                guard isInitialPositionReady, atBottomBox.value else { return }
+                scrollTick &+= 1
             }
             .onChange(of: selectedConversationID) { _, _ in
                 usesPostSendPositioning = false

@@ -5,9 +5,10 @@ import SwiftUI
 
 /// V1 中一个完整的 AgentTurn。
 ///
-/// List 只负责排列多个本视图；用户消息、Status、工具过程、流式消息和最终结果
-/// 都在这里完成组合与阶段切换。pending Turn 使用用户消息 ID，真实 Turn 使用
-/// turnID，确保多个历史/子 Turn 在列表中始终拥有唯一身份。
+/// List 只负责排列多个本视图；用户消息、工具过程、流式消息和最终结果
+/// 都在这里完成组合。当前对话状态由消息列表尾部的 ConversationStateView 展示。
+/// pending Turn 使用用户消息 ID，真实 Turn 使用 turnID，确保多个历史/子 Turn
+/// 在列表中始终拥有唯一身份。
 struct AgentTurnView: View {
     let services: MessageListServices
     let item: AgentTurnPresentationItem
@@ -48,9 +49,6 @@ struct AgentTurnView: View {
                 messageRow(lastMessage)
             }
 
-            if item.acceptsLiveActivity, let activity = viewModel.projection.activity {
-                AgentActivityView(activity: activity)
-            }
         }
         .task { await viewModel.activate() }
         .onChange(of: item) { _, newItem in

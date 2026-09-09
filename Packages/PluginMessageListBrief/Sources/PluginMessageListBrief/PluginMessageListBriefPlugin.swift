@@ -35,9 +35,9 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
 
     private var viewModel: ListV1ViewModel?
     private var messageObserver: MessageObserver?
-    private var streamingObserver: StreamingObserver?
     private var conversationStateObserver: ConversationStateObserver?
     private var selectedConversationObserver: SelectedConversationObserver?
+    private var conversationStateViewModel: ConversationStateViewModel?
     private var developerModeObserver: DeveloperModeObserver?
     private var verbosityObservation: VerbosityObservationBox?
 
@@ -59,16 +59,16 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
 
         let services = MessageListServices(
             conversations: conversations.map(MessageListConversationCapabilityAdapter.init(conversations:)),
-            conversationState: conversationState.map(MessageListConversationStateCapabilityAdapter.init(conversationState:)),
             developerMode: developerMode.map(MessageListDeveloperModeCapabilityAdapter.init(developerMode:)),
             messages: messages.map(MessageListMessageCapabilityAdapter.init(messages:)),
             rendering: rendering.map(MessageListRenderingCapabilityAdapter.init(rendering:)),
-            streaming: streaming.map(MessageListStreamingCapabilityAdapter.init(streaming:)),
             toolManager: toolManager.map(MessageListToolManagerCapabilityAdapter.init(toolManager:)),
             agentTurn: agentTurn.map(MessageListAgentLoopCapabilityAdapter.init(agentTurn:)),
         )
         let viewModel = ListV1ViewModel(services: services)
         self.viewModel = viewModel
+        let conversationStateViewModel = ConversationStateViewModel()
+        self.conversationStateViewModel = conversationStateViewModel
 
         // 观察详细程度变化，仅 .brief 时注册自己
         let verbosityObservation = VerbosityObservationBox(
@@ -80,7 +80,8 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
                 guard let viewModel else { return AnyView(EmptyView()) }
                 return AnyView(ListV1View(
                     services: services,
-                    viewModel: viewModel
+                    viewModel: viewModel,
+                    conversationStateViewModel: conversationStateViewModel
                 ))
             }
         )
@@ -96,16 +97,20 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         if let messages {
             messageObserver = MessageObserver(messages: messages, viewModel: viewModel)
         }
-        if let streaming {
-            streamingObserver = StreamingObserver(streaming: streaming, viewModel: viewModel)
-        }
         if let conversationState {
-            conversationStateObserver = ConversationStateObserver(state: conversationState, viewModel: viewModel)
+            conversationStateObserver = ConversationStateObserver(
+                state: conversationState,
+                streaming: streaming,
+                conversationID: conversations?.selectedConversationID,
+                viewModel: conversationStateViewModel
+            )
         }
         if let conversations {
             selectedConversationObserver = SelectedConversationObserver(
                 conversations: conversations,
-                viewModel: viewModel
+                viewModel: viewModel,
+                conversationStateViewModel: conversationStateViewModel,
+                conversationStateObserver: conversationStateObserver
             )
         }
     }
@@ -113,12 +118,11 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         messageObserver?.cancel()
         messageObserver = nil
-        streamingObserver?.cancel()
-        streamingObserver = nil
         conversationStateObserver?.cancel()
         conversationStateObserver = nil
         selectedConversationObserver?.cancel()
         selectedConversationObserver = nil
+        conversationStateViewModel = nil
         developerModeObserver?.cancel()
         developerModeObserver = nil
         verbosityObservation?.cancel()
