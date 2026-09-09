@@ -1,4 +1,3 @@
-import Combine
 import ProviderConversation
 import ProviderConversationState
 import SwiftUI
@@ -22,9 +21,12 @@ struct ListView: View {
     /// 点击时立刻写入的乐观选中 ID：不等 selectConversation 的同步持久化/通知
     /// 链路，让选中高亮即时跟上点击；随后由 onChange 与管理器真实状态对齐。
     @State private var immediateSelectionID: UUID?
-    @ObservedObject private var context: ConversationListContext
+    private let context: ConversationListContext
     @ObservedObject private var attentionStore: ConversationAttentionStore
     @ObservedObject private var sortStabilizer: ConversationSortStabilizer
+    @State private var contextRevision = 0
+    @State private var observedSelectedConversationID: UUID?
+    @State private var contextObserverHandle: (any ConversationListContext.ObserverHandle)?
 
     /// The project path to filter by, or nil if showing all conversations.
     private let projectPath: String?
@@ -35,7 +37,7 @@ struct ListView: View {
         sortStabilizer: ConversationSortStabilizer,
         projectPath: String? = nil
     ) {
-        self._context = ObservedObject(wrappedValue: context)
+        self.context = context
         self._attentionStore = ObservedObject(wrappedValue: attentionStore)
         self._sortStabilizer = ObservedObject(wrappedValue: sortStabilizer)
         self.projectPath = projectPath
@@ -58,17 +60,30 @@ struct ListView: View {
         .task(id: effectiveProjectPath) {
             await reload()
         }
-        // 插件入口持有 typed observer，并将结构变更转成 context revision。
-        .onChange(of: context.conversationsRevision) { _, _ in
+        .onChange(of: contextRevision) { _, _ in
             Task { @MainActor in
                 await reload()
             }
         }
         // 外部选中变化（删除自动选中、启动恢复、其他入口切换）时对齐乐观状态。
-        // context 是 ObservableObject，selectedConversationID 由 addSelectedConversationObserver
-        // 回调同步更新，@ObservedObject 直接追踪，无需间接订阅 objectWillChange。
-        .onChange(of: context.selectedConversationID) { _, newID in
+        .onChange(of: observedSelectedConversationID) { _, newID in
             immediateSelectionID = newID
+        }
+        .onAppear {
+            guard contextObserverHandle == nil else { return }
+            observedSelectedConversationID = context.selectedConversationID
+            contextObserverHandle = context.addObserver { event in
+                switch event {
+                case let .selectedConversationChanged(id):
+                    observedSelectedConversationID = id
+                case .conversationsChanged:
+                    contextRevision &+= 1
+                }
+            }
+        }
+        .onDisappear {
+            contextObserverHandle?.cancel()
+            contextObserverHandle = nil
         }
     }
 

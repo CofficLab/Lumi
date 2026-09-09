@@ -5,11 +5,13 @@ struct HeaderBarView: View {
     /// 是否仅展示当前项目下的会话。
     let scopeToCurrentProject: Bool
     /// 用于解析当前项目名称（当 `scopeToCurrentProject == true` 时使用）。
-    @ObservedObject private var context: ConversationListContext
+    private let context: ConversationListContext
+    @State private var contextRevision = 0
+    @State private var contextObserverHandle: (any ConversationListContext.ObserverHandle)?
 
     init(scopeToCurrentProject: Bool, context: ConversationListContext) {
         self.scopeToCurrentProject = scopeToCurrentProject
-        self._context = ObservedObject(wrappedValue: context)
+        self.context = context
     }
 
     /// 全库对话是否来自多个项目。
@@ -39,8 +41,20 @@ struct HeaderBarView: View {
         .task {
             await refreshProjectVisibility()
         }
-        .onChange(of: context.conversationsRevision) { _, _ in
+        .onChange(of: contextRevision) { _, _ in
             Task { await refreshProjectVisibility() }
+        }
+        .onAppear {
+            guard contextObserverHandle == nil else { return }
+            contextObserverHandle = context.addObserver { event in
+                if case .conversationsChanged = event {
+                    contextRevision &+= 1
+                }
+            }
+        }
+        .onDisappear {
+            contextObserverHandle?.cancel()
+            contextObserverHandle = nil
         }
     }
 

@@ -12,7 +12,7 @@ import SwiftUI
 /// 切换 Tab 时通过 `if` 分支保留两个 `ListView` 的视图身份,
 /// 让各自的滚动位置、分页状态和加载任务互不干扰。
 struct ToolbarPopoverContent: View {
-    @ObservedObject private var context: ConversationListContext
+    private let context: ConversationListContext
     @ObservedObject var attentionStore: ConversationAttentionStore
     @ObservedObject var sortStabilizer: ConversationSortStabilizer
 
@@ -28,13 +28,15 @@ struct ToolbarPopoverContent: View {
     /// 当前项目的对话数是否 >0。
     /// 默认 false（先隐藏），异步查得数量后再决定，避免短暂展示一个空入口。
     @State private var currentProjectHasConversations = false
+    @State private var contextRevision = 0
+    @State private var contextObserverHandle: (any ConversationListContext.ObserverHandle)?
 
     init(
         context: ConversationListContext,
         attentionStore: ConversationAttentionStore,
         sortStabilizer: ConversationSortStabilizer
     ) {
-        self._context = ObservedObject(wrappedValue: context)
+        self.context = context
         self.attentionStore = attentionStore
         self.sortStabilizer = sortStabilizer
     }
@@ -69,7 +71,7 @@ struct ToolbarPopoverContent: View {
         .task(id: currentProjectPath) {
             await refreshProjectScopeVisibility()
         }
-        .onChange(of: context.conversationsRevision) { _, _ in
+        .onChange(of: contextRevision) { _, _ in
             Task { await refreshProjectScopeVisibility() }
         }
         .onChange(of: showsCurrentProjectScope) { _, visible in
@@ -77,6 +79,18 @@ struct ToolbarPopoverContent: View {
             if !visible, selectedScope == .currentProject {
                 selectedScope = .allProjects
             }
+        }
+        .onAppear {
+            guard contextObserverHandle == nil else { return }
+            contextObserverHandle = context.addObserver { event in
+                if case .conversationsChanged = event {
+                    contextRevision &+= 1
+                }
+            }
+        }
+        .onDisappear {
+            contextObserverHandle?.cancel()
+            contextObserverHandle = nil
         }
     }
 

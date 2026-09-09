@@ -7,7 +7,7 @@ import SwiftUI
 /// 仅在「Chat 区块可见」且「全库至少存在一条对话」时渲染。任一条件不满足时
 /// 整个按钮消失，键盘/工具栏流程自然略过它。
 struct ToolbarButton: View {
-    @ObservedObject private var context: ConversationListContext
+    private let context: ConversationListContext
     let attentionStore: ConversationAttentionStore
     let sortStabilizer: ConversationSortStabilizer
     @State private var isPresented = false
@@ -18,13 +18,15 @@ struct ToolbarButton: View {
     /// 全库是否存在任意对话；默认 true 以避免启动加载期间按钮闪烁，
     /// 异步查得数量为 0 时再隐藏。
     @State private var hasAnyConversations: Bool = true
+    @State private var contextRevision = 0
+    @State private var contextObserverHandle: (any ConversationListContext.ObserverHandle)?
 
     init(
         context: ConversationListContext,
         attentionStore: ConversationAttentionStore,
         sortStabilizer: ConversationSortStabilizer
     ) {
-        self._context = ObservedObject(wrappedValue: context)
+        self.context = context
         self.attentionStore = attentionStore
         self.sortStabilizer = sortStabilizer
     }
@@ -62,8 +64,20 @@ struct ToolbarButton: View {
             chatObserverHandle?.cancel()
             chatObserverHandle = nil
         }
-        .onChange(of: context.conversationsRevision) { _, _ in
+        .onChange(of: contextRevision) { _, _ in
             Task { await refreshConversationPresence() }
+        }
+        .onAppear {
+            guard contextObserverHandle == nil else { return }
+            contextObserverHandle = context.addObserver { event in
+                if case .conversationsChanged = event {
+                    contextRevision &+= 1
+                }
+            }
+        }
+        .onDisappear {
+            contextObserverHandle?.cancel()
+            contextObserverHandle = nil
         }
     }
 
