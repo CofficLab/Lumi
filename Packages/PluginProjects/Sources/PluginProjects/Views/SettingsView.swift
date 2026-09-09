@@ -169,16 +169,29 @@ public struct SettingsView: View {
                         title: LumiPluginLocalization.string("Overview", bundle: .module),
                         titleAlignment: .leading
                     ) {
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 12) {
                             Text(project.name)
                                 .font(.title3.weight(.semibold))
                                 .foregroundStyle(theme.textPrimary)
                                 .lineLimit(2)
 
-                            Text(project.path)
-                                .font(.callout)
-                                .foregroundStyle(theme.textSecondary)
-                                .textSelection(.enabled)
+                            HStack(spacing: 6) {
+                                Image(systemName: "folder")
+                                    .foregroundStyle(theme.textSecondary)
+                                Text(project.path)
+                                    .font(.callout)
+                                    .foregroundStyle(theme.textSecondary)
+                                    .textSelection(.enabled)
+                                Spacer()
+                                AppButton(
+                                    LumiPluginLocalization.string("Open in Finder", bundle: .module),
+                                    systemImage: "folder",
+                                    style: .secondary,
+                                    size: .small
+                                ) {
+                                    NSWorkspace.shared.open(URL(fileURLWithPath: project.path))
+                                }
+                            }
                         }
                     }
 
