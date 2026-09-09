@@ -80,6 +80,9 @@ public struct SettingsView: View {
                 Text(selected.name)
             }
             Spacer()
+            AppButton(LumiPluginLocalization.string("Add Project", bundle: .module), systemImage: "plus", style: .secondary, size: .small) {
+                addProject()
+            }
 #if DEBUG
             AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
                 openDataDirectory()
@@ -88,6 +91,19 @@ public struct SettingsView: View {
         }
         .font(.appCaption)
         .foregroundStyle(theme.textSecondary)
+    }
+
+    private func addProject() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.message = LumiPluginLocalization.string("Select a project folder", bundle: .module)
+        panel.prompt = LumiPluginLocalization.string("Add", bundle: .module)
+
+        if panel.runModal() == .OK, let url = panel.url {
+            viewModel.addProject(url: url)
+        }
     }
 
     // MARK: - Sidebar（项目列表）

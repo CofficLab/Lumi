@@ -154,19 +154,19 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "新增"
+            "value": "添加"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "新增"
+            "value": "添加"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "新增"
+            "value": "添加"
           }
         }
       }
@@ -222,19 +222,19 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "添加專案"
+            "value": "添加項目"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "添加專案"
+            "value": "添加項目"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "添加專案"
+            "value": "添加項目"
           }
         }
       }
@@ -1304,6 +1304,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "在 Finder 中開啟"
+          }
+        }
+      }
+    },
+    "Select a project folder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a project folder"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择项目文件夹"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇項目文件夾"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇項目文件夾"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇項目文件夾"
           }
         }
       }
