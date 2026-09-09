@@ -40,8 +40,10 @@ struct ProviderMessageRenderingTests {
     func toolCallRendererChangesAreObservable() {
         let provider = DefaultToolCallRenderingProviding()
         var changeCount = 0
-        let cancellable = provider.objectWillChange.sink { _ in
-            changeCount += 1
+        let handle = provider.addToolCallRenderingObserver { event in
+            if case .renderersChanged = event {
+                changeCount += 1
+            }
         }
 
         provider.register(LowPriorityToolCallRenderer())
@@ -59,7 +61,7 @@ struct ProviderMessageRenderingTests {
         #expect(provider.allRenderers.isEmpty)
         #expect(changeCount > countAfterReplace)
 
-        withExtendedLifetime(cancellable) {}
+        handle.cancel()
     }
 
     private func makeMessageRenderer(id: String, order: Int) -> MessageRendererItem {
