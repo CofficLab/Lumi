@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 import SwiftUI
 
 public struct OnboardingPageItem: Identifiable, Sendable {
@@ -27,8 +26,7 @@ public protocol OnboardingObserverHandle: AnyObject {
 }
 
 @MainActor
-public protocol OnboardingProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol OnboardingProviding: AnyObject {
     var allPages: [OnboardingPageItem] { get }
     var isPresented: Bool { get }
     func register(_ page: OnboardingPageItem)
@@ -42,8 +40,8 @@ public protocol OnboardingProviding: AnyObject, ObservableObject
 
 @MainActor
 public final class DefaultOnboardingProviding: OnboardingProviding {
-    @Published public private(set) var allPages: [OnboardingPageItem] = []
-    @Published public private(set) var isPresented = false
+    public private(set) var allPages: [OnboardingPageItem] = []
+    public private(set) var isPresented = false
     private var observers: [WeakObserver] = []
 
     public init() {}

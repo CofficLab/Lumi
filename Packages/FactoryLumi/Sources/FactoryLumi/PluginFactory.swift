@@ -130,6 +130,7 @@ import PluginSettingView
 import PluginPerformanceMetrics
 import PluginSkill
 import PluginOnboarding
+import PluginWelcome
 import PluginThemePack
 import PluginToolManager
 import PluginToolbarSettings
@@ -252,6 +253,7 @@ public struct DefaultPluginFactory: PluginFactory {
             SkillPlugin(),
             XcodeBuildPlugin(),
             OnboardingPlugin(),
+            PluginWelcome(),
             MemoryPlugin(),
             ModelSelectorPlugin(),
             PluginMessageListEmptyPlugin(),

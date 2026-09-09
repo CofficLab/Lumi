@@ -51,10 +51,6 @@ public final class OnboardingPlugin: SuperPlugin, SuperLog {
         onboardingProvider = provider
         seenStore = store
 
-        provider.register(
-            OnboardingPageItem(id: "onboarding-welcome") { WelcomePage() }
-        )
-
         let finish: @MainActor () -> Void = { [weak provider, weak store] in
             store?.markSeen()
             provider?.dismiss()
@@ -91,7 +87,6 @@ public final class OnboardingPlugin: SuperPlugin, SuperLog {
         }
         removeShowNotificationObserver()
         onboardingProvider?.dismiss()
-        onboardingProvider?.unregister(id: "onboarding-welcome")
         kernel.unregisterProvider((any OnboardingProviding).self)
         onboardingProvider = nil
         seenStore = nil
@@ -154,10 +149,12 @@ final class OnboardingSeenStore {
 }
 
 private struct OnboardingOverlay: View {
-    @ObservedObject var provider: DefaultOnboardingProviding
+    let provider: DefaultOnboardingProviding
     let content: AnyView
     let finish: @MainActor () -> Void
     @State private var pageIndex = 0
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any OnboardingObserverHandle)?
 
     var body: some View {
         ZStack {
@@ -173,10 +170,18 @@ private struct OnboardingOverlay: View {
                 )
             }
         }
-        .onChange(of: provider.isPresented) { _, isPresented in
-            if isPresented {
-                pageIndex = 0
+        .onAppear {
+            guard observerHandle == nil else { return }
+            observerHandle = provider.addObserver { event in
+                observationRevision &+= 1
+                if case let .presentationChanged(isPresented) = event, isPresented {
+                    pageIndex = 0
+                }
             }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
         }
     }
 }
@@ -263,27 +268,5 @@ private struct OnboardingCard: View {
         .background(theme.background)
         .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.lg))
         .shadow(radius: 24)
-    }
-}
-
-private struct WelcomePage: View {
-    @LumiTheme private var theme
-
-    var body: some View {
-        VStack(spacing: DesignTokens.Spacing.lg - 2) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 56, weight: .semibold))
-                .foregroundStyle(theme.primary)
-            VStack(spacing: DesignTokens.Spacing.sm) {
-                Text(LumiPluginLocalization.string("Welcome to Lumi", bundle: .module))
-                    .font(DesignTokens.Typography.largeTitle)
-                Text(LumiPluginLocalization.string("Your local workspace for focused AI conversations, projects, and tools.", bundle: .module))
-                    .font(DesignTokens.Typography.body)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(theme.textSecondary)
-            }
-        }
-        .frame(maxWidth: 520)
-        .padding(.vertical, DesignTokens.Spacing.lg)
     }
 }
