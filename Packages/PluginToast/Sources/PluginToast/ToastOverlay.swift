@@ -5,12 +5,14 @@ import SwiftUI
 
 /// 挂在主窗口根部的 Toast 渲染覆盖层。
 ///
-/// 订阅共享的 `ToastCenter`（即 `ToastProviding` 实现），在窗口顶部
+/// 订阅共享的 `ToastCenter`（即 `ToastProviding` 实现）的类型化事件，在窗口顶部
 /// 渲染当前 toast。Toast 本身不参与交互（`allowsHitTesting(false)`），
 /// 不遮挡下方内容。
 public struct ToastOverlay<Content: View>: View {
     private let content: Content
-    @ObservedObject private var center: ToastCenter
+    private let center: ToastCenter
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any ToastProvidingObserverHandle)?
 
     public init(content: Content, center: ToastCenter) {
         self.content = content
@@ -28,6 +30,17 @@ public struct ToastOverlay<Content: View>: View {
                 }
                 .animation(.spring(duration: 0.3), value: center.currentToast)
                 .allowsHitTesting(false)
+            }
+            .id(observationRevision)
+            .onAppear {
+                guard observerHandle == nil else { return }
+                observerHandle = center.addObserver { _ in
+                    observationRevision += 1
+                }
+            }
+            .onDisappear {
+                observerHandle?.cancel()
+                observerHandle = nil
             }
     }
 }

@@ -1,5 +1,21 @@
 import Foundation
 
+@MainActor
+public enum ToastProvidingEvent {
+    case currentToastChanged(LumiToast?)
+}
+
+@MainActor
+public protocol ToastProvidingObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
+public final class NoopToastProvidingObserverHandle: ToastProvidingObserverHandle {
+    public init() {}
+    public func cancel() {}
+}
+
 /// Toast 展示能力协议
 ///
 /// 定义「任意代码 → 内核 → 瞬时提示」这一段的最小契约。
@@ -10,6 +26,13 @@ import Foundation
 /// 方式订阅并渲染;未注册实现时,调用方应静默跳过。
 @MainActor
 public protocol ToastProviding: AnyObject {
+    var currentToast: LumiToast? { get }
+
+    @discardableResult
+    func addObserver(
+        _ callback: @escaping (ToastProvidingEvent) -> Void
+    ) -> any ToastProvidingObserverHandle
+
     /// 展示一条 Toast。
     ///
     /// **契约**:非阻塞、不抛错。实现可自行决定队列策略(排队、合并或
@@ -20,6 +43,15 @@ public protocol ToastProviding: AnyObject {
 // MARK: - 默认实现
 
 public extension ToastProviding {
+    var currentToast: LumiToast? { nil }
+
+    @discardableResult
+    func addObserver(
+        _ callback: @escaping (ToastProvidingEvent) -> Void
+    ) -> any ToastProvidingObserverHandle {
+        NoopToastProvidingObserverHandle()
+    }
+
     /// 便捷入口:按标题与风格展示一条 Toast。
     func show(
         _ title: String,
