@@ -178,14 +178,18 @@ struct ModelListView: View {
         to models: [String],
         modelInfos: [String: LLMModelInfo]
     ) -> [String] {
-        models.filter { model in
-            selectedCategory.includes(model: model, modelInfo: modelInfos[model])
-        }
-        .filter { model in
-            searchText.isEmpty
-                || model.localizedCaseInsensitiveContains(searchText)
-                || (modelInfos[model]?.displayName ?? model).localizedCaseInsensitiveContains(searchText)
-        }
+        models
+            .filter { model in
+                selectedCategory.includes(model: model, modelInfo: modelInfos[model])
+            }
+            .sorted { lhs, rhs in
+                lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+            }
+            .filter { model in
+                searchText.isEmpty
+                    || model.localizedCaseInsensitiveContains(searchText)
+                    || (modelInfos[model]?.displayName ?? model).localizedCaseInsensitiveContains(searchText)
+            }
     }
 }
 
