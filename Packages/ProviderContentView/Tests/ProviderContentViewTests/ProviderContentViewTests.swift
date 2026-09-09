@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 import Testing
 @testable import ProviderContentView
@@ -65,7 +64,7 @@ struct ProviderContentViewTests {
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
         @MainActor final class CustomContentView: ContentViewProviding {
-            @Published var content: AnyView?
+            var content: AnyView?
 
             func setContentView(_ view: AnyView?) {
                 content = view

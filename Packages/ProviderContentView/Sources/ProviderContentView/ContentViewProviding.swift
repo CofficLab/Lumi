@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 
 /// 主内容视图提供能力协议
@@ -22,8 +21,7 @@ public protocol ContentViewObserverHandle: AnyObject {
 }
 
 @MainActor
-public protocol ContentViewProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol ContentViewProviding: AnyObject {
     @discardableResult
     func addContentViewObserver(
         _ callback: @escaping (ContentViewEvent) -> Void

@@ -5,8 +5,8 @@ import SwiftUI
 /// 插件通过 `setContentView(_:)` 注册主要内容（如设备信息视图）；
 /// 未设置时 `makeContentView()` 返回占位提示。
 @MainActor
-public final class DefaultContentViewProviding: ContentViewProviding, ObservableObject {
-    @Published fileprivate var contentView: AnyView?
+public final class DefaultContentViewProviding: ContentViewProviding {
+    fileprivate var contentView: AnyView?
     private var observers: [UUID: (ContentViewEvent) -> Void] = [:]
 
     public init() {}
@@ -47,7 +47,9 @@ public final class DefaultContentViewProviding: ContentViewProviding, Observable
 
 /// 稳定挂在 RootView 中并观察 Provider；后续 `setContentView` 会直接刷新内容区。
 private struct ContentHostView: View {
-    @ObservedObject var provider: DefaultContentViewProviding
+    let provider: DefaultContentViewProviding
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any ContentViewObserverHandle)?
 
     var body: some View {
         Group {
@@ -58,6 +60,17 @@ private struct ContentHostView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .id(observationRevision)
+        .onAppear {
+            guard observerHandle == nil else { return }
+            observerHandle = provider.addContentViewObserver { _ in
+                observationRevision += 1
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
+        }
     }
 }
 
