@@ -14,8 +14,8 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
     @Published public private(set) var barItems: [ChatSectionBarItem] = []
     @Published public private(set) var rootWrappers: [ChatSectionRootWrapper] = []
 
-    /// 会话选择绑定订阅：随 Provider 生命周期持有（与内核同生命周期）。
-    private var conversationSelectionCancellable: AnyCancellable?
+    /// 会话选择绑定句柄：随 Provider 生命周期持有（与内核同生命周期）。
+    private var conversationSelectionObserver: (any SelectedConversationObserverHandle)?
     private var observers: [WeakObserver] = []
     private let defaultWidthStore: (any ChatSectionWidthStoring)?
     private var activeWidthStore: (any ChatSectionWidthStoring)?
@@ -154,15 +154,11 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
     /// 由集成层在插件全部启动、`ConversationManaging` 最终实例确定后调用一次；
     /// 订阅由本 Provider 持有，随内核生命周期存续。
     public func bindConversationSelection(_ conversations: any ConversationManaging) {
+        conversationSelectionObserver?.cancel()
         setHeaderVisible(conversations.selectedConversationID != nil)
-        conversationSelectionCancellable = conversations.objectWillChange
-            .receive(on: RunLoop.main)
-            .sink { [weak self, weak conversations] _ in
-                MainActor.assumeIsolated {
-                    guard let self, let conversations else { return }
-                    self.setHeaderVisible(conversations.selectedConversationID != nil)
-                }
-            }
+        conversationSelectionObserver = conversations.addSelectedConversationObserver { [weak self] selectedID in
+            self?.setHeaderVisible(selectedID != nil)
+        }
     }
 
     private final class Observer: ChatSectionProvidingObserverHandle {

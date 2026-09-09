@@ -127,7 +127,7 @@ struct ProviderChatSectionTests {
     }
 
     @Test("绑定会话选择后 header 可见性跟随选中状态")
-    func bindingConversationSelectionTracksSelectedID() async throws {
+    func bindingConversationSelectionTracksSelectedID() {
         let provider = DefaultChatSectionProviding()
         let conversations = MockConversationManaging()
         conversations.selectedConversationID = UUID()
@@ -135,14 +135,32 @@ struct ProviderChatSectionTests {
         provider.bindConversationSelection(conversations)
         #expect(provider.isHeaderVisible == true)
 
-        // 取消选择 → objectWillChange → sink（main runloop）→ isHeaderVisible = false
+        // 取消选择 → typed observer → isHeaderVisible = false
         conversations.deselectConversation()
-        await waitForMainRunloop()
         #expect(provider.isHeaderVisible == false)
 
         // 重新选择 → 恢复显示
         conversations.selectConversation(id: UUID())
-        await waitForMainRunloop()
+        #expect(provider.isHeaderVisible == true)
+    }
+
+    @Test("重新绑定会话选择时取消旧观察者")
+    func rebindingConversationSelectionCancelsPreviousObserver() {
+        let provider = DefaultChatSectionProviding()
+        let firstConversations = MockConversationManaging()
+        let secondConversations = MockConversationManaging()
+        firstConversations.selectedConversationID = UUID()
+
+        provider.bindConversationSelection(firstConversations)
+        #expect(provider.isHeaderVisible == true)
+
+        provider.bindConversationSelection(secondConversations)
+        #expect(provider.isHeaderVisible == false)
+
+        firstConversations.deselectConversation()
+        #expect(provider.isHeaderVisible == false)
+
+        secondConversations.selectConversation(id: UUID())
         #expect(provider.isHeaderVisible == true)
     }
 
@@ -213,13 +231,6 @@ struct ProviderChatSectionTests {
         #expect(provider.chatSectionWidth.idealWidth == 380)
     }
 
-    private func waitForMainRunloop() async {
-        // Combine sink 通过 receive(on: .main) 异步投递，让出若干次主线程执行机会。
-        for _ in 0..<5 {
-            await Task.yield()
-            try? await Task.sleep(for: .milliseconds(5))
-        }
-    }
 }
 
 /// 最小 `ConversationManaging` 实现：仅测试需要的选中状态，其余返回默认值。
@@ -227,6 +238,7 @@ struct ProviderChatSectionTests {
 private final class MockConversationManaging: ConversationManaging {
     @Published var conversations: [ConversationSummary] = []
     @Published var selectedConversationID: UUID?
+    private var selectedConversationObservers: [UUID: (UUID?) -> Void] = [:]
 
     var currentTitle: String { "Mock" }
     var dataDirectory: URL { URL(fileURLWithPath: "/tmp/mock-conversations") }
@@ -237,14 +249,30 @@ private final class MockConversationManaging: ConversationManaging {
 
     func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?) throws -> UUID { UUID() }
     func createConversation(title: String?, projectPath: String?, providerID: String?, modelName: String?, parentConversationID: UUID?) throws -> UUID { UUID() }
-    func selectConversation(id: UUID) { selectedConversationID = id }
-    func deselectConversation() { selectedConversationID = nil }
+    func selectConversation(id: UUID) {
+        selectedConversationID = id
+        notifySelectedConversationObservers()
+    }
+    func deselectConversation() {
+        selectedConversationID = nil
+        notifySelectedConversationObservers()
+    }
     func deleteConversation(id: UUID) {}
     func updateConversationTitle(_ title: String, for conversationID: UUID) -> Bool { true }
     func markConversationActive(id: UUID, messageDate: Date) {}
     func isSending(for conversationID: UUID?) -> Bool { false }
     func addSelectedConversationObserver(_ callback: @escaping (UUID?) -> Void) -> any SelectedConversationObserverHandle {
-        NoopSelectedConversationObserverHandle()
+        let id = UUID()
+        selectedConversationObservers[id] = callback
+        return MockSelectedConversationObserverHandle(owner: self, id: id)
+    }
+    private func notifySelectedConversationObservers() {
+        for callback in selectedConversationObservers.values {
+            callback(selectedConversationID)
+        }
+    }
+    fileprivate func removeSelectedConversationObserver(id: UUID) {
+        selectedConversationObservers.removeValue(forKey: id)
     }
     func providerID(for conversationID: UUID?) -> String? { nil }
     func modelName(for conversationID: UUID?) -> String? { nil }
@@ -263,4 +291,22 @@ private final class MockConversationManaging: ConversationManaging {
     func setGlobalLanguage(_ language: ConversationLanguage) { globalLanguage = language }
     func language(for conversationID: UUID?) -> ConversationLanguage { globalLanguage }
     func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?) {}
+}
+
+@MainActor
+private final class MockSelectedConversationObserverHandle: SelectedConversationObserverHandle {
+    private weak var owner: MockConversationManaging?
+    private let id: UUID
+    private var isCancelled = false
+
+    init(owner: MockConversationManaging, id: UUID) {
+        self.owner = owner
+        self.id = id
+    }
+
+    func cancel() {
+        guard !isCancelled else { return }
+        isCancelled = true
+        owner?.removeSelectedConversationObserver(id: id)
+    }
 }
