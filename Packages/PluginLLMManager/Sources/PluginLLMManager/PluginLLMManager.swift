@@ -3,6 +3,7 @@ import KernelCore
 import os
 import ProviderLLMManager
 import ProviderMessageRendering
+import ProviderOnboarding
 import KitSuperLog
 
 /// LLM 供应商管理器插件。
@@ -66,11 +67,26 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         }
     }
 
+    private static let onboardingPageID = "onboarding-ai-setup"
+
     /// 对话绑定的供应商/模型通过 `LLMRequest.providerID` 显式传递，避免
     /// 切换对话时改写全局选中状态；未绑定对话才使用全局选中项。
-    public func onReady(kernel: KernelCoreContainer) throws {}
+    public func onReady(kernel: KernelCoreContainer) throws {
+        guard let manager,
+              let onboarding = kernel.resolveProvider((any OnboardingProviding).self)
+        else { return }
+
+        onboarding.register(
+            OnboardingPageItem(id: Self.onboardingPageID) {
+                AISetupPage(manager: manager)
+            }
+        )
+    }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        if let onboarding = kernel.resolveProvider((any OnboardingProviding).self) {
+            onboarding.unregister(id: Self.onboardingPageID)
+        }
         manager = nil
         // 内核会按插件归属自动撤回 onBoot 注册的 Provider，无需手动处理。
     }

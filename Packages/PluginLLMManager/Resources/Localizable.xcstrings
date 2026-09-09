@@ -1,382 +1,680 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Details" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Details"
+  "sourceLanguage": "en",
+  "strings": {
+    "Details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "详情"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "详情"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "详情"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "详情"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "详情"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "详情"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "详情"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "详情"
           }
         }
       }
     },
-    "Enter an API Key here, then resend your message." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter an API Key here, then resend your message."
+    "Enter an API Key here, then resend your message.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter an API Key here, then resend your message."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在此输入 API Key，然后重新发送消息。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此输入 API Key，然后重新发送消息。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在此输入 API Key，然后重新发送消息。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此输入 API Key，然后重新发送消息。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在此输入 API Key，然后重新发送消息。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此输入 API Key，然后重新发送消息。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在此输入 API Key，然后重新发送消息。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此输入 API Key，然后重新发送消息。"
           }
         }
       }
     },
-    "Hide API Key" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hide API Key"
+    "Hide API Key": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide API Key"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏 API 密钥"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏 API 密钥"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏 API 密钥"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏 API 密钥"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏 API 密钥"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏 API 密钥"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏 API 密钥"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏 API 密钥"
           }
         }
       }
     },
-    "Lumi could not read the saved API Key from the system Keychain. The key was not treated as missing." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi could not read the saved API Key from the system Keychain. The key was not treated as missing."
+    "Lumi could not read the saved API Key from the system Keychain. The key was not treated as missing.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi could not read the saved API Key from the system Keychain. The key was not treated as missing."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi 无法从系统钥匙串读取已保存的 API Key，但该密钥未被判定为缺失。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 无法从系统钥匙串读取已保存的 API Key，但该密钥未被判定为缺失。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi 无法从系统钥匙串读取已保存的 API Key，但该密钥未被判定为缺失。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 无法从系统钥匙串读取已保存的 API Key，但该密钥未被判定为缺失。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi 无法从系统钥匙串读取已保存的 API Key，但该密钥未被判定为缺失。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 无法从系统钥匙串读取已保存的 API Key，但该密钥未被判定为缺失。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi 无法从系统钥匙串读取已保存的 API Key，但该密钥未被判定为缺失。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 无法从系统钥匙串读取已保存的 API Key，但该密钥未被判定为缺失。"
           }
         }
       }
     },
-    "Open provider website" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open provider website"
+    "Open provider website": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open provider website"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开提供商网站"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开提供商网站"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开提供商网站"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开提供商网站"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开提供商网站"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开提供商网站"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开提供商网站"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开提供商网站"
           }
         }
       }
     },
-    "Provider is not registered yet. Open Settings to configure this key." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Provider is not registered yet. Open Settings to configure this key."
+    "Provider is not registered yet. Open Settings to configure this key.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provider is not registered yet. Open Settings to configure this key."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供商尚未注册，请打开设置配置此密钥。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供商尚未注册，请打开设置配置此密钥。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供商尚未注册，请打开设置配置此密钥。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供商尚未注册，请打开设置配置此密钥。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供商尚未注册，请打开设置配置此密钥。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供商尚未注册，请打开设置配置此密钥。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "提供商尚未注册，请打开设置配置此密钥。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供商尚未注册，请打开设置配置此密钥。"
           }
         }
       }
     },
-    "Recheck Keychain" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recheck Keychain"
+    "Recheck Keychain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recheck Keychain"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新检查钥匙串"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新检查钥匙串"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新检查钥匙串"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新检查钥匙串"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新检查钥匙串"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新检查钥匙串"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重新检查钥匙串"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新检查钥匙串"
           }
         }
       }
     },
-    "Save API Key" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save API Key"
+    "Save API Key": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save API Key"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保存 API Key"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存 API Key"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保存 API Key"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存 API Key"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保存 API Key"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存 API Key"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保存 API Key"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存 API Key"
           }
         }
       }
     },
-    "Saved" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saved"
+    "Saved": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已保存"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已保存"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已保存"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已保存"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已保存"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已保存"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已保存"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已保存"
           }
         }
       }
     },
-    "Show API Key" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show API Key"
+    "Show API Key": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show API Key"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示 API 密钥"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示 API 密钥"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示 API 密钥"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示 API 密钥"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示 API 密钥"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示 API 密钥"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示 API 密钥"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示 API 密钥"
           }
         }
       }
     },
-    "The API Key is readable again. Resend the message to continue." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The API Key is readable again. Resend the message to continue."
+    "The API Key is readable again. Resend the message to continue.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The API Key is readable again. Resend the message to continue."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API Key 已可读取，请重新发送消息以继续。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API Key 已可读取，请重新发送消息以继续。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API Key 已可读取，请重新发送消息以继续。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API Key 已可读取，请重新发送消息以继续。"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API Key 已可读取，请重新发送消息以继续。"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API Key 已可读取，请重新发送消息以继续。"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API Key 已可读取，请重新发送消息以继续。"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API Key 已可读取，请重新发送消息以继续。"
+          }
+        }
+      }
+    },
+    "Set up your AI provider": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set up your AI provider"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置你的 AI 提供商"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置你的 AI 提供商"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置你的 AI 提供商"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置你的 AI 提供商"
+          }
+        }
+      }
+    },
+    "Add a provider and choose a model in Settings. You can return here at any time from General Settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a provider and choose a model in Settings. You can return here at any time from General Settings."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在设置中添加提供商并选择模型，你可随时从通用设置返回此处。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在设置中添加提供商并选择模型，你可随时从通用设置返回此处。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在设置中添加提供商并选择模型，你可随时从通用设置返回此处。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在设置中添加提供商并选择模型，你可随时从通用设置返回此处。"
+          }
+        }
+      }
+    },
+    "No providers available": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No providers available"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无可用提供商"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无可用提供商"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无可用提供商"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无可用提供商"
+          }
+        }
+      }
+    },
+    "You can configure a provider later in Settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can configure a provider later in Settings."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你可以稍后在设置中配置提供商。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你可以稍后在设置中配置提供商。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你可以稍后在设置中配置提供商。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你可以稍后在设置中配置提供商。"
+          }
+        }
+      }
+    },
+    "Provider": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provider"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供商"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供商"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供商"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供商"
+          }
+        }
+      }
+    },
+    "This local provider does not require an API key.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This local provider does not require an API key."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此本地提供商无需 API Key。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此本地提供商无需 API Key。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此本地提供商无需 API Key。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此本地提供商无需 API Key。"
+          }
+        }
+      }
+    },
+    "API Key": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API Key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 密钥"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 密钥"
+          }
+        }
+      }
+    },
+    "Get a key": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get a key"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "获取密钥"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "获取密钥"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "获取密钥"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "获取密钥"
+          }
+        }
+      }
+    },
+    "Use Provider": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use Provider"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用该提供商"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用该提供商"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用该提供商"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用该提供商"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
