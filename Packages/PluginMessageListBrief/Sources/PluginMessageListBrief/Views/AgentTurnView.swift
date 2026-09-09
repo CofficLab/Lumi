@@ -14,8 +14,10 @@ struct AgentTurnView: View {
     let lastAgentTurnID: UUID?
     let verbosity: ResponseVerbosity
 
-    @ObservedObject private var viewModel: AgentTurnViewModel
+    let viewModel: AgentTurnViewModel
     @State private var isProcessExpanded = false
+    @State private var projection = AgentTurnMessageProjection()
+    @State private var observerHandle: (any AgentTurnViewModel.ObserverHandle)?
 
     init(
         services: MessageListServices,
@@ -28,30 +30,44 @@ struct AgentTurnView: View {
         self.item = item
         self.lastAgentTurnID = lastAgentTurnID
         self.verbosity = verbosity
-        _viewModel = ObservedObject(wrappedValue: viewModel)
+        self.viewModel = viewModel
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(viewModel.projection.userMessages) { message in
+            ForEach(projection.userMessages) { message in
                 messageRow(message)
             }
 
-            if !viewModel.projection.processMessages.isEmpty {
+            if !projection.processMessages.isEmpty {
                 processDisclosure
             }
 
-            if let lastMessage = viewModel.projection.lastMessage {
+            if let lastMessage = projection.lastMessage {
                 messageRow(lastMessage)
             }
 
-            if isConversationTail, let activityMessage = viewModel.projection.activityMessage {
+            if isConversationTail, let activityMessage = projection.activityMessage {
                 messageRow(activityMessage)
             }
         }
         .task { await viewModel.activate() }
         .onChange(of: item) { _, newItem in
             Task { await viewModel.update(item: newItem) }
+        }
+        .onAppear {
+            guard observerHandle == nil else { return }
+            projection = viewModel.projection
+            observerHandle = viewModel.addObserver { event in
+                switch event {
+                case let .projectionChanged(nextProjection):
+                    projection = nextProjection
+                }
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
         }
     }
 
@@ -67,7 +83,7 @@ struct AgentTurnView: View {
 
             if isProcessExpanded {
                 VStack(alignment: .leading, spacing: 8) {
-                    ForEach(viewModel.projection.processMessages) { message in
+                    ForEach(projection.processMessages) { message in
                         messageRow(message)
                     }
                 }
@@ -90,7 +106,7 @@ struct AgentTurnView: View {
                         Image(systemName: isProcessExpanded ? "chevron.down" : "chevron.right")
                         Text(AgentTurnViewModel.processDisclosureTitle(
                             item: item,
-                            userMessages: viewModel.projection.userMessages,
+                            userMessages: projection.userMessages,
                             now: now
                         ))
                     }
