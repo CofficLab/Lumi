@@ -1,9 +1,11 @@
 import Foundation
 import KernelCore
 import KitAgentTool
+import ProviderChatSection
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering
+import ProviderToolManager
 import SwiftUI
 import Testing
 @testable import PluginMessageRenderer
@@ -40,6 +42,60 @@ struct MessageRendererPluginTests {
 
         #expect(renderer.canRender(toolCall: completed) == false)
         #expect(renderer.canRender(toolCall: waiting) == true)
+    }
+
+    @Test("V1 风险审批只显示在当前 brief 会话")
+    func riskApprovalVisibility() {
+        let conversationID = UUID()
+        let interaction = RiskApprovalPendingInteraction(
+            toolCall: ToolCall(id: "call-1", name: "write", arguments: "{}"),
+            conversationID: conversationID,
+            turnID: UUID()
+        )
+
+        #expect(RiskApprovalPendingInteraction.shouldShow(
+            verbosity: .brief,
+            selectedConversationID: conversationID,
+            interaction: interaction
+        ))
+        #expect(!RiskApprovalPendingInteraction.shouldShow(
+            verbosity: .standard,
+            selectedConversationID: conversationID,
+            interaction: interaction
+        ))
+        #expect(!RiskApprovalPendingInteraction.shouldShow(
+            verbosity: .brief,
+            selectedConversationID: UUID(),
+            interaction: interaction
+        ))
+    }
+
+    @Test("审批事件创建 pending 状态，授权完成后清除")
+    func riskApprovalEventLifecycle() {
+        let conversations = DefaultConversationManager()
+        let toolManager = DefaultToolManagerProviding()
+        let viewModel = RiskApprovalChatViewModel(
+            conversations: conversations,
+            toolManager: toolManager
+        )
+        let conversationID = UUID()
+        let toolCall = ToolCall(id: "call-1", name: "write", arguments: "{}")
+
+        viewModel.consume(.authorizationRequired(
+            conversationID: conversationID,
+            turnID: UUID(),
+            toolCall: toolCall
+        ))
+        #expect(viewModel.pendingApprovals[conversationID]?.toolCall.id == "call-1")
+
+        viewModel.consume(.authorizedCompleted(
+            conversationID: conversationID,
+            turnID: UUID(),
+            toolCall: toolCall,
+            result: ToolCallResult(content: "done")
+        ))
+        #expect(viewModel.pendingApprovals[conversationID] == nil)
+        viewModel.cancel()
     }
 
     private func makeKernel() throws -> KernelCoreContainer {
@@ -154,5 +210,25 @@ struct MessageRendererPluginTests {
         let renderer = try #require(manager.renderer(for: message(role: .user, content: "hi")))
         let view = renderer.render(message(role: .user, content: "hi"), .standard)
         #expect(view is AnyView)
+    }
+
+    @Test("插件注册并移除 V1 风险审批固定区")
+    func registersRiskApprovalChatItem() throws {
+        let kernel = KernelCoreContainer()
+        let rendering = DefaultMessageRenderingProviding()
+        let chat = DefaultChatSectionProviding()
+        let conversations = DefaultConversationManager()
+        let toolManager = DefaultToolManagerProviding()
+        try kernel.registerProvider((any MessageRenderingProviding).self, rendering)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any ConversationManaging).self, conversations)
+        try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
+
+        let plugin = MessageRendererPlugin()
+        try plugin.onBoot(kernel: kernel)
+        #expect(chat.items.contains { $0.id == "CoreMessageRenderer.pending-risk-approval" })
+
+        try plugin.onShutdown(kernel: kernel)
+        #expect(!chat.items.contains { $0.id == "CoreMessageRenderer.pending-risk-approval" })
     }
 }

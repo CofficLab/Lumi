@@ -10,7 +10,7 @@ import ProviderMessageRendering
 import ProviderToolManager
 import SwiftUI
 
-private struct ToolPermissionRequest: Codable {
+struct ToolPermissionRequest: Codable {
     let toolCallID: String
     let kind: String
     let question: String
@@ -97,7 +97,7 @@ final class ToolApprovalBridge: SuperLog {
         Self.logger.info("\(Self.t)授权桥接已停止")
     }
 
-    fileprivate func permissionRequest(for toolCall: ToolCall) -> ToolPermissionRequest? {
+    func permissionRequest(for toolCall: ToolCall) -> ToolPermissionRequest? {
         if let content = toolCall.result?.content,
            let request = try? JSONDecoder().decode(
                ToolPermissionRequest.self,
@@ -220,7 +220,7 @@ public struct ToolApprovalRowRenderer: ToolCallRowRenderer, SuperLog {
     }
 }
 
-private struct ToolApprovalPendingView: View {
+struct ToolApprovalPendingView: View {
     @LumiTheme private var theme
 
     let request: ToolPermissionRequest
