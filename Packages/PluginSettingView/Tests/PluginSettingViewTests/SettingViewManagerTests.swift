@@ -90,4 +90,33 @@ struct SettingViewManagerTests {
         manager.selectEntry(id: "b")
         #expect(manager.selectedEntryID == "b")
     }
+
+    @Test("通过类型化事件通知设置项与选中项变化")
+    func publishesTypedEvents() {
+        let manager = SettingViewManager()
+        var events: [SettingViewEvent] = []
+        let handle = manager.addSettingViewObserver { events.append($0) }
+
+        manager.registerEntries([makeEntry(id: "a", order: 100)])
+        manager.selectEntry(id: nil)
+        handle.cancel()
+        manager.selectEntry(id: "a")
+
+        #expect(events.count == 3)
+        guard events.count == 3 else { return }
+        if case .entriesChanged = events[0] {
+        } else {
+            Issue.record("expected entriesChanged")
+        }
+        if case let .selectedEntryChanged(id) = events[1] {
+            #expect(id == "a")
+        } else {
+            Issue.record("expected selectedEntryChanged")
+        }
+        if case let .selectedEntryChanged(id) = events[2] {
+            #expect(id == nil)
+        } else {
+            Issue.record("expected selectedEntryChanged")
+        }
+    }
 }
