@@ -10,6 +10,9 @@ extension KernelCoreContainer {
         }
         plugins[plugin.id] = plugin
         pluginEnabledStates[plugin.id] = effectiveEnabledState(for: plugin)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)\(Self.emoji) 注册插件 '\(plugin.id, privacy: .public)'")
+        }
         activePluginID = plugin.id
         do {
             try plugin.onRegister(kernel: self)
@@ -19,6 +22,9 @@ extension KernelCoreContainer {
             cancelContributions(ownedBy: plugin.id)
             plugins.removeValue(forKey: plugin.id)
             pluginEnabledStates.removeValue(forKey: plugin.id)
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)\(Self.emoji) 插件注册失败 '\(plugin.id, privacy: .public)' \(error)")
+            }
             throw error
         }
     }

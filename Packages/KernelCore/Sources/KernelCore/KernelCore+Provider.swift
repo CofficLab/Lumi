@@ -24,6 +24,9 @@ extension KernelCoreContainer {
         providers[key] = provider
         if let activePluginID {
             providerOwners[key] = activePluginID
+            if Self.verbose {
+                Self.logger.info("\(Self.t)\(Self.emoji) 注册 Provider '\(String(reflecting: type), privacy: .public)' <- '\(activePluginID)'")
+            }
         }
     }
 
