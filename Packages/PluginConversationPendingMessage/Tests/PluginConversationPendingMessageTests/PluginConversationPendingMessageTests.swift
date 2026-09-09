@@ -48,6 +48,7 @@ struct ConversationPendingMessagePluginTests {
         )
         let box = ObservableMessageSendingBox(sender: sender)
         #expect(box.sender.isSending == false)
+        box.cancel()
     }
 
     @Test("pending UI 的会话选择桥接会跟随快速切换")

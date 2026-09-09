@@ -17,6 +17,8 @@ final class MessageSenderStateObserver {
                 self.provider.update(conversationID: id, activity: .sending)
             case .turnCompleted(let id, _), .turnFailed(let id, _):
                 self.provider.update(conversationID: id, clearActivity: true)
+            case .attachmentsChanged, .pendingMessagesChanged:
+                break
             }
         }
     }

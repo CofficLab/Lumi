@@ -24,7 +24,7 @@ final class ConversationInputViewState: ObservableObject {
 final class ConversationInputObserver {
     private var textHandle: (any TextInputObserverHandle)?
     private var inputCancellable: AnyCancellable?
-    private var senderCancellable: AnyCancellable?
+    private var senderObserver: (any MessageSenderObserverHandle)?
 
     init(
         input: (any ConversationInputProviding)?,
@@ -42,8 +42,13 @@ final class ConversationInputObserver {
                 state?.refresh(errorMessage: input?.errorMessage)
             }
         }
-        senderCancellable = sender?.objectWillChange.sink { [weak state] _ in
-            state?.refresh()
+        senderObserver = sender?.addMessageSenderObserver { [weak state] event in
+            switch event {
+            case .attachmentsChanged:
+                state?.refresh()
+            case .started, .turnCompleted, .turnFailed, .pendingMessagesChanged:
+                break
+            }
         }
     }
 
@@ -51,6 +56,6 @@ final class ConversationInputObserver {
         textHandle?.cancel()
         textHandle = nil
         inputCancellable = nil
-        senderCancellable = nil
+        senderObserver = nil
     }
 }

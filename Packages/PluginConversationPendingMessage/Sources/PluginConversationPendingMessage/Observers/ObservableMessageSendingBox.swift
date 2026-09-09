@@ -1,4 +1,3 @@
-import Combine
 import ProviderMessageSender
 import SwiftUI
 
@@ -6,20 +5,22 @@ import SwiftUI
 @MainActor
 public final class ObservableMessageSendingBox: ObservableObject {
     public let sender: any MessageSendingProviding
-    private var cancellable: AnyCancellable?
+    private var observer: (any MessageSenderObserverHandle)?
 
     public init(sender: any MessageSendingProviding) {
         self.sender = sender
-        cancellable = sender.objectWillChange
-            .map { _ in () }
-            .eraseToAnyPublisher()
-            .sink { [weak self] _ in
+        observer = sender.addMessageSenderObserver { [weak self] event in
+            switch event {
+            case .pendingMessagesChanged:
                 self?.objectWillChange.send()
+            case .started, .turnCompleted, .turnFailed, .attachmentsChanged:
+                break
             }
+        }
     }
 
     func cancel() {
-        cancellable?.cancel()
-        cancellable = nil
+        observer?.cancel()
+        observer = nil
     }
 }
