@@ -1,18 +1,18 @@
 import ProviderDeveloperMode
 
-/// 将开发者模式变化转发为消息列表 ViewModel 状态。
+/// 将开发者模式变化转发为当前对话消息列表 VM 状态。
 @MainActor
 final class DeveloperModeObserver {
     private var handle: (any DeveloperModeProvidingObserverHandle)?
 
     init(
         developerMode: any MessageListDeveloperModeCapability,
-        viewModel: ListV1ViewModel
+        vm: ConversationMessageListVM
     ) {
-        viewModel.updateDeveloperMode(enabled: developerMode.isEnabled)
-        handle = developerMode.addObserver { [weak viewModel] event in
+        vm.updateDeveloperMode(enabled: developerMode.isEnabled)
+        handle = developerMode.addObserver { [weak vm] event in
             guard case let .enabledChanged(enabled) = event else { return }
-            viewModel?.updateDeveloperMode(enabled: enabled)
+            vm?.updateDeveloperMode(enabled: enabled)
         }
     }
 

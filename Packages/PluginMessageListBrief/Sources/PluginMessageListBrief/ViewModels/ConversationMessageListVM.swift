@@ -2,15 +2,15 @@ import Foundation
 import ProviderAgentLoop
 import ProviderMessage
 
-/// V1-only data source that pages message windows and projects each visible
-/// window into AgentTurns. Persisted process messages are rebuilt from the
-/// bounded window; high-frequency streaming text is published separately.
+/// 当前对话的消息列表数据源：负责消息窗口、分页和列表行投影，并为每个
+/// AgentTurn 保持对应的子 VM。持久化过程消息从有限消息窗口重建；
+/// 高频流式正文由 AgentTurnVM 单独发布。
 ///
 /// 新版适配：`AgentTurnProviding` 没有持久化的 turn 记录存储，`records`
 /// 由 `AgentTurnRecordBuilder` 从消息 `turnID` 分组重建（按 startedAt 排序），
 /// turn 分页即对该重建序列做窗口切片。
 @MainActor
-final class ListV1ViewModel: ObservableObject {
+final class ConversationMessageListVM: ObservableObject {
     @Published private var presentation = ListV1Presentation()
     @Published private(set) var isLoading = true
     @Published private(set) var isLoadingEarlier = false
@@ -26,7 +26,7 @@ final class ListV1ViewModel: ObservableObject {
     private let pagination: MessageListPaginationService
     private let refreshGate = MessageListTailRefreshGate()
     private var records: [AgentTurnRecord] = [] // newest first
-    private var agentTurnViewModels: [UUID: AgentTurnViewModel] = [:]
+    private var agentTurnVMs: [UUID: AgentTurnVM] = [:]
     /// 当前已加载的消息窗口，按时间升序排列。
     private var messageWindow: [Message] = []
     private var activeConversationID: UUID?
@@ -55,14 +55,14 @@ final class ListV1ViewModel: ObservableObject {
             .sorted(by: messageOrdering)
     }
 
-    func agentTurnViewModel(for item: AgentTurnPresentationItem) -> AgentTurnViewModel {
-        if let viewModel = agentTurnViewModels[item.id] {
-            Task { @MainActor in await viewModel.update(item: item) }
-            return viewModel
+    func agentTurnVM(for item: AgentTurnPresentationItem) -> AgentTurnVM {
+        if let vm = agentTurnVMs[item.id] {
+            Task { @MainActor in await vm.update(item: item) }
+            return vm
         }
-        let viewModel = AgentTurnViewModel(services: services, item: item)
-        agentTurnViewModels[item.id] = viewModel
-        return viewModel
+        let vm = AgentTurnVM(services: services, item: item)
+        agentTurnVMs[item.id] = vm
+        return vm
     }
 
     /// 用户当前选中的对话 ID（来自内核状态，反映真实意图）。
@@ -274,20 +274,20 @@ final class ListV1ViewModel: ObservableObject {
                 messageWindow.sort(by: messageOrdering)
             }
             rebuildWindow(for: conversationID, sequence: activationSequence)
-            refreshAgentTurnViewModels()
+            refreshAgentTurnVMs()
         case let .persisted(_, conversationID),
              let .updated(conversationID: conversationID),
              let .deleted(_, conversationID: conversationID),
              let .cleared(conversationID: conversationID):
             guard conversationID == activeConversationID else { return }
             Task { @MainActor [weak self] in await self?.refresh() }
-            refreshAgentTurnViewModels()
+            refreshAgentTurnVMs()
         }
     }
 
-    private func refreshAgentTurnViewModels() {
-        for viewModel in agentTurnViewModels.values {
-            Task { @MainActor in await viewModel.refresh() }
+    private func refreshAgentTurnVMs() {
+        for vm in agentTurnVMs.values {
+            Task { @MainActor in await vm.refresh() }
         }
     }
 }

@@ -33,11 +33,11 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
-    private var viewModel: ListV1ViewModel?
+    private var messageListVM: ConversationMessageListVM?
     private var messageObserver: MessageObserver?
     private var conversationStateObserver: ConversationStateObserver?
     private var selectedConversationObserver: SelectedConversationObserver?
-    private var conversationStateViewModel: ConversationStateViewModel?
+    private var conversationStateVM: ConversationStateVM?
     private var developerModeObserver: DeveloperModeObserver?
     private var verbosityObservation: VerbosityObservationBox?
 
@@ -65,10 +65,10 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
             toolManager: toolManager.map(MessageListToolManagerCapabilityAdapter.init(toolManager:)),
             agentTurn: agentTurn.map(MessageListAgentLoopCapabilityAdapter.init(agentTurn:)),
         )
-        let viewModel = ListV1ViewModel(services: services)
-        self.viewModel = viewModel
-        let conversationStateViewModel = ConversationStateViewModel()
-        self.conversationStateViewModel = conversationStateViewModel
+        let messageListVM = ConversationMessageListVM(services: services)
+        self.messageListVM = messageListVM
+        let conversationStateVM = ConversationStateVM()
+        self.conversationStateVM = conversationStateVM
 
         // 观察详细程度变化，仅 .brief 时注册自己
         let verbosityObservation = VerbosityObservationBox(
@@ -76,12 +76,12 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
             chat: chat,
             pluginID: id,
             expectedVerbosity: .brief,
-            makeView: { [weak viewModel, services] in
-                guard let viewModel else { return AnyView(EmptyView()) }
+            makeView: { [weak messageListVM, services] in
+                guard let messageListVM else { return AnyView(EmptyView()) }
                 return AnyView(ListV1View(
                     services: services,
-                    viewModel: viewModel,
-                    conversationStateViewModel: conversationStateViewModel
+                    messageListVM: messageListVM,
+                    stateVM: conversationStateVM
                 ))
             }
         )
@@ -90,26 +90,26 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         if let developerMode = services.developerMode {
             developerModeObserver = DeveloperModeObserver(
                 developerMode: developerMode,
-                viewModel: viewModel
+                vm: messageListVM
             )
         }
 
         if let messages {
-            messageObserver = MessageObserver(messages: messages, viewModel: viewModel)
+            messageObserver = MessageObserver(messages: messages, vm: messageListVM)
         }
         if let conversationState {
             conversationStateObserver = ConversationStateObserver(
                 state: conversationState,
                 streaming: streaming,
                 conversationID: conversations?.selectedConversationID,
-                viewModel: conversationStateViewModel
+                stateVM: conversationStateVM
             )
         }
         if let conversations {
             selectedConversationObserver = SelectedConversationObserver(
                 conversations: conversations,
-                viewModel: viewModel,
-                conversationStateViewModel: conversationStateViewModel,
+                vm: messageListVM,
+                stateVM: conversationStateVM,
                 conversationStateObserver: conversationStateObserver
             )
         }
@@ -122,12 +122,12 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         conversationStateObserver = nil
         selectedConversationObserver?.cancel()
         selectedConversationObserver = nil
-        conversationStateViewModel = nil
+        conversationStateVM = nil
         developerModeObserver?.cancel()
         developerModeObserver = nil
         verbosityObservation?.cancel()
         verbosityObservation = nil
-        viewModel = nil
+        messageListVM = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeItem(id: id)
     }

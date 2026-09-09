@@ -11,8 +11,8 @@ import SwiftUI
 /// 当前对话状态由消息列表尾部的 ConversationStateView 独立展示。
 struct ListV1View: View {
     let services: MessageListServices
-    @ObservedObject private var turnViewModel: ListV1ViewModel
-    @ObservedObject private var conversationStateViewModel: ConversationStateViewModel
+    @ObservedObject private var messageListVM: ConversationMessageListVM
+    @ObservedObject private var stateVM: ConversationStateVM
 
     @LumiTheme private var theme
 
@@ -35,12 +35,12 @@ struct ListV1View: View {
 
     init(
         services: MessageListServices,
-        viewModel: ListV1ViewModel,
-        conversationStateViewModel: ConversationStateViewModel
+        messageListVM: ConversationMessageListVM,
+        stateVM: ConversationStateVM
     ) {
         self.services = services
-        _turnViewModel = ObservedObject(wrappedValue: viewModel)
-        _conversationStateViewModel = ObservedObject(wrappedValue: conversationStateViewModel)
+        _messageListVM = ObservedObject(wrappedValue: messageListVM)
+        _stateVM = ObservedObject(wrappedValue: stateVM)
     }
 
     var body: some View {
@@ -49,7 +49,7 @@ struct ListV1View: View {
                 .id(selectedConversationID)
                 .opacity(isInitialPositionReady ? 1 : 0)
                 .allowsHitTesting(isInitialPositionReady)
-            if turnViewModel.isLoading || !isInitialPositionReady {
+            if messageListVM.isLoading || !isInitialPositionReady {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(theme.surface.opacity(0.6))
@@ -59,7 +59,7 @@ struct ListV1View: View {
             atBottomBox.value = true
             isInitialPositionReady = false
             isPreparingInitialPosition = false
-            await turnViewModel.activate(conversationID: selectedConversationID)
+            await messageListVM.activate(conversationID: selectedConversationID)
         }
     }
 
@@ -70,8 +70,8 @@ struct ListV1View: View {
             List {
                 historyRows(proxy: proxy)
 
-                if conversationStateViewModel.activity != nil {
-                    ConversationStateView(viewModel: conversationStateViewModel)
+                if stateVM.activity != nil {
+                    ConversationStateView(stateVM: stateVM)
                         .plainMessageListRow()
                 }
 
@@ -117,17 +117,17 @@ struct ListV1View: View {
                 if atBottomBox.value {
                     scrollTick &+= 1
                 }
-                if !isInitialPositionReady, !turnViewModel.isLoading {
+                if !isInitialPositionReady, !messageListVM.isLoading {
                     prepareInitialPosition(proxy: proxy, messages: displayedHistoryMessages)
                 }
             }
             .onChange(of: displayedUserMessageIDs) { oldIDs, newIDs in
                 handleUserMessageInsertion(oldIDs: oldIDs, newIDs: newIDs)
             }
-            .onChange(of: turnViewModel.agentTurns) { _, items in
+            .onChange(of: messageListVM.agentTurns) { _, items in
                 handleTurnLifecycleChange(items)
             }
-            .onChange(of: conversationStateViewModel.activity) { _, _ in
+            .onChange(of: stateVM.activity) { _, _ in
                 guard isInitialPositionReady, atBottomBox.value else { return }
                 scrollTick &+= 1
             }
@@ -137,7 +137,7 @@ struct ListV1View: View {
                 isInitialPositionReady = false
                 isPreparingInitialPosition = false
             }
-            .onChange(of: turnViewModel.isLoading) { _, isLoading in
+            .onChange(of: messageListVM.isLoading) { _, isLoading in
                 if isLoading {
                     scrollCoordinator.cancelPendingTasks()
                     isInitialPositionReady = false
@@ -147,7 +147,7 @@ struct ListV1View: View {
                 }
             }
             .onAppear {
-                if !turnViewModel.isLoading {
+                if !messageListVM.isLoading {
                     prepareInitialPosition(proxy: proxy, messages: displayedHistoryMessages)
                 }
                 if atBottomBox.value {
@@ -177,11 +177,11 @@ struct ListV1View: View {
                 messages: messages,
                 controller: bottomScrollController,
                 condition: {
-                    conversationID == selectedConversationID && !turnViewModel.isLoading
+                    conversationID == selectedConversationID && !messageListVM.isLoading
                 }
             )
             isPreparingInitialPosition = false
-            if ready, conversationID == selectedConversationID, !turnViewModel.isLoading {
+            if ready, conversationID == selectedConversationID, !messageListVM.isLoading {
                 isInitialPositionReady = true
             }
         }
@@ -189,22 +189,22 @@ struct ListV1View: View {
 
     @ViewBuilder
     private func historyRows(proxy: ScrollViewProxy) -> some View {
-        if turnViewModel.hasEarlierTurns {
-            loadEarlierButton(isLoading: turnViewModel.isLoadingEarlier) {
+        if messageListVM.hasEarlierTurns {
+            loadEarlierButton(isLoading: messageListVM.isLoadingEarlier) {
                 Task { await loadEarlier(proxy: proxy) }
             }
             .plainMessageListRow(insets: EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
         }
 
-        ForEach(turnViewModel.rows) { row in
+        ForEach(messageListVM.rows) { row in
             switch row {
             case let .agentTurn(item):
                 AgentTurnView(
                     services: services,
                     item: item,
                     verbosity: verbosity,
-                    isDeveloperModeEnabled: turnViewModel.isDeveloperModeEnabled,
-                    viewModel: turnViewModel.agentTurnViewModel(for: item),
+                    isDeveloperModeEnabled: messageListVM.isDeveloperModeEnabled,
+                    turnVM: messageListVM.agentTurnVM(for: item),
                     onDynamicContentChange: {
                         guard isInitialPositionReady, atBottomBox.value else { return }
                         scrollTick &+= 1
@@ -217,7 +217,7 @@ struct ListV1View: View {
                     services: services,
                     message: message,
                     verbosity: verbosity,
-                    isDeveloperModeEnabled: turnViewModel.isDeveloperModeEnabled
+                    isDeveloperModeEnabled: messageListVM.isDeveloperModeEnabled
                 )
                 .id(message.id)
                 .plainMessageListRow()
@@ -243,7 +243,7 @@ struct ListV1View: View {
         .padding(.vertical, 8)
     }
 
-    private var displayedHistoryMessages: [ProviderMessage.Message] { turnViewModel.displayMessages }
+    private var displayedHistoryMessages: [ProviderMessage.Message] { messageListVM.displayMessages }
 
     private var visibleRowIDs: [UUID] {
         displayedHistoryMessages.map(\.id)
@@ -286,14 +286,14 @@ struct ListV1View: View {
     // MARK: - Pagination Trigger
 
     private func loadEarlier(proxy: ScrollViewProxy) async {
-        guard let anchorID = await turnViewModel.loadEarlier() else { return }
+        guard let anchorID = await messageListVM.loadEarlier() else { return }
         await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
     }
 
     // MARK: - Post-send positioning
 
     private func handleUserMessageInsertion(oldIDs: [UUID], newIDs: [UUID]) {
-        guard !turnViewModel.isLoading else { return }
+        guard !messageListVM.isLoading else { return }
         let insertedIDs = Set(newIDs).subtracting(oldIDs)
         guard !insertedIDs.isEmpty,
               let latestDisplayedUserMessageID,

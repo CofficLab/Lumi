@@ -2,10 +2,10 @@ import Foundation
 import ProviderConversationState
 import ProviderMessageStreaming
 
-/// 将会话活动状态变化转发给消息列表 ViewModel。
+/// 将会话活动状态变化转发给消息列表 VM。
 @MainActor
 final class ConversationStateObserver {
-    private weak var viewModel: ConversationStateViewModel?
+    private weak var stateVM: ConversationStateVM?
     private let state: any ConversationStateProviding
     private let streaming: (any MessageStreamingProviding)?
     private var stateHandle: (any ConversationStateObserverHandle)?
@@ -18,11 +18,11 @@ final class ConversationStateObserver {
         state: any ConversationStateProviding,
         streaming: (any MessageStreamingProviding)?,
         conversationID: UUID?,
-        viewModel: ConversationStateViewModel
+        stateVM: ConversationStateVM
     ) {
         self.state = state
         self.streaming = streaming
-        self.viewModel = viewModel
+        self.stateVM = stateVM
         updateSelectedConversation(conversationID)
         stateHandle = state.addConversationStateObserver { [weak self] change in
             self?.handleStateChange(change)
@@ -37,7 +37,7 @@ final class ConversationStateObserver {
         selectedConversationID = conversationID
         conversationState = nil
         streamingStage = .idle
-        viewModel?.updateSelectedConversation(conversationID)
+        stateVM?.updateSelectedConversation(conversationID)
 
         guard let conversationID else { return }
         conversationState = state.state(for: conversationID)
@@ -79,6 +79,6 @@ final class ConversationStateObserver {
             conversationState: conversationState,
             streamingStage: streamingStage
         )
-        viewModel?.update(activity: activity, for: conversationID)
+        stateVM?.update(activity: activity, for: conversationID)
     }
 }

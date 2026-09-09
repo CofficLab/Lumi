@@ -10,7 +10,7 @@ struct AgentTurnMessageProjection: Equatable {
 
 /// 单个 AgentTurnView 的消息数据源。它只接收 Turn 身份，读取并投影消息。
 @MainActor
-final class AgentTurnViewModel: ObservableObject {
+final class AgentTurnVM: ObservableObject {
     @Published private(set) var projection = AgentTurnMessageProjection()
 
     private let services: MessageListServices
@@ -26,8 +26,8 @@ final class AgentTurnViewModel: ObservableObject {
         await refresh()
     }
 
-    /// 视图会为相同 turnID 保留同一 ViewModel；TurnRecord 状态变化时更新描述，
-    /// 再由本 ViewModel 重新读取消息，而不是依赖外层重建视图。
+    /// 视图会为相同 turnID 保留同一 VM；TurnRecord 状态变化时更新描述，
+    /// 再由本 VM 重新读取消息，而不是依赖外层重建视图。
     func update(item: AgentTurnPresentationItem) async {
         guard self.item != item else { return }
         self.item = item

@@ -34,7 +34,7 @@ private final class StubMessageCapability: MessageListMessageCapability {
     }
 }
 
-@Test @MainActor func agentTurnViewModelPublishesProjectionChanges() async {
+@Test @MainActor func agentTurnVMPublishesProjectionChanges() async {
     let conversationID = UUID()
     let userMessage = Message(
         conversationID: conversationID,
@@ -54,17 +54,17 @@ private final class StubMessageCapability: MessageListMessageCapability {
         pendingUserMessages: [userMessage],
         statusMessage: nil
     )
-    let viewModel = AgentTurnViewModel(services: services, item: item)
+    let vm = AgentTurnVM(services: services, item: item)
 
-    await viewModel.refresh()
-    #expect(viewModel.projection.userMessages.map(\.id) == [userMessage.id])
+    await vm.refresh()
+    #expect(vm.projection.userMessages.map(\.id) == [userMessage.id])
     messages.snapshot = [userMessage]
-    await viewModel.refresh()
-    #expect(viewModel.projection.processMessages.isEmpty)
+    await vm.refresh()
+    #expect(vm.projection.processMessages.isEmpty)
 
     messages.snapshot = []
-    await viewModel.refresh()
-    #expect(viewModel.projection.userMessages.isEmpty)
+    await vm.refresh()
+    #expect(vm.projection.userMessages.isEmpty)
 }
 
 @Test @MainActor func activeToolCallStaysInsideProcessDisclosure() {
@@ -104,7 +104,7 @@ private final class StubMessageCapability: MessageListMessageCapability {
         .first!
     let item = AgentTurnPresentationItem(recorded: summary, acceptsLiveActivity: true)
 
-    let projection = AgentTurnViewModel.project(
+    let projection = AgentTurnVM.project(
         item: item,
         messages: [userMessage, toolMessage]
     )

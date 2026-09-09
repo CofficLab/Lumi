@@ -15,7 +15,7 @@ struct AgentTurnView: View {
     let verbosity: ResponseVerbosity
     let isDeveloperModeEnabled: Bool
 
-    @ObservedObject private var viewModel: AgentTurnViewModel
+    @ObservedObject private var turnVM: AgentTurnVM
     let onDynamicContentChange: (@MainActor () -> Void)?
     @State private var isProcessExpanded = false
 
@@ -24,37 +24,37 @@ struct AgentTurnView: View {
         item: AgentTurnPresentationItem,
         verbosity: ResponseVerbosity,
         isDeveloperModeEnabled: Bool,
-        viewModel: AgentTurnViewModel,
+        turnVM: AgentTurnVM,
         onDynamicContentChange: (@MainActor () -> Void)? = nil
     ) {
         self.services = services
         self.item = item
         self.verbosity = verbosity
         self.isDeveloperModeEnabled = isDeveloperModeEnabled
-        _viewModel = ObservedObject(wrappedValue: viewModel)
+        _turnVM = ObservedObject(wrappedValue: turnVM)
         self.onDynamicContentChange = onDynamicContentChange
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(viewModel.projection.userMessages) { message in
+            ForEach(turnVM.projection.userMessages) { message in
                 messageRow(message)
             }
 
-            if item.isShowingProcess || !viewModel.projection.processMessages.isEmpty {
+            if item.isShowingProcess || !turnVM.projection.processMessages.isEmpty {
                 processDisclosure
             }
 
-            if let lastMessage = viewModel.projection.lastMessage {
+            if let lastMessage = turnVM.projection.lastMessage {
                 messageRow(lastMessage)
             }
 
         }
-        .task { await viewModel.activate() }
+        .task { await turnVM.activate() }
         .onChange(of: item) { _, newItem in
-            Task { await viewModel.update(item: newItem) }
+            Task { await turnVM.update(item: newItem) }
         }
-        .onChange(of: viewModel.projection) { _, _ in
+        .onChange(of: turnVM.projection) { _, _ in
             onDynamicContentChange?()
         }
     }
@@ -71,7 +71,7 @@ struct AgentTurnView: View {
 
             if isProcessExpanded {
                 VStack(alignment: .leading, spacing: 8) {
-                    ForEach(viewModel.projection.processMessages) { message in
+                    ForEach(turnVM.projection.processMessages) { message in
                         messageRow(message)
                     }
                 }
@@ -92,10 +92,10 @@ struct AgentTurnView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: isProcessExpanded ? "chevron.down" : "chevron.right")
-                        Text(AgentTurnViewModel.processDisclosureTitle(
+                        Text(AgentTurnVM.processDisclosureTitle(
                             item: item,
-                            userMessages: viewModel.projection.userMessages,
-                            processMessages: viewModel.projection.processMessages,
+                            userMessages: turnVM.projection.userMessages,
+                            processMessages: turnVM.projection.processMessages,
                             now: now
                         ))
                     }

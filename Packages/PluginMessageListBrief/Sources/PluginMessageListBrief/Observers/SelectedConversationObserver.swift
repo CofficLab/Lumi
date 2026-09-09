@@ -1,28 +1,28 @@
 import ProviderConversation
 
-/// 将当前会话切换转发给消息列表 ViewModel。
+/// 将当前会话切换转发给消息列表 VM。
 @MainActor
 final class SelectedConversationObserver {
     private var handle: (any SelectedConversationObserverHandle)?
 
     init(
         conversations: any ConversationManaging,
-        viewModel: ListV1ViewModel,
-        conversationStateViewModel: ConversationStateViewModel,
+        vm: ConversationMessageListVM,
+        stateVM: ConversationStateVM,
         conversationStateObserver: ConversationStateObserver?
     ) {
         if let conversationStateObserver {
             conversationStateObserver.updateSelectedConversation(conversations.selectedConversationID)
         } else {
-            conversationStateViewModel.updateSelectedConversation(conversations.selectedConversationID)
+            stateVM.updateSelectedConversation(conversations.selectedConversationID)
         }
         handle = conversations.addSelectedConversationObserver {
-            [weak viewModel, weak conversationStateViewModel, weak conversationStateObserver] conversationID in
-            viewModel?.handleSelectedConversationChange(conversationID)
+            [weak vm, weak stateVM, weak conversationStateObserver] conversationID in
+            vm?.handleSelectedConversationChange(conversationID)
             if let conversationStateObserver {
                 conversationStateObserver.updateSelectedConversation(conversationID)
             } else {
-                conversationStateViewModel?.updateSelectedConversation(conversationID)
+                stateVM?.updateSelectedConversation(conversationID)
             }
         }
     }
