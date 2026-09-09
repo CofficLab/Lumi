@@ -7,15 +7,41 @@ import SwiftUI
 @MainActor
 public final class DefaultContentViewProviding: ContentViewProviding, ObservableObject {
     @Published fileprivate var contentView: AnyView?
+    private var observers: [UUID: (ContentViewEvent) -> Void] = [:]
 
     public init() {}
 
+    @discardableResult
+    public func addContentViewObserver(
+        _ callback: @escaping (ContentViewEvent) -> Void
+    ) -> any ContentViewObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
     public func setContentView(_ view: AnyView?) {
         contentView = view
+        observers.values.forEach { $0(.contentChanged) }
     }
 
     public func makeContentView() -> AnyView {
         AnyView(ContentHostView(provider: self))
+    }
+
+    private final class ObserverHandle: ContentViewObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
+        }
     }
 }
 

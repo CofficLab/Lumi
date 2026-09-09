@@ -12,11 +12,40 @@ import SwiftUI
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any ContentViewProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
+public enum ContentViewEvent {
+    case contentChanged
+}
+
+@MainActor
+public protocol ContentViewObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
 public protocol ContentViewProviding: AnyObject, ObservableObject
     where ObjectWillChangePublisher == ObservableObjectPublisher {
+    @discardableResult
+    func addContentViewObserver(
+        _ callback: @escaping (ContentViewEvent) -> Void
+    ) -> any ContentViewObserverHandle
+
     /// 设置当前主内容视图（传 `nil` 表示清空，回退到占位）。
     func setContentView(_ view: AnyView?)
 
     /// 返回当前主内容视图；未设置时返回占位视图。
     func makeContentView() -> AnyView
+}
+
+public extension ContentViewProviding {
+    @discardableResult
+    func addContentViewObserver(
+        _ callback: @escaping (ContentViewEvent) -> Void
+    ) -> any ContentViewObserverHandle {
+        NoopContentViewObserverHandle()
+    }
+}
+
+@MainActor
+private final class NoopContentViewObserverHandle: ContentViewObserverHandle {
+    func cancel() {}
 }

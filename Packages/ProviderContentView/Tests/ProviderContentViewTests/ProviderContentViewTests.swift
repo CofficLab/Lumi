@@ -31,12 +31,16 @@ struct ProviderContentViewTests {
     func settingContentPublishesChange() {
         let provider = DefaultContentViewProviding()
         var changeCount = 0
-        let cancellable = provider.objectWillChange.sink { changeCount += 1 }
+        let handle = provider.addContentViewObserver { event in
+            if case .contentChanged = event {
+                changeCount += 1
+            }
+        }
 
         provider.setContentView(AnyView(Text("next")))
 
         #expect(changeCount == 1)
-        cancellable.cancel()
+        handle.cancel()
     }
 
     @Test("设置 nil 后回退到占位")
