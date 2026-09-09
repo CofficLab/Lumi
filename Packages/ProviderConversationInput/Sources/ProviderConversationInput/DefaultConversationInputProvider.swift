@@ -89,7 +89,9 @@ public final class DefaultConversationInputProvider: ConversationInputProviding,
     // MARK: -
 
     public init() {
-        Self.logger.info("\(Self.onInit)initialized")
+        if Self.verbose {
+            Self.logger.info("\(Self.onInit)initialized")
+        }
     }
 
     public func addToConversation(fileURLs: [URL]) {
