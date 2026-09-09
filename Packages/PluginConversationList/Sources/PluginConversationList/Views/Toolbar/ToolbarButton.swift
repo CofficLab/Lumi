@@ -1,4 +1,5 @@
 import LumiUI
+import ProviderChatSection
 import SwiftUI
 
 /// 工具栏会话列表按钮（复刻旧版 ConversationListPlugin.ToolbarButton）
@@ -12,10 +13,8 @@ struct ToolbarButton: View {
     @State private var isPresented = false
 
     /// ChatSection 是否可见；不可见时整个按钮不渲染。
-    ///
-    /// ChatSectionProviding 是无约束协议，无法直接订阅 objectWillChange，
-    /// 用轻量轮询跟随可见性变化（复刻旧版 onChatSectionVisibleDidChange）。
     @State private var isChatSectionVisible: Bool = true
+    @State private var chatObserverHandle: (any ChatSectionProvidingObserverHandle)?
     /// 全库是否存在任意对话；默认 true 以避免启动加载期间按钮闪烁，
     /// 异步查得数量为 0 时再隐藏。
     @State private var hasAnyConversations: Bool = true
@@ -50,16 +49,18 @@ struct ToolbarButton: View {
         .task {
             await refreshConversationPresence()
         }
-        .task {
-            // 轮询 ChatSection 可见性：协议存在类型无法被 Combine 订阅，
-            // 轻量轮询开销可忽略，且跟随容器切换即时收敛。
-            while !Task.isCancelled {
-                let visible = context.chat?.isVisible ?? true
-                if isChatSectionVisible != visible {
-                    isChatSectionVisible = visible
+        .onAppear {
+            isChatSectionVisible = context.chat?.isVisible ?? true
+            guard chatObserverHandle == nil else { return }
+            chatObserverHandle = context.chat?.addObserver { event in
+                if case let .visibilityChanged(isVisible) = event {
+                    isChatSectionVisible = isVisible
                 }
-                try? await Task.sleep(for: .milliseconds(300))
             }
+        }
+        .onDisappear {
+            chatObserverHandle?.cancel()
+            chatObserverHandle = nil
         }
         .onChange(of: context.conversationsRevision) { _, _ in
             Task { await refreshConversationPresence() }
