@@ -26,8 +26,6 @@ struct AISetupPage: View {
 
     var body: some View {
         VStack(spacing: DesignTokens.Spacing.lg) {
-            headerSection
-
             if providers.isEmpty {
                 AppEmptyState(
                     icon: "network.slash",
@@ -37,12 +35,6 @@ struct AISetupPage: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 180)
             } else {
-                ProviderSelectView(
-                    providers: providers,
-                    selectedProviderID: $selectedProviderID,
-                    isPresented: $isProviderPickerPresented
-                )
-
                 if let provider = selectedProvider {
                     providerDetailCard(provider)
                 }
@@ -59,30 +51,24 @@ struct AISetupPage: View {
 
     // MARK: - Sections
 
-    private var headerSection: some View {
-        AppCard(style: .subtle) {
-            VStack(spacing: DesignTokens.Spacing.sm) {
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 48))
-                    .foregroundStyle(theme.primary)
-                Text(LumiPluginLocalization.string("Set up your AI provider", bundle: .module))
-                    .font(DesignTokens.Typography.title3)
-                Text(LumiPluginLocalization.string("Add a provider and choose a model in Settings. You can return here at any time from General Settings.", bundle: .module))
-                    .font(DesignTokens.Typography.caption1)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(theme.textSecondary)
-            }
-            .frame(maxWidth: .infinity)
-        }
-    }
-
     private func providerDetailCard(_ provider: any SuperLLMProvider) -> some View {
         AppCard(style: .subtle) {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
-                AppIdentityRow(
-                    title: provider.providerInfo.displayName,
-                    metadata: [provider.providerInfo.description]
-                )
+                HStack(alignment: .top) {
+                    ProviderSelectView(
+                        providers: providers,
+                        selectedProviderID: $selectedProviderID,
+                        isPresented: $isProviderPickerPresented
+                    )
+
+                    Spacer()
+
+                    if !provider.providerInfo.isLocal,
+                       let website = provider.providerInfo.websiteURL {
+                        Link(LumiPluginLocalization.string("Get a key", bundle: .module), destination: website)
+                            .font(DesignTokens.Typography.caption1)
+                    }
+                }
 
                 Divider()
 
@@ -99,31 +85,29 @@ struct AISetupPage: View {
                         text: $apiKey,
                         fieldType: .secure
                     )
-                    if let website = provider.providerInfo.websiteURL {
-                        Link(LumiPluginLocalization.string("Get a key", bundle: .module), destination: website)
-                            .font(DesignTokens.Typography.caption1)
-                    }
                 }
 
-                AppButton(
-                    LumiPluginLocalization.string(
-                        provider.providerInfo.isLocal ? "Use Provider" : "Save API Key",
-                        bundle: .module
-                    ),
-                    style: .primary,
-                    action: {
-                        provider.setApiKey(apiKey)
-                        manager?.select(providerID: provider.providerID, model: nil)
-                        apiKey = provider.getApiKey()
-                        didSave = true
-                    }
-                )
-                .disabled(!provider.providerInfo.isLocal && apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                HStack {
+                    AppButton(
+                        LumiPluginLocalization.string(
+                            provider.providerInfo.isLocal ? "Use Provider" : "Save API Key",
+                            bundle: .module
+                        ),
+                        style: .primary,
+                        action: {
+                            provider.setApiKey(apiKey)
+                            manager?.select(providerID: provider.providerID, model: nil)
+                            apiKey = provider.getApiKey()
+                            didSave = true
+                        }
+                    )
+                    .disabled(!provider.providerInfo.isLocal && apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                if didSave {
-                    Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
-                        .font(DesignTokens.Typography.caption1)
-                        .foregroundStyle(theme.success)
+                    if didSave {
+                        Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
+                            .font(DesignTokens.Typography.caption1)
+                            .foregroundStyle(theme.success)
+                    }
                 }
             }
         }

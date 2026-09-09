@@ -77,7 +77,10 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         else { return }
 
         onboarding.register(
-            OnboardingPageItem(id: Self.onboardingPageID) {
+            OnboardingPageItem(
+                id: Self.onboardingPageID,
+                title: LumiPluginLocalization.string("Set up your AI provider", bundle: .module)
+            ) {
                 AISetupPage(manager: manager)
             }
         )
