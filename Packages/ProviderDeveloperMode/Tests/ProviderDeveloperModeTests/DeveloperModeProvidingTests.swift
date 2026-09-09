@@ -1,5 +1,4 @@
 import Testing
-import Combine
 @testable import ProviderDeveloperMode
 
 @Suite("ProviderDeveloperMode")
@@ -16,21 +15,24 @@ struct DeveloperModeProvidingTests {
         #expect(provider.isEnabled == false)
     }
 
-    @Test("publishes changes only when the value changes")
-    func publishesChanges() {
+    @Test("typed observer only receives actual value changes")
+    func observesChanges() {
         let provider = DefaultDeveloperModeProviding()
-        var received = 0
-        let cancellable = provider.objectWillChange.sink { received += 1 }
+        var received: [Bool] = []
+        let handle = provider.addObserver { event in
+            guard case let .enabledChanged(isEnabled) = event else { return }
+            received.append(isEnabled)
+        }
 
         provider.setEnabled(false)
         provider.setEnabled(true)
         provider.setEnabled(true)
         provider.setEnabled(false)
 
-        #expect(received == 2)
-        cancellable.cancel()
+        #expect(received == [true, false])
+        handle.cancel()
         provider.setEnabled(true)
-        #expect(received == 2)
+        #expect(received == [true, false])
     }
 
     @Test("observation mirrors provider state")
