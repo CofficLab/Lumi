@@ -54,7 +54,7 @@ extension KernelCoreContainer {
         guard let provider = providers[ObjectIdentifier(type)] as? T else {
             if let pluginID = activePluginID, activePluginLifecyclePhase == .boot {
                 Self.logger.error(
-                    "Plugin '\(pluginID, privacy: .public)' could not resolve provider '\(String(reflecting: type), privacy: .public)' during onBoot"
+                    "\(Self.t)Plugin '\(pluginID, privacy: .public)' could not resolve provider '\(String(reflecting: type), privacy: .public)' during onBoot"
                 )
             }
             return nil
