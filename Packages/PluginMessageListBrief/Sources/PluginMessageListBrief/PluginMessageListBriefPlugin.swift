@@ -37,11 +37,10 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
     )
 
     private var viewModel: ListV1ViewModel?
-    private var messageChangeObserver: (any MessageChangeObserverHandle)?
-    private var streamingObserver: (any MessageStreamingObserverHandle)?
-    private var conversationStateObserver: (any ConversationStateObserverHandle)?
-    private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
-    private var conversationObserver: (any ConversationObserverHandle)?
+    private var messageObserver: MessageObserver?
+    private var streamingObserver: StreamingObserver?
+    private var conversationStateObserver: ConversationStateObserver?
+    private var selectedConversationObserver: SelectedConversationObserver?
     private var verbosityObservation: VerbosityObservationBox?
 
     public init() {}
@@ -99,42 +98,31 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         self.verbosityObservation = verbosityObservation
 
         if let messages {
-            messageChangeObserver = messages.addMessageChangeObserver { [weak viewModel] change in
-                viewModel?.handleMessageChange(change)
-            }
+            messageObserver = MessageObserver(messages: messages, viewModel: viewModel)
         }
         if let streaming {
-            streamingObserver = streaming.addMessageStreamingObserver { [weak viewModel] change in
-                viewModel?.handleStreamingChange(change)
-            }
+            streamingObserver = StreamingObserver(streaming: streaming, viewModel: viewModel)
         }
         if let conversationState {
-            conversationStateObserver = conversationState.addConversationStateObserver { [weak viewModel] change in
-                viewModel?.handleConversationStateChange(change)
-            }
+            conversationStateObserver = ConversationStateObserver(state: conversationState, viewModel: viewModel)
         }
         if let conversations {
-            selectedConversationObserver = conversations.addSelectedConversationObserver { [weak viewModel] conversationID in
-                viewModel?.handleSelectedConversationChange(conversationID)
-            }
-            conversationObserver = conversations.addConversationObserver { _ in
-                // V1 不需要 verbosity 变化时刷新（verbosity 变化由 observation box 处理
-                // 显示/隐藏，因此不在这里处理）
-            }
+            selectedConversationObserver = SelectedConversationObserver(
+                conversations: conversations,
+                viewModel: viewModel
+            )
         }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        messageChangeObserver?.cancel()
-        messageChangeObserver = nil
+        messageObserver?.cancel()
+        messageObserver = nil
         streamingObserver?.cancel()
         streamingObserver = nil
         conversationStateObserver?.cancel()
         conversationStateObserver = nil
         selectedConversationObserver?.cancel()
         selectedConversationObserver = nil
-        conversationObserver?.cancel()
-        conversationObserver = nil
         verbosityObservation?.cancel()
         verbosityObservation = nil
         viewModel = nil
