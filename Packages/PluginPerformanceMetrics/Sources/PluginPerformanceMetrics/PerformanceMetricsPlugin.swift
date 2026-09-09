@@ -1,4 +1,5 @@
 import KernelCore
+import KitLocalization
 import ProviderPerformanceMetrics
 import ProviderSettingView
 import ProviderStorage
@@ -32,7 +33,7 @@ public final class PerformanceMetricsPlugin: SuperPlugin {
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
                 id: id,
-                title: "Performance Metrics",
+                title: PerformanceMetricsLocalization.string("Performance Metrics", bundle: .module),
                 systemImage: "gauge.with.dots.needle.67percent",
                 order: order
             ) {
@@ -66,7 +67,7 @@ public struct PerformanceMetricsSettingsView: View {
                     ProgressView()
                         .frame(maxWidth: .infinity, alignment: .center)
                 } else if let report, !report.summaries.isEmpty {
-                    Text("Latency summaries")
+                    Text(PerformanceMetricsLocalization.string("Latency summaries", bundle: .module))
                         .font(.headline)
 
                     LazyVStack(alignment: .leading, spacing: 10) {
@@ -75,14 +76,14 @@ public struct PerformanceMetricsSettingsView: View {
                         }
                     }
 
-                    Text("Recent samples: \(report.totalEventCount)")
+                    Text(PerformanceMetricsLocalization.string("Recent samples: %@", bundle: .module).replacingOccurrences(of: "%@", with: "\(report.totalEventCount)"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else if !isLoading {
                     ContentUnavailableView(
-                        "No performance data",
+                        PerformanceMetricsLocalization.string("No performance data", bundle: .module),
                         systemImage: "chart.line.downtrend.xyaxis",
-                        description: Text("Use the app normally and timings will appear here.")
+                        description: Text(PerformanceMetricsLocalization.string("Use the app normally and timings will appear here.", bundle: .module))
                     )
                     .frame(maxWidth: .infinity)
                 }
@@ -95,16 +96,16 @@ public struct PerformanceMetricsSettingsView: View {
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Performance Metrics")
+                Text(PerformanceMetricsLocalization.string("Performance Metrics", bundle: .module))
                     .font(.title2.weight(.semibold))
-                Text("Local timings reported by app plugins. Message content is never collected.")
+                Text(PerformanceMetricsLocalization.string("Local timings reported by app plugins. Message content is never collected.", bundle: .module))
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
             HStack(spacing: 8) {
-                Button("Clear") {
+                Button(PerformanceMetricsLocalization.string("Clear", bundle: .module)) {
                     provider.clear()
                     Task { await reload() }
                 }
@@ -116,7 +117,7 @@ public struct PerformanceMetricsSettingsView: View {
                     Image(systemName: "arrow.clockwise")
                 }
                 .buttonStyle(.borderless)
-                .help("Refresh performance data")
+                .help(PerformanceMetricsLocalization.string("Refresh performance data", bundle: .module))
             }
         }
     }
