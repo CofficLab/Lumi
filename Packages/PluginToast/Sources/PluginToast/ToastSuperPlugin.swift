@@ -81,6 +81,7 @@ public final class ToastCenter: ToastProviding {
             try? await Task.sleep(for: duration)
             guard !Task.isCancelled else { return }
             self?.currentToast = nil
+            self?.notify(.currentToastChanged(nil))
         }
     }
 

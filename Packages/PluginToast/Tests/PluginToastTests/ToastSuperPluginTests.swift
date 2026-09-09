@@ -48,3 +48,23 @@ import Testing
         Issue.record("expected currentToastChanged")
     }
 }
+
+@MainActor
+@Test func toastCenterPublishesAutomaticDismissal() async {
+    let center = ToastCenter()
+    var events: [ToastProvidingEvent] = []
+    let handle = center.addObserver { events.append($0) }
+
+    center.show(LumiToast(title: "Saved", duration: 0.01))
+    try? await Task.sleep(for: .milliseconds(50))
+    handle.cancel()
+
+    #expect(center.currentToast == nil)
+    #expect(events.count == 2)
+    guard events.count == 2 else { return }
+    if case let .currentToastChanged(value) = events[1] {
+        #expect(value == nil)
+    } else {
+        Issue.record("expected automatic currentToastChanged(nil)")
+    }
+}
