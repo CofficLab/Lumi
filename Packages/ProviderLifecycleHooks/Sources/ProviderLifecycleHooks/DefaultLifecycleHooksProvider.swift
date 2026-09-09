@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 
 /// `LifecycleHooksProviding` 默认实现。
 ///
@@ -8,7 +7,7 @@ import Combine
 /// （所有钩子均在 MainActor 上执行，与现有 AgentLoop 一致）。
 @MainActor
 public final class DefaultLifecycleHooksProvider: LifecycleHooksProviding {
-    @Published public private(set) var revision: Int = 0
+    public private(set) var revision: Int = 0
 
     // MARK: - Hook Storage
 

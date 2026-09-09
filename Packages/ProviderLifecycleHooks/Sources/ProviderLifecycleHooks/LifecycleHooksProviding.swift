@@ -157,7 +157,7 @@ public protocol LifecycleHookHandle: AnyObject {
 ///
 /// 默认实现 `DefaultLifecycleHooksProvider` 提供开箱即用的钩子管理。
 @MainActor
-public protocol LifecycleHooksProviding: AnyObject, ObservableObject {
+public protocol LifecycleHooksProviding: AnyObject {
     // MARK: - 注册
 
     /// 注册 `willSendToLLM` 可变钩子。
