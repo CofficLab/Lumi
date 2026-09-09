@@ -207,7 +207,9 @@ private struct OnboardingCard: View {
                 ScrollView {
                     pages[safeIndex].makeView()
                         .padding(DesignTokens.Spacing.xl)
+                        .frame(maxWidth: .infinity)
                 }
+                .frame(maxWidth: .infinity)
             }
 
             Divider()
