@@ -5,6 +5,7 @@ import KitMarkdown
 import LumiUI
 import os
 import ProviderConversation
+import ProviderDeveloperMode
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageSender
@@ -71,6 +72,18 @@ struct ToolCallRowsView: View {
     @State private var parameterPopoverToolCallID: String?
     @State private var resultPopoverToolCallID: String?
     @State private var resolvedToolCalls: [MessageToolCall]?
+    @StateObject private var developerMode: DeveloperModeObservation
+
+    init(kernel: KernelCoreContainer, message: Message, verbosity: ResponseVerbosity) {
+        self.kernel = kernel
+        self.message = message
+        self.verbosity = verbosity
+        _developerMode = StateObject(
+            wrappedValue: DeveloperModeObservation(
+                provider: kernel.resolveProvider((any DeveloperModeProviding).self)
+            )
+        )
+    }
 
     private var toolCalls: [MessageToolCall] {
         resolvedToolCalls ?? message.toolCalls ?? []
@@ -175,7 +188,10 @@ struct ToolCallRowsView: View {
                 toolCall: toolCall.agentToolCall,
                 message: rowContext
             )
-            .toolCallRendererIdBadge(type(of: customRenderer).id)
+            .toolCallRendererIdBadge(
+                type(of: customRenderer).id,
+                isEnabled: developerMode.isEnabled
+            )
         } else {
             ToolCallRowView(
                 kernel: kernel,
@@ -762,17 +778,16 @@ private struct ToolCallResultLazyPopover: View {
     }
 }
 
-// MARK: - Tool Call Renderer Debug Badge
+// MARK: - Tool Call Renderer Developer Mode Badge
 
-/// Tool call renderer ID 调试徽章。
-/// 在 Debug 构建下，在工具调用行右上角显示渲染器 ID，便于调试。
+/// Tool call renderer ID badge shown in developer mode.
 private struct ToolCallRendererIdBadge: View {
     @LumiTheme private var theme
 
     let id: String
 
     private var rendererColor: Color {
-        ToolCallRendererDebugColor.color(for: id)
+        ToolCallRendererDeveloperModeColor.color(for: id)
     }
 
     var body: some View {
@@ -795,20 +810,20 @@ private struct ToolCallRendererIdBadge: View {
 
 extension View {
     /// 在工具调用行右上角叠加当前 tool call renderer 的 `id` 徽章。
-    /// 仅 Debug 构建有效；Release 构建下此方法为 no-op。
-    func toolCallRendererIdBadge(_ id: String) -> some View {
-        #if DEBUG
+    @ViewBuilder
+    func toolCallRendererIdBadge(_ id: String, isEnabled: Bool) -> some View {
+        if isEnabled {
             overlay(alignment: .topTrailing) {
                 ToolCallRendererIdBadge(id: id)
                     .padding(4)
             }
-        #else
+        } else {
             self
-        #endif
+        }
     }
 }
 
-private enum ToolCallRendererDebugColor {
+private enum ToolCallRendererDeveloperModeColor {
     static func color(for id: String) -> Color {
         Color(
             hue: hue(for: id),
