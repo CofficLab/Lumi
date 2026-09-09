@@ -1,9 +1,11 @@
 import Foundation
 import KitAgentTool
 
-/// 工具执行生命周期事件。
+/// 工具注册与执行生命周期事件。
 @MainActor
 public enum ToolManagerEvent {
+    /// 工具注册表发生变化。
+    case toolsChanged
     case started(conversationID: UUID, turnID: UUID?, toolCall: ToolCall)
     /// 工具需要用户授权后才能继续执行。
     case authorizationRequired(conversationID: UUID, turnID: UUID?, toolCall: ToolCall)
