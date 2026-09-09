@@ -26,6 +26,37 @@ struct ProviderRootViewTests {
         #expect(provider.overlays.map(\.id) == ["later"])
     }
 
+    @Test("根视图状态变化会发布类型化观察事件")
+    func rootViewChangesAreObservable() {
+        let provider = DefaultRootViewProvider()
+        var events: [String] = []
+        let handle = provider.addRootViewObserver { event in
+            switch event {
+            case .overlaysChanged:
+                events.append("overlays")
+            case .toolbarViewChanged:
+                events.append("toolbar")
+            case let .railViewVisibilityChanged(visible):
+                events.append("rail:\(visible)")
+            case let .contentViewVisibilityChanged(hidden):
+                events.append("content-hidden:\(hidden)")
+            default:
+                break
+            }
+        }
+
+        provider.addOverlays([RootOverlayItem(id: "search") { $0 }])
+        provider.setToolbarView(AnyView(Text("toolbar")))
+        provider.setRailViewVisible(false)
+        provider.setContentViewHidden(true)
+
+        #expect(events == ["overlays", "toolbar", "rail:false", "content-hidden:true"])
+
+        handle.cancel()
+        provider.setContentViewHidden(false)
+        #expect(events == ["overlays", "toolbar", "rail:false", "content-hidden:true"])
+    }
+
     @Test("DefaultRootViewProvider 无工具栏时返回根视图")
     func defaultProviderReturnsRootViewWithoutToolbar() {
         let provider = DefaultRootViewProvider()

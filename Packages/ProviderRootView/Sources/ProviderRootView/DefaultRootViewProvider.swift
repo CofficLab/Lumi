@@ -35,6 +35,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published public private(set) var isContentViewHidden: Bool = false
     @Published public private(set) var isContentHeaderViewHidden: Bool = false
     @Published public private(set) var isContentFooterViewHidden: Bool = false
+    private var observers: [UUID: (RootViewEvent) -> Void] = [:]
     private var railVisibilityObserver: (any RailViewProvidingObserverHandle)?
     private var railWidthObserver: (any RailViewProvidingObserverHandle)?
     private var railWidthResizeHandler: (@MainActor (CGFloat) -> Void)?
@@ -47,20 +48,42 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         }
     }
 
+    @discardableResult
+    public func addRootViewObserver(
+        _ callback: @escaping (RootViewEvent) -> Void
+    ) -> any RootViewObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
     public func setToolbarView(_ view: AnyView?) {
         guard !isSameView(toolbarView, view) else { return }
         toolbarView = view
+        notify(.toolbarViewChanged)
         if Self.verbose {
             Self.logger.debug("\(self.t)set toolbar view: \(view == nil ? "nil" : "injected")")
         }
     }
 
     public func addOverlays(_ newOverlays: [RootOverlayItem]) {
+        let oldCount = overlays.count
         for overlay in newOverlays where !overlays.contains(where: { $0.id == overlay.id }) { overlays.append(overlay) }
         overlays.sort { $0.order < $1.order }
+        if overlays.count != oldCount {
+            notify(.overlaysChanged)
+        }
     }
 
-    public func removeOverlays(ids: Set<String>) { overlays.removeAll { ids.contains($0.id) } }
+    public func removeOverlays(ids: Set<String>) {
+        let oldCount = overlays.count
+        overlays.removeAll { ids.contains($0.id) }
+        if overlays.count != oldCount {
+            notify(.overlaysChanged)
+        }
+    }
 
     public func setActivityBarView(_ view: AnyView?) {
         guard !isSameView(activityBarView, view) else { return }
@@ -83,6 +106,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
             setRailViewVisible(lastRailViewVisibility)
         }
         railView = view
+        notify(.railViewChanged)
         if Self.verbose {
             Self.logger.debug("\(self.t)set rail view: \(view == nil ? "nil" : "injected")")
         }
@@ -92,6 +116,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         guard isRailViewVisible != visible else { return }
         isRailViewVisible = visible
         lastRailViewVisibility = visible
+        notify(.railViewVisibilityChanged(visible))
     }
 
     public func bindRailViewVisibility(to provider: any RailViewProviding) {
@@ -113,6 +138,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         railWidthObserver = provider.addObserver { [weak self] event in
             guard case let .widthChanged(width) = event else { return }
             self?.railWidth = width
+            self?.notify(.railWidthChanged(width))
         }
     }
 
@@ -136,6 +162,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         let resolvedHeight = recommended.withIdealHeight(recommended.clamped(restoredHeight))
         if contentFooterHeight != resolvedHeight {
             contentFooterHeight = resolvedHeight
+            notify(.contentFooterHeightChanged(contentFooterHeight))
         }
     }
 
@@ -145,6 +172,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         activeContentFooterHeightStore = nil
         if contentFooterHeight != .standard {
             contentFooterHeight = .standard
+            notify(.contentFooterHeightChanged(contentFooterHeight))
         }
     }
 
@@ -155,12 +183,14 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         let updatedHeight = contentFooterHeight.withIdealHeight(resolvedHeight)
         if contentFooterHeight != updatedHeight {
             contentFooterHeight = updatedHeight
+            notify(.contentFooterHeightChanged(contentFooterHeight))
         }
     }
 
     public func setContentHeaderView(_ view: AnyView?) {
         guard !isSameView(contentHeaderView, view) else { return }
         contentHeaderView = view
+        notify(.contentHeaderViewChanged)
         if Self.verbose {
             Self.logger.debug("\(self.t)set content header view: \(view == nil ? "nil" : "injected")")
         }
@@ -169,6 +199,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     public func setContentView(_ view: AnyView?) {
         guard !isSameView(contentView, view) else { return }
         contentView = view
+        notify(.contentViewChanged)
         if Self.verbose {
             Self.logger.debug("\(self.t)set content view: \(view == nil ? "nil" : "injected")")
         }
@@ -177,6 +208,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     public func setContentFooterView(_ view: AnyView?) {
         guard !isSameView(contentFooterView, view) else { return }
         contentFooterView = view
+        notify(.contentFooterViewChanged)
         if Self.verbose {
             Self.logger.debug("\(self.t)set content footer view: \(view == nil ? "nil" : "injected")")
         }
@@ -185,6 +217,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     public func setContentFooterViewHidden(_ hidden: Bool) {
         guard isContentFooterViewHidden != hidden else { return }
         isContentFooterViewHidden = hidden
+        notify(.contentFooterVisibilityChanged(hidden))
         if Self.verbose {
             Self.logger.debug("\(self.t)set content footer hidden: \(hidden)")
         }
@@ -193,6 +226,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     public func setContentViewHidden(_ hidden: Bool) {
         guard isContentViewHidden != hidden else { return }
         isContentViewHidden = hidden
+        notify(.contentViewVisibilityChanged(hidden))
         if Self.verbose {
             Self.logger.debug("\(self.t)set content view hidden: \(hidden)")
         }
@@ -201,6 +235,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     public func setContentHeaderViewHidden(_ hidden: Bool) {
         guard isContentHeaderViewHidden != hidden else { return }
         isContentHeaderViewHidden = hidden
+        notify(.contentHeaderVisibilityChanged(hidden))
         if Self.verbose {
             Self.logger.debug("\(self.t)set content header hidden: \(hidden)")
         }
@@ -209,6 +244,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     public func setTrailingPane(_ pane: RootTrailingPane?) {
         guard pane !== trailingPane else { return }
         trailingPane = pane
+        notify(.trailingPaneChanged)
         if Self.verbose {
             Self.logger.debug("\(self.t)set trailing pane: \(pane.map { $0.id } ?? "nil")")
         }
@@ -241,6 +277,23 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
             Self.logger.debug("\(self.t)make root view: toolbar=\(self.toolbarView == nil ? "nil" : "set"), activityBar=\(self.activityBarView == nil ? "nil" : "set"), rail=\(self.railView == nil ? "nil" : "set"), content=\(self.contentView == nil ? "nil" : "set"), footer=\(self.contentFooterView == nil ? "nil" : "set")")
         }
         return AnyView(RootOverlayHostView(provider: self))
+    }
+
+    private func notify(_ event: RootViewEvent) {
+        observers.values.forEach { $0(event) }
+    }
+
+    private final class ObserverHandle: RootViewObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
+        }
     }
 
     // MARK: - 显示条件

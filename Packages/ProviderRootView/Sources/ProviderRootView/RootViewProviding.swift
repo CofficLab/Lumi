@@ -25,8 +25,36 @@ import ProviderRailView
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any RootViewProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
+public enum RootViewEvent {
+    case overlaysChanged
+    case toolbarViewChanged
+    case activityBarViewChanged
+    case railViewChanged
+    case railViewVisibilityChanged(Bool)
+    case railWidthChanged(RailViewWidth)
+    case contentHeaderViewChanged
+    case contentHeaderVisibilityChanged(Bool)
+    case contentViewChanged
+    case contentViewVisibilityChanged(Bool)
+    case contentFooterViewChanged
+    case contentFooterVisibilityChanged(Bool)
+    case contentFooterHeightChanged(ContentFooterHeight)
+    case trailingPaneChanged
+}
+
+@MainActor
+public protocol RootViewObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
 public protocol RootViewProviding: AnyObject, ObservableObject
     where ObjectWillChangePublisher == ObservableObjectPublisher {
+    @discardableResult
+    func addRootViewObserver(
+        _ callback: @escaping (RootViewEvent) -> Void
+    ) -> any RootViewObserverHandle
+
     /// 根视图叠层贡献（例如全局搜索、预览浮层）。后注册项显示在更上层。
     var overlays: [RootOverlayItem] { get }
 
@@ -135,6 +163,13 @@ public protocol RootViewProviding: AnyObject, ObservableObject
 }
 
 public extension RootViewProviding {
+    @discardableResult
+    func addRootViewObserver(
+        _ callback: @escaping (RootViewEvent) -> Void
+    ) -> any RootViewObserverHandle {
+        NoopRootViewObserverHandle()
+    }
+
     var overlays: [RootOverlayItem] { [] }
     var isContentViewHidden: Bool { false }
     var isContentHeaderViewHidden: Bool { false }
@@ -163,6 +198,11 @@ public extension RootViewProviding {
     ) {}
     func deactivateContentFooterHeightProfile(ownerID: String) {}
     func saveCurrentContentFooterHeight(_ height: CGFloat) {}
+}
+
+@MainActor
+private final class NoopRootViewObserverHandle: RootViewObserverHandle {
+    func cancel() {}
 }
 
 @MainActor
