@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 
 // MARK: - Docs Entry
@@ -52,8 +51,7 @@ public protocol DocsViewObserverHandle: AnyObject {
 }
 
 @MainActor
-public protocol DocsViewProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol DocsViewProviding: AnyObject {
     @discardableResult
     func addDocsViewObserver(
         _ callback: @escaping (DocsViewEvent) -> Void
