@@ -186,7 +186,7 @@ public final class RootTrailingPane: ObservableObject {
     public let content: AnyView
 
     @Published public var isVisible: Bool
-    private var visibilitySubscription: AnyCancellable?
+    private var visibilityObserver: (any ChatSectionProvidingObserverHandle)?
     private var widthSubscription: AnyCancellable?
     private var widthResizeHandler: (@MainActor (CGFloat) -> Void)?
 
@@ -216,14 +216,14 @@ public final class RootTrailingPane: ObservableObject {
     /// 将面板显隐状态绑定到 ChatSection Provider。
     ///
     /// ChatPanel 通过 `ChatSectionProviding` 响应 ActivityBar 切换；根布局
-    /// 直接观察这个状态。
+    /// 通过类型化事件观察这个状态。
     @MainActor
     public func bindVisibility(to provider: any ChatSectionProviding) {
+        visibilityObserver?.cancel()
         isVisible = provider.isVisible
-        visibilitySubscription = provider.objectWillChange.sink { [weak self, weak provider] _ in
-            Task { @MainActor [weak self, weak provider] in
-                self?.isVisible = provider?.isVisible ?? false
-            }
+        visibilityObserver = provider.addObserver { [weak self] event in
+            guard case let .visibilityChanged(isVisible) = event else { return }
+            self?.isVisible = isVisible
         }
     }
 

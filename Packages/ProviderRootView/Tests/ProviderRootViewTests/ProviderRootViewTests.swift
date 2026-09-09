@@ -36,18 +36,37 @@ struct ProviderRootViewTests {
     }
 
     @Test("ChatSection 可见性同步到 trailing pane")
-    func trailingPaneFollowsChatSectionVisibility() async {
+    func trailingPaneFollowsChatSectionVisibility() {
         let chat = DefaultChatSectionProviding()
         let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
         pane.bindVisibility(to: chat)
 
         #expect(pane.isVisible)
         chat.setVisible(false)
-        await Task.yield()
         #expect(!pane.isVisible)
         chat.setVisible(true)
-        await Task.yield()
         #expect(pane.isVisible)
+    }
+
+    @Test("重新绑定 ChatSection 显隐时取消旧观察者")
+    func rebindingTrailingPaneVisibilityCancelsPreviousObserver() {
+        let firstChat = DefaultChatSectionProviding()
+        let secondChat = DefaultChatSectionProviding()
+        let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
+
+        firstChat.setVisible(false)
+        pane.bindVisibility(to: firstChat)
+        #expect(!pane.isVisible)
+
+        secondChat.setVisible(true)
+        pane.bindVisibility(to: secondChat)
+        #expect(pane.isVisible)
+
+        firstChat.setVisible(true)
+        #expect(pane.isVisible)
+
+        secondChat.setVisible(false)
+        #expect(!pane.isVisible)
     }
 
     @Test("ChatSection 宽度绑定到 trailing pane 并转发用户拖拽")
