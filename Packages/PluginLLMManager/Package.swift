@@ -22,6 +22,7 @@ let package = Package(
         .package(path: "../KitSuperLog"),
         .package(path: "../KitLocalization"),
         .package(path: "../ProviderOnboarding"),
+        .package(path: "../PluginLLMProviderSettings"),
     ],
     targets: [
         .target(
@@ -37,6 +38,7 @@ let package = Package(
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
+                .product(name: "PluginLLMProviderSettings", package: "PluginLLMProviderSettings"),
             ],
             path: "Sources/PluginLLMManager",
             resources: [.process("../../Resources/Localizable.xcstrings")]

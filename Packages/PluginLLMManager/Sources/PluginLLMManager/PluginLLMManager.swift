@@ -1,9 +1,11 @@
 import Foundation
 import KernelCore
 import os
+import PluginLLMProviderSettings
 import ProviderLLMManager
 import ProviderMessageRendering
 import ProviderOnboarding
+import KitLLM
 import KitSuperLog
 
 /// LLM 供应商管理器插件。
@@ -71,17 +73,38 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
 
     /// 对话绑定的供应商/模型通过 `LLMRequest.providerID` 显式传递，避免
     /// 切换对话时改写全局选中状态；未绑定对话才使用全局选中项。
+    ///
+    /// 自定义供应商 Store 由 `LLMProviderSettingsPlugin`（order=100）创建，
+    /// `onReady` 在所有 `onBoot` 完成后执行，此时 Store 已就绪。
     public func onReady(kernel: KernelCoreContainer) throws {
-        guard let manager,
-              let onboarding = kernel.resolveProvider((any OnboardingProviding).self)
-        else { return }
+        guard let manager else { return }
+
+        let onboarding = kernel.resolveProvider((any OnboardingProviding).self)
+        let storeProvider = kernel.resolveProvider((any UserDefinedCloudProviderStoreProviding).self)
+
+        // 如果 onboarding 不可用，无法注册页面
+        guard let onboarding else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)OnboardingProviding not resolved, onboarding page skipped")
+            }
+            return
+        }
+
+        let customStore = storeProvider?.store
+
+        if customStore == nil, Self.verbose {
+            Self.logger.info("\(Self.t)UserDefinedCloudProviderStore not resolved, onboarding page registered without custom provider support")
+        }
 
         onboarding.register(
             OnboardingPageItem(
                 id: Self.onboardingPageID,
                 title: LumiPluginLocalization.string("Set up your AI provider", bundle: .module)
             ) {
-                AISetupPage(manager: manager)
+                AISetupPage(
+                    manager: manager,
+                    customProviderStore: customStore
+                )
             }
         )
     }

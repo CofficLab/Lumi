@@ -1,16 +1,20 @@
 import KitLLM
 import LumiUI
+import PluginLLMProviderSettings
 import ProviderLLMManager
 import SwiftUI
 
 /// AI 模型配置引导页 —— 首次启动时引导用户选择 LLM 供应商并填写 API Key。
 struct AISetupPage: View {
     let manager: (any LLMManaging)?
+    let customProviderStore: UserDefinedCloudProviderStore?
     @LumiTheme private var theme
     @State private var selectedProviderID = ""
     @State private var apiKey = ""
     @State private var didSave = false
     @State private var isProviderPickerPresented = false
+    @State private var isCustomProviderEditorPresented = false
+    @State private var customProviderCount = 0
 
     private var providers: [any SuperLLMProvider] {
         Self.cloudServiceProviders(from: manager?.allProviders() ?? [])
@@ -46,6 +50,16 @@ struct AISetupPage: View {
         .onChange(of: selectedProviderID) { _, _ in
             apiKey = selectedProvider?.getApiKey() ?? ""
             didSave = selectedProvider?.hasApiKey() ?? false
+        }
+        .onChange(of: customProviderStore?.configurations) { _, _ in
+            // 自定义供应商变化后刷新选中状态
+            synchronizeSelection()
+        }
+        .sheet(isPresented: $isCustomProviderEditorPresented) {
+            if let store = customProviderStore {
+                CustomCloudProviderEditor(store: store)
+                    .frame(width: 560, height: 620)
+            }
         }
     }
 
@@ -103,12 +117,27 @@ struct AISetupPage: View {
                     )
                     .disabled(!provider.providerInfo.isLocal && apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
+                    Spacer()
+
                     if didSave {
                         Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
                             .font(DesignTokens.Typography.caption1)
                             .foregroundStyle(theme.success)
                     }
                 }
+            }
+        }
+        .overlay(alignment: .topTrailing) {
+            if customProviderStore != nil {
+                AppButton(
+                    "添加供应商",
+                    systemImage: "plus",
+                    style: .tonal,
+                    size: .small
+                ) {
+                    isCustomProviderEditorPresented = true
+                }
+                .offset(x: 12, y: -12)
             }
         }
     }

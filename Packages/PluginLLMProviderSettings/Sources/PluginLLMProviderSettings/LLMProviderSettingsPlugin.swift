@@ -12,6 +12,9 @@ import SwiftUI
 ///
 /// 在设置界面把 `LLMManaging` 中注册的全部供应商展示出来，
 /// 按 `isLocal` 区分云端和本地供应商入口。
+///
+/// 同时创建并注册 `UserDefinedCloudProviderStore`，供 onboarding 页面
+/// 和设置界面共享自定义供应商数据。
 @MainActor
 public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-provider-settings", category: "LLMProviderSettings")
@@ -51,6 +54,13 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
             )
         )
         userProviderStore = store
+
+        // 注册 Store 为 Provider，供其他插件（如 PluginLLMManager 的 onboarding 页面）使用。
+        try kernel.registerProvider(
+            (any UserDefinedCloudProviderStoreProviding).self,
+            DefaultUserDefinedCloudProviderStoreProviding(store: store)
+        )
+
         downloadObservers.values.forEach { $0.cancel() }
         downloadObservers.removeAll()
         downloadViewModels.removeAll()
@@ -103,7 +113,18 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
             userProviderStore?.configurations.forEach { manager.unregister(id: $0.id) }
         }
         userProviderStore = nil
+        // 内核会按插件归属自动撤回 onBoot 注册的 UserDefinedCloudProviderStoreProviding。
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: ["\(id).remote-providers", "\(id).local-providers"])
+    }
+}
+
+/// `UserDefinedCloudProviderStoreProviding` 的默认实现。
+@MainActor
+final class DefaultUserDefinedCloudProviderStoreProviding: UserDefinedCloudProviderStoreProviding {
+    let store: UserDefinedCloudProviderStore
+
+    init(store: UserDefinedCloudProviderStore) {
+        self.store = store
     }
 }
