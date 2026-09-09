@@ -107,32 +107,7 @@
       }
     },
     "Missing provider(s): %@" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "缺少 Provider：%@"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "缺少 Provider：%@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "缺少 Provider：%@"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "缺少 Provider：%@"
-          }
-        }
-      }
+
     },
     "Provider configuration error — click for details" : {
       "localizations" : {

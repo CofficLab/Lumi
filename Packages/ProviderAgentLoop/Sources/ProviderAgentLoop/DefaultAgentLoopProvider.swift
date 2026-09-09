@@ -88,7 +88,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     private var messageObserver: (any MessageInsertedObserverHandle)?
     private var toolManagerObserver: (any ToolManagerObserverHandle)?
 
-    @Published public private(set) var revision: Int = 0
+    public private(set) var revision: Int = 0
 
     public init(
         messages: any MessageManaging,
@@ -959,7 +959,7 @@ public enum AgentLoopError: Error, LocalizedError {
 /// `MessageStreamingProviding` 是 MainActor 隔离的存在类型，不能直接捕获进
 /// `LLMStreamingProviding.streamComplete` 的 `@Sendable` 回调；本包装类标记
 /// `@unchecked Sendable`，回调内经 `await` 跳回 MainActor 写入，保证对
-/// `@Published` 的写安全。
+/// 流式 store 状态的写安全。
 private final class StreamingBridge: @unchecked Sendable {
     private let streaming: any MessageStreamingProviding
 

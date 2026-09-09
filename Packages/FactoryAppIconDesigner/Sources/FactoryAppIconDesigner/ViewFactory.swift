@@ -33,8 +33,8 @@ public struct DefaultViewFactory: ViewFactory {
         if let rail = kernel.resolveProvider((any RailViewProviding).self) {
             rootView.setRailView(rail.makeRailView())
             rootView.setRailViewVisible(rail.hasVisibleTabs)
-            rootView.bindRailViewVisibility(to: rail.railVisibilityPublisher)
-            rootView.bindRailViewWidth(to: rail.railWidthPublisher, onResize: rail.saveCurrentWidth)
+            rootView.bindRailViewVisibility(to: rail)
+            rootView.bindRailViewWidth(to: rail, onResize: rail.saveCurrentWidth)
         }
         if let contentView = kernel.resolveProvider((any ContentViewProviding).self) {
             rootView.setContentView(contentView.makeContentView())
@@ -47,7 +47,7 @@ public struct DefaultViewFactory: ViewFactory {
                 content: chat.makeChatSectionView()
             )
             trailingPane.bindVisibility(to: chat)
-            trailingPane.bindWidth(to: chat.chatSectionWidthPublisher, onResize: chat.saveCurrentWidth)
+            trailingPane.bindWidth(to: chat, onResize: chat.saveCurrentWidth)
             rootView.setTrailingPane(trailingPane)
         }
         return themed(rootView.makeRootView(), kernel: kernel)

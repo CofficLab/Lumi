@@ -9,11 +9,14 @@ struct ContextSizeToolbarView: View {
     let conversations: any ConversationManaging
     let messages: any MessageManaging
     let llmManager: any LLMManaging
-    @ObservedObject var state: ContextSizeToolbarState
+    let state: ContextSizeToolbarState
 
     @State private var maxContextSize: Int?
     @State private var usedTokens: Int?
     @State private var isPopoverPresented = false
+    @State private var selectedConversationID: UUID?
+    @State private var messageRefreshRevision = 0
+    @State private var observerHandle: (any ContextSizeToolbarState.ObserverHandle)?
 
     var body: some View {
         Button {
@@ -26,10 +29,26 @@ struct ContextSizeToolbarView: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             ContextSizePopover(used: usedTokens, max: maxContextSize)
         }
-        .task(id: "\(state.selectedConversationID?.uuidString ?? "nil")-\(state.messageRefreshRevision)") {
+        .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(messageRefreshRevision)") {
             try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled else { return }
-            await refreshSize(for: state.selectedConversationID)
+            await refreshSize(for: selectedConversationID)
+        }
+        .onAppear {
+            guard observerHandle == nil else { return }
+            selectedConversationID = state.selectedConversationID
+            observerHandle = state.addObserver { event in
+                switch event {
+                case let .selectedConversationChanged(id):
+                    selectedConversationID = id
+                case .messagesChanged, .llmChanged:
+                    messageRefreshRevision &+= 1
+                }
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
         }
     }
 
@@ -93,7 +112,7 @@ struct ContextSizeToolbarView: View {
 
     private func refreshUsedTokens(for conversationID: UUID?) async {
         guard let conversationID,
-              state.selectedConversationID == conversationID,
+              selectedConversationID == conversationID,
               conversations.selectedConversationID == conversationID else {
             usedTokens = nil
             return

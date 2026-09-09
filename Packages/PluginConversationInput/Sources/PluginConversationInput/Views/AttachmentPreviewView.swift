@@ -7,7 +7,7 @@ import SwiftUI
 
 /// 聊天输入框上方的待发送附件预览。
 ///
-/// 发送器通过 existential provider 注入，因此使用 objectWillChange + revision
+/// 发送器通过 existential provider 注入，因此使用 typed sender event + revision
 /// 驱动 SwiftUI 重建，避免把具体的发送器实现泄漏到输入插件中。
 struct AttachmentPreviewView: View {
     @LumiTheme private var theme

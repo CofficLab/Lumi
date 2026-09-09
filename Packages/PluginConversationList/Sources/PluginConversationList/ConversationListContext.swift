@@ -10,23 +10,40 @@ import ProviderProject
 /// 视图通过它访问对话管理 / 项目 / Agent 回合 / Chat 分区，
 /// 避免视图直接依赖 KernelCoreContainer 或 KernelLumi。
 ///
-/// 设计为 `ObservableObject` class，使 `selectedConversationID` 等可变状态
-/// 可被 SwiftUI 视图通过 `@ObservedObject` 直接观察，无需轮询协议存在类型属性。
 @MainActor
-final class ConversationListContext: ObservableObject {
+final class ConversationListContext {
+    enum Event {
+        case selectedConversationChanged(UUID?)
+        case conversationsChanged
+    }
+
+    protocol ObserverHandle: AnyObject {
+        func cancel()
+    }
+
+    private final class Handle: ObserverHandle {
+        private let cancelAction: () -> Void
+        private var isCancelled = false
+
+        init(cancelAction: @escaping () -> Void) {
+            self.cancelAction = cancelAction
+        }
+
+        func cancel() {
+            guard !isCancelled else { return }
+            isCancelled = true
+            cancelAction()
+        }
+    }
+
     let conversations: any ConversationManaging
     let project: (any ProjectProviding)?
     let agentTurn: (any AgentLoopProviding)?
     let conversationState: (any ConversationStateProviding)?
     let chat: (any ChatSectionProviding)?
-    /// 当前选中的对话 ID，由 `addSelectedConversationObserver` 回调同步更新。
-    ///
-    /// 视图通过 `@ObservedObject` 直接观察此属性，无需间接读取
-    /// `conversations.selectedConversationID`（协议存在类型，SwiftUI 难以追踪）。
-    @Published var selectedConversationID: UUID?
-    /// Monotonic revision for structural conversation changes. Views observe
-    /// this value instead of subscribing to a global notification channel.
-    @Published private(set) var conversationsRevision = 0
+    /// 当前选中的对话 ID，由 `ConversationListContextObserver` 同步更新。
+    private(set) var selectedConversationID: UUID?
+    private var observers: [UUID: (Event) -> Void] = [:]
 
     init(
         conversations: any ConversationManaging,
@@ -43,6 +60,15 @@ final class ConversationListContext: ObservableObject {
         self.selectedConversationID = conversations.selectedConversationID
     }
 
+    @discardableResult
+    func addObserver(_ callback: @escaping (Event) -> Void) -> any ObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return Handle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
     /// 当前项目路径；`nil` 表示未选中项目。
     var currentProjectPath: String? {
         project?.currentProject?.path
@@ -54,6 +80,18 @@ final class ConversationListContext: ObservableObject {
     }
 
     func markConversationsChanged() {
-        conversationsRevision &+= 1
+        notify(.conversationsChanged)
+    }
+
+    func setSelectedConversationID(_ id: UUID?) {
+        guard selectedConversationID != id else { return }
+        selectedConversationID = id
+        notify(.selectedConversationChanged(id))
+    }
+
+    private func notify(_ event: Event) {
+        for callback in Array(observers.values) {
+            callback(event)
+        }
     }
 }

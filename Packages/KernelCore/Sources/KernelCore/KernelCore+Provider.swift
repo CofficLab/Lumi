@@ -15,7 +15,7 @@ extension KernelCoreContainer {
     /// 注册 Provider 实现。
     ///
     /// Kernel 只维护注册表，不发布 Provider 状态变化。需要响应变化的消费者
-    /// 必须直接观察具体 Provider 的精准观察接口或 `objectWillChange`。
+    /// 必须直接使用具体 Provider 的类型化观察接口。
     public func registerProvider<T>(_ type: T.Type, _ provider: T) throws {
         let key = ObjectIdentifier(type)
         guard providers[key] == nil else {
@@ -24,6 +24,9 @@ extension KernelCoreContainer {
         providers[key] = provider
         if let activePluginID {
             providerOwners[key] = activePluginID
+            if Self.verbose {
+                Self.logger.info("\(Self.t)\(Self.emoji) 注册 Provider '\(String(reflecting: type), privacy: .public)' <- '\(activePluginID)'")
+            }
         }
     }
 
@@ -51,7 +54,7 @@ extension KernelCoreContainer {
         guard let provider = providers[ObjectIdentifier(type)] as? T else {
             if let pluginID = activePluginID, activePluginLifecyclePhase == .boot {
                 Self.logger.error(
-                    "Plugin '\(pluginID, privacy: .public)' could not resolve provider '\(String(reflecting: type), privacy: .public)' during onBoot"
+                    "\(Self.t)Plugin '\(pluginID, privacy: .public)' could not resolve provider '\(String(reflecting: type), privacy: .public)' during onBoot"
                 )
             }
             return nil

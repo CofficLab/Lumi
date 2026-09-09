@@ -67,6 +67,38 @@ struct PluginActivityBarTests {
         #expect(provider.activeItemID == "b")
     }
 
+    @Test("ActivityBarProvider 通过类型化事件通知入口变化")
+    func customProviderPublishesTypedEvents() {
+        let provider = ActivityBarProvider()
+        var events: [ActivityBarEvent] = []
+        let handle = provider.addActivityBarObserver { events.append($0) }
+
+        provider.registerItems([
+            ActivityBarItem(id: "a", title: "A", systemImage: "a", order: 0),
+            ActivityBarItem(id: "b", title: "B", systemImage: "b", order: 1),
+        ])
+        provider.activateItem(id: "b")
+        handle.cancel()
+        provider.activateItem(id: "a")
+
+        #expect(events.count == 3)
+        guard events.count == 3 else { return }
+        if case let .activeItemChanged(id) = events[0] {
+            #expect(id == "a")
+        } else {
+            Issue.record("expected activeItemChanged")
+        }
+        if case .itemsChanged = events[1] {
+        } else {
+            Issue.record("expected itemsChanged")
+        }
+        if case let .activeItemChanged(id) = events[2] {
+            #expect(id == "b")
+        } else {
+            Issue.record("expected activeItemChanged")
+        }
+    }
+
     @Test("激活入口时仅 Code Editor 保留 Content Footer")
     func contentFooterVisibilityFollowsActiveItem() throws {
         let kernel = KernelCoreContainer()

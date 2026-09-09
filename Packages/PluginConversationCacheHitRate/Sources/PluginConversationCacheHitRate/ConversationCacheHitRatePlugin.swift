@@ -45,11 +45,11 @@ public final class ConversationCacheHitRatePlugin: SuperPlugin, SuperLog {
             conversations: conversations,
             messages: messages,
             onConversationChange: { [weak toolbarState] newID in
-                toolbarState?.selectedConversationID = newID
+                toolbarState?.setSelectedConversationID(newID)
             },
             onMessageChange: { [weak toolbarState] conversationID in
                 guard conversationID == toolbarState?.selectedConversationID else { return }
-                toolbarState?.messageRefreshRevision &+= 1
+                toolbarState?.markMessagesChanged(conversationID: conversationID)
             }
         )
 
@@ -76,9 +76,58 @@ public final class ConversationCacheHitRatePlugin: SuperPlugin, SuperLog {
 }
 
 @MainActor
-final class CacheHitRateToolbarState: ObservableObject {
-    @Published var selectedConversationID: UUID?
-    @Published var messageRefreshRevision = 0
+final class CacheHitRateToolbarState {
+    enum Event {
+        case selectedConversationChanged(UUID?)
+        case messagesChanged(conversationID: UUID)
+    }
+
+    protocol ObserverHandle: AnyObject {
+        func cancel()
+    }
+
+    private final class Handle: ObserverHandle {
+        private let cancelAction: () -> Void
+        private var isCancelled = false
+
+        init(cancelAction: @escaping () -> Void) {
+            self.cancelAction = cancelAction
+        }
+
+        func cancel() {
+            guard !isCancelled else { return }
+            isCancelled = true
+            cancelAction()
+        }
+    }
+
+    private(set) var selectedConversationID: UUID?
+    private var observers: [UUID: (Event) -> Void] = [:]
+
+    @discardableResult
+    func addObserver(_ callback: @escaping (Event) -> Void) -> any ObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return Handle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
+    func setSelectedConversationID(_ id: UUID?) {
+        guard selectedConversationID != id else { return }
+        selectedConversationID = id
+        notify(.selectedConversationChanged(id))
+    }
+
+    func markMessagesChanged(conversationID: UUID) {
+        notify(.messagesChanged(conversationID: conversationID))
+    }
+
+    private func notify(_ event: Event) {
+        for callback in Array(observers.values) {
+            callback(event)
+        }
+    }
 }
 
 // MARK: - Cache Hit Rate Stats

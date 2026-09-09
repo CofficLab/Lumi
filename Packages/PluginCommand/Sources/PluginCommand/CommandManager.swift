@@ -9,7 +9,7 @@ import ProviderStorage
 /// 管理命令的注册、注销和查询。
 @MainActor
 public final class CommandManager: CommandProviding {
-    @Published public private(set) var allCommandGroups: [CommandMenuGroup] = []
+    public private(set) var allCommandGroups: [CommandMenuGroup] = []
     private var observers: [WeakObserver] = []
 
     public init() {}

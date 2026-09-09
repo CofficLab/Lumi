@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import KernelCore
 import ProviderToast
@@ -48,19 +47,32 @@ public final class ToastSuperPlugin: SuperPlugin, SuperLog {
 /// 节流策略：新 toast 到达时取消上一个消失计时器并重启——连续高频调用
 /// 不会堆叠成一串 toast，只会持续刷新当前这一条。
 @MainActor
-public final class ToastCenter: ObservableObject, ToastProviding {
+public final class ToastCenter: ToastProviding {
     /// 当前显示的 toast；`nil` 表示不显示。
-    @Published public private(set) var currentToast: LumiToast?
+    public private(set) var currentToast: LumiToast?
+    private var observers: [UUID: (ToastProvidingEvent) -> Void] = [:]
 
     private var dismissTask: Task<Void, Never>?
     private static let defaultDisplayDuration: Duration = .seconds(3)
 
     public init() {}
 
+    @discardableResult
+    public func addObserver(
+        _ callback: @escaping (ToastProvidingEvent) -> Void
+    ) -> any ToastProvidingObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
     // MARK: - ToastProviding
 
     public func show(_ toast: LumiToast) {
         currentToast = toast
+        notify(.currentToastChanged(toast))
 
         // 重启消失计时器：实现"替换式"节流。
         dismissTask?.cancel()
@@ -69,12 +81,32 @@ public final class ToastCenter: ObservableObject, ToastProviding {
             try? await Task.sleep(for: duration)
             guard !Task.isCancelled else { return }
             self?.currentToast = nil
+            self?.notify(.currentToastChanged(nil))
         }
     }
 
     /// 立即隐藏当前 toast（供测试与调试）。
     public func dismiss() {
         dismissTask?.cancel()
+        guard currentToast != nil else { return }
         currentToast = nil
+        notify(.currentToastChanged(nil))
+    }
+
+    private func notify(_ event: ToastProvidingEvent) {
+        observers.values.forEach { $0(event) }
+    }
+
+    private final class ObserverHandle: ToastProvidingObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
+        }
     }
 }

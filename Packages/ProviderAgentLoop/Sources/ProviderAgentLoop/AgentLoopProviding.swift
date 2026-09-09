@@ -13,7 +13,7 @@ import ProviderToolManager
 /// - `MessageManaging`（构造注入，消息历史与落库）
 /// - `llmManager` / `toolManager` / `streaming` / `conversations`（构造注入）
 @MainActor
-public protocol AgentLoopProviding: AnyObject, ObservableObject {
+public protocol AgentLoopProviding: AnyObject {
     /// 注册回合生命周期观察者。
     @discardableResult
     func addAgentLoopObserver(

@@ -50,7 +50,6 @@ import PluginLLMProviderXybbz
 import PluginLLMProviderZhipu
 import PluginLogoCoffic
 import PluginMemory
-import PluginMessageList
 import PluginMessageManager
 import PluginMessageRenderer
 import PluginMessageSender

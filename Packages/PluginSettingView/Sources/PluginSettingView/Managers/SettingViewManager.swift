@@ -9,19 +9,20 @@ import SwiftUI
 ///
 /// 参照 `SettingsManager`（KernelLumi 体系）设计，迁移至 KernelCore 生态：
 /// - 插件通过 `addEntries(_:)` 追加自己的设置入口（同 id 去重）；
-/// - 消费方订阅 `objectWillChange` 即可感知入口集合变化；
+/// - 消费方通过 `SettingViewEvent` 感知入口集合与选中状态变化；
 /// - **侧边栏 Logo 是插件内部行为**：以「惰性闭包」延迟到 `makeSettingView()`
 ///   时从共享内核动态解析 `LogoProviding`，自行构建 Header，无需外部类型强转注入；
 /// - 内置结构化日志，便于诊断注册 / 注销 / 选中切换。
 @MainActor
-public final class SettingViewManager: SettingViewProviding, ObservableObject, SuperLog {
+public final class SettingViewManager: SettingViewProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.setting-view", category: "Plugin")
     public nonisolated static let emoji = "⚙️"
     nonisolated static let verbose = false
 
-    @Published public private(set) var entries: [SettingEntryItem] = []
-    @Published public private(set) var projectDetailSections: [ProjectDetailSectionItem] = []
-    @Published public private(set) var selectedEntryID: String?
+    public private(set) var entries: [SettingEntryItem] = []
+    public private(set) var projectDetailSections: [ProjectDetailSectionItem] = []
+    public private(set) var selectedEntryID: String?
+    private var observers: [UUID: (SettingViewEvent) -> Void] = [:]
 
     /// 侧边栏 Header 需要的 Logo 服务来源。
     ///
@@ -37,13 +38,29 @@ public final class SettingViewManager: SettingViewProviding, ObservableObject, S
         self.logoProvider = logoProvider
     }
 
+    @discardableResult
+    public func addSettingViewObserver(
+        _ callback: @escaping (SettingViewEvent) -> Void
+    ) -> any SettingViewObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
     public func registerEntries(_ entries: [SettingEntryItem]) {
         if Self.verbose {
             Self.logger.info("\(Self.t)registerEntries: \(entries.count, privacy: .public) 项")
         }
+        let previousSelectedEntryID = selectedEntryID
         self.entries = entries.sorted { $0.order < $1.order }
         if selectedEntryID == nil || !self.entries.contains(where: { $0.id == selectedEntryID }) {
             selectedEntryID = self.entries.first?.id
+        }
+        notify(.entriesChanged)
+        if previousSelectedEntryID != selectedEntryID {
+            notify(.selectedEntryChanged(selectedEntryID))
         }
     }
 
@@ -53,6 +70,7 @@ public final class SettingViewManager: SettingViewProviding, ObservableObject, S
             Self.logger.info("\(Self.t)selectEntry: \(id ?? "nil", privacy: .public)")
         }
         selectedEntryID = id
+        notify(.selectedEntryChanged(id))
     }
 
     public func addProjectDetailSections(_ newSections: [ProjectDetailSectionItem]) {
@@ -61,13 +79,32 @@ public final class SettingViewManager: SettingViewProviding, ObservableObject, S
             merged.append(section)
         }
         projectDetailSections = merged.sorted { $0.order < $1.order }
+        notify(.projectDetailSectionsChanged)
     }
 
     public func removeProjectDetailSections(ids: Set<String>) {
         projectDetailSections.removeAll { ids.contains($0.id) }
+        notify(.projectDetailSectionsChanged)
     }
 
     public func makeSettingView() -> AnyView {
         AnyView(SettingView(provider: self, logo: logoProvider()))
+    }
+
+    private func notify(_ event: SettingViewEvent) {
+        observers.values.forEach { $0(event) }
+    }
+
+    private final class ObserverHandle: SettingViewObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
+        }
     }
 }

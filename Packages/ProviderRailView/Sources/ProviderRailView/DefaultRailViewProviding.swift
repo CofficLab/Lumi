@@ -1,4 +1,3 @@
-import Combine
 import LumiUI
 import SwiftUI
 
@@ -7,23 +6,20 @@ import SwiftUI
 ///
 /// 点击 tab 切换选中项并展示对应内容。
 @MainActor
-public final class DefaultRailViewProviding: RailViewProviding, ObservableObject {
-    @Published public private(set) var tabs: [RailTabItem] = []
-    @Published public private(set) var visibleCategories: Set<RailViewCategory>
-    @Published public private(set) var visibleTabID: String?
-    @Published public private(set) var activeTabID: String?
-    @Published public private(set) var hasVisibleTabs = false
-    @Published public private(set) var railWidth: RailViewWidth
+public final class DefaultRailViewProviding: RailViewProviding {
+    public private(set) var tabs: [RailTabItem] = []
+    public private(set) var visibleCategories: Set<RailViewCategory>
+    public private(set) var visibleTabID: String?
+    public private(set) var activeTabID: String?
+    public private(set) var hasVisibleTabs = false
+    public private(set) var railWidth: RailViewWidth
 
     private let defaultWidthStore: (any RailViewWidthStoring)?
     private var activeWidthStore: (any RailViewWidthStoring)?
     private var activeWidthOwnerID: String?
+    private var pendingActiveTabID: String?
 
     private var observers: [WeakObserver] = []
-
-    public var railVisibilityPublisher: AnyPublisher<Bool, Never> {
-        $hasVisibleTabs.eraseToAnyPublisher()
-    }
 
     public init(
         visibleCategories: Set<RailViewCategory> = Set(RailViewCategory.allCases),
@@ -35,6 +31,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         self.railWidth = .standard
         self.defaultWidthStore = widthStore
         self.activeWidthStore = nil
+        self.pendingActiveTabID = nil
     }
 
     public func registerTabs(_ tabs: [RailTabItem]) {
@@ -49,7 +46,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         if self.tabs.map(\.id) != oldTabs.map(\.id) {
             notify(.tabsChanged(self.tabs))
         }
-        if activeTabID != oldActiveTabID {
+        if activeTabID != oldActiveTabID, pendingActiveTabID == nil {
             notify(.activeTabChanged(activeTabID))
         }
         if hasVisibleTabs != oldHasVisibleTabs {
@@ -60,17 +57,37 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
     public func activateTab(id: String?) {
         let oldActiveTabID = activeTabID
         guard let id else {
+            let hadPendingActiveTab = pendingActiveTabID != nil
+            pendingActiveTabID = nil
             activeTabID = nil
-            if activeTabID != oldActiveTabID {
+            if activeTabID != oldActiveTabID || hadPendingActiveTab {
                 notify(.activeTabChanged(activeTabID))
             }
             return
         }
         guard visibleTabs.contains(where: { $0.id == id }) else { return }
+        let hadPendingActiveTab = pendingActiveTabID != nil
+        pendingActiveTabID = nil
         activeTabID = id
-        if activeTabID != oldActiveTabID {
+        if activeTabID != oldActiveTabID || hadPendingActiveTab {
             notify(.activeTabChanged(activeTabID))
         }
+    }
+
+    public func activateTabWhenAvailable(id: String?) {
+        guard let id else {
+            pendingActiveTabID = nil
+            activateTab(id: nil)
+            return
+        }
+
+        guard visibleTabs.contains(where: { $0.id == id }) else {
+            pendingActiveTabID = id
+            return
+        }
+
+        pendingActiveTabID = nil
+        activateTab(id: id)
     }
 
     public func setVisibleCategories(_ categories: Set<RailViewCategory>) {
@@ -90,7 +107,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         if visibleTabID != oldVisibleTabID {
             notify(.visibleTabIDChanged(visibleTabID))
         }
-        if activeTabID != oldActiveTabID {
+        if activeTabID != oldActiveTabID, pendingActiveTabID == nil {
             notify(.activeTabChanged(activeTabID))
         }
         if hasVisibleTabs != oldHasVisibleTabs {
@@ -108,7 +125,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         updateVisibleTabState()
 
         notify(.visibleTabIDChanged(visibleTabID))
-        if activeTabID != oldActiveTabID {
+        if activeTabID != oldActiveTabID, pendingActiveTabID == nil {
             notify(.activeTabChanged(activeTabID))
         }
         if hasVisibleTabs != oldHasVisibleTabs {
@@ -171,7 +188,7 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
         observers.removeAll { $0.observer === observer }
     }
 
-    private func notify(_ event: RailViewProvidingEvent) {
+    fileprivate func notify(_ event: RailViewProvidingEvent) {
         observers.removeAll { $0.observer == nil }
         let activeObservers = observers
         for observer in activeObservers {
@@ -193,6 +210,12 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
     private func reconcileActiveTab() {
         guard !visibleTabs.isEmpty else {
             activeTabID = nil
+            return
+        }
+        if let pendingActiveTabID,
+           visibleTabs.contains(where: { $0.id == pendingActiveTabID }) {
+            activeTabID = pendingActiveTabID
+            self.pendingActiveTabID = nil
             return
         }
         if let activeTabID, visibleTabs.contains(where: { $0.id == activeTabID }) {
@@ -244,10 +267,36 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
 /// - 内容区直接渲染激活 tab 视图（`.id` 保持切换动画），无内容时不渲染视图；
 /// - 整栏 `minWidth 200`、背景 `theme.surface`。
 private struct RailView: View {
-    @ObservedObject var provider: DefaultRailViewProviding
+    let provider: DefaultRailViewProviding
     @LumiTheme private var theme
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any RailViewProvidingObserverHandle)?
 
     var body: some View {
+        content
+            .id(observationRevision)
+            .onAppear {
+                guard observerHandle == nil else { return }
+                observerHandle = provider.addObserver { event in
+                    // Width is a layout-only update from the host split view. Do not
+                    // rebuild the Rail content tree for it: doing so destroys and
+                    // recreates consumers such as the conversation list while the
+                    // native NSSplitView is finishing its resize pass.
+                    guard case .widthChanged = event else {
+                        observationRevision += 1
+                        return
+                    }
+                }
+                provider.notify(.didAppear)
+            }
+            .onDisappear {
+                observerHandle?.cancel()
+                observerHandle = nil
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         let visibleTabs = provider.visibleTabs
 
         if visibleTabs.isEmpty {

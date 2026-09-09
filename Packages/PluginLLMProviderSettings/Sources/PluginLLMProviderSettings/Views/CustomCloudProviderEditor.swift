@@ -4,7 +4,7 @@ import SwiftUI
 
 /// 新增或编辑用户自定义云端供应商。
 @MainActor
-struct CustomCloudProviderEditor: View {
+public struct CustomCloudProviderEditor: View {
     @LumiTheme private var theme
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var store: UserDefinedCloudProviderStore
@@ -22,7 +22,7 @@ struct CustomCloudProviderEditor: View {
     private var apiFormats: [LLMProviderAPIFormat] { LLMProviderAPIFormat.allCases }
     private var apiFormat: LLMProviderAPIFormat { apiFormats[apiFormatIndex] }
 
-    init(
+    public init(
         store: UserDefinedCloudProviderStore,
         configuration: UserDefinedCloudProviderConfiguration? = nil
     ) {
@@ -38,7 +38,7 @@ struct CustomCloudProviderEditor: View {
         self._websiteURL = State(initialValue: configuration?.websiteURLString ?? "")
     }
 
-    var body: some View {
+    public var body: some View {
         VStack(spacing: 0) {
             // MARK: Header
             HStack {

@@ -1,6 +1,41 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Prompt.Suggestion.Create" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create an App Store promo image for me"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帮我创建一张 App Store 宣传图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我建立一張 App Store 宣傳圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我製作一張 App Store 宣傳圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我建立一張 App Store 宣傳圖"
+          }
+        }
+      }
+    },
     "%@ · %lld×%lld" : {
       "localizations" : {
         "en" : {
@@ -8,60 +43,11 @@
             "state" : "new",
             "value" : "%1$@ · %2$lld×%3$lld"
           }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · %lld×%lld"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · %lld×%lld"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · %lld×%lld"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · %lld×%lld"
-          }
         }
       }
     },
     "%lld" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        }
-      }
+
     },
     "%lld %@ · %@" : {
       "localizations" : {
@@ -69,30 +55,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld %2$@ · %3$@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld %@ · %@"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld %@ · %@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld %@ · %@"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld %@ · %@"
           }
         }
       }
@@ -294,75 +256,6 @@
         }
       }
     },
-    "Available sizes: iPhone 6.7\" (1290×2796), iPhone 6.5\" (1284×2778), iPhone 6.1\" / 5.8\" (1170×2532), iPad Pro 12.9\" (2048×2732), iPad Pro 11\" (1668×2388), and Desktop (1280×800)." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Available sizes: iPhone 6.7\" (1290×2796), iPhone 6.5\" (1284×2778), iPhone 6.1\" / 5.8\" (1170×2532), iPad Pro 12.9\" (2048×2732), iPad Pro 11\" (1668×2388), and Desktop (1280×800)."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可选尺寸:iPhone 6.7 英寸(1290×2796)、iPhone 6.5 英寸(1284×2778)、iPhone 6.1 / 5.8 英寸(1170×2532)、iPad Pro 12.9 英寸(2048×2732)、iPad Pro 11 英寸(1668×2388)、桌面(1280×800)。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可選尺寸:iPhone 6.7 吋(1290×2796)、iPhone 6.5 吋(1284×2778)、iPhone 6.1 / 5.8 吋(1170×2532)、iPad Pro 12.9 吋(2048×2732)、iPad Pro 11 吋(1668×2388)、桌面(1280×800)。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可選尺寸:iPhone 6.7 吋(1290×2796)、iPhone 6.5 吋(1284×2778)、iPhone 6.1 / 5.8 吋(1170×2532)、iPad Pro 12.9 吋(2048×2732)、iPad Pro 11 吋(1668×2388)、桌面(1280×800)。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可選尺寸:iPhone 6.7 吋(1290×2796)、iPhone 6.5 吋(1284×2778)、iPhone 6.1 / 5.8 吋(1170×2532)、iPad Pro 12.9 吋(2048×2732)、iPad Pro 11 吋(1668×2388)、桌面(1280×800)。"
-          }
-        }
-      }
-    },
-    "Available sizes: iPhone 6.7\\\" (1290×2796), iPhone 6.5\\\" (1284×2778), iPhone 6.1\\\" / 5.8\\\" (1170×2532), iPad Pro 12.9\\\" (2048×2732), iPad Pro 11\\\" (1668×2388), and Desktop (1280×800)." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Available sizes: iPhone 6.7\\\" (1290×2796), iPhone 6.5\\\" (1284×2778), iPhone 6.1\\\" / 5.8\\\" (1170×2532), iPad Pro 12.9\\\" (2048×2732), iPad Pro 11\\\" (1668×2388), and Desktop (1280×800)."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可用尺寸：iPhone 6.7\" (1290×2796)、iPhone 6.5\" (1284×2778)、iPhone 6.1\" / 5.8\" (1170×2532)、iPad Pro 12.9\" (2048×2732)、iPad Pro 11\" (1668×2388)，以及桌面 (1280×800)。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可用尺寸：iPhone 6.7\" (1290×2796)、iPhone 6.5\" (1284×2778)、iPhone 6.1\" / 5.8\" (1170×2532)、iPad Pro 12.9\" (2048×2732)、iPad Pro 11\" (1668×2388)，以及桌面 (1280×800)。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可用尺寸：iPhone 6.7\" (1290×2796)、iPhone 6.5\" (1284×2778)、iPhone 6.1\" / 5.8\" (1170×2532)、iPad Pro 12.9\" (2048×2732)、iPad Pro 11\" (1668×2388)，以及桌面 (1280×800)。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "可用尺寸：iPhone 6.7\" (1290×2796)、iPhone 6.5\" (1284×2778)、iPhone 6.1\" / 5.8\" (1170×2532)、iPad Pro 12.9\" (2048×2732)、iPad Pro 11\" (1668×2388)，以及桌面 (1280×800)。"
-          }
-        }
-      }
-    },
     "Choose Add Language from the language picker." : {
       "localizations" : {
         "en" : {
@@ -499,6 +392,40 @@
         }
       }
     },
+    "Create App Store promo images and marketing assets." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create App Store promo images and marketing assets."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "制作 App Store 推广图与宣传素材。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "製作 App Store 推廣圖與宣傳素材。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "製作 App Store 推廣圖與宣傳素材。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "製作 App Store 推廣圖與宣傳素材。"
+          }
+        }
+      }
+    },
     "Create promotional images from a natural-language brief." : {
       "localizations" : {
         "en" : {
@@ -583,110 +510,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "删除任务"
-          }
-        }
-      }
-    },
-    "Describe your app and what to highlight in the chat, e.g. \"a promo image for a coffee tracker, highlight the brew timer\"." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Describe your app and what to highlight in the chat, e.g. \"a promo image for a coffee tracker, highlight the brew timer\"."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在聊天中描述应用与要突出的内容,例如「为一个咖啡记录应用创建宣传图,突出冲煮计时功能」。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在聊天中描述應用程式與要突出的內容,例如「為一個咖啡記錄應用程式建立宣傳圖,突出沖煮計時功能」。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在聊天中描述應用程式與要突出的內容,例如「為一個咖啡記錄應用程式建立宣傳圖,突出沖煮計時功能」。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在聊天中描述應用程式與要突出的內容,例如「為一個咖啡記錄應用程式建立宣傳圖,突出沖煮計時功能」。"
-          }
-        }
-      }
-    },
-    "Describe your app and what to highlight in the chat, e.g. \\\"a promo image for a coffee tracker, highlight the brew timer\\\"." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Describe your app and what to highlight in the chat, e.g. \\\"a promo image for a coffee tracker, highlight the brew timer\\\"."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在对话框中描述你的 App 及要突出的重点，例如「一款咖啡追踪器的宣传图，突出冲泡计时器」。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在对话框中描述你的 App 及要突出的重点，例如「一款咖啡追踪器的宣传图，突出冲泡计时器」。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在对话框中描述你的 App 及要突出的重点，例如「一款咖啡追踪器的宣传图，突出冲泡计时器」。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在对话框中描述你的 App 及要突出的重点，例如「一款咖啡追踪器的宣传图，突出冲泡计时器」。"
-          }
-        }
-      }
-    },
-    "Detail" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Detail"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "详情"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "详情"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "详情"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "详情"
           }
         }
       }
@@ -973,41 +796,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "圖 3 按語言分組的匯出結果"
-          }
-        }
-      }
-    },
-    "Hero" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hero"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主视觉"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主视觉"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主视觉"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主视觉"
           }
         }
       }
@@ -1323,41 +1111,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "介面說明"
-          }
-        }
-      }
-    },
-    "Launch Campaign" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Launch Campaign"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "发起推广"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "发起推广"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "发起推广"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "发起推广"
           }
         }
       }
@@ -1776,41 +1529,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "宣传图"
-          }
-        }
-      }
-    },
-    "Prompt.Suggestion.Create" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create an App Store promo image for me"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "帮我创建一张 App Store 宣传图"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "幫我建立一張 App Store 宣傳圖"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "幫我製作一張 App Store 宣傳圖"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "幫我建立一張 App Store 宣傳圖"
           }
         }
       }
@@ -2297,40 +2015,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用入口"
-          }
-        }
-      }
-    },
-    "Create App Store promo images and marketing assets." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create App Store promo images and marketing assets."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "制作 App Store 推广图与宣传素材。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "製作 App Store 推廣圖與宣傳素材。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "製作 App Store 推廣圖與宣傳素材。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "製作 App Store 推廣圖與宣傳素材。"
           }
         }
       }

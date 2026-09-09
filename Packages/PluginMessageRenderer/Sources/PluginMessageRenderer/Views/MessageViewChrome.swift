@@ -30,9 +30,10 @@ struct MessageViewChrome<Content: View>: View {
         verbosity == .brief
     }
 
-    /// 操作按钮的可见性:悬停、思考 popover 打开、复制反馈显示中任一为真。
+    /// 操作按钮的可见性：悬停、思考 popover 打开、复制反馈显示中任一为真。
+    /// V3（detailed 模式）下始终显示，无需 hover。
     private var showsActions: Bool {
-        isRowHovered || showThinkingPopover || showInfoPopover || didCopy
+        verbosity == .detailed || isRowHovered || showThinkingPopover || showInfoPopover || didCopy
     }
 
     private var thinkingContent: String? {
@@ -72,7 +73,7 @@ struct MessageViewChrome<Content: View>: View {
                     }
                 } trailing: {
                     HStack(alignment: .center, spacing: 12) {
-                        // 操作按钮与时间戳仅在悬停时物化(见 showsActions)。
+                        // V3 (detailed) 下操作按钮与时间戳始终显示；V2 (standard) 下仅在悬停时物化。
                         if showsActions {
                             CopyMessageButton(
                                 contentProvider: { MessageViewHelpers.copyContent(for: message) },

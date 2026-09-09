@@ -25,28 +25,28 @@ public struct AskUserRowRenderer: ToolCallRowRenderer {
             return AnyView(Text("无法解析问题内容"))
         }
 
-        return AnyView(
-            AskUserPendingView(
+        return AnyView(AskUserPendingView(
+            interaction: AskUserPendingInteraction(
                 response: response,
-                toolCall: toolCall,
-                conversationID: message.conversationId
+                toolCallID: toolCall.id,
+                conversationID: message.conversationId,
+                initialAnswer: toolCall.result?.interactionState?.answer
             )
-        )
+        ))
     }
 }
 
-private struct AskUserPendingView: View {
+struct AskUserPendingView: View {
     @LumiTheme private var theme
 
-    let response: AskUserPendingResponse
-    let toolCall: ToolCall
-    let conversationID: UUID
+    let interaction: AskUserPendingInteraction
 
     @State private var answer = ""
     @State private var responded = false
 
     private var isFreeText: Bool {
-        response.mode == "free_text" || (response.mode == nil && response.options.isEmpty)
+        interaction.response.mode == "free_text"
+            || (interaction.response.mode == nil && interaction.response.options.isEmpty)
     }
 
     var body: some View {
@@ -54,7 +54,7 @@ private struct AskUserPendingView: View {
             HStack(spacing: 8) {
                 Image(systemName: "questionmark.circle.fill")
                     .foregroundColor(theme.primary)
-                Text(response.question)
+                Text(interaction.response.question)
                     .font(.appCaption)
                     .foregroundColor(theme.textPrimary)
             }
@@ -73,7 +73,7 @@ private struct AskUserPendingView: View {
                 }
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    ForEach(response.options) { option in
+                    ForEach(interaction.response.options) { option in
                         Button {
                             submit(option.label)
                         } label: {
@@ -119,8 +119,8 @@ private struct AskUserPendingView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .onAppear {
-            if let existing = toolCall.result?.interactionState?.answer {
-                answer = existing
+            if let initialAnswer = interaction.initialAnswer {
+                answer = initialAnswer
                 responded = true
             }
         }
@@ -145,8 +145,8 @@ private struct AskUserPendingView: View {
         answer = value
         responded = true
         AskUserBridge.shared.resume(
-            conversationId: conversationID.uuidString,
-            toolCallId: toolCall.id,
+            conversationId: interaction.conversationID.uuidString,
+            toolCallId: interaction.toolCallID,
             answer: value
         )
     }

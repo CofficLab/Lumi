@@ -128,17 +128,17 @@
 			path = AppIconDesignerApp;
 			sourceTree = "<group>";
 		};
-		BMUIT00000000000000000001 /* BookletMakerUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = BookletMakerUITests;
-			sourceTree = "<group>";
-		};
 		BM0000000000000000000004 /* BookletMakerApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				BM0000000000000000000003 /* Exceptions for "BookletMakerApp" folder in "BookletMaker" target */,
 			);
 			path = BookletMakerApp;
+			sourceTree = "<group>";
+		};
+		BMUIT00000000000000000001 /* BookletMakerUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BookletMakerUITests;
 			sourceTree = "<group>";
 		};
 		CD0000000000000000000004 /* CADDesignerApp */ = {

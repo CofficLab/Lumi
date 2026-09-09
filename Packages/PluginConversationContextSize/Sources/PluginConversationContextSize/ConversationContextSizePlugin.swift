@@ -49,14 +49,14 @@ public final class ConversationContextSizePlugin: SuperPlugin, SuperLog {
             messages: messages,
             llmManager: llmManager,
             onConversationChange: { [weak toolbarState] newID in
-                toolbarState?.selectedConversationID = newID
+                toolbarState?.setSelectedConversationID(newID)
             },
             onMessageInsert: { [weak toolbarState] conversationID in
                 guard conversationID == toolbarState?.selectedConversationID else { return }
-                toolbarState?.messageRefreshRevision &+= 1
+                toolbarState?.markMessagesChanged(conversationID: conversationID)
             },
             onLLMChange: { [weak toolbarState] in
-                toolbarState?.messageRefreshRevision &+= 1
+                toolbarState?.markLLMChanged()
             }
         )
 
@@ -85,7 +85,61 @@ public final class ConversationContextSizePlugin: SuperPlugin, SuperLog {
 }
 
 @MainActor
-final class ContextSizeToolbarState: ObservableObject {
-    @Published var selectedConversationID: UUID?
-    @Published var messageRefreshRevision = 0
+final class ContextSizeToolbarState {
+    enum Event {
+        case selectedConversationChanged(UUID?)
+        case messagesChanged(conversationID: UUID)
+        case llmChanged
+    }
+
+    protocol ObserverHandle: AnyObject {
+        func cancel()
+    }
+
+    private final class Handle: ObserverHandle {
+        private let cancelAction: () -> Void
+        private var isCancelled = false
+
+        init(cancelAction: @escaping () -> Void) {
+            self.cancelAction = cancelAction
+        }
+
+        func cancel() {
+            guard !isCancelled else { return }
+            isCancelled = true
+            cancelAction()
+        }
+    }
+
+    private(set) var selectedConversationID: UUID?
+    private var observers: [UUID: (Event) -> Void] = [:]
+
+    @discardableResult
+    func addObserver(_ callback: @escaping (Event) -> Void) -> any ObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return Handle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
+    func setSelectedConversationID(_ id: UUID?) {
+        guard selectedConversationID != id else { return }
+        selectedConversationID = id
+        notify(.selectedConversationChanged(id))
+    }
+
+    func markMessagesChanged(conversationID: UUID) {
+        notify(.messagesChanged(conversationID: conversationID))
+    }
+
+    func markLLMChanged() {
+        notify(.llmChanged)
+    }
+
+    private func notify(_ event: Event) {
+        for callback in Array(observers.values) {
+            callback(event)
+        }
+    }
 }

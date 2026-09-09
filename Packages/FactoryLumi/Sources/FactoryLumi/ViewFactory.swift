@@ -48,9 +48,9 @@ public struct DefaultViewFactory: ViewFactory {
         if let rail = kernel.resolveProvider((any RailViewProviding).self) {
             rootView.setRailView(rail.makeRailView())
             rootView.setRailViewVisible(rail.hasVisibleTabs)
-            rootView.bindRailViewVisibility(to: rail.railVisibilityPublisher)
+            rootView.bindRailViewVisibility(to: rail)
             rootView.bindRailViewWidth(
-                to: rail.railWidthPublisher,
+                to: rail,
                 onResize: rail.saveCurrentWidth
             )
         }
@@ -66,7 +66,7 @@ public struct DefaultViewFactory: ViewFactory {
             )
             trailingPane.bindVisibility(to: chat)
             trailingPane.bindWidth(
-                to: chat.chatSectionWidthPublisher,
+                to: chat,
                 onResize: chat.saveCurrentWidth
             )
             rootView.setTrailingPane(trailingPane)

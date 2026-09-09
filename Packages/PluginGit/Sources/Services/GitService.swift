@@ -282,7 +282,7 @@ public final class GitService: @unchecked Sendable, SuperLog {
         let repoPath = Self.resolvePath(path)
         return GitAccessCoordinator.performSync {
             do {
-                let unpushedCommits = try LibGit2.getUnPushedCommits(at: repoPath, verbose: true)
+                let unpushedCommits = try LibGit2.getUnPushedCommits(at: repoPath, verbose: false)
                 return unpushedCommits.map { $0.hash }
             } catch {
                 if Self.verbose {

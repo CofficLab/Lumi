@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import os
 import KitSuperLog
@@ -20,20 +19,20 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
 
     private static let initialPageSize = 40
 
-    @Published public private(set) var conversations: [ConversationSummary] = []
-    @Published public private(set) var selectedConversationID: UUID? {
+    public private(set) var conversations: [ConversationSummary] = []
+    public private(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
             notifySelectedConversationObservers()
             notifyConversationObservers(.selected(selectedConversationID))
         }
     }
-    @Published public private(set) var currentTitle: String = "No conversation"
-    @Published public private(set) var isLoadingConversations = false
-    @Published public private(set) var globalVerbosity: ResponseVerbosity = .defaultVerbosity
-    @Published public private(set) var globalReasoningEffort: ReasoningEffort? = .defaultEffort
-    @Published public private(set) var globalAutomationLevel: AutomationLevel = .build
-    @Published public private(set) var globalLanguage: ConversationLanguage = .chinese
+    public private(set) var currentTitle: String = "No conversation"
+    public private(set) var isLoadingConversations = false
+    public private(set) var globalVerbosity: ResponseVerbosity = .defaultVerbosity
+    public private(set) var globalReasoningEffort: ReasoningEffort? = .defaultEffort
+    public private(set) var globalAutomationLevel: AutomationLevel = .build
+    public private(set) var globalLanguage: ConversationLanguage = .chinese
 
     /// 按最后消息时间倒序排序
     public var sortedConversations: [ConversationSummary] {
@@ -340,7 +339,6 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         }
         conversations[index].lastMessageAt = messageDate
         conversations[index].updatedAt = Date()
-        conversations = conversations
         notifyConversationObservers(.markedActive(id))
         if Self.verbose {
             Self.logger.debug("\(self.t)marked conversation \(id.uuidString) active")
@@ -369,7 +367,6 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
               let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].providerID = id
         conversations[index].modelName = model
-        conversations = conversations
         notifyConversationObservers(.providerChanged(conversationID))
     }
 
@@ -392,8 +389,8 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
             return
         }
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
+        guard conversations[index].verbosity != verbosity else { return }
         conversations[index].verbosity = verbosity
-        conversations = conversations
         notifyConversationObservers(.verbosityChanged(conversationID))
     }
 
@@ -422,7 +419,6 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         }
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].reasoningEffort = reasoningEffort
-        conversations = conversations
         notifyConversationObservers(.reasoningChanged(conversationID))
     }
 
@@ -433,7 +429,6 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         }
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].reasoningEffort = nil
-        conversations = conversations
         notifyConversationObservers(.reasoningChanged(conversationID))
     }
 
@@ -457,7 +452,6 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         }
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].automationLevel = automationLevel
-        conversations = conversations
         notifyConversationObservers(.automationChanged(conversationID))
     }
 
@@ -481,7 +475,6 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         }
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         conversations[index].language = language
-        conversations = conversations
         notifyConversationObservers(.languageChanged(conversationID))
     }
 
@@ -522,8 +515,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
         } else {
             newTitle = "No conversation"
         }
-        // @Published 无条件发布 objectWillChange；值没变时跳过赋值，
-        // 避免 selectConversation 触发第二次容器级广播。
+        // 值没变时跳过赋值，避免 selectConversation 触发重复状态更新。
         guard currentTitle != newTitle else { return }
         currentTitle = newTitle
     }

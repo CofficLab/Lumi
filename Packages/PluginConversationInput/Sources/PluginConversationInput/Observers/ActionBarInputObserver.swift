@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import KitSuperLog
 import os
@@ -17,7 +16,7 @@ final class ActionBarInputObserver: SuperLog {
 
     private weak var viewModel: SendActionBarViewModel?
     private var observer: (any TextInputObserverHandle)?
-    private var senderObserver: AnyCancellable?
+    private var senderObserver: (any MessageSenderObserverHandle)?
 
     init(
         input: any ConversationInputProviding,
@@ -30,10 +29,9 @@ final class ActionBarInputObserver: SuperLog {
             viewModel?.updateInputText(text)
         }
         viewModel.updateAttachments()
-        self.senderObserver = sender.objectWillChange.sink { [weak viewModel] _ in
-            DispatchQueue.main.async {
-                viewModel?.updateAttachments()
-            }
+        self.senderObserver = sender.addMessageSenderObserver { [weak viewModel] event in
+            guard case .attachmentsChanged = event else { return }
+            viewModel?.updateAttachments()
         }
     }
 

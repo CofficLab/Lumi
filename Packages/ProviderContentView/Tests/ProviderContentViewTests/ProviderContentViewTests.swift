@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 import Testing
 @testable import ProviderContentView
@@ -31,12 +30,16 @@ struct ProviderContentViewTests {
     func settingContentPublishesChange() {
         let provider = DefaultContentViewProviding()
         var changeCount = 0
-        let cancellable = provider.objectWillChange.sink { changeCount += 1 }
+        let handle = provider.addContentViewObserver { event in
+            if case .contentChanged = event {
+                changeCount += 1
+            }
+        }
 
         provider.setContentView(AnyView(Text("next")))
 
         #expect(changeCount == 1)
-        cancellable.cancel()
+        handle.cancel()
     }
 
     @Test("设置 nil 后回退到占位")
@@ -61,7 +64,7 @@ struct ProviderContentViewTests {
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
         @MainActor final class CustomContentView: ContentViewProviding {
-            @Published var content: AnyView?
+            var content: AnyView?
 
             func setContentView(_ view: AnyView?) {
                 content = view

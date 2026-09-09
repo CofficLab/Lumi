@@ -17,6 +17,7 @@ import os
 @MainActor
 public final class XcodeBuildPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.xcode-build", category: "XcodeBuild")
+    nonisolated static let verbose = false
 
     public nonisolated static let pluginID = "com.coffic.lumi.plugin.xcode-build"
     public let id = XcodeBuildPlugin.pluginID
@@ -49,13 +50,17 @@ public final class XcodeBuildPlugin: SuperPlugin, SuperLog {
 
         let contributor = XcodeBuildSkillContributor(providerID: Self.pluginID)
         skillProvider.addProvider(contributor)
-        Self.logger.info("\(Self.t)Contributed \(contributor.allSkills.count) skill(s) via SkillProviding")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Contributed \(contributor.allSkills.count) skill(s) via SkillProviding")
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
             skillProvider.removeProvider(providerID: Self.pluginID)
-            Self.logger.info("\(Self.t)Revoked skill contribution")
+            if Self.verbose {
+                Self.logger.info("\(Self.t)Revoked skill contribution")
+            }
         }
     }
 }

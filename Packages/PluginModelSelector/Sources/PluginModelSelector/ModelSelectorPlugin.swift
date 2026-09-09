@@ -23,7 +23,7 @@ import ProviderToast
 /// - `kernel.resolveService((any LLMProviderManaging).self)` → 内核
 ///   `kernel.resolveProvider((any LLMManaging).self)`（FactoryLumi 已装配 `DefaultLLMManager`）；
 /// - 旧版 `.onLumiSelectedRemoteProviderIDDidChange` 等通知订阅 → SwiftUI 友好包装器
-///   `ObservableLLMProviderManagerBox`（同时订阅 LLM 注册表与模型选择 capability）。
+///   `LLMProviderManagerBox`（同时订阅 LLM 注册表与模型选择 capability）。
 @MainActor
 public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.model-selector", category: "ModelSelector")
@@ -42,7 +42,7 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
 
     private var usageStore: ProviderUsageStore?
     private var selectionCapability: ModelSelectionCapabilityAdapter?
-    private var selectionBox: ObservableLLMProviderManagerBox?
+    private var selectionBox: LLMProviderManagerBox?
 
     public init() {}
 
@@ -76,7 +76,7 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
         }
         self.usageStore = usageStore
 
-        let box = ObservableLLMProviderManagerBox(
+        let box = LLMProviderManagerBox(
             manager: manager,
             selection: selectionCapability
         )

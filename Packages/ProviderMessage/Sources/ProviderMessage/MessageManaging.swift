@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 /// 由消息管理器发布的结构化变化事件。
@@ -34,7 +33,7 @@ public protocol MessageInsertedObserverHandle: AnyObject {
 }
 
 @MainActor
-public protocol MessageManaging: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol MessageManaging: AnyObject {
     func messages(for conversationID: UUID) -> [Message]
     /// 异步读取指定会话的完整消息快照。实现应避免在 MainActor 执行磁盘读取、解码和排序。
     func messagesSnapshot(in conversationID: UUID) async -> [Message]

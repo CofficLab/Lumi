@@ -38,8 +38,6 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
     private var context: ConversationListContext?
     private var contextObserver: ConversationListContextObserver?
     private var railTabController: ConversationRailTabController?
-    /// `addSelectedConversationObserver` 令牌：持有期间持续接收选中变化通知，
-    /// 回调同步写入 `context.selectedConversationID`，使视图可观察。
     /// 复刻旧版 onTurnFinished：轮询 AgentTurn 状态迁移（running → 非 running）。
     private var attentionMonitorTask: Task<Void, Never>?
     private var runningConversationIDs: Set<UUID> = []
@@ -64,8 +62,7 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
         )
         self.context = context
 
-        // 0. 选中对话观察：回调同步写入 context.selectedConversationID，
-        //    视图通过 @ObservedObject 直接观察，无需间接订阅 objectWillChange。
+        // 0. 观察对话选择与列表结构变化，转成上下文 typed events 供视图订阅。
         contextObserver = ConversationListContextObserver(
             conversations: conversations,
             conversationState: conversationState,

@@ -2,9 +2,11 @@ import os
 import KernelCore
 import KitSuperLog
 import LumiUI
+import ProviderChatSection
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageRendering
+import ProviderToolManager
 import SwiftUI
 
 /// 核心消息渲染器插件（KernelCore 版本）。
@@ -45,6 +47,8 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
         "core-default-markdown",
     ]
 
+    private var riskApprovalChatViewModel: RiskApprovalChatViewModel?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -55,6 +59,26 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
         ToolApprovalBridge.shared.start(kernel: kernel)
         kernel.resolveProvider((any ToolCallRenderingProviding).self)?
             .register(ToolApprovalRowRenderer())
+
+        if let conversations = kernel.resolveProvider((any ConversationManaging).self),
+           let toolManager = kernel.resolveProvider((any ToolManagerProviding).self),
+           let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
+            let viewModel = RiskApprovalChatViewModel(
+                conversations: conversations,
+                toolManager: toolManager
+            )
+            riskApprovalChatViewModel = viewModel
+            chat.addItems([
+                ChatSectionItem(
+                    id: "CoreMessageRenderer.pending-risk-approval",
+                    order: 100,
+                    placement: .bottomFixed,
+                    showsTrailingDivider: false
+                ) { [viewModel] in
+                    RiskApprovalChatSectionView(viewModel: viewModel)
+                }
+            ])
+        }
         let base = Self.baseOrder
 
         // 优先级最高：turn-completed / status 特殊渲染
@@ -178,6 +202,10 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any ChatSectionProviding).self)?
+            .removeItem(id: "CoreMessageRenderer.pending-risk-approval")
+        riskApprovalChatViewModel?.cancel()
+        riskApprovalChatViewModel = nil
         kernel.resolveProvider((any ToolCallRenderingProviding).self)?
             .unregister(id: ToolApprovalRowRenderer.id)
         ToolApprovalBridge.shared.stop()

@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import SwiftUI
 
@@ -16,6 +15,7 @@ public enum RailViewProvidingEvent {
     case visibleTabIDChanged(String?)
     case visibilityChanged(Bool)
     case widthChanged(RailViewWidth)
+    case didAppear
 }
 
 /// Rail 视图状态观察句柄。
@@ -169,14 +169,8 @@ public protocol RailViewProviding: AnyObject {
     /// 不要求上层了解具体的 tab 分类或过滤规则。
     var hasVisibleTabs: Bool { get }
 
-    /// 可见 tab 状态变化发布器。
-    var railVisibilityPublisher: AnyPublisher<Bool, Never> { get }
-
     /// 当前 Rail 宽度（可能是插件推荐值，也可能是用户保存值）。
     var railWidth: RailViewWidth { get }
-
-    /// Rail 宽度变化发布器。
-    var railWidthPublisher: AnyPublisher<RailViewWidth, Never> { get }
 
     /// 注入 Rail tab 项（替换当前全部项）。
     func registerTabs(_ tabs: [RailTabItem])
@@ -195,6 +189,11 @@ public protocol RailViewProviding: AnyObject {
 
     /// 切换标签；未知 id 将被忽略。
     func activateTab(id: String?)
+
+    /// 请求激活标签；标签尚未注册时暂存请求，待标签出现后自动激活。
+    ///
+    /// 用于启动恢复等“目标 tab 可能稍后动态注册”的场景。
+    func activateTabWhenAvailable(id: String?)
 
     /// 激活插件的 Rail 宽度配置。
     ///
@@ -232,15 +231,7 @@ public extension RailViewProviding {
 
     var hasVisibleTabs: Bool { !tabs.isEmpty }
 
-    var railVisibilityPublisher: AnyPublisher<Bool, Never> {
-        Just(hasVisibleTabs).eraseToAnyPublisher()
-    }
-
     var railWidth: RailViewWidth { .standard }
-
-    var railWidthPublisher: AnyPublisher<RailViewWidth, Never> {
-        Just(railWidth).eraseToAnyPublisher()
-    }
 
     func addTabs(_ newTabs: [RailTabItem]) {
         var merged = tabs
@@ -259,6 +250,10 @@ public extension RailViewProviding {
     func setVisibleTabID(_ id: String?) {}
 
     func activateTab(id: String?) {}
+
+    func activateTabWhenAvailable(id: String?) {
+        activateTab(id: id)
+    }
 
     func activateWidthProfile(ownerID: String, recommended: RailViewWidth) {
         activateWidthProfile(ownerID: ownerID, recommended: recommended, store: nil)

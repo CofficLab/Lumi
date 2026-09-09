@@ -27,7 +27,6 @@ extension ConversationManager {
         }
         conversations[index].providerID = id
         conversations[index].modelName = model
-        conversations = conversations
         notifyConversationObservers(.providerChanged(conversationID))
 
         // Persist to database async
@@ -60,27 +59,33 @@ extension ConversationManager {
     }
 
     public func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {
-        guard let conversationID else {
-            return
-        }
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
-        }
-        conversations[index].verbosity = verbosity
-        // 重新赋值触发 @Published，并广播变更通知，使依赖该会话 verbosity 的视图
-        // （消息列表、工具栏等）即时刷新：消息列表会据此重新加载（工具消息的显隐）
-        // 并注入新的 verbosity 环境值。
-        conversations = conversations
-        notifyConversationObservers(.verbosityChanged(conversationID))
-        notifyConversationsChanged()
-
-        Task {
-            await store?.updateConversationPreferences(id: conversationID, verbosity: verbosity)
-        }
+        guard let conversationID = applyVerbosity(verbosity, for: conversationID) else { return }
+        Task { await store?.updateConversationPreferences(id: conversationID, verbosity: verbosity) }
 
         if Self.verbose {
             Self.logger.info("\(Self.t)setVerbosity: conversation=\(conversationID.uuidString.prefix(8)), verbosity=\(verbosity.rawValue)")
         }
+    }
+
+    /// 设置详细程度并等待数据库写入完成，供需要在退出前确认保存结果的调用方使用。
+    public func setVerbosityAndWait(_ verbosity: ResponseVerbosity, for conversationID: UUID?) async {
+        guard let conversationID = applyVerbosity(verbosity, for: conversationID) else { return }
+        _ = await store?.updateConversationPreferences(id: conversationID, verbosity: verbosity)
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)setVerbosityAndWait: conversation=\(conversationID.uuidString.prefix(8)), verbosity=\(verbosity.rawValue)")
+        }
+    }
+
+    /// 先更新内存并通知 UI，再由调用方决定是否等待持久化。
+    private func applyVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) -> UUID? {
+        guard let conversationID,
+              let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
+            return nil
+        }
+        conversations[index].verbosity = verbosity
+        notifyConversationObservers(.verbosityChanged(conversationID))
+        return conversationID
     }
 
     // MARK: - Reasoning Effort
@@ -110,7 +115,6 @@ extension ConversationManager {
             return
         }
         conversations[index].reasoningEffort = reasoningEffort
-        conversations = conversations
         notifyConversationObservers(.reasoningChanged(conversationID))
         notifyConversationsChanged()
 
@@ -138,7 +142,6 @@ extension ConversationManager {
             return
         }
         conversations[index].reasoningEffort = nil
-        conversations = conversations
         notifyConversationObservers(.reasoningChanged(conversationID))
         notifyConversationsChanged()
 
@@ -178,7 +181,6 @@ extension ConversationManager {
             return
         }
         conversations[index].automationLevel = automationLevel
-        conversations = conversations
         notifyConversationObservers(.automationChanged(conversationID))
         notifyConversationsChanged()
 
@@ -218,7 +220,6 @@ extension ConversationManager {
             return
         }
         conversations[index].language = language
-        conversations = conversations
         notifyConversationObservers(.languageChanged(conversationID))
 
         if Self.verbose {

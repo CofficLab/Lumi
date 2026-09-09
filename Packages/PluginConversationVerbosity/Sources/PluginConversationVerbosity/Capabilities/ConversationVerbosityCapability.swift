@@ -16,6 +16,9 @@ protocol ConversationVerbosityCapability: AnyObject {
     /// 设置指定对话的详细程度。
     func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?)
 
+    /// 设置指定对话的详细程度并等待持久化完成。
+    func setVerbosityAndWait(_ verbosity: ResponseVerbosity, for conversationID: UUID?) async
+
     /// 全局详细程度。
     var globalVerbosity: ResponseVerbosity { get }
 
@@ -45,6 +48,10 @@ final class ConversationVerbosityCapabilityAdapter: ConversationVerbosityCapabil
 
     func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {
         conversations.setVerbosity(verbosity, for: conversationID)
+    }
+
+    func setVerbosityAndWait(_ verbosity: ResponseVerbosity, for conversationID: UUID?) async {
+        await conversations.setVerbosityAndWait(verbosity, for: conversationID)
     }
 
     var globalVerbosity: ResponseVerbosity {

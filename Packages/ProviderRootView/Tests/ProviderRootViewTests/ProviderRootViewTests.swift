@@ -1,4 +1,3 @@
-import Combine
 import ProviderChatSection
 import ProviderRailView
 import SwiftUI
@@ -26,6 +25,37 @@ struct ProviderRootViewTests {
         #expect(provider.overlays.map(\.id) == ["later"])
     }
 
+    @Test("根视图状态变化会发布类型化观察事件")
+    func rootViewChangesAreObservable() {
+        let provider = DefaultRootViewProvider()
+        var events: [String] = []
+        let handle = provider.addRootViewObserver { event in
+            switch event {
+            case .overlaysChanged:
+                events.append("overlays")
+            case .toolbarViewChanged:
+                events.append("toolbar")
+            case let .railViewVisibilityChanged(visible):
+                events.append("rail:\(visible)")
+            case let .contentViewVisibilityChanged(hidden):
+                events.append("content-hidden:\(hidden)")
+            default:
+                break
+            }
+        }
+
+        provider.addOverlays([RootOverlayItem(id: "search") { $0 }])
+        provider.setToolbarView(AnyView(Text("toolbar")))
+        provider.setRailViewVisible(false)
+        provider.setContentViewHidden(true)
+
+        #expect(events == ["overlays", "toolbar", "rail:false", "content-hidden:true"])
+
+        handle.cancel()
+        provider.setContentViewHidden(false)
+        #expect(events == ["overlays", "toolbar", "rail:false", "content-hidden:true"])
+    }
+
     @Test("DefaultRootViewProvider 无工具栏时返回根视图")
     func defaultProviderReturnsRootViewWithoutToolbar() {
         let provider = DefaultRootViewProvider()
@@ -36,22 +66,59 @@ struct ProviderRootViewTests {
     }
 
     @Test("ChatSection 可见性同步到 trailing pane")
-    func trailingPaneFollowsChatSectionVisibility() async {
+    func trailingPaneFollowsChatSectionVisibility() {
         let chat = DefaultChatSectionProviding()
         let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
         pane.bindVisibility(to: chat)
 
         #expect(pane.isVisible)
         chat.setVisible(false)
-        await Task.yield()
         #expect(!pane.isVisible)
         chat.setVisible(true)
-        await Task.yield()
         #expect(pane.isVisible)
     }
 
+    @Test("Trailing pane 状态变化会发布类型化观察事件")
+    func trailingPaneChangesAreObservable() {
+        let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
+        var events: [String] = []
+        let handle = pane.addObserver { event in
+            if case let .visibilityChanged(visible) = event {
+                events.append("visible:\(visible)")
+            }
+        }
+
+        pane.isVisible = false
+        #expect(events == ["visible:false"])
+
+        handle.cancel()
+        pane.isVisible = true
+        #expect(events == ["visible:false"])
+    }
+
+    @Test("重新绑定 ChatSection 显隐时取消旧观察者")
+    func rebindingTrailingPaneVisibilityCancelsPreviousObserver() {
+        let firstChat = DefaultChatSectionProviding()
+        let secondChat = DefaultChatSectionProviding()
+        let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
+
+        firstChat.setVisible(false)
+        pane.bindVisibility(to: firstChat)
+        #expect(!pane.isVisible)
+
+        secondChat.setVisible(true)
+        pane.bindVisibility(to: secondChat)
+        #expect(pane.isVisible)
+
+        firstChat.setVisible(true)
+        #expect(pane.isVisible)
+
+        secondChat.setVisible(false)
+        #expect(!pane.isVisible)
+    }
+
     @Test("ChatSection 宽度绑定到 trailing pane 并转发用户拖拽")
-    func trailingPaneFollowsChatSectionWidthAndForwardsResize() async {
+    func trailingPaneFollowsChatSectionWidthAndForwardsResize() {
         let chat = DefaultChatSectionProviding()
         let pane = RootTrailingPane(
             id: "chat",
@@ -60,50 +127,96 @@ struct ProviderRootViewTests {
         )
         var resizedWidth: CGFloat?
         pane.bindWidth(
-            to: chat.chatSectionWidthPublisher,
+            to: chat,
             onResize: { resizedWidth = $0 }
         )
 
         let customWidth = ChatSectionWidth(minWidth: 280, idealWidth: 400, maxWidth: 560)
         chat.activateWidthProfile(ownerID: "plugin.chat", recommended: customWidth)
-        await Task.yield()
         #expect(pane.width == customWidth)
 
         pane.saveWidth(460)
         #expect(resizedWidth == 460)
     }
 
+    @Test("重新绑定 ChatSection 宽度时取消旧观察者")
+    func rebindingTrailingPaneWidthCancelsPreviousObserver() {
+        let firstChat = DefaultChatSectionProviding()
+        let secondChat = DefaultChatSectionProviding()
+        let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
+
+        let firstWidth = ChatSectionWidth(minWidth: 280, idealWidth: 380, maxWidth: 520)
+        firstChat.activateWidthProfile(ownerID: "plugin.first", recommended: firstWidth)
+        pane.bindWidth(to: firstChat, onResize: { _ in })
+        #expect(pane.width == firstWidth)
+
+        let secondWidth = ChatSectionWidth(minWidth: 280, idealWidth: 420, maxWidth: 560)
+        secondChat.activateWidthProfile(ownerID: "plugin.second", recommended: secondWidth)
+        pane.bindWidth(to: secondChat, onResize: { _ in })
+        #expect(pane.width == secondWidth)
+
+        firstChat.saveCurrentWidth(500)
+        #expect(pane.width == secondWidth)
+
+        secondChat.saveCurrentWidth(460)
+        #expect(pane.width == secondWidth.withIdealWidth(460))
+    }
+
     @Test("Rail 可见性绑定到根布局")
-    func railVisibilityFollowsPublisher() async {
+    func railVisibilityFollowsProvider() {
         let provider = DefaultRootViewProvider()
-        let visibility = CurrentValueSubject<Bool, Never>(true)
+        let rail = DefaultRailViewProviding()
 
-        provider.bindRailViewVisibility(to: visibility.eraseToAnyPublisher())
-        #expect(provider.isRailViewVisible)
-
-        visibility.send(false)
-        await Task.yield()
+        provider.bindRailViewVisibility(to: rail)
         #expect(!provider.isRailViewVisible)
 
-        visibility.send(true)
-        await Task.yield()
+        rail.registerTabs([
+            RailTabItem(id: "rail", category: .general, title: "Rail", systemImage: "sidebar") { Text("Rail") },
+        ])
+        #expect(provider.isRailViewVisible)
+
+        rail.removeTabs(ids: ["rail"])
+        #expect(!provider.isRailViewVisible)
+    }
+
+    @Test("重新绑定 Rail 显隐时取消旧观察者")
+    func rebindingRailVisibilityCancelsPreviousObserver() {
+        let provider = DefaultRootViewProvider()
+        let firstRail = DefaultRailViewProviding()
+        let secondRail = DefaultRailViewProviding()
+
+        firstRail.registerTabs([
+            RailTabItem(id: "first", category: .general, title: "First", systemImage: "1.circle") { Text("First") },
+        ])
+        provider.bindRailViewVisibility(to: firstRail)
+        #expect(provider.isRailViewVisible)
+
+        provider.bindRailViewVisibility(to: secondRail)
+        #expect(!provider.isRailViewVisible)
+
+        firstRail.removeTabs(ids: ["first"])
+        #expect(!provider.isRailViewVisible)
+
+        secondRail.registerTabs([
+            RailTabItem(id: "second", category: .general, title: "Second", systemImage: "2.circle") { Text("Second") },
+        ])
         #expect(provider.isRailViewVisible)
     }
 
     @Test("Rail 宽度绑定并转发用户拖拽回调")
-    func railWidthFollowsPublisherAndForwardsResize() async {
+    func railWidthFollowsProviderAndForwardsResize() async {
         let provider = DefaultRootViewProvider()
-        let width = CurrentValueSubject<RailViewWidth, Never>(.standard)
+        let rail = DefaultRailViewProviding()
         var resizedWidth: CGFloat?
 
         provider.bindRailViewWidth(
-            to: width.eraseToAnyPublisher(),
+            to: rail,
             onResize: { resizedWidth = $0 }
         )
         #expect(provider.railWidth == .standard)
 
         let customWidth = RailViewWidth(minWidth: 240, idealWidth: 360, maxWidth: 480)
-        width.send(customWidth)
+        rail.activateWidthProfile(ownerID: "plugin.rail", recommended: customWidth)
         await Task.yield()
         #expect(provider.railWidth == customWidth)
 
@@ -213,13 +326,13 @@ struct ProviderRootViewTests {
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
         @MainActor final class CustomRootView: RootViewProviding {
-            @Published var toolbarView: AnyView?
-            @Published var activityBarView: AnyView?
-            @Published var railView: AnyView?
-            @Published var contentHeaderView: AnyView?
-            @Published var contentView: AnyView?
-            @Published var contentFooterView: AnyView?
-            @Published var trailingPane: RootTrailingPane?
+            var toolbarView: AnyView?
+            var activityBarView: AnyView?
+            var railView: AnyView?
+            var contentHeaderView: AnyView?
+            var contentView: AnyView?
+            var contentFooterView: AnyView?
+            var trailingPane: RootTrailingPane?
 
             func setToolbarView(_ view: AnyView?) {
                 toolbarView = view
@@ -298,18 +411,20 @@ struct ProviderRootViewTests {
         #expect(!provider.hasActiveContent)
     }
 
-    // MARK: - 注入守卫（值相同则跳过赋值，避免视图更新期间发布 objectWillChange）
+    // MARK: - 注入守卫（值相同则跳过赋值，避免无意义事件）
 
-    /// 订阅 objectWillChange 并返回发送次数计数。
-    private func makeChangeCounter(for provider: DefaultRootViewProvider) -> (() -> Int, AnyCancellable) {
+    /// 订阅工具栏视图事件并返回发送次数计数。
+    private func makeChangeCounter(for provider: DefaultRootViewProvider) -> (() -> Int, any RootViewObserverHandle) {
         var count = 0
-        let cancellable = provider.objectWillChange.sink { _ in
-            count += 1
+        let handle = provider.addRootViewObserver { event in
+            if case .toolbarViewChanged = event {
+                count += 1
+            }
         }
-        return ({ count }, cancellable)
+        return ({ count }, handle)
     }
 
-    @Test("重复注入相同类型视图时跳过赋值（不发布 objectWillChange）")
+    @Test("重复注入相同类型视图时跳过赋值（不发布类型化事件）")
     func repeatedSameTypeInjectionSkipsPublish() {
         let provider = DefaultRootViewProvider()
         let (count, cancellable) = makeChangeCounter(for: provider)
@@ -322,10 +437,10 @@ struct ProviderRootViewTests {
 
         #expect(afterFirst == 1)
         #expect(afterSecond == afterFirst)
-        withExtendedLifetime(cancellable) {}
+        cancellable.cancel()
     }
 
-    @Test("注入状态变化（nil ↔ 非 nil）时正常更新（发布 objectWillChange）")
+    @Test("注入状态变化（nil ↔ 非 nil）时正常更新（发布类型化事件）")
     func valueTransitionStillPublishes() {
         let provider = DefaultRootViewProvider()
         let (count, cancellable) = makeChangeCounter(for: provider)
@@ -342,10 +457,10 @@ struct ProviderRootViewTests {
         #expect(afterNil == 0)
         #expect(afterInjected == 1)
         #expect(afterCleared == 2)
-        withExtendedLifetime(cancellable) {}
+        cancellable.cancel()
     }
 
-    @Test("重复注入 nil 时跳过赋值（不发布 objectWillChange）")
+    @Test("重复注入 nil 时跳过赋值（不发布类型化事件）")
     func repeatedNilInjectionSkipsPublish() {
         let provider = DefaultRootViewProvider()
         let (count, cancellable) = makeChangeCounter(for: provider)
@@ -357,7 +472,7 @@ struct ProviderRootViewTests {
 
         #expect(afterFirst == 0)
         #expect(afterSecond == afterFirst)
-        withExtendedLifetime(cancellable) {}
+        cancellable.cancel()
     }
 
 }

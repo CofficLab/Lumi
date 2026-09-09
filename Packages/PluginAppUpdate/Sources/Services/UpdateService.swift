@@ -31,6 +31,9 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     /// Feed URL detector (actor). Network probes run off the main actor.
     private var feedURLDetector: FeedURLDetector?
 
+    /// In-flight feed URL preparation shared by startup and manual checks.
+    private var feedPreparationTask: Task<Void, Never>?
+
     /// Update lifecycle state machine (tracks state + version only).
     private let stateMachine = UpdateServiceStateMachine()
 
@@ -40,12 +43,6 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     /// `setupFeedURLIfNeeded()` completes. Kept as a plain stored property so
     /// `feedURLString(for:)` (synchronous delegate callback) can read it directly.
     private var resolvedFeedURL: URL = UpdateFeedURLProvider.primary
-
-    /// Pending install callback provided by Sparkle via
-    /// `updater(_:willInstallUpdateOnQuit:immediateInstallationBlock:)`.
-    /// Stored on the MainActor-isolated service because the closure itself
-    /// is non-Sendable (it may touch AppKit).
-    private var pendingImmediateInstallHandler: (() -> Void)?
 
     /// Convenience access to the underlying `SPUUpdater`.
     public var updater: SPUUpdater? {
@@ -89,31 +86,57 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
 
     /// Detect the reachable feed URL and start the updater.
     ///
-    /// Called once from `MacAgent.applicationDidFinishLaunching`. The network
-    /// probe runs on a detached background task; only the Sparkle controller
-    /// initialization hops back to the main actor.
+    /// Called once from `MacAgent.applicationDidFinishLaunching`. The
+    /// preparation task is shared with manual checks so a check requested
+    /// during startup cannot race feed selection.
     public func setupFeedURLIfNeeded() {
         guard AppUpdateRuntimeEnvironment.current.allowsAppUpdates else { return }
-        guard let feedURLDetector else { return }
-        Task.detached(priority: .utility) { [feedURLDetector] in
-            await feedURLDetector.detectIfNeeded()
-            let url = await feedURLDetector.resolvedFeedURL
+        _ = prepareFeedURLIfNeeded()
+    }
 
-            await MainActor.run {
-                self.resolvedFeedURL = url
-                self.ensureUpdaterInitialized()
-                if Self.verbose {
-                    Self.logger.info("\(Self.t)Feed URL set to: \(url.absoluteString, privacy: .public)")
-                }
+    /// Start feed URL preparation once and reuse it while it is in flight.
+    ///
+    /// The detector is an actor, so awaiting it does not block the main actor.
+    /// Once the task finishes, the cached URL is copied to the synchronous
+    /// Sparkle delegate property and the task slot is released.
+    @discardableResult
+    private func prepareFeedURLIfNeeded() -> Task<Void, Never>? {
+        guard let feedURLDetector else { return nil }
+        if let feedPreparationTask {
+            return feedPreparationTask
+        }
+
+        let task = Task { @MainActor [weak self, feedURLDetector] in
+            await feedURLDetector.detectIfNeeded()
+            guard let self else { return }
+
+            let url = await feedURLDetector.resolvedFeedURL
+            self.resolvedFeedURL = url
+            self.feedPreparationTask = nil
+            if Self.verbose {
+                Self.logger.info("\(Self.t)Feed URL set to: \(url.absoluteString, privacy: .public)")
             }
         }
+        feedPreparationTask = task
+        return task
     }
 
     /// Trigger an immediate update check.
     public func checkForUpdates() {
         guard AppUpdateRuntimeEnvironment.current.allowsAppUpdates else { return }
-        ensureUpdaterInitialized()
-        updaterController?.checkForUpdates(nil)
+
+        guard let preparationTask = prepareFeedURLIfNeeded() else {
+            ensureUpdaterInitialized()
+            updaterController?.checkForUpdates(nil)
+            return
+        }
+
+        Task { @MainActor [weak self] in
+            await preparationTask.value
+            guard let self, AppUpdateRuntimeEnvironment.current.allowsAppUpdates else { return }
+            self.ensureUpdaterInitialized()
+            self.updaterController?.checkForUpdates(nil)
+        }
     }
 
     /// Current update lifecycle state (for UI display).
@@ -137,12 +160,14 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
         willInstallUpdateOnQuit item: SUAppcastItem,
         immediateInstallationBlock immediateInstallHandler: @escaping () -> Void
     ) -> Bool {
-        pendingImmediateInstallHandler = immediateInstallHandler
         Task {
             await stateMachine.markReadyToInstall(version: item.displayVersionString)
         }
         NotificationCenter.postAppUpdateReadyToInstall(version: item.displayVersionString)
-        return true
+        // Let Sparkle's standard user driver own installation and relaunch UI.
+        // Returning true would make this service responsible for invoking the
+        // callback, but there is no custom install UI here.
+        return false
     }
 
     /// Sparkle's recommended way to provide the feed URL dynamically.
@@ -162,11 +187,7 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     }
 
     @objc func handleInstallPreparedAppUpdateRequest() {
-        guard let handler = pendingImmediateInstallHandler else { return }
-        pendingImmediateInstallHandler = nil
-        Task {
-            await stateMachine.beginInstalling()
-        }
-        handler()
+        // Keep this notification endpoint for compatibility with older callers.
+        // Installation and relaunch are owned by Sparkle's standard user driver.
     }
 }

@@ -4,7 +4,7 @@ import PluginAgentRules
 import PluginAgentTempStorage
 import PluginAgentPlanStorage
 import PluginAgentTurnNotification
-import PluginDebugBadge
+import PluginDeveloperMode
 import PluginFileLog
 import PluginShowImage
 import ImageToPDFPlugin
@@ -96,12 +96,14 @@ import PluginLogoCoffic
 import PluginLogoManager
 import PluginLogoSmartLight
 import PluginMemory
-import PluginMessageList
+import PluginMessageListEmpty
+import PluginMessageListBrief
+import PluginMessageListStandard
+import PluginMessageListDetailed
 import PluginMessageManager
 import PluginMessageRenderer
 import PluginAgentLoop
 import PluginLLMContext
-import PluginMessageSender
 import PluginMindMapDesigner
 import PluginModelSelector
 import PluginOcr
@@ -127,6 +129,7 @@ import PluginSettingView
 import PluginPerformanceMetrics
 import PluginSkill
 import PluginOnboarding
+import PluginWelcome
 import PluginThemePack
 import PluginToolManager
 import PluginToolbarSettings
@@ -216,7 +219,7 @@ public struct DefaultPluginFactory: PluginFactory {
             OpenInGitHubDesktopPlugin(),
             OpenInGitOKPlugin(),
             AgentTurnNotificationPlugin(),
-            DebugBadgeSuperPlugin(),
+            DeveloperModePlugin(),
             FileLogPlugin(),
             ShowImagePlugin(),
             ImageToPDFSuperPlugin(),
@@ -249,9 +252,13 @@ public struct DefaultPluginFactory: PluginFactory {
             SkillPlugin(),
             XcodeBuildPlugin(),
             OnboardingPlugin(),
+            PluginWelcome(),
             MemoryPlugin(),
             ModelSelectorPlugin(),
-            MessageListPlugin(),
+            PluginMessageListEmptyPlugin(),
+            PluginMessageListBriefPlugin(),
+            PluginMessageListStandardPlugin(),
+            PluginMessageListDetailedPlugin(),
             MessageRendererPlugin(),
             ConversationInputPlugin(),
             ConversationListPlugin(),
@@ -260,7 +267,6 @@ public struct DefaultPluginFactory: PluginFactory {
             MessageManagerPlugin(),
             LLMContextPlugin(),
             PluginAgentLoop(),
-            MessageSenderPlugin(),
             PluginPluginManager(),
             // 设置视图管理器：替换 ProviderFactory 预注册的默认 SettingViewProviding 实现，
             // 必须先于各设置入口贡献插件（如 SettingGeneralPlugin order=200）。

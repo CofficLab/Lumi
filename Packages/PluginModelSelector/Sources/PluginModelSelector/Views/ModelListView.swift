@@ -89,10 +89,10 @@ enum ModelCategory: String, CaseIterable {
 /// 模型列表视图（由旧版 ModelSelectorPlugin 复刻）。
 ///
 /// 显示指定供应商的模型列表，支持搜索、能力筛选和选择。
-/// 数据源为内核 `LLMManaging`（经 `ObservableLLMProviderManagerBox` 订阅）。
+/// 数据源为内核 `LLMManaging`（经 `LLMProviderManagerBox` 订阅）。
 struct ModelListView: View {
     @LumiTheme private var theme
-    @ObservedObject var box: ObservableLLMProviderManagerBox
+    let box: LLMProviderManagerBox
     let selectedProviderID: String?
     let initialModel: String?
     let toast: (any ToastProviding)?
@@ -178,14 +178,18 @@ struct ModelListView: View {
         to models: [String],
         modelInfos: [String: LLMModelInfo]
     ) -> [String] {
-        models.filter { model in
-            selectedCategory.includes(model: model, modelInfo: modelInfos[model])
-        }
-        .filter { model in
-            searchText.isEmpty
-                || model.localizedCaseInsensitiveContains(searchText)
-                || (modelInfos[model]?.displayName ?? model).localizedCaseInsensitiveContains(searchText)
-        }
+        models
+            .filter { model in
+                selectedCategory.includes(model: model, modelInfo: modelInfos[model])
+            }
+            .sorted { lhs, rhs in
+                lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+            }
+            .filter { model in
+                searchText.isEmpty
+                    || model.localizedCaseInsensitiveContains(searchText)
+                    || (modelInfos[model]?.displayName ?? model).localizedCaseInsensitiveContains(searchText)
+            }
     }
 }
 

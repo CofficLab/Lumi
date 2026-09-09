@@ -35,8 +35,9 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published public private(set) var isContentViewHidden: Bool = false
     @Published public private(set) var isContentHeaderViewHidden: Bool = false
     @Published public private(set) var isContentFooterViewHidden: Bool = false
-    private var railVisibilitySubscription: AnyCancellable?
-    private var railWidthSubscription: AnyCancellable?
+    private var observers: [UUID: (RootViewEvent) -> Void] = [:]
+    private var railVisibilityObserver: (any RailViewProvidingObserverHandle)?
+    private var railWidthObserver: (any RailViewProvidingObserverHandle)?
     private var railWidthResizeHandler: (@MainActor (CGFloat) -> Void)?
     private var activeContentFooterHeightStore: (any ContentFooterHeightStoring)?
     private var activeContentFooterHeightOwnerID: String?
@@ -47,20 +48,42 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         }
     }
 
+    @discardableResult
+    public func addRootViewObserver(
+        _ callback: @escaping (RootViewEvent) -> Void
+    ) -> any RootViewObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
     public func setToolbarView(_ view: AnyView?) {
         guard !isSameView(toolbarView, view) else { return }
         toolbarView = view
+        notify(.toolbarViewChanged)
         if Self.verbose {
             Self.logger.debug("\(self.t)set toolbar view: \(view == nil ? "nil" : "injected")")
         }
     }
 
     public func addOverlays(_ newOverlays: [RootOverlayItem]) {
+        let oldCount = overlays.count
         for overlay in newOverlays where !overlays.contains(where: { $0.id == overlay.id }) { overlays.append(overlay) }
         overlays.sort { $0.order < $1.order }
+        if overlays.count != oldCount {
+            notify(.overlaysChanged)
+        }
     }
 
-    public func removeOverlays(ids: Set<String>) { overlays.removeAll { ids.contains($0.id) } }
+    public func removeOverlays(ids: Set<String>) {
+        let oldCount = overlays.count
+        overlays.removeAll { ids.contains($0.id) }
+        if overlays.count != oldCount {
+            notify(.overlaysChanged)
+        }
+    }
 
     public func setActivityBarView(_ view: AnyView?) {
         guard !isSameView(activityBarView, view) else { return }
@@ -83,6 +106,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
             setRailViewVisible(lastRailViewVisibility)
         }
         railView = view
+        notify(.railViewChanged)
         if Self.verbose {
             Self.logger.debug("\(self.t)set rail view: \(view == nil ? "nil" : "injected")")
         }
@@ -92,34 +116,37 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         guard isRailViewVisible != visible else { return }
         isRailViewVisible = visible
         lastRailViewVisibility = visible
+        notify(.railViewVisibilityChanged(visible))
     }
 
-    public func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>) {
-        railVisibilitySubscription = publisher.sink { [weak self] visible in
-            Task { @MainActor [weak self] in
-                self?.setRailViewVisible(visible)
-            }
+    public func bindRailViewVisibility(to provider: any RailViewProviding) {
+        railVisibilityObserver?.cancel()
+        setRailViewVisible(provider.hasVisibleTabs)
+        railVisibilityObserver = provider.addObserver { [weak self] event in
+            guard case let .visibilityChanged(visible) = event else { return }
+            self?.setRailViewVisible(visible)
         }
     }
 
     public func bindRailViewWidth(
-        to publisher: AnyPublisher<RailViewWidth, Never>,
+        to provider: any RailViewProviding,
         onResize: @escaping @MainActor (CGFloat) -> Void
     ) {
+        railWidthObserver?.cancel()
         railWidthResizeHandler = onResize
-        railWidthSubscription = publisher.sink { [weak self] width in
+        railWidth = provider.railWidth
+        railWidthObserver = provider.addObserver { [weak self] event in
+            guard case let .widthChanged(width) = event else { return }
             Task { @MainActor [weak self] in
-                self?.railWidth = width
+                guard let self else { return }
+                self.railWidth = width
+                self.notify(.railWidthChanged(width))
             }
         }
     }
 
     func saveRailViewWidth(_ width: CGFloat) {
         railWidthResizeHandler?(width)
-    }
-
-    public var contentFooterHeightPublisher: AnyPublisher<ContentFooterHeight, Never> {
-        $contentFooterHeight.eraseToAnyPublisher()
     }
 
     public func activateContentFooterHeightProfile(
@@ -134,6 +161,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         let resolvedHeight = recommended.withIdealHeight(recommended.clamped(restoredHeight))
         if contentFooterHeight != resolvedHeight {
             contentFooterHeight = resolvedHeight
+            notify(.contentFooterHeightChanged(contentFooterHeight))
         }
     }
 
@@ -143,6 +171,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         activeContentFooterHeightStore = nil
         if contentFooterHeight != .standard {
             contentFooterHeight = .standard
+            notify(.contentFooterHeightChanged(contentFooterHeight))
         }
     }
 
@@ -153,12 +182,14 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         let updatedHeight = contentFooterHeight.withIdealHeight(resolvedHeight)
         if contentFooterHeight != updatedHeight {
             contentFooterHeight = updatedHeight
+            notify(.contentFooterHeightChanged(contentFooterHeight))
         }
     }
 
     public func setContentHeaderView(_ view: AnyView?) {
         guard !isSameView(contentHeaderView, view) else { return }
         contentHeaderView = view
+        notify(.contentHeaderViewChanged)
         if Self.verbose {
             Self.logger.debug("\(self.t)set content header view: \(view == nil ? "nil" : "injected")")
         }
@@ -167,6 +198,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     public func setContentView(_ view: AnyView?) {
         guard !isSameView(contentView, view) else { return }
         contentView = view
+        notify(.contentViewChanged)
         if Self.verbose {
             Self.logger.debug("\(self.t)set content view: \(view == nil ? "nil" : "injected")")
         }
@@ -175,6 +207,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     public func setContentFooterView(_ view: AnyView?) {
         guard !isSameView(contentFooterView, view) else { return }
         contentFooterView = view
+        notify(.contentFooterViewChanged)
         if Self.verbose {
             Self.logger.debug("\(self.t)set content footer view: \(view == nil ? "nil" : "injected")")
         }
@@ -183,6 +216,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     public func setContentFooterViewHidden(_ hidden: Bool) {
         guard isContentFooterViewHidden != hidden else { return }
         isContentFooterViewHidden = hidden
+        notify(.contentFooterVisibilityChanged(hidden))
         if Self.verbose {
             Self.logger.debug("\(self.t)set content footer hidden: \(hidden)")
         }
@@ -191,6 +225,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     public func setContentViewHidden(_ hidden: Bool) {
         guard isContentViewHidden != hidden else { return }
         isContentViewHidden = hidden
+        notify(.contentViewVisibilityChanged(hidden))
         if Self.verbose {
             Self.logger.debug("\(self.t)set content view hidden: \(hidden)")
         }
@@ -199,6 +234,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     public func setContentHeaderViewHidden(_ hidden: Bool) {
         guard isContentHeaderViewHidden != hidden else { return }
         isContentHeaderViewHidden = hidden
+        notify(.contentHeaderVisibilityChanged(hidden))
         if Self.verbose {
             Self.logger.debug("\(self.t)set content header hidden: \(hidden)")
         }
@@ -207,6 +243,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     public func setTrailingPane(_ pane: RootTrailingPane?) {
         guard pane !== trailingPane else { return }
         trailingPane = pane
+        notify(.trailingPaneChanged)
         if Self.verbose {
             Self.logger.debug("\(self.t)set trailing pane: \(pane.map { $0.id } ?? "nil")")
         }
@@ -222,13 +259,12 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     /// - 状态不同（nil ↔ 非 nil）→ 视为变化，正常更新。
     ///
     /// 目的：装配流程可能重复调用注入方法（如宿主重建视图树时）
-    /// 导致 App body 重求值后再次装配），重复赋值 `@Published` 会在视图更新期间
-    /// 发布变更，触发 SwiftUI 的 "Publishing changes from within view updates
-    /// is not allowed" 并可能形成循环。状态相同即跳过，避免无意义发布。
+    /// 导致 App body 重求值后再次装配），重复赋值会在视图更新期间
+    /// 触发不必要的刷新并可能形成循环。状态相同即跳过，避免无意义发布。
     ///
     /// 注意：这是保守近似 —— 已注入非 nil 视图后，再次注入任意新视图（含不同
     /// 类型）都会被跳过。Lumi 架构下视图内容更新由视图内部状态驱动（Provider
-    /// 的 `@Published`/`objectWillChange`），无需重新注入新 `AnyView`；若确有
+    /// 的内部状态驱动，无需重新注入新 `AnyView`；若确有
     /// Provider 需要强制替换，可先传 nil 再传新值。
     private func isSameView(_ lhs: AnyView?, _ rhs: AnyView?) -> Bool {
         (lhs == nil) == (rhs == nil)
@@ -238,9 +274,24 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         if Self.verbose {
             Self.logger.debug("\(self.t)make root view: toolbar=\(self.toolbarView == nil ? "nil" : "set"), activityBar=\(self.activityBarView == nil ? "nil" : "set"), rail=\(self.railView == nil ? "nil" : "set"), content=\(self.contentView == nil ? "nil" : "set"), footer=\(self.contentFooterView == nil ? "nil" : "set")")
         }
-        var root = AnyView(DefaultRootHostView(provider: self))
-        for overlay in overlays { root = overlay.wrap(root) }
-        return root
+        return AnyView(RootOverlayHostView(provider: self))
+    }
+
+    private func notify(_ event: RootViewEvent) {
+        observers.values.forEach { $0(event) }
+    }
+
+    private final class ObserverHandle: RootViewObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
+        }
     }
 
     // MARK: - 显示条件
@@ -254,5 +305,38 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
             || contentView != nil
             || (contentFooterView != nil && !isContentFooterViewHidden)
             || trailingPane?.isVisible == true
+    }
+}
+
+/// Observes the provider's overlay registry and rebuilds the wrapper chain when
+/// a plugin adds or removes an overlay after the root view has been assembled.
+@MainActor
+private struct RootOverlayHostView: View {
+    let provider: DefaultRootViewProvider
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any RootViewObserverHandle)?
+
+    var body: some View {
+        makeWrappedRoot()
+            .id(observationRevision)
+            .onAppear {
+                guard observerHandle == nil else { return }
+                observerHandle = provider.addRootViewObserver { event in
+                    guard case .overlaysChanged = event else { return }
+                    observationRevision += 1
+                }
+            }
+            .onDisappear {
+                observerHandle?.cancel()
+                observerHandle = nil
+            }
+    }
+
+    private func makeWrappedRoot() -> AnyView {
+        var root = AnyView(DefaultRootHostView(provider: provider))
+        for overlay in provider.overlays {
+            root = overlay.wrap(root)
+        }
+        return root
     }
 }

@@ -2,7 +2,7 @@ import Foundation
 
 @MainActor
 public final class DefaultMessageManager: MessageManaging {
-    @Published private var storage: [UUID: [Message]] = [:]
+    private var storage: [UUID: [Message]] = [:]
     private var insertionObservers: [UUID: (Message, UUID) -> Void] = [:]
     private var changeObservers: [UUID: (MessageChange) -> Void] = [:]
 

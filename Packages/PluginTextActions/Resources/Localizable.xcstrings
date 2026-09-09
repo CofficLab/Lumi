@@ -69,39 +69,6 @@
         }
       }
     },
-    "Accessibility permission granted": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "辅助功能权限已授予"
-          }
-        }
-      }
-    },
-    "Accessibility permission is required to read selected text from other apps.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "读取其他应用的选中文字需要辅助功能权限。"
-          }
-        }
-      }
-    },
-    "Accessibility permission not granted": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "尚未授予辅助功能权限"
-          }
-        }
-      }
-    },
     "After text is selected in another app, a floating menu with Copy, Search, and Translate appears near the selection.": {
       "localizations": {
         "en": {
@@ -248,17 +215,6 @@
         }
       }
     },
-    "Copy Translation": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "复制译文"
-          }
-        }
-      }
-    },
     "Core Capabilities": {
       "localizations": {
         "en": {
@@ -385,17 +341,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "啟用開關"
-          }
-        }
-      }
-    },
-    "Enable Text Actions": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "启用文本操作"
           }
         }
       }
@@ -668,17 +613,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "注意事項"
-          }
-        }
-      }
-    },
-    "Open System Settings": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开系统设置"
           }
         }
       }
@@ -993,17 +927,6 @@
         }
       }
     },
-    "Selected Text Actions": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "选中文字后的快捷操作"
-          }
-        }
-      }
-    },
     "Settings → Text Actions": {
       "localizations": {
         "en": {
@@ -1034,17 +957,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "設定 → 文字操作"
-          }
-        }
-      }
-    },
-    "Show a floating menu after selecting text in another macOS app.": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在其他 macOS 应用中选中文字后显示浮动菜单。"
           }
         }
       }
@@ -1225,17 +1137,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "翻譯所選文字。"
-          }
-        }
-      }
-    },
-    "Translating…": {
-      "extractionState": "stale",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "翻译中…"
           }
         }
       }

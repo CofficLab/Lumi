@@ -4,7 +4,6 @@ import FactoryLumi
 import KernelCore
 import PluginToast
 import PluginToolbarSettings
-import ProviderOnboarding
 import ProviderSettingView
 import ProviderToast
 import SwiftUI
@@ -15,7 +14,6 @@ struct LumiApp: App {
     private let kernel: KernelCoreContainer
     @StateObject private var menuBarController: LumiMenuBarController
     private let toastCenter: ToastCenter?
-    private let onboardingProvider: (any OnboardingProviding)?
 
     /// 启动失败必须显式呈现，不能静默退化成一个没有 Provider 的空内核。
     private let bootstrapErrorDescription: String?
@@ -39,7 +37,6 @@ struct LumiApp: App {
             kernel = assembledKernel
             _menuBarController = StateObject(wrappedValue: LumiMenuBarController())
             toastCenter = assembledKernel.resolveProvider((any ToastProviding).self) as? ToastCenter
-            onboardingProvider = assembledKernel.resolveProvider((any OnboardingProviding).self)
             bootstrapErrorDescription = nil
             mainView = (try? KernelFactory.makeMainView(kernel: assembledKernel))
                 ?? AnyView(BootstrapFailureView(message: "Failed to assemble main view"))
@@ -52,7 +49,6 @@ struct LumiApp: App {
             kernel = KernelCoreContainer()
             _menuBarController = StateObject(wrappedValue: LumiMenuBarController())
             toastCenter = nil
-            onboardingProvider = nil
             bootstrapErrorDescription = error.localizedDescription
             mainView = AnyView(BootstrapFailureView(message: error.localizedDescription))
             settingsView = AnyView(BootstrapFailureView(message: error.localizedDescription))
@@ -66,7 +62,7 @@ struct LumiApp: App {
             // 主题切换后各窗口即时同步。
             // 注意：`.onReceive` 需应用到整个 `??` 表达式（否则会误绑到 fallback 分支）。
             ToastHost(
-                content: OnboardingHost(content: mainView, provider: onboardingProvider),
+                content: mainView,
                 center: toastCenter
             )
             // 与旧版 Lumi（WindowMain.configureForLumiMainChrome）一致：

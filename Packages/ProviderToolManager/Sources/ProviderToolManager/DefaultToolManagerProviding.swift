@@ -1,5 +1,4 @@
 import KitAgentTool
-import Combine
 import Foundation
 import KitSuperLog
 import os
@@ -19,7 +18,7 @@ private struct DefaultToolInteractionPayload: Codable {
 
 /// `ToolManagerProviding` 的默认实现。
 @MainActor
-public final class DefaultToolManagerProviding: ToolManagerProviding, ObservableObject, SuperLog {
+public final class DefaultToolManagerProviding: ToolManagerProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-tool-manager", category: "ToolManager")
     public nonisolated static let emoji = "🛠️"
     nonisolated static let verbose = true
@@ -94,7 +93,7 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
         }
         pluginToolIndex[pluginID, default: []].append(tool.name)
 
-        objectWillChange.send()
+        notify(.toolsChanged)
     }
 
     public func remove(id: String) {
@@ -109,7 +108,7 @@ public final class DefaultToolManagerProviding: ToolManagerProviding, Observable
             }
         }
 
-        objectWillChange.send()
+        notify(.toolsChanged)
     }
 
     public func toolsGroupedByPlugin() -> [(pluginID: String, tools: [any SuperAgentTool])] {

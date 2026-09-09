@@ -4,10 +4,13 @@ import SwiftUI
 /// Agent Turn 运行状态工具栏视图
 struct AgentTurnStatusToolbarView: View {
     let agentLoop: any AgentLoopProviding
-    @ObservedObject var state: AgentTurnStatusToolbarState
+    let state: AgentTurnStatusToolbarState
 
     @State private var isRunning: Bool = false
     @State private var pulseAnimation: Bool = false
+    @State private var selectedConversationID: UUID?
+    @State private var revision = 0
+    @State private var observerHandle: (any AgentTurnStatusToolbarState.ObserverHandle)?
 
     var body: some View {
         Group {
@@ -39,15 +42,31 @@ struct AgentTurnStatusToolbarView: View {
                 .onDisappear { pulseAnimation = false }
             }
         }
-        .task(id: "\(state.selectedConversationID?.uuidString ?? "nil")-\(state.revision)") {
+        .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(revision)") {
             await Task.yield()
             guard !Task.isCancelled else { return }
             updateRunningState()
         }
+        .onAppear {
+            guard observerHandle == nil else { return }
+            selectedConversationID = state.selectedConversationID
+            observerHandle = state.addObserver { event in
+                switch event {
+                case let .selectedConversationChanged(id):
+                    selectedConversationID = id
+                case .agentLoopChanged:
+                    revision &+= 1
+                }
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
+        }
     }
 
     private func updateRunningState() {
-        guard let conversationID = state.selectedConversationID else {
+        guard let conversationID = selectedConversationID else {
             isRunning = false
             return
         }

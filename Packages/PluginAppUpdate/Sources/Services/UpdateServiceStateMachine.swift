@@ -20,12 +20,11 @@ public enum UpdateLifecycleState: String, Sendable {
 
 /// Update lifecycle state machine.
 ///
-/// Manages `UpdateLifecycleState` transitions and records the pending install handler.
+/// Manages `UpdateLifecycleState` transitions and records the latest update version.
 /// It is an `actor` for concurrency safety.
 ///
 /// ## Responsibilities
 /// - Manage update state transitions (idle → checking → downloading → readyToInstall → installing)
-/// - Manage the pending install callback (Sparkle's `immediateInstallationBlock`)
 /// - Track the most recently detected update version
 /// - Manage the local feed URL cache (for the Sparkle delegate's synchronous queries)
 public actor UpdateServiceStateMachine {

@@ -15,11 +15,13 @@ final class ConversationListContextObserver {
         context: ConversationListContext
     ) {
         selectedConversationHandle = conversations.addSelectedConversationObserver { [weak context] newID in
-            context?.selectedConversationID = newID
+            context?.setSelectedConversationID(newID)
         }
         conversationHandle = conversations.addConversationObserver { [weak context] event in
             switch event {
-            case .selected:
+            case .selected, .verbosityChanged:
+                // Verbosity is a chat preference and is not rendered in list rows.
+                // Avoid reloading the ScrollView so changing it preserves position.
                 break
             default:
                 context?.markConversationsChanged()

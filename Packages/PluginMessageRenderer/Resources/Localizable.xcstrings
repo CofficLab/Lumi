@@ -107,38 +107,7 @@
       }
     },
     "HTTP Status Code: %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP Status Code: %lld"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP 状态码：%lld"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP 状态码：%lld"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP 状态码：%lld"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP 状态码：%lld"
-          }
-        }
-      }
+
     },
     "Lumi" : {
       "localizations" : {
@@ -630,6 +599,9 @@
     "无法解析工具审批请求" : {
 
     },
+    "暂无新进度" : {
+
+    },
     "暂时没有输出" : {
 
     },
@@ -706,6 +678,7 @@
       }
     },
     "正在加载工具结果…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

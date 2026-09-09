@@ -21,6 +21,8 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitSuperLog"),
         .package(path: "../KitLocalization"),
+        .package(path: "../ProviderOnboarding"),
+        .package(path: "../PluginLLMProviderSettings"),
     ],
     targets: [
         .target(
@@ -35,6 +37,8 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
+                .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
+                .product(name: "PluginLLMProviderSettings", package: "PluginLLMProviderSettings"),
             ],
             path: "Sources/PluginLLMManager",
             resources: [.process("../../Resources/Localizable.xcstrings")]

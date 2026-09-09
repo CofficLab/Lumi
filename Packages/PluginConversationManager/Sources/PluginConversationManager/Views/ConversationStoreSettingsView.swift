@@ -12,7 +12,7 @@ import SwiftUI
 @MainActor
 public struct ConversationStoreSettingsView: View {
     @LumiTheme private var theme
-    @ObservedObject private var conversationManager: ConversationManager
+    private let conversationManager: ConversationManager
     @ObservedObject private var migrationProgress: ConversationMigrationProgressStore
 
     private let messageManager: (any MessageManaging)?
@@ -44,14 +44,12 @@ public struct ConversationStoreSettingsView: View {
         migrationProgress: ConversationMigrationProgressStore
     ) {
         if let manager {
-            self._conversationManager = ObservedObject(wrappedValue: manager)
+            self.conversationManager = manager
         } else {
             // 占位 manager：仅当插件初始化失败时出现，理论上不会走到。
-            self._conversationManager = ObservedObject(
-                wrappedValue: ConversationManager(
-                    store: nil,
-                    dataDirectory: ConversationStore.defaultDatabaseRootURL
-                )
+            self.conversationManager = ConversationManager(
+                store: nil,
+                dataDirectory: ConversationStore.defaultDatabaseRootURL
             )
         }
         self.messageManager = messageManager

@@ -45,30 +45,6 @@
             "state" : "new",
             "value" : "%1$@ (.%2$@)"
           }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ (.%@)"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ (.%@)"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ (.%@)"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ (.%@)"
-          }
         }
       }
     },
@@ -306,6 +282,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "點擊「打開系統設定」,在系統設定中啟用本應用程式的 Finder 擴充功能。"
+          }
+        }
+      }
+    },
+    "Configure right-click actions and preview their behavior." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configure right-click actions and preview their behavior."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配置右键操作并预览其行为。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定右鍵操作並預覽其行為。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定右鍵操作並預覽其行為。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定右鍵操作並預覽其行為。"
           }
         }
       }
@@ -1292,41 +1302,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "即時預覽"
-          }
-        }
-      }
-    },
-    "Lumi" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lumi"
           }
         }
       }
@@ -2465,40 +2440,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用入口"
-          }
-        }
-      }
-    },
-    "Configure right-click actions and preview their behavior." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Configure right-click actions and preview their behavior."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "配置右键操作并预览其行为。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定右鍵操作並預覽其行為。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定右鍵操作並預覽其行為。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定右鍵操作並預覽其行為。"
           }
         }
       }

@@ -6,27 +6,39 @@ import KitSuperLog
 import SwiftUI
 
 @MainActor
-public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, SuperLog {
+public final class ActivityBarProvider: ActivityBarProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.activity-bar", category: "Provider")
     public nonisolated static let emoji = "🧱"
     nonisolated static let verbose = false
 
     /// 当前已激活入口的 id。
-    @Published public private(set) var activeItemID: String?
+    public private(set) var activeItemID: String?
 
     /// 当前已注入的全部 ActivityBar 项（按 `order` 排序）。
-    @Published public private(set) var items: [ActivityBarItem] = []
+    public private(set) var items: [ActivityBarItem] = []
 
     /// 已被业务插件追加/移除的入口历史（仅日志诊断用）。
     public private(set) var customItems: [ActivityBarItem] = []
 
     /// 隐藏缓存：按插件 id 存储被隐藏的入口，以便插件重新启用时恢复。
     private var hiddenItemCache: [String: [ActivityBarItem]] = [:]
+    private var observers: [UUID: (ActivityBarEvent) -> Void] = [:]
 
     /// 入口被显式激活后的回调，由 PluginActivityBar 用于持久化全局激活态。
     var onActiveItemChanged: ((String?) -> Void)?
 
     public init() {}
+
+    @discardableResult
+    public func addActivityBarObserver(
+        _ callback: @escaping (ActivityBarEvent) -> Void
+    ) -> any ActivityBarObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
 
     /// 用一组已存在的内容（即将被替换的旧 `DefaultActivityBarProviding` 数据）
     /// 预填新实例，确保 `unregisterProvider` 之后业务插件已注册的 `ActivityBarItem`
@@ -73,6 +85,7 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
 
         // 局部缓存，便于日志/调试观察。
         customItems = self.items
+        notify(.itemsChanged)
     }
 
     /// 追加入口，保留已有项。复用协议的默认合并实现。
@@ -148,7 +161,7 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
 
     // MARK: - Private
 
-    /// 更新激活态，仅在实际变化时触发 `@Published` 变更，并通知状态发生变化的入口。
+    /// 更新激活态，仅在实际变化时通知状态发生变化的入口与观察者。
     private func setActiveItemID(_ id: String?, previousItems: [ActivityBarItem]? = nil) {
         guard activeItemID != id else { return }
         let previousID = activeItemID
@@ -162,6 +175,24 @@ public final class ActivityBarProvider: ActivityBarProviding, ObservableObject, 
         if let id,
            let nextItem = items.first(where: { $0.id == id }), id != previousID {
             nextItem.onActivationChanged(.activated)
+        }
+        notify(.activeItemChanged(id))
+    }
+
+    private func notify(_ event: ActivityBarEvent) {
+        observers.values.forEach { $0(event) }
+    }
+
+    private final class ObserverHandle: ActivityBarObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
         }
     }
 }

@@ -10,7 +10,7 @@ import ProviderMessageRendering
 import ProviderToolManager
 import SwiftUI
 
-private struct ToolPermissionRequest: Codable {
+struct ToolPermissionRequest: Codable {
     let toolCallID: String
     let kind: String
     let question: String
@@ -74,6 +74,7 @@ final class ToolApprovalBridge: SuperLog {
         subsystem: "com.coffic.lumi.plugin.message-renderer",
         category: "ToolApprovalBridge"
     )
+    nonisolated static let verbose = false
 
     private weak var agentLoop: (any AgentLoopProviding)?
     private weak var toolManager: (any ToolManagerProviding)?
@@ -85,28 +86,34 @@ final class ToolApprovalBridge: SuperLog {
         agentLoop = kernel.resolveProvider((any AgentLoopProviding).self)
         toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
         conversations = kernel.resolveProvider((any ConversationManaging).self)
-        Self.logger.info(
-            "\(Self.t)授权桥接已启动 agentLoop=\(self.agentLoop != nil, privacy: .public) toolManager=\(self.toolManager != nil, privacy: .public) conversations=\(self.conversations != nil, privacy: .public)"
-        )
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t)授权桥接已启动 agentLoop=\(self.agentLoop != nil, privacy: .public) toolManager=\(self.toolManager != nil, privacy: .public) conversations=\(self.conversations != nil, privacy: .public)"
+            )
+        }
     }
 
     func stop() {
         agentLoop = nil
         toolManager = nil
         conversations = nil
-        Self.logger.info("\(Self.t)授权桥接已停止")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)授权桥接已停止")
+        }
     }
 
-    fileprivate func permissionRequest(for toolCall: ToolCall) -> ToolPermissionRequest? {
+    func permissionRequest(for toolCall: ToolCall) -> ToolPermissionRequest? {
         if let content = toolCall.result?.content,
            let request = try? JSONDecoder().decode(
                ToolPermissionRequest.self,
                from: Data(content.utf8)
            ),
            request.kind == "permission" {
-            Self.logger.info(
-                "\(Self.t)使用工具结果中的授权请求 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public)"
-            )
+            if Self.verbose {
+                Self.logger.info(
+                    "\(Self.t)使用工具结果中的授权请求 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public)"
+                )
+            }
             return request
         }
         guard let risk = toolManager?.riskLevel(for: toolCall) else {
@@ -116,14 +123,9 @@ final class ToolApprovalBridge: SuperLog {
             return nil
         }
         guard risk.requiresPermission else {
-            Self.logger.debug(
-                "\(Self.t)工具风险不要求授权 tool=\(toolCall.name, privacy: .public) risk=\(risk.rawValue, privacy: .public)"
-            )
             return nil
         }
-        Self.logger.info(
-            "\(Self.t)根据风险等级生成授权请求 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) risk=\(risk.rawValue, privacy: .public)"
-        )
+        
         return ToolPermissionRequest(
             toolCallID: "approval:\(toolCall.id)",
             kind: "permission",
@@ -206,10 +208,6 @@ public struct ToolApprovalRowRenderer: ToolCallRowRenderer, SuperLog {
             return AnyView(Text("无法解析工具审批请求"))
         }
 
-        Self.logger.info(
-            "\(Self.t)显示授权界面 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) conversation=\(message.conversationId.uuidString, privacy: .public)"
-        )
-
         return AnyView(
             ToolApprovalPendingView(
                 request: request,
@@ -220,7 +218,7 @@ public struct ToolApprovalRowRenderer: ToolCallRowRenderer, SuperLog {
     }
 }
 
-private struct ToolApprovalPendingView: View {
+struct ToolApprovalPendingView: View {
     @LumiTheme private var theme
 
     let request: ToolPermissionRequest

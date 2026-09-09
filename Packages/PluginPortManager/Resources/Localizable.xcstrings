@@ -42,66 +42,8 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "new",
             "value" : "Are you sure you want to kill process %1$@ (PID: %2$@)?"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要终止进程 %@（PID：%@）吗？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要终止进程 %@（PID：%@）吗？"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要终止进程 %@（PID：%@）吗？"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要终止进程 %@（PID：%@）吗？"
-          }
-        }
-      }
-    },
-    "Are you sure you want to kill process %1$@ (PID: %2$@)?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Are you sure you want to kill process %1$@ (PID: %2$@)?"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "确定要结束进程 %1$@ (PID: %2$@) 吗？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "確定要結束進程 %1$@ (PID: %2$@) 吗？"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "確定要結束進程 %1$@ (PID: %2$@) 吗？"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "確定要結束進程 %1$@ (PID: %2$@) 吗？"
           }
         }
       }
@@ -238,75 +180,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "錯誤"
-          }
-        }
-      }
-    },
-    "Failed to kill process: \\(error.localizedDescription)" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to kill process: \\(error.localizedDescription)"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "终止进程失败：\\(error.localizedDescription)"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "终止进程失败：\\(error.localizedDescription)"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "终止进程失败：\\(error.localizedDescription)"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "终止进程失败：\\(error.localizedDescription)"
-          }
-        }
-      }
-    },
-    "Failed to kill process: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to kill process: %@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "结束进程失败：%@"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "結束進程失敗：%@"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "結束進程失敗：%@"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "結束進程失敗：%@"
           }
         }
       }

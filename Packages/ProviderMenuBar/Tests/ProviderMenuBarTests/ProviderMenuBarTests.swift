@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 import Testing
 @testable import ProviderMenuBar
@@ -28,6 +27,29 @@ struct ProviderMenuBarTests {
         #expect(provider.popupItems[0].id == "cpu")
         #expect(type(of: provider.contentItems[0].makeView()) == AnyView.self)
         #expect(type(of: provider.popupItems[0].makeView()) == AnyView.self)
+    }
+
+    @Test("菜单栏条目变化会发布类型化观察事件")
+    func menuBarItemsAreObservable() {
+        let provider = DefaultMenuBarProviding()
+        var events: [String] = []
+        let handle = provider.addMenuBarObserver { event in
+            switch event {
+            case .contentItemsChanged:
+                events.append("content")
+            case .popupItemsChanged:
+                events.append("popup")
+            }
+        }
+
+        provider.addContent(MenuBarContentItem(id: "cpu", title: "CPU") { Text("cpu") })
+        provider.addPopup(MenuBarPopupItem(id: "cpu", title: "CPU") { Text("detail") })
+
+        #expect(events == ["content", "popup"])
+
+        handle.cancel()
+        provider.addContent(MenuBarContentItem(id: "memory", title: "Memory") { Text("memory") })
+        #expect(events == ["content", "popup"])
     }
 
     @Test("同 id 追加去重")
@@ -66,8 +88,7 @@ struct ProviderMenuBarTests {
 
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
-        final class CustomMenuBar: @preconcurrency MenuBarProviding {
-            let objectWillChange = ObservableObjectPublisher()
+        final class CustomMenuBar: MenuBarProviding {
             var contentItems: [MenuBarContentItem] = []
             var popupItems: [MenuBarPopupItem] = []
 

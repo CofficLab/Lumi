@@ -78,6 +78,23 @@ struct ProviderLogoTests {
         #expect(logo.isLogoHighlighted == false)
     }
 
+    @Test("Logo 状态变化通过 typed observer 发布")
+    func stateChangesPublishTypedEvents() {
+        let logo = DefaultLogoProviding()
+        var events: [LogoProvidingEvent] = []
+        let handle = logo.addLogoObserver { events.append($0) }
+
+        logo.registerLogoItem(makeItem("a"))
+        logo.setLogoHighlighted(true)
+        logo.unregisterLogoItem(id: "a")
+
+        #expect(events.count == 3)
+        if case .itemsChanged = events[0] {} else { Issue.record("expected itemsChanged") }
+        if case .highlightChanged(true) = events[1] {} else { Issue.record("expected highlightChanged") }
+        if case .itemsChanged = events[2] {} else { Issue.record("expected itemsChanged") }
+        handle.cancel()
+    }
+
     @Test("空 Provider 的最高优先级为 nil")
     func emptyProviderReturnsNil() {
         let logo = DefaultLogoProviding()
