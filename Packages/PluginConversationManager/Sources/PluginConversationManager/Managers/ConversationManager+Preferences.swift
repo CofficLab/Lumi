@@ -27,7 +27,6 @@ extension ConversationManager {
         }
         conversations[index].providerID = id
         conversations[index].modelName = model
-        conversations = conversations
         notifyConversationObservers(.providerChanged(conversationID))
 
         // Persist to database async
@@ -85,10 +84,6 @@ extension ConversationManager {
             return nil
         }
         conversations[index].verbosity = verbosity
-        // 重新赋值触发 @Published，并广播变更通知，使依赖该会话 verbosity 的视图
-        // （消息列表、工具栏等）即时刷新：消息列表会据此重新加载（工具消息的显隐）
-        // 并注入新的 verbosity 环境值。
-        conversations = conversations
         notifyConversationObservers(.verbosityChanged(conversationID))
         notifyConversationsChanged()
         return conversationID
@@ -121,7 +116,6 @@ extension ConversationManager {
             return
         }
         conversations[index].reasoningEffort = reasoningEffort
-        conversations = conversations
         notifyConversationObservers(.reasoningChanged(conversationID))
         notifyConversationsChanged()
 
@@ -149,7 +143,6 @@ extension ConversationManager {
             return
         }
         conversations[index].reasoningEffort = nil
-        conversations = conversations
         notifyConversationObservers(.reasoningChanged(conversationID))
         notifyConversationsChanged()
 
@@ -189,7 +182,6 @@ extension ConversationManager {
             return
         }
         conversations[index].automationLevel = automationLevel
-        conversations = conversations
         notifyConversationObservers(.automationChanged(conversationID))
         notifyConversationsChanged()
 
@@ -229,7 +221,6 @@ extension ConversationManager {
             return
         }
         conversations[index].language = language
-        conversations = conversations
         notifyConversationObservers(.languageChanged(conversationID))
 
         if Self.verbose {
