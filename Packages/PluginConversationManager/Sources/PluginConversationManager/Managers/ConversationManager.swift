@@ -62,6 +62,9 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     let agentTurn: (any AgentLoopProviding)?
     let eventBus: KernelCoreEventBus?
 
+    /// 项目切换观察者：监听当前项目变化，清空对话选择。
+    private var projectObserver: (any ProjectProvidingObserverHandle)?
+
     // MARK: - Initialization
 
     public init(
@@ -82,6 +85,12 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         self.toolManager = toolManager
         self.agentTurn = agentTurn
         self.eventBus = eventBus
+
+        // 监听项目切换，清空对话选择
+        projectObserver = project?.addObserver { [weak self] event in
+            guard case .currentProjectChanged = event else { return }
+            self?.deselectConversation()
+        }
     }
 
     // MARK: - Load
