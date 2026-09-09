@@ -16,7 +16,7 @@ final class ConversationMessageListVM: ObservableObject {
     @Published private(set) var isLoadingEarlier = false
     @Published private(set) var hasEarlierTurns = false
     @Published private(set) var isDeveloperModeEnabled = false
-    /// 仅供分页/滚动与既有回归测试使用，不传给 AgentTurnView。
+    /// 供滚动辅助器使用，不传给 AgentTurnView。
     private var summaryItems: [AgentTurnSummaryItem] = []
     private var pendingUserSnapshot: [Message] = []
     private var pendingStatusSnapshot: Message?
@@ -25,7 +25,6 @@ final class ConversationMessageListVM: ObservableObject {
     private let builder = AgentTurnSummaryBuilder()
     private let pagination: MessageListPaginationService
     private let refreshGate = MessageListTailRefreshGate()
-    private var records: [AgentTurnRecord] = [] // newest first
     private var agentTurnVMs: [UUID: AgentTurnVM] = [:]
     /// 当前已加载的消息窗口，按时间升序排列。
     private var messageWindow: [Message] = []
@@ -112,7 +111,6 @@ final class ConversationMessageListVM: ObservableObject {
 
     /// 切换会话时先清空旧会话的展示快照，避免异步首屏加载期间继续显示旧行。
     private func clearDisplayState() {
-        records = []
         messageWindow = []
         presentation = ListV1Presentation()
         summaryItems = []
@@ -191,7 +189,7 @@ final class ConversationMessageListVM: ObservableObject {
         guard sequence == activationSequence,
               selectedConversationID == conversationID else { return }
         let conversationState = services.agentTurn?.state(for: conversationID) ?? .idle
-        records = AgentTurnRecordBuilder.records(
+        let records = AgentTurnRecordBuilder.records(
             from: messageWindow,
             conversationID: conversationID,
             conversationState: conversationState

@@ -94,7 +94,7 @@ final class AgentTurnVM: ObservableObject {
         // V1 不将流式临时回复加入投影；仅在回合结束后展示完整落库消息。
         responseMessages = deduplicated(responseMessages.sorted(by: messageOrdering))
 
-        // 活跃回合只有两个展示区：过程折叠区和独立的实时活动视图。
+        // 活跃回合只有两个展示区：过程折叠区和列表尾部的对话状态视图。
         // 不要把工具调用或尚未稳定的助手消息当作“最后回复”放到折叠区外。
         let processMessages: [Message]
         let lastMessage: Message?

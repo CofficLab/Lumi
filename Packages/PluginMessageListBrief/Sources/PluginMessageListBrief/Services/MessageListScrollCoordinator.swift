@@ -6,8 +6,7 @@ import SwiftUI
 ///
 /// 封装 `MessageListView` 中"与 SwiftUI 滚动行为耦合但与业务无关"的策略：
 ///
-/// 1. **底部滚动**：普通 `scrollToBottom(animated:)`，以及流式跟随滚到底
-///    （无动画，避免高频 delta 抖动）。
+/// 1. **底部滚动**：流式跟随滚到底（无动画，避免高频 delta 抖动）。
 /// 2. **post-layout 滚动**：prepend 之后等 `postPrependDelayNs` 让新行布局
 ///    完成再把锚点行钉回视口顶部，避免视觉跳动。
 ///
@@ -102,40 +101,6 @@ final class MessageListScrollCoordinator {
 
     private func isPreparationActive(_ sequence: UInt64) -> Bool {
         sequence == preparationSequence && !Task.isCancelled
-    }
-
-    /// 滚动到底部锚点。
-    ///
-    /// `animated == true` 时裹一层 `.easeOut(0.2s)`；
-    /// `messages.isEmpty` 时不做任何滚动（无锚点可钉）。
-    /// - Parameter condition: 每次真正滚动前（含重试）调用的前置条件，默认永真。
-    func scrollToBottom(
-        proxy: ScrollViewProxy,
-        messages: [Message],
-        animated: Bool,
-        controller: ScrollViewBottomController? = nil,
-        condition: @escaping @MainActor () -> Bool = { true }
-    ) {
-        pendingBottomScrollTask?.cancel()
-        pendingBottomScrollTask = nil
-        guard !messages.isEmpty, condition() else { return }
-        performScrollToBottom(proxy: proxy, animated: animated)
-        // macOS 14 首次布局未完成时 scrollTo 会静默丢失，补一次重试。
-        // 重试前再次检查条件 —— 用户可能在 100ms 窗口内手动滚离了底部。
-        pendingBottomScrollTask = Task { @MainActor [weak self] in
-            do {
-                try await Task.sleep(nanoseconds: Self.scrollRetryDelayNs)
-            } catch {
-                return
-            }
-            guard let self, !Task.isCancelled else { return }
-            guard condition() else { return }
-            if let controller, controller.isAttached {
-                await self.settleBottom(controller: controller, condition: condition)
-            } else {
-                self.performScrollToBottom(proxy: proxy, animated: animated)
-            }
-        }
     }
 
     private func performScrollToBottom(proxy: ScrollViewProxy, animated: Bool) {

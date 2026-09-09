@@ -6,25 +6,8 @@ enum MessageListSendPositioning {
     /// the message-list viewport.
     static let targetTopFraction: CGFloat = 0.25
 
-    /// Reserves the part of the viewport that is still empty below the active
-    /// turn. As the activity view grows, the reserve shrinks by the same
-    /// amount, keeping the sent message near the target position.
-    static func tailReserve(
-        viewportHeight: CGFloat,
-        activeTurnHeight: CGFloat
-    ) -> CGFloat {
-        guard viewportHeight.isFinite,
-              activeTurnHeight.isFinite,
-              viewportHeight > 0,
-              activeTurnHeight >= 0 else { return 0 }
-
-        return max(
-            0,
-            viewportHeight * (1 - targetTopFraction) - activeTurnHeight
-        )
-    }
-
-    /// Conservative reserve used while the live turn is changing size.
+    /// Conservative reserve used while the live turn and conversation state
+    /// are changing size.
     ///
     /// Measuring a streaming List row with a SwiftUI preference feeds every
     /// token-sized change back into List layout. Keep the reserve independent
