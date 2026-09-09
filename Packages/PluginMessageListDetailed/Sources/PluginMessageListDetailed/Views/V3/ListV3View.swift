@@ -134,9 +134,10 @@ struct ListV3View: View {
                 isInitialPositionReady = false
                 isPreparingInitialPosition = false
             }
-            // 流式行出现（nil→非 nil）时跟随滚到底；内容增长期间沿用 atBottomBox
-            // 判定（用户上滑则不跟随）。流式行用独立 id，此处按其 id 变化触发。
-            .onChange(of: viewModel.streamingRow?.id) { _, _ in
+            // 流式行出现或内容增长时跟随滚到底；内容增长期间沿用
+            // atBottomBox 判定（用户上滑则不跟随）。不能只监听 id，因为流式
+            // token 更新保持同一个行 id，但会持续改变行高。
+            .onChange(of: viewModel.streamingRow) { _, _ in
                 guard viewModel.streamingRow != nil, atBottomBox.value else { return }
                 scrollTick &+= 1
             }

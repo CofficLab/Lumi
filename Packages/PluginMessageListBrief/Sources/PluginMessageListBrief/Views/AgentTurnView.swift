@@ -14,6 +14,7 @@ struct AgentTurnView: View {
     let verbosity: ResponseVerbosity
 
     let viewModel: AgentTurnViewModel
+    let onDynamicContentChange: (@MainActor () -> Void)?
     @State private var isProcessExpanded = false
     @State private var projection = AgentTurnMessageProjection()
     @State private var observerHandle: (any AgentTurnViewModel.ObserverHandle)?
@@ -22,12 +23,14 @@ struct AgentTurnView: View {
         services: MessageListServices,
         item: AgentTurnPresentationItem,
         verbosity: ResponseVerbosity,
-        viewModel: AgentTurnViewModel
+        viewModel: AgentTurnViewModel,
+        onDynamicContentChange: (@MainActor () -> Void)? = nil
     ) {
         self.services = services
         self.item = item
         self.verbosity = verbosity
         self.viewModel = viewModel
+        self.onDynamicContentChange = onDynamicContentChange
     }
 
     var body: some View {
@@ -59,6 +62,7 @@ struct AgentTurnView: View {
                 switch event {
                 case let .projectionChanged(nextProjection):
                     projection = nextProjection
+                    onDynamicContentChange?()
                 }
             }
         }

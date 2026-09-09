@@ -191,7 +191,11 @@ struct ListV1View: View {
                     services: services,
                     item: item,
                     verbosity: verbosity,
-                    viewModel: turnViewModel.agentTurnViewModel(for: item)
+                    viewModel: turnViewModel.agentTurnViewModel(for: item),
+                    onDynamicContentChange: {
+                        guard isInitialPositionReady, atBottomBox.value else { return }
+                        scrollTick &+= 1
+                    }
                 )
                 .id(item.id)
                 .plainMessageListRow()
