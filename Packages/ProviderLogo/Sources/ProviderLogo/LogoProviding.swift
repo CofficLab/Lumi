@@ -1,5 +1,16 @@
 import SwiftUI
 
+@MainActor
+public enum LogoProvidingEvent {
+    case itemsChanged
+    case highlightChanged(Bool)
+}
+
+@MainActor
+public protocol LogoObserverHandle: AnyObject {
+    func cancel()
+}
+
 // MARK: - Logo Capability Protocol
 
 /// Logo 能力协议
@@ -12,9 +23,14 @@ import SwiftUI
 /// 使用 `AnyView` 而非 `associatedtype`，可无泛型约束地作为存在类型
 /// （`any LogoProviding`）注册进 KernelCore 的注册表。
 @MainActor
-public protocol LogoProviding: AnyObject, ObservableObject {
+public protocol LogoProviding: AnyObject {
     /// Whether the currently displayed Logo should use its highlighted status-bar presentation.
     var isLogoHighlighted: Bool { get }
+
+    @discardableResult
+    func addLogoObserver(
+        _ callback: @escaping (LogoProvidingEvent) -> Void
+    ) -> any LogoObserverHandle
 
     /// Changes the highlighted state used by status-bar Logo consumers.
     func setLogoHighlighted(_ highlighted: Bool)
@@ -33,10 +49,22 @@ public protocol LogoProviding: AnyObject, ObservableObject {
 }
 
 public extension LogoProviding {
+    @discardableResult
+    func addLogoObserver(
+        _ callback: @escaping (LogoProvidingEvent) -> Void
+    ) -> any LogoObserverHandle {
+        NoopLogoObserverHandle()
+    }
+
     /// 当前最高优先级的 Logo 项。
     var highestPriorityLogoItem: LogoItem? {
         allLogoItems.max { $0.order < $1.order }
     }
 
     func clearAllContributions() {}
+}
+
+@MainActor
+private final class NoopLogoObserverHandle: LogoObserverHandle {
+    func cancel() {}
 }
