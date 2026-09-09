@@ -277,8 +277,15 @@ private struct RailView: View {
             .id(observationRevision)
             .onAppear {
                 guard observerHandle == nil else { return }
-                observerHandle = provider.addObserver { _ in
-                    observationRevision += 1
+                observerHandle = provider.addObserver { event in
+                    // Width is a layout-only update from the host split view. Do not
+                    // rebuild the Rail content tree for it: doing so destroys and
+                    // recreates consumers such as the conversation list while the
+                    // native NSSplitView is finishing its resize pass.
+                    guard case .widthChanged = event else {
+                        observationRevision += 1
+                        return
+                    }
                 }
                 provider.notify(.didAppear)
             }

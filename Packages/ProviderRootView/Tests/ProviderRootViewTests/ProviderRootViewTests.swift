@@ -204,7 +204,7 @@ struct ProviderRootViewTests {
     }
 
     @Test("Rail 宽度绑定并转发用户拖拽回调")
-    func railWidthFollowsProviderAndForwardsResize() {
+    func railWidthFollowsProviderAndForwardsResize() async {
         let provider = DefaultRootViewProvider()
         let rail = DefaultRailViewProviding()
         var resizedWidth: CGFloat?
@@ -217,6 +217,7 @@ struct ProviderRootViewTests {
 
         let customWidth = RailViewWidth(minWidth: 240, idealWidth: 360, maxWidth: 480)
         rail.activateWidthProfile(ownerID: "plugin.rail", recommended: customWidth)
+        await Task.yield()
         #expect(provider.railWidth == customWidth)
 
         provider.saveRailViewWidth(420)

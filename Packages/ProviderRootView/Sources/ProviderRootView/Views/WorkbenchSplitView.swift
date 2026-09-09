@@ -1,18 +1,9 @@
 import SwiftUI
 import LumiUI
-import ProviderRailView
 
 @MainActor
 struct WorkbenchSplitView: View {
-    let provider: DefaultRootViewProvider
-    @State private var observedRailWidth: RailViewWidth
-    @State private var observationRevision = 0
-    @State private var observerHandle: (any RootViewObserverHandle)?
-
-    init(provider: DefaultRootViewProvider) {
-        self.provider = provider
-        _observedRailWidth = State(initialValue: provider.railWidth)
-    }
+    @ObservedObject var provider: DefaultRootViewProvider
 
     private var showsRail: Bool {
         provider.railView != nil && provider.isRailViewVisible
@@ -25,13 +16,13 @@ struct WorkbenchSplitView: View {
                 HSplitView {
                     provider.railView!
                         .frame(
-                            minWidth: observedRailWidth.minWidth,
-                            idealWidth: observedRailWidth.idealWidth,
-                            maxWidth: observedRailWidth.maxWidth
+                            minWidth: provider.railWidth.minWidth,
+                            idealWidth: provider.railWidth.idealWidth,
+                            maxWidth: provider.railWidth.maxWidth
                         )
                         .appSplitDivider(
                             .trailing,
-                            initialPosition: observedRailWidth.idealWidth,
+                            initialPosition: provider.railWidth.idealWidth,
                             onResize: provider.saveRailViewWidth
                         )
                     provider.hasActiveContent ? AnyView(mainContent) : AnyView(RootWelcomeView())
@@ -51,36 +42,6 @@ struct WorkbenchSplitView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .id(observationRevision)
-        .onAppear {
-            guard observerHandle == nil else { return }
-            observedRailWidth = provider.railWidth
-            observerHandle = provider.addRootViewObserver { event in
-                switch event {
-                case let .railWidthChanged(width):
-                    // Width is a layout-only update. Keep the HSplitView subtree's
-                    // identity stable so list tasks and scroll state are preserved.
-                    observedRailWidth = width
-                case .railViewChanged,
-                     .railViewVisibilityChanged,
-                     .contentHeaderViewChanged,
-                     .contentHeaderVisibilityChanged,
-                     .contentViewChanged,
-                     .contentViewVisibilityChanged,
-                     .contentFooterViewChanged,
-                     .contentFooterVisibilityChanged,
-                     .contentFooterHeightChanged,
-                     .trailingPaneChanged:
-                    observationRevision += 1
-                default:
-                    break
-                }
-            }
-        }
-        .onDisappear {
-            observerHandle?.cancel()
-            observerHandle = nil
-        }
     }
 
     private var mainContent: some View {
