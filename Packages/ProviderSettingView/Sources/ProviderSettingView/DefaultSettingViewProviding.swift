@@ -7,12 +7,12 @@ import SwiftUI
 /// 骨架阶段使用：无主题定制，入口为空时显示占位提示；
 /// 宿主可注入自己的实现（如基于 SettingsTabItem 的完整设置界面）。
 @MainActor
-public final class DefaultSettingViewProviding: SettingViewProviding, ObservableObject {
-    @Published public private(set) var entries: [SettingEntryItem] = []
-    @Published public private(set) var projectDetailSections: [ProjectDetailSectionItem] = []
+public final class DefaultSettingViewProviding: SettingViewProviding {
+    public private(set) var entries: [SettingEntryItem] = []
+    public private(set) var projectDetailSections: [ProjectDetailSectionItem] = []
 
     /// 当前选中入口的 id。
-    @Published public private(set) var selectedEntryID: String?
+    public private(set) var selectedEntryID: String?
     private var observers: [UUID: (SettingViewEvent) -> Void] = [:]
 
     public init() {}

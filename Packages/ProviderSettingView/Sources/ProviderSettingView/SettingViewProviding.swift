@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import SwiftUI
 
@@ -38,8 +37,7 @@ public protocol SettingViewObserverHandle: AnyObject {
 }
 
 @MainActor
-public protocol SettingViewProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol SettingViewProviding: AnyObject {
     @discardableResult
     func addSettingViewObserver(
         _ callback: @escaping (SettingViewEvent) -> Void
