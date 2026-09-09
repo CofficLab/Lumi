@@ -1,8 +1,6 @@
 import AppKit
 import KernelCore
 import ProviderDocsView
-import ProviderSettingView
-import ProviderStorage
 import ProviderIdleTime
 import SwiftUI
 import KitSuperLog
@@ -13,7 +11,7 @@ import os
 /// 由旧版 `Plugins/IdleTimePlugin`（KernelLumi / LumiPlugin 架构）复刻而来：
 /// - onBoot 解析内核注册的 `IdleTimeProviding`（FactoryLumi 已装配完整服务），
 ///   注册活动事件监听（应用激活 / 编辑器保存），把事件喂给服务做休息窗口推断；
-/// - 贡献设置页、关于文档；
+/// - 贡献关于文档；
 /// - onShutdown 全部撤回。
 @MainActor
 public final class IdleTimePlugin: SuperPlugin, SuperLog {
@@ -59,22 +57,6 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
                 }
             }
         }
-
-        // 3. 设置页：休息窗口详情 + 打开数据目录。
-        if let settings = kernel.resolveProvider((any SettingViewProviding).self),
-           let storage = kernel.resolveProvider((any StorageProviding).self),
-           let viewModel {
-            let dataDirectory = storage.pluginDataDirectory(for: "IdleTime")
-            let entry = SettingEntryItem(
-                id: "\(id).settings",
-                title: LumiPluginLocalization.string("Idle Time", bundle: .module),
-                systemImage: "moon.zzz",
-                order: order
-            ) {
-                IdleTimeSettingsView(viewModel: viewModel, dataDirectory: dataDirectory)
-            }
-            settings.addEntries([entry])
-        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
@@ -85,9 +67,6 @@ public final class IdleTimePlugin: SuperPlugin, SuperLog {
         snapshotObserver = nil
         viewModel = nil
         provider = nil
-
-        kernel.resolveProvider((any SettingViewProviding).self)?
-            .removeEntries(ids: ["\(id).settings"])
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
