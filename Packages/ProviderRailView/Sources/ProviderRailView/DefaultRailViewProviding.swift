@@ -1,4 +1,3 @@
-import Combine
 import LumiUI
 import SwiftUI
 
@@ -7,13 +6,13 @@ import SwiftUI
 ///
 /// 点击 tab 切换选中项并展示对应内容。
 @MainActor
-public final class DefaultRailViewProviding: RailViewProviding, ObservableObject {
-    @Published public private(set) var tabs: [RailTabItem] = []
-    @Published public private(set) var visibleCategories: Set<RailViewCategory>
-    @Published public private(set) var visibleTabID: String?
-    @Published public private(set) var activeTabID: String?
-    @Published public private(set) var hasVisibleTabs = false
-    @Published public private(set) var railWidth: RailViewWidth
+public final class DefaultRailViewProviding: RailViewProviding {
+    public private(set) var tabs: [RailTabItem] = []
+    public private(set) var visibleCategories: Set<RailViewCategory>
+    public private(set) var visibleTabID: String?
+    public private(set) var activeTabID: String?
+    public private(set) var hasVisibleTabs = false
+    public private(set) var railWidth: RailViewWidth
 
     private let defaultWidthStore: (any RailViewWidthStoring)?
     private var activeWidthStore: (any RailViewWidthStoring)?
@@ -268,10 +267,29 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
 /// - 内容区直接渲染激活 tab 视图（`.id` 保持切换动画），无内容时不渲染视图；
 /// - 整栏 `minWidth 200`、背景 `theme.surface`。
 private struct RailView: View {
-    @ObservedObject var provider: DefaultRailViewProviding
+    let provider: DefaultRailViewProviding
     @LumiTheme private var theme
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any RailViewProvidingObserverHandle)?
 
     var body: some View {
+        content
+            .id(observationRevision)
+            .onAppear {
+                guard observerHandle == nil else { return }
+                observerHandle = provider.addObserver { _ in
+                    observationRevision += 1
+                }
+                provider.notify(.didAppear)
+            }
+            .onDisappear {
+                observerHandle?.cancel()
+                observerHandle = nil
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         let visibleTabs = provider.visibleTabs
 
         if visibleTabs.isEmpty {
@@ -313,7 +331,6 @@ private struct RailView: View {
             }
             .frame(minWidth: 200, maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.surface)
-            .onAppear { provider.notify(.didAppear) }
         }
     }
 }
