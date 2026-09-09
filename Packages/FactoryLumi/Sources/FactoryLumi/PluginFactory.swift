@@ -4,7 +4,7 @@ import PluginAgentRules
 import PluginAgentTempStorage
 import PluginAgentPlanStorage
 import PluginAgentTurnNotification
-import PluginDebugBadge
+import PluginDeveloperMode
 import PluginFileLog
 import PluginShowImage
 import ImageToPDFPlugin
@@ -219,7 +219,7 @@ public struct DefaultPluginFactory: PluginFactory {
             OpenInGitHubDesktopPlugin(),
             OpenInGitOKPlugin(),
             AgentTurnNotificationPlugin(),
-            DebugBadgeSuperPlugin(),
+            DeveloperModePlugin(),
             FileLogPlugin(),
             ShowImagePlugin(),
             ImageToPDFSuperPlugin(),
