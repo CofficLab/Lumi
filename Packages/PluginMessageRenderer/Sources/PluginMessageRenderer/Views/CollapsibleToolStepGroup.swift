@@ -11,8 +11,8 @@ import SwiftUI
 ///
 /// 多个工具调用直接逐行显示，不使用汇总文案或折叠/展开交互。
 ///
-/// 复用既有 `ToolCallRowView`，传入 `showsDetails: false` 以隐藏耗时与参数/结果按钮，
-/// 保持 V1 的 inline 极简风格；V1 不走自定义 ToolCall renderer。
+/// 与 V2/V3 使用相同的 `ToolCallRowView` 渲染（含耗时、参数/结果按钮、卡片样式），
+/// 唯一区别是 V1 不走自定义 ToolCall renderer，统一走默认卡片路径。
 struct CollapsibleToolStepGroup: View {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-renderer", category: "CollapsibleToolStepGroup")
 
@@ -105,9 +105,7 @@ struct CollapsibleToolStepGroup: View {
             message: message,
             toolCall: toolCall,
             verbosity: verbosity,
-            // V1 只显示工具名(+ loading/失败颜色),不带耗时与参数/结果按钮,
-            // 以完全融入正文列。
-            showsDetails: false,
+            showsDetails: true,
             parameterPopoverToolCallID: $parameterPopoverToolCallID,
             resultPopoverToolCallID: $resultPopoverToolCallID
         )
