@@ -48,7 +48,6 @@ struct AgentTurnPresentationItem: Identifiable, Equatable, Sendable {
     /// 只有最新活跃 Turn 接收无 turnID 的瞬时 Status 与流式消息。
     let acceptsLiveActivity: Bool
 
-    var isPending: Bool { record == nil }
     var isShowingProcess: Bool { record?.isFinished != true }
 
     init(recorded item: AgentTurnSummaryItem, acceptsLiveActivity: Bool) {

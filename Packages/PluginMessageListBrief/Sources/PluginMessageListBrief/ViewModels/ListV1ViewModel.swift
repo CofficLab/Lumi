@@ -46,10 +46,6 @@ final class ListV1ViewModel: ObservableObject {
     /// AgentTurn 与独立时间线事件合并后的展示行。
     var rows: [ListV1PresentationRow] { presentation.rows }
 
-    // 旧粒度只读访问器仅保留给行为回归测试；视图层不得使用。
-    var items: [AgentTurnSummaryItem] { summaryItems }
-    var pendingUserMessages: [Message] { pendingUserSnapshot }
-    var pendingStatusMessage: Message? { pendingStatusSnapshot }
     /// 供滚动辅助器与"自己刚发送"检测使用的完整可见消息序列。
     var displayMessages: [Message] {
         let turnMessages = summaryItems.flatMap { item in
@@ -61,8 +57,6 @@ final class ListV1ViewModel: ObservableObject {
             + presentation.timelineEvents
             .sorted(by: messageOrdering)
     }
-
-    var hasVisibleContent: Bool { !rows.isEmpty }
 
     func agentTurnViewModel(for item: AgentTurnPresentationItem) -> AgentTurnViewModel {
         if let viewModel = agentTurnViewModels[item.id] {

@@ -353,7 +353,6 @@ final class TrackerView: NSView {
     private func pinToBottomUntilStable() {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            // 等 LiveResizeFrozenView 恢复真实宿主并应用最终宽度。
             // 80ms 足够覆盖这一帧 + 后续几帧的 initial layout。
             try? await Task.sleep(nanoseconds: 80_000_000)
 

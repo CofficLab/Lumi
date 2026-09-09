@@ -1,5 +1,3 @@
-import Foundation
-
 /// Serializes message-tail refreshes and collapses an event burst into at most
 /// one active refresh plus one trailing refresh.
 ///
@@ -34,17 +32,5 @@ final class MessageListTailRefreshGate {
         } while needsTrailingRefresh
 
         return didChange
-    }
-}
-
-enum MessageListNotificationFilter {
-    /// Events without a conversation ID are treated as legacy global events.
-    static func shouldHandle(
-        eventConversationID: UUID?,
-        selectedConversationID: UUID?
-    ) -> Bool {
-        guard let selectedConversationID else { return false }
-        guard let eventConversationID else { return true }
-        return eventConversationID == selectedConversationID
     }
 }
