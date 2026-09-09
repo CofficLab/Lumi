@@ -6,6 +6,7 @@ import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
 import ProviderConversationState
+import ProviderDeveloperMode
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
@@ -51,6 +52,7 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         }
         let conversations = kernel.resolveProvider((any ConversationManaging).self)
         let conversationState = kernel.resolveProvider((any ConversationStateProviding).self)
+        let developerMode = kernel.resolveProvider((any DeveloperModeProviding).self)
         let messages = kernel.resolveProvider((any MessageManaging).self)
         let rendering = kernel.resolveProvider((any MessageRenderingProviding).self)
         let streaming = kernel.resolveProvider((any MessageStreamingProviding).self)
@@ -64,6 +66,7 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         let services = MessageListServices(
             conversations: conversations.map(MessageListConversationCapabilityAdapter.init(conversations:)),
             conversationState: conversationState.map(MessageListConversationStateCapabilityAdapter.init(conversationState:)),
+            developerMode: developerMode,
             messages: messages.map(MessageListMessageCapabilityAdapter.init(messages:)),
             rendering: rendering.map(MessageListRenderingCapabilityAdapter.init(rendering:)),
             streaming: streaming.map(MessageListStreamingCapabilityAdapter.init(streaming:)),
