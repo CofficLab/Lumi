@@ -42,7 +42,9 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
             return
         }
 
-        var toolbarItems = [
+        var toolbarItems = [ToolbarItem]()
+#if DEBUG
+        toolbarItems.append(
             ToolbarItem(
                 id: "\(id).toggle",
                 title: LumiPluginLocalization.string("Developer mode"),
@@ -51,8 +53,9 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
                 order: 5
             ) {
                 DeveloperModeToggleView(provider: provider)
-            },
-        ]
+            }
+        )
+#endif
 #if DEBUG
         toolbarItems.append(
             ToolbarItem(
