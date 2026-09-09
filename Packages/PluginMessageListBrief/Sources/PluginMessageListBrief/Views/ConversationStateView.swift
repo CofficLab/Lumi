@@ -14,10 +14,6 @@ struct ConversationStateView: View {
     var body: some View {
         if let activity = stateVM.activity {
             HStack(alignment: .center, spacing: 8) {
-                ProgressView()
-                    .controlSize(.small)
-                    .tint(theme.primary)
-
                 Image(systemName: activity.phase.iconName)
                     .font(.appCaptionEmphasized)
                     .foregroundColor(theme.primary)
@@ -28,15 +24,19 @@ struct ConversationStateView: View {
                         .foregroundColor(theme.textPrimary)
                         .lineLimit(1)
 
-                    if let detail = activity.detail, !detail.isEmpty {
-                        Text(detail)
-                            .font(.appMicro)
-                            .foregroundColor(theme.textSecondary)
-                            .lineLimit(1)
-                    }
+                    Text(activity.detail ?? " ")
+                        .font(.appMicro)
+                        .foregroundColor(theme.textSecondary)
+                        .lineLimit(1)
+                        .opacity(activity.detail?.isEmpty == false ? 1 : 0)
                 }
+                .frame(height: 30, alignment: .leading)
 
                 Spacer(minLength: 0)
+
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(theme.primary)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
@@ -48,6 +48,7 @@ struct ConversationStateView: View {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .stroke(theme.primary.opacity(0.16), lineWidth: 0.5)
             )
+            .frame(height: 46)
         }
     }
 }
