@@ -19,15 +19,13 @@ struct MessageRowView: View {
     let message: Message
     let verbosity: ResponseVerbosity
 
-    @StateObject private var developerMode: DeveloperModeObservation
+    @State private var isDeveloperModeEnabled = false
+    @State private var developerModeObserverHandle: (any DeveloperModeProvidingObserverHandle)?
 
     init(services: MessageListServices, message: Message, verbosity: ResponseVerbosity) {
         self.services = services
         self.message = message
         self.verbosity = verbosity
-        _developerMode = StateObject(
-            wrappedValue: DeveloperModeObservation(provider: services.developerMode)
-        )
     }
 
     private var renderer: MessageRendererItem? {
@@ -38,12 +36,25 @@ struct MessageRowView: View {
         Group {
             if let renderer {
                 renderer.render(message, verbosity)
-                    .messageRendererIdBadge(renderer.id, isEnabled: developerMode.isEnabled)
+                    .messageRendererIdBadge(renderer.id, isEnabled: isDeveloperModeEnabled)
             } else {
                 Text("No renderer for message: \(message.id)")
                     .foregroundColor(.orange)
                     .padding(12)
             }
+        }
+        .onAppear {
+            guard developerModeObserverHandle == nil else { return }
+            guard let provider = services.developerMode else { return }
+            isDeveloperModeEnabled = provider.isEnabled
+            developerModeObserverHandle = provider.addObserver { event in
+                guard case let .enabledChanged(value) = event else { return }
+                isDeveloperModeEnabled = value
+            }
+        }
+        .onDisappear {
+            developerModeObserverHandle?.cancel()
+            developerModeObserverHandle = nil
         }
     }
 }

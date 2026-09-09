@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 /// Developer-mode state change event.
@@ -102,26 +101,6 @@ public final class DefaultDeveloperModeProviding: DeveloperModeProviding {
 
         init(_ observer: Observer) {
             self.observer = observer
-        }
-    }
-}
-
-/// SwiftUI-friendly projection of a developer-mode provider.
-///
-/// Consumers depend on the provider protocol while this object bridges its
-/// semantic observer into local state for view invalidation.
-@MainActor
-public final class DeveloperModeObservation: ObservableObject {
-    @Published public private(set) var isEnabled: Bool
-
-    private var observer: (any DeveloperModeProvidingObserverHandle)?
-
-    public init(provider: (any DeveloperModeProviding)?) {
-        self.isEnabled = provider?.isEnabled ?? false
-        guard let provider else { return }
-        observer = provider.addObserver { [weak self] event in
-            guard case let .enabledChanged(isEnabled) = event else { return }
-            self?.isEnabled = isEnabled
         }
     }
 }

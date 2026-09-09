@@ -72,17 +72,15 @@ struct ToolCallRowsView: View {
     @State private var parameterPopoverToolCallID: String?
     @State private var resultPopoverToolCallID: String?
     @State private var resolvedToolCalls: [MessageToolCall]?
-    @StateObject private var developerMode: DeveloperModeObservation
+    @State private var isDeveloperModeEnabled = false
+    @State private var developerModeObserverHandle: (any DeveloperModeProvidingObserverHandle)?
+    private let developerModeProvider: (any DeveloperModeProviding)?
 
     init(kernel: KernelCoreContainer, message: Message, verbosity: ResponseVerbosity) {
         self.kernel = kernel
         self.message = message
         self.verbosity = verbosity
-        _developerMode = StateObject(
-            wrappedValue: DeveloperModeObservation(
-                provider: kernel.resolveProvider((any DeveloperModeProviding).self)
-            )
-        )
+        self.developerModeProvider = kernel.resolveProvider((any DeveloperModeProviding).self)
     }
 
     private var toolCalls: [MessageToolCall] {
@@ -133,6 +131,19 @@ struct ToolCallRowsView: View {
                 return
             }
             await resolveResults()
+        }
+        .onAppear {
+            guard developerModeObserverHandle == nil else { return }
+            guard let developerModeProvider else { return }
+            isDeveloperModeEnabled = developerModeProvider.isEnabled
+            developerModeObserverHandle = developerModeProvider.addObserver { event in
+                guard case let .enabledChanged(value) = event else { return }
+                isDeveloperModeEnabled = value
+            }
+        }
+        .onDisappear {
+            developerModeObserverHandle?.cancel()
+            developerModeObserverHandle = nil
         }
     }
 
@@ -190,7 +201,7 @@ struct ToolCallRowsView: View {
             )
             .toolCallRendererIdBadge(
                 type(of: customRenderer).id,
-                isEnabled: developerMode.isEnabled
+                isEnabled: isDeveloperModeEnabled
             )
         } else {
             ToolCallRowView(

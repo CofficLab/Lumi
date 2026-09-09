@@ -104,15 +104,12 @@ private struct DebugBadgeView: View {
 
 private struct DeveloperModeToggleView: View {
     @LumiTheme private var theme
-    @StateObject private var observation: DeveloperModeObservation
-
     private let provider: any DeveloperModeProviding
+    @State private var isEnabled = false
+    @State private var observerHandle: (any DeveloperModeProvidingObserverHandle)?
 
     init(provider: any DeveloperModeProviding) {
         self.provider = provider
-        _observation = StateObject(
-            wrappedValue: DeveloperModeObservation(provider: provider)
-        )
     }
 
     var body: some View {
@@ -120,16 +117,16 @@ private struct DeveloperModeToggleView: View {
             provider.toggle()
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: observation.isEnabled ? "hammer.fill" : "hammer")
+                Image(systemName: isEnabled ? "hammer.fill" : "hammer")
                 Text(LumiPluginLocalization.string("DEV"))
             }
             .font(.appMicroEmphasized)
             .tracking(0.3)
-            .foregroundStyle(observation.isEnabled ? .white : theme.textSecondary)
+            .foregroundStyle(isEnabled ? .white : theme.textSecondary)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(
-                observation.isEnabled
+                isEnabled
                     ? theme.warning
                     : theme.textSecondary.opacity(0.12),
                 in: Capsule(style: .continuous)
@@ -138,14 +135,26 @@ private struct DeveloperModeToggleView: View {
         .buttonStyle(.plain)
         .help(
             LumiPluginLocalization.string(
-                observation.isEnabled ? "Developer mode is enabled" : "Developer mode is disabled"
+                isEnabled ? "Developer mode is enabled" : "Developer mode is disabled"
             )
         )
         .accessibilityLabel(LumiPluginLocalization.string("Developer mode"))
         .accessibilityValue(
             LumiPluginLocalization.string(
-                observation.isEnabled ? "Developer mode is enabled" : "Developer mode is disabled"
+                isEnabled ? "Developer mode is enabled" : "Developer mode is disabled"
             )
         )
+        .onAppear {
+            guard observerHandle == nil else { return }
+            isEnabled = provider.isEnabled
+            observerHandle = provider.addObserver { event in
+                guard case let .enabledChanged(value) = event else { return }
+                isEnabled = value
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
+        }
     }
 }

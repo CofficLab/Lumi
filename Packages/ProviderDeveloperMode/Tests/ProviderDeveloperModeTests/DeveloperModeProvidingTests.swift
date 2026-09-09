@@ -35,14 +35,4 @@ struct DeveloperModeProvidingTests {
         #expect(received == [true, false])
     }
 
-    @Test("observation mirrors provider state")
-    func observationMirrorsProvider() async {
-        let provider = DefaultDeveloperModeProviding()
-        let observation = DeveloperModeObservation(provider: provider)
-
-        #expect(observation.isEnabled == false)
-        provider.setEnabled(true)
-        await Task.yield()
-        #expect(observation.isEnabled == true)
-    }
 }
