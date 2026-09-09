@@ -3,7 +3,9 @@ import LumiUI
 
 @MainActor
 struct WorkbenchSplitView: View {
-    @ObservedObject var provider: DefaultRootViewProvider
+    let provider: DefaultRootViewProvider
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any RootViewObserverHandle)?
 
     private var showsRail: Bool {
         provider.railView != nil && provider.isRailViewVisible
@@ -42,6 +44,32 @@ struct WorkbenchSplitView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .id(observationRevision)
+        .onAppear {
+            guard observerHandle == nil else { return }
+            observerHandle = provider.addRootViewObserver { event in
+                switch event {
+                case .railViewChanged,
+                     .railViewVisibilityChanged,
+                     .railWidthChanged,
+                     .contentHeaderViewChanged,
+                     .contentHeaderVisibilityChanged,
+                     .contentViewChanged,
+                     .contentViewVisibilityChanged,
+                     .contentFooterViewChanged,
+                     .contentFooterVisibilityChanged,
+                     .contentFooterHeightChanged,
+                     .trailingPaneChanged:
+                    observationRevision += 1
+                default:
+                    break
+                }
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
+        }
     }
 
     private var mainContent: some View {
