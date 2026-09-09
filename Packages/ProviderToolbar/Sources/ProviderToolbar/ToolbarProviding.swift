@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 
 /// 工具栏视图提供能力协议
@@ -25,8 +24,7 @@ public protocol ToolbarObserverHandle: AnyObject {
 }
 
 @MainActor
-public protocol ToolbarProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol ToolbarProviding: AnyObject {
     @discardableResult
     func addToolbarObserver(
         _ callback: @escaping (ToolbarEvent) -> Void
