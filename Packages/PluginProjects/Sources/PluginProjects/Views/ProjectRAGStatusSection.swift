@@ -23,7 +23,10 @@ struct ProjectRAGStatusSection: View {
     }
 
     var body: some View {
-        AppSettingsSection(title: LumiPluginLocalization.string("RAG Index", bundle: .module)) {
+        AppSettingSection(
+                        title: LumiPluginLocalization.string("RAG Index", bundle: .module),
+                        titleAlignment: .leading
+                    ) {
             VStack(alignment: .leading, spacing: 10) {
                 switch state {
                 case .loading:
