@@ -36,7 +36,7 @@ struct ConversationPendingMessagePluginTests {
         try plugin.onShutdown(kernel: kernel)
     }
 
-    @Test("ObservableMessageSendingBox 桥接 sender 状态")
+    @Test("MessageSendingBox 持有 sender 并支持取消")
     func boxBridges() {
         let conversations = DefaultConversationManager()
         let messages = DefaultMessageManager()
@@ -46,7 +46,7 @@ struct ConversationPendingMessagePluginTests {
             messages: messages,
             agentLoop: loop
         )
-        let box = ObservableMessageSendingBox(sender: sender)
+        let box = MessageSendingBox(sender: sender)
         #expect(box.sender.isSending == false)
         box.cancel()
     }

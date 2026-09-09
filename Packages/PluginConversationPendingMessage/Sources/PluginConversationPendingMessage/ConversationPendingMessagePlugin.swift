@@ -31,7 +31,7 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
     )
 
     public init() {}
-    private var sendingBox: ObservableMessageSendingBox? = nil
+    private var sendingBox: MessageSendingBox? = nil
     private var selectionBox: ConversationSelectionBox? = nil
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -42,7 +42,7 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
             return
         }
 
-        let box = ObservableMessageSendingBox(sender: sender)
+        let box = MessageSendingBox(sender: sender)
         let selectionBox = ConversationSelectionBox(conversations: conversations)
         sendingBox = box
         self.selectionBox = selectionBox
@@ -71,14 +71,17 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
 
 /// 待发消息列表视图。
 struct PendingMessageListView: View {
-    @ObservedObject var box: ObservableMessageSendingBox
+    let box: MessageSendingBox
     let selection: ConversationSelectionBox
     @State private var selectedConversationID: UUID?
     @State private var selectionRevision = 0
     @State private var selectionObserverHandle: (any ConversationSelectionBox.ObserverHandle)?
+    @State private var sendingRevision = 0
+    @State private var sendingObserverHandle: (any MessageSendingBox.ObserverHandle)?
 
     var body: some View {
         let _ = selectionRevision
+        let _ = sendingRevision
         Group {
             // 仅当选中会话有待发消息时显示。
             if let conversationID = selectedConversationID {
@@ -136,6 +139,16 @@ struct PendingMessageListView: View {
         .onDisappear {
             selectionObserverHandle?.cancel()
             selectionObserverHandle = nil
+        }
+        .onAppear {
+            guard sendingObserverHandle == nil else { return }
+            sendingObserverHandle = box.addObserver { _ in
+                sendingRevision &+= 1
+            }
+        }
+        .onDisappear {
+            sendingObserverHandle?.cancel()
+            sendingObserverHandle = nil
         }
     }
 }
