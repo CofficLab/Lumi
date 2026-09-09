@@ -3,13 +3,16 @@ import SwiftUI
 
 public struct OnboardingPageItem: Identifiable, Sendable {
     public let id: String
+    public let title: String
     public let makeView: @MainActor @Sendable () -> AnyView
 
     public init<Content: View>(
         id: String,
+        title: String,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id
+        self.title = title
         self.makeView = { AnyView(content()) }
     }
 }
