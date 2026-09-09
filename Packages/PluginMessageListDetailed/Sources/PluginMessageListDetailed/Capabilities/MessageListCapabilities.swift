@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import ProviderAgentLoop
 import ProviderChatSection
@@ -182,7 +181,11 @@ final class MessageListAgentLoopCapabilityAdapter: MessageListAgentLoopCapabilit
 @MainActor
 protocol MessageListPromptSuggestionCapability: AnyObject {
     var allSuggestions: [PromptSuggestion] { get }
-    var changes: AnyPublisher<Void, Never> { get }
+
+    @discardableResult
+    func addObserver(
+        _ callback: @escaping (PromptSuggestionProvidingEvent) -> Void
+    ) -> any PromptSuggestionProvidingObserverHandle
 }
 
 @MainActor
@@ -190,7 +193,13 @@ final class MessageListPromptSuggestionCapabilityAdapter: MessageListPromptSugge
     private let promptSuggestions: any PromptSuggestionProviding
     init(promptSuggestions: any PromptSuggestionProviding) { self.promptSuggestions = promptSuggestions }
     var allSuggestions: [PromptSuggestion] { promptSuggestions.allSuggestions }
-    var changes: AnyPublisher<Void, Never> { promptSuggestions.changes }
+
+    @discardableResult
+    func addObserver(
+        _ callback: @escaping (PromptSuggestionProvidingEvent) -> Void
+    ) -> any PromptSuggestionProvidingObserverHandle {
+        promptSuggestions.addObserver(callback)
+    }
 }
 
 /// 提示建议执行所需的最小能力。
