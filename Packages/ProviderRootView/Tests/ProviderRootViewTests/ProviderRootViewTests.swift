@@ -1,4 +1,3 @@
-import Combine
 import ProviderChatSection
 import ProviderRailView
 import SwiftUI
@@ -326,13 +325,13 @@ struct ProviderRootViewTests {
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
         @MainActor final class CustomRootView: RootViewProviding {
-            @Published var toolbarView: AnyView?
-            @Published var activityBarView: AnyView?
-            @Published var railView: AnyView?
-            @Published var contentHeaderView: AnyView?
-            @Published var contentView: AnyView?
-            @Published var contentFooterView: AnyView?
-            @Published var trailingPane: RootTrailingPane?
+            var toolbarView: AnyView?
+            var activityBarView: AnyView?
+            var railView: AnyView?
+            var contentHeaderView: AnyView?
+            var contentView: AnyView?
+            var contentFooterView: AnyView?
+            var trailingPane: RootTrailingPane?
 
             func setToolbarView(_ view: AnyView?) {
                 toolbarView = view
@@ -411,18 +410,20 @@ struct ProviderRootViewTests {
         #expect(!provider.hasActiveContent)
     }
 
-    // MARK: - 注入守卫（值相同则跳过赋值，避免视图更新期间发布 objectWillChange）
+    // MARK: - 注入守卫（值相同则跳过赋值，避免无意义事件）
 
-    /// 订阅 objectWillChange 并返回发送次数计数。
-    private func makeChangeCounter(for provider: DefaultRootViewProvider) -> (() -> Int, AnyCancellable) {
+    /// 订阅工具栏视图事件并返回发送次数计数。
+    private func makeChangeCounter(for provider: DefaultRootViewProvider) -> (() -> Int, any RootViewObserverHandle) {
         var count = 0
-        let cancellable = provider.objectWillChange.sink { _ in
-            count += 1
+        let handle = provider.addRootViewObserver { event in
+            if case .toolbarViewChanged = event {
+                count += 1
+            }
         }
-        return ({ count }, cancellable)
+        return ({ count }, handle)
     }
 
-    @Test("重复注入相同类型视图时跳过赋值（不发布 objectWillChange）")
+    @Test("重复注入相同类型视图时跳过赋值（不发布类型化事件）")
     func repeatedSameTypeInjectionSkipsPublish() {
         let provider = DefaultRootViewProvider()
         let (count, cancellable) = makeChangeCounter(for: provider)
@@ -435,10 +436,10 @@ struct ProviderRootViewTests {
 
         #expect(afterFirst == 1)
         #expect(afterSecond == afterFirst)
-        withExtendedLifetime(cancellable) {}
+        cancellable.cancel()
     }
 
-    @Test("注入状态变化（nil ↔ 非 nil）时正常更新（发布 objectWillChange）")
+    @Test("注入状态变化（nil ↔ 非 nil）时正常更新（发布类型化事件）")
     func valueTransitionStillPublishes() {
         let provider = DefaultRootViewProvider()
         let (count, cancellable) = makeChangeCounter(for: provider)
@@ -455,10 +456,10 @@ struct ProviderRootViewTests {
         #expect(afterNil == 0)
         #expect(afterInjected == 1)
         #expect(afterCleared == 2)
-        withExtendedLifetime(cancellable) {}
+        cancellable.cancel()
     }
 
-    @Test("重复注入 nil 时跳过赋值（不发布 objectWillChange）")
+    @Test("重复注入 nil 时跳过赋值（不发布类型化事件）")
     func repeatedNilInjectionSkipsPublish() {
         let provider = DefaultRootViewProvider()
         let (count, cancellable) = makeChangeCounter(for: provider)
@@ -470,7 +471,7 @@ struct ProviderRootViewTests {
 
         #expect(afterFirst == 0)
         #expect(afterSecond == afterFirst)
-        withExtendedLifetime(cancellable) {}
+        cancellable.cancel()
     }
 
 }

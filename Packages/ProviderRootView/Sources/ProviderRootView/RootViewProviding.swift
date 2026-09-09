@@ -48,8 +48,7 @@ public protocol RootViewObserverHandle: AnyObject {
 }
 
 @MainActor
-public protocol RootViewProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol RootViewProviding: AnyObject {
     @discardableResult
     func addRootViewObserver(
         _ callback: @escaping (RootViewEvent) -> Void
@@ -124,9 +123,6 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     /// 当前 Content Footer 的有效高度。
     var contentFooterHeight: ContentFooterHeight { get }
 
-    /// Content Footer 高度变化发布器。
-    var contentFooterHeightPublisher: AnyPublisher<ContentFooterHeight, Never> { get }
-
     /// 激活插件的 Content Footer 高度配置。
     func activateContentFooterHeightProfile(
         ownerID: String,
@@ -188,9 +184,6 @@ public extension RootViewProviding {
         onResize: @escaping @MainActor (CGFloat) -> Void
     ) {}
     var contentFooterHeight: ContentFooterHeight { .standard }
-    var contentFooterHeightPublisher: AnyPublisher<ContentFooterHeight, Never> {
-        Just(contentFooterHeight).eraseToAnyPublisher()
-    }
     func activateContentFooterHeightProfile(
         ownerID: String,
         recommended: ContentFooterHeight,

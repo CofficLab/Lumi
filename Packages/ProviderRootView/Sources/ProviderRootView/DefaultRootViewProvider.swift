@@ -1,4 +1,3 @@
-import Combine
 import LumiUI
 import KitSuperLog
 import os
@@ -16,25 +15,25 @@ import SwiftUI
 /// - 根视图应用主题背景、`appThemedAppearance`、`ThemeWindowAppearanceBridge`
 ///   与 `AppThemeVM` 环境对象（复刻旧版主题链）。
 @MainActor
-public final class DefaultRootViewProvider: RootViewProviding, ObservableObject, SuperLog {
+public final class DefaultRootViewProvider: RootViewProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-root-view", category: "ProviderRootView")
     nonisolated public static let emoji = "🏠"
     nonisolated static let verbose = false
 
-    @Published var toolbarView: AnyView?
-    @Published var activityBarView: AnyView?
-    @Published var railView: AnyView?
-    @Published var contentHeaderView: AnyView?
-    @Published var contentView: AnyView?
-    @Published var contentFooterView: AnyView?
-    @Published var trailingPane: RootTrailingPane?
-    @Published public private(set) var isRailViewVisible = true
-    @Published public private(set) var railWidth: RailViewWidth = .standard
-    @Published public private(set) var contentFooterHeight: ContentFooterHeight = .standard
-    @Published public private(set) var overlays: [RootOverlayItem] = []
-    @Published public private(set) var isContentViewHidden: Bool = false
-    @Published public private(set) var isContentHeaderViewHidden: Bool = false
-    @Published public private(set) var isContentFooterViewHidden: Bool = false
+    var toolbarView: AnyView?
+    var activityBarView: AnyView?
+    var railView: AnyView?
+    var contentHeaderView: AnyView?
+    var contentView: AnyView?
+    var contentFooterView: AnyView?
+    var trailingPane: RootTrailingPane?
+    public private(set) var isRailViewVisible = true
+    public private(set) var railWidth: RailViewWidth = .standard
+    public private(set) var contentFooterHeight: ContentFooterHeight = .standard
+    public private(set) var overlays: [RootOverlayItem] = []
+    public private(set) var isContentViewHidden: Bool = false
+    public private(set) var isContentHeaderViewHidden: Bool = false
+    public private(set) var isContentFooterViewHidden: Bool = false
     private var observers: [UUID: (RootViewEvent) -> Void] = [:]
     private var railVisibilityObserver: (any RailViewProvidingObserverHandle)?
     private var railWidthObserver: (any RailViewProvidingObserverHandle)?
@@ -144,10 +143,6 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
 
     func saveRailViewWidth(_ width: CGFloat) {
         railWidthResizeHandler?(width)
-    }
-
-    public var contentFooterHeightPublisher: AnyPublisher<ContentFooterHeight, Never> {
-        $contentFooterHeight.eraseToAnyPublisher()
     }
 
     public func activateContentFooterHeightProfile(
@@ -260,13 +255,12 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     /// - 状态不同（nil ↔ 非 nil）→ 视为变化，正常更新。
     ///
     /// 目的：装配流程可能重复调用注入方法（如宿主重建视图树时）
-    /// 导致 App body 重求值后再次装配），重复赋值 `@Published` 会在视图更新期间
-    /// 发布变更，触发 SwiftUI 的 "Publishing changes from within view updates
-    /// is not allowed" 并可能形成循环。状态相同即跳过，避免无意义发布。
+    /// 导致 App body 重求值后再次装配），重复赋值会在视图更新期间
+    /// 触发不必要的刷新并可能形成循环。状态相同即跳过，避免无意义发布。
     ///
     /// 注意：这是保守近似 —— 已注入非 nil 视图后，再次注入任意新视图（含不同
     /// 类型）都会被跳过。Lumi 架构下视图内容更新由视图内部状态驱动（Provider
-    /// 的 `@Published`/`objectWillChange`），无需重新注入新 `AnyView`；若确有
+    /// 的内部状态驱动，无需重新注入新 `AnyView`；若确有
     /// Provider 需要强制替换，可先传 nil 再传新值。
     private func isSameView(_ lhs: AnyView?, _ rhs: AnyView?) -> Bool {
         (lhs == nil) == (rhs == nil)
