@@ -43,6 +43,7 @@ struct ListV1View: View {
     var body: some View {
         ZStack {
             messageScrollView
+                .id(selectedConversationID)
                 .opacity(isInitialPositionReady ? 1 : 0)
                 .allowsHitTesting(isInitialPositionReady)
             if turnViewModel.isLoading || !isInitialPositionReady {
@@ -80,12 +81,15 @@ struct ListV1View: View {
                     .plainMessageListRow(insets: EdgeInsets())
                     .onChange(of: scrollTick) { _, _ in
                         guard isInitialPositionReady else { return }
+                        let conversationID = selectedConversationID
                         scrollCoordinator.scheduleScrollToBottomAfterLayout(
                             proxy: proxy,
                             messages: displayedHistoryMessages,
                             animated: false,
                             controller: bottomScrollController,
-                            condition: { true }
+                            condition: {
+                                conversationID == selectedConversationID
+                            }
                         )
                     }
             }

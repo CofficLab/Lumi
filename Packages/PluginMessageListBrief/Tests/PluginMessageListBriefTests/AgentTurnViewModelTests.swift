@@ -148,3 +148,42 @@ private final class StubStreamingCapability: MessageListStreamingCapability {
     #expect(projection.lastMessage == nil)
     #expect(projection.activity?.title == "正在思考…")
 }
+
+@Test @MainActor func pendingAndRecordedTurnKeepStableListIdentity() {
+    let conversationID = UUID()
+    let turnID = UUID()
+    let startedAt = Date()
+    let userMessage = Message(
+        id: UUID(),
+        conversationID: conversationID,
+        role: .user,
+        content: "继续执行",
+        createdAt: startedAt
+    )
+    let assistantMessage = Message(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "已完成",
+        createdAt: startedAt.addingTimeInterval(1),
+        turnID: turnID
+    )
+    let record = AgentTurnRecord(
+        id: turnID,
+        conversationID: conversationID,
+        startedAt: startedAt.addingTimeInterval(1),
+        endedAt: assistantMessage.createdAt,
+        state: .completed
+    )
+    let summary = AgentTurnSummaryBuilder()
+        .build(records: [record], messages: [userMessage, assistantMessage])
+        .first!
+
+    let pending = AgentTurnPresentationItem(
+        pendingUserMessages: [userMessage],
+        statusMessage: nil
+    )
+    let recorded = AgentTurnPresentationItem(recorded: summary, acceptsLiveActivity: false)
+
+    #expect(pending.id == userMessage.id)
+    #expect(recorded.id == pending.id)
+}

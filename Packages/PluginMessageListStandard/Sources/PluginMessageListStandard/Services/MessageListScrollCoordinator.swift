@@ -39,6 +39,7 @@ final class MessageListScrollCoordinator {
 
     private var pendingBottomScrollTask: Task<Void, Never>?
     private var preparationSequence: UInt64 = 0
+    private var scrollGeneration: UInt64 = 0
 
     deinit {
         pendingBottomScrollTask?.cancel()
@@ -52,6 +53,7 @@ final class MessageListScrollCoordinator {
         pendingBottomScrollTask?.cancel()
         pendingBottomScrollTask = nil
         preparationSequence &+= 1
+        scrollGeneration &+= 1
     }
 
     /// 在首次显示消息列表前完成布局并定位到底部。
@@ -209,7 +211,9 @@ final class MessageListScrollCoordinator {
 
     /// 等待 `postPrependDelayNs` 让 prepend 的新行完成布局，再把指定 id 钉回视口顶部。
     func pinToAnchor(proxy: ScrollViewProxy, anchorID: UUID) async {
+        let generation = scrollGeneration
         try? await Task.sleep(nanoseconds: Self.postPrependDelayNs)
+        guard !Task.isCancelled, generation == scrollGeneration else { return }
         proxy.scrollTo(anchorID, anchor: .top)
     }
 }

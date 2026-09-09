@@ -43,6 +43,7 @@ struct ListV3View: View {
     var body: some View {
         ZStack {
             messageScrollView
+                .id(viewModel.selectedConversationID)
                 .opacity(isInitialPositionReady ? 1 : 0)
                 .allowsHitTesting(isInitialPositionReady)
             if viewModel.isLoading || !isInitialPositionReady {
@@ -85,6 +86,7 @@ struct ListV3View: View {
                     .plainMessageListRow(insets: EdgeInsets())
                     .onChange(of: scrollTick) { _, _ in
                         guard isInitialPositionReady else { return }
+                        let conversationID = viewModel.selectedConversationID
                         // 新消息行可能还没有完成尺寸布局；立即 scrollTo 会把
                         // 锚点停在旧的内容底部，导致最后一行被输入框截断。
                         // 等布局完成后只保留最后一次滚动请求，避免多个
@@ -94,7 +96,9 @@ struct ListV3View: View {
                             messages: viewModel.historyRows,
                             animated: false,
                             controller: bottomScrollController,
-                            condition: { true }
+                            condition: {
+                                conversationID == viewModel.selectedConversationID
+                            }
                         )
                     }
             }

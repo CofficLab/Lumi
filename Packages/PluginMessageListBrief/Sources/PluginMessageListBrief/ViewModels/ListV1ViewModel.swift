@@ -80,6 +80,7 @@ final class ListV1ViewModel: ObservableObject {
     }
 
     func activate(conversationID: UUID?) async {
+        guard selectedConversationID == conversationID else { return }
         // 记录当前激活序列号，用于后续异步操作完成后检查是否过期
         activationSequence &+= 1
         let mySequence = activationSequence
@@ -257,7 +258,10 @@ final class ListV1ViewModel: ObservableObject {
     }
 
     func handleSelectedConversationChange(_ conversationID: UUID?) {
-        refreshAgentTurnViewModels()
+        // Invalidate in-flight loads before the new activation task gets a
+        // chance to run. Rapid conversation switching must not let an older
+        // snapshot publish into the new List.
+        activationSequence &+= 1
         Task { @MainActor [weak self] in
             await self?.activate(conversationID: conversationID)
         }
