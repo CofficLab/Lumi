@@ -20,9 +20,7 @@ struct RootMainContentView: View {
     let contentFooterHeight: ContentFooterHeight
     let onContentFooterResize: (@MainActor (CGFloat) -> Void)?
     let isContentViewHidden: Bool
-    let trailingPane: RootTrailingPane
-    @State private var observationRevision = 0
-    @State private var observerHandle: (any RootTrailingPaneObserverHandle)?
+    @ObservedObject var trailingPane: RootTrailingPane
     init(
         contentHeaderView: AnyView?,
         isContentHeaderViewHidden: Bool,
@@ -42,11 +40,11 @@ struct RootMainContentView: View {
         self.contentFooterHeight = contentFooterHeight
         self.onContentFooterResize = onContentFooterResize
         self.isContentViewHidden = isContentViewHidden
-        self.trailingPane = trailingPane ?? RootTrailingPane(
+        _trailingPane = ObservedObject(wrappedValue: trailingPane ?? RootTrailingPane(
             id: "root.empty",
             isVisible: false,
             content: AnyView(EmptyView())
-        )
+        ))
     }
 
     private var mainContent: AnyView {
@@ -159,16 +157,5 @@ struct RootMainContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .id(observationRevision)
-        .onAppear {
-            guard observerHandle == nil else { return }
-            observerHandle = trailingPane.addObserver { _ in
-                observationRevision += 1
-            }
-        }
-        .onDisappear {
-            observerHandle?.cancel()
-            observerHandle = nil
-        }
     }
 }
