@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 
 /// ActivityBar 视图提供能力协议
@@ -25,8 +24,7 @@ public protocol ActivityBarObserverHandle: AnyObject {
 }
 
 @MainActor
-public protocol ActivityBarProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol ActivityBarProviding: AnyObject {
     /// 当前已注入的全部 ActivityBar 项。
     var items: [ActivityBarItem] { get }
 

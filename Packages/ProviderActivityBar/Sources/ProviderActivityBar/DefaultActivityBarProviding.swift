@@ -5,9 +5,9 @@ import SwiftUI
 /// 渲染为 48pt 宽的竖直入口栏（与旧版 `FactoryCore.ActivityBar` 视觉一致）。
 ///
 @MainActor
-public final class DefaultActivityBarProviding: ActivityBarProviding, ObservableObject {
-    @Published public private(set) var items: [ActivityBarItem] = []
-    @Published public private(set) var activeItemID: String?
+public final class DefaultActivityBarProviding: ActivityBarProviding {
+    public private(set) var items: [ActivityBarItem] = []
+    public private(set) var activeItemID: String?
     private var observers: [UUID: (ActivityBarEvent) -> Void] = [:]
 
     public init() {}
@@ -89,7 +89,9 @@ public final class DefaultActivityBarProviding: ActivityBarProviding, Observable
 /// - 内容溢出时滚动，配合上下 8pt 渐隐遮罩提示可滚动；
 /// - 右键菜单提供「打开设置」入口（与旧版一致，通过 `lumi.openSettings` 通知）。
 private struct ActivityBarView: View {
-    @ObservedObject var provider: DefaultActivityBarProviding
+    let provider: DefaultActivityBarProviding
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any ActivityBarObserverHandle)?
 
     var body: some View {
         Group {
@@ -118,6 +120,17 @@ private struct ActivityBarView: View {
                     }
                 }
             }
+        }
+        .id(observationRevision)
+        .onAppear {
+            guard observerHandle == nil else { return }
+            observerHandle = provider.addActivityBarObserver { _ in
+                observationRevision += 1
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
         }
     }
 }
