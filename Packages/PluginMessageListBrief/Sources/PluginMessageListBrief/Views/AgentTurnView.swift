@@ -11,7 +11,6 @@ import SwiftUI
 struct AgentTurnView: View {
     let services: MessageListServices
     let item: AgentTurnPresentationItem
-    let lastAgentTurnID: UUID?
     let verbosity: ResponseVerbosity
 
     let viewModel: AgentTurnViewModel
@@ -22,13 +21,11 @@ struct AgentTurnView: View {
     init(
         services: MessageListServices,
         item: AgentTurnPresentationItem,
-        lastAgentTurnID: UUID?,
         verbosity: ResponseVerbosity,
         viewModel: AgentTurnViewModel
     ) {
         self.services = services
         self.item = item
-        self.lastAgentTurnID = lastAgentTurnID
         self.verbosity = verbosity
         self.viewModel = viewModel
     }
@@ -39,7 +36,7 @@ struct AgentTurnView: View {
                 messageRow(message)
             }
 
-            if !projection.processMessages.isEmpty {
+            if item.isShowingProcess || !projection.processMessages.isEmpty {
                 processDisclosure
             }
 
@@ -47,8 +44,8 @@ struct AgentTurnView: View {
                 messageRow(lastMessage)
             }
 
-            if isConversationTail, let activityMessage = projection.activityMessage {
-                messageRow(activityMessage)
+            if item.acceptsLiveActivity, let activity = projection.activity {
+                AgentActivityView(activity: activity)
             }
         }
         .task { await viewModel.activate() }
@@ -107,6 +104,7 @@ struct AgentTurnView: View {
                         Text(AgentTurnViewModel.processDisclosureTitle(
                             item: item,
                             userMessages: projection.userMessages,
+                            processMessages: projection.processMessages,
                             now: now
                         ))
                     }
@@ -134,11 +132,6 @@ struct AgentTurnView: View {
 
             Divider()
         }
-    }
-
-    /// List 只提供尾部身份；消息与活动状态仍由本 Turn 自行获取。
-    private var isConversationTail: Bool {
-        item.id == lastAgentTurnID
     }
 
     private func messageRow(_ message: Message) -> some View {

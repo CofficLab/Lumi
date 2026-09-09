@@ -72,50 +72,6 @@
     "No renderer for message: %@" : {
 
     },
-    "status.executing-tool" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "正在执行工具…"
-          }
-        }
-      }
-    },
-    "status.sending" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "正在发送消息…"
-          }
-        }
-      }
-    },
-    "status.thinking" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "正在思考…"
-          }
-        }
-      }
-    },
-    "status.waiting-for-user" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "等待你的输入…"
-          }
-        }
-      }
-    },
     "停止当前回合" : {
 
     }

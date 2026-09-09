@@ -1,4 +1,5 @@
 import Foundation
+import ProviderConversationState
 import ProviderMessage
 import ProviderMessageStreaming
 
@@ -6,8 +7,8 @@ struct AgentTurnMessageProjection: Equatable {
     var userMessages: [Message] = []
     var processMessages: [Message] = []
     var lastMessage: Message?
-    /// 会话当前活动的独立尾部提示，不参与"过程/结果"的折叠规则。
-    var activityMessage: Message?
+    /// 会话当前活动的独立尾部状态，不属于消息时间线。
+    var activity: AgentActivityProjection?
 }
 
 /// 单个 AgentTurnView 的消息数据源。它只接收 Turn 身份，自行读取、监听和投影消息。
@@ -90,7 +91,7 @@ final class AgentTurnViewModel {
         let nextProjection = Self.project(
             item: item,
             messages: messages,
-            streamingMessage: currentStreamingMessage(),
+            conversationState: services.conversationState?.state(for: conversationID),
             streamingStage: currentStreamingStage()
         )
         setProjection(nextProjection)
@@ -111,13 +112,10 @@ final class AgentTurnViewModel {
     nonisolated static func project(
         item: AgentTurnPresentationItem,
         messages: [Message],
-        streamingMessage: Message?,
+        conversationState: ConversationStateSnapshot?,
         streamingStage: MessageStreamingStage = .idle
     ) -> AgentTurnMessageProjection {
         let chronological = messages.sorted(by: messageOrdering)
-        let transientStatus = item.acceptsLiveActivity
-            ? chronological.last(where: isTransientStatus)
-            : nil
         let userMessages: [Message]
         var responseMessages: [Message]
 
@@ -153,23 +151,38 @@ final class AgentTurnViewModel {
             userMessages: userMessages,
             processMessages: Array(responseMessages.dropLast()),
             lastMessage: responseMessages.last,
-            activityMessage: activityMessage(
-                item: item,
-                status: transientStatus,
-                stage: streamingStage
-            )
+            activity: item.acceptsLiveActivity
+                ? AgentActivityProjection.resolve(
+                    conversationState: conversationState,
+                    streamingStage: streamingStage
+                )
+                : nil
         )
     }
 
     nonisolated static func processDisclosureTitle(
         item: AgentTurnPresentationItem,
         userMessages: [Message],
+        processMessages: [Message],
         now: Date
     ) -> String {
         let startedAt = item.record?.startedAt ?? userMessages.first?.createdAt ?? now
         let endedAt = item.record?.endedAt ?? now
         let elapsed = max(0, endedAt.timeIntervalSince(startedAt))
-        return "耗时\(formattedDuration(elapsed))"
+        let stepCount = processStepCount(processMessages)
+        let summary = item.isShowingProcess
+            ? "执行中"
+            : "执行了\(stepCount)个步骤"
+        return item.isShowingProcess
+            ? "\(summary) · \(stepCount)个步骤 · \(formattedDuration(elapsed))"
+            : "\(summary) · \(formattedDuration(elapsed))"
+    }
+
+    private nonisolated static func processStepCount(_ messages: [Message]) -> Int {
+        let toolCallCount = messages.reduce(0) { count, message in
+            count + (message.toolCalls?.count ?? 0)
+        }
+        return toolCallCount > 0 ? toolCallCount : messages.count
     }
 
     private nonisolated static func formattedDuration(_ duration: TimeInterval) -> String {
@@ -184,43 +197,9 @@ final class AgentTurnViewModel {
         return minutes == 0 ? "\(hours)小时" : "\(hours)小时\(minutes)分钟"
     }
 
-    private func currentStreamingMessage() -> Message? {
-        // V1 只展示回合状态，不展示逐字增长的临时回复；完整回复在回合结束后
-        // 通过消息变化写入并展示。V2/V3 仍由各自的 ViewModel 处理流式行。
-        return nil
-    }
-
     private func currentStreamingStage() -> MessageStreamingStage {
         guard item.acceptsLiveActivity, let streaming = services.streaming else { return .idle }
         return streaming.stage(for: item.conversationID)
-    }
-
-    private nonisolated static func activityMessage(
-        item: AgentTurnPresentationItem,
-        status: Message?,
-        stage: MessageStreamingStage
-    ) -> Message? {
-        guard item.acceptsLiveActivity else { return nil }
-        let content: String
-        if let status, !status.content.isEmpty {
-            content = status.content
-        } else {
-            switch stage {
-            case .idle: return nil
-            case .sending: content = "正在发送消息…"
-            case .thinking: content = "正在思考…"
-            case .generating: content = "正在生成回复…"
-            }
-        }
-        return Message(
-            id: activityMessageID(for: item.id),
-            conversationID: item.conversationID,
-            role: .status,
-            content: content,
-            createdAt: status?.createdAt ?? item.startedAt,
-            turnID: item.record?.id,
-            metadata: ["isTransientStatus": "true"]
-        )
     }
 
     private nonisolated static func isTransientStatus(_ message: Message) -> Bool {
@@ -230,13 +209,6 @@ final class AgentTurnViewModel {
 
     private nonisolated static func isPlaceholderStatus(_ message: Message) -> Bool {
         message.role == .status && message.content == "…"
-    }
-
-    private nonisolated static func activityMessageID(for turnID: UUID) -> UUID {
-        var bytes = turnID.uuid
-        // XOR 保证动态行 ID 与 Turn ID 不同，同时保持一一映射和跨刷新稳定。
-        bytes.1 ^= 0x40
-        return UUID(uuid: bytes)
     }
 
     private nonisolated static func deduplicated(_ messages: [Message]) -> [Message] {

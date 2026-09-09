@@ -39,6 +39,7 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
     private var viewModel: ListV1ViewModel?
     private var messageChangeObserver: (any MessageChangeObserverHandle)?
     private var streamingObserver: (any MessageStreamingObserverHandle)?
+    private var conversationStateObserver: (any ConversationStateObserverHandle)?
     private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
     private var conversationObserver: (any ConversationObserverHandle)?
     private var verbosityObservation: VerbosityObservationBox?
@@ -107,6 +108,11 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
                 viewModel?.handleStreamingChange(change)
             }
         }
+        if let conversationState {
+            conversationStateObserver = conversationState.addConversationStateObserver { [weak viewModel] change in
+                viewModel?.handleConversationStateChange(change)
+            }
+        }
         if let conversations {
             selectedConversationObserver = conversations.addSelectedConversationObserver { [weak viewModel] conversationID in
                 viewModel?.handleSelectedConversationChange(conversationID)
@@ -123,6 +129,8 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         messageChangeObserver = nil
         streamingObserver?.cancel()
         streamingObserver = nil
+        conversationStateObserver?.cancel()
+        conversationStateObserver = nil
         selectedConversationObserver?.cancel()
         selectedConversationObserver = nil
         conversationObserver?.cancel()

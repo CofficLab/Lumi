@@ -117,7 +117,6 @@ struct ListV1View: View {
                 AgentTurnView(
                     services: services,
                     item: item,
-                    lastAgentTurnID: turnViewModel.agentTurns.last?.id,
                     verbosity: verbosity,
                     viewModel: turnViewModel.agentTurnViewModel(for: item)
                 )

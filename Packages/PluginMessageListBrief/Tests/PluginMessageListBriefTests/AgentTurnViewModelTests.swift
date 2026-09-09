@@ -1,5 +1,6 @@
 import Foundation
 import ProviderMessage
+import ProviderMessageStreaming
 import Testing
 @testable import PluginMessageListBrief
 
@@ -33,6 +34,14 @@ private final class StubMessageCapability: MessageListMessageCapability {
     }
 }
 
+@MainActor
+private final class StubStreamingCapability: MessageListStreamingCapability {
+    var currentStage: MessageStreamingStage = .idle
+
+    func streamingMessage(for conversationID: UUID) -> Message? { nil }
+    func stage(for conversationID: UUID) -> MessageStreamingStage { currentStage }
+}
+
 @Test @MainActor func agentTurnViewModelForwardsProjectionEvents() async {
     let conversationID = UUID()
     let userMessage = Message(
@@ -46,13 +55,14 @@ private final class StubMessageCapability: MessageListMessageCapability {
         content: "Thinking"
     )
     let messages = StubMessageCapability(snapshot: [userMessage])
+    let streaming = StubStreamingCapability()
     let services = MessageListServices(
         conversations: nil,
         conversationState: nil,
         developerMode: nil,
         messages: messages,
         rendering: nil,
-        streaming: nil,
+        streaming: streaming,
         toolManager: nil,
         agentTurn: nil,
         promptSuggestions: nil,
@@ -77,9 +87,11 @@ private final class StubMessageCapability: MessageListMessageCapability {
 
     await viewModel.refresh()
     messages.snapshot = [userMessage, statusMessage]
+    streaming.currentStage = .thinking
     await viewModel.refresh()
     #expect(projections.count == 2)
-    #expect(projections.last?.activityMessage?.content == "Thinking")
+    #expect(projections.last?.activity?.title == "正在思考…")
+    #expect(projections.last?.processMessages.isEmpty == true)
 
     handle.cancel()
     messages.snapshot = []

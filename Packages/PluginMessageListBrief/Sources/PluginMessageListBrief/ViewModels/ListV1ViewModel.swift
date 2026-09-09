@@ -1,5 +1,6 @@
 import Foundation
 import ProviderAgentLoop
+import ProviderConversationState
 import ProviderMessage
 import ProviderMessageStreaming
 
@@ -274,6 +275,21 @@ final class ListV1ViewModel: ObservableObject {
         // V1 不显示流式正文，只让当前活动回合在阶段切换时更新尾部提示。
         guard let activeTurnID = agentTurns.last(where: \.acceptsLiveActivity)?.id,
               let viewModel = agentTurnViewModels[activeTurnID] else { return }
+        Task { @MainActor in await viewModel.refresh() }
+    }
+
+    /// 会话活动变化不一定伴随消息变化，例如工具 Job 的创建、进度和等待授权。
+    /// 这些事件只刷新当前活动 Turn，避免重新加载或重建历史消息窗口。
+    func handleConversationStateChange(_ change: ConversationStateEvent) {
+        let conversationID: UUID
+        switch change {
+        case let .updated(id), let .removed(id):
+            conversationID = id
+        }
+        guard conversationID == selectedConversationID else { return }
+
+        guard let activeTurn = agentTurns.first(where: \.acceptsLiveActivity),
+              let viewModel = agentTurnViewModels[activeTurn.id] else { return }
         Task { @MainActor in await viewModel.refresh() }
     }
 
