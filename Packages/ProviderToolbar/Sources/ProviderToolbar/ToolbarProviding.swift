@@ -14,8 +14,24 @@ import SwiftUI
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any ToolbarProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
+public enum ToolbarEvent {
+    case toolbarItemsChanged
+    case visibleCategoriesChanged
+}
+
+@MainActor
+public protocol ToolbarObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
 public protocol ToolbarProviding: AnyObject, ObservableObject
     where ObjectWillChangePublisher == ObservableObjectPublisher {
+    @discardableResult
+    func addToolbarObserver(
+        _ callback: @escaping (ToolbarEvent) -> Void
+    ) -> any ToolbarObserverHandle
+
     /// 当前已注入的全部工具栏项。
     var toolbarItems: [ToolbarItem] { get }
 
@@ -52,6 +68,20 @@ public protocol ToolbarProviding: AnyObject, ObservableObject
 
     /// 返回工具栏视图（基于已注入的 items 渲染）。
     func makeToolbarView() -> AnyView
+}
+
+public extension ToolbarProviding {
+    @discardableResult
+    func addToolbarObserver(
+        _ callback: @escaping (ToolbarEvent) -> Void
+    ) -> any ToolbarObserverHandle {
+        NoopToolbarObserverHandle()
+    }
+}
+
+@MainActor
+private final class NoopToolbarObserverHandle: ToolbarObserverHandle {
+    func cancel() {}
 }
 
 public extension ToolbarProviding {

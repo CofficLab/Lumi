@@ -35,6 +35,32 @@ struct ProviderToolbarTests {
         #expect(provider.toolbarItems.map(\.id) == ["a", "b"])
     }
 
+    @Test("工具栏状态变化会发布类型化观察事件")
+    func toolbarChangesAreObservable() {
+        let provider = DefaultToolbarProviding()
+        var events: [String] = []
+        let handle = provider.addToolbarObserver { event in
+            switch event {
+            case .toolbarItemsChanged:
+                events.append("items")
+            case .visibleCategoriesChanged:
+                events.append("categories")
+            }
+        }
+
+        provider.registerToolbarItems([
+            ProviderToolbar.ToolbarItem(id: "global", title: "Global") { Text("Global") }
+        ])
+        provider.setVisibleCategories([.global])
+        provider.setVisibleCategories([])
+
+        #expect(events == ["items", "categories", "categories"])
+
+        handle.cancel()
+        provider.registerToolbarItems([])
+        #expect(events == ["items", "categories", "categories"])
+    }
+
     @Test("追加工具栏项按 order 从小到大排列")
     func appendedItemsAreSortedByOrder() {
         let provider = DefaultToolbarProviding()
