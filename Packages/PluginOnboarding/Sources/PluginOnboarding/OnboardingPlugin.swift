@@ -123,14 +123,15 @@ private struct OnboardingOverlay: View {
     let content: AnyView
     let finish: @MainActor () -> Void
     @State private var pageIndex = 0
-    @State private var observationRevision = 0
+    @State private var isPresented = false
+    @State private var pageCount = 0
     @State private var observerHandle: (any OnboardingObserverHandle)?
 
     var body: some View {
         ZStack {
             content
 
-            if provider.isPresented, !provider.allPages.isEmpty {
+            if isPresented, pageCount > 0 {
                 Color.black.opacity(0.22)
                     .ignoresSafeArea()
                 OnboardingCard(
@@ -142,10 +143,17 @@ private struct OnboardingOverlay: View {
         }
         .onAppear {
             guard observerHandle == nil else { return }
+            isPresented = provider.isPresented
+            pageCount = provider.allPages.count
             observerHandle = provider.addObserver { event in
-                observationRevision &+= 1
-                if case let .presentationChanged(isPresented) = event, isPresented {
-                    pageIndex = 0
+                switch event {
+                case .pagesChanged:
+                    pageCount = provider.allPages.count
+                case let .presentationChanged(presented):
+                    isPresented = presented
+                    if presented {
+                        pageIndex = 0
+                    }
                 }
             }
         }

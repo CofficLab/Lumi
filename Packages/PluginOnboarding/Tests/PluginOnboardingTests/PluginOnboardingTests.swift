@@ -47,3 +47,21 @@ import Testing
     #expect(!store.hasSeen)
     #expect(provider.isPresented)
 }
+
+@MainActor
+@Test func onboardingDismissPublishesHiddenPresentationState() {
+    let provider = DefaultOnboardingProviding()
+    var dismissed = false
+    let observer = provider.addObserver { event in
+        if case .presentationChanged(isPresented: false) = event {
+            dismissed = true
+        }
+    }
+
+    provider.show()
+    provider.dismiss()
+
+    #expect(!provider.isPresented)
+    #expect(dismissed)
+    observer.cancel()
+}
