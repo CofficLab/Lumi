@@ -165,7 +165,10 @@ public struct SettingsView: View {
         if let project = selectedProject {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    AppSettingsSection(title: LumiPluginLocalization.string("Overview", bundle: .module)) {
+                    AppSettingSection(
+                        title: LumiPluginLocalization.string("Overview", bundle: .module),
+                        titleAlignment: .leading
+                    ) {
                         VStack(alignment: .leading, spacing: 10) {
                             Text(project.name)
                                 .font(.title3.weight(.semibold))
@@ -179,7 +182,10 @@ public struct SettingsView: View {
                         }
                     }
 
-                    AppSettingsSection(title: LumiPluginLocalization.string("Basic Info", bundle: .module)) {
+                    AppSettingSection(
+                        title: LumiPluginLocalization.string("Basic Info", bundle: .module),
+                        titleAlignment: .leading
+                    ) {
                         VStack(spacing: 0) {
                             detailRow(title: LumiPluginLocalization.string("Name", bundle: .module), icon: "text.cursor", value: project.name)
                             Divider().padding(.vertical, 8)
@@ -225,7 +231,10 @@ public struct SettingsView: View {
         let urls = opened?.openFileURLs ?? []
         let current = opened?.currentFileURL
 
-        AppSettingsSection(title: LumiPluginLocalization.string("Opened Files", bundle: .module)) {
+        AppSettingSection(
+                        title: LumiPluginLocalization.string("Opened Files", bundle: .module),
+                        titleAlignment: .leading
+                    ) {
             if isLoadingOpenedFiles {
                 HStack(spacing: 8) {
                     ProgressView()
