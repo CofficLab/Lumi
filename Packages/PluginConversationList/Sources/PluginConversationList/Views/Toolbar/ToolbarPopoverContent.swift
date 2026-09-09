@@ -14,7 +14,7 @@ import SwiftUI
 struct ToolbarPopoverContent: View {
     private let context: ConversationListContext
     let attentionStore: ConversationAttentionStore
-    @ObservedObject var sortStabilizer: ConversationSortStabilizer
+    let sortStabilizer: ConversationSortStabilizer
 
     enum Scope: Hashable {
         case allProjects

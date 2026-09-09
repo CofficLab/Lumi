@@ -23,7 +23,7 @@ struct ListView: View {
     @State private var immediateSelectionID: UUID?
     private let context: ConversationListContext
     private let attentionStore: ConversationAttentionStore
-    @ObservedObject private var sortStabilizer: ConversationSortStabilizer
+    private let sortStabilizer: ConversationSortStabilizer
     @State private var contextRevision = 0
     @State private var observedSelectedConversationID: UUID?
     @State private var contextObserverHandle: (any ConversationListContext.ObserverHandle)?
@@ -41,7 +41,7 @@ struct ListView: View {
     ) {
         self.context = context
         self.attentionStore = attentionStore
-        self._sortStabilizer = ObservedObject(wrappedValue: sortStabilizer)
+        self.sortStabilizer = sortStabilizer
         self.projectPath = projectPath
     }
 
