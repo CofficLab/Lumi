@@ -52,7 +52,6 @@ struct ActionBarButton: View {
             )
         }
         .accessibilityLabel("Select Model")
-        .id(observationRevision)
         .onAppear {
             guard observerHandle == nil else { return }
             observerHandle = box.addObserver { _ in

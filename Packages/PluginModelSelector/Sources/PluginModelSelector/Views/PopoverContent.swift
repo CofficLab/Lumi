@@ -50,7 +50,6 @@ struct PopoverContent: View {
                     ?? box.providerInfos.first.map { $0.id }
             }
         }
-        .id(observationRevision)
         .onAppear {
             guard observerHandle == nil else { return }
             observerHandle = box.addObserver { _ in
