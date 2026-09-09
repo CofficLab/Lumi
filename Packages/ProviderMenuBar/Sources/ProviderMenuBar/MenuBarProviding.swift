@@ -24,7 +24,7 @@ public protocol MenuBarObserverHandle: AnyObject {
 }
 
 @MainActor
-public protocol MenuBarProviding: AnyObject, ObservableObject {
+public protocol MenuBarProviding: AnyObject {
     @discardableResult
     func addMenuBarObserver(
         _ callback: @escaping (MenuBarEvent) -> Void
