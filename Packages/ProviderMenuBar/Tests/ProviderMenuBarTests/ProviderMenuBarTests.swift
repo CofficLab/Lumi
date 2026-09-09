@@ -30,6 +30,29 @@ struct ProviderMenuBarTests {
         #expect(type(of: provider.popupItems[0].makeView()) == AnyView.self)
     }
 
+    @Test("菜单栏条目变化会发布类型化观察事件")
+    func menuBarItemsAreObservable() {
+        let provider = DefaultMenuBarProviding()
+        var events: [String] = []
+        let handle = provider.addMenuBarObserver { event in
+            switch event {
+            case .contentItemsChanged:
+                events.append("content")
+            case .popupItemsChanged:
+                events.append("popup")
+            }
+        }
+
+        provider.addContent(MenuBarContentItem(id: "cpu", title: "CPU") { Text("cpu") })
+        provider.addPopup(MenuBarPopupItem(id: "cpu", title: "CPU") { Text("detail") })
+
+        #expect(events == ["content", "popup"])
+
+        handle.cancel()
+        provider.addContent(MenuBarContentItem(id: "memory", title: "Memory") { Text("memory") })
+        #expect(events == ["content", "popup"])
+    }
+
     @Test("同 id 追加去重")
     func defaultProviderDeduplicatesItems() {
         let provider = DefaultMenuBarProviding()

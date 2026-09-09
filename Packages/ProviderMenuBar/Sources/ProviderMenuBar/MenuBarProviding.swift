@@ -13,7 +13,23 @@ import SwiftUI
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any MenuBarProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
+public enum MenuBarEvent {
+    case contentItemsChanged
+    case popupItemsChanged
+}
+
+@MainActor
+public protocol MenuBarObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
 public protocol MenuBarProviding: AnyObject, ObservableObject {
+    @discardableResult
+    func addMenuBarObserver(
+        _ callback: @escaping (MenuBarEvent) -> Void
+    ) -> any MenuBarObserverHandle
+
     /// 全部菜单栏内容项。
     var contentItems: [MenuBarContentItem] { get }
 
@@ -40,6 +56,20 @@ public protocol MenuBarProviding: AnyObject, ObservableObject {
 
     /// 返回菜单栏弹窗视图（合并多个弹窗项）。
     func makePopupView() -> AnyView
+}
+
+public extension MenuBarProviding {
+    @discardableResult
+    func addMenuBarObserver(
+        _ callback: @escaping (MenuBarEvent) -> Void
+    ) -> any MenuBarObserverHandle {
+        NoopMenuBarObserverHandle()
+    }
+}
+
+@MainActor
+private final class NoopMenuBarObserverHandle: MenuBarObserverHandle {
+    func cancel() {}
 }
 
 public extension MenuBarProviding {
