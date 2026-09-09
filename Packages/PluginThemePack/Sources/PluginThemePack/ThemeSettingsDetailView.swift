@@ -36,11 +36,13 @@ private enum ThemeAppearanceFilter: String, CaseIterable, Identifiable {
 struct ThemeSettingsDetailView: View {
     let theme: any ThemeProviding
 
-    @ObservedObject private var themeObservation: ThemeSettingsObservationModel
+    private let themeObservation: ThemeSettingsObservationModel
     @LumiUI.LumiTheme private var uiTheme: any LumiUI.LumiUITheme
     @State private var selectedID: String?
     @State private var searchText = ""
     @State private var appearanceFilter: ThemeAppearanceFilter = .all
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any ThemeSettingsObservationModel.ObserverHandle)?
 
     init(theme: any ThemeProviding, observation: ThemeSettingsObservationModel) {
         self.theme = theme
@@ -66,6 +68,7 @@ struct ThemeSettingsDetailView: View {
     }
 
     var body: some View {
+        let _ = observationRevision
         AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 14) {
                 headerStats
@@ -87,7 +90,17 @@ struct ThemeSettingsDetailView: View {
         }
         .padding(.bottom, 16)
         .onAppear { selectedID = theme.selectedThemeId ?? selectedTheme?.id }
-        .onChange(of: themeObservation.revision) { _, _ in selectedID = theme.selectedThemeId }
+        .onAppear {
+            guard observerHandle == nil else { return }
+            observerHandle = themeObservation.addObserver { _ in
+                observationRevision &+= 1
+                selectedID = theme.selectedThemeId
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
+        }
         .onChange(of: filteredThemes.map(\.id)) { _, ids in
             guard let selectedID, ids.contains(selectedID) else {
                 self.selectedID = ids.first
