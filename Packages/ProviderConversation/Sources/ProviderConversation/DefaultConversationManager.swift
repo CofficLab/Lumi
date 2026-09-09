@@ -389,6 +389,7 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
             return
         }
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
+        guard conversations[index].verbosity != verbosity else { return }
         conversations[index].verbosity = verbosity
         notifyConversationObservers(.verbosityChanged(conversationID))
     }

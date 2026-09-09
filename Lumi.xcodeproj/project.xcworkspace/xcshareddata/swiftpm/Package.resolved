@@ -1,5 +1,5 @@
 {
-  "originHash" : "2d404ba984d05d5340e49730c4d090e7eb51731f1cfeae097190097ce536c658",
+  "originHash" : "d07cb826a8671409c154304b9c5d5b09a4a39d0daa1e040ac9f5b9ddffc5e735",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -88,7 +88,7 @@
       "location" : "https://github.com/nookery/LibGit2Swift",
       "state" : {
         "branch" : "main",
-        "revision" : "7005a7383c4b29a91da418bf24a534992ff5cf27"
+        "revision" : "68d4c67f5c09421744d2b99e12dfdfec8f83be39"
       }
     },
     {

@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import ProviderChatSection
 import ProviderRailView
@@ -223,9 +224,9 @@ public protocol RootTrailingPaneObserverHandle: AnyObject {
 }
 
 @MainActor
-public final class RootTrailingPane {
+public final class RootTrailingPane: ObservableObject {
     public let id: String
-    public private(set) var width: ChatSectionWidth {
+    @Published public private(set) var width: ChatSectionWidth {
         didSet {
             guard oldValue != width else { return }
             notify(.widthChanged(width))
@@ -233,7 +234,7 @@ public final class RootTrailingPane {
     }
     public let content: AnyView
 
-    public var isVisible: Bool {
+    @Published public var isVisible: Bool {
         didSet {
             guard oldValue != isVisible else { return }
             notify(.visibilityChanged(isVisible))

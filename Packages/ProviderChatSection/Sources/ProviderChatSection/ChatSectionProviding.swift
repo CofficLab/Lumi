@@ -156,6 +156,11 @@ public protocol ChatSectionProviding: AnyObject {
     func addItems(_ items: [ChatSectionItem])
     func removeItem(id: String)
 
+    /// 通知已注册的动态 item 重新计算可见性，而不改变 ChatSection 的 item 集合。
+    ///
+    /// 用于消息列表详细程度等只影响当前 slot 内容、不会改变布局贡献的状态更新。
+    func refreshItems()
+
     func addBarItems(_ items: [ChatSectionBarItem])
     func removeBarItem(id: String)
 
@@ -214,6 +219,8 @@ public extension ChatSectionProviding {
     func setActiveContext(_ context: ChatContext?) {}
 
     func addRootWrappers(_ wrappers: [ChatSectionRootWrapper]) {}
+
+    func refreshItems() {}
 
     func removeRootWrapper(id: String) {}
 

@@ -4,10 +4,10 @@ import ProviderChatSection
 import ProviderConversation
 import SwiftUI
 
-/// 观察当前会话详细程度变化，匹配时注册 ChatSectionItem，不匹配时移除。
+/// 观察当前会话详细程度变化，并刷新消息列表 slot 的可见性。
 ///
 /// 每个 MessageList 子插件（Brief/Standard/Detailed）各持一个实例，
-/// 仅在自己的 expectedVerbosity 下展示 ChatSectionItem。
+/// 常驻注册自己的 ChatSectionItem，仅在自己的 expectedVerbosity 下参与渲染。
 @MainActor
 final class VerbosityObservationBox {
     private let conversations: (any ConversationManaging)?
@@ -16,7 +16,8 @@ final class VerbosityObservationBox {
     private let expectedVerbosity: ResponseVerbosity
     private let makeView: @MainActor @Sendable () -> AnyView
     private var conversationHandle: (any ConversationObserverHandle)?
-    /// 当前是否在 chat 中注册了 item
+    /// 当前是否在 chat 中注册了 item。注册状态与可见状态刻意分离，
+    /// 避免详细程度切换时修改 ChatSection 的布局贡献集合。
     private var isRegistered = false
 
     init(
@@ -32,8 +33,7 @@ final class VerbosityObservationBox {
         self.expectedVerbosity = expectedVerbosity
         self.makeView = makeView
 
-        // 初始注册
-        reevaluate()
+        register()
 
         // 监听 verbosity 变化和会话选择变化
         conversationHandle = conversations?.addConversationObserver { [weak self] event in
@@ -56,27 +56,27 @@ final class VerbosityObservationBox {
     }
 
     private func reevaluate() {
-        let selectedID = conversations?.selectedConversationID
-        let verbosity = conversations?.verbosity(for: selectedID) ?? .standard
-        // 空态由独立的 PluginMessageListEmptyPlugin 接管；列表插件只在有选中
-        // 会话时注册自己的消息列表内容项。
-        let shouldShow = verbosity == expectedVerbosity && selectedID != nil
+        chat.refreshItems()
+    }
 
-        if shouldShow, !isRegistered {
-            chat.addItems([
-                ChatSectionItem(
-                    id: pluginID,
-                    order: 82,
-                    scope: .global,
-                    exclusiveGroup: "message-list",
-                    fillsRemainingHeight: true,
-                    content: makeView
-                )
-            ])
-            isRegistered = true
-        } else if !shouldShow, isRegistered {
-            chat.removeItem(id: pluginID)
-            isRegistered = false
-        }
+    private func register() {
+        guard !isRegistered else { return }
+        let conversations = conversations
+        let expectedVerbosity = expectedVerbosity
+        chat.addItems([
+            ChatSectionItem(
+                id: pluginID,
+                order: 82,
+                scope: .global,
+                exclusiveGroup: "message-list",
+                fillsRemainingHeight: true,
+                isActive: { @MainActor in
+                    guard let selectedID = conversations?.selectedConversationID else { return false }
+                    return conversations?.verbosity(for: selectedID) == expectedVerbosity
+                },
+                content: makeView
+            )
+        ])
+        isRegistered = true
     }
 }

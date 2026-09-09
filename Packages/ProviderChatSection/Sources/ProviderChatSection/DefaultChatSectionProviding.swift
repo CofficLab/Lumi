@@ -1,21 +1,23 @@
+import Combine
 import LumiUI
 import ProviderConversation
 import SwiftUI
 
 @MainActor
-public final class DefaultChatSectionProviding: ChatSectionProviding {
-    public private(set) var isVisible: Bool = true
-    public private(set) var isContextActive: Bool = false
-    public private(set) var activeContext: ChatContext? = .defaultChat
-    public private(set) var isHeaderVisible: Bool = true
-    public private(set) var chatSectionWidth: ChatSectionWidth
-    public private(set) var items: [ChatSectionItem] = []
-    public private(set) var barItems: [ChatSectionBarItem] = []
-    public private(set) var rootWrappers: [ChatSectionRootWrapper] = []
+public final class DefaultChatSectionProviding: ChatSectionProviding, ObservableObject {
+    @Published public private(set) var isVisible: Bool = true
+    @Published public private(set) var isContextActive: Bool = false
+    @Published public private(set) var activeContext: ChatContext? = .defaultChat
+    @Published public private(set) var isHeaderVisible: Bool = true
+    @Published public private(set) var chatSectionWidth: ChatSectionWidth
+    @Published public private(set) var items: [ChatSectionItem] = []
+    @Published public private(set) var barItems: [ChatSectionBarItem] = []
+    @Published public private(set) var rootWrappers: [ChatSectionRootWrapper] = []
 
     /// 会话选择绑定句柄：随 Provider 生命周期持有（与内核同生命周期）。
     private var conversationSelectionObserver: (any SelectedConversationObserverHandle)?
     private var observers: [WeakObserver] = []
+    private var itemRefreshTask: Task<Void, Never>?
     private let defaultWidthStore: (any ChatSectionWidthStoring)?
     private var activeWidthStore: (any ChatSectionWidthStoring)?
     private var activeWidthOwnerID: String?
@@ -37,6 +39,19 @@ public final class DefaultChatSectionProviding: ChatSectionProviding {
         let oldCount = items.count
         items.removeAll { $0.id == id }
         if items.count != oldCount { notify(.itemsChanged(items)) }
+    }
+
+    public func refreshItems() {
+        guard itemRefreshTask == nil else { return }
+        itemRefreshTask = Task { @MainActor [weak self] in
+            // Let all providers handling the same conversation event update
+            // their active predicate before invalidating the chat slot once.
+            await Task.yield()
+            guard let self else { return }
+            itemRefreshTask = nil
+            objectWillChange.send()
+            notify(.itemsChanged(items))
+        }
     }
 
     public func addBarItems(_ newItems: [ChatSectionBarItem]) {
@@ -207,9 +222,7 @@ public final class DefaultChatSectionProviding: ChatSectionProviding {
 /// `AppPanelChromeMetrics`，与旧版高度、内边距、背景、边框、阴影一致。
 @MainActor
 public struct ChatSectionHostView: View {
-    let provider: DefaultChatSectionProviding
-    @State private var observationRevision = 0
-    @State private var observerHandle: (any ChatSectionProvidingObserverHandle)?
+    @ObservedObject var provider: DefaultChatSectionProviding
 
     public init(provider: DefaultChatSectionProviding) {
         self.provider = provider
@@ -217,13 +230,17 @@ public struct ChatSectionHostView: View {
 
     private var stackItems: [ChatSectionItem] {
         exclusiveItems(provider.items.filter {
-            $0.placement == .stack && $0.scope.matches(provider.activeContext)
+            $0.placement == .stack
+                && $0.scope.matches(provider.activeContext)
+                && $0.isActive()
         })
     }
 
     private var bottomItems: [ChatSectionItem] {
         exclusiveItems(provider.items.filter {
-            $0.placement == .bottomFixed && $0.scope.matches(provider.activeContext)
+            $0.placement == .bottomFixed
+                && $0.scope.matches(provider.activeContext)
+                && $0.isActive()
         })
     }
 
@@ -263,17 +280,6 @@ public struct ChatSectionHostView: View {
 
     public var body: some View {
         wrappedContent
-            .id(observationRevision)
-            .onAppear {
-                guard observerHandle == nil else { return }
-                observerHandle = provider.addObserver { _ in
-                    observationRevision += 1
-                }
-            }
-            .onDisappear {
-                observerHandle?.cancel()
-                observerHandle = nil
-            }
     }
 
     /// 根包装器链式叠加：order 升序，先注册的先包（最小 order 在最外层）。

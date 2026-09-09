@@ -1,5 +1,6 @@
 import Foundation
 import os
+import KitSuperLog
 
 enum KernelPluginLifecyclePhase {
     case boot
@@ -24,12 +25,15 @@ public enum KernelLifecycleState: String, Sendable {
 /// Only holds protocol types, does not depend on concrete implementations.
 /// All concrete implementations are injected via plugins.
 @MainActor
-public final class KernelCoreContainer {
+public final class KernelCoreContainer: SuperLog {
 
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi",
-        category: "kernel.provider"
+        category: "kernel.core"
     )
+
+    nonisolated public static let emoji = "🧠"
+    nonisolated(unsafe) static var verbose: Bool = false
 
     // MARK: - Provider Registry
 

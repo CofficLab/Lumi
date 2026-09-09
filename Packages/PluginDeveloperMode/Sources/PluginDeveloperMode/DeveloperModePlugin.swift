@@ -31,13 +31,9 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        let provider: any DeveloperModeProviding
-        if let existing = kernel.resolveProvider((any DeveloperModeProviding).self) {
-            provider = existing
-        } else {
-            let defaultProvider = DefaultDeveloperModeProviding()
-            try kernel.registerProvider((any DeveloperModeProviding).self, defaultProvider)
-            provider = defaultProvider
+        guard let provider = kernel.resolveProvider((any DeveloperModeProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve DeveloperModeProviding from kernel")
+            return
         }
         self.provider = provider
 
@@ -82,79 +78,5 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
             ids: Set(toolbarItemIDs)
         )
         provider = nil
-    }
-}
-
-#if DEBUG
-/// Indicates that the app is running a Debug build.
-private struct DebugBadgeView: View {
-    @LumiTheme private var theme
-
-    var body: some View {
-        Text(LumiPluginLocalization.string("DEBUG"))
-            .font(.appMicroEmphasized)
-            .tracking(0.3)
-            .foregroundStyle(.white)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(theme.warning, in: Capsule())
-    }
-}
-#endif
-
-private struct DeveloperModeToggleView: View {
-    @LumiTheme private var theme
-    private let provider: any DeveloperModeProviding
-    @State private var isEnabled = false
-    @State private var observerHandle: (any DeveloperModeProvidingObserverHandle)?
-
-    init(provider: any DeveloperModeProviding) {
-        self.provider = provider
-    }
-
-    var body: some View {
-        Button {
-            provider.toggle()
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: isEnabled ? "hammer.fill" : "hammer")
-                Text(LumiPluginLocalization.string("DEV"))
-            }
-            .font(.appMicroEmphasized)
-            .tracking(0.3)
-            .foregroundStyle(isEnabled ? .white : theme.textSecondary)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(
-                isEnabled
-                    ? theme.warning
-                    : theme.textSecondary.opacity(0.12),
-                in: Capsule(style: .continuous)
-            )
-        }
-        .buttonStyle(.plain)
-        .help(
-            LumiPluginLocalization.string(
-                isEnabled ? "Developer mode is enabled" : "Developer mode is disabled"
-            )
-        )
-        .accessibilityLabel(LumiPluginLocalization.string("Developer mode"))
-        .accessibilityValue(
-            LumiPluginLocalization.string(
-                isEnabled ? "Developer mode is enabled" : "Developer mode is disabled"
-            )
-        )
-        .onAppear {
-            guard observerHandle == nil else { return }
-            isEnabled = provider.isEnabled
-            observerHandle = provider.addObserver { event in
-                guard case let .enabledChanged(value) = event else { return }
-                isEnabled = value
-            }
-        }
-        .onDisappear {
-            observerHandle?.cancel()
-            observerHandle = nil
-        }
     }
 }

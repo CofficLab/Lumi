@@ -85,7 +85,6 @@ extension ConversationManager {
         }
         conversations[index].verbosity = verbosity
         notifyConversationObservers(.verbosityChanged(conversationID))
-        notifyConversationsChanged()
         return conversationID
     }
 

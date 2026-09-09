@@ -133,6 +133,7 @@ final class ListV3ViewModel: ObservableObject {
 
     /// 切换/进入会话：记录目标会话并加载最近一页；外部订阅由插件维护。
     func activate(conversationID: UUID?) async {
+        guard selectedConversationID == conversationID else { return }
         activationSequence &+= 1
         let mySequence = activationSequence
 
@@ -291,6 +292,9 @@ final class ListV3ViewModel: ObservableObject {
     }
 
     func handleSelectedConversationChange(_ conversationID: UUID?) {
+        // Invalidate the previous conversation before the async activation
+        // task starts, so rapid switching cannot publish stale snapshots.
+        activationSequence &+= 1
         Task { @MainActor [weak self] in
             await self?.activate(conversationID: conversationID)
         }

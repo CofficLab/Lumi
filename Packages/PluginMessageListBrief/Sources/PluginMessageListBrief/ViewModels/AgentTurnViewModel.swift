@@ -118,6 +118,7 @@ final class AgentTurnViewModel {
         let chronological = messages.sorted(by: messageOrdering)
         let userMessages: [Message]
         var responseMessages: [Message]
+        var selectedSummaryMessageID: UUID?
 
         if let record = item.record {
             let summary = AgentTurnSummaryBuilder()
@@ -125,6 +126,7 @@ final class AgentTurnViewModel {
                 .first
             userMessages = summary?.userMessage.map { [$0] } ?? []
             responseMessages = summary?.processMessages ?? []
+            selectedSummaryMessageID = summary?.message.id
             if let result = summary?.message,
                !(item.acceptsLiveActivity && isPlaceholderStatus(result)),
                !(result.role == .status && result.content == "…" && !responseMessages.isEmpty) {
@@ -147,10 +149,25 @@ final class AgentTurnViewModel {
         // V1 不将流式临时回复加入投影；仅在回合结束后展示完整落库消息。
         responseMessages = deduplicated(responseMessages.sorted(by: messageOrdering))
 
+        // 活跃回合只有两个展示区：过程折叠区和独立的实时活动视图。
+        // 不要把工具调用或尚未稳定的助手消息当作“最后回复”放到折叠区外。
+        let processMessages: [Message]
+        let lastMessage: Message?
+        if item.acceptsLiveActivity {
+            if let selectedSummaryMessageID {
+                responseMessages.removeAll { $0.id == selectedSummaryMessageID }
+            }
+            processMessages = responseMessages
+            lastMessage = nil
+        } else {
+            processMessages = Array(responseMessages.dropLast())
+            lastMessage = responseMessages.last
+        }
+
         return AgentTurnMessageProjection(
             userMessages: userMessages,
-            processMessages: Array(responseMessages.dropLast()),
-            lastMessage: responseMessages.last,
+            processMessages: processMessages,
+            lastMessage: lastMessage,
             activity: item.acceptsLiveActivity
                 ? AgentActivityProjection.resolve(
                     conversationState: conversationState,

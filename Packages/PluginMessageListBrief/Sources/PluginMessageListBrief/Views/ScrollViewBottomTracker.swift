@@ -78,6 +78,8 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
     let onChange: (Bool) -> Void
     /// 提供给滚动协调器的底层滚动控制器，不参与 SwiftUI 布局。
     let controller: ScrollViewBottomController?
+    /// 可视区域高度变化时回调，用于计算发送后的尾部留白。
+    let onViewportHeightChange: (CGFloat) -> Void
     /// Live-resize 结束时回调，参数为 resize **开始时**是否在底部。
     /// 宿主据此决定底部场景滚到底部（scrollTick）、非底部场景由 tracker 内部恢复 offset。
     var onLiveResizeEnd: ((Bool) -> Void)?
@@ -85,10 +87,12 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
     init(
         onChange: @escaping (Bool) -> Void,
         controller: ScrollViewBottomController? = nil,
+        onViewportHeightChange: @escaping (CGFloat) -> Void = { _ in },
         onLiveResizeEnd: ((Bool) -> Void)? = nil
     ) {
         self.onChange = onChange
         self.controller = controller
+        self.onViewportHeightChange = onViewportHeightChange
         self.onLiveResizeEnd = onLiveResizeEnd
     }
 
@@ -97,6 +101,9 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
         view.bottomController = controller
         view.onChange = { [weak coordinator = context.coordinator] atBottom in
             coordinator?.onChange(atBottom)
+        }
+        view.onViewportHeightChange = { [weak coordinator = context.coordinator] height in
+            coordinator?.onViewportHeightChange(height)
         }
         view.onLiveResizeEnd = { [weak coordinator = context.coordinator] wasAtBottom in
             coordinator?.onLiveResizeEnd?(wasAtBottom)
@@ -108,6 +115,7 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
         // 故意不做任何尺寸/几何相关工作 —— 这里一旦触碰布局就会重新进入
         // SwiftUI 的尺寸协商，可能复活反馈环。仅同步回调句柄。
         context.coordinator.onChange = onChange
+        context.coordinator.onViewportHeightChange = onViewportHeightChange
         context.coordinator.onLiveResizeEnd = onLiveResizeEnd
         nsView.bottomController = controller
     }
@@ -117,14 +125,24 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onChange: onChange, onLiveResizeEnd: onLiveResizeEnd)
+        Coordinator(
+            onChange: onChange,
+            onViewportHeightChange: onViewportHeightChange,
+            onLiveResizeEnd: onLiveResizeEnd
+        )
     }
 
     final class Coordinator {
         var onChange: (Bool) -> Void
+        var onViewportHeightChange: (CGFloat) -> Void
         var onLiveResizeEnd: ((Bool) -> Void)?
-        init(onChange: @escaping (Bool) -> Void, onLiveResizeEnd: ((Bool) -> Void)?) {
+        init(
+            onChange: @escaping (Bool) -> Void,
+            onViewportHeightChange: @escaping (CGFloat) -> Void,
+            onLiveResizeEnd: ((Bool) -> Void)?
+        ) {
             self.onChange = onChange
+            self.onViewportHeightChange = onViewportHeightChange
             self.onLiveResizeEnd = onLiveResizeEnd
         }
     }
@@ -134,12 +152,19 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
 @MainActor
 final class TrackerView: NSView {
     fileprivate var onChange: ((Bool) -> Void)?
+    fileprivate var onViewportHeightChange: ((CGFloat) -> Void)?
     fileprivate var onLiveResizeEnd: ((Bool) -> Void)?
     fileprivate var bottomController: ScrollViewBottomController?
     private var observation: NSObjectProtocol?
     private weak var observedScrollView: NSScrollView?
     /// 上一次报告的「是否在底部」，用于迟滞判定、避免无谓回调。
     private var lastAtBottom: Bool = true
+    private var lastVisibleHeight: CGFloat = 0
+    /// Layout callbacks must not synchronously mutate SwiftUI state while
+    /// AppKit is laying out the hosting view. Coalesce the latest viewport
+    /// height and deliver it on the next main-actor turn instead.
+    private var pendingViewportHeight: CGFloat?
+    private var viewportHeightUpdateTask: Task<Void, Never>?
 
     // MARK: - Live-resize 恢复
 
@@ -161,6 +186,10 @@ final class TrackerView: NSView {
         super.init(frame: .zero)
         // 不绘制、不参与命中测试，纯粹作为「挂在视图树里用来找 scrollView」的锚点。
         wantsLayer = false
+    }
+
+    deinit {
+        viewportHeightUpdateTask?.cancel()
     }
 
     @available(*, unavailable)
@@ -271,6 +300,9 @@ final class TrackerView: NSView {
     }
 
     fileprivate func stopObserving() {
+        viewportHeightUpdateTask?.cancel()
+        viewportHeightUpdateTask = nil
+        pendingViewportHeight = nil
         if let observation {
             NotificationCenter.default.removeObserver(observation)
             self.observation = nil
@@ -438,6 +470,11 @@ final class TrackerView: NSView {
         guard documentHeight.isFinite, visibleHeight.isFinite,
               documentHeight < 10_000_000, visibleHeight > 0 else { return }
 
+        if abs(visibleHeight - lastVisibleHeight) >= 0.5 {
+            lastVisibleHeight = visibleHeight
+            scheduleViewportHeightUpdate(visibleHeight)
+        }
+
         let distance = documentHeight - (offsetY + visibleHeight)
         // 迟滞：已在底部时用更宽容的离开阈值，不在底部时用更严格的进入阈值，
         // 避免在容差边界抖动时反复翻转。
@@ -449,6 +486,24 @@ final class TrackerView: NSView {
         guard atBottom != lastAtBottom else { return }
         lastAtBottom = atBottom
         onChange?(atBottom)
+    }
+
+    /// Defer the SwiftUI-facing callback until the current AppKit layout pass
+    /// has returned. Without this hop, changing `viewportHeight` from inside
+    /// `layout()` can re-enter List's AttributeGraph layout and hit SwiftUI's
+    /// `DynamicLayoutViewChildGeometry` assertion.
+    private func scheduleViewportHeightUpdate(_ height: CGFloat) {
+        pendingViewportHeight = height
+        guard viewportHeightUpdateTask == nil else { return }
+
+        viewportHeightUpdateTask = Task { @MainActor [weak self] in
+            await Task.yield()
+            guard let self else { return }
+            self.viewportHeightUpdateTask = nil
+            guard let pendingViewportHeight = self.pendingViewportHeight else { return }
+            self.pendingViewportHeight = nil
+            self.onViewportHeightChange?(pendingViewportHeight)
+        }
     }
 
     /// 切换会话/重置滚动位置时由外部调用，把判定重置回「在底部」。

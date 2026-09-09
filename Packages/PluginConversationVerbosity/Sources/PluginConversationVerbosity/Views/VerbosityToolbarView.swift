@@ -1,19 +1,16 @@
 import ProviderConversation
-import ProviderToast
 import SwiftUI
 
 /// 详细度 chip：显示当前会话的 verbosity，点击弹出三档选择。
 struct VerbosityToolbarView: View {
     private let conversationObservation: ConversationManagerObservationBox
-    let toast: (any ToastProviding)?
 
     @State private var isPopoverPresented = false
     @State private var observationRevision = 0
     @State private var observerHandle: (any ConversationManagerObservationBox.ObserverHandle)?
 
-    init(observation: ConversationManagerObservationBox, toast: (any ToastProviding)? = nil) {
+    init(observation: ConversationManagerObservationBox) {
         self.conversationObservation = observation
-        self.toast = toast
     }
 
     private var capability: any ConversationVerbosityCapability {
@@ -47,17 +44,13 @@ struct VerbosityToolbarView: View {
         .help(selectedVerbosity.description)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VerbosityPopover(selected: selectedVerbosity) { level in
-                capability.setGlobalVerbosity(level)
                 if let conversationID = capability.selectedConversationID {
                     Task { @MainActor in
                         await capability.setVerbosityAndWait(level, for: conversationID)
                     }
+                } else {
+                    capability.setGlobalVerbosity(level)
                 }
-                ConversationVerbosityToast.show(
-                    toast,
-                    title: LumiPluginLocalization.string("Response Detail", bundle: .module),
-                    detail: level.levelCode,
-                )
                 isPopoverPresented = false
             }
         }

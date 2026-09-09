@@ -30,6 +30,7 @@ import ProviderIdleTime
 import ProviderLegacyData
 import ProviderPluginControl
 import ProviderPluginManaging
+import ProviderDeveloperMode
 import ProviderWebServer
 import ProviderExternalFile
 import ProviderLifecycleHooks
@@ -99,10 +100,11 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultLLMManager()
     }
 
-    /// 产出 `MessageSendingProviding` 实现的工厂钩子。
+    /// 产出 `MessageSendingProviding` 实现。
     ///
-    /// 默认注册职责已移交 `PluginMessageSender.MessageSenderPlugin`（onBoot 中
-    /// 解析基础 Provider 并注册），宿主如需定制实现，可覆盖本方法并自行注册。
+    /// `DefaultMessageSender` 在其 `init` 中自动向 `agentLoop` 注册事件观察器，
+    /// 无需外部额外接线。`PluginAgentLoop` 替换 `AgentLoopProviding` 后会在
+    /// `onBoot` 中重新注册本 Provider 以指向新的 AgentLoop 实例。
     public func makeMessageSenderProvider(
         conversations: any ConversationManaging,
         messages: any MessageManaging,
@@ -244,6 +246,11 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultSkillProvider()
     }
 
+    /// 产出 `DeveloperModeProviding` 实现（默认内存实现）。
+    public func makeDeveloperModeProvider() -> any DeveloperModeProviding {
+        DefaultDeveloperModeProviding()
+    }
+
     // MARK: - Provider Registration
 
     /// 装配并注册全部默认 Provider，完成依赖接线。
@@ -338,10 +345,10 @@ public struct DefaultProviderFactory: ProviderFactory {
             agentLoop.setLifecycleHooks(lifecycleHooks)
         }
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop)
-        // `MessageSendingProviding` 不再由工厂装配注册：改由 `PluginMessageSender`
-        // （`MessageSenderPlugin`，order=9）在 onBoot 中解析上述 conversations /
-        // messages / agentLoop 并注册，与消费方插件共享同一实例。宿主如需定制
-        // 产出逻辑，可覆盖 `makeMessageSenderProvider` 或替换插件列表。
+        try kernel.registerProvider(
+            (any MessageSendingProviding).self,
+            makeMessageSenderProvider(conversations: conversations, messages: messages, agentLoop: agentLoop)
+        )
         // 输入插件通过自己的窄播观察器消费文本、光标和高度等高频状态。
         try kernel.registerProvider(
             (any ConversationInputProviding).self,
@@ -389,5 +396,9 @@ public struct DefaultProviderFactory: ProviderFactory {
         // Skill 管理：插件技能贡献注册表。必须在插件启动前注册，
         // 使各插件在 onBoot 中能解析到 SkillProviding 并注入技能。
         try kernel.registerProvider((any SkillProviding).self, makeSkillProvider())
+
+        // 开发者模式：运行时开关。必须在插件启动前注册，
+        // 使 DeveloperModePlugin 在 onBoot 中能解析到。
+        try kernel.registerProvider((any DeveloperModeProviding).self, makeDeveloperModeProvider())
     }
 }

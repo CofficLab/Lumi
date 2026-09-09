@@ -24,6 +24,9 @@ extension KernelCoreContainer {
         providers[key] = provider
         if let activePluginID {
             providerOwners[key] = activePluginID
+            if Self.verbose {
+                Self.logger.info("\(Self.t)\(Self.emoji) 注册 Provider '\(String(reflecting: type), privacy: .public)' <- '\(activePluginID)'")
+            }
         }
     }
 
@@ -51,7 +54,7 @@ extension KernelCoreContainer {
         guard let provider = providers[ObjectIdentifier(type)] as? T else {
             if let pluginID = activePluginID, activePluginLifecyclePhase == .boot {
                 Self.logger.error(
-                    "Plugin '\(pluginID, privacy: .public)' could not resolve provider '\(String(reflecting: type), privacy: .public)' during onBoot"
+                    "\(Self.t)Plugin '\(pluginID, privacy: .public)' could not resolve provider '\(String(reflecting: type), privacy: .public)' during onBoot"
                 )
             }
             return nil
