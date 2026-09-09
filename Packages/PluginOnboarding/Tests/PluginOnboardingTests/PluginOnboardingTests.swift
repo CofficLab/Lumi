@@ -3,12 +3,22 @@ import KernelCore
 import ProviderOnboarding
 import ProviderRootView
 import ProviderStorage
+import SwiftUI
 import Testing
 @testable import PluginOnboarding
 
 @MainActor
 @Test func onboardingHasStablePluginIdentity() {
     #expect(OnboardingPlugin().id == "com.coffic.lumi.plugin.onboarding")
+}
+
+@MainActor
+@Test func onboardingPageItemRetainsProviderTitle() {
+    let page = OnboardingPageItem(id: "test-page", title: "Provider title") {
+        EmptyView()
+    }
+
+    #expect(page.title == "Provider title")
 }
 
 @MainActor
