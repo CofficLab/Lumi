@@ -1,3 +1,4 @@
+import Foundation
 import LumiUI
 import ProviderOnboarding
 import ProviderRootView
@@ -81,7 +82,13 @@ struct OnboardingSheet: View {
                     .font(DesignTokens.Typography.bodyEmphasized)
                     .foregroundStyle(theme.textSecondary)
                 Spacer()
-                Text("\(safeIndex + 1) of \(pages.count)")
+                Text(
+                    String(
+                        format: LumiPluginLocalization.string("%lld of %lld", bundle: LumiPluginLocalization.bundle),
+                        Int64(safeIndex + 1),
+                        Int64(pages.count)
+                    )
+                )
                     .font(DesignTokens.Typography.caption1)
                     .foregroundStyle(theme.textTertiary)
                 AppButton(LumiPluginLocalization.string("Skip", bundle: LumiPluginLocalization.bundle), style: .tonal, size: .small, action: finish)

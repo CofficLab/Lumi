@@ -61,34 +61,9 @@ private struct WelcomePage: View {
                     .multilineTextAlignment(.center)
                     .foregroundStyle(theme.textSecondary)
             }
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm + 4) {
-                feature("bubble.left.and.bubble.right", LumiPluginLocalization.string("Conversations", bundle: .module), LumiPluginLocalization.string("Keep context, files, and preferences with every chat.", bundle: .module))
-                feature("folder", LumiPluginLocalization.string("Projects", bundle: .module), LumiPluginLocalization.string("Connect conversations to the project you are working on.", bundle: .module))
-                feature("wrench.and.screwdriver", LumiPluginLocalization.string("Tools", bundle: .module), LumiPluginLocalization.string("Use built-in skills and agent tools when you need them.", bundle: .module))
-            }
-            .padding(DesignTokens.Spacing.md + 2)
-            .background(
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.md - 2, style: .continuous)
-                    .fill(theme.textSecondary.opacity(0.06))
-            )
         }
         .frame(maxWidth: 520)
         .padding(.vertical, DesignTokens.Spacing.lg)
-    }
-
-    private func feature(_ symbol: String, _ title: String, _ detail: String) -> some View {
-        HStack(alignment: .top, spacing: DesignTokens.Spacing.sm + 4) {
-            Image(systemName: symbol)
-                .foregroundStyle(theme.primary)
-                .frame(width: 20)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(DesignTokens.Typography.bodyEmphasized)
-                Text(detail)
-                    .font(DesignTokens.Typography.subheadline)
-                    .foregroundStyle(theme.textSecondary)
-            }
-        }
     }
 }
 
@@ -120,7 +95,7 @@ private struct AISetupPage: View {
 
             if providers.isEmpty {
                 ContentUnavailableView(
-                    "No providers available",
+                    LumiPluginLocalization.string("No providers available", bundle: .module),
                     systemImage: "network.slash",
                     description: Text(LumiPluginLocalization.string("You can configure a provider later in Settings.", bundle: .module))
                 )
@@ -153,7 +128,10 @@ private struct AISetupPage: View {
                     }
 
                     AppButton(
-                        provider.providerInfo.isLocal ? "Use Provider" : "Save API Key",
+                        LumiPluginLocalization.string(
+                            provider.providerInfo.isLocal ? "Use Provider" : "Save API Key",
+                            bundle: .module
+                        ),
                         style: .primary,
                         action: {
                             provider.setApiKey(apiKey)
