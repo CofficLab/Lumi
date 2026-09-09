@@ -63,6 +63,7 @@ public struct SettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .padding(.bottom, 16)
         .task {
             await loadOpenedFiles()
         }
