@@ -37,7 +37,9 @@ public enum ResponseVerbosity: CaseIterable, Codable, Identifiable, RawRepresent
 
     public var iconName: String {
         switch self {
-        case .brief: "text.alignleft"
+        // A checkmark makes the concise, conclusion-first mode visibly
+        // different from the text-layout icons used by the richer modes.
+        case .brief: "checkmark.circle"
         case .standard: "text.justify.left"
         case .detailed: "doc.richtext"
         }
