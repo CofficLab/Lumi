@@ -7,13 +7,15 @@ import SwiftUI
 /// 模型选择弹窗：左侧供应商列表 + 右侧模型列表（由旧版复刻）。
 struct PopoverContent: View {
     @LumiTheme private var theme
-    @ObservedObject var box: ObservableLLMProviderManagerBox
+    let box: LLMProviderManagerBox
     @ObservedObject var usageStore: ProviderUsageStore
     let toast: (any ToastProviding)?
     @Binding var isPresented: Bool
 
     /// 当前选中的供应商（初始来自内核 `LLMManaging`）。
     @State private var selectedProviderID: String?
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any LLMProviderManagerBox.ObserverHandle)?
 
     var body: some View {
         HStack(spacing: 0) {
@@ -47,6 +49,17 @@ struct PopoverContent: View {
                 selectedProviderID = box.selectedProviderID
                     ?? box.providerInfos.first.map { $0.id }
             }
+        }
+        .id(observationRevision)
+        .onAppear {
+            guard observerHandle == nil else { return }
+            observerHandle = box.addObserver { _ in
+                observationRevision += 1
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
         }
     }
 }

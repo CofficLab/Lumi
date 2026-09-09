@@ -20,7 +20,7 @@ Model Selector 插件（KernelCore 体系），由旧版 `Plugins/ModelSelectorP
 |--------------------|---------------------|
 | `chatSectionActionBarItems(.leading)` | `ChatSectionProviding.addBarItems(.actionLeading)` |
 | `kernel.resolveService((any LLMProviderManaging).self)` | `kernel.resolveProvider((any LLMManaging).self)` |
-| `.onLumiSelectedRemoteProviderIDDidChange` 等通知 | `ObservableLLMProviderManagerBox`（桥接 `LLMManaging.objectWillChange`） |
+| `.onLumiSelectedRemoteProviderIDDidChange` 等通知 | `LLMProviderManagerBox`（桥接 typed provider / conversation events） |
 | `LumiLLMProviderInfo` / `LumiModelInfo` | `LLMProviderInfo` / `LLMModelInfo` |
 
 插件 ID 保持旧值 `com.coffic.lumi.plugin.model-selector`，启用状态与自动化不失效。

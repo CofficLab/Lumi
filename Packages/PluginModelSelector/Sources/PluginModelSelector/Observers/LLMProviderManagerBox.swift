@@ -1,43 +1,58 @@
-import Combine
 import Foundation
 import KitLLM
 import ProviderConversation
 import ProviderLLMManager
 
-/// SwiftUI 友好的内核 `LLMManaging` 包装器。
+/// 模型选择器使用的 LLM 管理器快照。
 ///
-/// SwiftUI 的 `@ObservedObject` 不支持 `any LLMManaging` 类型的
-/// existentials（`ObservableObject` 要求具体类型，报错
-/// `type 'any LLMManaging' cannot conform to 'ObservableObject'`）。
-///
-/// 本包装器通过 `LLMManaging.addObserver(_:)` 订阅 `LLMManagerEvent`，
-/// 把状态刷新到自身的 `@Published` 快照上，视图即可：
-/// ```swift
-/// @ObservedObject var box: ObservableLLMProviderManagerBox
-/// box.selectedProviderID
-/// box.providerInfos
-/// ```
+/// 通过 `LLMManaging.addObserver(_:)` 和会话观察接口刷新快照，
+/// 再通过本地类型化事件通知 SwiftUI 视图。
 @MainActor
-public final class ObservableLLMProviderManagerBox: ObservableObject {
+public final class LLMProviderManagerBox {
+    public enum Event {
+        case stateChanged
+    }
+
+    @MainActor
+    public protocol ObserverHandle: AnyObject {
+        func cancel()
+    }
+
+    private final class Handle: ObserverHandle {
+        let cancelAction: () -> Void
+        private var isCancelled = false
+
+        init(cancelAction: @escaping () -> Void) {
+            self.cancelAction = cancelAction
+        }
+
+        func cancel() {
+            guard !isCancelled else { return }
+            isCancelled = true
+            cancelAction()
+        }
+    }
+
     /// 被包装的 LLM Provider 管理器实例（用于读取供应商与模型目录）。
     public let manager: any LLMManaging
     /// 当前上下文的模型选择能力；写入会话/全局设置由 capability 路由。
     let selection: any ModelSelectionCapability
 
     /// 当前选中的供应商 id 快照。
-    @Published public private(set) var selectedProviderID: String?
+    public private(set) var selectedProviderID: String?
 
     /// 当前选中的模型 id 快照。
-    @Published public private(set) var selectedModel: String?
+    public private(set) var selectedModel: String?
 
     /// 全部已注册供应商的元数据快照，按注册顺序排列。
-    @Published public private(set) var providerInfos: [LLMProviderInfo] = []
+    public private(set) var providerInfos: [LLMProviderInfo] = []
 
     /// providerID -> 模型 id 列表快照。
-    @Published public private(set) var modelIDs: [String: [String]] = [:]
+    public private(set) var modelIDs: [String: [String]] = [:]
 
     private var observer: (any LLMManagerObserverHandle)?
     private var conversationObserver: (any ConversationObserverHandle)?
+    private var observers: [UUID: (Event) -> Void] = [:]
 
     public convenience init(manager: any LLMManaging) {
         self.init(
@@ -68,6 +83,17 @@ public final class ObservableLLMProviderManagerBox: ObservableObject {
         }
     }
 
+    @discardableResult
+    public func addObserver(
+        _ callback: @escaping (Event) -> Void
+    ) -> any ObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return Handle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
     /// 按 id 查找供应商元数据快照；未注册时返回 `nil`。
     public func providerInfo(id: String) -> LLMProviderInfo? {
         providerInfos.first { $0.id == id }
@@ -92,5 +118,6 @@ public final class ObservableLLMProviderManagerBox: ObservableObject {
                 ($0.providerInfo.id, manager.models(for: $0.providerInfo.id))
             }
         )
+        observers.values.forEach { $0(.stateChanged) }
     }
 }

@@ -184,6 +184,29 @@ struct ModelSelectionCapabilityTests {
     }
 }
 
+@Suite("LLM provider manager box")
+@MainActor
+struct LLMProviderManagerBoxTests {
+    @Test("Refreshes its snapshot through typed events")
+    func refreshesSnapshotThroughTypedEvents() throws {
+        let manager = DefaultLLMManager()
+        let box = LLMProviderManagerBox(manager: manager)
+        var eventCount = 0
+        let handle = box.addObserver { _ in eventCount += 1 }
+
+        try manager.register(TestProvider(
+            id: "box-provider",
+            models: ["box-model"]
+        ))
+
+        #expect(eventCount > 0)
+        #expect(box.providerInfo(id: "box-provider")?.id == "box-provider")
+        #expect(box.models(for: "box-provider") == ["box-model"])
+
+        handle.cancel()
+    }
+}
+
 @MainActor
 private final class TestProvider: ManagedLLMProvider {
     let providerInfo: LLMProviderInfo
