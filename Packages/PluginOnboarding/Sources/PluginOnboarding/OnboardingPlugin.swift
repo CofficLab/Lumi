@@ -176,11 +176,14 @@ private struct OnboardingCard: View {
         VStack(spacing: 0) {
             HStack {
                 Label(
-                    LumiPluginLocalization.string("Getting started", bundle: .module),
+                    pages.indices.contains(safeIndex)
+                        ? pages[safeIndex].title
+                        : LumiPluginLocalization.string("Getting started", bundle: .module),
                     systemImage: "graduationcap.fill"
                 )
                 .font(DesignTokens.Typography.bodyEmphasized)
                 .foregroundStyle(theme.textSecondary)
+                .lineLimit(1)
                 Spacer()
                 Text(
                     String(
@@ -191,12 +194,14 @@ private struct OnboardingCard: View {
                 )
                 .font(DesignTokens.Typography.caption1)
                 .foregroundStyle(theme.textTertiary)
-                AppButton(
-                    LumiPluginLocalization.string("Skip", bundle: .module),
-                    style: .tonal,
-                    size: .small,
-                    action: finish
-                )
+                if safeIndex < pages.count - 1 {
+                    AppButton(
+                        LumiPluginLocalization.string("Skip", bundle: .module),
+                        style: .tonal,
+                        size: .small,
+                        action: finish
+                    )
+                }
             }
             .padding(.horizontal, DesignTokens.Spacing.lg)
             .padding(.vertical, DesignTokens.Spacing.md + 4)
