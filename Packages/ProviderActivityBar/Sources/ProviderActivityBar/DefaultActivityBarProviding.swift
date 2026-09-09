@@ -8,8 +8,20 @@ import SwiftUI
 public final class DefaultActivityBarProviding: ActivityBarProviding, ObservableObject {
     @Published public private(set) var items: [ActivityBarItem] = []
     @Published public private(set) var activeItemID: String?
+    private var observers: [UUID: (ActivityBarEvent) -> Void] = [:]
 
     public init() {}
+
+    @discardableResult
+    public func addActivityBarObserver(
+        _ callback: @escaping (ActivityBarEvent) -> Void
+    ) -> any ActivityBarObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
 
     public func registerItems(_ items: [ActivityBarItem]) {
         let previousItems = self.items
@@ -21,6 +33,7 @@ public final class DefaultActivityBarProviding: ActivityBarProviding, Observable
             nextActiveID = self.items.first?.id
         }
         setActiveItemID(nextActiveID, previousItems: previousItems)
+        notify(.itemsChanged)
     }
 
     public func activateItem(id: String?) {
@@ -45,6 +58,24 @@ public final class DefaultActivityBarProviding: ActivityBarProviding, Observable
         if let id,
            let nextItem = items.first(where: { $0.id == id }), id != previousID {
             nextItem.onActivationChanged(.activated)
+        }
+        notify(.activeItemChanged(id))
+    }
+
+    private func notify(_ event: ActivityBarEvent) {
+        observers.values.forEach { $0(event) }
+    }
+
+    private final class ObserverHandle: ActivityBarObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
         }
     }
 }

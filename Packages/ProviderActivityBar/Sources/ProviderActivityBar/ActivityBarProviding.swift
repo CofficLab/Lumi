@@ -14,6 +14,17 @@ import SwiftUI
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any ActivityBarProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
+public enum ActivityBarEvent {
+    case itemsChanged
+    case activeItemChanged(String?)
+}
+
+@MainActor
+public protocol ActivityBarObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
 public protocol ActivityBarProviding: AnyObject, ObservableObject
     where ObjectWillChangePublisher == ObservableObjectPublisher {
     /// 当前已注入的全部 ActivityBar 项。
@@ -24,6 +35,11 @@ public protocol ActivityBarProviding: AnyObject, ObservableObject
 
     /// 当前激活入口；无入口时为 nil。
     var activeItemID: String? { get }
+
+    @discardableResult
+    func addActivityBarObserver(
+        _ callback: @escaping (ActivityBarEvent) -> Void
+    ) -> any ActivityBarObserverHandle
 
     /// 注入 ActivityBar 项（替换当前全部项）。
     func registerItems(_ items: [ActivityBarItem])
@@ -44,6 +60,13 @@ public protocol ActivityBarProviding: AnyObject, ObservableObject
 }
 
 public extension ActivityBarProviding {
+    @discardableResult
+    func addActivityBarObserver(
+        _ callback: @escaping (ActivityBarEvent) -> Void
+    ) -> any ActivityBarObserverHandle {
+        NoopActivityBarObserverHandle()
+    }
+
     var shouldDisplayActivityBar: Bool { items.count > 1 }
 
     var activeItemID: String? { nil }
@@ -62,4 +85,9 @@ public extension ActivityBarProviding {
     }
 
     func activateItem(id: String?) {}
+}
+
+@MainActor
+private final class NoopActivityBarObserverHandle: ActivityBarObserverHandle {
+    func cancel() {}
 }

@@ -41,6 +41,32 @@ struct ProviderActivityBarTests {
         #expect(provider.activeItemID == "a")
     }
 
+    @Test("ActivityBar 状态变化会发布类型化观察事件")
+    func activityBarChangesAreObservable() {
+        let provider = DefaultActivityBarProviding()
+        var events: [String] = []
+        let handle = provider.addActivityBarObserver { event in
+            switch event {
+            case .itemsChanged:
+                events.append("items")
+            case let .activeItemChanged(id):
+                events.append("active:\(id ?? "nil")")
+            }
+        }
+
+        provider.registerItems([
+            ActivityBarItem(id: "a", title: "A", systemImage: "a"),
+            ActivityBarItem(id: "b", title: "B", systemImage: "b"),
+        ])
+        provider.activateItem(id: "b")
+
+        #expect(events == ["active:a", "items", "active:b"])
+
+        handle.cancel()
+        provider.activateItem(id: "a")
+        #expect(events == ["active:a", "items", "active:b"])
+    }
+
     @Test("仅一个入口时不显示 ActivityBar")
     func hidesActivityBarWhenThereIsAtMostOneItem() {
         let provider = DefaultActivityBarProviding()
