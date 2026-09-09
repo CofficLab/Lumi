@@ -17,7 +17,9 @@ private extension Notification.Name {
 /// - 内容溢出时滚动，配合上下 8pt 渐隐遮罩提示可滚动；
 /// - 右键菜单提供「打开设置」入口（与旧版一致，通过 `lumi.openSettings` 通知）。
 internal struct ActivityBarView: View {
-    @ObservedObject var provider: ActivityBarProvider
+    let provider: ActivityBarProvider
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any ActivityBarObserverHandle)?
 
     var body: some View {
         Group {
@@ -45,6 +47,17 @@ internal struct ActivityBarView: View {
                     }
                 }
             }
+        }
+        .id(observationRevision)
+        .onAppear {
+            guard observerHandle == nil else { return }
+            observerHandle = provider.addActivityBarObserver { _ in
+                observationRevision += 1
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
         }
     }
 }
