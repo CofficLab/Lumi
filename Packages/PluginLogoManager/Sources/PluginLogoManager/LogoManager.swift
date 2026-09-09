@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// 复刻旧版 `LogoManager`（KernelLumi 体系），迁移至 KernelCore 生态：
 /// - 插件通过 `registerLogoItem(_:)` 追加自己的 Logo 贡献（同 id 覆盖）；
-/// - 消费方订阅 `objectWillChange` 即可感知 Logo 集合变化；
+/// - 消费方通过 `addLogoObserver` 感知 Logo 集合与高亮状态变化；
 /// - 内置结构化日志，便于诊断注册 / 注销 / 高亮状态切换。
 @MainActor
 public final class LogoManager: LogoProviding, SuperLog {
@@ -16,11 +16,12 @@ public final class LogoManager: LogoProviding, SuperLog {
     public nonisolated static let emoji = "🖼️"
     nonisolated static let verbose = false
 
-    @Published public private(set) var isLogoHighlighted = false
+    public private(set) var isLogoHighlighted = false
     public private(set) var allLogoItems: [LogoItem] = []
 
     private var logoItems: [String: LogoItem] = [:]
     private var logoItemOrder: [String] = []
+    private var observers: [UUID: (LogoProvidingEvent) -> Void] = [:]
 
     public init() {}
 
@@ -30,6 +31,18 @@ public final class LogoManager: LogoProviding, SuperLog {
         }
         Self.logger.info("[LogoHighlight] \(self.isLogoHighlighted) -> \(highlighted)")
         isLogoHighlighted = highlighted
+        notify(.highlightChanged(highlighted))
+    }
+
+    @discardableResult
+    public func addLogoObserver(
+        _ callback: @escaping (LogoProvidingEvent) -> Void
+    ) -> any LogoObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
     }
 
     public func registerLogoItem(_ item: LogoItem) {
@@ -41,6 +54,7 @@ public final class LogoManager: LogoProviding, SuperLog {
         }
         logoItems[item.id] = item
         updateSortedItems()
+        notify(.itemsChanged)
     }
 
     public func unregisterLogoItem(id: String) {
@@ -50,6 +64,7 @@ public final class LogoManager: LogoProviding, SuperLog {
         logoItems.removeValue(forKey: id)
         logoItemOrder.removeAll { $0 == id }
         updateSortedItems()
+        notify(.itemsChanged)
     }
 
     public func clearAllContributions() {
@@ -59,10 +74,28 @@ public final class LogoManager: LogoProviding, SuperLog {
         logoItems.removeAll()
         logoItemOrder.removeAll()
         updateSortedItems()
+        notify(.itemsChanged)
     }
 
     private func updateSortedItems() {
         allLogoItems = logoItemOrder.compactMap { logoItems[$0] }
             .sorted { $0.order > $1.order }
+    }
+
+    private func notify(_ event: LogoProvidingEvent) {
+        observers.values.forEach { $0(event) }
+    }
+
+    private final class ObserverHandle: LogoObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
+        }
     }
 }
