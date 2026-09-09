@@ -43,6 +43,11 @@ struct AISetupPage: View {
                     providerDetailCard(provider)
                 }
             }
+
+            Text(LumiPluginLocalization.string("You can also configure providers anytime in Settings > Cloud Providers.", bundle: .module))
+                .font(DesignTokens.Typography.caption1)
+                .foregroundStyle(theme.textSecondary)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: 460)
         .padding(.vertical, DesignTokens.Spacing.xxl - 4)
