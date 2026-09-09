@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 /// 选中对话变化观察者的注册令牌。
@@ -18,12 +17,9 @@ public protocol SelectedConversationObserverHandle: AnyObject {
 ///
 /// 复刻自旧版内核 KernelLumi 的 `ConversationManaging`，去掉对 KernelLumi /
 /// 事件总线 / 具体存储实现的依赖，使协议存在类型（`any ConversationManaging`）
-/// 可被 SwiftUI 跨包响应式观察 + Hook 订阅。
-///
-/// `ObjectWillChangePublisher == ObservableObjectPublisher` 约束用于让协议存在类型的
-/// `objectWillChange` 可被订阅。
+/// 可被 SwiftUI 跨包读取，并通过语义事件订阅变化。
 @MainActor
-public protocol ConversationManaging: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol ConversationManaging: AnyObject {
     /// 所有对话列表
     var conversations: [ConversationSummary] { get }
 
@@ -118,7 +114,7 @@ public protocol ConversationManaging: ObservableObject where ObjectWillChangePub
     /// 注册对话领域事件观察者。
     ///
     /// 事件只描述语义变化，适合需要区分创建、删除、偏好修改等场景的消费者；
-    /// 一般 UI 刷新仍应使用 `ObservableObject.objectWillChange`。
+    /// UI 刷新也应通过这些语义事件驱动。
     @discardableResult
     func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle
 
