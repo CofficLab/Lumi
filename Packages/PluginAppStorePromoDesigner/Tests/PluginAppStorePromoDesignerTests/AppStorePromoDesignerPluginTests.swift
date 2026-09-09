@@ -44,6 +44,12 @@ struct AppStorePromoDesignerPluginTests {
         ])
     }
 
+    @Test("提示词标题本地化 key 可解析")
+    func promptSuggestionLocalizationResolves() {
+        let key = "Prompt.Suggestion.Create"
+        #expect(PromoLocalization.string(key) != key)
+    }
+
     @Test func activatingPluginEntryShowsChatAndActivatesRail() async throws {
         let kernel = KernelCoreContainer()
         let activity = DefaultActivityBarProviding()

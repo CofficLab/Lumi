@@ -89,6 +89,12 @@ struct AppIconDesignerPluginTests {
         #expect(suggestions.allSuggestions.first?.requiresEnable == true)
     }
 
+    @Test("提示词标题本地化 key 可解析")
+    func promptSuggestionLocalizationResolves() {
+        let key = "Prompt.Suggestion.Design"
+        #expect(AppIconDesignerLocalization.string(key) != key)
+    }
+
     @Test("图标文档在 APP 作用域创建并落盘")
     func createsAndPersistsAppDocument() throws {
         let directory = FileManager.default.temporaryDirectory
