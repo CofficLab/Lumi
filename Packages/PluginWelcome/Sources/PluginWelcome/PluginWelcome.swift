@@ -30,7 +30,10 @@ public final class PluginWelcome: SuperPlugin {
         guard let onboarding = kernel.resolveProvider((any OnboardingProviding).self) else { return }
 
         onboarding.register(
-            OnboardingPageItem(id: Self.pageID) {
+            OnboardingPageItem(
+                id: Self.pageID,
+                title: LumiPluginLocalization.string("Welcome to Lumi", bundle: .module)
+            ) {
                 WelcomePage()
             }
         )
