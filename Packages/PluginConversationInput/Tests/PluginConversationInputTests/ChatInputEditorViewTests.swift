@@ -245,6 +245,21 @@ struct ChatInputEditorViewTests {
         #expect(sender.pendingFileAttachments.isEmpty)
         observer.cancel()
     }
+
+    @Test("输入错误状态通过 typed observer 同步并支持取消")
+    func inputObserverTracksErrorState() {
+        let input = DefaultConversationInputProvider()
+        let state = ConversationInputViewState()
+        let observer = ConversationInputObserver(input: input, sender: nil, state: state)
+
+        #expect(state.errorMessage == nil)
+        input.errorMessage = "send failed"
+        #expect(state.errorMessage == "send failed")
+
+        observer.cancel()
+        input.errorMessage = nil
+        #expect(state.errorMessage == "send failed")
+    }
 }
 
 private final class MarkedTextTestView: NSTextView {

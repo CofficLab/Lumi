@@ -23,7 +23,7 @@ final class ConversationInputViewState: ObservableObject {
 @MainActor
 final class ConversationInputObserver {
     private var textHandle: (any TextInputObserverHandle)?
-    private var inputCancellable: AnyCancellable?
+    private var inputObserver: (any ConversationInputProvidingObserverHandle)?
     private var senderObserver: (any MessageSenderObserverHandle)?
 
     init(
@@ -35,12 +35,9 @@ final class ConversationInputObserver {
         textHandle = input?.addTextObserver { [weak state] _ in
             state?.refresh()
         }
-        inputCancellable = input?.objectWillChange.sink { [weak input, weak state] _ in
-            Task { @MainActor in
-                await Task.yield()
-                guard !Task.isCancelled else { return }
-                state?.refresh(errorMessage: input?.errorMessage)
-            }
+        inputObserver = input?.addObserver { [weak state] event in
+            guard case let .errorMessageChanged(errorMessage) = event else { return }
+            state?.refresh(errorMessage: errorMessage)
         }
         senderObserver = sender?.addMessageSenderObserver { [weak state] event in
             switch event {
@@ -55,7 +52,7 @@ final class ConversationInputObserver {
     func cancel() {
         textHandle?.cancel()
         textHandle = nil
-        inputCancellable = nil
+        inputObserver = nil
         senderObserver = nil
     }
 }

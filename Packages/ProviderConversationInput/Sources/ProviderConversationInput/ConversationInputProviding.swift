@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import SwiftUI
 
@@ -13,9 +12,26 @@ public protocol TextInputObserverHandle: AnyObject {
     func cancel()
 }
 
+/// 输入状态变化事件。
 @MainActor
-public protocol ConversationInputProviding: ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public enum ConversationInputProvidingEvent {
+    case errorMessageChanged(String?)
+}
+
+/// 输入状态观察句柄。
+@MainActor
+public protocol ConversationInputProvidingObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
+public final class NoopConversationInputProvidingObserverHandle: ConversationInputProvidingObserverHandle {
+    public init() {}
+    public func cancel() {}
+}
+
+@MainActor
+public protocol ConversationInputProviding: AnyObject {
     var text: String { get set }
     var inputHeight: CGFloat { get set }
     var isInputFocused: Bool { get set }
@@ -35,4 +51,8 @@ public protocol ConversationInputProviding: ObservableObject
     /// - Returns: 注销令牌；持有返回值即可持续接收，令牌释放或调用 `cancel()` 后自动停止。
     @discardableResult
     func addTextObserver(_ callback: @escaping (String) -> Void) -> any TextInputObserverHandle
+
+    /// 注册输入状态观察者。
+    @discardableResult
+    func addObserver(_ callback: @escaping (ConversationInputProvidingEvent) -> Void) -> any ConversationInputProvidingObserverHandle
 }
