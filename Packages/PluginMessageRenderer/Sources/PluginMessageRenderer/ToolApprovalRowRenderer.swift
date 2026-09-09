@@ -123,14 +123,9 @@ final class ToolApprovalBridge: SuperLog {
             return nil
         }
         guard risk.requiresPermission else {
-            Self.logger.debug(
-                "\(Self.t)工具风险不要求授权 tool=\(toolCall.name, privacy: .public) risk=\(risk.rawValue, privacy: .public)"
-            )
             return nil
         }
-        Self.logger.info(
-            "\(Self.t)根据风险等级生成授权请求 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) risk=\(risk.rawValue, privacy: .public)"
-        )
+        
         return ToolPermissionRequest(
             toolCallID: "approval:\(toolCall.id)",
             kind: "permission",
@@ -212,10 +207,6 @@ public struct ToolApprovalRowRenderer: ToolCallRowRenderer, SuperLog {
             )
             return AnyView(Text("无法解析工具审批请求"))
         }
-
-        Self.logger.info(
-            "\(Self.t)显示授权界面 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public) conversation=\(message.conversationId.uuidString, privacy: .public)"
-        )
 
         return AnyView(
             ToolApprovalPendingView(
