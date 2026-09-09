@@ -48,6 +48,34 @@ struct ProviderSettingViewTests {
         #expect(provider.selectedEntryID == "b")
     }
 
+    @Test("设置状态变化会发布类型化观察事件")
+    func settingChangesAreObservable() {
+        let provider = DefaultSettingViewProviding()
+        var events: [String] = []
+        let handle = provider.addSettingViewObserver { event in
+            switch event {
+            case .entriesChanged:
+                events.append("entries")
+            case .projectDetailSectionsChanged:
+                events.append("sections")
+            case let .selectedEntryChanged(id):
+                events.append("selected:\(id ?? "nil")")
+            }
+        }
+
+        provider.registerEntries([
+            SettingEntryItem(id: "a", title: "A", systemImage: "a") { Text("A") },
+            SettingEntryItem(id: "b", title: "B", systemImage: "b") { Text("B") },
+        ])
+        provider.selectEntry(id: "b")
+
+        #expect(events == ["entries", "selected:a", "selected:b"])
+
+        handle.cancel()
+        provider.selectEntry(id: "a")
+        #expect(events == ["entries", "selected:a", "selected:b"])
+    }
+
     @Test("注入入口后返回可渲染的设置视图")
     func defaultProviderRendersView() {
         let provider = DefaultSettingViewProviding()

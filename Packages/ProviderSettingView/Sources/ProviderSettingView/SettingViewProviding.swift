@@ -26,8 +26,25 @@ public enum SettingViewNavigation {
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any SettingViewProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
+public enum SettingViewEvent {
+    case entriesChanged
+    case projectDetailSectionsChanged
+    case selectedEntryChanged(String?)
+}
+
+@MainActor
+public protocol SettingViewObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
 public protocol SettingViewProviding: AnyObject, ObservableObject
     where ObjectWillChangePublisher == ObservableObjectPublisher {
+    @discardableResult
+    func addSettingViewObserver(
+        _ callback: @escaping (SettingViewEvent) -> Void
+    ) -> any SettingViewObserverHandle
+
     /// 当前已注入的全部设置入口项。
     var entries: [SettingEntryItem] { get }
     var projectDetailSections: [ProjectDetailSectionItem] { get }
@@ -53,6 +70,20 @@ public protocol SettingViewProviding: AnyObject, ObservableObject
 
     /// 返回设置视图（基于已注入的入口渲染）。
     func makeSettingView() -> AnyView
+}
+
+public extension SettingViewProviding {
+    @discardableResult
+    func addSettingViewObserver(
+        _ callback: @escaping (SettingViewEvent) -> Void
+    ) -> any SettingViewObserverHandle {
+        NoopSettingViewObserverHandle()
+    }
+}
+
+@MainActor
+private final class NoopSettingViewObserverHandle: SettingViewObserverHandle {
+    func cancel() {}
 }
 
 public extension SettingViewProviding {
