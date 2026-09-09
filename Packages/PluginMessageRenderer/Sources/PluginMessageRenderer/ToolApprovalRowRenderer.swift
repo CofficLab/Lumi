@@ -74,6 +74,7 @@ final class ToolApprovalBridge: SuperLog {
         subsystem: "com.coffic.lumi.plugin.message-renderer",
         category: "ToolApprovalBridge"
     )
+    nonisolated static let verbose = false
 
     private weak var agentLoop: (any AgentLoopProviding)?
     private weak var toolManager: (any ToolManagerProviding)?
@@ -85,16 +86,20 @@ final class ToolApprovalBridge: SuperLog {
         agentLoop = kernel.resolveProvider((any AgentLoopProviding).self)
         toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
         conversations = kernel.resolveProvider((any ConversationManaging).self)
-        Self.logger.info(
-            "\(Self.t)授权桥接已启动 agentLoop=\(self.agentLoop != nil, privacy: .public) toolManager=\(self.toolManager != nil, privacy: .public) conversations=\(self.conversations != nil, privacy: .public)"
-        )
+        if Self.verbose {
+            Self.logger.info(
+                "\(Self.t)授权桥接已启动 agentLoop=\(self.agentLoop != nil, privacy: .public) toolManager=\(self.toolManager != nil, privacy: .public) conversations=\(self.conversations != nil, privacy: .public)"
+            )
+        }
     }
 
     func stop() {
         agentLoop = nil
         toolManager = nil
         conversations = nil
-        Self.logger.info("\(Self.t)授权桥接已停止")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)授权桥接已停止")
+        }
     }
 
     func permissionRequest(for toolCall: ToolCall) -> ToolPermissionRequest? {
@@ -104,9 +109,11 @@ final class ToolApprovalBridge: SuperLog {
                from: Data(content.utf8)
            ),
            request.kind == "permission" {
-            Self.logger.info(
-                "\(Self.t)使用工具结果中的授权请求 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public)"
-            )
+            if Self.verbose {
+                Self.logger.info(
+                    "\(Self.t)使用工具结果中的授权请求 tool=\(toolCall.name, privacy: .public) id=\(toolCall.id, privacy: .public)"
+                )
+            }
             return request
         }
         guard let risk = toolManager?.riskLevel(for: toolCall) else {
