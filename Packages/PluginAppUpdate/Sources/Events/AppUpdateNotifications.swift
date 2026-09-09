@@ -15,7 +15,8 @@ public extension Notification.Name {
     /// `userInfo["version"]` carries the displayable version string.
     static let appUpdateReadyToInstall = Notification.Name("appUpdateReadyToInstall")
 
-    /// Requests immediate installation of a previously prepared update.
+    /// Legacy request for immediate installation of a previously prepared update.
+    /// Sparkle's standard user driver now owns installation and relaunch UI.
     static let installPreparedAppUpdate = Notification.Name("installPreparedAppUpdate")
 }
 

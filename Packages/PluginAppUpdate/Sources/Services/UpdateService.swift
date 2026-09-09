@@ -41,12 +41,6 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     /// `feedURLString(for:)` (synchronous delegate callback) can read it directly.
     private var resolvedFeedURL: URL = UpdateFeedURLProvider.primary
 
-    /// Pending install callback provided by Sparkle via
-    /// `updater(_:willInstallUpdateOnQuit:immediateInstallationBlock:)`.
-    /// Stored on the MainActor-isolated service because the closure itself
-    /// is non-Sendable (it may touch AppKit).
-    private var pendingImmediateInstallHandler: (() -> Void)?
-
     /// Convenience access to the underlying `SPUUpdater`.
     public var updater: SPUUpdater? {
         updaterController?.updater
@@ -137,12 +131,14 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
         willInstallUpdateOnQuit item: SUAppcastItem,
         immediateInstallationBlock immediateInstallHandler: @escaping () -> Void
     ) -> Bool {
-        pendingImmediateInstallHandler = immediateInstallHandler
         Task {
             await stateMachine.markReadyToInstall(version: item.displayVersionString)
         }
         NotificationCenter.postAppUpdateReadyToInstall(version: item.displayVersionString)
-        return true
+        // Let Sparkle's standard user driver own installation and relaunch UI.
+        // Returning true would make this service responsible for invoking the
+        // callback, but there is no custom install UI here.
+        return false
     }
 
     /// Sparkle's recommended way to provide the feed URL dynamically.
@@ -162,11 +158,7 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     }
 
     @objc func handleInstallPreparedAppUpdateRequest() {
-        guard let handler = pendingImmediateInstallHandler else { return }
-        pendingImmediateInstallHandler = nil
-        Task {
-            await stateMachine.beginInstalling()
-        }
-        handler()
+        // Keep this notification endpoint for compatibility with older callers.
+        // Installation and relaunch are owned by Sparkle's standard user driver.
     }
 }
