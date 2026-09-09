@@ -105,6 +105,25 @@ final class ProviderConversationTests: XCTestCase {
         XCTAssertEqual(manager.reasoningEffort(for: id), .defaultEffort)
     }
 
+    func testSettingSameVerbosityDoesNotNotify() throws {
+        let manager = DefaultConversationManager()
+        let id = try manager.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil)
+        var verbosityEvents = 0
+        let handle = manager.addConversationObserver { event in
+            if case .verbosityChanged = event {
+                verbosityEvents += 1
+            }
+        }
+        defer { handle.cancel() }
+
+        manager.setVerbosity(.defaultVerbosity, for: id)
+        XCTAssertEqual(verbosityEvents, 0)
+
+        manager.setVerbosity(.detailed, for: id)
+        manager.setVerbosity(.detailed, for: id)
+        XCTAssertEqual(verbosityEvents, 1)
+    }
+
     func testGlobalPreferencesApplyToNewConversations() throws {
         let manager = DefaultConversationManager()
         manager.setGlobalVerbosity(.brief)

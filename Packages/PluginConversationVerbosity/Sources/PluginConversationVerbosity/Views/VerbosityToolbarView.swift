@@ -44,11 +44,12 @@ struct VerbosityToolbarView: View {
         .help(selectedVerbosity.description)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             VerbosityPopover(selected: selectedVerbosity) { level in
-                capability.setGlobalVerbosity(level)
                 if let conversationID = capability.selectedConversationID {
                     Task { @MainActor in
                         await capability.setVerbosityAndWait(level, for: conversationID)
                     }
+                } else {
+                    capability.setGlobalVerbosity(level)
                 }
                 isPopoverPresented = false
             }

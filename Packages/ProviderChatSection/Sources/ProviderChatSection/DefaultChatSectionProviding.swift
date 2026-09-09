@@ -17,6 +17,7 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
     /// 会话选择绑定句柄：随 Provider 生命周期持有（与内核同生命周期）。
     private var conversationSelectionObserver: (any SelectedConversationObserverHandle)?
     private var observers: [WeakObserver] = []
+    private var itemRefreshTask: Task<Void, Never>?
     private let defaultWidthStore: (any ChatSectionWidthStoring)?
     private var activeWidthStore: (any ChatSectionWidthStoring)?
     private var activeWidthOwnerID: String?
@@ -38,6 +39,19 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         let oldCount = items.count
         items.removeAll { $0.id == id }
         if items.count != oldCount { notify(.itemsChanged(items)) }
+    }
+
+    public func refreshItems() {
+        guard itemRefreshTask == nil else { return }
+        itemRefreshTask = Task { @MainActor [weak self] in
+            // Let all providers handling the same conversation event update
+            // their active predicate before invalidating the chat slot once.
+            await Task.yield()
+            guard let self else { return }
+            itemRefreshTask = nil
+            objectWillChange.send()
+            notify(.itemsChanged(items))
+        }
     }
 
     public func addBarItems(_ newItems: [ChatSectionBarItem]) {
@@ -216,13 +230,17 @@ public struct ChatSectionHostView: View {
 
     private var stackItems: [ChatSectionItem] {
         exclusiveItems(provider.items.filter {
-            $0.placement == .stack && $0.scope.matches(provider.activeContext)
+            $0.placement == .stack
+                && $0.scope.matches(provider.activeContext)
+                && $0.isActive()
         })
     }
 
     private var bottomItems: [ChatSectionItem] {
         exclusiveItems(provider.items.filter {
-            $0.placement == .bottomFixed && $0.scope.matches(provider.activeContext)
+            $0.placement == .bottomFixed
+                && $0.scope.matches(provider.activeContext)
+                && $0.isActive()
         })
     }
 

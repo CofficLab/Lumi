@@ -64,6 +64,9 @@ public struct ChatSectionItem: Identifiable, Sendable {
     public let placement: ChatSectionPlacement
     public let fillsRemainingHeight: Bool
     public let showsTrailingDivider: Bool
+    /// Whether this item participates in rendering right now. The item stays
+    /// registered so changing its state does not mutate the surrounding layout.
+    public let isActive: @MainActor @Sendable () -> Bool
     public let makeView: @MainActor @Sendable () -> AnyView
 
     public init<Content: View>(
@@ -74,6 +77,7 @@ public struct ChatSectionItem: Identifiable, Sendable {
         placement: ChatSectionPlacement = .stack,
         fillsRemainingHeight: Bool = false,
         showsTrailingDivider: Bool = true,
+        isActive: @escaping @MainActor @Sendable () -> Bool = { true },
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id
@@ -83,6 +87,7 @@ public struct ChatSectionItem: Identifiable, Sendable {
         self.placement = placement
         self.fillsRemainingHeight = fillsRemainingHeight
         self.showsTrailingDivider = showsTrailingDivider
+        self.isActive = isActive
         self.makeView = { AnyView(content()) }
     }
 }

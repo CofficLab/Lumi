@@ -21,6 +21,29 @@ struct ProviderChatSectionTests {
         #expect(provider.items.map(\.id) == ["b", "a"])
     }
 
+    @Test("动态 item 刷新合并通知且不改变注册集合")
+    func dynamicItemRefreshCoalescesNotifications() async throws {
+        let provider = DefaultChatSectionProviding()
+        provider.addItems([
+            ChatSectionItem(id: "dynamic", isActive: { false }) { Text("Dynamic") }
+        ])
+
+        var refreshCount = 0
+        let handle = provider.addObserver { event in
+            if case .itemsChanged = event {
+                refreshCount += 1
+            }
+        }
+        defer { handle.cancel() }
+
+        provider.refreshItems()
+        provider.refreshItems()
+        try await Task.sleep(nanoseconds: 1_000_000)
+
+        #expect(refreshCount == 1)
+        #expect(provider.items.map(\.id) == ["dynamic"])
+    }
+
     @Test("Bar contribution 按 order 排序")
     func barItemsAreSorted() {
         let provider = DefaultChatSectionProviding()
