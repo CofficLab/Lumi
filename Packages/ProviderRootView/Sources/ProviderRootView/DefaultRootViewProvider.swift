@@ -314,10 +314,24 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
 /// a plugin adds or removes an overlay after the root view has been assembled.
 @MainActor
 private struct RootOverlayHostView: View {
-    @ObservedObject var provider: DefaultRootViewProvider
+    let provider: DefaultRootViewProvider
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any RootViewObserverHandle)?
 
     var body: some View {
         makeWrappedRoot()
+            .id(observationRevision)
+            .onAppear {
+                guard observerHandle == nil else { return }
+                observerHandle = provider.addRootViewObserver { event in
+                    guard case .overlaysChanged = event else { return }
+                    observationRevision += 1
+                }
+            }
+            .onDisappear {
+                observerHandle?.cancel()
+                observerHandle = nil
+            }
     }
 
     private func makeWrappedRoot() -> AnyView {
