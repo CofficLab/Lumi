@@ -26,6 +26,10 @@ struct ListV1View: View {
     /// 进入 List 布局后再执行 scrollTo，避免最后一行被底部输入框遮挡。
     @State private var scrollTick: Int = 0
     private let bottomScrollController = ScrollViewBottomController()
+    /// 发送新消息后，临时把最新回合定位在视口上方约四分之一处。
+    @State private var usesPostSendPositioning = false
+    @State private var viewportHeight: CGFloat = 0
+    @State private var activeTurnHeight: CGFloat = 0
 
     init(
         services: MessageListServices,
@@ -56,6 +60,13 @@ struct ListV1View: View {
             List {
                 historyRows(proxy: proxy)
 
+                if postSendTailReserve > 0 {
+                    Color.clear
+                        .frame(height: postSendTailReserve)
+                        .accessibilityHidden(true)
+                        .plainMessageListRow(insets: EdgeInsets())
+                }
+
                 Color.clear
                     .frame(height: 16)
                     .id(MessageListScrollCoordinator.bottomAnchorID)
@@ -79,13 +90,27 @@ struct ListV1View: View {
             .background(
                 ScrollViewBottomTracker(
                     onChange: { atBottomBox.value = $0 },
-                    controller: bottomScrollController
+                    controller: bottomScrollController,
+                    onViewportHeightChange: updateViewportHeight
                 )
             )
             .onChange(of: visibleRowIDs) { _, _ in
                 if atBottomBox.value {
                     scrollTick &+= 1
                 }
+            }
+            .onChange(of: displayedUserMessageIDs) { oldIDs, newIDs in
+                handleUserMessageInsertion(oldIDs: oldIDs, newIDs: newIDs)
+            }
+            .onChange(of: turnViewModel.agentTurns) { _, items in
+                handleTurnLifecycleChange(items)
+            }
+            .onPreferenceChange(ActiveTurnHeightPreferenceKey.self) { height in
+                updateActiveTurnHeight(height)
+            }
+            .onChange(of: selectedConversationID) { _, _ in
+                usesPostSendPositioning = false
+                activeTurnHeight = 0
             }
             .onAppear {
                 if atBottomBox.value {
@@ -122,6 +147,16 @@ struct ListV1View: View {
                 )
                 .id(item.id)
                 .plainMessageListRow()
+                .background {
+                    if item.acceptsLiveActivity {
+                        GeometryReader { proxy in
+                            Color.clear.preference(
+                                key: ActiveTurnHeightPreferenceKey.self,
+                                value: proxy.size.height
+                            )
+                        }
+                    }
+                }
             case let .timelineEvent(message):
                 MessageRowView(
                     services: services,
@@ -158,6 +193,32 @@ struct ListV1View: View {
         displayedHistoryMessages.map(\.id)
     }
 
+    private var displayedUserMessageIDs: [UUID] {
+        displayedHistoryMessages
+            .filter { $0.role == .user }
+            .map(\.id)
+    }
+
+    private var latestDisplayedUserMessageID: UUID? {
+        displayedHistoryMessages
+            .filter { $0.role == .user }
+            .max(by: { lhs, rhs in
+                if lhs.createdAt == rhs.createdAt {
+                    return lhs.id.uuidString < rhs.id.uuidString
+                }
+                return lhs.createdAt < rhs.createdAt
+            })?
+            .id
+    }
+
+    private var postSendTailReserve: CGFloat {
+        guard usesPostSendPositioning else { return 0 }
+        return MessageListSendPositioning.tailReserve(
+            viewportHeight: viewportHeight,
+            activeTurnHeight: activeTurnHeight
+        )
+    }
+
     private var verbosity: ResponseVerbosity {
         services.verbosity(for: selectedConversationID)
     }
@@ -167,5 +228,49 @@ struct ListV1View: View {
     private func loadEarlier(proxy: ScrollViewProxy) async {
         guard let anchorID = await turnViewModel.loadEarlier() else { return }
         await scrollCoordinator.pinToAnchor(proxy: proxy, anchorID: anchorID)
+    }
+
+    // MARK: - Post-send positioning
+
+    private func handleUserMessageInsertion(oldIDs: [UUID], newIDs: [UUID]) {
+        guard !turnViewModel.isLoading else { return }
+        let insertedIDs = Set(newIDs).subtracting(oldIDs)
+        guard !insertedIDs.isEmpty,
+              let latestDisplayedUserMessageID,
+              insertedIDs.contains(latestDisplayedUserMessageID) else { return }
+
+        usesPostSendPositioning = true
+        // A send should bring the new turn into view even if the user was
+        // reading an older part of the conversation.
+        scrollTick &+= 1
+    }
+
+    private func handleTurnLifecycleChange(_ items: [AgentTurnPresentationItem]) {
+        guard usesPostSendPositioning,
+              !items.contains(where: \.acceptsLiveActivity) else { return }
+
+        usesPostSendPositioning = false
+        activeTurnHeight = 0
+        if atBottomBox.value {
+            scrollTick &+= 1
+        }
+    }
+
+    private func updateViewportHeight(_ height: CGFloat) {
+        guard height.isFinite, height > 0 else { return }
+        viewportHeight = height
+    }
+
+    private func updateActiveTurnHeight(_ height: CGFloat) {
+        guard height.isFinite, height >= 0 else { return }
+        activeTurnHeight = height
+    }
+}
+
+private struct ActiveTurnHeightPreferenceKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
