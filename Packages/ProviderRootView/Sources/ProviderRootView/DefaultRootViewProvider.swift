@@ -35,8 +35,8 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
     @Published public private(set) var isContentViewHidden: Bool = false
     @Published public private(set) var isContentHeaderViewHidden: Bool = false
     @Published public private(set) var isContentFooterViewHidden: Bool = false
-    private var railVisibilitySubscription: AnyCancellable?
-    private var railWidthSubscription: AnyCancellable?
+    private var railVisibilityObserver: (any RailViewProvidingObserverHandle)?
+    private var railWidthObserver: (any RailViewProvidingObserverHandle)?
     private var railWidthResizeHandler: (@MainActor (CGFloat) -> Void)?
     private var activeContentFooterHeightStore: (any ContentFooterHeightStoring)?
     private var activeContentFooterHeightOwnerID: String?
@@ -94,23 +94,25 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         lastRailViewVisibility = visible
     }
 
-    public func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>) {
-        railVisibilitySubscription = publisher.sink { [weak self] visible in
-            Task { @MainActor [weak self] in
-                self?.setRailViewVisible(visible)
-            }
+    public func bindRailViewVisibility(to provider: any RailViewProviding) {
+        railVisibilityObserver?.cancel()
+        setRailViewVisible(provider.hasVisibleTabs)
+        railVisibilityObserver = provider.addObserver { [weak self] event in
+            guard case let .visibilityChanged(visible) = event else { return }
+            self?.setRailViewVisible(visible)
         }
     }
 
     public func bindRailViewWidth(
-        to publisher: AnyPublisher<RailViewWidth, Never>,
+        to provider: any RailViewProviding,
         onResize: @escaping @MainActor (CGFloat) -> Void
     ) {
+        railWidthObserver?.cancel()
         railWidthResizeHandler = onResize
-        railWidthSubscription = publisher.sink { [weak self] width in
-            Task { @MainActor [weak self] in
-                self?.railWidth = width
-            }
+        railWidth = provider.railWidth
+        railWidthObserver = provider.addObserver { [weak self] event in
+            guard case let .widthChanged(width) = event else { return }
+            self?.railWidth = width
         }
     }
 

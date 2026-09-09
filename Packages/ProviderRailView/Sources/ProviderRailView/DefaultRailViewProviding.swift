@@ -22,10 +22,6 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
 
     private var observers: [WeakObserver] = []
 
-    public var railVisibilityPublisher: AnyPublisher<Bool, Never> {
-        $hasVisibleTabs.eraseToAnyPublisher()
-    }
-
     public init(
         visibleCategories: Set<RailViewCategory> = Set(RailViewCategory.allCases),
         visibleTabID: String? = nil,

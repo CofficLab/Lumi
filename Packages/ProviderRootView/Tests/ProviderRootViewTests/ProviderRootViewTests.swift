@@ -93,37 +93,60 @@ struct ProviderRootViewTests {
     }
 
     @Test("Rail 可见性绑定到根布局")
-    func railVisibilityFollowsPublisher() async {
+    func railVisibilityFollowsProvider() {
         let provider = DefaultRootViewProvider()
-        let visibility = CurrentValueSubject<Bool, Never>(true)
+        let rail = DefaultRailViewProviding()
 
-        provider.bindRailViewVisibility(to: visibility.eraseToAnyPublisher())
-        #expect(provider.isRailViewVisible)
-
-        visibility.send(false)
-        await Task.yield()
+        provider.bindRailViewVisibility(to: rail)
         #expect(!provider.isRailViewVisible)
 
-        visibility.send(true)
-        await Task.yield()
+        rail.registerTabs([
+            RailTabItem(id: "rail", category: .general, title: "Rail", systemImage: "sidebar") { Text("Rail") },
+        ])
+        #expect(provider.isRailViewVisible)
+
+        rail.removeTabs(ids: ["rail"])
+        #expect(!provider.isRailViewVisible)
+    }
+
+    @Test("重新绑定 Rail 显隐时取消旧观察者")
+    func rebindingRailVisibilityCancelsPreviousObserver() {
+        let provider = DefaultRootViewProvider()
+        let firstRail = DefaultRailViewProviding()
+        let secondRail = DefaultRailViewProviding()
+
+        firstRail.registerTabs([
+            RailTabItem(id: "first", category: .general, title: "First", systemImage: "1.circle") { Text("First") },
+        ])
+        provider.bindRailViewVisibility(to: firstRail)
+        #expect(provider.isRailViewVisible)
+
+        provider.bindRailViewVisibility(to: secondRail)
+        #expect(!provider.isRailViewVisible)
+
+        firstRail.removeTabs(ids: ["first"])
+        #expect(!provider.isRailViewVisible)
+
+        secondRail.registerTabs([
+            RailTabItem(id: "second", category: .general, title: "Second", systemImage: "2.circle") { Text("Second") },
+        ])
         #expect(provider.isRailViewVisible)
     }
 
     @Test("Rail 宽度绑定并转发用户拖拽回调")
-    func railWidthFollowsPublisherAndForwardsResize() async {
+    func railWidthFollowsProviderAndForwardsResize() {
         let provider = DefaultRootViewProvider()
-        let width = CurrentValueSubject<RailViewWidth, Never>(.standard)
+        let rail = DefaultRailViewProviding()
         var resizedWidth: CGFloat?
 
         provider.bindRailViewWidth(
-            to: width.eraseToAnyPublisher(),
+            to: rail,
             onResize: { resizedWidth = $0 }
         )
         #expect(provider.railWidth == .standard)
 
         let customWidth = RailViewWidth(minWidth: 240, idealWidth: 360, maxWidth: 480)
-        width.send(customWidth)
-        await Task.yield()
+        rail.activateWidthProfile(ownerID: "plugin.rail", recommended: customWidth)
         #expect(provider.railWidth == customWidth)
 
         provider.saveRailViewWidth(420)

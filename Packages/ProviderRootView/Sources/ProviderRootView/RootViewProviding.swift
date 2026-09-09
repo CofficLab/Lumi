@@ -59,14 +59,14 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     func setRailViewVisible(_ visible: Bool)
 
     /// 绑定 Rail provider 的可见状态，使 tab 过滤或增删能同步到根布局。
-    func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>)
+    func bindRailViewVisibility(to provider: any RailViewProviding)
 
     /// 当前 Rail 的有效宽度。
     var railWidth: RailViewWidth { get }
 
     /// 绑定 Rail provider 的宽度，并接收用户拖拽完成后的宽度。
     func bindRailViewWidth(
-        to publisher: AnyPublisher<RailViewWidth, Never>,
+        to provider: any RailViewProviding,
         onResize: @escaping @MainActor (CGFloat) -> Void
     )
 
@@ -146,10 +146,10 @@ public extension RootViewProviding {
     var isContentFooterViewHidden: Bool { false }
     func setContentFooterViewHidden(_ hidden: Bool) {}
     func setRailViewVisible(_ visible: Bool) {}
-    func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>) {}
+    func bindRailViewVisibility(to provider: any RailViewProviding) {}
     var railWidth: RailViewWidth { .standard }
     func bindRailViewWidth(
-        to publisher: AnyPublisher<RailViewWidth, Never>,
+        to provider: any RailViewProviding,
         onResize: @escaping @MainActor (CGFloat) -> Void
     ) {}
     var contentFooterHeight: ContentFooterHeight { .standard }
