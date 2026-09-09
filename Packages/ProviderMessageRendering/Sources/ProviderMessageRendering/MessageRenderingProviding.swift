@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 import ProviderConversation
 import ProviderMessage
 import SwiftUI
@@ -40,8 +39,7 @@ public protocol MessageRenderingObserverHandle: AnyObject {
 }
 
 @MainActor
-public protocol MessageRenderingProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol MessageRenderingProviding: AnyObject {
     var allRenderers: [MessageRendererItem] { get }
     @discardableResult
     func addMessageRenderingObserver(
@@ -67,8 +65,8 @@ private final class NoopMessageRenderingObserverHandle: MessageRenderingObserver
 }
 
 @MainActor
-public final class DefaultMessageRenderingProviding: MessageRenderingProviding, ObservableObject {
-    @Published public private(set) var allRenderers: [MessageRendererItem] = []
+public final class DefaultMessageRenderingProviding: MessageRenderingProviding {
+    public private(set) var allRenderers: [MessageRendererItem] = []
     private var observers: [UUID: (MessageRenderingEvent) -> Void] = [:]
     public init() {}
 
