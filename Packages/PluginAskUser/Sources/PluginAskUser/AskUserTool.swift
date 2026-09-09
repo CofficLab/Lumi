@@ -235,7 +235,7 @@ public struct AskUserOption: Codable, Equatable, Sendable, Identifiable, Hashabl
 }
 
 /// 等待用户响应的数据结构（复刻旧版模型）。
-public struct AskUserPendingResponse: Codable, Equatable {
+public struct AskUserPendingResponse: Codable, Equatable, Sendable {
     public let toolCallId: String
     public let question: String
     public let options: [AskUserOption]
