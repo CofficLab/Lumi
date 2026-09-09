@@ -30,6 +30,29 @@ struct ProviderDocsViewTests {
         #expect(type(of: provider.manualEntries[0].makeView()) == AnyView.self)
     }
 
+    @Test("文档条目变化会发布类型化观察事件")
+    func docsEntriesAreObservable() {
+        let provider = DefaultDocsViewProviding()
+        var events: [String] = []
+        let handle = provider.addDocsViewObserver { event in
+            switch event {
+            case .aboutEntriesChanged:
+                events.append("about")
+            case .manualEntriesChanged:
+                events.append("manual")
+            }
+        }
+
+        provider.addAbout(DocsEntry(id: "about", name: "About") { Text("about") })
+        provider.addManual(DocsEntry(id: "manual", name: "Manual") { Text("manual") })
+
+        #expect(events == ["about", "manual"])
+
+        handle.cancel()
+        provider.addAbout(DocsEntry(id: "second", name: "Second") { Text("second") })
+        #expect(events == ["about", "manual"])
+    }
+
     @Test("同 id 追加去重")
     func defaultProviderDeduplicatesEntries() {
         let provider = DefaultDocsViewProviding()

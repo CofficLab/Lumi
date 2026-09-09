@@ -9,14 +9,45 @@ import SwiftUI
 public final class DefaultDocsViewProviding: DocsViewProviding, ObservableObject {
     @Published public private(set) var aboutEntries: [DocsEntry] = []
     @Published public private(set) var manualEntries: [DocsEntry] = []
+    private var observers: [UUID: (DocsViewEvent) -> Void] = [:]
 
     public init() {}
 
+    @discardableResult
+    public func addDocsViewObserver(
+        _ callback: @escaping (DocsViewEvent) -> Void
+    ) -> any DocsViewObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
     public func replaceAboutEntries(_ entries: [DocsEntry]) {
         aboutEntries = entries
+        notify(.aboutEntriesChanged)
     }
 
     public func replaceManualEntries(_ entries: [DocsEntry]) {
         manualEntries = entries
+        notify(.manualEntriesChanged)
+    }
+
+    private func notify(_ event: DocsViewEvent) {
+        observers.values.forEach { $0(event) }
+    }
+
+    private final class ObserverHandle: DocsViewObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
+        }
     }
 }
