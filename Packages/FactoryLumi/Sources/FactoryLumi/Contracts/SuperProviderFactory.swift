@@ -33,6 +33,7 @@ import ProviderTheme
 import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
+import ProviderDeveloperMode
 import ProviderWebServer
 import ProviderLifecycleHooks
 
@@ -141,6 +142,9 @@ public protocol ProviderFactory {
     /// 默认实现 `DefaultSkillProvider` 只维护注册表；插件在 `onBoot` 解析
     /// 它并注入自己的技能，`PluginSkill` 负责把内置 / 项目层合入 system prompt。
     func makeSkillProvider() -> any SkillProviding
+
+    /// 产出 `DeveloperModeProviding` 实现（运行时开发者模式开关）。
+    func makeDeveloperModeProvider() -> any DeveloperModeProviding
 
     /// 装配并注册全部默认 Provider 到内核。
     ///

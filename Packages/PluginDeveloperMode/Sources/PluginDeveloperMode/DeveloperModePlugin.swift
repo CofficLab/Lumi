@@ -31,13 +31,9 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        let provider: any DeveloperModeProviding
-        if let existing = kernel.resolveProvider((any DeveloperModeProviding).self) {
-            provider = existing
-        } else {
-            let defaultProvider = DefaultDeveloperModeProviding()
-            try kernel.registerProvider((any DeveloperModeProviding).self, defaultProvider)
-            provider = defaultProvider
+        guard let provider = kernel.resolveProvider((any DeveloperModeProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to resolve DeveloperModeProviding from kernel")
+            return
         }
         self.provider = provider
 

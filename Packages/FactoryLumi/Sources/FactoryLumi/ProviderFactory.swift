@@ -30,6 +30,7 @@ import ProviderIdleTime
 import ProviderLegacyData
 import ProviderPluginControl
 import ProviderPluginManaging
+import ProviderDeveloperMode
 import ProviderWebServer
 import ProviderExternalFile
 import ProviderLifecycleHooks
@@ -244,6 +245,11 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultSkillProvider()
     }
 
+    /// 产出 `DeveloperModeProviding` 实现（默认内存实现）。
+    public func makeDeveloperModeProvider() -> any DeveloperModeProviding {
+        DefaultDeveloperModeProviding()
+    }
+
     // MARK: - Provider Registration
 
     /// 装配并注册全部默认 Provider，完成依赖接线。
@@ -389,5 +395,9 @@ public struct DefaultProviderFactory: ProviderFactory {
         // Skill 管理：插件技能贡献注册表。必须在插件启动前注册，
         // 使各插件在 onBoot 中能解析到 SkillProviding 并注入技能。
         try kernel.registerProvider((any SkillProviding).self, makeSkillProvider())
+
+        // 开发者模式：运行时开关。必须在插件启动前注册，
+        // 使 DeveloperModePlugin 在 onBoot 中能解析到。
+        try kernel.registerProvider((any DeveloperModeProviding).self, makeDeveloperModeProvider())
     }
 }
