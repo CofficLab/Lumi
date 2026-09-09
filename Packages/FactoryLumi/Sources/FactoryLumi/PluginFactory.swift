@@ -104,7 +104,6 @@ import PluginMessageManager
 import PluginMessageRenderer
 import PluginAgentLoop
 import PluginLLMContext
-import PluginMessageSender
 import PluginMindMapDesigner
 import PluginModelSelector
 import PluginOcr
@@ -268,7 +267,6 @@ public struct DefaultPluginFactory: PluginFactory {
             MessageManagerPlugin(),
             LLMContextPlugin(),
             PluginAgentLoop(),
-            MessageSenderPlugin(),
             PluginPluginManager(),
             // 设置视图管理器：替换 ProviderFactory 预注册的默认 SettingViewProviding 实现，
             // 必须先于各设置入口贡献插件（如 SettingGeneralPlugin order=200）。
