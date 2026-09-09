@@ -85,6 +85,7 @@ struct ThemeSettingsDetailView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .padding(.bottom, 16)
         .onAppear { selectedID = theme.selectedThemeId ?? selectedTheme?.id }
         .onChange(of: themeObservation.revision) { _, _ in selectedID = theme.selectedThemeId }
         .onChange(of: filteredThemes.map(\.id)) { _, ids in
@@ -183,6 +184,7 @@ struct ThemeSettingsDetailView: View {
             ThemePreviewPane(
                 item: selectedTheme,
                 isActive: theme.selectedThemeId == selectedTheme.id,
+                containerBackground: uiTheme.surface,
                 onApply: { try? theme.selectTheme(id: selectedTheme.id) }
             )
         } else {
@@ -207,6 +209,8 @@ struct ThemeSettingsDetailView: View {
 private struct ThemePreviewPane: View {
     let item: AppThemeValue
     let isActive: Bool
+    /// 预览容器沿用当前生效主题，浏览待应用主题时不改变设置页背景。
+    let containerBackground: Color
     let onApply: () -> Void
 
     private var palette: LumiThemePalette { item.palette }
@@ -218,17 +222,14 @@ private struct ThemePreviewPane: View {
     private var textSecondary: Color { palette.textSecondary.color() }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                header
-                AppDivider()
-                preview
-            }
-            .padding(22)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+        VStack(alignment: .leading, spacing: 22) {
+            header
+            AppDivider()
+            preview
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(background)
+        .padding(22)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(containerBackground)
     }
 
     private var header: some View {
@@ -248,7 +249,7 @@ private struct ThemePreviewPane: View {
                     .font(.appCaption)
                     .foregroundStyle(textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(appearanceLabel)
+                Text(appearanceLabel(for: item))
                     .font(.appMicro)
                     .foregroundStyle(textSecondary.opacity(0.8))
             }
@@ -257,13 +258,13 @@ private struct ThemePreviewPane: View {
             if isActive {
                 AppTag("当前使用", style: .accent)
             } else {
-                AppButton("使用此主题", systemImage: "paintbrush.fill", style: .primary, size: .small, action: onApply)
+                AppButton("使用", systemImage: "paintbrush.fill", style: .primary, size: .small, action: onApply)
             }
         }
     }
 
-    private var appearanceLabel: String {
-        switch item.appearanceKind {
+    private func appearanceLabel(for theme: AppThemeValue) -> String {
+        switch theme.appearanceKind {
         case .dark: "深色主题"
         case .light: "浅色主题"
         case .system: "跟随系统外观"
@@ -271,29 +272,191 @@ private struct ThemePreviewPane: View {
     }
 
     private var preview: some View {
-        AppSettingsSection(title: "组件预览", subtitle: "查看常用组件在此主题下的效果", spacing: 12) {
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(LumiPluginLocalization.string("Primary Text", bundle: .module)).font(.appBody).foregroundStyle(textPrimary)
-                    Text(LumiPluginLocalization.string("Secondary Text", bundle: .module)).font(.appCaption).foregroundStyle(textSecondary)
-                    Text("主题颜色与层级预览").font(.appMicro).foregroundStyle(textSecondary.opacity(0.75))
-                }
+        GeometryReader { proxy in
+            let cardHeight = max(154, (proxy.size.height - 48 - 14) / 2)
+
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), spacing: 14),
+                    GridItem(.flexible(), spacing: 14),
+                ],
+                spacing: 14
+            ) {
+                typographyCard.frame(height: cardHeight)
+                colorsCard.frame(height: cardHeight)
+                controlsCard.frame(height: cardHeight)
+                listStatusCard.frame(height: cardHeight)
+            }
+            .padding(24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(elevated.opacity(0.45))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var typographyCard: some View {
+        previewCard(title: "文字与操作", systemImage: "textformat") {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(LumiPluginLocalization.string("Primary Text", bundle: .module))
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(textPrimary)
+                Text(LumiPluginLocalization.string("Secondary Text", bundle: .module))
+                    .font(.appBody)
+                    .foregroundStyle(textSecondary)
+                Text("主题颜色与层级预览")
+                    .font(.appMicro)
+                    .foregroundStyle(textSecondary.opacity(0.75))
                 HStack(spacing: 8) {
                     previewButton("主要操作", fill: primary, foreground: .white)
                     previewButton("次要操作", fill: elevated, foreground: textPrimary)
-                    previewButton("辅助操作", fill: secondary.opacity(0.18), foreground: secondary)
                 }
-                HStack(spacing: 10) {
-                    colorSwatch("主色", primary)
-                    colorSwatch("辅色", secondary)
-                    colorSwatch("背景", background)
-                    colorSwatch("抬升", elevated)
+                previewButton("辅助操作", fill: secondary.opacity(0.18), foreground: secondary)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private var colorsCard: some View {
+        previewCard(title: "强调色", systemImage: "paintpalette") {
+            LazyVGrid(
+                columns: [GridItem(.flexible()), GridItem(.flexible())],
+                alignment: .leading,
+                spacing: 10
+            ) {
+                colorSwatch("主色", primary)
+                colorSwatch("辅色", secondary)
+                colorSwatch("背景", background)
+                colorSwatch("抬升", elevated)
+            }
+            HStack(spacing: 8) {
+                Text("表面层级")
+                    .font(.appMicro)
+                    .foregroundStyle(textSecondary)
+                ProgressView(value: 0.68)
+                    .tint(primary)
+                Text(verbatim: "68%")
+                    .font(.appMicroEmphasized)
+                    .foregroundStyle(textPrimary)
+            }
+        }
+    }
+
+    private var controlsCard: some View {
+        previewCard(title: "控件", systemImage: "slider.horizontal.3") {
+            VStack(alignment: .leading, spacing: 12) {
+                Toggle("系统同步", isOn: .constant(true))
+                    .font(.appCaption)
+                    .foregroundStyle(textPrimary)
+                    .tint(primary)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("显示密度")
+                        Spacer()
+                        Text("舒适")
+                    }
+                    .font(.appMicro)
+                    .foregroundStyle(textSecondary)
+                    Slider(value: .constant(0.68))
+                        .tint(primary)
+                }
+
+                Picker("外观", selection: .constant(1)) {
+                    Text("紧凑").tag(0)
+                    Text("舒适").tag(1)
+                    Text("宽松").tag(2)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .tint(primary)
+            }
+        }
+    }
+
+    private var listStatusCard: some View {
+        previewCard(title: "列表与状态", systemImage: "list.bullet.rectangle") {
+            VStack(spacing: 8) {
+                previewListRow(
+                    title: "main",
+                    detail: "工作区",
+                    systemImage: "arrow.triangle.branch",
+                    isSelected: true
+                )
+                previewListRow(
+                    title: "feature/preview",
+                    detail: "3 项更改",
+                    systemImage: "arrow.triangle.branch",
+                    isSelected: false
+                )
+                HStack(spacing: 8) {
+                    previewBadge("就绪", color: primary)
+                    previewBadge("3 项更改", color: secondary)
+                    Spacer(minLength: 0)
                 }
             }
-            .padding(16)
-            .background(elevated.opacity(0.45))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
+    }
+
+    private func previewCard<Content: View>(
+        title: String,
+        systemImage: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 7) {
+                Image(systemName: systemImage)
+                    .font(.appCaptionEmphasized)
+                    .foregroundStyle(primary)
+                Text(title)
+                    .font(.appCaptionEmphasized)
+                    .foregroundStyle(textPrimary)
+            }
+            content()
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background(background.opacity(0.72))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(textSecondary.opacity(0.14), lineWidth: 1)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func previewListRow(title: String, detail: String, systemImage: String, isSelected: Bool) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.appMicroEmphasized)
+                .foregroundStyle(isSelected ? primary : textSecondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.appMicroEmphasized)
+                    .foregroundStyle(textPrimary)
+                Text(detail)
+                    .font(.appMicro)
+                    .foregroundStyle(textSecondary)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .font(.appMicro)
+                .foregroundStyle(isSelected ? primary : textSecondary.opacity(0.6))
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 7)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(isSelected ? primary.opacity(0.12) : elevated.opacity(0.55))
+        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+    }
+
+    private func previewBadge(_ title: String, color: Color) -> some View {
+        Text(title)
+            .font(.appMicroEmphasized)
+            .foregroundStyle(color)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(color.opacity(0.14))
+            .clipShape(Capsule())
     }
 
     private func previewButton(_ title: String, fill: Color, foreground: Color) -> some View {
