@@ -220,15 +220,37 @@ public struct RootOverlayItem: Identifiable {
 
 /// 根布局的右侧面板描述。
 @MainActor
+public enum RootTrailingPaneEvent {
+    case visibilityChanged(Bool)
+    case widthChanged(ChatSectionWidth)
+}
+
+@MainActor
+public protocol RootTrailingPaneObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
 public final class RootTrailingPane: ObservableObject {
     public let id: String
-    @Published public private(set) var width: ChatSectionWidth
+    @Published public private(set) var width: ChatSectionWidth {
+        didSet {
+            guard oldValue != width else { return }
+            notify(.widthChanged(width))
+        }
+    }
     public let content: AnyView
 
-    @Published public var isVisible: Bool
+    @Published public var isVisible: Bool {
+        didSet {
+            guard oldValue != isVisible else { return }
+            notify(.visibilityChanged(isVisible))
+        }
+    }
     private var visibilityObserver: (any ChatSectionProvidingObserverHandle)?
     private var widthObserver: (any ChatSectionProvidingObserverHandle)?
     private var widthResizeHandler: (@MainActor (CGFloat) -> Void)?
+    private var observers: [UUID: (RootTrailingPaneEvent) -> Void] = [:]
 
     public init(
         id: String,
@@ -252,6 +274,17 @@ public final class RootTrailingPane: ObservableObject {
     public var minWidth: CGFloat { width.minWidth }
     public var idealWidth: CGFloat { width.idealWidth }
     public var maxWidth: CGFloat { width.maxWidth }
+
+    @discardableResult
+    public func addObserver(
+        _ callback: @escaping (RootTrailingPaneEvent) -> Void
+    ) -> any RootTrailingPaneObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
 
     /// 将面板显隐状态绑定到 ChatSection Provider。
     ///
@@ -286,5 +319,22 @@ public final class RootTrailingPane: ObservableObject {
     @MainActor
     public func saveWidth(_ width: CGFloat) {
         widthResizeHandler?(width)
+    }
+
+    private func notify(_ event: RootTrailingPaneEvent) {
+        observers.values.forEach { $0(event) }
+    }
+
+    private final class ObserverHandle: RootTrailingPaneObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
+        }
     }
 }

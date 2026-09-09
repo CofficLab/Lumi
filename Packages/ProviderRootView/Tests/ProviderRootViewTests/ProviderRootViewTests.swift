@@ -79,6 +79,24 @@ struct ProviderRootViewTests {
         #expect(pane.isVisible)
     }
 
+    @Test("Trailing pane 状态变化会发布类型化观察事件")
+    func trailingPaneChangesAreObservable() {
+        let pane = RootTrailingPane(id: "chat", content: AnyView(Text("chat")))
+        var events: [String] = []
+        let handle = pane.addObserver { event in
+            if case let .visibilityChanged(visible) = event {
+                events.append("visible:\(visible)")
+            }
+        }
+
+        pane.isVisible = false
+        #expect(events == ["visible:false"])
+
+        handle.cancel()
+        pane.isVisible = true
+        #expect(events == ["visible:false"])
+    }
+
     @Test("重新绑定 ChatSection 显隐时取消旧观察者")
     func rebindingTrailingPaneVisibilityCancelsPreviousObserver() {
         let firstChat = DefaultChatSectionProviding()
