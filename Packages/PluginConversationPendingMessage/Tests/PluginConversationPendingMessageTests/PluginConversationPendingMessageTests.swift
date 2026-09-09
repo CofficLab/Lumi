@@ -51,7 +51,7 @@ struct ConversationPendingMessagePluginTests {
         box.cancel()
     }
 
-    @Test("pending UI 的会话选择桥接会跟随快速切换")
+    @Test("pending UI 的会话选择事件会跟随快速切换")
     func selectionBoxTracksConversationSwitches() throws {
         let conversations = DefaultConversationManager()
         let first = try conversations.createConversation(
@@ -62,7 +62,12 @@ struct ConversationPendingMessagePluginTests {
         )
         conversations.selectConversation(id: first)
 
-        let box = ObservableConversationSelectionBox(conversations: conversations)
+        let box = ConversationSelectionBox(conversations: conversations)
+        var received: [UUID?] = []
+        let observer = box.addObserver { event in
+            guard case let .selectedConversationChanged(id) = event else { return }
+            received.append(id)
+        }
         #expect(box.selectedConversationID == first)
 
         conversations.selectConversation(id: second)
@@ -70,6 +75,8 @@ struct ConversationPendingMessagePluginTests {
 
         conversations.selectConversation(id: first)
         #expect(box.selectedConversationID == first)
+        #expect(received == [second, first])
+        observer.cancel()
         box.cancel()
     }
 }
