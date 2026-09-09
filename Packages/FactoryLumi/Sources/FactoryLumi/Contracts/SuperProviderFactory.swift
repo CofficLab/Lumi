@@ -20,7 +20,6 @@ import ProviderMessageRendering
 import ProviderMessageSender
 import ProviderMessageStreaming
 import ProviderNetwork
-import ProviderOnboarding
 import ProviderPluginControl
 import ProviderPluginManaging
 import ProviderProject
@@ -119,7 +118,6 @@ public protocol ProviderFactory {
     func makeMessageRenderingProvider() -> any MessageRenderingProviding
     func makeToolCallRenderingProvider() -> any ToolCallRenderingProviding
     func makePromptSuggestionProvider() -> any PromptSuggestionProviding
-    func makeOnboardingProvider() -> any OnboardingProviding
     func makeCommandProvider() -> any CommandProviding
     func makeIdleTimeProvider(storage: any StorageProviding) -> any IdleTimeProviding
     func makeLegacyDataProvider() -> any LegacyDataProviding

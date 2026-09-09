@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import SwiftUI
 
 public struct OnboardingPageItem: Identifiable, Sendable {
@@ -17,6 +18,7 @@ public struct OnboardingPageItem: Identifiable, Sendable {
 @MainActor
 public enum OnboardingProvidingEvent {
     case pagesChanged
+    case presentationChanged(isPresented: Bool)
 }
 
 @MainActor
@@ -25,10 +27,14 @@ public protocol OnboardingObserverHandle: AnyObject {
 }
 
 @MainActor
-public protocol OnboardingProviding: AnyObject {
+public protocol OnboardingProviding: AnyObject, ObservableObject
+    where ObjectWillChangePublisher == ObservableObjectPublisher {
     var allPages: [OnboardingPageItem] { get }
+    var isPresented: Bool { get }
     func register(_ page: OnboardingPageItem)
     func unregister(id: String)
+    func show()
+    func dismiss()
 
     @discardableResult
     func addObserver(_ callback: @escaping (OnboardingProvidingEvent) -> Void) -> any OnboardingObserverHandle
@@ -36,7 +42,8 @@ public protocol OnboardingProviding: AnyObject {
 
 @MainActor
 public final class DefaultOnboardingProviding: OnboardingProviding {
-    public private(set) var allPages: [OnboardingPageItem] = []
+    @Published public private(set) var allPages: [OnboardingPageItem] = []
+    @Published public private(set) var isPresented = false
     private var observers: [WeakObserver] = []
 
     public init() {}
@@ -53,6 +60,18 @@ public final class DefaultOnboardingProviding: OnboardingProviding {
         if allPages.count != oldCount {
             notify(.pagesChanged)
         }
+    }
+
+    public func show() {
+        guard !isPresented else { return }
+        isPresented = true
+        notify(.presentationChanged(isPresented: true))
+    }
+
+    public func dismiss() {
+        guard isPresented else { return }
+        isPresented = false
+        notify(.presentationChanged(isPresented: false))
     }
 
     @discardableResult

@@ -12,6 +12,8 @@ let package = Package(
         .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../ProviderOnboarding"),
+        .package(path: "../ProviderRootView"),
+        .package(path: "../ProviderStorage"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../KitLLM"),
         .package(path: "../KitLocalization"),
@@ -24,6 +26,8 @@ let package = Package(
                 "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
@@ -37,6 +41,8 @@ let package = Package(
                 "PluginOnboarding",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
             ]
         ),
     ]

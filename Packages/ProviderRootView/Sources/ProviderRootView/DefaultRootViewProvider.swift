@@ -240,9 +240,7 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
         if Self.verbose {
             Self.logger.debug("\(self.t)make root view: toolbar=\(self.toolbarView == nil ? "nil" : "set"), activityBar=\(self.activityBarView == nil ? "nil" : "set"), rail=\(self.railView == nil ? "nil" : "set"), content=\(self.contentView == nil ? "nil" : "set"), footer=\(self.contentFooterView == nil ? "nil" : "set")")
         }
-        var root = AnyView(DefaultRootHostView(provider: self))
-        for overlay in overlays { root = overlay.wrap(root) }
-        return root
+        return AnyView(RootOverlayHostView(provider: self))
     }
 
     // MARK: - 显示条件
@@ -256,5 +254,24 @@ public final class DefaultRootViewProvider: RootViewProviding, ObservableObject,
             || contentView != nil
             || (contentFooterView != nil && !isContentFooterViewHidden)
             || trailingPane?.isVisible == true
+    }
+}
+
+/// Observes the provider's overlay registry and rebuilds the wrapper chain when
+/// a plugin adds or removes an overlay after the root view has been assembled.
+@MainActor
+private struct RootOverlayHostView: View {
+    @ObservedObject var provider: DefaultRootViewProvider
+
+    var body: some View {
+        makeWrappedRoot()
+    }
+
+    private func makeWrappedRoot() -> AnyView {
+        var root = AnyView(DefaultRootHostView(provider: provider))
+        for overlay in provider.overlays {
+            root = overlay.wrap(root)
+        }
+        return root
     }
 }

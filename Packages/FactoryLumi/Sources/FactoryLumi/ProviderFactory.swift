@@ -25,7 +25,6 @@ import ProviderConversationInput
 import ProviderMessageStreaming
 import ProviderMessageRendering
 import ProviderPromptSuggestion
-import ProviderOnboarding
 import ProviderCommand
 import ProviderIdleTime
 import ProviderLegacyData
@@ -201,9 +200,6 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultPromptSuggestionProvider()
     }
 
-    public func makeOnboardingProvider() -> any OnboardingProviding {
-        DefaultOnboardingProviding()
-    }
 
     public func makeCommandProvider() -> any CommandProviding {
         DefaultCommandProviding()
@@ -361,7 +357,6 @@ public struct DefaultProviderFactory: ProviderFactory {
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
             throw KernelCoreError.providerNotRegistered(type: (any StorageProviding).self)
         }
-        try kernel.registerProvider((any OnboardingProviding).self, makeOnboardingProvider())
         try kernel.registerProvider((any CommandProviding).self, makeCommandProvider())
         try kernel.registerProvider((any IdleTimeProviding).self, makeIdleTimeProvider(storage: storage))
         try kernel.registerProvider((any LegacyDataProviding).self, makeLegacyDataProvider())
