@@ -5,8 +5,6 @@ import SwiftUI
 
 /// 启动器设置页：全局热键录制 + 内容源开关
 public struct LauncherSettingsView: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
-
     @ObservedObject private var hotkeyManager: GlobalHotkeyManager
     @AppStorage("QuickLauncher.Source.apps") private var appsEnabled = true
     @AppStorage("QuickLauncher.Source.files") private var filesEnabled = true
@@ -20,22 +18,21 @@ public struct LauncherSettingsView: View {
     }
 
     public var body: some View {
-        PluginSettingsScaffold(
-            title: LumiPluginLocalization.string("Quick Launcher", bundle: .module),
-            subtitle: LumiPluginLocalization.string("Raycast-style global launcher", bundle: .module),
-            showHeader: false
-        ) {
+        AppSettingsContentScaffold(maxContentWidth: nil) {
+            VStack(alignment: .leading, spacing: 24) {
 #if DEBUG
-            HStack {
-                Spacer()
-                AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
-                    openDataDirectory()
+                HStack {
+                    Spacer()
+                    AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
+                        openDataDirectory()
+                    }
                 }
-            }
 #endif
-            hotkeyCard
-            sourcesCard
-            usageCard
+                hotkeySection
+                sourcesSection
+                usageSection
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onDisappear {
             stopRecording()
@@ -44,137 +41,133 @@ public struct LauncherSettingsView: View {
 
     // MARK: - Hotkey
 
-    private var hotkeyCard: some View {
-        AppCard {
-            AppSettingsSection(
-                title: LumiPluginLocalization.string("Global Hotkey", bundle: .module),
-                spacing: 12
+    private var hotkeySection: some View {
+        AppSettingSection(
+            title: LumiPluginLocalization.string("Global Hotkey", bundle: .module),
+            titleAlignment: .leading
+        ) {
+            AppSettingRow(
+                title: LumiPluginLocalization.string("Toggle Launcher", bundle: .module),
+                description: LumiPluginLocalization.string("Press the hotkey anywhere to open the launcher. Click Record, then press a key combination with ⌘/⌥/⌃.", bundle: .module),
+                icon: "command"
             ) {
-                AppSettingsRow {
-                    HStack(spacing: 12) {
-                        Text(LumiPluginLocalization.string("Toggle Launcher", bundle: .module))
-                            .font(.appBody)
-                            .foregroundColor(theme.textPrimary)
+                HStack(spacing: 8) {
+                    AppTag(hotkeyManager.currentCombo.displayString, systemImage: "command", style: .accent)
 
-                        Spacer()
-
-                        Text(verbatim: hotkeyManager.currentCombo.displayString)
-                            .font(.appBody)
-                            .fontDesign(.monospaced)
-                            .foregroundColor(theme.textPrimary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(theme.appAccentSoftFill)
-                            )
-
-                        if isRecording {
-                            Button(LumiPluginLocalization.string("Cancel", bundle: .module)) {
-                                stopRecording()
-                            }
-                        } else {
-                            Button(LumiPluginLocalization.string("Record", bundle: .module)) {
-                                startRecording()
-                            }
-                            Button(LumiPluginLocalization.string("Reset", bundle: .module)) {
-                                hotkeyManager.resetToDefault()
-                            }
+                    if isRecording {
+                        AppButton(
+                            LumiPluginLocalization.string("Cancel", bundle: .module),
+                            systemImage: "xmark",
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            stopRecording()
+                        }
+                    } else {
+                        AppButton(
+                            LumiPluginLocalization.string("Record", bundle: .module),
+                            systemImage: "record.circle",
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            startRecording()
+                        }
+                        AppButton(
+                            LumiPluginLocalization.string("Reset", bundle: .module),
+                            systemImage: "arrow.counterclockwise",
+                            style: .secondary,
+                            size: .small
+                        ) {
+                            hotkeyManager.resetToDefault()
                         }
                     }
                 }
-
-                Text(LumiPluginLocalization.string("Press the hotkey anywhere to open the launcher. Click Record, then press a key combination with ⌘/⌥/⌃.", bundle: .module))
-                    .font(.appCaption)
-                    .foregroundColor(theme.textSecondary)
             }
         }
     }
 
     // MARK: - Sources
 
-    private var sourcesCard: some View {
-        AppCard {
-            AppSettingsSection(
-                title: LumiPluginLocalization.string("Search Sources", bundle: .module),
-                spacing: 8
-            ) {
-                Toggle(isOn: $appsEnabled) {
-                    Text(LumiPluginLocalization.string("Applications", bundle: .module))
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
-                }
-                .toggleStyle(.switch)
-
-                Toggle(isOn: $filesEnabled) {
-                    Text(LumiPluginLocalization.string("Files (Spotlight)", bundle: .module))
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
-                }
-                .toggleStyle(.switch)
-
-                Toggle(isOn: $commandsEnabled) {
-                    Text(LumiPluginLocalization.string("Commands", bundle: .module))
-                        .font(.appBody)
-                        .foregroundColor(theme.textPrimary)
-                }
-                .toggleStyle(.switch)
+    private var sourcesSection: some View {
+        AppSettingSection(
+            title: LumiPluginLocalization.string("Search Sources", bundle: .module),
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
+                AppSettingToggleRow(
+                    LumiPluginLocalization.string("Applications", bundle: .module),
+                    icon: "app.fill",
+                    isOn: $appsEnabled
+                )
+                Divider()
+                    .padding(.vertical, 8)
+                AppSettingToggleRow(
+                    LumiPluginLocalization.string("Files (Spotlight)", bundle: .module),
+                    icon: "doc.text.magnifyingglass",
+                    isOn: $filesEnabled
+                )
+                Divider()
+                    .padding(.vertical, 8)
+                AppSettingToggleRow(
+                    LumiPluginLocalization.string("Commands", bundle: .module),
+                    icon: "terminal",
+                    isOn: $commandsEnabled
+                )
             }
         }
     }
 
     // MARK: - Usage
 
-    private var usageCard: some View {
-        AppCard {
-            AppSettingsSection(
-                title: LumiPluginLocalization.string("How to Use", bundle: .module),
-                spacing: 8
-            ) {
+    private var usageSection: some View {
+        AppSettingSection(
+            title: LumiPluginLocalization.string("How to Use", bundle: .module),
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
                 instructionRow(
                     key: hotkeyManager.currentCombo.displayString,
-                    description: LumiPluginLocalization.string("Open the launcher anywhere", bundle: .module)
+                    description: LumiPluginLocalization.string("Open the launcher anywhere", bundle: .module),
+                    icon: "command"
                 )
+                Divider()
+                    .padding(.vertical, 8)
                 instructionRow(
                     key: "?",
-                    description: LumiPluginLocalization.string("Prefix with ? to ask Lumi directly", bundle: .module)
+                    description: LumiPluginLocalization.string("Prefix with ? to ask Lumi directly", bundle: .module),
+                    icon: "questionmark"
                 )
+                Divider()
+                    .padding(.vertical, 8)
                 instructionRow(
                     key: "↑ ↓",
-                    description: LumiPluginLocalization.string("Navigate results", bundle: .module)
+                    description: LumiPluginLocalization.string("Navigate results", bundle: .module),
+                    icon: "arrow.up.arrow.down"
                 )
+                Divider()
+                    .padding(.vertical, 8)
                 instructionRow(
                     key: "↩",
-                    description: LumiPluginLocalization.string("Open / execute selected result", bundle: .module)
+                    description: LumiPluginLocalization.string("Open / execute selected result", bundle: .module),
+                    icon: "return"
                 )
+                Divider()
+                    .padding(.vertical, 8)
                 instructionRow(
                     key: "Esc",
-                    description: LumiPluginLocalization.string("Close the launcher", bundle: .module)
+                    description: LumiPluginLocalization.string("Close the launcher", bundle: .module),
+                    icon: "escape"
                 )
             }
         }
     }
 
-    private func instructionRow(key: String, description: String) -> some View {
-        AppSettingsRow(verticalPadding: 6) {
-            HStack(spacing: 12) {
-                Text(key)
-                    .font(.appBody)
-                    .fontDesign(.monospaced)
-                    .foregroundColor(theme.textPrimary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(theme.appAccentSoftFill)
-                    )
-
-                Text(description)
-                    .font(.appBody)
-                    .foregroundColor(theme.textSecondary)
-
-                Spacer()
-            }
+    private func instructionRow(key: String, description: String, icon: String) -> some View {
+        AppSettingRow(
+            title: description,
+            icon: icon
+        ) {
+            AppTag(key, style: .subtle)
         }
     }
 
