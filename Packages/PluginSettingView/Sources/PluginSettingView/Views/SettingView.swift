@@ -38,7 +38,6 @@ struct SettingView<Provider: SettingViewProviding>: View {
             }
         #endif
             .ignoresSafeArea()
-            .id(observationRevision)
             .onAppear {
                 guard observerHandle == nil else { return }
                 observerHandle = provider.addSettingViewObserver { _ in
@@ -49,6 +48,10 @@ struct SettingView<Provider: SettingViewProviding>: View {
                 observerHandle?.cancel()
                 observerHandle = nil
             }
+            // Keep the provider-backed selection and entry list reactive
+            // without using `id(observationRevision)`, which would recreate
+            // the sidebar ScrollView and reset its content offset.
+            .onChange(of: observationRevision) { _, _ in }
     }
 
     /// 左侧：顶部 Logo Header（应用 Logo + 名称 + 版本）+ 入口列表。

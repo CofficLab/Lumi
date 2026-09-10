@@ -38,7 +38,6 @@ struct SettingView<Provider: SettingViewProviding>: View {
 
     var body: some View {
         AppSettingsSidebarShell { sidebar } detail: { detail }
-            .id(observationRevision)
             .frame(minWidth: 960, minHeight: 520)
             .background(theme.background)
             .appThemedAppearance()
@@ -59,6 +58,9 @@ struct SettingView<Provider: SettingViewProviding>: View {
                 observerHandle?.cancel()
                 observerHandle = nil
             }
+            // Keep the provider-backed selection and entry list reactive
+            // without recreating the sidebar ScrollView on every event.
+            .onChange(of: observationRevision) { _, _ in }
     }
 
     /// 左侧：入口列表。
