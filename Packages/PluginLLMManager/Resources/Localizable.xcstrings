@@ -643,6 +643,40 @@
         }
       }
     },
+    "You can also configure providers anytime in Settings > Cloud Providers." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can also configure providers anytime in Settings > Cloud Providers."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你也可以随时在「设置 > 云端供应商」中进行配置。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你也可以隨時在「設定 > 雲端供應商」中進行設定。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你也可以隨時在「設定 > 雲端供應商」中進行設定。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你也可以隨時在「設定 > 雲端供應商」中進行設定。"
+          }
+        }
+      }
+    },
     "You can configure a provider later in Settings." : {
       "localizations" : {
         "en" : {

@@ -38,6 +38,9 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
     /// 内置技能 contributor 的 providerID。公开以便测试断言。
     public static let builtinContributorID = "com.coffic.lumi.plugin.skill.builtin"
 
+    /// `willSendToLLM` 技能注入钩子（见 `Hooks/SkillInjectionHook.swift`）。
+    private var skillInjectionHook: SkillInjectionHook?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
@@ -72,16 +75,15 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
         // 2. willSendToLLM 钩子：注入可用技能列表（插件贡献 + 内置 + 项目）。
         //    无当前项目时也注入，保证通用技能始终可用。
         if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
-            let handle = hooks.addWillSendToLLMHook { [weak project, weak skillProvider] context in
-                let projectPath = project?.currentProject?.path ?? ""
-                // 底座 = 插件贡献 + 内置（由 SkillProviding 聚合）。
-                let baseSkills = skillProvider?.allSkills() ?? []
-                let skills = await skillService.listSkills(projectPath: projectPath, baseSkills: baseSkills)
-                guard !skills.isEmpty else { return context }
-                let prompt = SkillPromptBuilder.buildPrompt(skills: skills)
-                var ctx = context
-                ctx.messages = [LLMMessage(role: .system, content: prompt)] + ctx.messages
-                return ctx
+            let hook = SkillInjectionHook(
+                project: project,
+                skillProvider: skillProvider,
+                skillService: skillService
+            )
+            skillInjectionHook = hook
+            let handle = hooks.addWillSendToLLMHook { [weak hook] context in
+                guard let hook else { return context }
+                return await hook.apply(to: context)
             }
             lifecycleHandles.append(handle)
         }
@@ -110,6 +112,7 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
         lifecycleHandles.removeAll()
         for handle in observerHandles { handle.cancel() }
         observerHandles.removeAll()
+        skillInjectionHook = nil
 
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar")

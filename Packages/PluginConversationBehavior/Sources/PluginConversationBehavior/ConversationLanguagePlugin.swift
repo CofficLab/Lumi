@@ -32,6 +32,8 @@ public final class ConversationLanguagePlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    /// `willSendToLLM` 语言注入钩子（见 `Hooks/ConversationLanguageHook.swift`）。
+    private var conversationLanguageHook: ConversationLanguageHook?
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
@@ -42,17 +44,11 @@ public final class ConversationLanguagePlugin: SuperPlugin, SuperLog {
 
         if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self),
            let conversations = kernel.resolveProvider((any ConversationManaging).self) {
-            hooks.addWillSendToLLMHook { [weak conversations] context in
-                guard let conversations else { return context }
-                let language = conversations.language(for: context.conversationID)
-                let prompt: String
-                switch language {
-                case .chinese: prompt = "## 语言偏好\n请用中文回复用户。"
-                case .english: prompt = "## Language Preference\nPlease respond in English."
-                }
-                var ctx = context
-                ctx.messages = [LLMMessage(role: .system, content: prompt)] + ctx.messages
-                return ctx
+            let hook = ConversationLanguageHook(conversations: conversations)
+            conversationLanguageHook = hook
+            hooks.addWillSendToLLMHook { [weak hook] context in
+                guard let hook else { return context }
+                return hook.apply(to: context)
             }
         }
 
@@ -71,6 +67,7 @@ public final class ConversationLanguagePlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        conversationLanguageHook = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar-button")
     }

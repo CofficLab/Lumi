@@ -1,6 +1,5 @@
 import LumiUI
 import ProviderConversation
-import ProviderDeveloperMode
 import ProviderMessage
 import ProviderMessageRendering
 import SwiftUI
@@ -18,14 +17,18 @@ struct MessageRowView: View {
     let services: MessageListServices
     let message: Message
     let verbosity: ResponseVerbosity
+    let isDeveloperModeEnabled: Bool
 
-    @State private var isDeveloperModeEnabled = false
-    @State private var developerModeObserverHandle: (any DeveloperModeProvidingObserverHandle)?
-
-    init(services: MessageListServices, message: Message, verbosity: ResponseVerbosity) {
+    init(
+        services: MessageListServices,
+        message: Message,
+        verbosity: ResponseVerbosity,
+        isDeveloperModeEnabled: Bool
+    ) {
         self.services = services
         self.message = message
         self.verbosity = verbosity
+        self.isDeveloperModeEnabled = isDeveloperModeEnabled
     }
 
     private var renderer: MessageRendererItem? {
@@ -42,19 +45,6 @@ struct MessageRowView: View {
                     .foregroundColor(.orange)
                     .padding(12)
             }
-        }
-        .onAppear {
-            guard developerModeObserverHandle == nil else { return }
-            guard let provider = services.developerMode else { return }
-            isDeveloperModeEnabled = provider.isEnabled
-            developerModeObserverHandle = provider.addObserver { event in
-                guard case let .enabledChanged(value) = event else { return }
-                isDeveloperModeEnabled = value
-            }
-        }
-        .onDisappear {
-            developerModeObserverHandle?.cancel()
-            developerModeObserverHandle = nil
         }
     }
 }

@@ -5,7 +5,8 @@ let package = Package(
     name: "PluginGoalTask",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v14),
+        .iOS(.v17)
     ],
     products: [
         .library(name: "PluginGoalTask", targets: ["GoalTaskPlugin"])

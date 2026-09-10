@@ -33,7 +33,7 @@ final class ProjectOpenedFilesPersistence {
 
     private func handle(_ event: ProjectProvidingEvent) {
         switch event {
-        case .currentProjectChanged(let project):
+        case .currentProjectChanged(let project, _):
             handleCurrentProjectChanged(project)
         case .openFilesChanged, .currentFileChanged:
             persistCurrentProjectState()

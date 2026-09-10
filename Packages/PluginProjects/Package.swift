@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginProjects",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "PluginProjects", targets: ["PluginProjects"]),
     ],
@@ -51,6 +51,8 @@ let package = Package(
             name: "PluginProjectsTests",
             dependencies: [
                 "PluginProjects",
+                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
             ]

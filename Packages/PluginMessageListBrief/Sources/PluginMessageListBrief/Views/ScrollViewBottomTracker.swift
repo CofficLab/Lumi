@@ -80,20 +80,14 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
     let controller: ScrollViewBottomController?
     /// 可视区域高度变化时回调，用于计算发送后的尾部留白。
     let onViewportHeightChange: (CGFloat) -> Void
-    /// Live-resize 结束时回调，参数为 resize **开始时**是否在底部。
-    /// 宿主据此决定底部场景滚到底部（scrollTick）、非底部场景由 tracker 内部恢复 offset。
-    var onLiveResizeEnd: ((Bool) -> Void)?
-
     init(
         onChange: @escaping (Bool) -> Void,
         controller: ScrollViewBottomController? = nil,
-        onViewportHeightChange: @escaping (CGFloat) -> Void = { _ in },
-        onLiveResizeEnd: ((Bool) -> Void)? = nil
+        onViewportHeightChange: @escaping (CGFloat) -> Void = { _ in }
     ) {
         self.onChange = onChange
         self.controller = controller
         self.onViewportHeightChange = onViewportHeightChange
-        self.onLiveResizeEnd = onLiveResizeEnd
     }
 
     func makeNSView(context: Context) -> TrackerView {
@@ -105,9 +99,6 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
         view.onViewportHeightChange = { [weak coordinator = context.coordinator] height in
             coordinator?.onViewportHeightChange(height)
         }
-        view.onLiveResizeEnd = { [weak coordinator = context.coordinator] wasAtBottom in
-            coordinator?.onLiveResizeEnd?(wasAtBottom)
-        }
         return view
     }
 
@@ -116,7 +107,6 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
         // SwiftUI 的尺寸协商，可能复活反馈环。仅同步回调句柄。
         context.coordinator.onChange = onChange
         context.coordinator.onViewportHeightChange = onViewportHeightChange
-        context.coordinator.onLiveResizeEnd = onLiveResizeEnd
         nsView.bottomController = controller
     }
 
@@ -127,23 +117,19 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
     func makeCoordinator() -> Coordinator {
         Coordinator(
             onChange: onChange,
-            onViewportHeightChange: onViewportHeightChange,
-            onLiveResizeEnd: onLiveResizeEnd
+            onViewportHeightChange: onViewportHeightChange
         )
     }
 
     final class Coordinator {
         var onChange: (Bool) -> Void
         var onViewportHeightChange: (CGFloat) -> Void
-        var onLiveResizeEnd: ((Bool) -> Void)?
         init(
             onChange: @escaping (Bool) -> Void,
-            onViewportHeightChange: @escaping (CGFloat) -> Void,
-            onLiveResizeEnd: ((Bool) -> Void)?
+            onViewportHeightChange: @escaping (CGFloat) -> Void
         ) {
             self.onChange = onChange
             self.onViewportHeightChange = onViewportHeightChange
-            self.onLiveResizeEnd = onLiveResizeEnd
         }
     }
 }
@@ -153,7 +139,6 @@ struct ScrollViewBottomTracker: NSViewRepresentable {
 final class TrackerView: NSView {
     fileprivate var onChange: ((Bool) -> Void)?
     fileprivate var onViewportHeightChange: ((CGFloat) -> Void)?
-    fileprivate var onLiveResizeEnd: ((Bool) -> Void)?
     fileprivate var bottomController: ScrollViewBottomController?
     private var observation: NSObjectProtocol?
     private weak var observedScrollView: NSScrollView?
@@ -313,8 +298,6 @@ final class TrackerView: NSView {
         observedScrollView = nil
     }
 
-    // MARK: - 底部判定（迟滞带）
-
     // MARK: - Live-resize 恢复实现
 
     private func saveOffsetBeforeResize() {
@@ -337,12 +320,9 @@ final class TrackerView: NSView {
             // suppress onChange，逐帧把 contentOffset 钉到当前 documentView
             // 底部，直到几何连续多帧稳定，才真正落地。
             isRestoringAfterResize = true
-            suppressReevaluateDuringRestore()
-            onLiveResizeEnd?(true)
             pinToBottomUntilStable()
         } else {
             // 非底部场景：tracker 在 AppKit 层恢复 contentOffset。
-            onLiveResizeEnd?(false)
             restoreAttempts = 0
             scheduleRestore()
         }
@@ -353,7 +333,6 @@ final class TrackerView: NSView {
     private func pinToBottomUntilStable() {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            // 等 LiveResizeFrozenView 恢复真实宿主并应用最终宽度。
             // 80ms 足够覆盖这一帧 + 后续几帧的 initial layout。
             try? await Task.sleep(nanoseconds: 80_000_000)
 
@@ -415,12 +394,6 @@ final class TrackerView: NSView {
         }
         // 再强制评估一次当前真实几何，确保 lastAtBottom 与实际一致。
         reevaluate()
-    }
-
-    /// 恢复期间抑制 reevaluate，防止 lazy materialize 的高度增长被误判
-    /// 为「离开底部」而翻转 onChange / 污染 atBottomBox。
-    private func suppressReevaluateDuringRestore() {
-        // 占位：实际的 suppress 通过在 reevaluate 开头检查 isRestoringAfterResize 实现。
     }
 
     // MARK: - 非底部场景：contentOffset 恢复
@@ -506,9 +479,4 @@ final class TrackerView: NSView {
         }
     }
 
-    /// 切换会话/重置滚动位置时由外部调用，把判定重置回「在底部」。
-    /// （当前由 `atBottomBox.value = true` 直接重置，此处保留以备需要。）
-    fileprivate func resetToBottom() {
-        lastAtBottom = true
-    }
 }

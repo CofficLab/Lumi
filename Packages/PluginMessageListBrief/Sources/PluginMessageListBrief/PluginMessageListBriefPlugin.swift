@@ -10,9 +10,6 @@ import ProviderDeveloperMode
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageStreaming
-import ProviderPromptSuggestion
-import ProviderProject
-import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
 
@@ -36,12 +33,12 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
-    private var viewModel: ListV1ViewModel?
-    private var messageChangeObserver: (any MessageChangeObserverHandle)?
-    private var streamingObserver: (any MessageStreamingObserverHandle)?
-    private var conversationStateObserver: (any ConversationStateObserverHandle)?
-    private var selectedConversationObserver: (any SelectedConversationObserverHandle)?
-    private var conversationObserver: (any ConversationObserverHandle)?
+    private var messageListVM: ConversationMessageListVM?
+    private var messageObserver: MessageObserver?
+    private var conversationStateObserver: ConversationStateObserver?
+    private var selectedConversationObserver: SelectedConversationObserver?
+    private var conversationStateVM: ConversationStateVM?
+    private var developerModeObserver: DeveloperModeObserver?
     private var verbosityObservation: VerbosityObservationBox?
 
     public init() {}
@@ -59,28 +56,19 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
         let streaming = kernel.resolveProvider((any MessageStreamingProviding).self)
         let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
         let agentTurn = kernel.resolveProvider((any AgentLoopProviding).self)
-        let promptSuggestions = kernel.resolveProvider((any PromptSuggestionProviding).self)
-        let promptSuggestionExecutor = kernel.resolveProvider((any PromptSuggestionExecuting).self)
-        let project = kernel.resolveProvider((any ProjectProviding).self)
-        let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
 
         let services = MessageListServices(
             conversations: conversations.map(MessageListConversationCapabilityAdapter.init(conversations:)),
-            conversationState: conversationState.map(MessageListConversationStateCapabilityAdapter.init(conversationState:)),
-            developerMode: developerMode,
+            developerMode: developerMode.map(MessageListDeveloperModeCapabilityAdapter.init(developerMode:)),
             messages: messages.map(MessageListMessageCapabilityAdapter.init(messages:)),
             rendering: rendering.map(MessageListRenderingCapabilityAdapter.init(rendering:)),
-            streaming: streaming.map(MessageListStreamingCapabilityAdapter.init(streaming:)),
             toolManager: toolManager.map(MessageListToolManagerCapabilityAdapter.init(toolManager:)),
             agentTurn: agentTurn.map(MessageListAgentLoopCapabilityAdapter.init(agentTurn:)),
-            promptSuggestions: promptSuggestions.map(MessageListPromptSuggestionCapabilityAdapter.init(promptSuggestions:)),
-            promptSuggestionExecutor: promptSuggestionExecutor.map(MessageListPromptSuggestionExecutorCapabilityAdapter.init(executor:)),
-            project: project.map(MessageListProjectCapabilityAdapter.init(project:)),
-            toolbar: toolbar.map(MessageListToolbarCapabilityAdapter.init(toolbar:)),
-            chat: MessageListChatSectionCapabilityAdapter(chat: chat),
         )
-        let viewModel = ListV1ViewModel(services: services)
-        self.viewModel = viewModel
+        let messageListVM = ConversationMessageListVM(services: services)
+        self.messageListVM = messageListVM
+        let conversationStateVM = ConversationStateVM()
+        self.conversationStateVM = conversationStateVM
 
         // 观察详细程度变化，仅 .brief 时注册自己
         let verbosityObservation = VerbosityObservationBox(
@@ -88,56 +76,58 @@ public final class PluginMessageListBriefPlugin: SuperPlugin, SuperLog {
             chat: chat,
             pluginID: id,
             expectedVerbosity: .brief,
-            makeView: { [weak viewModel, services] in
-                guard let viewModel else { return AnyView(EmptyView()) }
+            makeView: { [weak messageListVM, services] in
+                guard let messageListVM else { return AnyView(EmptyView()) }
                 return AnyView(ListV1View(
                     services: services,
-                    viewModel: viewModel
+                    messageListVM: messageListVM,
+                    stateVM: conversationStateVM
                 ))
             }
         )
         self.verbosityObservation = verbosityObservation
 
-        if let messages {
-            messageChangeObserver = messages.addMessageChangeObserver { [weak viewModel] change in
-                viewModel?.handleMessageChange(change)
-            }
+        if let developerMode = services.developerMode {
+            developerModeObserver = DeveloperModeObserver(
+                developerMode: developerMode,
+                vm: messageListVM
+            )
         }
-        if let streaming {
-            streamingObserver = streaming.addMessageStreamingObserver { [weak viewModel] change in
-                viewModel?.handleStreamingChange(change)
-            }
+
+        if let messages {
+            messageObserver = MessageObserver(messages: messages, vm: messageListVM)
         }
         if let conversationState {
-            conversationStateObserver = conversationState.addConversationStateObserver { [weak viewModel] change in
-                viewModel?.handleConversationStateChange(change)
-            }
+            conversationStateObserver = ConversationStateObserver(
+                state: conversationState,
+                streaming: streaming,
+                conversationID: conversations?.selectedConversationID,
+                stateVM: conversationStateVM
+            )
         }
         if let conversations {
-            selectedConversationObserver = conversations.addSelectedConversationObserver { [weak viewModel] conversationID in
-                viewModel?.handleSelectedConversationChange(conversationID)
-            }
-            conversationObserver = conversations.addConversationObserver { _ in
-                // V1 不需要 verbosity 变化时刷新（verbosity 变化由 observation box 处理
-                // 显示/隐藏，因此不在这里处理）
-            }
+            selectedConversationObserver = SelectedConversationObserver(
+                conversations: conversations,
+                vm: messageListVM,
+                stateVM: conversationStateVM,
+                conversationStateObserver: conversationStateObserver
+            )
         }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        messageChangeObserver?.cancel()
-        messageChangeObserver = nil
-        streamingObserver?.cancel()
-        streamingObserver = nil
+        messageObserver?.cancel()
+        messageObserver = nil
         conversationStateObserver?.cancel()
         conversationStateObserver = nil
         selectedConversationObserver?.cancel()
         selectedConversationObserver = nil
-        conversationObserver?.cancel()
-        conversationObserver = nil
+        conversationStateVM = nil
+        developerModeObserver?.cancel()
+        developerModeObserver = nil
         verbosityObservation?.cancel()
         verbosityObservation = nil
-        viewModel = nil
+        messageListVM = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeItem(id: id)
     }

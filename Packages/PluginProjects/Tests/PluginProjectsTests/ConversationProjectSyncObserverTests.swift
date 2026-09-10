@@ -17,12 +17,12 @@ struct ConversationProjectSyncObserverTests {
         var currentFileURL: URL?
         var openedPaths: [String] = []
 
-        func openProject(at path: String) async throws {
+        func openProject(at path: String, reason: ProjectChangeReason) async throws {
             openedPaths.append(path)
             currentProject = ProjectInfo(name: (path as NSString).lastPathComponent, path: path)
         }
 
-        func closeProject() async { currentProject = nil }
+        func closeProject(reason: ProjectChangeReason) async { currentProject = nil }
         func refreshProjects() async throws {}
         func updateCurrentFile(_ fileURL: URL?) { currentFileURL = fileURL }
         func updateOpenFiles(_ fileURLs: [URL]) { openFileURLs = fileURLs }

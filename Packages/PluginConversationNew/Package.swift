@@ -3,7 +3,7 @@ import PackageDescription
 let package = Package(
     name: "PluginConversationNew",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginConversationNew", targets: ["PluginConversationNew"])],
     dependencies: [
         .package(path: "../KernelCore"),

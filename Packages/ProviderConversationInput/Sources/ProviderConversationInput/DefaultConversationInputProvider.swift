@@ -17,7 +17,11 @@ public final class DefaultConversationInputProvider: ConversationInputProviding,
             notifyTextObservers()
         }
     }
-    public var inputHeight: CGFloat = 40
+    // Keep the provider's first layout consistent with ChatInputEditorView's
+    // minimum. The editor measures asynchronously; starting below the minimum
+    // would resize the bottom-fixed input after the message list has already
+    // positioned itself at the bottom.
+    public var inputHeight: CGFloat = 64
     public var isInputFocused = false
     public var inputCursorPosition = 0
     public var errorMessage: String? {

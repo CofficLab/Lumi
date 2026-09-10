@@ -5,7 +5,8 @@ let package = Package(
     name: "KitWebServer",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v14),
+        .iOS(.v17)
     ],
     products: [
         .library(name: "KitWebServer", targets: ["KitWebServer"])

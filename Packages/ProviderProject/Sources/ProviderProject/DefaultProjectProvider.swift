@@ -19,12 +19,9 @@ public final class DefaultProjectProvider: ProjectProviding, SuperLog {
 
     private var observers: [WeakObserver] = []
 
-    public init() {
-        Self.logger.warning("\(Self.t)DefaultProjectProvider is an incomplete default implementation")
-    }
+    public init() {}
 
-    public func openProject(at path: String) async throws {
-        Self.logger.warning("\(Self.t)DefaultProjectProvider.openProject uses in-memory state only; persistent project support is incomplete")
+    public func openProject(at path: String, reason: ProjectChangeReason = .userSelected) async throws {
         let info = ProjectInfo(
             name: (path as NSString).lastPathComponent,
             path: path
@@ -45,15 +42,15 @@ public final class DefaultProjectProvider: ProjectProviding, SuperLog {
             notify(.projectsChanged(projects))
         }
         if currentProjectChanged {
-            notify(.currentProjectChanged(info))
+            notify(.currentProjectChanged(info, reason: reason))
         }
     }
 
-    public func closeProject() async {
+    public func closeProject(reason: ProjectChangeReason = .userSelected) async {
         Self.logger.warning("\(Self.t)DefaultProjectProvider.closeProject uses in-memory state only; complete project cleanup is not implemented")
         guard currentProject != nil else { return }
         currentProject = nil
-        notify(.currentProjectChanged(nil))
+        notify(.currentProjectChanged(nil, reason: reason))
     }
 
     public func refreshProjects() async throws {

@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginCodeEditorHost",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginCodeEditorHost", targets: ["PluginCodeEditorHost"])],
     dependencies: [
         .package(path: "../KitSuperLog"),

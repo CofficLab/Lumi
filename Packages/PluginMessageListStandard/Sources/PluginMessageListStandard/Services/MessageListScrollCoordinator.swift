@@ -181,7 +181,8 @@ final class MessageListScrollCoordinator {
 
     /// 等待 `postAppendDelayNs` 让新内容完成布局，再滚到底。
     ///
-    /// 新请求会取消旧请求，避免多个延迟 `scrollTo` 同时操作同一个 macOS List。
+    /// 同一轮布局稳定期间只保留一个任务，避免流式 token 更新不断取消
+    /// 30ms 延迟，导致连续输出期间一次真正的滚动都无法执行。
     /// 流式期间（`animated == false`）不要动画：tail 刷新在流式中每条消息都会
     /// 触发，带动画的 `scrollTo` 会不断把目标重定到正在增长的底部，动画永不收敛。
     func scheduleScrollToBottomAfterLayout(
@@ -191,21 +192,46 @@ final class MessageListScrollCoordinator {
         controller: ScrollViewBottomController? = nil,
         condition: @escaping @MainActor () -> Bool = { true }
     ) {
-        pendingBottomScrollTask?.cancel()
+        // If a scroll/settle pass is already active, it observes the current
+        // document height repeatedly and will absorb subsequent token updates.
+        // Debouncing by cancellation here starves the scroll during a steady
+        // stream (each update arrives before the 30ms delay expires).
+        guard pendingBottomScrollTask == nil else { return }
+
+        let generation = scrollGeneration
         pendingBottomScrollTask = Task { @MainActor [weak self] in
+            defer {
+                if let self, self.scrollGeneration == generation {
+                    self.pendingBottomScrollTask = nil
+                }
+            }
             do {
                 try await Task.sleep(nanoseconds: Self.postAppendDelayNs)
             } catch {
                 return
             }
-            guard let self, !Task.isCancelled else { return }
-            self.scrollToBottom(
-                proxy: proxy,
-                messages: messages,
-                animated: animated,
-                controller: controller,
-                condition: condition
-            )
+            guard let self,
+                  !Task.isCancelled,
+                  generation == self.scrollGeneration,
+                  !messages.isEmpty,
+                  condition() else { return }
+
+            self.performScrollToBottom(proxy: proxy, animated: animated)
+
+            do {
+                try await Task.sleep(nanoseconds: Self.scrollRetryDelayNs)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled,
+                  generation == self.scrollGeneration,
+                  condition() else { return }
+
+            if let controller, controller.isAttached {
+                await self.settleBottom(controller: controller, condition: condition)
+            } else {
+                self.performScrollToBottom(proxy: proxy, animated: animated)
+            }
         }
     }
 

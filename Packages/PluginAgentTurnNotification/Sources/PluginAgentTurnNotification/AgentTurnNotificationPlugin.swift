@@ -31,6 +31,8 @@ public final class AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
     )
 
     private var isActive = false
+    /// 回合结束通知钩子（见 `Hooks/TurnFinishedNotificationHook.swift`）。
+    private var turnFinishedHook: TurnFinishedNotificationHook?
     /// 通知发送器（测试可注入 no-op）。
     public var notifier: @MainActor (String, String, UUID) -> Void = { title, body, _ in
         let content = UNMutableNotificationContent()
@@ -53,31 +55,22 @@ public final class AgentTurnNotificationPlugin: SuperPlugin, SuperLog {
         // 通知授权由宿主 App 在启动时请求；插件只负责订阅并发送。
 
         isActive = true
-        kernel.resolveProvider((any LifecycleHooksProviding).self)?.addTurnFinishedHook { [weak self] context in
-            guard let self, self.isActive else { return }
-            let (title, body) = Self.presentation(for: context.endReason?.rawValue ?? "completed")
-            self.notifier(title, body, context.conversationID)
-        }
+        let hook = TurnFinishedNotificationHook(
+            isActive: { [weak self] in self?.isActive ?? false },
+            notifier: { [weak self] title, body, conversationID in
+                self?.notifier(title, body, conversationID)
+            }
+        )
+        turnFinishedHook = hook
+        kernel.resolveProvider((any LifecycleHooksProviding).self)?
+            .addTurnFinishedHook { [weak hook] context in
+                hook?.apply(to: context)
+            }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         isActive = false
-    }
-
-    // MARK: - Presentation
-
-    /// 按结束原因生成通知标题与正文（纯函数，可测试）。
-    nonisolated static func presentation(for reason: String) -> (title: String, body: String) {
-        switch reason {
-        case "completed":
-            return ("任务完成", "Agent 回合已结束")
-        case "failed":
-            return ("任务失败", "Agent 回合执行失败")
-        case "cancelled":
-            return ("任务已取消", "Agent 回合已取消")
-        default:
-            return ("回合结束", "Agent 回合已结束")
-        }
+        turnFinishedHook = nil
     }
 
     // MARK: - Private

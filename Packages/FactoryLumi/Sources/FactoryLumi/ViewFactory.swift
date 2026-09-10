@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import KernelCore
 import LumiUI
@@ -162,6 +163,8 @@ private struct ThemeHostingView<Content: View>: View {
     }
 
     var body: some View {
+        let _ = refreshTick
+
         content
             .preferredColorScheme(preferredColorScheme)
             .background(backgroundColor)
@@ -172,6 +175,18 @@ private struct ThemeHostingView<Content: View>: View {
                 refreshTick.toggle()
                 DefaultViewFactory.syncLumiTheme(theme)
             }
+            #if os(macOS)
+            .onReceive(
+                DistributedNotificationCenter.default().publisher(
+                    for: Notification.Name("AppleInterfaceThemeChangedNotification")
+                )
+                .receive(on: RunLoop.main)
+            ) { _ in
+                guard theme.followsSystemAppearance else { return }
+                refreshTick.toggle()
+                DefaultViewFactory.syncLumiTheme(theme)
+            }
+            #endif
     }
 
     /// 按主题外观类型解析窗口明暗；跟随系统时使用已同步的系统明暗。

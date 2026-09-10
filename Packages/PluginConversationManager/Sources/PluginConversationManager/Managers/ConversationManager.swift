@@ -86,9 +86,9 @@ public final class ConversationManager: ConversationManaging, SuperLog {
         self.agentTurn = agentTurn
         self.eventBus = eventBus
 
-        // 监听项目切换，清空对话选择
+        // 监听项目切换，仅在用户主动切换时清空对话选择
         projectObserver = project?.addObserver { [weak self] event in
-            guard case .currentProjectChanged = event else { return }
+            guard case .currentProjectChanged(_, reason: .userSelected) = event else { return }
             self?.deselectConversation()
         }
     }
