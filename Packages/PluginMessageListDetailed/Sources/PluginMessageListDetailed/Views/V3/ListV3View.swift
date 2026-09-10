@@ -57,7 +57,7 @@ struct ListV3View: View {
             atBottomBox.value = true
             isInitialPositionReady = false
             isPreparingInitialPosition = false
-            await viewModel.activate(conversationID: viewModel.selectedConversationID)
+            await viewModel.activateCurrentConversation()
         }
     }
 
