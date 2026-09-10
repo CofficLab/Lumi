@@ -20,10 +20,10 @@ struct AgentTurnNotificationPluginTests {
 
     @Test("presentation 按原因生成标题")
     func presentationTitles() {
-        #expect(AgentTurnNotificationPlugin.presentation(for: "completed").title == "任务完成")
-        #expect(AgentTurnNotificationPlugin.presentation(for: "failed").title == "任务失败")
-        #expect(AgentTurnNotificationPlugin.presentation(for: "cancelled").title == "任务已取消")
-        #expect(AgentTurnNotificationPlugin.presentation(for: "unknown").title == "回合结束")
+        #expect(TurnFinishedNotificationHook.presentation(for: "completed").title == "任务完成")
+        #expect(TurnFinishedNotificationHook.presentation(for: "failed").title == "任务失败")
+        #expect(TurnFinishedNotificationHook.presentation(for: "cancelled").title == "任务已取消")
+        #expect(TurnFinishedNotificationHook.presentation(for: "unknown").title == "回合结束")
     }
 
     @Test("V2 turn-finished hook 触发 notifier")

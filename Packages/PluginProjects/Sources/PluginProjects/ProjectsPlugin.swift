@@ -42,6 +42,8 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     private var projectObserver: ProjectProvidingObserver?
     private var openedFilesPersistence: ProjectOpenedFilesPersistence?
     private var conversationProjectSyncObserver: ConversationProjectSyncObserver?
+    /// `willSendToLLM` 项目路径注入钩子（见 `Hooks/ProjectPathInjectionHook.swift`）。
+    private var projectPathInjectionHook: ProjectPathInjectionHook?
 
     public init() {}
 
@@ -122,19 +124,11 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
         // 6. willSendToLLM 钩子：将当前项目路径注入 LLM 上下文。
         if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self),
            let project = kernel.resolveProvider((any ProjectProviding).self) {
-            hooks.addWillSendToLLMHook { context in
-                guard let projectPath = project.currentProject?.path,
-                      !projectPath.isEmpty else {
-                    Self.logger.error("\(Self.t)无法将当前项目路径注入 LLM 上下文：未选择项目或项目路径为空")
-                    return context
-                }
-                var ctx = context
-                let projectMessage = LLMMessage(
-                    role: .system,
-                    content: "当前工作项目路径：\(projectPath)"
-                )
-                ctx.messages = [projectMessage] + ctx.messages
-                return ctx
+            let hook = ProjectPathInjectionHook(project: project)
+            projectPathInjectionHook = hook
+            hooks.addWillSendToLLMHook { [weak hook] context in
+                guard let hook else { return context }
+                return hook.apply(to: context)
             }
         } else {
             if kernel.resolveProvider((any LifecycleHooksProviding).self) == nil {
@@ -215,6 +209,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
         projectObserver = nil
         openedFilesPersistence?.cancel()
         openedFilesPersistence = nil
+        projectPathInjectionHook = nil
         viewModel = nil
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
             for tool in Self.agentTools {
