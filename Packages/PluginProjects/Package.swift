@@ -51,6 +51,8 @@ let package = Package(
             name: "PluginProjectsTests",
             dependencies: [
                 "PluginProjects",
+                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
             ]

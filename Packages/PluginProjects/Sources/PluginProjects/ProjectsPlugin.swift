@@ -21,7 +21,7 @@ import SwiftUI
 ///   并通过 `ProjectProvidingObserver` 将内核 `ProjectProviding` 的状态同步到插件;
 /// - 注册 Agent 工具（list_projects / add_project / get_current_project）;
 /// - 贡献标题栏项目控件与设置页;
-/// - 通过 `willSendToLLM` 钩子将当前项目路径注入 LLM 上下文;
+/// - 通过 `willSendToLLM` 钩子将当前对话绑定的项目路径注入 LLM 上下文;
 ///   「添加项目」动作胶囊。
 @MainActor
 public final class ProjectsPlugin: SuperPlugin, SuperLog {
@@ -44,6 +44,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     private var conversationProjectSyncObserver: ConversationProjectSyncObserver?
     /// `willSendToLLM` 项目路径注入钩子（见 `Hooks/ProjectPathInjectionHook.swift`）。
     private var projectPathInjectionHook: ProjectPathInjectionHook?
+    private var projectPathInjectionHookHandle: (any LifecycleHookHandle)?
 
     public init() {}
 
@@ -121,25 +122,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
             }
         }
 
-        // 6. willSendToLLM 钩子：将当前项目路径注入 LLM 上下文。
-        if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self),
-           let project = kernel.resolveProvider((any ProjectProviding).self) {
-            let hook = ProjectPathInjectionHook(project: project)
-            projectPathInjectionHook = hook
-            hooks.addWillSendToLLMHook { [weak hook] context in
-                guard let hook else { return context }
-                return hook.apply(to: context)
-            }
-        } else {
-            if kernel.resolveProvider((any LifecycleHooksProviding).self) == nil {
-                Self.logger.error("\(Self.t)无法注册 willSendToLLM 钩子：LifecycleHooksProviding 未注册")
-            }
-            if kernel.resolveProvider((any ProjectProviding).self) == nil {
-                Self.logger.error("\(Self.t)无法注册 willSendToLLM 钩子：ProjectProviding 未注册")
-            }
-        }
-
-        // 7. 贡献标题栏项目控件
+        // 6. 贡献标题栏项目控件
         if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
             toolbar.addToolbarItems([
                 ToolbarItem(
@@ -154,7 +137,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
             ])
         }
 
-        // 7. 贡献设置入口
+        // 6. 贡献设置入口
         if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
             settings.addProjectDetailSections([
                 ProjectDetailSectionItem(
@@ -181,6 +164,24 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
 
     public func onReady(kernel: KernelCoreContainer) throws {
         registerPromptSuggestion(kernel: kernel, requiresEnable: false)
+
+        // willSendToLLM 必须在 onReady 注册：ConversationManagerPlugin 会在
+        // onBoot 中替换默认 ConversationManaging，钩子需要持有最终的实现。
+        guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            Self.logger.error("\(Self.t)无法注册 willSendToLLM 钩子：ConversationManaging 未注册")
+            return
+        }
+        if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self) {
+            let hook = ProjectPathInjectionHook(conversations: conversations)
+            projectPathInjectionHook = hook
+            projectPathInjectionHookHandle?.cancel()
+            projectPathInjectionHookHandle = hooks.addWillSendToLLMHook { [weak hook] context in
+                guard let hook else { return context }
+                return await hook.apply(to: context)
+            }
+        } else {
+            Self.logger.error("\(Self.t)无法注册 willSendToLLM 钩子：LifecycleHooksProviding 未注册")
+        }
 
         // 监听「当前对话变化」并切换到对话绑定的项目。
         // 必须在 onReady 注册而非 onBoot(order=5)：此时 ConversationManaging
@@ -209,6 +210,8 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
         projectObserver = nil
         openedFilesPersistence?.cancel()
         openedFilesPersistence = nil
+        projectPathInjectionHookHandle?.cancel()
+        projectPathInjectionHookHandle = nil
         projectPathInjectionHook = nil
         viewModel = nil
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
