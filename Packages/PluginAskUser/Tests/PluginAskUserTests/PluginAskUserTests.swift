@@ -287,5 +287,10 @@ struct AskUserPluginTests {
         )
         #expect(resumed == .completed)
         #expect(messages.lastMessage(in: conversationID)?.content == "好的，继续")
+        let toolMessages = await messages.messagesSnapshot(in: conversationID).filter { message in
+            message.role == .tool && message.toolCallID == "ask-1"
+        }
+        #expect(toolMessages.count == 1)
+        #expect(toolMessages.first?.content == "是")
     }
 }
