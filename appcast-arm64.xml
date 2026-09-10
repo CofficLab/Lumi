@@ -3,38 +3,20 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.24.1</title>
-            <pubDate>Thu, 10 Sep 2026 05:14:12 +0000</pubDate>
-            <sparkle:version>631</sparkle:version>
-            <sparkle:shortVersionString>5.24.1</sparkle:shortVersionString>
+            <title>5.24.2</title>
+            <pubDate>Thu, 10 Sep 2026 10:10:09 +0000</pubDate>
+            <sparkle:version>632</sparkle:version>
+            <sparkle:shortVersionString>5.24.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.24.1</h2>
-<h3>Changes since v5.24.0</h3>
+            <description><![CDATA[<h2>Release v5.24.2</h2>
+<h3>Changes since v5.24.1</h3>
 <ul>
-<li>feat(PluginLLMManager): add hint text to LLM provider onboarding page 提示用户可随时在「设置 &gt; 云端供应商」中进行配置</li>
-<li>feat(ProviderProject): add ProjectChangeReason enum to project change API</li>
-<li>feat(ProviderProject): propagate ProjectChangeReason through events</li>
-<li>fix(message-list-brief): stabilize conversation state bar layout with fixed height</li>
-<li>fix(message-list): keep streaming output pinned to bottom</li>
-<li>fix(Packages): add iOS 17 platform declaration to all Swift packages</li>
-<li>fix(PluginDeveloperMode): hide DEV button in release builds</li>
-<li>fix(PluginDeveloperMode): resolve ToolbarItem type conflict with SwiftUI</li>
-<li>fix(PluginProjectFileTree): update pattern match for currentProjectChanged event</li>
-<li>fix(projects): inject conversation-bound project path</li>
-<li>fix(theme): refresh system appearance changes</li>
-<li>refactor: remove BookletMaker standalone app, keep plugin only</li>
-<li>refactor(message-list-brief): extract conversation state into dedicated ViewModel and View</li>
-<li>refactor(message-list-brief): organize external observers</li>
-<li>refactor(message-list-brief): remove dead code and unused helpers</li>
-<li>refactor(message-list-brief): remove unused capabilities and lift developer mode observation</li>
-<li>refactor(message-list-brief): remove unused message list code</li>
-<li>refactor(message-list-brief): replace custom observer pattern with ObservableObject in AgentTurnViewModel</li>
-<li>refactor(message-list-brief): simplify view model naming</li>
-<li>refactor(message-list-brief): split capabilities by concern</li>
+<li>fix(KitLLM): retain usage in DeepSeek final stream chunk</li>
+<li>fix(PluginAgentLoop): avoid duplicate tool results after approval</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.24.1</sparkle:fullReleaseNotesLink>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.24.2</sparkle:fullReleaseNotesLink>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://s.kuaiyizhi.cn/lumi/Lumi_5.24.1_arm64.dmg" length="41925364" type="application/octet-stream" sparkle:edSignature="jaiptuk60nGMuJUBW7Kv2TQStGZ9aJkv828J3/JO20+I8fKNzCIDYTrihTDytR2ZAjAP+1geqbo5gaURUTP1Ag=="/>
+            <enclosure url="https://s.kuaiyizhi.cn/lumi/Lumi_5.24.2_arm64.dmg" length="41921215" type="application/octet-stream" sparkle:edSignature="CK/qePVN/ingXbfWe+fZLXe58QsdULSf5/bL/Ndg4PFIl/GzaT8XncmIZFdhKv9omAPX///AXtlGU5jCuqPKCA=="/>
         </item>
     </channel>
 </rss>
