@@ -166,6 +166,24 @@ struct KitLLMTests {
         #expect(chunk?.stopReason == "stop")
     }
 
+    @Test("DeepSeek 最终结束块保留 usage 和缓存命中字段")
+    func openAIAdapterParsesDeepSeekFinalUsageChunk() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.deepseek.com/v1")
+        )
+        let event = """
+        data: {"choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":123,"completion_tokens":17,"prompt_cache_hit_tokens":100,"prompt_cache_miss_tokens":23}}
+
+        """
+        let chunk = try adapter.parseStreamChunk(data: Data(event.utf8))
+
+        #expect(chunk?.inputTokens == 123)
+        #expect(chunk?.outputTokens == 17)
+        #expect(chunk?.cachedInputTokens == 100)
+        #expect(chunk?.cacheTotalInputTokens == 123)
+        #expect(chunk?.stopReason == "stop")
+    }
+
     @Test("未收到流式终止信号时拒绝不完整响应")
     func incompleteStreamingResponseFails() async {
         let accumulator = StreamingAccumulator()

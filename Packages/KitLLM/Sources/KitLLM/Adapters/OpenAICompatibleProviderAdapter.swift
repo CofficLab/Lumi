@@ -345,7 +345,17 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
 
             // 纯 stop_reason 结束信号
             if let stopReason {
-                return StreamChunk(stopReason: stopReason)
+                // DeepSeek 将最终 usage 放在带 choices/finish_reason 的最后一个
+                // chunk 中，而不是发送独立的 usage-only chunk。不能在这里丢弃
+                // token usage，否则速度和缓存命中率都无法落库。
+                return StreamChunk(
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
+                    cacheTotalInputTokens: inputTokens,
+                    stopReason: stopReason
+                )
             }
         }
 
@@ -404,6 +414,8 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             ?? (usage?["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
             ?? (usage?["input_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
             ?? usage?["cache_read_input_tokens"] as? Int
+            // DeepSeek OpenAI API
+            ?? usage?["prompt_cache_hit_tokens"] as? Int
     }
 
     static func cacheWriteInputTokens(from usage: [String: Any]?) -> Int? {
