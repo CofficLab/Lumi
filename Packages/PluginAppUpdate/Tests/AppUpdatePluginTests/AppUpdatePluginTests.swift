@@ -1,5 +1,6 @@
 import AppUpdatePlugin
 import Foundation
+import ProviderAppUpdate
 import Testing
 
 @Suite("App update V2 host bootstrap")
@@ -20,5 +21,15 @@ struct AppUpdatePluginTests {
     func keepsFeedHosts() {
         #expect(UpdateFeedURLProvider.primary(forArchitecture: "arm64").host == "s.kuaiyizhi.cn")
         #expect(UpdateFeedURLProvider.fallback(forArchitecture: "x86_64").host == "github.com")
+    }
+
+    @Test("keeps preview feeds isolated from stable feeds")
+    func keepsPreviewFeedsIsolated() {
+        let previewPrimary = UpdateFeedURLProvider.primary(for: .preview, architecture: "arm64")
+        let previewFallback = UpdateFeedURLProvider.fallback(for: .preview, architecture: "x86_64")
+
+        #expect(previewPrimary.path == "/lumi/pre/appcast-arm64.xml")
+        #expect(previewFallback.host == "raw.githubusercontent.com")
+        #expect(previewFallback.path == "/CofficLab/Lumi/pre/appcast-pre-x86_64.xml")
     }
 }

@@ -1,4 +1,5 @@
 import AppKit
+import ProviderAppUpdate
 import ProviderNetwork
 import Sparkle
 import KitSuperLog
@@ -17,7 +18,7 @@ import os
 /// Cross-plugin communication uses `NotificationCenter` so callers (e.g.
 /// `MenuBarManagerPlugin`) do not need a hard dependency on `AppUpdatePlugin`.
 @MainActor
-public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
+public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpdateChannelProviding {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "core.updater")
     nonisolated public static let emoji = "⬆️"
     nonisolated public static let verbose = false
@@ -44,12 +45,25 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
     /// `feedURLString(for:)` (synchronous delegate callback) can read it directly.
     private var resolvedFeedURL: URL = UpdateFeedURLProvider.primary
 
+    /// Selected release channel. Persisted independently from Sparkle's own
+    /// preferences so switching channels never changes updater internals.
+    public private(set) var channel: AppUpdateChannel
+
+    private static func loadChannel() -> AppUpdateChannel {
+        guard let rawValue = UserDefaults.standard.string(forKey: AppUpdateChannel.userDefaultsKey),
+              let channel = AppUpdateChannel(rawValue: rawValue) else {
+            return .stable
+        }
+        return channel
+    }
+
     /// Convenience access to the underlying `SPUUpdater`.
     public var updater: SPUUpdater? {
         updaterController?.updater
     }
 
     override init() {
+        channel = Self.loadChannel()
         super.init()
     }
 
@@ -57,9 +71,30 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
 
     public func configure(network: any NetworkProviding) {
         feedURLDetector = FeedURLDetector(
-            initialURL: UpdateFeedURLProvider.primary,
-            reachabilityChecker: ProviderNetworkReachabilityChecker(network: network)
+            initialURL: UpdateFeedURLProvider.primary(for: channel),
+            reachabilityChecker: ProviderNetworkReachabilityChecker(network: network),
+            fallbackURL: UpdateFeedURLProvider.fallback(for: channel)
         )
+    }
+
+    /// Persist and immediately apply the selected update channel.
+    public func setChannel(_ channel: AppUpdateChannel) {
+        guard self.channel != channel else { return }
+
+        self.channel = channel
+        UserDefaults.standard.set(channel.rawValue, forKey: AppUpdateChannel.userDefaultsKey)
+        resolvedFeedURL = UpdateFeedURLProvider.primary(for: channel)
+        feedPreparationTask?.cancel()
+        feedPreparationTask = nil
+
+        if let feedURLDetector {
+            Task {
+                await feedURLDetector.updateFeedURLs(
+                    primary: UpdateFeedURLProvider.primary(for: channel),
+                    fallback: UpdateFeedURLProvider.fallback(for: channel)
+                )
+            }
+        }
     }
 
     /// Lazily initialize the Sparkle updater controller.
@@ -106,9 +141,10 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog {
             return feedPreparationTask
         }
 
-        let task = Task { @MainActor [weak self, feedURLDetector] in
+        let channel = self.channel
+        let task = Task { @MainActor [weak self, feedURLDetector, channel] in
             await feedURLDetector.detectIfNeeded()
-            guard let self else { return }
+            guard let self, self.channel == channel else { return }
 
             let url = await feedURLDetector.resolvedFeedURL
             self.resolvedFeedURL = url

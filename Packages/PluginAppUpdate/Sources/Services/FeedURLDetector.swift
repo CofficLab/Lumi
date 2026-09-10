@@ -28,6 +28,9 @@ public actor FeedURLDetector {
     /// Timestamp of the last probe; used for cache window decisions.
     private var lastDetectionTime: Date?
 
+    private var primaryURL: URL
+    private var fallbackURL: URL
+
     /// Injected reachability checker.
     private let reachabilityChecker: FeedURLReachabilityChecker
 
@@ -47,10 +50,13 @@ public actor FeedURLDetector {
     public init(
         initialURL: URL,
         reachabilityChecker: FeedURLReachabilityChecker,
+        fallbackURL: URL? = nil,
         cacheWindow: TimeInterval = FeedURLDetector.defaultCacheWindow,
         clock: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.resolvedFeedURL = initialURL
+        self.primaryURL = initialURL
+        self.fallbackURL = fallbackURL ?? initialURL
         self.reachabilityChecker = reachabilityChecker
         self.cacheWindow = cacheWindow
         self.clock = clock
@@ -67,11 +73,9 @@ public actor FeedURLDetector {
 
         lastDetectionTime = clock()
 
-        let primary = UpdateFeedURLProvider.primary
-        let fallback = UpdateFeedURLProvider.fallback
         let detectedURL = await Self.detectFeedURL(
-            primary: primary,
-            fallback: fallback,
+            primary: primaryURL,
+            fallback: fallbackURL,
             reachabilityChecker: reachabilityChecker
         )
 
@@ -83,6 +87,14 @@ public actor FeedURLDetector {
     public func forceRedetect() async {
         lastDetectionTime = nil
         await detectIfNeeded()
+    }
+
+    /// Change the channel without replacing the injected reachability checker.
+    public func updateFeedURLs(primary: URL, fallback: URL) {
+        primaryURL = primary
+        fallbackURL = fallback
+        resolvedFeedURL = primary
+        lastDetectionTime = nil
     }
 
     // MARK: - Private

@@ -1,6 +1,7 @@
 import KernelCore
 import LumiUI
 import ProviderCommand
+import ProviderAppUpdate
 import ProviderDiagnostics
 import ProviderDocsView
 import ProviderOnboarding
@@ -86,11 +87,15 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
             title: "通用",
             systemImage: "gearshape",
             order: 1
-        ) { [versionProvider, docsProvider, diagnosticsProvider, onboardingProvider, uninstallProvider, prepareForUninstall] in
+        ) { [versionProvider, docsProvider, diagnosticsProvider, onboardingProvider, uninstallProvider, prepareForUninstall, kernel] in
             GeneralSettingsDetailView(
                 version: versionProvider(),
                 docsProvider: docsProvider,
                 diagnosticsProvider: diagnosticsProvider,
+                // AppUpdateBootstrap is host-owned and may register after
+                // plugin boot. Resolve it when the entry is materialized so
+                // settings sees the provider in both Debug and Release.
+                updateProvider: kernel.resolveProvider((any AppUpdateChannelProviding).self),
                 onboardingProvider: onboardingProvider,
                 uninstallProvider: uninstallProvider,
                 prepareForUninstall: prepareForUninstall

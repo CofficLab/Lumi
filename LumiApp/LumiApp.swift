@@ -38,13 +38,13 @@ struct LumiApp: App {
             _menuBarController = StateObject(wrappedValue: LumiMenuBarController())
             toastCenter = assembledKernel.resolveProvider((any ToastProviding).self) as? ToastCenter
             bootstrapErrorDescription = nil
+            // Register the host-owned update provider before the settings view
+            // is materialized, so General can render the channel selector.
+            AppUpdateBootstrap.start(kernel: assembledKernel)
             mainView = (try? KernelFactory.makeMainView(kernel: assembledKernel))
                 ?? AnyView(BootstrapFailureView(message: "Failed to assemble main view"))
             settingsView = (try? KernelFactory.makeSettingsView(kernel: assembledKernel))
                 ?? AnyView(BootstrapFailureView(message: "Failed to assemble settings view"))
-            // Lumi 直营分发继续启用 Sparkle。触发单例初始化以安装更新通知观察者，
-            // 并在启动时完成 feed URL 探测；菜单命令直接复用同一服务。
-            AppUpdateBootstrap.start(kernel: assembledKernel)
         } catch {
             kernel = KernelCoreContainer()
             _menuBarController = StateObject(wrappedValue: LumiMenuBarController())
