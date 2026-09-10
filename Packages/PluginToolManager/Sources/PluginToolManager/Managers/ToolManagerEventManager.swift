@@ -42,6 +42,7 @@ final class ToolManagerEventManager: SuperLog {
 
     private func eventName(_ event: ToolManagerEvent) -> String {
         switch event {
+        case .toolsChanged: return "toolsChanged"
         case .started: return "started"
         case .authorizationRequired: return "authorizationRequired"
         case .completed: return "completed"

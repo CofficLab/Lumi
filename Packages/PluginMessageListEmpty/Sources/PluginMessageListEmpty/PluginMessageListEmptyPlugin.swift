@@ -1,4 +1,3 @@
-import Combine
 import KernelCore
 import KitSuperLog
 import LumiUI
@@ -43,7 +42,7 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
     private var messageChangeObserver: (any MessageChangeObserverHandle)?
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private var chatObserver: (any ChatSectionProvidingObserverHandle)?
-    private var promptSuggestionsCancellable: AnyCancellable?
+    private var promptSuggestionsObserver: (any PromptSuggestionProvidingObserverHandle)?
     private var isRegistered = false
 
     public init() {}
@@ -95,7 +94,7 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
             guard case let .activeContextChanged(context) = event else { return }
             guideState?.handleContextChange(context)
         }
-        promptSuggestionsCancellable = promptSuggestions?.changes.sink { [weak guideState] _ in
+        promptSuggestionsObserver = promptSuggestions?.addObserver { [weak guideState] _ in
             guideState?.handlePromptSuggestionsChange()
         }
 
@@ -112,7 +111,8 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         projectObserver = nil
         chatObserver?.cancel()
         chatObserver = nil
-        promptSuggestionsCancellable = nil
+        promptSuggestionsObserver?.cancel()
+        promptSuggestionsObserver = nil
 
         if isRegistered {
             chat?.removeItem(id: id)

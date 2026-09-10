@@ -1,5 +1,4 @@
 import ProviderConversation
-import Combine
 import Foundation
 import SwiftUI
 
@@ -115,6 +114,7 @@ public enum ChatSectionProvidingEvent {
     case contextActiveChanged(Bool)
     case activeContextChanged(ChatContext?)
     case headerVisibilityChanged(Bool)
+    case widthChanged(ChatSectionWidth)
 }
 
 /// 聊天分区状态观察句柄。
@@ -135,8 +135,7 @@ public final class NoopChatSectionProvidingObserverHandle: ChatSectionProvidingO
 /// stack+bottomFixed / action bar），插件通过它注册内容区与各栏贡献；
 /// 宿主通过 `makeChatSectionView()` 渲染整个聊天分区。
 @MainActor
-public protocol ChatSectionProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol ChatSectionProviding: AnyObject {
     /// 聊天分区整体是否可见（由容器切换驱动）。
     var isVisible: Bool { get }
 
@@ -156,6 +155,11 @@ public protocol ChatSectionProviding: AnyObject, ObservableObject
 
     func addItems(_ items: [ChatSectionItem])
     func removeItem(id: String)
+
+    /// 通知已注册的动态 item 重新计算可见性，而不改变 ChatSection 的 item 集合。
+    ///
+    /// 用于消息列表详细程度等只影响当前 slot 内容、不会改变布局贡献的状态更新。
+    func refreshItems()
 
     func addBarItems(_ items: [ChatSectionBarItem])
     func removeBarItem(id: String)
@@ -182,9 +186,6 @@ public protocol ChatSectionProviding: AnyObject, ObservableObject
 
     /// 当前 ChatSection 的有效宽度。
     var chatSectionWidth: ChatSectionWidth { get }
-
-    /// ChatSection 宽度变化发布器。
-    var chatSectionWidthPublisher: AnyPublisher<ChatSectionWidth, Never> { get }
 
     /// 激活插件的 ChatSection 宽度配置。
     ///
@@ -219,15 +220,13 @@ public extension ChatSectionProviding {
 
     func addRootWrappers(_ wrappers: [ChatSectionRootWrapper]) {}
 
+    func refreshItems() {}
+
     func removeRootWrapper(id: String) {}
 
     func bindConversationSelection(_ conversations: any ConversationManaging) {}
 
     var chatSectionWidth: ChatSectionWidth { .standard }
-
-    var chatSectionWidthPublisher: AnyPublisher<ChatSectionWidth, Never> {
-        Just(chatSectionWidth).eraseToAnyPublisher()
-    }
 
     func activateWidthProfile(ownerID: String, recommended: ChatSectionWidth) {
         activateWidthProfile(ownerID: ownerID, recommended: recommended, store: nil)

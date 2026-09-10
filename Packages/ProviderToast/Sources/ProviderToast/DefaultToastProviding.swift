@@ -8,6 +8,8 @@ import Foundation
 public final class DefaultToastProviding: ToastProviding {
     public init() {}
 
+    public var currentToast: LumiToast? { nil }
+
     public func show(_ toast: LumiToast) {
         // no-op：骨架阶段不渲染，静默丢弃。
     }

@@ -22,13 +22,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		BMUIT00000000000000000004 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = BM0000000000000000000009;
-			remoteInfo = BookletMaker;
-		};
 		LF000000000000000012 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
@@ -62,11 +55,8 @@
 		AE205FD720E849E1FFA4D49C /* Project-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Project-Release.xcconfig"; path = "LumiApp/Config/Project-Release.xcconfig"; sourceTree = "<group>"; };
 		AI0000000000000000000002 /* AppIconDesigner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AppIconDesigner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BEB5089FCE8F5EB98AEF0906 /* LumiFinder-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "LumiFinder-Debug.xcconfig"; path = "Packages/PluginRClick/FinderExtension/LumiFinder-Debug.xcconfig"; sourceTree = "<group>"; };
-		BM0000000000000000000002 /* BookletMaker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BookletMaker.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		BMUIT00000000000000000002 /* BookletMakerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BookletMakerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD0000000000000000000002 /* CADDesigner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CADDesigner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DB0000000000000000000002 /* DatabaseManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DatabaseManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		DD36141333F791471BC94F98 /* BookletMaker.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = BookletMaker.xcconfig; path = BookletMakerApp/BookletMaker.xcconfig; sourceTree = "<group>"; };
 		ED0129D9D619E8053070A012 /* LumiFinder-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "LumiFinder-Release.xcconfig"; path = "Packages/PluginRClick/FinderExtension/LumiFinder-Release.xcconfig"; sourceTree = "<group>"; };
 		F53C3ECB2F1A3CB000929321 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -80,14 +70,6 @@
 				"AppIconDesigner-Info.plist",
 			);
 			target = AI0000000000000000000009 /* AppIconDesigner */;
-		};
-		BM0000000000000000000003 /* Exceptions for "BookletMakerApp" folder in "BookletMaker" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"BookletMaker-Info.plist",
-				"BookletMaker-iOS-Info.plist",
-			);
-			target = BM0000000000000000000009 /* BookletMaker */;
 		};
 		CD0000000000000000000003 /* Exceptions for "CADDesignerApp" folder in "CADDesigner" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -126,19 +108,6 @@
 				AI0000000000000000000003 /* Exceptions for "AppIconDesignerApp" folder in "AppIconDesigner" target */,
 			);
 			path = AppIconDesignerApp;
-			sourceTree = "<group>";
-		};
-		BMUIT00000000000000000001 /* BookletMakerUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = BookletMakerUITests;
-			sourceTree = "<group>";
-		};
-		BM0000000000000000000004 /* BookletMakerApp */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				BM0000000000000000000003 /* Exceptions for "BookletMakerApp" folder in "BookletMaker" target */,
-			);
-			path = BookletMakerApp;
 			sourceTree = "<group>";
 		};
 		CD0000000000000000000004 /* CADDesignerApp */ = {
@@ -181,22 +150,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				AI2AFB000000000000000001 /* FactoryAppIconDesigner in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		BM0000000000000000000005 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				BM2BFB000000000000000B002 /* FactoryBookletMakerMac in Frameworks */,
-				BM2BFB000000000000000B003 /* FactoryBookletMakerIOS in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		BMUIT0000000000000000000A /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -251,23 +204,18 @@
 				F53C3ECB2F1A3CB000929321 /* Assets.xcassets */,
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
 				AI0000000000000000000004 /* AppIconDesignerApp */,
-				BM0000000000000000000004 /* BookletMakerApp */,
 				CD0000000000000000000004 /* CADDesignerApp */,
 				DB0000000000000000000004 /* DatabaseManagerApp */,
 				LF000000000000000009 /* Packages/PluginRClick/FinderExtension */,
-				BMUIT00000000000000000001 /* BookletMakerUITests */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
 				AI0000000000000000000002 /* AppIconDesigner.app */,
-				BM0000000000000000000002 /* BookletMaker.app */,
 				CD0000000000000000000002 /* CADDesigner.app */,
 				DB0000000000000000000002 /* DatabaseManager.app */,
 				LF000000000000000001 /* LumiFinder.appex */,
-				BMUIT00000000000000000002 /* BookletMakerUITests.xctest */,
 				0BBD822C30067A13005CCD05 /* Frameworks */,
 				7BACB91084647EBF2FC35695 /* Project-Debug.xcconfig */,
 				AE205FD720E849E1FFA4D49C /* Project-Release.xcconfig */,
 				10DD2383E811EBAC5B6264D5 /* AppIconDesigner.xcconfig */,
-				DD36141333F791471BC94F98 /* BookletMaker.xcconfig */,
 				70E0C23EA196F323323F057B /* CADDesigner.xcconfig */,
 				08B37721AB3348660D4B2D5E /* DatabaseManager.xcconfig */,
 				4991976404FE2623D0C4E068 /* Lumi-Debug.xcconfig */,
@@ -302,51 +250,6 @@
 			productName = AppIconDesigner;
 			productReference = AI0000000000000000000002 /* AppIconDesigner.app */;
 			productType = "com.apple.product-type.application";
-		};
-		BM0000000000000000000009 /* BookletMaker */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = BM000000000000000000000F /* Build configuration list for PBXNativeTarget "BookletMaker" */;
-			buildPhases = (
-				BM0000000000000000000007 /* Sources */,
-				BM0000000000000000000005 /* Frameworks */,
-				BM0000000000000000000006 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				BM0000000000000000000004 /* BookletMakerApp */,
-			);
-			name = BookletMaker;
-			packageProductDependencies = (
-				BM2AFB0000000000000000002 /* FactoryBookletMakerMac */,
-				BM2AFB0000000000000000003 /* FactoryBookletMakerIOS */,
-			);
-			productName = BookletMaker;
-			productReference = BM0000000000000000000002 /* BookletMaker.app */;
-			productType = "com.apple.product-type.application";
-		};
-		BMUIT00000000000000000003 /* BookletMakerUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = BMUIT00000000000000000008 /* Build configuration list for PBXNativeTarget "BookletMakerUITests" */;
-			buildPhases = (
-				BMUIT00000000000000000009 /* Sources */,
-				BMUIT0000000000000000000A /* Frameworks */,
-				BMUIT0000000000000000000B /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				BMUIT00000000000000000005 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				BMUIT00000000000000000001 /* BookletMakerUITests */,
-			);
-			name = BookletMakerUITests;
-			productName = BookletMakerUITests;
-			productReference = BMUIT00000000000000000002 /* BookletMakerUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		CD0000000000000000000009 /* CADDesigner */ = {
 			isa = PBXNativeTarget;
@@ -459,14 +362,6 @@
 					AI0000000000000000000009 = {
 						CreatedOnToolsVersion = 16.4;
 					};
-					BM0000000000000000000009 = {
-						CreatedOnToolsVersion = 16.4;
-						TestTargetID = BM0000000000000000000009;
-					};
-					BMUIT00000000000000000003 = {
-						CreatedOnToolsVersion = 26.0;
-						TestTargetID = BM0000000000000000000009;
-					};
 					CD0000000000000000000009 = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -510,32 +405,16 @@
 			projectRoot = "";
 			targets = (
 				F54F8C7D2F1A3B6500AABB2A /* Lumi */,
-				BM0000000000000000000009 /* BookletMaker */,
 				AI0000000000000000000009 /* AppIconDesigner */,
 				CD0000000000000000000009 /* CADDesigner */,
 				DB0000000000000000000009 /* DatabaseManager */,
 				LF000000000000000002 /* LumiFinder */,
-				BMUIT00000000000000000003 /* BookletMakerUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		AI0000000000000000000006 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		BM0000000000000000000006 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		BMUIT0000000000000000000B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -605,20 +484,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		BM0000000000000000000007 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		BMUIT00000000000000000009 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		CD0000000000000000000007 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -650,11 +515,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		BMUIT00000000000000000005 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = BM0000000000000000000009 /* BookletMaker */;
-			targetProxy = BMUIT00000000000000000004 /* PBXContainerItemProxy */;
-		};
 		LF000000000000000011 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = LF000000000000000002 /* LumiFinder */;
@@ -674,52 +534,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 10DD2383E811EBAC5B6264D5 /* AppIconDesigner.xcconfig */;
 			buildSettings = {
-			};
-			name = Release;
-		};
-		BM000000000000000000000D /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = DD36141333F791471BC94F98 /* BookletMaker.xcconfig */;
-			buildSettings = {
-			};
-			name = Debug;
-		};
-		BM000000000000000000000E /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = DD36141333F791471BC94F98 /* BookletMaker.xcconfig */;
-			buildSettings = {
-			};
-			name = Release;
-		};
-		BMUIT00000000000000000006 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker.uitests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = BookletMaker;
-			};
-			name = Debug;
-		};
-		BMUIT00000000000000000007 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.coffic.bookletmaker.uitests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = BookletMaker;
 			};
 			name = Release;
 		};
@@ -801,24 +615,6 @@
 			buildConfigurations = (
 				AI000000000000000000000D /* Debug */,
 				AI000000000000000000000E /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		BM000000000000000000000F /* Build configuration list for PBXNativeTarget "BookletMaker" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				BM000000000000000000000D /* Debug */,
-				BM000000000000000000000E /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		BMUIT00000000000000000008 /* Build configuration list for PBXNativeTarget "BookletMakerUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				BMUIT00000000000000000006 /* Debug */,
-				BMUIT00000000000000000007 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

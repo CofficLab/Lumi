@@ -63,6 +63,7 @@ public struct SettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .padding(.bottom, 16)
         .task {
             await loadOpenedFiles()
         }
@@ -80,6 +81,9 @@ public struct SettingsView: View {
                 Text(selected.name)
             }
             Spacer()
+            AppButton(LumiPluginLocalization.string("Add Project", bundle: .module), systemImage: "plus", style: .secondary, size: .small) {
+                addProject()
+            }
 #if DEBUG
             AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
                 openDataDirectory()
@@ -88,6 +92,19 @@ public struct SettingsView: View {
         }
         .font(.appCaption)
         .foregroundStyle(theme.textSecondary)
+    }
+
+    private func addProject() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.message = LumiPluginLocalization.string("Select a project folder", bundle: .module)
+        panel.prompt = LumiPluginLocalization.string("Add", bundle: .module)
+
+        if panel.runModal() == .OK, let url = panel.url {
+            viewModel.addProject(url: url)
+        }
     }
 
     // MARK: - Sidebar（项目列表）
@@ -165,21 +182,40 @@ public struct SettingsView: View {
         if let project = selectedProject {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    AppSettingsSection(title: LumiPluginLocalization.string("Overview", bundle: .module)) {
-                        VStack(alignment: .leading, spacing: 10) {
+                    AppSettingSection(
+                        title: LumiPluginLocalization.string("Overview", bundle: .module),
+                        titleAlignment: .leading
+                    ) {
+                        VStack(alignment: .leading, spacing: 12) {
                             Text(project.name)
                                 .font(.title3.weight(.semibold))
                                 .foregroundStyle(theme.textPrimary)
                                 .lineLimit(2)
 
-                            Text(project.path)
-                                .font(.callout)
-                                .foregroundStyle(theme.textSecondary)
-                                .textSelection(.enabled)
+                            HStack(spacing: 6) {
+                                Image(systemName: "folder")
+                                    .foregroundStyle(theme.textSecondary)
+                                Text(project.path)
+                                    .font(.callout)
+                                    .foregroundStyle(theme.textSecondary)
+                                    .textSelection(.enabled)
+                                Spacer()
+                                AppButton(
+                                    LumiPluginLocalization.string("Open in Finder", bundle: .module),
+                                    systemImage: "folder",
+                                    style: .secondary,
+                                    size: .small
+                                ) {
+                                    NSWorkspace.shared.open(URL(fileURLWithPath: project.path))
+                                }
+                            }
                         }
                     }
 
-                    AppSettingsSection(title: LumiPluginLocalization.string("Basic Info", bundle: .module)) {
+                    AppSettingSection(
+                        title: LumiPluginLocalization.string("Basic Info", bundle: .module),
+                        titleAlignment: .leading
+                    ) {
                         VStack(spacing: 0) {
                             detailRow(title: LumiPluginLocalization.string("Name", bundle: .module), icon: "text.cursor", value: project.name)
                             Divider().padding(.vertical, 8)
@@ -225,7 +261,10 @@ public struct SettingsView: View {
         let urls = opened?.openFileURLs ?? []
         let current = opened?.currentFileURL
 
-        AppSettingsSection(title: LumiPluginLocalization.string("Opened Files", bundle: .module)) {
+        AppSettingSection(
+                        title: LumiPluginLocalization.string("Opened Files", bundle: .module),
+                        titleAlignment: .leading
+                    ) {
             if isLoadingOpenedFiles {
                 HStack(spacing: 8) {
                     ProgressView()

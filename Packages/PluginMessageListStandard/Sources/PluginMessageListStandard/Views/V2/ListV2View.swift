@@ -25,6 +25,8 @@ struct ListV2View: View, SuperLog {
     /// 内容就绪信号：historyRows 首尾消息 id 变化时 +1。
     @State private var scrollTick: Int = 0
     private let bottomScrollController = ScrollViewBottomController()
+    @State private var isInitialPositionReady = false
+    @State private var isPreparingInitialPosition = false
 
     init(
         services: MessageListServices,
@@ -41,7 +43,10 @@ struct ListV2View: View, SuperLog {
         let _ = logContentDecision()
         ZStack {
             messageScrollView
-            if viewModel.isLoading {
+                .id(viewModel.selectedConversationID)
+                .opacity(isInitialPositionReady ? 1 : 0)
+                .allowsHitTesting(isInitialPositionReady)
+            if viewModel.isLoading || !isInitialPositionReady {
                 MessageLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(theme.surface.opacity(0.6))
@@ -50,10 +55,12 @@ struct ListV2View: View, SuperLog {
         .task {
             // 首次出现/容器切换重建：重置滚动位置，加载当前选中会话。
             atBottomBox.value = true
+            isInitialPositionReady = false
+            isPreparingInitialPosition = false
             if Self.verbose {
                 Self.logger.debug("\(Self.t)activate conversation: \(viewModel.selectedConversationID?.uuidString ?? "nil")")
             }
-            await viewModel.activate(conversationID: viewModel.selectedConversationID)
+            await viewModel.activateCurrentConversation()
         }
     }
 
@@ -91,6 +98,8 @@ struct ListV2View: View, SuperLog {
                     .accessibilityHidden(true)
                     .plainMessageListRow(insets: EdgeInsets())
                     .onChange(of: scrollTick) { _, _ in
+                        guard isInitialPositionReady else { return }
+                        let conversationID = viewModel.selectedConversationID
                         // 新消息行可能还没有完成尺寸布局；立即 scrollTo 会把
                         // 锚点停在旧的内容底部，导致最后一行被输入框截断。
                         // 等布局完成后只保留最后一次滚动请求，避免多个
@@ -100,7 +109,9 @@ struct ListV2View: View, SuperLog {
                             messages: viewModel.historyRows,
                             animated: false,
                             controller: bottomScrollController,
-                            condition: { true }
+                            condition: {
+                                conversationID == viewModel.selectedConversationID
+                            }
                         )
                     }
             }
@@ -118,10 +129,28 @@ struct ListV2View: View, SuperLog {
                 if atBottomBox.value {
                     scrollTick &+= 1
                 }
+                if !isInitialPositionReady, !viewModel.isLoading {
+                    prepareInitialPosition(proxy: proxy, messages: viewModel.historyRows)
+                }
             }
-            // 流式行出现（nil→非 nil）时跟随滚到底；内容增长期间沿用 atBottomBox
-            // 判定（用户上滑则不跟随）。流式行用独立 id，此处按其 id 变化触发。
-            .onChange(of: viewModel.streamingRow?.id) { _, _ in
+            .onChange(of: viewModel.isLoading) { _, isLoading in
+                if isLoading {
+                    scrollCoordinator.cancelPendingTasks()
+                    isInitialPositionReady = false
+                    isPreparingInitialPosition = false
+                } else {
+                    prepareInitialPosition(proxy: proxy, messages: viewModel.historyRows)
+                }
+            }
+            .onChange(of: viewModel.selectedConversationID) { _, _ in
+                scrollCoordinator.cancelPendingTasks()
+                isInitialPositionReady = false
+                isPreparingInitialPosition = false
+            }
+            // 流式行出现或内容增长时跟随滚到底；内容增长期间沿用
+            // atBottomBox 判定（用户上滑则不跟随）。不能只监听 id，因为流式
+            // token 更新保持同一个行 id，但会持续改变行高。
+            .onChange(of: viewModel.streamingRow) { _, _ in
                 if Self.verbose, viewModel.streamingRow != nil {
                     Self.logger.debug("\(Self.t)streaming row appeared, following to bottom: atBottom=\(atBottomBox.value)")
                 }
@@ -130,6 +159,9 @@ struct ListV2View: View, SuperLog {
             }
             // 兜底：锚点出现（内容从无到有）时也补一次，覆盖首屏/慢加载。
             .onAppear {
+                if !viewModel.isLoading {
+                    prepareInitialPosition(proxy: proxy, messages: viewModel.historyRows)
+                }
                 if atBottomBox.value {
                     scrollTick &+= 1
                 }
@@ -142,6 +174,31 @@ struct ListV2View: View, SuperLog {
             }
             .onDisappear {
                 scrollCoordinator.cancelPendingTasks()
+            }
+        }
+    }
+
+    private func prepareInitialPosition(
+        proxy: ScrollViewProxy,
+        messages: [ProviderMessage.Message]
+    ) {
+        guard !isInitialPositionReady, !isPreparingInitialPosition else { return }
+        let conversationID = viewModel.selectedConversationID
+        isPreparingInitialPosition = true
+        Task { @MainActor in
+            let ready = await scrollCoordinator.prepareInitialBottom(
+                proxy: proxy,
+                messages: messages,
+                controller: bottomScrollController,
+                condition: {
+                    conversationID == viewModel.selectedConversationID && !viewModel.isLoading
+                }
+            )
+            isPreparingInitialPosition = false
+            if ready,
+               conversationID == viewModel.selectedConversationID,
+               !viewModel.isLoading {
+                isInitialPositionReady = true
             }
         }
     }

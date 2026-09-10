@@ -6,7 +6,7 @@ public enum ProjectProvidingEvent: Sendable {
     /// 项目列表发生变化。
     case projectsChanged([ProjectInfo])
     /// 当前项目发生变化；`nil` 表示当前没有打开项目。
-    case currentProjectChanged(ProjectInfo?)
+    case currentProjectChanged(ProjectInfo?, reason: ProjectChangeReason)
     /// 当前项目的打开文件列表发生变化。
     case openFilesChanged([URL])
     /// 当前选中文件发生变化；`nil` 表示没有选中文件。

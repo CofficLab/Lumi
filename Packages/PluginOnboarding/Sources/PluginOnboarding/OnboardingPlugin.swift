@@ -1,16 +1,18 @@
+import Foundation
 import KernelCore
-import KitLLM
-import LumiUI
-import ProviderLLMManager
-import ProviderOnboarding
-import SwiftUI
 import KitSuperLog
+import LumiUI
+import ProviderOnboarding
+import ProviderRootView
+import ProviderStorage
+import SwiftUI
 import os
 
-/// First-run V2 onboarding contribution.
+/// First-run onboarding contribution.
 ///
-/// The host owns presentation so the same pages work in every V2 app; this
-/// plugin owns only the user-facing welcome and AI setup content.
+/// The plugin owns the complete onboarding feature: it creates the page
+/// provider, contributes the root overlay, and persists completion in its own
+/// storage directory. Hosts only need to assemble the root view.
 @MainActor
 public final class OnboardingPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.onboarding", category: "Onboarding")
@@ -25,166 +27,231 @@ public final class OnboardingPlugin: SuperPlugin, SuperLog {
         policy: .alwaysOn
     )
 
+    private static let overlayID = "com.coffic.lumi.plugin.onboarding.overlay"
+    private var onboardingProvider: DefaultOnboardingProviding?
+    private var seenStore: OnboardingSeenStore?
+
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        kernel.resolveProvider((any OnboardingProviding).self)?.register(
-            OnboardingPageItem(id: "onboarding-welcome") { WelcomePage() }
-        )
-        kernel.resolveProvider((any OnboardingProviding).self)?.register(
-            OnboardingPageItem(id: "onboarding-ai-setup") {
-                AISetupPage(manager: kernel.resolveProvider((any LLMManaging).self))
+        guard let rootView = kernel.resolveProvider((any RootViewProviding).self) else {
+            throw KernelCoreError.providerNotRegistered(type: (any RootViewProviding).self)
+        }
+        guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
+            throw KernelCoreError.providerNotRegistered(type: (any StorageProviding).self)
+        }
+
+        let store = OnboardingSeenStore(directory: storage.pluginDataDirectory(for: id))
+        let provider = DefaultOnboardingProviding(onReplay: { [weak store] in
+            store?.reset()
+        })
+        try kernel.registerProvider((any OnboardingProviding).self, provider)
+
+        onboardingProvider = provider
+        seenStore = store
+
+        let finish: @MainActor () -> Void = { [weak provider, weak store] in
+            store?.markSeen()
+            provider?.dismiss()
+        }
+        rootView.addOverlays([
+            RootOverlayItem(id: Self.overlayID, order: Int.max) { content in
+                OnboardingOverlay(
+                    provider: provider,
+                    content: content,
+                    finish: finish
+                )
             }
-        )
+        ])
+
+        if !store.hasSeen {
+            provider.show()
+        }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        let onboarding = kernel.resolveProvider((any OnboardingProviding).self)
-        onboarding?.unregister(id: "onboarding-welcome")
-        onboarding?.unregister(id: "onboarding-ai-setup")
+        if let rootView = kernel.resolveProvider((any RootViewProviding).self) {
+            rootView.removeOverlays(ids: [Self.overlayID])
+        }
+        onboardingProvider?.dismiss()
+        kernel.unregisterProvider((any OnboardingProviding).self)
+        onboardingProvider = nil
+        seenStore = nil
     }
+
+    public func onUnregister(kernel: KernelCoreContainer) throws {}
 }
 
-private struct WelcomePage: View {
-    @LumiTheme private var theme
+@MainActor
+final class OnboardingSeenStore {
+    private let markerURL: URL
 
-    var body: some View {
-        VStack(spacing: DesignTokens.Spacing.lg - 2) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 56, weight: .semibold))
-                .foregroundStyle(theme.primary)
-            VStack(spacing: DesignTokens.Spacing.sm) {
-                Text(LumiPluginLocalization.string("Welcome to Lumi", bundle: .module))
-                    .font(DesignTokens.Typography.largeTitle)
-                Text(LumiPluginLocalization.string("Your local workspace for focused AI conversations, projects, and tools.", bundle: .module))
-                    .font(DesignTokens.Typography.body)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(theme.textSecondary)
-            }
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm + 4) {
-                feature("bubble.left.and.bubble.right", LumiPluginLocalization.string("Conversations", bundle: .module), LumiPluginLocalization.string("Keep context, files, and preferences with every chat.", bundle: .module))
-                feature("folder", LumiPluginLocalization.string("Projects", bundle: .module), LumiPluginLocalization.string("Connect conversations to the project you are working on.", bundle: .module))
-                feature("wrench.and.screwdriver", LumiPluginLocalization.string("Tools", bundle: .module), LumiPluginLocalization.string("Use built-in skills and agent tools when you need them.", bundle: .module))
-            }
-            .padding(DesignTokens.Spacing.md + 2)
-            .background(
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.md - 2, style: .continuous)
-                    .fill(theme.textSecondary.opacity(0.06))
+    init(directory: URL) {
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        markerURL = directory.appendingPathComponent("completed", isDirectory: false)
+    }
+
+    var hasSeen: Bool {
+        FileManager.default.fileExists(atPath: markerURL.path)
+    }
+
+    func markSeen() {
+        do {
+            try Data("completed".utf8).write(to: markerURL, options: .atomic)
+        } catch {
+            OnboardingPlugin.logger.error(
+                "Failed to persist onboarding completion: \(error.localizedDescription, privacy: .public)"
             )
         }
-        .frame(maxWidth: 520)
-        .padding(.vertical, DesignTokens.Spacing.lg)
     }
 
-    private func feature(_ symbol: String, _ title: String, _ detail: String) -> some View {
-        HStack(alignment: .top, spacing: DesignTokens.Spacing.sm + 4) {
-            Image(systemName: symbol)
-                .foregroundStyle(theme.primary)
-                .frame(width: 20)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(DesignTokens.Typography.bodyEmphasized)
-                Text(detail)
-                    .font(DesignTokens.Typography.subheadline)
-                    .foregroundStyle(theme.textSecondary)
-            }
+    func reset() {
+        do {
+            try FileManager.default.removeItem(at: markerURL)
+        } catch CocoaError.fileNoSuchFile {
+            // The marker is already absent.
+        } catch {
+            OnboardingPlugin.logger.error(
+                "Failed to reset onboarding completion: \(error.localizedDescription, privacy: .public)"
+            )
         }
     }
 }
 
-private struct AISetupPage: View {
-    let manager: (any LLMManaging)?
-    @LumiTheme private var theme
-    @State private var selectedProviderID = ""
-    @State private var apiKey = ""
-    @State private var didSave = false
-
-    private var providers: [any SuperLLMProvider] { manager?.allProviders() ?? [] }
-
-    private var selectedProvider: (any SuperLLMProvider)? {
-        manager?.provider(id: selectedProviderID)
-    }
+private struct OnboardingOverlay: View {
+    let provider: DefaultOnboardingProviding
+    let content: AnyView
+    let finish: @MainActor () -> Void
+    @State private var pageIndex = 0
+    @State private var isPresented = false
+    @State private var pageCount = 0
+    @State private var observerHandle: (any OnboardingObserverHandle)?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.Spacing.lg) {
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: 54))
-                .foregroundStyle(theme.primary)
-                .frame(maxWidth: .infinity)
-            Text(LumiPluginLocalization.string("Set up your AI provider", bundle: .module))
-                .font(DesignTokens.Typography.title2)
-            Text(LumiPluginLocalization.string("Add a provider and choose a model in Settings. You can return here at any time from General Settings.", bundle: .module))
-                .font(DesignTokens.Typography.body)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(theme.textSecondary)
+        ZStack {
+            content
 
-            if providers.isEmpty {
-                ContentUnavailableView(
-                    "No providers available",
-                    systemImage: "network.slash",
-                    description: Text(LumiPluginLocalization.string("You can configure a provider later in Settings.", bundle: .module))
+            if isPresented, pageCount > 0 {
+                Color.black.opacity(0.22)
+                    .ignoresSafeArea()
+                OnboardingCard(
+                    pages: provider.allPages,
+                    index: $pageIndex,
+                    finish: finish
                 )
-            } else {
-                Picker(LumiPluginLocalization.string("Provider", bundle: .module), selection: $selectedProviderID) {
-                    ForEach(providers, id: \.providerID) { provider in
-                        Text(provider.providerInfo.displayName).tag(provider.providerID)
-                    }
-                }
-
-                if let provider = selectedProvider {
-                    Text(provider.providerInfo.description)
-                        .font(DesignTokens.Typography.subheadline)
-                        .foregroundStyle(theme.textSecondary)
-
-                    if provider.providerInfo.isLocal {
-                        Label(LumiPluginLocalization.string("This local provider does not require an API key.", bundle: .module), systemImage: "checkmark.circle")
-                            .font(DesignTokens.Typography.subheadline)
-                            .foregroundStyle(theme.textSecondary)
-                    } else {
-                        AppInputField(
-                            LocalizedStringKey(LumiPluginLocalization.string("API Key", bundle: .module)),
-                            text: $apiKey,
-                            fieldType: .secure
-                        )
-                        if let website = provider.providerInfo.websiteURL {
-                            Link(LumiPluginLocalization.string("Get a key", bundle: .module), destination: website)
-                                .font(DesignTokens.Typography.subheadline)
-                        }
-                    }
-
-                    AppButton(
-                        provider.providerInfo.isLocal ? "Use Provider" : "Save API Key",
-                        style: .primary,
-                        action: {
-                            provider.setApiKey(apiKey)
-                            manager?.select(providerID: provider.providerID, model: nil)
-                            apiKey = provider.getApiKey()
-                            didSave = true
-                        }
-                    )
-                    .disabled(!provider.providerInfo.isLocal && apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
-                    if didSave {
-                        Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
-                            .font(DesignTokens.Typography.subheadline)
-                            .foregroundStyle(theme.success)
+            }
+        }
+        .onAppear {
+            guard observerHandle == nil else { return }
+            isPresented = provider.isPresented
+            pageCount = provider.allPages.count
+            observerHandle = provider.addObserver { event in
+                switch event {
+                case .pagesChanged:
+                    pageCount = provider.allPages.count
+                case let .presentationChanged(presented):
+                    isPresented = presented
+                    if presented {
+                        pageIndex = 0
                     }
                 }
             }
         }
-        .frame(maxWidth: 460)
-        .padding(.vertical, DesignTokens.Spacing.xxl - 4)
-        .onAppear { synchronizeSelection() }
-        .onChange(of: selectedProviderID) { _, _ in
-            apiKey = selectedProvider?.getApiKey() ?? ""
-            didSave = selectedProvider?.hasApiKey() ?? false
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
         }
     }
+}
 
-    private func synchronizeSelection() {
-        guard selectedProviderID.isEmpty else { return }
-        selectedProviderID = manager?.selectedProviderID ?? providers.first?.providerID ?? ""
-        apiKey = selectedProvider?.getApiKey() ?? ""
-        didSave = selectedProvider?.hasApiKey() ?? false
+private struct OnboardingCard: View {
+    let pages: [OnboardingPageItem]
+    @Binding var index: Int
+    let finish: @MainActor () -> Void
+
+    @LumiTheme private var theme
+
+    var body: some View {
+        let safeIndex = min(max(index, 0), max(pages.count - 1, 0))
+        VStack(spacing: 0) {
+            HStack {
+                Label(
+                    pages.indices.contains(safeIndex)
+                        ? pages[safeIndex].title
+                        : LumiPluginLocalization.string("Getting started", bundle: .module),
+                    systemImage: "graduationcap.fill"
+                )
+                .font(DesignTokens.Typography.bodyEmphasized)
+                .foregroundStyle(theme.textSecondary)
+                .lineLimit(1)
+                Spacer()
+                Text(
+                    String(
+                        format: LumiPluginLocalization.string("%lld of %lld", bundle: .module),
+                        Int64(safeIndex + 1),
+                        Int64(pages.count)
+                    )
+                )
+                .font(DesignTokens.Typography.caption1)
+                .foregroundStyle(theme.textTertiary)
+                if safeIndex < pages.count - 1 {
+                    AppButton(
+                        LumiPluginLocalization.string("Skip", bundle: .module),
+                        style: .tonal,
+                        size: .small,
+                        action: finish
+                    )
+                }
+            }
+            .padding(.horizontal, DesignTokens.Spacing.lg)
+            .padding(.vertical, DesignTokens.Spacing.md + 4)
+
+            Divider()
+
+            if pages.indices.contains(safeIndex) {
+                ScrollView {
+                    pages[safeIndex].makeView()
+                        .padding(DesignTokens.Spacing.xl)
+                        .frame(maxWidth: .infinity)
+                }
+                .frame(maxWidth: .infinity)
+            }
+
+            Divider()
+
+            HStack {
+                AppButton(
+                    LumiPluginLocalization.string("Back", bundle: .module),
+                    systemImage: "chevron.left",
+                    style: .ghost,
+                    size: .small,
+                    action: { index = max(0, safeIndex - 1) }
+                )
+                .disabled(safeIndex == 0)
+
+                Spacer()
+
+                AppButton(
+                    safeIndex == pages.count - 1
+                        ? LumiPluginLocalization.string("Finish", bundle: .module)
+                        : LumiPluginLocalization.string("Continue", bundle: .module),
+                    systemImage: safeIndex == pages.count - 1 ? nil : "chevron.right",
+                    style: .primary,
+                    action: {
+                        if safeIndex == pages.count - 1 {
+                            finish()
+                        } else {
+                            index = safeIndex + 1
+                        }
+                    }
+                )
+            }
+            .padding(.horizontal, DesignTokens.Spacing.lg)
+            .padding(.vertical, DesignTokens.Spacing.md + 4)
+        }
+        .frame(width: 640, height: 550)
+        .background(theme.background)
+        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.lg))
+        .shadow(radius: 24)
     }
 }

@@ -1,7 +1,10 @@
 import Foundation
+import GitPlugin
 import KernelCore
 import KitLocalization
 import ProviderMessage
+import ProviderActivityHeatmap
+import ProviderGitRepositoryWatch
 import ProviderSettingView
 import ProviderIdleTime
 import ProviderDocsView
@@ -21,6 +24,10 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.activity-heatmap", category: "ActivityHeatmap")
     public let id = "com.coffic.activity-heatmap"
     public let order = 9
+    public let dependencies = [
+        "com.coffic.lumi.plugin.projects",
+        "com.coffic.lumi.plugin.git-repository-watch",
+    ]
     public let metadata = PluginMetadata(
         id: "com.coffic.activity-heatmap",
         name: "Activity Heatmap",
@@ -32,6 +39,8 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
 
     private var cache: ActivityHeatmapCache?
     private var cacheDirectory: URL?
+    private var gitActivityProvider: LocalGitActivityHeatmapProvider?
+    private var gitWatchHandle: (any GitRepositoryWatchingObserverHandle)?
     private var viewModel: ActivityHeatmapViewModel?
     private var insertionObserver: MessageObserver?
     private var idleTimeState: ActivityHeatmapIdleTimeState?
@@ -40,6 +49,38 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            let provider = LocalGitActivityHeatmapProvider(
+                directory: storage.pluginDataDirectory(for: id)
+            )
+            gitActivityProvider = provider
+            try kernel.registerProvider((any ActivityHeatmapProviding).self, provider)
+
+            if let gitWatch = kernel.resolveProvider((any GitRepositoryWatching).self) {
+                gitWatchHandle = gitWatch.addObserver { [weak provider, weak gitWatch] event in
+                    guard case .refsChanged = event,
+                          let repository = gitWatch?.watchingRepositoryURL else { return }
+                    provider?.refresh(for: repository)
+                }
+            }
+
+            if let settings = kernel.resolveProvider((any SettingViewProviding).self) {
+                settings.addProjectDetailSections([
+                    ProjectDetailSectionItem(
+                        id: "\(id).project-activity",
+                        order: 180
+                    ) { path in
+                        GitActivityHeatmapProjectSection(
+                            projectPath: path,
+                            provider: provider
+                        )
+                    }
+                ])
+            }
+        } else {
+            Self.logger.error("\(Self.t) StorageProviding not found; Git activity heatmap is unavailable")
+        }
+
         guard let settings = kernel.resolveProvider((any SettingViewProviding).self) else {
             Self.logger.error("\(Self.t) SettingViewProviding not found")
             return
@@ -105,6 +146,13 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        gitWatchHandle?.cancel()
+        gitWatchHandle = nil
+        gitActivityProvider = nil
+        kernel.unregisterProvider((any ActivityHeatmapProviding).self)
+        kernel.resolveProvider((any SettingViewProviding).self)?.removeProjectDetailSections(
+            ids: ["\(id).project-activity"]
+        )
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
         insertionObserver?.cancel()
         insertionObserver = nil

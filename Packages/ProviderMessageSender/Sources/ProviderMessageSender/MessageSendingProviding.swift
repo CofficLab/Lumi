@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import ProviderAgentLoop
 import ProviderMessage
@@ -22,7 +21,7 @@ public protocol SendingStateObserverHandle: AnyObject {
 /// - 排队：同一会话发送中时，新消息进入 pending 队列，完成后依次发出；
 /// - 取消 / 恢复：`cancelCurrentRequest` 取消当前回合；`resumeTurn` 恢复挂起回合。
 @MainActor
-public protocol MessageSendingProviding: AnyObject, ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol MessageSendingProviding: AnyObject {
     /// 注册发送生命周期观察者。
     @discardableResult
     func addMessageSenderObserver(

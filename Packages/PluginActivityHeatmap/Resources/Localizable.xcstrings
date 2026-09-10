@@ -1,6 +1,48 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%lld commits · %lld active days" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld commits · %2$lld active days" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld 次提交 · %2$lld 个活跃日" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld 次提交 · %2$lld 個活躍日" } }
+      }
+    },
+    "Commit Activity" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Commit Activity" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "提交活动" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "提交活動" } }
+      }
+    },
+    "Commits in the last year" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Commits in the last year" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "过去一年的提交" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "過去一年的提交" } }
+      }
+    },
+    "Loading commit activity…" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Loading commit activity…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在加载提交活动…" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "正在載入提交活動…" } }
+      }
+    },
+    "No Git commit activity available" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No Git commit activity available" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "暂无 Git 提交活动" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "暫無 Git 提交活動" } }
+      }
+    },
+    "Make sure this project is a Git repository." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Make sure this project is a Git repository." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请确认此项目是 Git 仓库。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "請確認此專案是 Git 儲存庫。" } }
+      }
+    },
     "%@: %lld %@" : {
       "localizations" : {
         "en" : {

@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PluginAgentLoop",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "PluginAgentLoop", targets: ["PluginAgentLoop"]),
     ],
@@ -12,6 +12,7 @@ let package = Package(
         .package(name: "KitSuperLog", path: "../KitSuperLog"),
         .package(name: "ProviderAgentLoop", path: "../ProviderAgentLoop"),
         .package(name: "ProviderMessage", path: "../ProviderMessage"),
+        .package(name: "ProviderMessageSender", path: "../ProviderMessageSender"),
         .package(name: "KitLLM", path: "../KitLLM"),
         .package(name: "ProviderLLMManager", path: "../ProviderLLMManager"),
         .package(name: "ProviderToolManager", path: "../ProviderToolManager"),
@@ -29,6 +30,7 @@ let package = Package(
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderMessageSender", package: "ProviderMessageSender"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),

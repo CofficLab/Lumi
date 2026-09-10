@@ -48,13 +48,14 @@ struct AgentTurnPresentationItem: Identifiable, Equatable, Sendable {
     /// 只有最新活跃 Turn 接收无 turnID 的瞬时 Status 与流式消息。
     let acceptsLiveActivity: Bool
 
-    var isPending: Bool { record == nil }
     var isShowingProcess: Bool { record?.isFinished != true }
 
     init(recorded item: AgentTurnSummaryItem, acceptsLiveActivity: Bool) {
-        // 真实 Turn 始终以 turnID 为身份；即使异常历史数据让多个 Turn 匹配到
-        // 同一用户消息，ForEach 也不会产生重复 ID。
-        id = item.record.id
+        // 临时 Turn 使用触发它的用户消息 ID；落库后继续使用同一个 ID，
+        // 避免 macOS List 把同一行 diff 成「删除旧行 + 插入新行」。这类
+        // identity replacement 发生在 NSTableView 自动计算行高期间时，
+        // SwiftUI 的 DynamicLayoutViewChildGeometry 可能触发断点。
+        id = item.userMessage?.id ?? item.record.id
         conversationID = item.record.conversationID
         startedAt = item.record.startedAt
         record = item.record

@@ -2,12 +2,12 @@ import SwiftUI
 import LumiUI
 import KitLocalization
 
-/// 公开工厂函数：为任意 `SettingViewProviding & ObservableObject` 实现渲染设置界面。
+/// 公开工厂函数：为任意 `SettingViewProviding` 实现渲染设置界面。
 ///
 /// 供 `PluginSettingView` 等自定义 Provider 在 `makeSettingView()` 中复用
 /// 与 `DefaultSettingViewProviding` 完全一致的视图。
 @MainActor
-public func makeSettingView<Provider: SettingViewProviding & ObservableObject>(
+public func makeSettingView<Provider: SettingViewProviding>(
     provider: Provider
 ) -> AnyView {
     AnyView(SettingView(provider: provider))
@@ -24,10 +24,12 @@ public func makeSettingView<Provider: SettingViewProviding & ObservableObject>(
 /// - 最小尺寸 960 × 520，确保外观页的主题列表与预览区完整可见
 /// - 空状态与旧版一致（gearshape + "Select a tab"）
 ///
-/// 泛型 `Provider` 支持任意 `SettingViewProviding & ObservableObject` 实现，
+/// 泛型 `Provider` 支持任意 `SettingViewProviding` 实现，
 /// 使 `PluginSettingView` 等自定义 Provider 也可复用同一视图。
-struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
-    @ObservedObject var provider: Provider
+struct SettingView<Provider: SettingViewProviding>: View {
+    let provider: Provider
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any SettingViewObserverHandle)?
     @LumiTheme private var theme
 
     init(provider: Provider) {
@@ -46,6 +48,19 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
             }
         #endif
             .ignoresSafeArea()
+            .onAppear {
+                guard observerHandle == nil else { return }
+                observerHandle = provider.addSettingViewObserver { _ in
+                    observationRevision += 1
+                }
+            }
+            .onDisappear {
+                observerHandle?.cancel()
+                observerHandle = nil
+            }
+            // Keep the provider-backed selection and entry list reactive
+            // without recreating the sidebar ScrollView on every event.
+            .onChange(of: observationRevision) { _, _ in }
     }
 
     /// 左侧：入口列表。

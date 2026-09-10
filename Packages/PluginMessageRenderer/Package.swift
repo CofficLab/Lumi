@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginMessageRenderer",
     defaultLocalization: "zh-Hans",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "PluginMessageRenderer", targets: ["PluginMessageRenderer"]),
     ],
@@ -12,7 +12,9 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderConversation"),
+        .package(path: "../ProviderDeveloperMode"),
         .package(path: "../ProviderAgentLoop"),
+        .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessageSender"),
@@ -28,7 +30,9 @@ let package = Package(
                 "KernelCore",
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 "ProviderConversation",
+                "ProviderDeveloperMode",
                 "ProviderAgentLoop",
+                "ProviderChatSection",
                 "ProviderMessage",
                 "ProviderMessageRendering",
                 "ProviderMessageSender",

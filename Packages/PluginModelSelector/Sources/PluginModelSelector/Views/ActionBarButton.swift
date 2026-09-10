@@ -5,16 +5,18 @@ import SwiftUI
 
 /// Action Bar 上的模型选择按钮（由旧版 ModelSelectorPlugin 复刻）。
 ///
-/// 通过 `ObservableLLMProviderManagerBox` 订阅内核 `LLMManaging`
+/// 通过 `LLMProviderManagerBox` 订阅内核 `LLMManaging`
 /// 的选中/注册变化（替代旧版的 `.onLumiSelectedRemoteProviderIDDidChange`
 /// 等通知订阅），按钮标签实时反映「供应商 · 模型」。
 struct ActionBarButton: View {
     @LumiTheme private var theme
-    @ObservedObject var box: ObservableLLMProviderManagerBox
+    let box: LLMProviderManagerBox
     @ObservedObject var usageStore: ProviderUsageStore
     let toast: (any ToastProviding)?
 
     @State private var isPopoverPresented = false
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any LLMProviderManagerBox.ObserverHandle)?
 
     var body: some View {
         Button {
@@ -50,6 +52,16 @@ struct ActionBarButton: View {
             )
         }
         .accessibilityLabel("Select Model")
+        .onAppear {
+            guard observerHandle == nil else { return }
+            observerHandle = box.addObserver { _ in
+                observationRevision += 1
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
+        }
     }
 
     private var buttonLabel: String {

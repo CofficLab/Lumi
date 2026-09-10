@@ -8,6 +8,21 @@ import Testing
     #expect(plugin.id == "com.coffic.lumi.plugin.conversation-cache-hit-rate")
 }
 
+@Test @MainActor func cacheHitRateToolbarStateForwardsTypedEvents() {
+    let state = CacheHitRateToolbarState()
+    let conversationID = UUID()
+    var events: [CacheHitRateToolbarState.Event] = []
+    let handle = state.addObserver { events.append($0) }
+
+    state.setSelectedConversationID(conversationID)
+    state.markMessagesChanged(conversationID: conversationID)
+
+    #expect(events.count == 2)
+    handle.cancel()
+    state.markMessagesChanged(conversationID: conversationID)
+    #expect(events.count == 2)
+}
+
 @Test func cacheHitRateStatsUseTypedTokenFields() async throws {
     let conversationID = UUID()
     let messages = [

@@ -5,7 +5,8 @@ let package = Package(
     name: "PluginIdleTime",
     defaultLocalization: "en",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v14),
+        .iOS(.v17)
     ],
     products: [
         .library(
@@ -20,8 +21,6 @@ let package = Package(
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderMenuBar"),
-        .package(path: "../ProviderSettingView"),
-        .package(path: "../ProviderStorage"),
         .package(path: "../ProviderIdleTime"),
     ],
     targets: [
@@ -34,8 +33,6 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderMenuBar", package: "ProviderMenuBar"),
-                .product(name: "ProviderSettingView", package: "ProviderSettingView"),
-                .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
             ],
             path: ".",

@@ -8,7 +8,7 @@ public final class DefaultConversationInputProvider: ConversationInputProviding,
     nonisolated public static let emoji = "💬"
     nonisolated static let verbose = false
 
-    @Published public var text = "" {
+    public var text = "" {
         didSet {
             guard text != oldValue else { return }
             if Self.verbose {
@@ -17,17 +17,23 @@ public final class DefaultConversationInputProvider: ConversationInputProviding,
             notifyTextObservers()
         }
     }
-    @Published public var inputHeight: CGFloat = 40
-    @Published public var isInputFocused = false
-    @Published public var inputCursorPosition = 0
-    @Published public var errorMessage: String? {
+    // Keep the provider's first layout consistent with ChatInputEditorView's
+    // minimum. The editor measures asynchronously; starting below the minimum
+    // would resize the bottom-fixed input after the message list has already
+    // positioned itself at the bottom.
+    public var inputHeight: CGFloat = 64
+    public var isInputFocused = false
+    public var inputCursorPosition = 0
+    public var errorMessage: String? {
         didSet {
+            guard errorMessage != oldValue else { return }
             if let errorMessage {
                 Self.logger.error("\(self.t)error set ➡️ \(errorMessage, privacy: .public)")
             }
+            notify(.errorMessageChanged(errorMessage))
         }
     }
-    @Published public private(set) var isSending = false {
+    public private(set) var isSending = false {
         didSet {
             guard isSending != oldValue else { return }
             Self.logger.info("\(self.t)isSending: \(oldValue) ➡️ \(self.isSending)")
@@ -37,6 +43,7 @@ public final class DefaultConversationInputProvider: ConversationInputProviding,
     // MARK: - Text Observation
 
     private var textObservers: [WeakTextInputObserver] = []
+    private var observers: [WeakObserver] = []
 
     @discardableResult
     public func addTextObserver(_ callback: @escaping (String) -> Void) -> any TextInputObserverHandle {
@@ -64,10 +71,31 @@ public final class DefaultConversationInputProvider: ConversationInputProviding,
         }
     }
 
+    @discardableResult
+    public func addObserver(_ callback: @escaping (ConversationInputProvidingEvent) -> Void) -> any ConversationInputProvidingObserverHandle {
+        let observer = Observer(owner: self, callback: callback)
+        observers.append(WeakObserver(observer))
+        return observer
+    }
+
+    fileprivate func remove(_ observer: Observer) {
+        observers.removeAll { $0.observer === observer }
+    }
+
+    private func notify(_ event: ConversationInputProvidingEvent) {
+        observers.removeAll { $0.observer == nil }
+        let activeObservers = observers
+        for observer in activeObservers {
+            observer.observer?.invoke(event)
+        }
+    }
+
     // MARK: -
 
     public init() {
-        Self.logger.info("\(Self.onInit)initialized")
+        if Self.verbose {
+            Self.logger.info("\(Self.onInit)initialized")
+        }
     }
 
     public func addToConversation(fileURLs: [URL]) {
@@ -112,4 +140,33 @@ private final class TextInputObserverHandleImpl: TextInputObserverHandle {
 private final class WeakTextInputObserver {
     fileprivate weak var handle: TextInputObserverHandleImpl?
     init(_ handle: TextInputObserverHandleImpl) { self.handle = handle }
+}
+
+@MainActor
+private final class Observer: ConversationInputProvidingObserverHandle {
+    private weak var owner: DefaultConversationInputProvider?
+    private let callback: (ConversationInputProvidingEvent) -> Void
+    private var isCancelled = false
+
+    init(owner: DefaultConversationInputProvider, callback: @escaping (ConversationInputProvidingEvent) -> Void) {
+        self.owner = owner
+        self.callback = callback
+    }
+
+    func cancel() {
+        guard !isCancelled else { return }
+        isCancelled = true
+        owner?.remove(self)
+    }
+
+    fileprivate func invoke(_ event: ConversationInputProvidingEvent) {
+        guard !isCancelled else { return }
+        callback(event)
+    }
+}
+
+@MainActor
+private final class WeakObserver {
+    fileprivate weak var observer: Observer?
+    init(_ observer: Observer) { self.observer = observer }
 }

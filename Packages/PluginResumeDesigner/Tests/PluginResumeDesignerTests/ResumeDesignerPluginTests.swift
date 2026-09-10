@@ -92,6 +92,12 @@ struct ResumeDesignerSuite {
         try? FileManager.default.removeItem(at: storage.dataRootDirectory)
     }
 
+    @Test("提示词标题本地化 key 可解析")
+    func promptSuggestionLocalizationResolves() {
+        let key = "Prompt.Suggestion.Create"
+        #expect(ResumeDesignerLocalization.string(key) != key)
+    }
+
     @Test("启动后 10 个 Agent 工具注册到 ToolManagerProviding，停止后移除")
     func registersAndRemovesAgentTools() async throws {
         let kernel = KernelCoreContainer()

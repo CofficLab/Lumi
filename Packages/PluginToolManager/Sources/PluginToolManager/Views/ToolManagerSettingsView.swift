@@ -9,8 +9,6 @@ import SwiftUI
 /// 顶部 Tab：Tools（可用工具列表）/ Execution Log（执行日志）/
 /// Usage Statistics（调用统计）；右上角可打开数据目录。
 struct ToolManagerSettingsView: View {
-    @LumiTheme private var theme
-
     let manager: any ToolManagerProviding
     let store: ProviderToolManager.ToolCallRecordStore?
 
@@ -50,6 +48,10 @@ struct ToolManagerSettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 tabBar
                 contentArea
+                    // The scaffold intentionally disables its outer scroll view
+                    // because each tab owns a full-height list. Keep a small
+                    // trailing inset so section borders remain fully visible.
+                    .padding(.trailing, -12)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
@@ -147,8 +149,12 @@ struct ToolManagerSettingsView: View {
                     } else {
                         ForEach(groups, id: \.pluginID) { group in
                             AppSettingSection(title: group.pluginID, titleAlignment: .leading) {
-                                LazyVStack(spacing: 0) {
-                                    ForEach(group.tools, id: \.name) { tool in
+                                VStack(spacing: 0) {
+                                    ForEach(Array(group.tools.enumerated()), id: \.element.name) { index, tool in
+                                        if index > 0 {
+                                            Divider()
+                                                .padding(.vertical, 8)
+                                        }
                                         ToolManagerToolRowView(tool: tool)
                                     }
                                 }
@@ -187,28 +193,15 @@ struct ToolManagerSettingsView: View {
 
 /// 单个工具行：名称 + 描述。
 private struct ToolManagerToolRowView: View {
-    @LumiTheme private var theme
     let tool: any SuperAgentTool
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "wrench.and.screwdriver")
-                .font(.appCaption)
-                .foregroundStyle(theme.textSecondary)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(tool.name)
-                    .font(.appBody)
-                    .fontWeight(.medium)
-                    .foregroundStyle(theme.textPrimary)
-                Text(tool.description(for: .chinese))
-                    .font(.appCaption)
-                    .foregroundStyle(theme.textSecondary)
-                    .lineLimit(2)
-            }
-            Spacer()
+        AppSettingRow(
+            title: tool.name,
+            description: tool.description(for: .chinese),
+            icon: "wrench.and.screwdriver"
+        ) {
+            EmptyView()
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(theme.surface)
     }
 }

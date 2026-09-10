@@ -5,6 +5,7 @@ import KitMarkdown
 import LumiUI
 import os
 import ProviderConversation
+import ProviderDeveloperMode
 import ProviderMessage
 import ProviderMessageRendering
 import ProviderMessageSender
@@ -71,6 +72,16 @@ struct ToolCallRowsView: View {
     @State private var parameterPopoverToolCallID: String?
     @State private var resultPopoverToolCallID: String?
     @State private var resolvedToolCalls: [MessageToolCall]?
+    @State private var isDeveloperModeEnabled = false
+    @State private var developerModeObserverHandle: (any DeveloperModeProvidingObserverHandle)?
+    private let developerModeProvider: (any DeveloperModeProviding)?
+
+    init(kernel: KernelCoreContainer, message: Message, verbosity: ResponseVerbosity) {
+        self.kernel = kernel
+        self.message = message
+        self.verbosity = verbosity
+        self.developerModeProvider = kernel.resolveProvider((any DeveloperModeProviding).self)
+    }
 
     private var toolCalls: [MessageToolCall] {
         resolvedToolCalls ?? message.toolCalls ?? []
@@ -95,7 +106,7 @@ struct ToolCallRowsView: View {
     var body: some View {
         Group {
             if verbosity == .brief {
-                // V1:ChatGPT 风格的「可折叠工具步骤组」——进行中展开,完成后收起成一行摘要。
+                // V1:直接逐行显示默认工具调用，不使用自定义 renderer 或折叠摘要。
                 CollapsibleToolStepGroup(
                     kernel: kernel,
                     message: message,
@@ -120,6 +131,19 @@ struct ToolCallRowsView: View {
                 return
             }
             await resolveResults()
+        }
+        .onAppear {
+            guard developerModeObserverHandle == nil else { return }
+            guard let developerModeProvider else { return }
+            isDeveloperModeEnabled = developerModeProvider.isEnabled
+            developerModeObserverHandle = developerModeProvider.addObserver { event in
+                guard case let .enabledChanged(value) = event else { return }
+                isDeveloperModeEnabled = value
+            }
+        }
+        .onDisappear {
+            developerModeObserverHandle?.cancel()
+            developerModeObserverHandle = nil
         }
     }
 
@@ -166,11 +190,18 @@ struct ToolCallRowsView: View {
 
     @ViewBuilder
     private func toolCallRow(for toolCall: MessageToolCall) -> some View {
-        if let rendering = kernel.resolveProvider((any ToolCallRenderingProviding).self),
+        // V1 (brief) 模式不使用自定义工具渲染器，统一走默认卡片路径。
+        let useCustomRenderer = verbosity != .brief
+        if useCustomRenderer,
+           let rendering = kernel.resolveProvider((any ToolCallRenderingProviding).self),
            let customRenderer = rendering.renderer(for: toolCall.agentToolCall) {
             customRenderer.render(
                 toolCall: toolCall.agentToolCall,
                 message: rowContext
+            )
+            .toolCallRendererIdBadge(
+                type(of: customRenderer).id,
+                isEnabled: isDeveloperModeEnabled
             )
         } else {
             ToolCallRowView(
@@ -755,5 +786,69 @@ private struct ToolCallResultLazyPopover: View {
             result = resolved.flatMap(MessageToolResult.init(toolCallResult:)) ?? fallbackResult
             didLoad = true
         }
+    }
+}
+
+// MARK: - Tool Call Renderer Developer Mode Badge
+
+/// Tool call renderer ID badge shown in developer mode.
+private struct ToolCallRendererIdBadge: View {
+    @LumiTheme private var theme
+
+    let id: String
+
+    private var rendererColor: Color {
+        ToolCallRendererDeveloperModeColor.color(for: id)
+    }
+
+    var body: some View {
+        Text(id)
+            .font(.system(size: 9, weight: .medium, design: .monospaced))
+            .foregroundColor(theme.textSecondary)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(
+                rendererColor.opacity(0.10),
+                in: Capsule(style: .continuous)
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(rendererColor.opacity(0.45), lineWidth: 0.5)
+            )
+            .fixedSize()
+    }
+}
+
+extension View {
+    /// 在工具调用行右上角叠加当前 tool call renderer 的 `id` 徽章。
+    @ViewBuilder
+    func toolCallRendererIdBadge(_ id: String, isEnabled: Bool) -> some View {
+        if isEnabled {
+            overlay(alignment: .topTrailing) {
+                ToolCallRendererIdBadge(id: id)
+                    .padding(4)
+            }
+        } else {
+            self
+        }
+    }
+}
+
+private enum ToolCallRendererDeveloperModeColor {
+    static func color(for id: String) -> Color {
+        Color(
+            hue: hue(for: id),
+            saturation: 0.65,
+            brightness: 0.85
+        )
+    }
+
+    private static func hue(for id: String) -> Double {
+        var hash: UInt32 = 2_166_136_261
+        for byte in id.utf8 {
+            hash ^= UInt32(byte)
+            hash = hash &* 16_777_619
+        }
+        return Double(hash) / Double(UInt32.max)
     }
 }

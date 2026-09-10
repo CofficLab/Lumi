@@ -1,5 +1,4 @@
 import KitAgentTool
-import Combine
 import SwiftUI
 
 /// 工具调用行渲染所需的助手消息上下文。
@@ -37,32 +36,90 @@ extension ToolCallRowRenderer {
 /// 与 `MessageRenderingProviding` 平级：消息级渲染器负责选择整条消息，
 /// 工具调用渲染器负责替换 assistant 消息内部的单个 ToolCall 行。
 @MainActor
-public protocol ToolCallRenderingProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public enum ToolCallRenderingEvent {
+    case renderersChanged
+}
+
+@MainActor
+public protocol ToolCallRenderingObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
+public protocol ToolCallRenderingProviding: AnyObject {
     var allRenderers: [any ToolCallRowRenderer] { get }
+    @discardableResult
+    func addToolCallRenderingObserver(
+        _ callback: @escaping (ToolCallRenderingEvent) -> Void
+    ) -> any ToolCallRenderingObserverHandle
     func register(_ renderer: any ToolCallRowRenderer)
     func unregister(id: String)
     func renderer(for toolCall: ToolCall) -> (any ToolCallRowRenderer)?
 }
 
+public extension ToolCallRenderingProviding {
+    @discardableResult
+    func addToolCallRenderingObserver(
+        _ callback: @escaping (ToolCallRenderingEvent) -> Void
+    ) -> any ToolCallRenderingObserverHandle {
+        NoopToolCallRenderingObserverHandle()
+    }
+}
+
 @MainActor
-public final class DefaultToolCallRenderingProviding: ToolCallRenderingProviding, ObservableObject {
-    @Published public private(set) var allRenderers: [any ToolCallRowRenderer] = []
+private final class NoopToolCallRenderingObserverHandle: ToolCallRenderingObserverHandle {
+    func cancel() {}
+}
+
+@MainActor
+public final class DefaultToolCallRenderingProviding: ToolCallRenderingProviding {
+    public private(set) var allRenderers: [any ToolCallRowRenderer] = []
+    private var observers: [UUID: (ToolCallRenderingEvent) -> Void] = [:]
 
     public init() {}
+
+    @discardableResult
+    public func addToolCallRenderingObserver(
+        _ callback: @escaping (ToolCallRenderingEvent) -> Void
+    ) -> any ToolCallRenderingObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
 
     public func register(_ renderer: any ToolCallRowRenderer) {
         let rendererType = type(of: renderer)
         allRenderers.removeAll { type(of: $0).id == rendererType.id }
         allRenderers.append(renderer)
         allRenderers.sort { type(of: $0).priority > type(of: $1).priority }
+        notify(.renderersChanged)
     }
 
     public func unregister(id: String) {
         allRenderers.removeAll { type(of: $0).id == id }
+        notify(.renderersChanged)
     }
 
     public func renderer(for toolCall: ToolCall) -> (any ToolCallRowRenderer)? {
         allRenderers.first { $0.canRender(toolCall: toolCall) }
+    }
+
+    private func notify(_ event: ToolCallRenderingEvent) {
+        observers.values.forEach { $0(event) }
+    }
+
+    private final class ObserverHandle: ToolCallRenderingObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
+        }
     }
 }

@@ -65,6 +65,8 @@ struct DefaultToolManagerProvidingTests {
         var events: [String] = []
         let handle = manager.addToolManagerObserver { event in
             switch event {
+            case .toolsChanged:
+                break
             case .started:
                 events.append("started")
             case .authorizationRequired:
@@ -85,6 +87,23 @@ struct DefaultToolManagerProvidingTests {
         )
 
         #expect(events == ["started", "completed"])
+        handle.cancel()
+    }
+
+    @Test("工具注册表变化通过 typed 事件发布")
+    func toolRegistrationPublishesTypedEvent() {
+        let manager = DefaultToolManagerProviding()
+        var changes = 0
+        let handle = manager.addToolManagerObserver { event in
+            if case .toolsChanged = event {
+                changes += 1
+            }
+        }
+
+        manager.add(MockTool(name: "read"), pluginID: "p")
+        manager.remove(id: "read")
+
+        #expect(changes == 2)
         handle.cancel()
     }
 

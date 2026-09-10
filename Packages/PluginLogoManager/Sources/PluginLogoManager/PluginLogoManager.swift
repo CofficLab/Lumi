@@ -42,7 +42,7 @@ public final class PluginLogoManager: SuperPlugin, SuperLog {
         self.manager = manager
 
         // 0. 复制旧的默认实现（或先前已注册实现）中已有的数据，避免数据丢失。
-        //    LogoProviding 协议要求 AnyObject & ObservableObject，可直接读取协议属性。
+        //    LogoProviding 协议以 typed observer 提供变化通知，属性仍可直接读取。
         if let old = kernel.resolveProvider((any LogoProviding).self) {
             // 逐个重新注册，保持去重与 order 降序排序逻辑一致。
             for item in old.allLogoItems {
@@ -57,7 +57,7 @@ public final class PluginLogoManager: SuperPlugin, SuperLog {
         // 1. 注销 ProviderFactory 预注册的默认实现（避免 providerAlreadyRegistered）。
         kernel.unregisterProvider((any LogoProviding).self)
 
-        // 2. 注册本插件实现。消费者直接观察 LogoProviding 的状态变化。
+        // 2. 注册本插件实现。消费者通过 LogoProviding 的 typed observer 获取状态变化。
         try kernel.registerHostProvider((any LogoProviding).self, manager)
 
         if Self.verbose {

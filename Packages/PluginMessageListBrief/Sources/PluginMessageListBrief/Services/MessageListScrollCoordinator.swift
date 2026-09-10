@@ -6,8 +6,7 @@ import SwiftUI
 ///
 /// 封装 `MessageListView` 中"与 SwiftUI 滚动行为耦合但与业务无关"的策略：
 ///
-/// 1. **底部滚动**：普通 `scrollToBottom(animated:)`，以及流式跟随滚到底
-///    （无动画，避免高频 delta 抖动）。
+/// 1. **底部滚动**：流式跟随滚到底（无动画，避免高频 delta 抖动）。
 /// 2. **post-layout 滚动**：prepend 之后等 `postPrependDelayNs` 让新行布局
 ///    完成再把锚点行钉回视口顶部，避免视觉跳动。
 ///
@@ -38,6 +37,8 @@ final class MessageListScrollCoordinator {
     static let bottomSettleStableFrames = 3
 
     private var pendingBottomScrollTask: Task<Void, Never>?
+    private var preparationSequence: UInt64 = 0
+    private var scrollGeneration: UInt64 = 0
 
     deinit {
         pendingBottomScrollTask?.cancel()
@@ -50,40 +51,56 @@ final class MessageListScrollCoordinator {
     func cancelPendingTasks() {
         pendingBottomScrollTask?.cancel()
         pendingBottomScrollTask = nil
+        preparationSequence &+= 1
+        scrollGeneration &+= 1
     }
 
-    /// 滚动到底部锚点。
+    /// 在首次显示消息列表前完成布局并定位到底部。
     ///
-    /// `animated == true` 时裹一层 `.easeOut(0.2s)`；
-    /// `messages.isEmpty` 时不做任何滚动（无锚点可钉）。
-    /// - Parameter condition: 每次真正滚动前（含重试）调用的前置条件，默认永真。
-    func scrollToBottom(
+    /// `List` 的首轮布局和懒加载行 materialize 都是异步的。调用方应在该方法
+    /// 返回 `true` 后再撤掉遮罩，否则用户可能先看到列表顶部，再看到它跳到底部。
+    func prepareInitialBottom(
         proxy: ScrollViewProxy,
         messages: [Message],
-        animated: Bool,
         controller: ScrollViewBottomController? = nil,
         condition: @escaping @MainActor () -> Bool = { true }
-    ) {
+    ) async -> Bool {
         pendingBottomScrollTask?.cancel()
         pendingBottomScrollTask = nil
-        guard !messages.isEmpty, condition() else { return }
-        performScrollToBottom(proxy: proxy, animated: animated)
-        // macOS 14 首次布局未完成时 scrollTo 会静默丢失，补一次重试。
-        // 重试前再次检查条件 —— 用户可能在 100ms 窗口内手动滚离了底部。
-        pendingBottomScrollTask = Task { @MainActor [weak self] in
-            do {
-                try await Task.sleep(nanoseconds: Self.scrollRetryDelayNs)
-            } catch {
-                return
-            }
-            guard let self, !Task.isCancelled else { return }
-            guard condition() else { return }
-            if let controller, controller.isAttached {
-                await self.settleBottom(controller: controller, condition: condition)
-            } else {
-                self.performScrollToBottom(proxy: proxy, animated: animated)
-            }
+        preparationSequence &+= 1
+        let sequence = preparationSequence
+
+        guard !messages.isEmpty else { return true }
+
+        do {
+            try await Task.sleep(nanoseconds: Self.postAppendDelayNs)
+        } catch {
+            return false
         }
+        guard isPreparationActive(sequence), condition() else { return false }
+
+        performScrollToBottom(proxy: proxy, animated: false)
+
+        do {
+            try await Task.sleep(nanoseconds: Self.scrollRetryDelayNs)
+        } catch {
+            return false
+        }
+        guard isPreparationActive(sequence), condition() else { return false }
+
+        if let controller, controller.isAttached {
+            await settleBottom(controller: controller) {
+                self.isPreparationActive(sequence) && condition()
+            }
+        } else if condition() {
+            performScrollToBottom(proxy: proxy, animated: false)
+        }
+
+        return isPreparationActive(sequence) && condition()
+    }
+
+    private func isPreparationActive(_ sequence: UInt64) -> Bool {
+        sequence == preparationSequence && !Task.isCancelled
     }
 
     private func performScrollToBottom(proxy: ScrollViewProxy, animated: Bool) {
@@ -129,7 +146,8 @@ final class MessageListScrollCoordinator {
 
     /// 等待 `postAppendDelayNs` 让新内容完成布局，再滚到底。
     ///
-    /// 新请求会取消旧请求，避免多个延迟 `scrollTo` 同时操作同一个 macOS List。
+    /// 同一轮布局稳定期间只保留一个任务，避免流式 token 更新不断取消
+    /// 30ms 延迟，导致连续输出期间一次真正的滚动都无法执行。
     /// 流式期间（`animated == false`）不要动画：tail 刷新在流式中每条消息都会
     /// 触发，带动画的 `scrollTo` 会不断把目标重定到正在增长的底部，动画永不收敛。
     func scheduleScrollToBottomAfterLayout(
@@ -139,27 +157,54 @@ final class MessageListScrollCoordinator {
         controller: ScrollViewBottomController? = nil,
         condition: @escaping @MainActor () -> Bool = { true }
     ) {
-        pendingBottomScrollTask?.cancel()
+        // If a scroll/settle pass is already active, it observes the current
+        // document height repeatedly and will absorb subsequent token updates.
+        // Debouncing by cancellation here starves the scroll during a steady
+        // stream (each update arrives before the 30ms delay expires).
+        guard pendingBottomScrollTask == nil else { return }
+
+        let generation = scrollGeneration
         pendingBottomScrollTask = Task { @MainActor [weak self] in
+            defer {
+                if let self, self.scrollGeneration == generation {
+                    self.pendingBottomScrollTask = nil
+                }
+            }
             do {
                 try await Task.sleep(nanoseconds: Self.postAppendDelayNs)
             } catch {
                 return
             }
-            guard let self, !Task.isCancelled else { return }
-            self.scrollToBottom(
-                proxy: proxy,
-                messages: messages,
-                animated: animated,
-                controller: controller,
-                condition: condition
-            )
+            guard let self,
+                  !Task.isCancelled,
+                  generation == self.scrollGeneration,
+                  !messages.isEmpty,
+                  condition() else { return }
+
+            self.performScrollToBottom(proxy: proxy, animated: animated)
+
+            do {
+                try await Task.sleep(nanoseconds: Self.scrollRetryDelayNs)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled,
+                  generation == self.scrollGeneration,
+                  condition() else { return }
+
+            if let controller, controller.isAttached {
+                await self.settleBottom(controller: controller, condition: condition)
+            } else {
+                self.performScrollToBottom(proxy: proxy, animated: animated)
+            }
         }
     }
 
     /// 等待 `postPrependDelayNs` 让 prepend 的新行完成布局，再把指定 id 钉回视口顶部。
     func pinToAnchor(proxy: ScrollViewProxy, anchorID: UUID) async {
+        let generation = scrollGeneration
         try? await Task.sleep(nanoseconds: Self.postPrependDelayNs)
+        guard !Task.isCancelled, generation == scrollGeneration else { return }
         proxy.scrollTo(anchorID, anchor: .top)
     }
 }

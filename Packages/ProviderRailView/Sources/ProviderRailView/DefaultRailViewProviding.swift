@@ -1,4 +1,3 @@
-import Combine
 import LumiUI
 import SwiftUI
 
@@ -7,13 +6,13 @@ import SwiftUI
 ///
 /// 点击 tab 切换选中项并展示对应内容。
 @MainActor
-public final class DefaultRailViewProviding: RailViewProviding, ObservableObject {
-    @Published public private(set) var tabs: [RailTabItem] = []
-    @Published public private(set) var visibleCategories: Set<RailViewCategory>
-    @Published public private(set) var visibleTabID: String?
-    @Published public private(set) var activeTabID: String?
-    @Published public private(set) var hasVisibleTabs = false
-    @Published public private(set) var railWidth: RailViewWidth
+public final class DefaultRailViewProviding: RailViewProviding {
+    public private(set) var tabs: [RailTabItem] = []
+    public private(set) var visibleCategories: Set<RailViewCategory>
+    public private(set) var visibleTabID: String?
+    public private(set) var activeTabID: String?
+    public private(set) var hasVisibleTabs = false
+    public private(set) var railWidth: RailViewWidth
 
     private let defaultWidthStore: (any RailViewWidthStoring)?
     private var activeWidthStore: (any RailViewWidthStoring)?
@@ -21,10 +20,6 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
     private var pendingActiveTabID: String?
 
     private var observers: [WeakObserver] = []
-
-    public var railVisibilityPublisher: AnyPublisher<Bool, Never> {
-        $hasVisibleTabs.eraseToAnyPublisher()
-    }
 
     public init(
         visibleCategories: Set<RailViewCategory> = Set(RailViewCategory.allCases),
@@ -272,10 +267,38 @@ public final class DefaultRailViewProviding: RailViewProviding, ObservableObject
 /// - 内容区直接渲染激活 tab 视图（`.id` 保持切换动画），无内容时不渲染视图；
 /// - 整栏 `minWidth 200`、背景 `theme.surface`。
 private struct RailView: View {
-    @ObservedObject var provider: DefaultRailViewProviding
+    let provider: DefaultRailViewProviding
     @LumiTheme private var theme
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any RailViewProvidingObserverHandle)?
 
     var body: some View {
+        // Read the local token so provider events invalidate this view without
+        // changing the identity of the entire Rail content tree.
+        let _ = observationRevision
+        content
+            .onAppear {
+                guard observerHandle == nil else { return }
+                observerHandle = provider.addObserver { event in
+                    // Width is a layout-only update from the host split view. Do not
+                    // rebuild the Rail content tree for it: doing so destroys and
+                    // recreates consumers such as the conversation list while the
+                    // native NSSplitView is finishing its resize pass.
+                    guard case .widthChanged = event else {
+                        observationRevision += 1
+                        return
+                    }
+                }
+                provider.notify(.didAppear)
+            }
+            .onDisappear {
+                observerHandle?.cancel()
+                observerHandle = nil
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         let visibleTabs = provider.visibleTabs
 
         if visibleTabs.isEmpty {
@@ -317,7 +340,6 @@ private struct RailView: View {
             }
             .frame(minWidth: 200, maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.surface)
-            .onAppear { provider.notify(.didAppear) }
         }
     }
 }

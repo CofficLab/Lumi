@@ -46,12 +46,11 @@ public final class ConversationAgentTurnCountPlugin: SuperPlugin, SuperLog {
             conversations: conversations,
             agentLoop: agentLoop,
             onConversationChange: { [weak toolbarState] newID in
-                toolbarState?.selectedConversationID = newID
-                toolbarState?.revision &+= 1
+                toolbarState?.setSelectedConversationID(newID)
             },
             onAgentLoopChange: { [weak toolbarState] conversationID in
                 guard conversationID == toolbarState?.selectedConversationID else { return }
-                toolbarState?.revision &+= 1
+                toolbarState?.markAgentLoopChanged(conversationID: conversationID)
             }
         )
 
@@ -78,7 +77,56 @@ public final class ConversationAgentTurnCountPlugin: SuperPlugin, SuperLog {
 }
 
 @MainActor
-final class AgentTurnStatusToolbarState: ObservableObject {
-    @Published var selectedConversationID: UUID?
-    @Published var revision = 0
+final class AgentTurnStatusToolbarState {
+    enum Event {
+        case selectedConversationChanged(UUID?)
+        case agentLoopChanged(conversationID: UUID)
+    }
+
+    protocol ObserverHandle: AnyObject {
+        func cancel()
+    }
+
+    private final class Handle: ObserverHandle {
+        private let cancelAction: () -> Void
+        private var isCancelled = false
+
+        init(cancelAction: @escaping () -> Void) {
+            self.cancelAction = cancelAction
+        }
+
+        func cancel() {
+            guard !isCancelled else { return }
+            isCancelled = true
+            cancelAction()
+        }
+    }
+
+    private(set) var selectedConversationID: UUID?
+    private var observers: [UUID: (Event) -> Void] = [:]
+
+    @discardableResult
+    func addObserver(_ callback: @escaping (Event) -> Void) -> any ObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return Handle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
+    func setSelectedConversationID(_ id: UUID?) {
+        guard selectedConversationID != id else { return }
+        selectedConversationID = id
+        notify(.selectedConversationChanged(id))
+    }
+
+    func markAgentLoopChanged(conversationID: UUID) {
+        notify(.agentLoopChanged(conversationID: conversationID))
+    }
+
+    private func notify(_ event: Event) {
+        for callback in Array(observers.values) {
+            callback(event)
+        }
+    }
 }

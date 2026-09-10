@@ -7,7 +7,7 @@ import KitSuperLog
 
 /// Message Manager Service
 @MainActor
-public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
+public final class MessageManager: MessageManaging, SuperLog {
     public nonisolated static let emoji = "💬"
     public nonisolated static let verbose = false
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "message.manager")
@@ -391,7 +391,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
 
         // 1) 写入内存缓冲,立即通知 UI —— UI 这一刻就能从读路径看到它(read-your-writes)。
         enqueuePending(messageToInsert, conversationID: conversationID)
-        notifyMessagesDidChange(conversationID: conversationID)
         notifyMessageChange(.inserted(messageToInsert, conversationID: conversationID))
         notifyMessageInsertedObservers(messageToInsert, conversationID: conversationID)
 
@@ -433,7 +432,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         } else {
             _ = store?.updateMessage(id: id, content: content)
         }
-        notifyMessagesDidChange(conversationID: conversationID)
         notifyMessageChange(.updated(conversationID: conversationID))
     }
 
@@ -447,7 +445,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
         persistQueue.sync {
             _ = store?.deleteMessage(id: id)
         }
-        notifyMessagesDidChange(conversationID: conversationID)
         notifyMessageChange(.deleted(messageID: id, conversationID: conversationID))
     }
 
@@ -461,7 +458,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             _ = store?.deleteAllMessages(conversationId: conversationID)
             pending.clear(conversationID: conversationID)
         }
-        notifyMessagesDidChange(conversationID: conversationID)
         notifyMessageChange(.cleared(conversationID: conversationID))
     }
 
@@ -509,7 +505,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
             Self.logger.info("\(Self.t)updateToolCallResult ➡️ conversation=\(conversationID.uuidString.prefix(8))…, message=\(assistantMessageID.uuidString.prefix(8))…, toolCall=\(toolCallID)")
         }
 
-        notifyMessagesDidChange(conversationID: conversationID)
         notifyMessageChange(.updated(conversationID: conversationID))
     }
 
@@ -535,12 +530,6 @@ public final class MessageManager: ObservableObject, MessageManaging, SuperLog {
     }
 
     // MARK: - Notification
-
-    /// 通知订阅方消息已变化（`MessageManaging.objectWillChange`，消费方 PluginMessageList
-    /// 等窄播订阅）。对齐旧版 `eventManager.postMessagesDidChange` 的语义。
-    private func notifyMessagesDidChange(conversationID: UUID) {
-        objectWillChange.send()
-    }
 
     // MARK: - Message Insertion Observation
 

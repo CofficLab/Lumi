@@ -95,6 +95,8 @@ struct ProviderMessageSenderTests {
                 events.append("completed")
             case .turnFailed:
                 events.append("failed")
+            case .attachmentsChanged, .pendingMessagesChanged:
+                break
             }
         }
 

@@ -186,26 +186,52 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
     /// turn. Anthropic adapters support images directly inside tool_result and
     /// do not use this normalization path.
     private func transformMessages(_ messages: [LLMMessage]) -> [[String: Any]] {
+        let normalizedMessages = normalizeToolResultOrder(messages)
         var output: [[String: Any]] = []
         var index = 0
+        var expectedToolCallIDs = Set<String>()
 
-        while index < messages.count {
-            let message = messages[index]
-            guard message.role == .tool, message.toolCallID != nil else {
+        while index < normalizedMessages.count {
+            let message = normalizedMessages[index]
+            guard message.role == .tool else {
                 output.append(transformMessage(message))
+                expectedToolCallIDs = message.role == .assistant
+                    ? Set(message.toolCalls?.map(\.id) ?? [])
+                    : []
                 index += 1
                 continue
             }
 
             var resultImages: [MessageImage] = []
-            while index < messages.count {
-                var result = messages[index]
-                guard result.role == .tool, result.toolCallID != nil else { break }
+            var toolResultsByID: [String: LLMMessage] = [:]
+            var toolResultOrder: [String] = []
+            while index < normalizedMessages.count {
+                var result = normalizedMessages[index]
+                guard result.role == .tool else { break }
+                index += 1
+
+                guard let toolCallID = result.toolCallID,
+                      expectedToolCallIDs.contains(toolCallID),
+                      !Self.isPermissionPlaceholder(result.content) else {
+                    continue
+                }
+
                 resultImages.append(contentsOf: result.images)
                 result.images = []
-                output.append(transformMessage(result))
-                index += 1
+                if toolResultsByID[toolCallID] == nil {
+                    toolResultOrder.append(toolCallID)
+                }
+                // 旧会话可能已经包含同一 tool_call_id 的授权占位结果和
+                // 最终结果；保留最后一个真实结果，避免生成非法连续 tool 消息。
+                toolResultsByID[toolCallID] = result
             }
+
+            for toolCallID in toolResultOrder {
+                if let result = toolResultsByID[toolCallID] {
+                    output.append(transformMessage(result))
+                }
+            }
+            expectedToolCallIDs = []
 
             if !resultImages.isEmpty {
                 output.append([
@@ -219,6 +245,66 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         }
 
         return output
+    }
+
+    /// 修复交互工具恢复时的落库竞态：用户消息可能先于恢复后的 tool 结果写入，
+    /// 但 OpenAI 兼容协议要求 tool 结果紧跟对应的 assistant.tool_calls。
+    ///
+    /// 如果历史中完全找不到结果，则移除这次孤立的 tool_calls，避免旧会话继续
+    /// 阻塞后续请求；工具调用结果本身仍由本地消息/UI 历史保留。
+    private func normalizeToolResultOrder(_ messages: [LLMMessage]) -> [LLMMessage] {
+        var normalized = messages
+        var index = 0
+
+        while index < normalized.count {
+            guard normalized[index].role == .assistant,
+                  let toolCalls = normalized[index].toolCalls,
+                  !toolCalls.isEmpty else {
+                index += 1
+                continue
+            }
+
+            let expectedToolCallIDs = Set(toolCalls.map(\.id))
+            var scanIndex = index + 1
+            var resultIndices: [Int] = []
+            while scanIndex < normalized.count {
+                if normalized[scanIndex].role == .assistant { break }
+                if normalized[scanIndex].role == .tool,
+                   let toolCallID = normalized[scanIndex].toolCallID,
+                   expectedToolCallIDs.contains(toolCallID),
+                   !Self.isPermissionPlaceholder(normalized[scanIndex].content) {
+                    resultIndices.append(scanIndex)
+                }
+                scanIndex += 1
+            }
+
+            if !resultIndices.isEmpty {
+                let results = resultIndices.map { normalized[$0] }
+                for resultIndex in resultIndices.reversed() {
+                    normalized.remove(at: resultIndex)
+                }
+                normalized.insert(contentsOf: results, at: index + 1)
+                index += results.count + 1
+                continue
+            }
+
+            // 发送层遇到无结果的历史 tool call 时，不能继续生成供应商必拒的请求。
+            // 只移除出站副本中的 tool_calls，不修改本地持久化消息。
+            normalized[index].toolCalls = nil
+            index += 1
+        }
+
+        return normalized
+    }
+
+    /// 授权流程产生的临时消息不是工具执行结果，不应发送给 LLM。
+    /// 旧会话可能已经持久化了这类消息，因此发送层也要做兼容清理。
+    private static func isPermissionPlaceholder(_ content: String) -> Bool {
+        guard let data = content.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return false
+        }
+        return object["kind"] as? String == "permission"
     }
 
     public func formatTool(_ tool: any LLMToolSchemaProviding) -> [String: Any] {
@@ -345,7 +431,17 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
 
             // 纯 stop_reason 结束信号
             if let stopReason {
-                return StreamChunk(stopReason: stopReason)
+                // DeepSeek 将最终 usage 放在带 choices/finish_reason 的最后一个
+                // chunk 中，而不是发送独立的 usage-only chunk。不能在这里丢弃
+                // token usage，否则速度和缓存命中率都无法落库。
+                return StreamChunk(
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
+                    cacheTotalInputTokens: inputTokens,
+                    stopReason: stopReason
+                )
             }
         }
 
@@ -404,6 +500,8 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             ?? (usage?["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
             ?? (usage?["input_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
             ?? usage?["cache_read_input_tokens"] as? Int
+            // DeepSeek OpenAI API
+            ?? usage?["prompt_cache_hit_tokens"] as? Int
     }
 
     static func cacheWriteInputTokens(from usage: [String: Any]?) -> Int? {

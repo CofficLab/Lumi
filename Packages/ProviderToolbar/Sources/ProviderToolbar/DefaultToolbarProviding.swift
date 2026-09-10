@@ -1,4 +1,3 @@
-import Combine
 import LumiUI
 import SwiftUI
 
@@ -17,9 +16,10 @@ import AppKit
 /// - 背景使用 `AppToolbarContainer(style: .toolbar)`、前景 `theme.textPrimary`
 ///   （与旧版 `AppTitleToolbar` 一致）。
 @MainActor
-public final class DefaultToolbarProviding: ToolbarProviding, ObservableObject {
-    @Published public private(set) var toolbarItems: [ToolbarItem] = []
-    @Published public private(set) var visibleCategories: Set<ToolbarItemCategory>
+public final class DefaultToolbarProviding: ToolbarProviding {
+    public private(set) var toolbarItems: [ToolbarItem] = []
+    public private(set) var visibleCategories: Set<ToolbarItemCategory>
+    private var observers: [UUID: (ToolbarEvent) -> Void] = [:]
 
     private var baseVisibleCategories: Set<ToolbarItemCategory>
     private var hiddenCategoriesBySource: [String: Set<ToolbarItemCategory>] = [:]
@@ -29,8 +29,20 @@ public final class DefaultToolbarProviding: ToolbarProviding, ObservableObject {
         self.baseVisibleCategories = visibleCategories
     }
 
+    @discardableResult
+    public func addToolbarObserver(
+        _ callback: @escaping (ToolbarEvent) -> Void
+    ) -> any ToolbarObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
     public func registerToolbarItems(_ items: [ToolbarItem]) {
         toolbarItems = items
+        notify(.toolbarItemsChanged)
     }
 
     public func setVisibleCategories(_ categories: Set<ToolbarItemCategory>) {
@@ -55,6 +67,24 @@ public final class DefaultToolbarProviding: ToolbarProviding, ObservableObject {
         let effectiveCategories = baseVisibleCategories.subtracting(hiddenCategories)
         guard visibleCategories != effectiveCategories else { return }
         visibleCategories = effectiveCategories
+        notify(.visibleCategoriesChanged)
+    }
+
+    private func notify(_ event: ToolbarEvent) {
+        observers.values.forEach { $0(event) }
+    }
+
+    private final class ObserverHandle: ToolbarObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
+        }
     }
 
     public func makeToolbarView() -> AnyView {
@@ -66,7 +96,9 @@ public final class DefaultToolbarProviding: ToolbarProviding, ObservableObject {
 private struct ToolbarView: View {
     @LumiTheme private var theme
 
-    @ObservedObject var provider: DefaultToolbarProviding
+    let provider: DefaultToolbarProviding
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any ToolbarObserverHandle)?
 
     /// 与旧版 `AppTitleToolbar` 保持一致的尺寸常量。
     private let height: CGFloat = 44
@@ -113,7 +145,18 @@ private struct ToolbarView: View {
             .frame(height: height)
             .frame(maxWidth: .infinity)
         }
+        .id(observationRevision)
         .foregroundStyle(theme.textPrimary)
+        .onAppear {
+            guard observerHandle == nil else { return }
+            observerHandle = provider.addToolbarObserver { _ in
+                observationRevision += 1
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
+        }
     }
 
     private func group(_ items: [ToolbarItem]) -> some View {

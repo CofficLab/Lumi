@@ -166,6 +166,123 @@ struct KitLLMTests {
         #expect(chunk?.stopReason == "stop")
     }
 
+    @Test("DeepSeek 最终结束块保留 usage 和缓存命中字段")
+    func openAIAdapterParsesDeepSeekFinalUsageChunk() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.deepseek.com/v1")
+        )
+        let event = """
+        data: {"choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":123,"completion_tokens":17,"prompt_cache_hit_tokens":100,"prompt_cache_miss_tokens":23}}
+
+        """
+        let chunk = try adapter.parseStreamChunk(data: Data(event.utf8))
+
+        #expect(chunk?.inputTokens == 123)
+        #expect(chunk?.outputTokens == 17)
+        #expect(chunk?.cachedInputTokens == 100)
+        #expect(chunk?.cacheTotalInputTokens == 123)
+        #expect(chunk?.stopReason == "stop")
+    }
+
+    @Test("OpenAI 兼容请求过滤授权占位并去重旧工具结果")
+    func openAIAdapterRepairsDuplicateToolResults() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.deepseek.com/v1")
+        )
+        let messages = [
+            LLMMessage(
+                role: .assistant,
+                content: "",
+                toolCalls: [
+                    LLMToolCall(id: "call-edit", name: "edit_file", arguments: "{}"),
+                    LLMToolCall(id: "call-read", name: "read_file", arguments: "{}"),
+                ]
+            ),
+            LLMMessage(
+                role: .tool,
+                content: #"{"kind":"permission","toolCallID":"approval:call-edit"}"#,
+                toolCallID: "call-edit"
+            ),
+            LLMMessage(role: .tool, content: "read result", toolCallID: "call-read"),
+            LLMMessage(role: .tool, content: "edit result", toolCallID: "call-edit"),
+        ]
+
+        let body = try adapter.buildRequestBody(
+            messages: messages,
+            model: "deepseek-v4-flash",
+            tools: nil,
+            systemPrompt: ""
+        )
+        let bodyMessages = body["messages"] as? [[String: Any]]
+
+        #expect(bodyMessages?.count == 3)
+        #expect(bodyMessages?[1]["tool_call_id"] as? String == "call-read")
+        #expect(bodyMessages?[1]["content"] as? String == "read result")
+        #expect(bodyMessages?[2]["tool_call_id"] as? String == "call-edit")
+        #expect(bodyMessages?[2]["content"] as? String == "edit result")
+    }
+
+    @Test("OpenAI 兼容请求将迟到的交互工具结果移到 assistant 后")
+    func openAIAdapterRepairsOutOfOrderToolResult() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.deepseek.com/v1")
+        )
+        let messages = [
+            LLMMessage(
+                role: .assistant,
+                content: "",
+                toolCalls: [LLMToolCall(id: "ask-1", name: "ask_user", arguments: "{}")]
+            ),
+            LLMMessage(role: .user, content: "继续提交这次修改"),
+            LLMMessage(
+                role: .tool,
+                content: "The user continued without answering.",
+                toolCallID: "ask-1"
+            ),
+        ]
+
+        let body = try adapter.buildRequestBody(
+            messages: messages,
+            model: "deepseek-v4-flash",
+            tools: nil,
+            systemPrompt: ""
+        )
+        let bodyMessages = body["messages"] as? [[String: Any]]
+
+        #expect(bodyMessages?.count == 3)
+        #expect(bodyMessages?[1]["role"] as? String == "tool")
+        #expect(bodyMessages?[1]["tool_call_id"] as? String == "ask-1")
+        #expect(bodyMessages?[2]["role"] as? String == "user")
+        #expect(bodyMessages?[2]["content"] as? String == "继续提交这次修改")
+    }
+
+    @Test("OpenAI 兼容请求移除无结果的孤立工具调用")
+    func openAIAdapterRemovesOrphanToolCalls() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.deepseek.com/v1")
+        )
+        let messages = [
+            LLMMessage(
+                role: .assistant,
+                content: "等待用户回答",
+                toolCalls: [LLMToolCall(id: "orphan", name: "ask_user", arguments: "{}")]
+            ),
+            LLMMessage(role: .user, content: "继续")
+        ]
+
+        let body = try adapter.buildRequestBody(
+            messages: messages,
+            model: "deepseek-v4-flash",
+            tools: nil,
+            systemPrompt: ""
+        )
+        let bodyMessages = body["messages"] as? [[String: Any]]
+
+        #expect(bodyMessages?.count == 2)
+        #expect(bodyMessages?[0]["tool_calls"] == nil)
+        #expect(bodyMessages?[0]["content"] as? String == "等待用户回答")
+    }
+
     @Test("未收到流式终止信号时拒绝不完整响应")
     func incompleteStreamingResponseFails() async {
         let accumulator = StreamingAccumulator()

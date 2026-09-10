@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 import Testing
 @testable import ProviderActivityBar
@@ -39,6 +38,32 @@ struct ProviderActivityBarTests {
         #expect(provider.items.count == 2)
         #expect(provider.items.map(\.id) == ["a", "b"])
         #expect(provider.activeItemID == "a")
+    }
+
+    @Test("ActivityBar 状态变化会发布类型化观察事件")
+    func activityBarChangesAreObservable() {
+        let provider = DefaultActivityBarProviding()
+        var events: [String] = []
+        let handle = provider.addActivityBarObserver { event in
+            switch event {
+            case .itemsChanged:
+                events.append("items")
+            case let .activeItemChanged(id):
+                events.append("active:\(id ?? "nil")")
+            }
+        }
+
+        provider.registerItems([
+            ActivityBarItem(id: "a", title: "A", systemImage: "a"),
+            ActivityBarItem(id: "b", title: "B", systemImage: "b"),
+        ])
+        provider.activateItem(id: "b")
+
+        #expect(events == ["active:a", "items", "active:b"])
+
+        handle.cancel()
+        provider.activateItem(id: "a")
+        #expect(events == ["active:a", "items", "active:b"])
     }
 
     @Test("仅一个入口时不显示 ActivityBar")
@@ -134,7 +159,7 @@ struct ProviderActivityBarTests {
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
         @MainActor final class CustomActivityBar: ActivityBarProviding {
-            @Published var items: [ActivityBarItem] = []
+            var items: [ActivityBarItem] = []
 
             func registerItems(_ items: [ActivityBarItem]) {
                 self.items = items

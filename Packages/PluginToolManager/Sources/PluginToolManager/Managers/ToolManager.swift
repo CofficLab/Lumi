@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import KitAgentTool
 import KitSuperLog
@@ -16,7 +15,7 @@ private struct ToolInteractionPayload: Codable {
 
 /// PluginToolManager 自己实现的工具注册、执行、授权和调用记录管理。
 @MainActor
-public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog {
+public final class ToolManager: ToolManagerProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "ToolManager")
     public nonisolated static let emoji = "🛠️"
     nonisolated static let verbose = false
@@ -160,7 +159,7 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
         }
         if pluginToolIndex[pluginID] == nil, !pluginOrder.contains(pluginID) { pluginOrder.append(pluginID) }
         pluginToolIndex[pluginID, default: []].append(tool.name)
-        objectWillChange.send()
+        eventManager.send(.toolsChanged)
     }
 
     public func remove(id: String) {
@@ -173,7 +172,7 @@ public final class ToolManager: ToolManagerProviding, ObservableObject, SuperLog
                 pluginOrder.removeAll { $0 == pluginID }
             }
         }
-        objectWillChange.send()
+        eventManager.send(.toolsChanged)
     }
 
     public func toolsGroupedByPlugin() -> [(pluginID: String, tools: [any SuperAgentTool])] {

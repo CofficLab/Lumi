@@ -37,6 +37,8 @@ final class ToolManagerStateObserver: SuperLog {
 
     private func consume(_ event: ToolManagerEvent) {
         switch event {
+        case .toolsChanged:
+            break
         case .started(let id, let turn, _):
             provider.update(conversationID: id, turnID: turn, toolState: .executing, activity: .executingTool)
         case .authorizationRequired(let id, let turn, _):
@@ -76,11 +78,13 @@ final class ToolManagerStateObserver: SuperLog {
             if lhs.updatedAt == rhs.updatedAt { return lhs.createdAt > rhs.createdAt }
             return lhs.updatedAt > rhs.updatedAt
         }
+        let activeJob = sortedJobs.first(where: { !$0.status.isTerminal })
         let activity = ConversationJobActivity(
             currentJobCount: jobs.count,
             runningJobCount: jobs.filter { !$0.status.isTerminal }.count,
-            recentJobDescription: sortedJobs.first?.toolCall.displayDescription ?? sortedJobs.first?.toolCall.name,
-            recentJobUpdatedAt: sortedJobs.first?.updatedAt
+            recentJobDescription: (activeJob ?? sortedJobs.first)?.toolCall.displayDescription
+                ?? (activeJob ?? sortedJobs.first)?.toolCall.name,
+            recentJobUpdatedAt: (activeJob ?? sortedJobs.first)?.updatedAt
         )
 
         let isWaiting = jobs.contains { $0.status == .waitingForUser }

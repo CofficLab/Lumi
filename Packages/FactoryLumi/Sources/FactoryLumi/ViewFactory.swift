@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import KernelCore
 import LumiUI
@@ -48,9 +49,9 @@ public struct DefaultViewFactory: ViewFactory {
         if let rail = kernel.resolveProvider((any RailViewProviding).self) {
             rootView.setRailView(rail.makeRailView())
             rootView.setRailViewVisible(rail.hasVisibleTabs)
-            rootView.bindRailViewVisibility(to: rail.railVisibilityPublisher)
+            rootView.bindRailViewVisibility(to: rail)
             rootView.bindRailViewWidth(
-                to: rail.railWidthPublisher,
+                to: rail,
                 onResize: rail.saveCurrentWidth
             )
         }
@@ -66,7 +67,7 @@ public struct DefaultViewFactory: ViewFactory {
             )
             trailingPane.bindVisibility(to: chat)
             trailingPane.bindWidth(
-                to: chat.chatSectionWidthPublisher,
+                to: chat,
                 onResize: chat.saveCurrentWidth
             )
             rootView.setTrailingPane(trailingPane)
@@ -162,6 +163,8 @@ private struct ThemeHostingView<Content: View>: View {
     }
 
     var body: some View {
+        let _ = refreshTick
+
         content
             .preferredColorScheme(preferredColorScheme)
             .background(backgroundColor)
@@ -172,6 +175,18 @@ private struct ThemeHostingView<Content: View>: View {
                 refreshTick.toggle()
                 DefaultViewFactory.syncLumiTheme(theme)
             }
+            #if os(macOS)
+            .onReceive(
+                DistributedNotificationCenter.default().publisher(
+                    for: Notification.Name("AppleInterfaceThemeChangedNotification")
+                )
+                .receive(on: RunLoop.main)
+            ) { _ in
+                guard theme.followsSystemAppearance else { return }
+                refreshTick.toggle()
+                DefaultViewFactory.syncLumiTheme(theme)
+            }
+            #endif
     }
 
     /// 按主题外观类型解析窗口明暗；跟随系统时使用已同步的系统明暗。

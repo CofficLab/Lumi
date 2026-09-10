@@ -1,8 +1,10 @@
 import AppKit
 import Darwin
 import LumiUI
+import ProviderAppUpdate
 import ProviderDiagnostics
 import ProviderDocsView
+import ProviderOnboarding
 import ProviderUninstall
 import SwiftUI
 import UniformTypeIdentifiers
@@ -12,6 +14,8 @@ struct GeneralSettingsDetailView: View {
     let version: String?
     let docsProvider: (any DocsViewProviding)?
     let diagnosticsProvider: (any DiagnosticsProviding)?
+    let updateProvider: (any AppUpdateChannelProviding)?
+    let onboardingProvider: (any OnboardingProviding)?
     let uninstallProvider: (any UninstallProviding)?
     let prepareForUninstall: (@MainActor () async -> Void)?
 
@@ -27,6 +31,7 @@ struct GeneralSettingsDetailView: View {
     @State private var uninstallFeedbackKind: UninstallFeedbackKind = .info
     @State private var removeKeychainCredentials = true
     @State private var removeApplication = true
+    @State private var selectedUpdateChannel: AppUpdateChannel = .stable
 
     /// App bundle 元数据（名称 / 包名 / 版本 / 构建）。
     private let bundleInfo = AppBundleInfo()
@@ -76,6 +81,9 @@ struct GeneralSettingsDetailView: View {
         .sheet(isPresented: $isPresentingUninstall) {
             uninstallSheet
         }
+        .onAppear {
+            selectedUpdateChannel = updateProvider?.channel ?? .stable
+        }
     }
 
     // MARK: - Debug Header
@@ -111,13 +119,9 @@ struct GeneralSettingsDetailView: View {
                         style: .secondary,
                         size: .small
                     ) {
-                        // 广播重放引导请求，由宿主监听并展示。
-                        NotificationCenter.default.post(
-                            name: .lumiShowOnboarding,
-                            object: nil,
-                            userInfo: [LumiOnboardingNotification.resetKey: true]
-                        )
+                        onboardingProvider?.replay()
                     }
+                    .disabled(onboardingProvider == nil)
                 }
 
                 if !manuals.isEmpty {
@@ -228,21 +232,46 @@ struct GeneralSettingsDetailView: View {
             title: LumiPluginLocalization.string("Updates", bundle: .module),
             titleAlignment: .leading
         ) {
-            AppSettingRow(
-                title: LumiPluginLocalization.string("Check for Updates", bundle: .module),
-                description: "Check whether a newer version of Lumi is available.",
-                icon: "arrow.down.circle"
-            ) {
-                AppButton(
-                    LumiPluginLocalization.string("Check...", bundle: .module),
-                    systemImage: "arrow.triangle.2.circlepath",
-                    style: .secondary,
-                    size: .small
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: LumiPluginLocalization.string("Check for Updates", bundle: .module),
+                    description: "Check whether a newer version of Lumi is available.",
+                    icon: "arrow.down.circle"
                 ) {
-                    NotificationCenter.default.post(
-                        name: Notification.Name("checkForUpdates"),
-                        object: nil
-                    )
+                    AppButton(
+                        LumiPluginLocalization.string("Check...", bundle: .module),
+                        systemImage: "arrow.triangle.2.circlepath",
+                        style: .secondary,
+                        size: .small
+                    ) {
+                        NotificationCenter.default.post(
+                            name: Notification.Name("checkForUpdates"),
+                            object: nil
+                        )
+                    }
+                }
+
+                if let updateProvider {
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    AppSettingRow(
+                        title: "更新通道",
+                        description: selectedUpdateChannel == .preview
+                            ? "获取 pre 分支发布的预览版本，可能包含未修复的问题。"
+                            : "获取 main 分支发布的稳定版本。",
+                        icon: selectedUpdateChannel == .preview ? "flask" : "checkmark.seal"
+                    ) {
+                        Picker("更新通道", selection: $selectedUpdateChannel) {
+                            Text("稳定版").tag(AppUpdateChannel.stable)
+                            Text("预览版").tag(AppUpdateChannel.preview)
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .onChange(of: selectedUpdateChannel) { _, channel in
+                            updateProvider.setChannel(channel)
+                        }
+                    }
                 }
             }
         }
@@ -558,17 +587,4 @@ struct GeneralSettingsDetailView: View {
         NSWorkspace.shared.open(url)
     }
     #endif
-}
-
-// MARK: - Onboarding 通知
-
-/// 通知名与重置 key。
-enum LumiOnboardingNotification {
-    /// 重放新手引导时置 true，宿主据此强制重置引导进度。
-    static let resetKey = "reset"
-}
-
-extension Notification.Name {
-    /// 请求展示/重放新手引导（`Onboarding.Show`）。
-    static let lumiShowOnboarding = Notification.Name("Onboarding.Show")
 }

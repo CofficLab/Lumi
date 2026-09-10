@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 
 // MARK: - Docs Entry
@@ -41,8 +40,23 @@ public struct DocsEntry: Identifiable {
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any DocsViewProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
-public protocol DocsViewProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public enum DocsViewEvent {
+    case aboutEntriesChanged
+    case manualEntriesChanged
+}
+
+@MainActor
+public protocol DocsViewObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
+public protocol DocsViewProviding: AnyObject {
+    @discardableResult
+    func addDocsViewObserver(
+        _ callback: @escaping (DocsViewEvent) -> Void
+    ) -> any DocsViewObserverHandle
+
     /// 全部「关于」条目。
     var aboutEntries: [DocsEntry] { get }
 
@@ -63,6 +77,20 @@ public protocol DocsViewProviding: AnyObject, ObservableObject
 
     /// 同时撤回指定插件的关于与说明书贡献。
     func removeEntries(id: String)
+}
+
+public extension DocsViewProviding {
+    @discardableResult
+    func addDocsViewObserver(
+        _ callback: @escaping (DocsViewEvent) -> Void
+    ) -> any DocsViewObserverHandle {
+        NoopDocsViewObserverHandle()
+    }
+}
+
+@MainActor
+private final class NoopDocsViewObserverHandle: DocsViewObserverHandle {
+    func cancel() {}
 }
 
 public extension DocsViewProviding {

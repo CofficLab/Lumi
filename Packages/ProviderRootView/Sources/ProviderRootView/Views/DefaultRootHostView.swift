@@ -4,8 +4,10 @@ import SwiftUI
 
 @MainActor
 struct DefaultRootHostView: View {
-    @ObservedObject var provider: DefaultRootViewProvider
+    let provider: DefaultRootViewProvider
     @LumiTheme private var theme
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any RootViewObserverHandle)?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -36,5 +38,21 @@ struct DefaultRootHostView: View {
         #if os(macOS)
             .ignoresSafeArea()
         #endif
+        .id(observationRevision)
+        .onAppear {
+            guard observerHandle == nil else { return }
+            observerHandle = provider.addRootViewObserver { event in
+                switch event {
+                case .toolbarViewChanged, .activityBarViewChanged:
+                    observationRevision += 1
+                default:
+                    break
+                }
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
+        }
     }
 }

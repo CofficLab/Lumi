@@ -27,7 +27,7 @@ enum ProviderScope: String, CaseIterable {
 /// 显示所有可用的 LLM 供应商，支持搜索与云端/本地切换。
 struct ProviderListView: View {
     @LumiTheme private var theme
-    @ObservedObject var box: ObservableLLMProviderManagerBox
+    let box: LLMProviderManagerBox
     @ObservedObject var usageStore: ProviderUsageStore
     @Binding var selectedProviderID: String?
     var onClose: (() -> Void)? = nil

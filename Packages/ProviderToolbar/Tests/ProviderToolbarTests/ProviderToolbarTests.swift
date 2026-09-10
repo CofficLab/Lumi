@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 import Testing
 @testable import ProviderToolbar
@@ -33,6 +32,32 @@ struct ProviderToolbarTests {
 
         #expect(provider.toolbarItems.count == 2)
         #expect(provider.toolbarItems.map(\.id) == ["a", "b"])
+    }
+
+    @Test("工具栏状态变化会发布类型化观察事件")
+    func toolbarChangesAreObservable() {
+        let provider = DefaultToolbarProviding()
+        var events: [String] = []
+        let handle = provider.addToolbarObserver { event in
+            switch event {
+            case .toolbarItemsChanged:
+                events.append("items")
+            case .visibleCategoriesChanged:
+                events.append("categories")
+            }
+        }
+
+        provider.registerToolbarItems([
+            ProviderToolbar.ToolbarItem(id: "global", title: "Global") { Text("Global") }
+        ])
+        provider.setVisibleCategories([.global])
+        provider.setVisibleCategories([])
+
+        #expect(events == ["items", "categories", "categories"])
+
+        handle.cancel()
+        provider.registerToolbarItems([])
+        #expect(events == ["items", "categories", "categories"])
     }
 
     @Test("追加工具栏项按 order 从小到大排列")
@@ -76,7 +101,7 @@ struct ProviderToolbarTests {
     @Test("自定义实现可被协议访问")
     func customProviderWorks() {
         @MainActor final class CustomToolbar: ToolbarProviding {
-            @Published var toolbarItems: [ProviderToolbar.ToolbarItem] = []
+            var toolbarItems: [ProviderToolbar.ToolbarItem] = []
 
             func registerToolbarItems(_ items: [ProviderToolbar.ToolbarItem]) {
                 toolbarItems = items

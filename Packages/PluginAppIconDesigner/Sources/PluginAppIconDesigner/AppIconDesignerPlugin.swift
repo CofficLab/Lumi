@@ -96,7 +96,6 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             if !skillProvider.isProviderRegistered(providerID: id) {
                 let contributor = AppIconDesignerSkillContributor(providerID: id)
                 skillProvider.addProvider(contributor)
-                Self.logger.info("\(Self.t)Contributed \(contributor.allSkills.count) skill(s) via SkillProviding")
             }
         }
 

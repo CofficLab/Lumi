@@ -64,7 +64,7 @@ final class ConversationProjectSyncObserver: SuperLog {
                 Self.logger.info("\(Self.t)当前对话绑定项目，切换项目到 \(projectPath, privacy: .public)")
             }
             do {
-                try await self.project.openProject(at: projectPath)
+                try await self.project.openProject(at: projectPath, reason: .conversationSwitch)
             } catch {
                 Self.logger.error("\(Self.t)切换项目失败：\(error.localizedDescription, privacy: .public)")
             }

@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 import ProviderConversation
 import ProviderMessage
 import SwiftUI
@@ -30,25 +29,67 @@ public struct MessageRendererItem: Identifiable, Sendable {
 }
 
 @MainActor
-public protocol MessageRenderingProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public enum MessageRenderingEvent {
+    case renderersChanged
+}
+
+@MainActor
+public protocol MessageRenderingObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
+public protocol MessageRenderingProviding: AnyObject {
     var allRenderers: [MessageRendererItem] { get }
+    @discardableResult
+    func addMessageRenderingObserver(
+        _ callback: @escaping (MessageRenderingEvent) -> Void
+    ) -> any MessageRenderingObserverHandle
     func register(_ renderer: MessageRendererItem)
     func unregister(id: String)
     func renderer(for message: Message) -> MessageRendererItem?
 }
 
+public extension MessageRenderingProviding {
+    @discardableResult
+    func addMessageRenderingObserver(
+        _ callback: @escaping (MessageRenderingEvent) -> Void
+    ) -> any MessageRenderingObserverHandle {
+        NoopMessageRenderingObserverHandle()
+    }
+}
+
 @MainActor
-public final class DefaultMessageRenderingProviding: MessageRenderingProviding, ObservableObject {
-    @Published public private(set) var allRenderers: [MessageRendererItem] = []
+private final class NoopMessageRenderingObserverHandle: MessageRenderingObserverHandle {
+    func cancel() {}
+}
+
+@MainActor
+public final class DefaultMessageRenderingProviding: MessageRenderingProviding {
+    public private(set) var allRenderers: [MessageRendererItem] = []
+    private var observers: [UUID: (MessageRenderingEvent) -> Void] = [:]
     public init() {}
+
+    @discardableResult
+    public func addMessageRenderingObserver(
+        _ callback: @escaping (MessageRenderingEvent) -> Void
+    ) -> any MessageRenderingObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
     public func register(_ renderer: MessageRendererItem) {
         allRenderers.removeAll { $0.id == renderer.id }
         allRenderers.append(renderer)
         allRenderers.sort { $0.order > $1.order }
+        notify(.renderersChanged)
     }
     public func unregister(id: String) {
         allRenderers.removeAll { $0.id == id }
+        notify(.renderersChanged)
     }
     public func renderer(for message: Message) -> MessageRendererItem? {
         if let preferredID = message.preferredRendererID,
@@ -56,5 +97,22 @@ public final class DefaultMessageRenderingProviding: MessageRenderingProviding, 
             return preferred
         }
         return allRenderers.first { $0.canRender(message) }
+    }
+
+    private func notify(_ event: MessageRenderingEvent) {
+        observers.values.forEach { $0(event) }
+    }
+
+    private final class ObserverHandle: MessageRenderingObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
+        }
     }
 }

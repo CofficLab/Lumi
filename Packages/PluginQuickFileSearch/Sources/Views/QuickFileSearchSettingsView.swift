@@ -3,8 +3,6 @@ import SwiftUI
 
 /// 快速文件搜索设置视图
 public struct QuickFileSearchSettingsView: View {
-    @LumiUI.LumiTheme private var theme: any LumiUITheme
-
     private let projectPath: String
 
     public init(projectPath: String) {
@@ -12,98 +10,84 @@ public struct QuickFileSearchSettingsView: View {
     }
 
     public var body: some View {
-        PluginSettingsScaffold(
-            title: LumiPluginLocalization.string("Quick File Search", bundle: .module),
-            subtitle: LumiPluginLocalization.string("Fast file search with Cmd+P", bundle: .module),
-            showHeader: false
-        ) {
-            statusCard
-            instructionsCard
+        AppSettingsContentScaffold(maxContentWidth: nil) {
+            VStack(alignment: .leading, spacing: 24) {
+                statusSection
+                instructionsSection
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    private var statusCard: some View {
-        AppCard {
-            AppSettingsSection(
-                title: LumiPluginLocalization.string("Current Status", bundle: .module),
-                spacing: 12
-            ) {
-                AppSettingsRow {
-                    HStack(spacing: 12) {
-                        Image(systemName: projectPath.isEmpty ? "circle" : "checkmark.circle.fill")
-                            .font(.appTitle)
-                            .foregroundColor(projectPath.isEmpty ? theme.warning : theme.success)
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            if projectPath.isEmpty {
-                                Text(LumiPluginLocalization.string("No project selected", bundle: .module))
-                                    .font(.appBody)
-                                    .foregroundColor(theme.textPrimary)
-                                Text(LumiPluginLocalization.string("Please select a project to enable file search", bundle: .module))
-                                    .font(.appCaption)
-                                    .foregroundColor(theme.textSecondary)
-                            } else {
-                                Text(LumiPluginLocalization.string("Project indexed", bundle: .module))
-                                    .font(.appBody)
-                                    .foregroundColor(theme.textPrimary)
-                                Text(URL(fileURLWithPath: projectPath).lastPathComponent)
-                                    .font(.appCaption)
-                                    .foregroundColor(theme.textSecondary)
-                            }
-                        }
-
-                        Spacer()
-                    }
+    private var statusSection: some View {
+        AppSettingSection(
+            title: LumiPluginLocalization.string("Current Status", bundle: .module),
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: projectPath.isEmpty
+                        ? LumiPluginLocalization.string("No project selected", bundle: .module)
+                        : LumiPluginLocalization.string("Project indexed", bundle: .module),
+                    description: projectPath.isEmpty
+                        ? LumiPluginLocalization.string("Please select a project to enable file search", bundle: .module)
+                        : URL(fileURLWithPath: projectPath).lastPathComponent,
+                    icon: projectPath.isEmpty ? "circle" : "checkmark.circle.fill"
+                ) {
+                    EmptyView()
                 }
 
                 if !projectPath.isEmpty {
-                    HStack(spacing: 8) {
-                        Image(systemName: "info.circle")
-                            .foregroundColor(theme.info)
-                        Text(LumiPluginLocalization.string("File indexing is automatic when switching projects", bundle: .module))
-                            .font(.appCaption)
-                            .foregroundColor(theme.textSecondary)
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    AppSettingRow(
+                        title: LumiPluginLocalization.string("File indexing is automatic when switching projects", bundle: .module),
+                        icon: "info.circle"
+                    ) {
+                        EmptyView()
                     }
-                    .padding(.horizontal, 8)
                 }
             }
         }
     }
 
-    private var instructionsCard: some View {
-        AppCard {
-            AppSettingsSection(
-                title: LumiPluginLocalization.string("How to Use", bundle: .module),
-                spacing: 8
-            ) {
-                instructionRow(key: "Cmd+P", description: LumiPluginLocalization.string("Open file search", bundle: .module))
-                instructionRow(key: "↑ ↓", description: LumiPluginLocalization.string("Navigate results", bundle: .module))
-                instructionRow(key: "Enter", description: LumiPluginLocalization.string("Select file", bundle: .module))
-                instructionRow(key: "Esc", description: LumiPluginLocalization.string("Close search", bundle: .module))
+    private var instructionsSection: some View {
+        AppSettingSection(
+            title: LumiPluginLocalization.string("How to Use", bundle: .module),
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
+                instructionRow(
+                    key: "Cmd+P",
+                    description: LumiPluginLocalization.string("Open file search", bundle: .module),
+                    icon: "command"
+                )
+                Divider().padding(.vertical, 8)
+                instructionRow(
+                    key: "↑ ↓",
+                    description: LumiPluginLocalization.string("Navigate results", bundle: .module),
+                    icon: "arrow.up.arrow.down"
+                )
+                Divider().padding(.vertical, 8)
+                instructionRow(
+                    key: "Enter",
+                    description: LumiPluginLocalization.string("Select file", bundle: .module),
+                    icon: "return"
+                )
+                Divider().padding(.vertical, 8)
+                instructionRow(
+                    key: "Esc",
+                    description: LumiPluginLocalization.string("Close search", bundle: .module),
+                    icon: "escape"
+                )
             }
         }
     }
 
-    private func instructionRow(key: String, description: String) -> some View {
-        AppSettingsRow(verticalPadding: 6) {
-            HStack(spacing: 12) {
-                Text(key)
-                    .font(.appBody)
-                    .fontDesign(.monospaced)
-                    .foregroundColor(theme.textPrimary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(theme.appAccentSoftFill)
-                    )
-
-                Text(description)
-                    .font(.appBody)
-                    .foregroundColor(theme.textSecondary)
-
-                Spacer()
-            }
+    private func instructionRow(key: String, description: String, icon: String) -> some View {
+        AppSettingRow(title: description, icon: icon) {
+            AppTag(key, style: .subtle)
         }
     }
 }

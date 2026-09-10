@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginOnboarding",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "PluginOnboarding", targets: ["PluginOnboarding"]),
     ],
@@ -12,8 +12,8 @@ let package = Package(
         .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../ProviderOnboarding"),
-        .package(path: "../ProviderLLMManager"),
-        .package(path: "../KitLLM"),
+        .package(path: "../ProviderRootView"),
+        .package(path: "../ProviderStorage"),
         .package(path: "../KitLocalization"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
     ],
@@ -24,8 +24,8 @@ let package = Package(
                 "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
-                .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
-                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ],
@@ -37,6 +37,8 @@ let package = Package(
                 "PluginOnboarding",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
+                .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
             ]
         ),
     ]

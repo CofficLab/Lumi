@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import SwiftUI
 
@@ -170,14 +169,8 @@ public protocol RailViewProviding: AnyObject {
     /// 不要求上层了解具体的 tab 分类或过滤规则。
     var hasVisibleTabs: Bool { get }
 
-    /// 可见 tab 状态变化发布器。
-    var railVisibilityPublisher: AnyPublisher<Bool, Never> { get }
-
     /// 当前 Rail 宽度（可能是插件推荐值，也可能是用户保存值）。
     var railWidth: RailViewWidth { get }
-
-    /// Rail 宽度变化发布器。
-    var railWidthPublisher: AnyPublisher<RailViewWidth, Never> { get }
 
     /// 注入 Rail tab 项（替换当前全部项）。
     func registerTabs(_ tabs: [RailTabItem])
@@ -238,15 +231,7 @@ public extension RailViewProviding {
 
     var hasVisibleTabs: Bool { !tabs.isEmpty }
 
-    var railVisibilityPublisher: AnyPublisher<Bool, Never> {
-        Just(hasVisibleTabs).eraseToAnyPublisher()
-    }
-
     var railWidth: RailViewWidth { .standard }
-
-    var railWidthPublisher: AnyPublisher<RailViewWidth, Never> {
-        Just(railWidth).eraseToAnyPublisher()
-    }
 
     func addTabs(_ newTabs: [RailTabItem]) {
         var merged = tabs

@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import ProviderAgentLoop
 
@@ -98,8 +97,7 @@ public protocol ConversationStateObserverHandle: AnyObject {
 }
 
 @MainActor
-public protocol ConversationStateProviding: AnyObject, ObservableObject
-where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol ConversationStateProviding: AnyObject {
     func state(for conversationID: UUID) -> ConversationStateSnapshot
     var states: [UUID: ConversationStateSnapshot] { get }
 

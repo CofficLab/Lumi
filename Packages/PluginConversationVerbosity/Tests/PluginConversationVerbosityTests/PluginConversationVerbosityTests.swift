@@ -39,15 +39,22 @@ struct PluginConversationVerbosityTests {
         #expect(conversations.globalVerbosity == .brief)
     }
 
-    @Test("ObservationBox 在 conversation 变化时递增 revision")
-    func observationBoxTracksRevision() throws {
+    @Test("ObservationBox 转发 conversation typed events 并支持取消")
+    func observationBoxForwardsTypedEvents() throws {
         let conversations = DefaultConversationManager()
         let adapter = ConversationVerbosityCapabilityAdapter(conversations: conversations)
         let box = ConversationManagerObservationBox(capability: adapter)
+        var eventCount = 0
+        let handle = box.addObserver { _ in eventCount += 1 }
 
-        #expect(box.revision == 0)
         _ = try conversations.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil)
-        #expect(box.revision > 0)
+        #expect(eventCount > 0)
+
+        handle.cancel()
+        let countAfterCancel = eventCount
+        conversations.setGlobalVerbosity(.detailed)
+        #expect(eventCount == countAfterCancel)
+
         box.cancel()
     }
 }

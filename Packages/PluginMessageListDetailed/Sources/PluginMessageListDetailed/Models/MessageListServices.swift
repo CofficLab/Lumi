@@ -2,6 +2,7 @@ import Foundation
 import ProviderChatSection
 import ProviderConversation
 import ProviderConversationState
+import ProviderDeveloperMode
 import ProviderMessage
 
 /// 新版 PluginMessageList 的服务容器。
@@ -14,6 +15,7 @@ import ProviderMessage
 struct MessageListServices {
     let conversations: (any MessageListConversationCapability)?
     let conversationState: (any MessageListConversationStateCapability)?
+    let developerMode: (any DeveloperModeProviding)?
     let messages: (any MessageListMessageCapability)?
     let rendering: (any MessageListRenderingCapability)?
     let streaming: (any MessageListStreamingCapability)?

@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "EditorTextView",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         // A Fast, Efficient text view for code.
         .library(

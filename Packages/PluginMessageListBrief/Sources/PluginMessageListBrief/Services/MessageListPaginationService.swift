@@ -9,22 +9,18 @@ import ProviderMessage
 ///
 /// 与旧版一致：取数前先**剔除独立的 `.tool` 结果行**（旧版 `messagePage` 默认
 /// `includesToolMessages=false`，工具结果消息从不进入 UI 分页窗口；工具信息由
-/// 助手消息内联的 toolCalls 呈现）。`MessageListRowBuilder` 再做一层展示兜底。
+/// 助手消息内联的 toolCalls 呈现）。渲染层再做一层展示兜底。
 ///
 /// 1. **首屏加载** —— 加载最近一页（pageSize 条），并探测是否还有更早消息。
 /// 2. **向上翻页** —— 在当前最早一条之前加载更早一页并 prepend。
 /// 3. **尾部刷新** —— 重新取最近一页，与当前 `messages` 比对并覆盖尾部重叠区；
 ///    无重叠且用户正在翻历史时不强行覆盖（避免破坏视觉位置）。
-/// 4. **窗口回收** —— 超过 `maxRetainedCount` 时丢弃尾部（较新、远离可视区的），
-///    仅在用户**不在底部**时执行（避免裁掉正在流式的尾部）。
 @MainActor
 struct MessageListPaginationService {
     let pageSize: Int
-    let maxRetainedCount: Int
 
-    init(pageSize: Int = 40, maxRetainedCount: Int = 300) {
+    init(pageSize: Int = 40) {
         self.pageSize = pageSize
-        self.maxRetainedCount = maxRetainedCount
     }
 
     /// 加载首屏（最近一页）+ 是否还有更早消息。
@@ -70,11 +66,7 @@ struct MessageListPaginationService {
             beforeMessageID: earlier.first?.id,
             includesToolMessages: false
         )
-        return LoadEarlierResult(
-            anchorID: currentFirstID,
-            earlier: earlier,
-            hasEarlierMessages: stillHasEarlier
-        )
+        return LoadEarlierResult(earlier: earlier, hasEarlierMessages: stillHasEarlier)
     }
 
     /// 尾部刷新：用最近一页覆盖 `messages` 尾部，保留头部更早的历史。
@@ -116,17 +108,6 @@ struct MessageListPaginationService {
         return nil
     }
 
-    /// 窗口回收：超过 `maxRetainedCount` 时丢弃尾部较新消息。
-    /// **仅在用户不在底部时执行**（`isAtBottom == false`）——防止裁掉正在流式的尾部。
-    func evictTailIfNeeded(
-        messages: [Message], isAtBottom: Bool
-    ) -> [Message] {
-        guard messages.count > maxRetainedCount, !isAtBottom else { return messages }
-        let overflow = messages.count - maxRetainedCount
-        var trimmed = messages
-        trimmed.removeLast(overflow)
-        return trimmed
-    }
 }
 
 // MARK: - Results
@@ -137,10 +118,8 @@ struct LoadFirstPageResult: Sendable {
     let hasEarlierMessages: Bool
 }
 
-/// `loadEarlier` 的返回结构。`anchorID` 是 prepend 前最早一条消息的 id，
-/// UI 应在 prepend 后把它钉回视口顶部。
+/// `loadEarlier` 的返回结构。
 struct LoadEarlierResult: Sendable {
-    let anchorID: UUID
     let earlier: [Message]
     let hasEarlierMessages: Bool
 }

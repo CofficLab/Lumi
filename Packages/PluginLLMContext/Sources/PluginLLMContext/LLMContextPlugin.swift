@@ -29,6 +29,8 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
     )
 
     private var provider: LLMContextProvider?
+    /// `turnFinished` 钩子（见 `Hooks/LLMContextTurnFinishedHook.swift`）。
+    private var turnFinishedHook: LLMContextTurnFinishedHook?
 
     public init() {}
 
@@ -63,14 +65,16 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
         kernel.unregisterProvider((any LLMContextProviding).self)
         try kernel.registerProvider((any LLMContextProviding).self, provider)
 
+        let hook = LLMContextTurnFinishedHook(provider: provider)
+        turnFinishedHook = hook
         kernel.resolveProvider((any LifecycleHooksProviding).self)?
-            .addTurnFinishedHook { [weak provider] context in
-                guard context.endReason == .completed else { return }
-                provider?.scheduleBackgroundCompaction(for: context.conversationID)
+            .addTurnFinishedHook { [weak hook] context in
+                hook?.apply(to: context)
             }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        turnFinishedHook = nil
         provider?.shutdown()
         provider = nil
         kernel.unregisterProvider((any LLMContextProviding).self)

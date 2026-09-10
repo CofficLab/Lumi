@@ -1,14 +1,15 @@
-import Combine
 import ProviderConversation
 import ProviderToast
 import SwiftUI
 
 /// 自动化级别 chip：显示当前会话的 automationLevel，点击弹出三档选择。
 struct AutomationLevelToolbarView: View {
-    @ObservedObject private var conversationObservation: ConversationManagerObservationBox
+    private let conversationObservation: ConversationManagerObservationBox
     let toast: (any ToastProviding)?
 
     @State private var isPopoverPresented = false
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any ConversationManagerObservationBox.ObserverHandle)?
 
     init(observation: ConversationManagerObservationBox, toast: (any ToastProviding)? = nil) {
         self.conversationObservation = observation
@@ -27,7 +28,7 @@ struct AutomationLevelToolbarView: View {
     }
 
     var body: some View {
-        let _ = conversationObservation.revision
+        let _ = observationRevision
         Button {
             isPopoverPresented.toggle()
         } label: {
@@ -49,6 +50,16 @@ struct AutomationLevelToolbarView: View {
                 updateAutomationLevel(level)
                 isPopoverPresented = false
             }
+        }
+        .onAppear {
+            guard observerHandle == nil else { return }
+            observerHandle = conversationObservation.addObserver { _ in
+                observationRevision &+= 1
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
         }
     }
 

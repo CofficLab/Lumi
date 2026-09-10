@@ -5,11 +5,14 @@ import SwiftUI
 /// 缓存命中率工具栏视图。
 struct CacheHitRateToolbarView: View {
     let messages: any MessageManaging
-    @ObservedObject var state: CacheHitRateToolbarState
+    let state: CacheHitRateToolbarState
 
     @State private var stats = CacheHitRateStats.empty
     @State private var unavailabilityReason: CacheHitRateUnavailability = .noConversationSelected
     @State private var isPopoverPresented = false
+    @State private var selectedConversationID: UUID?
+    @State private var messageRefreshRevision = 0
+    @State private var observerHandle: (any CacheHitRateToolbarState.ObserverHandle)?
 
     var body: some View {
         Button {
@@ -39,15 +42,31 @@ struct CacheHitRateToolbarView: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             CacheHitRatePopover(stats: stats, unavailabilityReason: unavailabilityReason)
         }
-        .onChange(of: state.selectedConversationID) { _, newValue in
+        .onChange(of: selectedConversationID) { _, newValue in
             if newValue == nil {
                 isPopoverPresented = false
             }
         }
-        .task(id: "\(state.selectedConversationID?.uuidString ?? "nil")-\(state.messageRefreshRevision)") {
+        .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(messageRefreshRevision)") {
             try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled else { return }
             await refresh()
+        }
+        .onAppear {
+            guard observerHandle == nil else { return }
+            selectedConversationID = state.selectedConversationID
+            observerHandle = state.addObserver { event in
+                switch event {
+                case let .selectedConversationChanged(id):
+                    selectedConversationID = id
+                case .messagesChanged:
+                    messageRefreshRevision &+= 1
+                }
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
         }
     }
 
@@ -71,13 +90,13 @@ struct CacheHitRateToolbarView: View {
     }
 
     private func refresh() async {
-        guard let conversationID = state.selectedConversationID else {
+        guard let conversationID = selectedConversationID else {
             stats = .empty
             unavailabilityReason = .noConversationSelected
             return
         }
         let snapshot = await messages.messagesSnapshot(in: conversationID)
-        guard conversationID == state.selectedConversationID else { return }
+        guard conversationID == selectedConversationID else { return }
         stats = CacheHitRateStats.compute(messages: snapshot)
         if stats.sampleCount > 0 {
             unavailabilityReason = .waitingForResponse

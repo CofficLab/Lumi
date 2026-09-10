@@ -12,7 +12,18 @@
 6.	提交 Apple Notarization
 7.	Staple 公证票据并执行 Gatekeeper 验证
 8.	自动创建 GitHub Release 并上传 DMG
-9.	`main` 发布会生成 stable release 和 appcast；`pre` 发布会生成 prerelease
+9.	`main` 发布会生成 stable release 和 stable appcast；`pre` 发布会生成 prerelease 和 preview appcast
+
+### 更新通道
+
+直营版用户可以在「设置 → 通用 → 更新 → 更新通道」中选择：
+
+- `稳定版`：读取 `https://s.kuaiyizhi.cn/lumi/appcast-*.xml`，对应 `main`。
+- `预览版`：读取 `https://s.kuaiyizhi.cn/lumi/pre/appcast-*.xml`，对应 `pre`，可能包含未修复的问题。
+
+两个通道分别存放 DMG 和 appcast。preview 不使用 GitHub Releases 的 `latest` fallback，因为 GitHub 的 `latest` 不包含 prerelease；preview 的 fallback 是 `pre` 分支中提交的架构 appcast。
+
+Sparkle 的构建号使用 GitHub Actions release workflow 的全局 `run_number`，保证 `pre` 和 `main` 不会生成相同的数字版本，避免切换通道时被 Sparkle 错误地判定为同一版本。
 
 ## 二、需要准备的东西
 

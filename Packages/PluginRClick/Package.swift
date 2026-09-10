@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginRClick",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginRClick", targets: ["RClickPlugin"])],
     dependencies: [
         .package(path: "../KernelCore"),

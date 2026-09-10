@@ -5,53 +5,57 @@ import SwiftUI
 
 /// V1 中一个完整的 AgentTurn。
 ///
-/// List 只负责排列多个本视图；用户消息、Status、工具过程、流式消息和最终结果
-/// 都在这里完成组合与阶段切换。pending Turn 使用用户消息 ID，真实 Turn 使用
-/// turnID，确保多个历史/子 Turn 在列表中始终拥有唯一身份。
+/// List 只负责排列多个本视图；用户消息、工具过程、流式消息和最终结果
+/// 都在这里完成组合。当前对话状态由消息列表尾部的 ConversationStateView 展示。
+/// pending Turn 使用用户消息 ID，真实 Turn 使用 turnID，确保多个历史/子 Turn
+/// 在列表中始终拥有唯一身份。
 struct AgentTurnView: View {
     let services: MessageListServices
     let item: AgentTurnPresentationItem
-    let lastAgentTurnID: UUID?
     let verbosity: ResponseVerbosity
+    let isDeveloperModeEnabled: Bool
 
-    @ObservedObject private var viewModel: AgentTurnViewModel
+    @ObservedObject private var turnVM: AgentTurnVM
+    let onDynamicContentChange: (@MainActor () -> Void)?
     @State private var isProcessExpanded = false
 
     init(
         services: MessageListServices,
         item: AgentTurnPresentationItem,
-        lastAgentTurnID: UUID?,
         verbosity: ResponseVerbosity,
-        viewModel: AgentTurnViewModel
+        isDeveloperModeEnabled: Bool,
+        turnVM: AgentTurnVM,
+        onDynamicContentChange: (@MainActor () -> Void)? = nil
     ) {
         self.services = services
         self.item = item
-        self.lastAgentTurnID = lastAgentTurnID
         self.verbosity = verbosity
-        _viewModel = ObservedObject(wrappedValue: viewModel)
+        self.isDeveloperModeEnabled = isDeveloperModeEnabled
+        _turnVM = ObservedObject(wrappedValue: turnVM)
+        self.onDynamicContentChange = onDynamicContentChange
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(viewModel.projection.userMessages) { message in
+            ForEach(turnVM.projection.userMessages) { message in
                 messageRow(message)
             }
 
-            if !viewModel.projection.processMessages.isEmpty {
+            if item.isShowingProcess || !turnVM.projection.processMessages.isEmpty {
                 processDisclosure
             }
 
-            if let lastMessage = viewModel.projection.lastMessage {
+            if let lastMessage = turnVM.projection.lastMessage {
                 messageRow(lastMessage)
             }
 
-            if isConversationTail, let activityMessage = viewModel.projection.activityMessage {
-                messageRow(activityMessage)
-            }
         }
-        .task { await viewModel.activate() }
+        .task { await turnVM.activate() }
         .onChange(of: item) { _, newItem in
-            Task { await viewModel.update(item: newItem) }
+            Task { await turnVM.update(item: newItem) }
+        }
+        .onChange(of: turnVM.projection) { _, _ in
+            onDynamicContentChange?()
         }
     }
 
@@ -67,7 +71,7 @@ struct AgentTurnView: View {
 
             if isProcessExpanded {
                 VStack(alignment: .leading, spacing: 8) {
-                    ForEach(viewModel.projection.processMessages) { message in
+                    ForEach(turnVM.projection.processMessages) { message in
                         messageRow(message)
                     }
                 }
@@ -88,9 +92,10 @@ struct AgentTurnView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: isProcessExpanded ? "chevron.down" : "chevron.right")
-                        Text(AgentTurnViewModel.processDisclosureTitle(
+                        Text(AgentTurnVM.processDisclosureTitle(
                             item: item,
-                            userMessages: viewModel.projection.userMessages,
+                            userMessages: turnVM.projection.userMessages,
+                            processMessages: turnVM.projection.processMessages,
                             now: now
                         ))
                     }
@@ -120,16 +125,12 @@ struct AgentTurnView: View {
         }
     }
 
-    /// List 只提供尾部身份；消息与活动状态仍由本 Turn 自行获取。
-    private var isConversationTail: Bool {
-        item.id == lastAgentTurnID
-    }
-
     private func messageRow(_ message: Message) -> some View {
         MessageRowView(
             services: services,
             message: message,
-            verbosity: verbosity
+            verbosity: verbosity,
+            isDeveloperModeEnabled: isDeveloperModeEnabled
         )
         .id(message.id)
     }

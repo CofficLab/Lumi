@@ -47,6 +47,15 @@ extension AgentLoopManager {
         messages.updateToolCallResult(result, toolCallID: toolCallID, assistantMessageID: assistantMessage.id, in: conversationID)
         if let pending = (await messages.messagesSnapshot(in: conversationID)).last(where: { $0.role == .tool && $0.toolCallID == toolCallID }) {
             messages.updateMessage(id: pending.id, in: conversationID, content: result.content)
+        } else {
+            // ask_user 等交互工具的挂起结果只保存在 assistant.toolCalls 中；
+            // 恢复时必须补一条 role=tool，才能满足 OpenAI 兼容接口的工具协议。
+            insertToolResultMessage(
+                result,
+                toolCallID: toolCallID,
+                conversationID: conversationID,
+                turnID: turnID
+            )
         }
         runtime.pendingSuspensions.removeValue(forKey: toolCallID)
         // Reducer 的 toolCallCompleted 事件只接受 executingTools；恢复时把

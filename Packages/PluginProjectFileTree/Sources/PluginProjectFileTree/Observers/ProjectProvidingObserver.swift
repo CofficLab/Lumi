@@ -24,7 +24,7 @@ final class ProjectProvidingObserver: SuperLog {
         self.viewModel = viewModel
         viewModel.updateCurrentProject(project.currentProject)
         observer = project.addObserver { [weak self] event in
-            guard case let .currentProjectChanged(project) = event else { return }
+            guard case let .currentProjectChanged(project, _) = event else { return }
             self?.viewModel?.updateCurrentProject(project)
             onProjectChange?(project)
         }

@@ -3,6 +3,7 @@ import Testing
 import KernelCore
 import KitAgentTool
 import ProviderConversation
+import ProviderChatSection
 import ProviderMessage
 import KitLLM
 import ProviderAgentLoop
@@ -40,9 +41,93 @@ private final class ScriptedLLMManager: LLMManaging {
     func select(providerID: String, model: String?) {}
 }
 
+@MainActor
+private final class EmptyLLMProvider: SuperLLMProvider, @unchecked Sendable {
+    let providerID = "empty"
+    let providerInfo = LLMProviderInfo(
+        id: "empty",
+        displayName: "Empty",
+        defaultModel: "",
+        models: [],
+        isLocal: true
+    )
+
+    func complete(_ request: LLMRequest) async throws -> LLMResponse {
+        LLMResponse(content: "")
+    }
+}
+
 @Suite("AskUserPlugin")
 @MainActor
 struct AskUserPluginTests {
+    @Test("V1 只显示当前会话的 userInput 挂起问题")
+    func pendingInteractionVisibility() throws {
+        let conversationID = UUID()
+        let response = AskUserPendingResponse(
+            toolCallId: "ask_user",
+            question: "继续吗?",
+            options: [AskUserOption(label: "是"), AskUserOption(label: "否")],
+            mode: "yes_no",
+            conversationId: conversationID.uuidString,
+            verbosity: "standard"
+        )
+        let interaction = AskUserPendingInteraction(
+            response: response,
+            toolCallID: "call-1",
+            conversationID: conversationID,
+            initialAnswer: nil
+        )
+
+        #expect(AskUserPendingInteraction.shouldShow(
+            verbosity: .brief,
+            selectedConversationID: conversationID,
+            interaction: interaction
+        ))
+        #expect(!AskUserPendingInteraction.shouldShow(
+            verbosity: .standard,
+            selectedConversationID: conversationID,
+            interaction: interaction
+        ))
+        #expect(!AskUserPendingInteraction.shouldShow(
+            verbosity: .brief,
+            selectedConversationID: UUID(),
+            interaction: interaction
+        ))
+    }
+
+    @Test("从 userInput suspension 解码问题并保留真实 tool call ID")
+    func suspensionPayloadDecoding() throws {
+        let conversationID = UUID()
+        let response = AskUserPendingResponse(
+            toolCallId: "ask_user",
+            question: "选哪个?",
+            options: [AskUserOption(label: "Debug")],
+            mode: "choice",
+            conversationId: conversationID.uuidString,
+            verbosity: "standard"
+        )
+        let payload = String(data: try JSONEncoder().encode(response), encoding: .utf8)!
+        let suspension = AgentLoopSuspension(
+            suspensionID: "userInput:call-2",
+            conversationID: conversationID,
+            toolCallID: "call-2",
+            kind: "userInput",
+            payload: payload
+        )
+
+        let interaction = try #require(AskUserPendingInteraction.from(suspension: suspension))
+        #expect(interaction.toolCallID == "call-2")
+        #expect(interaction.response.question == "选哪个?")
+        #expect(interaction.response.options.map(\.label) == ["Debug"])
+        #expect(AskUserPendingInteraction.from(suspension: AgentLoopSuspension(
+            suspensionID: "other",
+            conversationID: conversationID,
+            toolCallID: "call-2",
+            kind: "authorization",
+            payload: payload
+        )) == nil)
+    }
+
     @Test("yes_no 模式：返回是/否选项且挂起等待回答")
     func yesNoMode() async throws {
         let tool = AskUserTool()
@@ -120,15 +205,28 @@ struct AskUserPluginTests {
         let kernel = KernelCoreContainer()
         let conversations = DefaultConversationManager()
         let toolManager = DefaultToolManagerProviding()
+        let chat = DefaultChatSectionProviding()
+        let messages = DefaultMessageManager()
+        let agentLoop = DefaultAgentLoopProvider(
+            messages: messages,
+            llmManager: ScriptedLLMManager(provider: EmptyLLMProvider()),
+            toolManager: toolManager,
+            streaming: DefaultMessageStreamingProviding(),
+            conversations: conversations
+        )
         try kernel.registerProvider((any ConversationManaging).self, conversations)
         try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
+        try kernel.registerProvider((any ChatSectionProviding).self, chat)
+        try kernel.registerProvider((any AgentLoopProviding).self, agentLoop)
 
         let plugin = AskUserPlugin()
         try plugin.onBoot(kernel: kernel)
         #expect(toolManager.tool(named: "ask_user") != nil)
+        #expect(chat.items.contains { $0.id == "com.coffic.lumi.plugin.ask-user.pending-question" })
 
         try plugin.onShutdown(kernel: kernel)
         #expect(toolManager.tool(named: "ask_user") == nil)
+        #expect(!chat.items.contains { $0.id == "com.coffic.lumi.plugin.ask-user.pending-question" })
     }
 
     @Test("ask_user 工具经 AgentLoop 挂起后可恢复（端到端）")
@@ -189,5 +287,10 @@ struct AskUserPluginTests {
         )
         #expect(resumed == .completed)
         #expect(messages.lastMessage(in: conversationID)?.content == "好的，继续")
+        let toolMessages = await messages.messagesSnapshot(in: conversationID).filter { message in
+            message.role == .tool && message.toolCallID == "ask-1"
+        }
+        #expect(toolMessages.count == 1)
+        #expect(toolMessages.first?.content == "是")
     }
 }

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="920" viewBox="0 0 1440 920">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F8F8F6"/>
+      <stop offset="0.52" stop-color="#FFF8E8"/>
+      <stop offset="1" stop-color="#F1F2FA"/>
+    </linearGradient>
+    <radialGradient id="yellowGlow" cx="0.18" cy="0.38" r="0.56">
+      <stop offset="0" stop-color="#F4B942" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#F4B942" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lavenderGlow" cx="0.86" cy="0.56" r="0.5">
+      <stop offset="0" stop-color="#8A82D8" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#8A82D8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1440" height="920" fill="url(#bg)"/>
+  <rect width="1440" height="920" fill="url(#yellowGlow)"/>
+  <rect width="1440" height="920" fill="url(#lavenderGlow)"/>
+
+  <g opacity="0.17" stroke="#A3A6B4" stroke-width="1">
+    <path d="M0 164H1440M0 328H1440M0 492H1440M0 656H1440M0 820H1440"/>
+    <path d="M180 0V920M360 0V920M540 0V920M720 0V920M900 0V920M1080 0V920M1260 0V920"/>
+  </g>
+
+  <g transform="translate(82 72)">
+    <text x="0" y="62" fill="#30343B" font-family="-apple-system, BlinkMacSystemFont, Helvetica Neue, sans-serif" font-size="48" font-weight="700">A calmer workspace for AI.</text>
+    <text x="2" y="100" fill="#69717D" font-family="-apple-system, BlinkMacSystemFont, Helvetica Neue, sans-serif" font-size="22">Move Lumi to Applications to get started.</text>
+  </g>
+</svg>

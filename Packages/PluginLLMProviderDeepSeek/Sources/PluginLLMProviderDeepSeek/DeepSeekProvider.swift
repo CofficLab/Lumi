@@ -13,10 +13,10 @@ public final class DeepSeekProvider: VendorLLMProvider {
                 id: "deepseek",
                 displayName: "DeepSeek",
                 description: "DeepSeek AI",
-                defaultModel: "deepseek-v4-flash",
+                defaultModel: "deepseek-flash",
                 models: [
-                    LLMModelInfo(id: "deepseek-v4-flash", contextWindowSize: 1_000_000, supportsVision: false),
-                    LLMModelInfo(id: "deepseek-v4-pro", contextWindowSize: 1_000_000, supportsVision: false),
+                    LLMModelInfo(id: "deepseek-flash", displayName: "DeepSeek-V4.1-Flash", contextWindowSize: 1_000_000, supportsVision: false),
+                    LLMModelInfo(id: "deepseek-v4-pro", displayName: "DeepSeek-V4-Pro-0813", contextWindowSize: 1_000_000, supportsVision: false),
                 ],
                 websiteURL: URL(string: "https://www.deepseek.com/")!,
                 apiFormat: .openAI,

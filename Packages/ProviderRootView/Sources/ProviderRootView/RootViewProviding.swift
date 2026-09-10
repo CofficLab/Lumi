@@ -25,8 +25,35 @@ import ProviderRailView
 /// 使用 `AnyView` 而非 `associatedtype`：协议可无泛型约束地作为存在类型
 /// （`any RootViewProviding`）注册进 KernelCore 的 `[ObjectIdentifier: Any]` 注册表。
 @MainActor
-public protocol RootViewProviding: AnyObject, ObservableObject
-    where ObjectWillChangePublisher == ObservableObjectPublisher {
+public enum RootViewEvent {
+    case overlaysChanged
+    case toolbarViewChanged
+    case activityBarViewChanged
+    case railViewChanged
+    case railViewVisibilityChanged(Bool)
+    case railWidthChanged(RailViewWidth)
+    case contentHeaderViewChanged
+    case contentHeaderVisibilityChanged(Bool)
+    case contentViewChanged
+    case contentViewVisibilityChanged(Bool)
+    case contentFooterViewChanged
+    case contentFooterVisibilityChanged(Bool)
+    case contentFooterHeightChanged(ContentFooterHeight)
+    case trailingPaneChanged
+}
+
+@MainActor
+public protocol RootViewObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
+public protocol RootViewProviding: AnyObject {
+    @discardableResult
+    func addRootViewObserver(
+        _ callback: @escaping (RootViewEvent) -> Void
+    ) -> any RootViewObserverHandle
+
     /// 根视图叠层贡献（例如全局搜索、预览浮层）。后注册项显示在更上层。
     var overlays: [RootOverlayItem] { get }
 
@@ -59,14 +86,14 @@ public protocol RootViewProviding: AnyObject, ObservableObject
     func setRailViewVisible(_ visible: Bool)
 
     /// 绑定 Rail provider 的可见状态，使 tab 过滤或增删能同步到根布局。
-    func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>)
+    func bindRailViewVisibility(to provider: any RailViewProviding)
 
     /// 当前 Rail 的有效宽度。
     var railWidth: RailViewWidth { get }
 
     /// 绑定 Rail provider 的宽度，并接收用户拖拽完成后的宽度。
     func bindRailViewWidth(
-        to publisher: AnyPublisher<RailViewWidth, Never>,
+        to provider: any RailViewProviding,
         onResize: @escaping @MainActor (CGFloat) -> Void
     )
 
@@ -95,9 +122,6 @@ public protocol RootViewProviding: AnyObject, ObservableObject
 
     /// 当前 Content Footer 的有效高度。
     var contentFooterHeight: ContentFooterHeight { get }
-
-    /// Content Footer 高度变化发布器。
-    var contentFooterHeightPublisher: AnyPublisher<ContentFooterHeight, Never> { get }
 
     /// 激活插件的 Content Footer 高度配置。
     func activateContentFooterHeightProfile(
@@ -135,6 +159,13 @@ public protocol RootViewProviding: AnyObject, ObservableObject
 }
 
 public extension RootViewProviding {
+    @discardableResult
+    func addRootViewObserver(
+        _ callback: @escaping (RootViewEvent) -> Void
+    ) -> any RootViewObserverHandle {
+        NoopRootViewObserverHandle()
+    }
+
     var overlays: [RootOverlayItem] { [] }
     var isContentViewHidden: Bool { false }
     var isContentHeaderViewHidden: Bool { false }
@@ -146,16 +177,13 @@ public extension RootViewProviding {
     var isContentFooterViewHidden: Bool { false }
     func setContentFooterViewHidden(_ hidden: Bool) {}
     func setRailViewVisible(_ visible: Bool) {}
-    func bindRailViewVisibility(to publisher: AnyPublisher<Bool, Never>) {}
+    func bindRailViewVisibility(to provider: any RailViewProviding) {}
     var railWidth: RailViewWidth { .standard }
     func bindRailViewWidth(
-        to publisher: AnyPublisher<RailViewWidth, Never>,
+        to provider: any RailViewProviding,
         onResize: @escaping @MainActor (CGFloat) -> Void
     ) {}
     var contentFooterHeight: ContentFooterHeight { .standard }
-    var contentFooterHeightPublisher: AnyPublisher<ContentFooterHeight, Never> {
-        Just(contentFooterHeight).eraseToAnyPublisher()
-    }
     func activateContentFooterHeightProfile(
         ownerID: String,
         recommended: ContentFooterHeight,
@@ -163,6 +191,11 @@ public extension RootViewProviding {
     ) {}
     func deactivateContentFooterHeightProfile(ownerID: String) {}
     func saveCurrentContentFooterHeight(_ height: CGFloat) {}
+}
+
+@MainActor
+private final class NoopRootViewObserverHandle: RootViewObserverHandle {
+    func cancel() {}
 }
 
 @MainActor
@@ -180,15 +213,37 @@ public struct RootOverlayItem: Identifiable {
 
 /// 根布局的右侧面板描述。
 @MainActor
+public enum RootTrailingPaneEvent {
+    case visibilityChanged(Bool)
+    case widthChanged(ChatSectionWidth)
+}
+
+@MainActor
+public protocol RootTrailingPaneObserverHandle: AnyObject {
+    func cancel()
+}
+
+@MainActor
 public final class RootTrailingPane: ObservableObject {
     public let id: String
-    @Published public private(set) var width: ChatSectionWidth
+    @Published public private(set) var width: ChatSectionWidth {
+        didSet {
+            guard oldValue != width else { return }
+            notify(.widthChanged(width))
+        }
+    }
     public let content: AnyView
 
-    @Published public var isVisible: Bool
-    private var visibilitySubscription: AnyCancellable?
-    private var widthSubscription: AnyCancellable?
+    @Published public var isVisible: Bool {
+        didSet {
+            guard oldValue != isVisible else { return }
+            notify(.visibilityChanged(isVisible))
+        }
+    }
+    private var visibilityObserver: (any ChatSectionProvidingObserverHandle)?
+    private var widthObserver: (any ChatSectionProvidingObserverHandle)?
     private var widthResizeHandler: (@MainActor (CGFloat) -> Void)?
+    private var observers: [UUID: (RootTrailingPaneEvent) -> Void] = [:]
 
     public init(
         id: String,
@@ -213,31 +268,43 @@ public final class RootTrailingPane: ObservableObject {
     public var idealWidth: CGFloat { width.idealWidth }
     public var maxWidth: CGFloat { width.maxWidth }
 
+    @discardableResult
+    public func addObserver(
+        _ callback: @escaping (RootTrailingPaneEvent) -> Void
+    ) -> any RootTrailingPaneObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return ObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
+    }
+
     /// 将面板显隐状态绑定到 ChatSection Provider。
     ///
     /// ChatPanel 通过 `ChatSectionProviding` 响应 ActivityBar 切换；根布局
-    /// 直接观察这个状态。
+    /// 通过类型化事件观察这个状态。
     @MainActor
     public func bindVisibility(to provider: any ChatSectionProviding) {
+        visibilityObserver?.cancel()
         isVisible = provider.isVisible
-        visibilitySubscription = provider.objectWillChange.sink { [weak self, weak provider] _ in
-            Task { @MainActor [weak self, weak provider] in
-                self?.isVisible = provider?.isVisible ?? false
-            }
+        visibilityObserver = provider.addObserver { [weak self] event in
+            guard case let .visibilityChanged(isVisible) = event else { return }
+            self?.isVisible = isVisible
         }
     }
 
     /// 将面板宽度绑定到 ChatSection provider，并接收用户拖拽完成后的宽度。
     @MainActor
     public func bindWidth(
-        to publisher: AnyPublisher<ChatSectionWidth, Never>,
+        to provider: any ChatSectionProviding,
         onResize: @escaping @MainActor (CGFloat) -> Void
     ) {
+        widthObserver?.cancel()
         widthResizeHandler = onResize
-        widthSubscription = publisher.sink { [weak self] width in
-            Task { @MainActor [weak self] in
-                self?.width = width
-            }
+        width = provider.chatSectionWidth
+        widthObserver = provider.addObserver { [weak self] event in
+            guard case let .widthChanged(width) = event else { return }
+            self?.width = width
         }
     }
 
@@ -245,5 +312,22 @@ public final class RootTrailingPane: ObservableObject {
     @MainActor
     public func saveWidth(_ width: CGFloat) {
         widthResizeHandler?(width)
+    }
+
+    private func notify(_ event: RootTrailingPaneEvent) {
+        observers.values.forEach { $0(event) }
+    }
+
+    private final class ObserverHandle: RootTrailingPaneObserverHandle {
+        private var cancellation: (() -> Void)?
+
+        init(cancellation: @escaping () -> Void) {
+            self.cancellation = cancellation
+        }
+
+        func cancel() {
+            cancellation?()
+            cancellation = nil
+        }
     }
 }

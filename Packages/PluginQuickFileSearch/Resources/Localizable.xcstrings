@@ -107,6 +107,7 @@
       }
     },
     "Fast file search with Cmd+P" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

@@ -11,7 +11,7 @@ import KitSuperLog
 
 /// Conversation Manager - real implementation using SwiftData persistence
 @MainActor
-public final class ConversationManager: ObservableObject, ConversationManaging, SuperLog {
+public final class ConversationManager: ConversationManaging, SuperLog {
     private static let initialPageSize = 40
     /// 选中状态写盘队列：串行执行，保证连续切换会话时最后一次写入生效。
     private nonisolated static let stateWriteQueue = DispatchQueue(
@@ -22,8 +22,8 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     public nonisolated static let emoji = "💬"
     public nonisolated static let verbose = false
 
-    @Published public internal(set) var conversations: [ConversationSummary] = []
-    @Published public internal(set) var selectedConversationID: UUID? {
+    public internal(set) var conversations: [ConversationSummary] = []
+    public internal(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
             notifySelectedConversationObservers()
@@ -31,12 +31,12 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         }
     }
 
-    @Published public internal(set) var currentTitle: String = "No conversation"
-    @Published public internal(set) var isLoadingConversations = true
-    @Published public internal(set) var globalVerbosity: ResponseVerbosity = .defaultVerbosity
-    @Published public internal(set) var globalReasoningEffort: ReasoningEffort? = .defaultEffort
-    @Published public internal(set) var globalAutomationLevel: AutomationLevel = .build
-    @Published public internal(set) var globalLanguage: ConversationLanguage = .chinese
+    public internal(set) var currentTitle: String = "No conversation"
+    public internal(set) var isLoadingConversations = true
+    public internal(set) var globalVerbosity: ResponseVerbosity = .defaultVerbosity
+    public internal(set) var globalReasoningEffort: ReasoningEffort? = .defaultEffort
+    public internal(set) var globalAutomationLevel: AutomationLevel = .build
+    public internal(set) var globalLanguage: ConversationLanguage = .chinese
 
     /// 会话列表刷新去抖任务。消息写入会高频更新 lastMessageAt，侧栏排序不需要同步跟随每一次变化。
     private var conversationsChangeTask: Task<Void, Never>?
@@ -62,6 +62,9 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
     let agentTurn: (any AgentLoopProviding)?
     let eventBus: KernelCoreEventBus?
 
+    /// 项目切换观察者：监听当前项目变化，清空对话选择。
+    private var projectObserver: (any ProjectProvidingObserverHandle)?
+
     // MARK: - Initialization
 
     public init(
@@ -82,6 +85,12 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         self.toolManager = toolManager
         self.agentTurn = agentTurn
         self.eventBus = eventBus
+
+        // 监听项目切换，仅在用户主动切换时清空对话选择
+        projectObserver = project?.addObserver { [weak self] event in
+            guard case .currentProjectChanged(_, reason: .userSelected) = event else { return }
+            self?.deselectConversation()
+        }
     }
 
     // MARK: - Load
@@ -143,8 +152,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
 
     /// Notify observers that conversations changed.
     ///
-    /// v2 无事件管理器：@Published 已驱动 `registerProvider` 的 objectWillChange 转发；
-    /// 这里额外以类型化事件发布 + 旧 Notification 桥接，兼容尚未迁移的消费者。
+    /// 以类型化事件发布，并保留旧 Notification 桥接，兼容尚未迁移的消费者。
     func notifyConversationsChanged() {
         // 创建、删除、标题更新等明确的结构变化需要立即通知；同时取消尚未发出的活跃会话去抖通知，
         // 避免一次变更产生重复的侧栏刷新。
@@ -251,8 +259,7 @@ public final class ConversationManager: ObservableObject, ConversationManaging, 
         } else {
             newTitle = "No conversation"
         }
-        // @Published 无条件发布 objectWillChange；值没变时跳过赋值，
-        // 避免 selectConversation 触发第二次全局广播。
+        // 值没变时跳过赋值，避免 selectConversation 触发重复状态更新。
         guard currentTitle != newTitle else { return }
         currentTitle = newTitle
     }

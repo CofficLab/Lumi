@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginCommand",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginCommand", targets: ["PluginCommand"])],
     dependencies: [
         .package(path: "../KitSuperLog"),

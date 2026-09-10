@@ -22,8 +22,8 @@ struct OpenInPluginTests {
         init(path: String?) {
             currentProject = path.map { ProjectInfo(name: "test", path: $0) }
         }
-        func openProject(at path: String) async throws {}
-        func closeProject() async {}
+        func openProject(at path: String, reason: ProjectChangeReason) async throws {}
+        func closeProject(reason: ProjectChangeReason) async {}
         func refreshProjects() async throws {}
         func updateCurrentFile(_ fileURL: URL?) {}
         func updateOpenFiles(_ fileURLs: [URL]) {}

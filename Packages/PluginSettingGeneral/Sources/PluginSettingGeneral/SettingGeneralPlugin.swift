@@ -1,8 +1,10 @@
 import KernelCore
 import LumiUI
 import ProviderCommand
+import ProviderAppUpdate
 import ProviderDiagnostics
 import ProviderDocsView
+import ProviderOnboarding
 import ProviderUninstall
 import ProviderSettingView
 import SwiftUI
@@ -74,6 +76,7 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
         // 捕获 docs provider 引用，供详情视图读取。
         let docsProvider = kernel.resolveProvider((any DocsViewProviding).self)
         let diagnosticsProvider = kernel.resolveProvider((any DiagnosticsProviding).self)
+        let onboardingProvider = kernel.resolveProvider((any OnboardingProviding).self)
         let uninstallProvider = self.uninstallProvider
         let prepareForUninstall: @MainActor () async -> Void = {
             try? await kernel.stopAsync()
@@ -84,11 +87,16 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
             title: "通用",
             systemImage: "gearshape",
             order: 1
-        ) { [versionProvider, docsProvider, diagnosticsProvider, uninstallProvider, prepareForUninstall] in
+        ) { [versionProvider, docsProvider, diagnosticsProvider, onboardingProvider, uninstallProvider, prepareForUninstall, kernel] in
             GeneralSettingsDetailView(
                 version: versionProvider(),
                 docsProvider: docsProvider,
                 diagnosticsProvider: diagnosticsProvider,
+                // AppUpdateBootstrap is host-owned and may register after
+                // plugin boot. Resolve it when the entry is materialized so
+                // settings sees the provider in both Debug and Release.
+                updateProvider: kernel.resolveProvider((any AppUpdateChannelProviding).self),
+                onboardingProvider: onboardingProvider,
                 uninstallProvider: uninstallProvider,
                 prepareForUninstall: prepareForUninstall
             )

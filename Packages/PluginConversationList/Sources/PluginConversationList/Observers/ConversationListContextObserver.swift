@@ -15,7 +15,7 @@ final class ConversationListContextObserver {
         context: ConversationListContext
     ) {
         selectedConversationHandle = conversations.addSelectedConversationObserver { [weak context] newID in
-            context?.selectedConversationID = newID
+            context?.setSelectedConversationID(newID)
         }
         conversationHandle = conversations.addConversationObserver { [weak context] event in
             switch event {

@@ -11,6 +11,7 @@ import os
 public final class DefaultSkillProvider: SkillProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-skill", category: "Skill")
     public nonisolated static let emoji = "✨"
+    nonisolated static let verbose = false
 
     /// 已注册的贡献者，按注册顺序。
     private var registeredContributors: [any SkillContributing] = []
@@ -19,7 +20,9 @@ public final class DefaultSkillProvider: SkillProviding, SuperLog {
     private var observers: [WeakObserver] = []
 
     public init() {
-        Self.logger.info("\(Self.t)DefaultSkillProvider ready")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)DefaultSkillProvider ready")
+        }
     }
 
     // MARK: - SkillProviding
@@ -34,7 +37,9 @@ public final class DefaultSkillProvider: SkillProviding, SuperLog {
             return
         }
         registeredContributors.append(provider)
-        Self.logger.info("\(Self.t)Registered Skill contributor '\(provider.providerID)' (\(provider.allSkills.count) skills)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Registered Skill contributor '\(provider.providerID)' (\(provider.allSkills.count) skills)")
+        }
         notify(.contributorsChanged)
     }
 
@@ -42,7 +47,9 @@ public final class DefaultSkillProvider: SkillProviding, SuperLog {
         let before = registeredContributors.count
         registeredContributors.removeAll { $0.providerID == providerID }
         guard registeredContributors.count != before else { return }
-        Self.logger.info("\(Self.t)Removed Skill contributor '\(providerID)'")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Removed Skill contributor '\(providerID)'")
+        }
         notify(.contributorsChanged)
     }
 

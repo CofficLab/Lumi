@@ -3,13 +3,16 @@ import SwiftUI
 
 public struct OnboardingPageItem: Identifiable, Sendable {
     public let id: String
+    public let title: String
     public let makeView: @MainActor @Sendable () -> AnyView
 
     public init<Content: View>(
         id: String,
+        title: String,
         @ViewBuilder content: @escaping @MainActor @Sendable () -> Content
     ) {
         self.id = id
+        self.title = title
         self.makeView = { AnyView(content()) }
     }
 }
@@ -17,6 +20,7 @@ public struct OnboardingPageItem: Identifiable, Sendable {
 @MainActor
 public enum OnboardingProvidingEvent {
     case pagesChanged
+    case presentationChanged(isPresented: Bool)
 }
 
 @MainActor
@@ -27,8 +31,14 @@ public protocol OnboardingObserverHandle: AnyObject {
 @MainActor
 public protocol OnboardingProviding: AnyObject {
     var allPages: [OnboardingPageItem] { get }
+    var isPresented: Bool { get }
     func register(_ page: OnboardingPageItem)
     func unregister(id: String)
+    func show()
+    /// Clears the persisted completion state through the owning implementation
+    /// and presents onboarding from the first page again.
+    func replay()
+    func dismiss()
 
     @discardableResult
     func addObserver(_ callback: @escaping (OnboardingProvidingEvent) -> Void) -> any OnboardingObserverHandle
@@ -37,9 +47,13 @@ public protocol OnboardingProviding: AnyObject {
 @MainActor
 public final class DefaultOnboardingProviding: OnboardingProviding {
     public private(set) var allPages: [OnboardingPageItem] = []
+    public private(set) var isPresented = false
+    private let replayHandler: (@MainActor () -> Void)?
     private var observers: [WeakObserver] = []
 
-    public init() {}
+    public init(onReplay: (@MainActor () -> Void)? = nil) {
+        replayHandler = onReplay
+    }
 
     public func register(_ page: OnboardingPageItem) {
         allPages.removeAll { $0.id == page.id }
@@ -53,6 +67,27 @@ public final class DefaultOnboardingProviding: OnboardingProviding {
         if allPages.count != oldCount {
             notify(.pagesChanged)
         }
+    }
+
+    public func show() {
+        guard !isPresented else { return }
+        isPresented = true
+        notify(.presentationChanged(isPresented: true))
+    }
+
+    public func replay() {
+        replayHandler?()
+        if !isPresented {
+            isPresented = true
+        }
+        // Always notify so an already visible onboarding resets to page one.
+        notify(.presentationChanged(isPresented: true))
+    }
+
+    public func dismiss() {
+        guard isPresented else { return }
+        isPresented = false
+        notify(.presentationChanged(isPresented: false))
     }
 
     @discardableResult

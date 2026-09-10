@@ -10,7 +10,7 @@ import Foundation
 ///
 /// 该组件仅在 ConversationListPlugin 内部使用，不污染 Kernel 模型。
 @MainActor
-public final class ConversationSortStabilizer: ObservableObject {
+public final class ConversationSortStabilizer {
     /// 每个对话的锚定排序时间：防止在窗口内被新消息顶走
     private var anchorTimes: [UUID: Date] = [:]
 

@@ -5,10 +5,13 @@ import SwiftUI
 /// 消息计数工具栏视图
 struct MessageCountToolbarView: View {
     let messages: any MessageManaging
-    @ObservedObject var state: MessageCountToolbarState
+    let state: MessageCountToolbarState
 
     @State private var count: Int = 0
     @State private var isPopoverPresented = false
+    @State private var selectedConversationID: UUID?
+    @State private var messageRefreshRevision = 0
+    @State private var observerHandle: (any MessageCountToolbarState.ObserverHandle)?
 
     var body: some View {
         Button {
@@ -35,15 +38,31 @@ struct MessageCountToolbarView: View {
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
             MessageCountPopover(count: count)
         }
-        .task(id: "\(state.selectedConversationID?.uuidString ?? "nil")-\(state.messageRefreshRevision)") {
+        .task(id: "\(selectedConversationID?.uuidString ?? "nil")-\(messageRefreshRevision)") {
             await Task.yield()
             guard !Task.isCancelled else { return }
             refreshCount()
         }
+        .onAppear {
+            guard observerHandle == nil else { return }
+            selectedConversationID = state.selectedConversationID
+            observerHandle = state.addObserver { event in
+                switch event {
+                case let .selectedConversationChanged(id):
+                    selectedConversationID = id
+                case .messagesChanged:
+                    messageRefreshRevision &+= 1
+                }
+            }
+        }
+        .onDisappear {
+            observerHandle?.cancel()
+            observerHandle = nil
+        }
     }
 
     private func refreshCount() {
-        guard let conversationID = state.selectedConversationID else {
+        guard let conversationID = selectedConversationID else {
             count = 0
             return
         }

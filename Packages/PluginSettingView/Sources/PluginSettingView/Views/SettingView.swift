@@ -4,8 +4,10 @@ import ProviderLogo
 import ProviderSettingView
 import LumiUI
 
-struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
-    @ObservedObject var provider: Provider
+struct SettingView<Provider: SettingViewProviding>: View {
+    let provider: Provider
+    @State private var observationRevision = 0
+    @State private var observerHandle: (any SettingViewObserverHandle)?
     @LumiTheme private var theme
 
     /// 从共享内核解析的 Logo 服务；`nil` 时侧边栏 Header 仅显示回退图标。
@@ -36,6 +38,20 @@ struct SettingView<Provider: SettingViewProviding & ObservableObject>: View {
             }
         #endif
             .ignoresSafeArea()
+            .onAppear {
+                guard observerHandle == nil else { return }
+                observerHandle = provider.addSettingViewObserver { _ in
+                    observationRevision += 1
+                }
+            }
+            .onDisappear {
+                observerHandle?.cancel()
+                observerHandle = nil
+            }
+            // Keep the provider-backed selection and entry list reactive
+            // without using `id(observationRevision)`, which would recreate
+            // the sidebar ScrollView and reset its content offset.
+            .onChange(of: observationRevision) { _, _ in }
     }
 
     /// 左侧：顶部 Logo Header（应用 Logo + 名称 + 版本）+ 入口列表。

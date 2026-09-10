@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import ProviderMessage
 
@@ -19,7 +18,7 @@ public protocol MessageStreamingObserverHandle: AnyObject {
 /// 由 AgentLoop 在回合循环中写入，UI 窄播订阅；`any MessageStreamingProviding`
 /// 因此是 MainActor 隔离的存在类型，可在 `@Sendable` 流式回调中经 `await` 安全访问。
 @MainActor
-public protocol MessageStreamingProviding: ObservableObject where ObjectWillChangePublisher == ObservableObjectPublisher {
+public protocol MessageStreamingProviding: AnyObject {
     func streamingMessage(for conversationID: UUID) -> Message?
     func stage(for conversationID: UUID) -> MessageStreamingStage
     func start(conversationID: UUID)
@@ -48,7 +47,7 @@ public extension MessageStreamingProviding {
 
 @MainActor
 public final class DefaultMessageStreamingProviding: MessageStreamingProviding {
-    @Published private var rows: [UUID: Message] = [:]
+    private var rows: [UUID: Message] = [:]
     private var stages: [UUID: MessageStreamingStage] = [:]
     private var observers: [UUID: (MessageStreamingChange) -> Void] = [:]
     public init() {}

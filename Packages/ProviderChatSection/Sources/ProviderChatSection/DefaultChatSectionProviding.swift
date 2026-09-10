@@ -14,9 +14,10 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
     @Published public private(set) var barItems: [ChatSectionBarItem] = []
     @Published public private(set) var rootWrappers: [ChatSectionRootWrapper] = []
 
-    /// 会话选择绑定订阅：随 Provider 生命周期持有（与内核同生命周期）。
-    private var conversationSelectionCancellable: AnyCancellable?
+    /// 会话选择绑定句柄：随 Provider 生命周期持有（与内核同生命周期）。
+    private var conversationSelectionObserver: (any SelectedConversationObserverHandle)?
     private var observers: [WeakObserver] = []
+    private var itemRefreshTask: Task<Void, Never>?
     private let defaultWidthStore: (any ChatSectionWidthStoring)?
     private var activeWidthStore: (any ChatSectionWidthStoring)?
     private var activeWidthOwnerID: String?
@@ -38,6 +39,19 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         let oldCount = items.count
         items.removeAll { $0.id == id }
         if items.count != oldCount { notify(.itemsChanged(items)) }
+    }
+
+    public func refreshItems() {
+        guard itemRefreshTask == nil else { return }
+        itemRefreshTask = Task { @MainActor [weak self] in
+            // Let all providers handling the same conversation event update
+            // their active predicate before invalidating the chat slot once.
+            await Task.yield()
+            guard let self else { return }
+            itemRefreshTask = nil
+            objectWillChange.send()
+            notify(.itemsChanged(items))
+        }
     }
 
     public func addBarItems(_ newItems: [ChatSectionBarItem]) {
@@ -90,10 +104,6 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         notify(.headerVisibilityChanged(visible))
     }
 
-    public var chatSectionWidthPublisher: AnyPublisher<ChatSectionWidth, Never> {
-        $chatSectionWidth.eraseToAnyPublisher()
-    }
-
     public func activateWidthProfile(
         ownerID: String,
         recommended: ChatSectionWidth,
@@ -107,6 +117,7 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         let resolvedWidth = recommended.withIdealWidth(recommended.clamped(restoredWidth))
         if chatSectionWidth != resolvedWidth {
             chatSectionWidth = resolvedWidth
+            notify(.widthChanged(chatSectionWidth))
         }
     }
 
@@ -116,6 +127,7 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         activeWidthStore = nil
         if chatSectionWidth != .standard {
             chatSectionWidth = .standard
+            notify(.widthChanged(chatSectionWidth))
         }
     }
 
@@ -126,6 +138,7 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
         let updatedWidth = chatSectionWidth.withIdealWidth(resolvedWidth)
         if chatSectionWidth != updatedWidth {
             chatSectionWidth = updatedWidth
+            notify(.widthChanged(chatSectionWidth))
         }
     }
 
@@ -154,15 +167,11 @@ public final class DefaultChatSectionProviding: ChatSectionProviding, Observable
     /// 由集成层在插件全部启动、`ConversationManaging` 最终实例确定后调用一次；
     /// 订阅由本 Provider 持有，随内核生命周期存续。
     public func bindConversationSelection(_ conversations: any ConversationManaging) {
+        conversationSelectionObserver?.cancel()
         setHeaderVisible(conversations.selectedConversationID != nil)
-        conversationSelectionCancellable = conversations.objectWillChange
-            .receive(on: RunLoop.main)
-            .sink { [weak self, weak conversations] _ in
-                MainActor.assumeIsolated {
-                    guard let self, let conversations else { return }
-                    self.setHeaderVisible(conversations.selectedConversationID != nil)
-                }
-            }
+        conversationSelectionObserver = conversations.addSelectedConversationObserver { [weak self] selectedID in
+            self?.setHeaderVisible(selectedID != nil)
+        }
     }
 
     private final class Observer: ChatSectionProvidingObserverHandle {
@@ -221,13 +230,17 @@ public struct ChatSectionHostView: View {
 
     private var stackItems: [ChatSectionItem] {
         exclusiveItems(provider.items.filter {
-            $0.placement == .stack && $0.scope.matches(provider.activeContext)
+            $0.placement == .stack
+                && $0.scope.matches(provider.activeContext)
+                && $0.isActive()
         })
     }
 
     private var bottomItems: [ChatSectionItem] {
         exclusiveItems(provider.items.filter {
-            $0.placement == .bottomFixed && $0.scope.matches(provider.activeContext)
+            $0.placement == .bottomFixed
+                && $0.scope.matches(provider.activeContext)
+                && $0.isActive()
         })
     }
 

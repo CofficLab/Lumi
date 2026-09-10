@@ -18,7 +18,7 @@ import KitSuperLog
 public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.provider-message-sender", category: "MessageSender")
     nonisolated public static let emoji = "📤"
-    nonisolated static let verbose = true
+    nonisolated static let verbose = false
 
     private let conversations: any ConversationManaging
     private let messages: any MessageManaging
@@ -31,15 +31,15 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
     private var agentLoopObserver: (any AgentLoopObserverHandle)?
     private var messageSenderObservers: [UUID: (MessageSenderEvent) -> Void] = [:]
 
-    @Published public private(set) var isSending = false {
+    public private(set) var isSending = false {
         didSet {
             guard isSending != oldValue else { return }
             notifySendingStateObservers()
         }
     }
-    @Published public private(set) var pendingImageAttachments: [UserImageAttachment] = []
-    @Published public private(set) var pendingFileAttachments: [UserFileAttachment] = []
-    @Published public private(set) var pendingQueues: [UUID: [PendingChatMessage]] = [:]
+    public private(set) var pendingImageAttachments: [UserImageAttachment] = []
+    public private(set) var pendingFileAttachments: [UserFileAttachment] = []
+    public private(set) var pendingQueues: [UUID: [PendingChatMessage]] = [:]
 
     // MARK: - Sending State Observation
 
@@ -102,26 +102,40 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
 
     public func addImageAttachment(_ attachment: UserImageAttachment) {
         pendingImageAttachments.append(attachment)
+        notify(.attachmentsChanged)
     }
 
     public func removeImageAttachment(id: UUID) {
+        let oldCount = pendingImageAttachments.count
         pendingImageAttachments.removeAll { $0.id == id }
+        if pendingImageAttachments.count != oldCount {
+            notify(.attachmentsChanged)
+        }
     }
 
     public func clearImageAttachments() {
+        guard !pendingImageAttachments.isEmpty else { return }
         pendingImageAttachments = []
+        notify(.attachmentsChanged)
     }
 
     public func addFileAttachment(_ attachment: UserFileAttachment) {
         pendingFileAttachments.append(attachment)
+        notify(.attachmentsChanged)
     }
 
     public func removeFileAttachment(id: UUID) {
+        let oldCount = pendingFileAttachments.count
         pendingFileAttachments.removeAll { $0.id == id }
+        if pendingFileAttachments.count != oldCount {
+            notify(.attachmentsChanged)
+        }
     }
 
     public func clearFileAttachments() {
+        guard !pendingFileAttachments.isEmpty else { return }
         pendingFileAttachments = []
+        notify(.attachmentsChanged)
     }
 
     // MARK: - Pending Queue
@@ -138,6 +152,7 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         } else {
             pendingQueues[conversationID] = queue
         }
+        notify(.pendingMessagesChanged(conversationID: conversationID))
     }
 
     // MARK: - Send
@@ -257,6 +272,7 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
                 imageAttachments: imageAttachments,
                 fileAttachments: fileAttachments
             ))
+            notify(.pendingMessagesChanged(conversationID: targetID))
             clearSentAttachments(imageAttachments, fileAttachments)
             if Self.verbose {
                 Self.logger.info("\(Self.t)send queued: conversation=\(targetID.uuidString.prefix(8)), queueDepth=\(self.pendingQueues[targetID]?.count ?? 0)")
@@ -470,6 +486,7 @@ public final class DefaultMessageSender: MessageSendingProviding, SuperLog {
         } else {
             pendingQueues[conversationID] = queue
         }
+        notify(.pendingMessagesChanged(conversationID: conversationID))
 
         var metadata: [String: String] = [:]
         metadata.merge(UserAttachmentMetadata.encodeImageAttachments(next.imageAttachments)) { _, new in new }

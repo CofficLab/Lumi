@@ -1,4 +1,5 @@
 import LumiUI
+import ProviderChatSection
 import SwiftUI
 
 /// 工具栏会话列表按钮（复刻旧版 ConversationListPlugin.ToolbarButton）
@@ -6,26 +7,26 @@ import SwiftUI
 /// 仅在「Chat 区块可见」且「全库至少存在一条对话」时渲染。任一条件不满足时
 /// 整个按钮消失，键盘/工具栏流程自然略过它。
 struct ToolbarButton: View {
-    @ObservedObject private var context: ConversationListContext
+    private let context: ConversationListContext
     let attentionStore: ConversationAttentionStore
     let sortStabilizer: ConversationSortStabilizer
     @State private var isPresented = false
 
     /// ChatSection 是否可见；不可见时整个按钮不渲染。
-    ///
-    /// ChatSectionProviding 是无约束协议，无法直接订阅 objectWillChange，
-    /// 用轻量轮询跟随可见性变化（复刻旧版 onChatSectionVisibleDidChange）。
     @State private var isChatSectionVisible: Bool = true
+    @State private var chatObserverHandle: (any ChatSectionProvidingObserverHandle)?
     /// 全库是否存在任意对话；默认 true 以避免启动加载期间按钮闪烁，
     /// 异步查得数量为 0 时再隐藏。
     @State private var hasAnyConversations: Bool = true
+    @State private var contextRevision = 0
+    @State private var contextObserverHandle: (any ConversationListContext.ObserverHandle)?
 
     init(
         context: ConversationListContext,
         attentionStore: ConversationAttentionStore,
         sortStabilizer: ConversationSortStabilizer
     ) {
-        self._context = ObservedObject(wrappedValue: context)
+        self.context = context
         self.attentionStore = attentionStore
         self.sortStabilizer = sortStabilizer
     }
@@ -50,19 +51,33 @@ struct ToolbarButton: View {
         .task {
             await refreshConversationPresence()
         }
-        .task {
-            // 轮询 ChatSection 可见性：协议存在类型无法被 Combine 订阅，
-            // 轻量轮询开销可忽略，且跟随容器切换即时收敛。
-            while !Task.isCancelled {
-                let visible = context.chat?.isVisible ?? true
-                if isChatSectionVisible != visible {
-                    isChatSectionVisible = visible
+        .onAppear {
+            isChatSectionVisible = context.chat?.isVisible ?? true
+            guard chatObserverHandle == nil else { return }
+            chatObserverHandle = context.chat?.addObserver { event in
+                if case let .visibilityChanged(isVisible) = event {
+                    isChatSectionVisible = isVisible
                 }
-                try? await Task.sleep(for: .milliseconds(300))
             }
         }
-        .onChange(of: context.conversationsRevision) { _, _ in
+        .onDisappear {
+            chatObserverHandle?.cancel()
+            chatObserverHandle = nil
+        }
+        .onChange(of: contextRevision) { _, _ in
             Task { await refreshConversationPresence() }
+        }
+        .onAppear {
+            guard contextObserverHandle == nil else { return }
+            contextObserverHandle = context.addObserver { event in
+                if case .conversationsChanged = event {
+                    contextRevision &+= 1
+                }
+            }
+        }
+        .onDisappear {
+            contextObserverHandle?.cancel()
+            contextObserverHandle = nil
         }
     }
 

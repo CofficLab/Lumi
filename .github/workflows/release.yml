@@ -100,18 +100,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo "📝 Updating Lumi CURRENT_PROJECT_VERSION..."
-
-          # build settings 已迁移到 LumiApp/Config/*.xcconfig。Lumi 的构建号在 Debug/Release 两个文件。
-          # 从 Release 读取当前值（Debug 与 Release 保持一致）。
-          CURRENT_BUILD=$(grep -m1 "^CURRENT_PROJECT_VERSION" LumiApp/Config/Lumi-Release.xcconfig | sed 's/.*= *//; s/;.*//' | tr -d ' ')
-          if [ -z "$CURRENT_BUILD" ]; then
-            echo "❌ 无法从 LumiApp/Config/Lumi-Release.xcconfig 读取 CURRENT_PROJECT_VERSION"
-            exit 1
-          fi
-
-          NEW_BUILD_VERSION=$((CURRENT_BUILD + 1))
-          echo "  Build number: $CURRENT_BUILD → $NEW_BUILD_VERSION (Lumi)"
+          # Sparkle compares the numeric bundle version. A branch-local
+          # increment can produce the same build on pre and main, so use the
+          # workflow run number, which is monotonic for this workflow across
+          # both channels.
+          NEW_BUILD_VERSION="${GITHUB_RUN_NUMBER}"
+          echo "📝 Updating Lumi CURRENT_PROJECT_VERSION to $NEW_BUILD_VERSION..."
 
           for f in LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig; do
             sed -i '' "s/^CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION;/" "$f"
@@ -131,10 +125,14 @@ jobs:
           if [[ "${{ github.ref }}" == "refs/heads/pre" ]]; then
             TAG_NAME="p${{ env.new_version }}($BUILD_VERSION)"
             echo "IS_PRERELEASE=true" >> $GITHUB_ENV
+            echo "UPDATE_CHANNEL=preview" >> $GITHUB_ENV
+            echo "UPDATE_R2_PREFIX=lumi/pre" >> $GITHUB_ENV
             echo "## 🏷️ Tag Info (Pre-release)" >> $GITHUB_STEP_SUMMARY
           else
             TAG_NAME="v${{ env.new_version }}"
             echo "IS_PRERELEASE=false" >> $GITHUB_ENV
+            echo "UPDATE_CHANNEL=stable" >> $GITHUB_ENV
+            echo "UPDATE_R2_PREFIX=lumi" >> $GITHUB_ENV
             echo "## 🏷️ Tag Info (Release)" >> $GITHUB_STEP_SUMMARY
           fi
 
@@ -276,8 +274,9 @@ jobs:
         run: |
           set -euo pipefail
 
+          chmod +x .github/scripts/create-designed-dmg.sh
+
           for arch in ${{ env.RELEASE_ARCHS }}; do
-            STAGING_DIR="./temp/dmg_staging_${arch}"
             VOL_NAME="${{ env.SCHEME }}-${arch}"
             DMG_NAME="./temp/${{ env.SCHEME }}_${{ env.new_version }}_${arch}.dmg"
             APP_PATH="./temp/${{ env.SCHEME }}-${arch}.app"
@@ -287,42 +286,12 @@ jobs:
               exit 1
             fi
 
-            # 干净 staging，避免上次失败或增量残留导致 hdiutil 异常
-            rm -rf "$STAGING_DIR"
-            mkdir -p "$STAGING_DIR"
-            ditto "$APP_PATH" "$STAGING_DIR/${{ env.SCHEME }}.app"
-            ln -sfn /Applications "$STAGING_DIR/Applications"
-
-            echo "Checking Staging Dir for $arch:"
-            ls -la "$STAGING_DIR"
-
-            # 降低 Spotlight 在 runner 上占用源目录导致 EBUSY 的概率
-            mdutil -i off "$STAGING_DIR" 2>/dev/null || true
-            mdutil -i off "./temp" 2>/dev/null || true
-            sync
-            sleep 1
-
-            create_dmg() {
-              # 同名卷若仍挂在 /Volumes（上次失败、并发、本地重跑），会导致 Resource busy
-              hdiutil detach "/Volumes/${VOL_NAME}" -force 2>/dev/null || true
-              rm -f "$DMG_NAME"
-              if hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"; then
-                return 0
-              fi
-              return 1
-            }
-
-            MAX_ATTEMPTS=6
-            attempt=0
-            until create_dmg; do
-              attempt=$((attempt + 1))
-              if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
-                echo "hdiutil create failed after $MAX_ATTEMPTS attempts (often Resource busy / EBUSY)"
-                exit 1
-              fi
-              echo "hdiutil create failed for $arch (attempt $attempt/$MAX_ATTEMPTS), retrying after backoff..."
-              sleep $((attempt * 3))
-            done
+            .github/scripts/create-designed-dmg.sh \
+              "$APP_PATH" \
+              "$DMG_NAME" \
+              "$VOL_NAME" \
+              ".github/dmg/Lumi-dmg-background.png" \
+              "${{ env.SCHEME }}"
 
             echo "Created: $DMG_NAME"
           done
@@ -407,16 +376,18 @@ jobs:
           done
 
       # =================================================================================================
-      # 2.6 生成 Changelog (仅 Release 分支，供 appcast 和 GitHub Release 使用)
+      # 2.6 生成 Changelog (供两个通道的 appcast 和 GitHub Release 使用)
       # =================================================================================================
       - name: Generate Changelog
-        if: env.IS_PRERELEASE == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
-          PREVIOUS_TAG="${{ env.previous_tag }}"
+          if [ "${{ env.IS_PRERELEASE }}" = "true" ]; then
+            NOTES="## Preview ${{ env.tag }}\n\nThis preview build was published from the pre branch and may contain unfinished changes."
+          else
+            PREVIOUS_TAG="${{ env.previous_tag }}"
 
           if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "0.0.0" ]; then
             NOTES="## Release ${{ env.tag }}\n\nInitial release"
@@ -430,6 +401,7 @@ jobs:
               CHANGES="- Maintenance and stability improvements"
             fi
             NOTES="## Release ${{ env.tag }}\n\n### Changes since v${PREVIOUS_TAG}\n\n${CHANGES}"
+          fi
           fi
 
           echo -e "$NOTES" > changelog.md
@@ -448,10 +420,9 @@ jobs:
           echo "✅ Changelog generated and converted to HTML"
 
       # =================================================================================================
-      # 3. Appcast 生成 (仅 Release 分支)
+      # 3. Appcast 生成 (按通道分别生成)
       # =================================================================================================
       - name: Generate Appcasts (per-arch)
-        if: env.IS_PRERELEASE == 'false'
         run: |
           set -euo pipefail
 
@@ -492,7 +463,11 @@ jobs:
             # 替换 enclosure url 为正确的下载链接
             DMG_FILENAME=$(basename "$DMG_FILE")
             DMG_URL_ENCODED=$(echo "$DMG_FILENAME" | sed 's/ /%20/g')
-            DOWNLOAD_URL="${{ env.UPDATE_DOWNLOAD_BASE_URL }}/$DMG_URL_ENCODED"
+            DOWNLOAD_ROOT="${{ env.UPDATE_DOWNLOAD_BASE_URL }}"
+            if [ "${{ env.UPDATE_CHANNEL }}" = "preview" ]; then
+              DOWNLOAD_ROOT="$DOWNLOAD_ROOT/pre"
+            fi
+            DOWNLOAD_URL="$DOWNLOAD_ROOT/$DMG_URL_ENCODED"
             sed -i '' 's|url="[^"]*"|url="'"$DOWNLOAD_URL"'"|g' "$APPCAST_FILE"
 
             # 注入 release notes HTML 到 appcast
@@ -517,15 +492,25 @@ jobs:
               echo "✅ Release notes injected for $arch"
             fi
 
-            # 输出到根目录
-            cp "$APPCAST_FILE" "${{ github.workspace }}/appcast-${arch}.xml"
+            # Stable keeps the legacy names; preview uses its own names so
+            # the two feeds can never overwrite each other.
+            if [ "${{ env.UPDATE_CHANNEL }}" = "preview" ]; then
+              OUTPUT_APPCAST="${{ github.workspace }}/appcast-pre-${arch}.xml"
+            else
+              OUTPUT_APPCAST="${{ github.workspace }}/appcast-${arch}.xml"
+            fi
+            cp "$APPCAST_FILE" "$OUTPUT_APPCAST"
 
-            echo "✅ appcast-${arch}.xml generated:"
-            cat "${{ github.workspace }}/appcast-${arch}.xml"
+            echo "✅ $(basename "$OUTPUT_APPCAST") generated:"
+            cat "$OUTPUT_APPCAST"
           done
 
-          # 兼容旧版本客户端（仍读取 appcast.xml），使用默认架构
-          cp "${{ github.workspace }}/appcast-${{ env.DEFAULT_UPDATE_ARCH }}.xml" "${{ github.workspace }}/appcast.xml"
+          if [ "${{ env.UPDATE_CHANNEL }}" = "preview" ]; then
+            cp "${{ github.workspace }}/appcast-pre-${{ env.DEFAULT_UPDATE_ARCH }}.xml" "${{ github.workspace }}/appcast-pre.xml"
+          else
+            # 兼容旧版本客户端（仍读取 appcast.xml），使用默认架构
+            cp "${{ github.workspace }}/appcast-${{ env.DEFAULT_UPDATE_ARCH }}.xml" "${{ github.workspace }}/appcast.xml"
+          fi
 
       # =================================================================================================
       # 4. 提交更改与推送
@@ -539,7 +524,7 @@ jobs:
           tagging_message: ${{ env.tag }}
           push_options: "--follow-tags"
           # 仅提交版本号 xcconfig 和 appcast（pbxproj 不再随版本号变动）
-          file_pattern: "LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig appcast.xml appcast-arm64.xml appcast-x86_64.xml"
+          file_pattern: "LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig appcast.xml appcast-arm64.xml appcast-x86_64.xml appcast-pre.xml appcast-pre-arm64.xml appcast-pre-x86_64.xml"
 
       - name: Prepare Release Assets
         if: success()
@@ -553,15 +538,18 @@ jobs:
           fi
           cp ./updates/*.dmg release-assets/
 
-          if [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
-            if [ ! -f ./appcast.xml ]; then
-              echo "❌ appcast.xml is required for stable releases"
+          if [ "${{ env.UPDATE_CHANNEL }}" = "preview" ]; then
+            APPCAST_FILES="appcast-pre.xml appcast-pre-arm64.xml appcast-pre-x86_64.xml"
+          else
+            APPCAST_FILES="appcast.xml appcast-arm64.xml appcast-x86_64.xml"
+          fi
+          for APPCAST_FILE in $APPCAST_FILES; do
+            if [ ! -f "./$APPCAST_FILE" ]; then
+              echo "❌ $APPCAST_FILE is required for ${{ env.UPDATE_CHANNEL }} releases"
               exit 1
             fi
-            cp ./appcast.xml release-assets/
-            cp ./appcast-arm64.xml release-assets/
-            cp ./appcast-x86_64.xml release-assets/
-          fi
+            cp "./$APPCAST_FILE" release-assets/
+          done
 
           if compgen -G "./temp/*_dSYMs.zip" > /dev/null; then
             cp ./temp/*_dSYMs.zip release-assets/
@@ -588,7 +576,7 @@ jobs:
           else
             for DMG_FILE in ./release-assets/*.dmg; do
               DMG_FILENAME=$(basename "$DMG_FILE")
-              R2_KEY="lumi/${DMG_FILENAME}"
+              R2_KEY="${{ env.UPDATE_R2_PREFIX }}/${DMG_FILENAME}"
 
               echo "📤 Uploading DMG to R2: $R2_KEY"
 
@@ -609,12 +597,16 @@ jobs:
             done
           fi
 
-          # 上传 appcast (仅 Release)
-          if [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
-            for APPCAST_FILE in ./release-assets/appcast.xml ./release-assets/appcast-arm64.xml ./release-assets/appcast-x86_64.xml; do
+          # 上传当前通道的 appcast
+          if [ "${{ env.UPDATE_CHANNEL }}" = "preview" ]; then
+            APPCAST_FILES="./release-assets/appcast-pre.xml ./release-assets/appcast-pre-arm64.xml ./release-assets/appcast-pre-x86_64.xml"
+          else
+            APPCAST_FILES="./release-assets/appcast.xml ./release-assets/appcast-arm64.xml ./release-assets/appcast-x86_64.xml"
+          fi
+          for APPCAST_FILE in $APPCAST_FILES; do
               if [ -f "$APPCAST_FILE" ]; then
                 APPCAST_FILENAME=$(basename "$APPCAST_FILE")
-                R2_KEY="lumi/${APPCAST_FILENAME}"
+                R2_KEY="${{ env.UPDATE_R2_PREFIX }}/${APPCAST_FILENAME}"
 
                 echo "📤 Uploading appcast to R2: $R2_KEY"
 
@@ -632,8 +624,7 @@ jobs:
                   exit 1
                 fi
               fi
-            done
-          fi
+          done
 
       # =================================================================================================
       # 6. 发布 Release

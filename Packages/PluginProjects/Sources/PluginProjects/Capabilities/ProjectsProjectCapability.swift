@@ -17,10 +17,10 @@ protocol ProjectsProjectCapability: AnyObject {
     func synchronizeProjects(_ projects: [ProjectInfo])
 
     /// 打开项目。
-    func openProject(at path: String) async throws
+    func openProject(at path: String, reason: ProjectChangeReason) async throws
 
     /// 关闭当前项目。
-    func closeProject() async
+    func closeProject(reason: ProjectChangeReason) async
 }
 
 /// 将内核的 `ProjectProviding` 收窄为 Projects 插件的项目能力。
@@ -40,11 +40,11 @@ final class ProjectsProjectCapabilityAdapter: ProjectsProjectCapability {
         project.synchronizeProjects(projects)
     }
 
-    func openProject(at path: String) async throws {
-        try await project.openProject(at: path)
+    func openProject(at path: String, reason: ProjectChangeReason) async throws {
+        try await project.openProject(at: path, reason: reason)
     }
 
-    func closeProject() async {
-        await project.closeProject()
+    func closeProject(reason: ProjectChangeReason) async {
+        await project.closeProject(reason: reason)
     }
 }

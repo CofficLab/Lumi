@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginAskUser",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "PluginAskUser", targets: ["PluginAskUser"]),
     ],
@@ -14,6 +14,7 @@ let package = Package(
         .package(path: "../KitAgentTool"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderConversation"),
+        .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderMessageRendering"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderAgentLoop"),
@@ -32,6 +33,7 @@ let package = Package(
                 "KitAgentTool",
                 "LumiUI",
                 "ProviderConversation",
+                "ProviderChatSection",
                 "ProviderMessageRendering",
                 "ProviderMessage",
                 "ProviderAgentLoop",
@@ -49,6 +51,7 @@ let package = Package(
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
