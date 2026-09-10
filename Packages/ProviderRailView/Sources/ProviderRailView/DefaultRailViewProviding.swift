@@ -274,7 +274,6 @@ private struct RailView: View {
 
     var body: some View {
         content
-            .id(observationRevision)
             .onAppear {
                 guard observerHandle == nil else { return }
                 observerHandle = provider.addObserver { event in
