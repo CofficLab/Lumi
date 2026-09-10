@@ -12,7 +12,7 @@ public final class DeepSeekAnthropicProvider: VendorLLMProvider {
                 id: "deepseek-anthropic",
                 displayName: "DeepSeek (Anthropic Format)",
                 description: "DeepSeek AI via Anthropic-compatible endpoint",
-                defaultModel: "deepseek-v4-flash",
+                defaultModel: "deepseek-flash",
                 models: [
                     LLMModelInfo(id: "deepseek-v4-flash", contextWindowSize: 1_000_000, supportsVision: false),
                     LLMModelInfo(id: "deepseek-v4-pro", contextWindowSize: 1_000_000, supportsVision: false),

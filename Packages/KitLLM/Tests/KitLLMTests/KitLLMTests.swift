@@ -184,6 +184,44 @@ struct KitLLMTests {
         #expect(chunk?.stopReason == "stop")
     }
 
+    @Test("OpenAI 兼容请求过滤授权占位并去重旧工具结果")
+    func openAIAdapterRepairsDuplicateToolResults() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.deepseek.com/v1")
+        )
+        let messages = [
+            LLMMessage(
+                role: .assistant,
+                content: "",
+                toolCalls: [
+                    LLMToolCall(id: "call-edit", name: "edit_file", arguments: "{}"),
+                    LLMToolCall(id: "call-read", name: "read_file", arguments: "{}"),
+                ]
+            ),
+            LLMMessage(
+                role: .tool,
+                content: #"{"kind":"permission","toolCallID":"approval:call-edit"}"#,
+                toolCallID: "call-edit"
+            ),
+            LLMMessage(role: .tool, content: "read result", toolCallID: "call-read"),
+            LLMMessage(role: .tool, content: "edit result", toolCallID: "call-edit"),
+        ]
+
+        let body = try adapter.buildRequestBody(
+            messages: messages,
+            model: "deepseek-v4-flash",
+            tools: nil,
+            systemPrompt: ""
+        )
+        let bodyMessages = body["messages"] as? [[String: Any]]
+
+        #expect(bodyMessages?.count == 3)
+        #expect(bodyMessages?[1]["tool_call_id"] as? String == "call-read")
+        #expect(bodyMessages?[1]["content"] as? String == "read result")
+        #expect(bodyMessages?[2]["tool_call_id"] as? String == "call-edit")
+        #expect(bodyMessages?[2]["content"] as? String == "edit result")
+    }
+
     @Test("未收到流式终止信号时拒绝不完整响应")
     func incompleteStreamingResponseFails() async {
         let accumulator = StreamingAccumulator()
