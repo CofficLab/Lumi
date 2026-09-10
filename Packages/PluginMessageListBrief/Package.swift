@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginMessageListBrief",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginMessageListBrief", targets: ["PluginMessageListBrief"])],
     dependencies: [
         .package(path: "../KernelCore"),

@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "ProviderExternalFile",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "ProviderExternalFile", targets: ["ProviderExternalFile"])],
     targets: [
         .target(name: "ProviderExternalFile"),

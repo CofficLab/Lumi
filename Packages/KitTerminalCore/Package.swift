@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "KitTerminalCore",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "KitTerminalCore", targets: ["KitTerminalCore"])],
     dependencies: [
         .package(path: "../KitLocalization"),

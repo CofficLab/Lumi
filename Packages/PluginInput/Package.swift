@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginInput",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginInput", targets: ["InputPlugin"])],
     dependencies: [
         .package(path: "../KernelCore"),

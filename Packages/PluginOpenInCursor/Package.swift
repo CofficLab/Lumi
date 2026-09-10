@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginOpenInCursor",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "PluginOpenInCursor", targets: ["PluginOpenInCursor"]),
     ],

@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "PluginOpenIn",
     defaultLocalization: "zh-Hans",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "PluginOpenIn", targets: ["PluginOpenIn"]),
     ],

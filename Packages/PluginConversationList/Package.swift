@@ -3,7 +3,7 @@ import PackageDescription
 let package = Package(
     name: "PluginConversationList",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "PluginConversationList", targets: ["PluginConversationList"])],
     dependencies: [
         .package(path: "../KernelCore"),
