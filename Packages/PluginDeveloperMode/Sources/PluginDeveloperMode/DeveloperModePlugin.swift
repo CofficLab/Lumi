@@ -42,10 +42,10 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
             return
         }
 
-        var toolbarItems = [ToolbarItem]()
+        var toolbarItems = [ProviderToolbar.ToolbarItem]()
 #if DEBUG
         toolbarItems.append(
-            ToolbarItem(
+            ProviderToolbar.ToolbarItem(
                 id: "\(id).toggle",
                 title: LumiPluginLocalization.string("Developer mode"),
                 placement: .leading,
@@ -58,7 +58,7 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
 #endif
 #if DEBUG
         toolbarItems.append(
-            ToolbarItem(
+            ProviderToolbar.ToolbarItem(
                 id: "\(id).badge",
                 title: LumiPluginLocalization.string("Running a Debug build"),
                 placement: .leading,
