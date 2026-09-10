@@ -515,8 +515,8 @@ jobs:
       # =================================================================================================
       # 4. 提交更改与推送
       # =================================================================================================
-      - name: Commit and Push Changes
-        if: success()
+      - name: Commit and Push Stable Changes
+        if: success() && env.UPDATE_CHANNEL == 'stable'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "ci: bump to ${{ env.new_version }}"
@@ -524,7 +524,18 @@ jobs:
           tagging_message: ${{ env.tag }}
           push_options: "--follow-tags"
           # 仅提交版本号 xcconfig 和 appcast（pbxproj 不再随版本号变动）
-          file_pattern: "LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig appcast.xml appcast-arm64.xml appcast-x86_64.xml appcast-pre.xml appcast-pre-arm64.xml appcast-pre-x86_64.xml"
+          file_pattern: "LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig appcast.xml appcast-arm64.xml appcast-x86_64.xml"
+
+      - name: Commit and Push Preview Changes
+        if: success() && env.UPDATE_CHANNEL == 'preview'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci: bump to ${{ env.new_version }}"
+          commit_user_name: GitHub Action
+          tagging_message: ${{ env.tag }}
+          push_options: "--follow-tags"
+          # 仅提交版本号 xcconfig 和预览版 appcast
+          file_pattern: "LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig appcast-pre.xml appcast-pre-arm64.xml appcast-pre-x86_64.xml"
 
       - name: Prepare Release Assets
         if: success()
