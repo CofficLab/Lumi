@@ -186,12 +186,13 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
     /// turn. Anthropic adapters support images directly inside tool_result and
     /// do not use this normalization path.
     private func transformMessages(_ messages: [LLMMessage]) -> [[String: Any]] {
+        let normalizedMessages = normalizeToolResultOrder(messages)
         var output: [[String: Any]] = []
         var index = 0
         var expectedToolCallIDs = Set<String>()
 
-        while index < messages.count {
-            let message = messages[index]
+        while index < normalizedMessages.count {
+            let message = normalizedMessages[index]
             guard message.role == .tool else {
                 output.append(transformMessage(message))
                 expectedToolCallIDs = message.role == .assistant
@@ -204,8 +205,8 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             var resultImages: [MessageImage] = []
             var toolResultsByID: [String: LLMMessage] = [:]
             var toolResultOrder: [String] = []
-            while index < messages.count {
-                var result = messages[index]
+            while index < normalizedMessages.count {
+                var result = normalizedMessages[index]
                 guard result.role == .tool else { break }
                 index += 1
 
@@ -244,6 +245,56 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         }
 
         return output
+    }
+
+    /// 修复交互工具恢复时的落库竞态：用户消息可能先于恢复后的 tool 结果写入，
+    /// 但 OpenAI 兼容协议要求 tool 结果紧跟对应的 assistant.tool_calls。
+    ///
+    /// 如果历史中完全找不到结果，则移除这次孤立的 tool_calls，避免旧会话继续
+    /// 阻塞后续请求；工具调用结果本身仍由本地消息/UI 历史保留。
+    private func normalizeToolResultOrder(_ messages: [LLMMessage]) -> [LLMMessage] {
+        var normalized = messages
+        var index = 0
+
+        while index < normalized.count {
+            guard normalized[index].role == .assistant,
+                  let toolCalls = normalized[index].toolCalls,
+                  !toolCalls.isEmpty else {
+                index += 1
+                continue
+            }
+
+            let expectedToolCallIDs = Set(toolCalls.map(\.id))
+            var scanIndex = index + 1
+            var resultIndices: [Int] = []
+            while scanIndex < normalized.count {
+                if normalized[scanIndex].role == .assistant { break }
+                if normalized[scanIndex].role == .tool,
+                   let toolCallID = normalized[scanIndex].toolCallID,
+                   expectedToolCallIDs.contains(toolCallID),
+                   !Self.isPermissionPlaceholder(normalized[scanIndex].content) {
+                    resultIndices.append(scanIndex)
+                }
+                scanIndex += 1
+            }
+
+            if !resultIndices.isEmpty {
+                let results = resultIndices.map { normalized[$0] }
+                for resultIndex in resultIndices.reversed() {
+                    normalized.remove(at: resultIndex)
+                }
+                normalized.insert(contentsOf: results, at: index + 1)
+                index += results.count + 1
+                continue
+            }
+
+            // 发送层遇到无结果的历史 tool call 时，不能继续生成供应商必拒的请求。
+            // 只移除出站副本中的 tool_calls，不修改本地持久化消息。
+            normalized[index].toolCalls = nil
+            index += 1
+        }
+
+        return normalized
     }
 
     /// 授权流程产生的临时消息不是工具执行结果，不应发送给 LLM。

@@ -222,6 +222,67 @@ struct KitLLMTests {
         #expect(bodyMessages?[2]["content"] as? String == "edit result")
     }
 
+    @Test("OpenAI 兼容请求将迟到的交互工具结果移到 assistant 后")
+    func openAIAdapterRepairsOutOfOrderToolResult() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.deepseek.com/v1")
+        )
+        let messages = [
+            LLMMessage(
+                role: .assistant,
+                content: "",
+                toolCalls: [LLMToolCall(id: "ask-1", name: "ask_user", arguments: "{}")]
+            ),
+            LLMMessage(role: .user, content: "继续提交这次修改"),
+            LLMMessage(
+                role: .tool,
+                content: "The user continued without answering.",
+                toolCallID: "ask-1"
+            ),
+        ]
+
+        let body = try adapter.buildRequestBody(
+            messages: messages,
+            model: "deepseek-v4-flash",
+            tools: nil,
+            systemPrompt: ""
+        )
+        let bodyMessages = body["messages"] as? [[String: Any]]
+
+        #expect(bodyMessages?.count == 3)
+        #expect(bodyMessages?[1]["role"] as? String == "tool")
+        #expect(bodyMessages?[1]["tool_call_id"] as? String == "ask-1")
+        #expect(bodyMessages?[2]["role"] as? String == "user")
+        #expect(bodyMessages?[2]["content"] as? String == "继续提交这次修改")
+    }
+
+    @Test("OpenAI 兼容请求移除无结果的孤立工具调用")
+    func openAIAdapterRemovesOrphanToolCalls() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.deepseek.com/v1")
+        )
+        let messages = [
+            LLMMessage(
+                role: .assistant,
+                content: "等待用户回答",
+                toolCalls: [LLMToolCall(id: "orphan", name: "ask_user", arguments: "{}")]
+            ),
+            LLMMessage(role: .user, content: "继续")
+        ]
+
+        let body = try adapter.buildRequestBody(
+            messages: messages,
+            model: "deepseek-v4-flash",
+            tools: nil,
+            systemPrompt: ""
+        )
+        let bodyMessages = body["messages"] as? [[String: Any]]
+
+        #expect(bodyMessages?.count == 2)
+        #expect(bodyMessages?[0]["tool_calls"] == nil)
+        #expect(bodyMessages?[0]["content"] as? String == "等待用户回答")
+    }
+
     @Test("未收到流式终止信号时拒绝不完整响应")
     func incompleteStreamingResponseFails() async {
         let accumulator = StreamingAccumulator()
