@@ -60,7 +60,7 @@ struct ListV2View: View, SuperLog {
             if Self.verbose {
                 Self.logger.debug("\(Self.t)activate conversation: \(viewModel.selectedConversationID?.uuidString ?? "nil")")
             }
-            await viewModel.activate(conversationID: viewModel.selectedConversationID)
+            await viewModel.activateCurrentConversation()
         }
     }
 

@@ -151,6 +151,9 @@ final class ListV2ViewModel: ObservableObject {
 
     /// 切换/进入会话：记录目标会话并加载最近一页。
     func activate(conversationID: UUID?) async {
+        // Ignore requests for a selection that is no longer current. The view
+        // uses activateCurrentConversation() so delayed view tasks cannot
+        // overwrite a newer conversation snapshot.
         guard selectedConversationID == conversationID else { return }
         activationSequence &+= 1
         let mySequence = activationSequence
@@ -178,6 +181,11 @@ final class ListV2ViewModel: ObservableObject {
         } else {
             turnActivitySummaries = [:]
         }
+    }
+
+    /// Starts activation with the selection observed at task execution time.
+    func activateCurrentConversation() async {
+        await activate(conversationID: selectedConversationID)
     }
 
     /// 会话设置（verbosity 等）变化后的轻量刷新。
