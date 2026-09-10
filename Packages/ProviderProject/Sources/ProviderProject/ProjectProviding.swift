@@ -51,7 +51,9 @@ public protocol ProjectProviding: AnyObject {
     func closeFile(_ fileURL: URL)
 
     /// 关闭当前项目
-    func closeProject() async
+    ///
+    /// - Parameter reason: 触发本次变更的原因，供观察者与日志区分来源。
+    func closeProject(reason: ProjectChangeReason) async
 
     /// 刷新项目列表
     func refreshProjects() async throws
@@ -84,6 +86,11 @@ public extension ProjectProviding {
     /// 便捷重载：默认原因为 `.userSelected`。
     func openProject(at path: String) async throws {
         try await openProject(at: path, reason: .userSelected)
+    }
+
+    /// 便捷重载：默认原因为 `.userSelected`。
+    func closeProject() async {
+        await closeProject(reason: .userSelected)
     }
 
     /// 默认预览行为：仅切换当前文件。

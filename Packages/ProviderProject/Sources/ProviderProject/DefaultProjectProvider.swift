@@ -42,15 +42,15 @@ public final class DefaultProjectProvider: ProjectProviding, SuperLog {
             notify(.projectsChanged(projects))
         }
         if currentProjectChanged {
-            notify(.currentProjectChanged(info))
+            notify(.currentProjectChanged(info, reason: reason))
         }
     }
 
-    public func closeProject() async {
+    public func closeProject(reason: ProjectChangeReason = .userSelected) async {
         Self.logger.warning("\(Self.t)DefaultProjectProvider.closeProject uses in-memory state only; complete project cleanup is not implemented")
         guard currentProject != nil else { return }
         currentProject = nil
-        notify(.currentProjectChanged(nil))
+        notify(.currentProjectChanged(nil, reason: reason))
     }
 
     public func refreshProjects() async throws {

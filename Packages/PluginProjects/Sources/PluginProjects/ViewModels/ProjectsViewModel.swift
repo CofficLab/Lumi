@@ -139,7 +139,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
                 openProject(at: first.path, reason: .projectRemoved)
             } else {
                 Task { @MainActor [projectCapability] in
-                    await projectCapability.closeProject()
+                    await projectCapability.closeProject(reason: .projectRemoved)
                 }
             }
         }
@@ -156,7 +156,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         // 空/空白路径 → "无项目"态
         guard !trimmed.isEmpty else {
             Task { @MainActor [projectCapability] in
-                await projectCapability.closeProject()
+                await projectCapability.closeProject(reason: .settingsChange)
             }
             return
         }

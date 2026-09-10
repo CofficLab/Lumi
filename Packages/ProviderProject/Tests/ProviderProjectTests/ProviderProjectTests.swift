@@ -19,7 +19,7 @@ struct ProviderProjectTests {
             currentProject = ProjectInfo(name: (path as NSString).lastPathComponent, path: path)
         }
 
-        func closeProject() async {
+        func closeProject(reason: ProjectChangeReason) async {
             currentProject = nil
         }
 
@@ -146,7 +146,7 @@ struct ProviderProjectTests {
         } else {
             Issue.record("Expected a projectsChanged event after opening a new project")
         }
-        if case .currentProjectChanged(let project) = events[1] {
+        if case .currentProjectChanged(let project, _) = events[1] {
             #expect(project?.path == projectPath)
         } else {
             Issue.record("Expected a currentProjectChanged event after opening a project")
@@ -171,7 +171,7 @@ struct ProviderProjectTests {
         } else {
             Issue.record("Expected currentFileChanged(nil) after closing the current file")
         }
-        if case .currentProjectChanged(let project) = events[6] {
+        if case .currentProjectChanged(let project, _) = events[6] {
             #expect(project == nil)
         } else {
             Issue.record("Expected currentProjectChanged(nil) after closing the project")
