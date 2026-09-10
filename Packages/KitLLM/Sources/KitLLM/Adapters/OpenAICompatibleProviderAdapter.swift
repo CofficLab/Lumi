@@ -188,24 +188,49 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
     private func transformMessages(_ messages: [LLMMessage]) -> [[String: Any]] {
         var output: [[String: Any]] = []
         var index = 0
+        var expectedToolCallIDs = Set<String>()
 
         while index < messages.count {
             let message = messages[index]
-            guard message.role == .tool, message.toolCallID != nil else {
+            guard message.role == .tool else {
                 output.append(transformMessage(message))
+                expectedToolCallIDs = message.role == .assistant
+                    ? Set(message.toolCalls?.map(\.id) ?? [])
+                    : []
                 index += 1
                 continue
             }
 
             var resultImages: [MessageImage] = []
+            var toolResultsByID: [String: LLMMessage] = [:]
+            var toolResultOrder: [String] = []
             while index < messages.count {
                 var result = messages[index]
-                guard result.role == .tool, result.toolCallID != nil else { break }
+                guard result.role == .tool else { break }
+                index += 1
+
+                guard let toolCallID = result.toolCallID,
+                      expectedToolCallIDs.contains(toolCallID),
+                      !Self.isPermissionPlaceholder(result.content) else {
+                    continue
+                }
+
                 resultImages.append(contentsOf: result.images)
                 result.images = []
-                output.append(transformMessage(result))
-                index += 1
+                if toolResultsByID[toolCallID] == nil {
+                    toolResultOrder.append(toolCallID)
+                }
+                // 旧会话可能已经包含同一 tool_call_id 的授权占位结果和
+                // 最终结果；保留最后一个真实结果，避免生成非法连续 tool 消息。
+                toolResultsByID[toolCallID] = result
             }
+
+            for toolCallID in toolResultOrder {
+                if let result = toolResultsByID[toolCallID] {
+                    output.append(transformMessage(result))
+                }
+            }
+            expectedToolCallIDs = []
 
             if !resultImages.isEmpty {
                 output.append([
@@ -219,6 +244,16 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
         }
 
         return output
+    }
+
+    /// 授权流程产生的临时消息不是工具执行结果，不应发送给 LLM。
+    /// 旧会话可能已经持久化了这类消息，因此发送层也要做兼容清理。
+    private static func isPermissionPlaceholder(_ content: String) -> Bool {
+        guard let data = content.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return false
+        }
+        return object["kind"] as? String == "permission"
     }
 
     public func formatTool(_ tool: any LLMToolSchemaProviding) -> [String: Any] {
@@ -345,7 +380,17 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
 
             // 纯 stop_reason 结束信号
             if let stopReason {
-                return StreamChunk(stopReason: stopReason)
+                // DeepSeek 将最终 usage 放在带 choices/finish_reason 的最后一个
+                // chunk 中，而不是发送独立的 usage-only chunk。不能在这里丢弃
+                // token usage，否则速度和缓存命中率都无法落库。
+                return StreamChunk(
+                    inputTokens: inputTokens,
+                    outputTokens: outputTokens,
+                    cachedInputTokens: cachedInputTokens,
+                    cacheWriteInputTokens: cacheWriteInputTokens,
+                    cacheTotalInputTokens: inputTokens,
+                    stopReason: stopReason
+                )
             }
         }
 
@@ -404,6 +449,8 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             ?? (usage?["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
             ?? (usage?["input_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int
             ?? usage?["cache_read_input_tokens"] as? Int
+            // DeepSeek OpenAI API
+            ?? usage?["prompt_cache_hit_tokens"] as? Int
     }
 
     static func cacheWriteInputTokens(from usage: [String: Any]?) -> Int? {

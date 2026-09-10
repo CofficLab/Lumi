@@ -92,14 +92,12 @@ extension AgentLoopManager {
             assistantMessageID: assistantMessageID,
             in: snapshot.conversationID
         )
-        insertToolResultMessage(
-            result,
-            toolCallID: toolCallID,
-            conversationID: snapshot.conversationID,
-            turnID: jobTurnID
-        )
 
         if result.awaitingUserResponse {
+            // 授权/用户输入等待状态只写入 assistant.toolCalls 的展示快照。
+            // 此时还没有真正的 tool result；若提前插入 role=tool，用户
+            // 完成授权后真实结果会再次使用同一 tool_call_id 插入，导致
+            // 下一轮请求出现连续的 role=tool 消息。
             let suspension = AgentLoopSuspension(
                 suspensionID: "userInput:\(toolCallID)",
                 conversationID: snapshot.conversationID,
@@ -117,6 +115,13 @@ extension AgentLoopManager {
             }
             return
         }
+
+        insertToolResultMessage(
+            result,
+            toolCallID: toolCallID,
+            conversationID: snapshot.conversationID,
+            turnID: jobTurnID
+        )
 
         let (updated, outcome) = TurnReducer.reduce(
             runtime,
@@ -217,14 +222,16 @@ extension AgentLoopManager {
                     assistantMessageID: assistantMessageID,
                     in: conversationID
                 )
-                insertToolResultMessage(result, toolCallID: call.id, conversationID: conversationID, turnID: turnID)
                 if result.awaitingUserResponse {
+                    // 等待授权/用户输入时不要创建独立 role=tool 消息；
+                    // 真正结果会在授权完成后由专用路径插入一次。
                     suspension = AgentLoopSuspension(
                         suspensionID: "userInput:\(call.id)", conversationID: conversationID,
                         toolCallID: call.id, kind: "userInput", payload: result.content
                     )
                     break
                 }
+                insertToolResultMessage(result, toolCallID: call.id, conversationID: conversationID, turnID: turnID)
                 let (updated, outcome) = TurnReducer.reduce(runtime, event: .toolCallCompleted(toolCallID: call.id, result: result))
                 runtime = updated
                 if Self.verbose { Self.logger.info("\(Self.t)reducer after tool id=\(call.id), phase=\(String(describing: runtime.phase)), outcome=\(String(describing: outcome))") }
@@ -258,12 +265,6 @@ extension AgentLoopManager {
                     toolCallID: call.id,
                     assistantMessageID: assistantMessageID,
                     in: conversationID
-                )
-                insertToolResultMessage(
-                    approvalResult,
-                    toolCallID: call.id,
-                    conversationID: conversationID,
-                    turnID: turnID
                 )
                 suspension = interactionSuspension
             }
@@ -425,9 +426,10 @@ extension AgentLoopManager {
             in: conversationID,
             authorizationState: toolCall.authorizationState.rawValue
         )
-        insertToolResultMessage(result, toolCallID: toolCall.id, conversationID: conversationID, turnID: turnID)
 
         if result.awaitingUserResponse {
+            // 仍在等待用户输入时只更新 assistant 内嵌状态，避免把临时
+            // 占位结果和后续真实结果都追加到 LLM 历史。
             let suspension = AgentLoopSuspension(
                 suspensionID: "userInput:\(toolCall.id)",
                 conversationID: conversationID,
@@ -443,6 +445,8 @@ extension AgentLoopManager {
             if let outcome { finishTurn(conversationID: conversationID, turnID: turnID, outcome: outcome) }
             return
         }
+
+        insertToolResultMessage(result, toolCallID: toolCall.id, conversationID: conversationID, turnID: turnID)
 
         let (updated, outcome) = TurnReducer.reduce(
             runtime,
