@@ -273,6 +273,9 @@ private struct RailView: View {
     @State private var observerHandle: (any RailViewProvidingObserverHandle)?
 
     var body: some View {
+        // Read the local token so provider events invalidate this view without
+        // changing the identity of the entire Rail content tree.
+        let _ = observationRevision
         content
             .onAppear {
                 guard observerHandle == nil else { return }
