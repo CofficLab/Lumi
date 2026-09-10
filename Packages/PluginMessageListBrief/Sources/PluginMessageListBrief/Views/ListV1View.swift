@@ -59,7 +59,7 @@ struct ListV1View: View {
             atBottomBox.value = true
             isInitialPositionReady = false
             isPreparingInitialPosition = false
-            await messageListVM.activate(conversationID: selectedConversationID)
+            await messageListVM.activateCurrentConversation()
         }
     }
 

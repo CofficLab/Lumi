@@ -75,8 +75,10 @@ final class ConversationMessageListVM: ObservableObject {
     }
 
     func activate(conversationID: UUID?) async {
+        // Ignore requests for a selection that is no longer current. The view
+        // uses activateCurrentConversation() so this only filters delayed
+        // callbacks from an older selection.
         guard selectedConversationID == conversationID else { return }
-        // 记录当前激活序列号，用于后续异步操作完成后检查是否过期
         activationSequence &+= 1
         let mySequence = activationSequence
 
@@ -107,6 +109,12 @@ final class ConversationMessageListVM: ObservableObject {
         messageWindow = page.messages
         hasEarlierTurns = page.hasEarlierMessages
         rebuildWindow(for: conversationID, sequence: mySequence)
+    }
+
+    /// Starts activation with the selection observed at task execution time,
+    /// not the value captured while SwiftUI was building the view hierarchy.
+    func activateCurrentConversation() async {
+        await activate(conversationID: selectedConversationID)
     }
 
     /// 切换会话时先清空旧会话的展示快照，避免异步首屏加载期间继续显示旧行。
