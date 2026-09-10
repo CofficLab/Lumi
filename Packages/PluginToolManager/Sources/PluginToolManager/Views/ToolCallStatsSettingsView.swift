@@ -6,67 +6,57 @@ import SwiftUI
 ///
 /// 新版 `ToolCallRecordStore` 未提供聚合接口，这里分页拉取后在本视图内聚合。
 struct ToolCallStatsSettingsView: View {
-    @LumiTheme private var theme
-
     let store: ProviderToolManager.ToolCallRecordStore
 
     @State private var stats: [ToolStatEntry] = []
     @State private var totalCount = 0
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
-                Label(String(format: L("%lld total calls"), totalCount), systemImage: "chart.bar.xaxis")
-                Spacer()
-                AppButton(L("Refresh"), systemImage: "arrow.clockwise", size: .small) {
-                    Task { await reload() }
+        AppSettingSection(
+            title: L("Usage Statistics"),
+            titleAlignment: .leading
+        ) {
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: String(format: L("%lld total calls"), totalCount),
+                    description: L("Tool usage statistics will appear here once tools are called."),
+                    icon: "chart.bar.xaxis"
+                ) {
+                    AppButton(
+                        L("Refresh"),
+                        systemImage: "arrow.clockwise",
+                        style: .secondary,
+                        size: .small
+                    ) {
+                        Task { await reload() }
+                    }
                 }
-            }
-            .font(.appCaption)
-            .foregroundStyle(.secondary)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(stats) { stat in
-                        HStack(spacing: 10) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(stat.toolName)
-                                    .font(.appBody)
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(theme.textPrimary)
-                                Text(String(format: L("%lld errors"), stat.errorCount))
-                                    .font(.appMicro)
-                                    .foregroundStyle(theme.error)
+                Divider()
+                    .padding(.vertical, 8)
+
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(stats.enumerated()), id: \.element.id) { index, stat in
+                            if index > 0 {
+                                Divider()
+                                    .padding(.vertical, 8)
                             }
-                            Spacer()
-                            Text(String(format: L("%lld calls"), stat.totalCount))
-                                .font(.appBody)
-                                .foregroundStyle(theme.textSecondary)
-                            if stat.averageDuration > 0 {
-                                Text(String(format: L("avg %.2fs"), stat.averageDuration))
-                                    .font(.appMicro)
-                                    .foregroundStyle(theme.textSecondary)
-                            }
+                            ToolStatRowView(stat: stat)
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(theme.surface)
-                        .overlay(alignment: .bottom) {
-                            Rectangle()
-                                .fill(theme.divider)
-                                .frame(height: 0.5)
+                        if stats.isEmpty {
+                            AppEmptyState(
+                                icon: "chart.bar.xaxis",
+                                title: L("No statistics yet"),
+                                description: L("Tool usage statistics will appear here once tools are called.")
+                            )
+                            .frame(maxWidth: .infinity, minHeight: 200)
                         }
-                    }
-                    if stats.isEmpty {
-                        AppEmptyState(
-                            icon: "chart.bar.xaxis",
-                            title: L("No statistics yet"),
-                            description: L("Tool usage statistics will appear here once tools are called.")
-                        )
-                        .frame(maxWidth: .infinity, minHeight: 200)
                     }
                 }
+                .frame(maxHeight: .infinity)
             }
+            .frame(maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .task { await reload() }
@@ -118,6 +108,29 @@ struct ToolCallStatsSettingsView: View {
 
     private func L(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: .module)
+    }
+}
+
+private struct ToolStatRowView: View {
+    let stat: ToolStatEntry
+
+    var body: some View {
+        AppSettingRow(
+            title: stat.toolName,
+            description: String(format: LumiPluginLocalization.string("%lld errors", bundle: .module), stat.errorCount),
+            icon: "wrench.and.screwdriver"
+        ) {
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(String(format: LumiPluginLocalization.string("%lld calls", bundle: .module), stat.totalCount))
+                    .font(.appBody)
+                    .foregroundStyle(.secondary)
+                if stat.averageDuration > 0 {
+                    Text(String(format: LumiPluginLocalization.string("avg %.2fs", bundle: .module), stat.averageDuration))
+                        .font(.appMicro)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 }
 
