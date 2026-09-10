@@ -105,7 +105,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
         if projectProvider.currentProject == nil, let storedCurrentProject {
             Task { @MainActor in
                 do {
-                    try await projectProvider.openProject(at: storedCurrentProject.path)
+                    try await projectProvider.openProject(at: storedCurrentProject.path, reason: .appRestore)
                 } catch {
                     Self.logger.error("\(Self.t)Failed to restore current project: \(error.localizedDescription)")
                 }

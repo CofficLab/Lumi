@@ -80,7 +80,7 @@ struct NoConversationSelectedView: View {
         }
         .fileImporter(isPresented: $importingFolder, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
             guard case .success(let urls) = result, let url = urls.first else { return }
-            Task { @MainActor in do { try await services.project?.openProject(at: url.path) } catch { projectError = error.localizedDescription } }
+            Task { @MainActor in do { try await services.project?.openProject(at: url.path, reason: .userSelected) } catch { projectError = error.localizedDescription } }
         }
         .alert(LumiPluginLocalization.string("Failed to Open Project"), isPresented: Binding(get: { projectError != nil }, set: { if !$0 { projectError = nil } })) {
             Button(LumiPluginLocalization.string("OK"), role: .cancel) {}
@@ -94,7 +94,7 @@ struct NoConversationSelectedView: View {
                 .foregroundStyle(theme.textPrimary)
             Menu {
                 ForEach(guideState.projects, id: \.path) { item in
-                    Button(item.name) { Task { @MainActor in do { try await services.project?.openProject(at: item.path) } catch { projectError = error.localizedDescription } } }
+                    Button(item.name) { Task { @MainActor in do { try await services.project?.openProject(at: item.path, reason: .userSelected) } catch { projectError = error.localizedDescription } } }
                 }
                 Divider()
                 Button(LumiPluginLocalization.string("Add Project…")) { importingFolder = true }

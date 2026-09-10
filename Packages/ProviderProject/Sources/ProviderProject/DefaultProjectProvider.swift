@@ -21,7 +21,7 @@ public final class DefaultProjectProvider: ProjectProviding, SuperLog {
 
     public init() {}
 
-    public func openProject(at path: String) async throws {
+    public func openProject(at path: String, reason: ProjectChangeReason = .userSelected) async throws {
         let info = ProjectInfo(
             name: (path as NSString).lastPathComponent,
             path: path

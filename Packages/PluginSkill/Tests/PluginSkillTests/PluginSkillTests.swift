@@ -25,7 +25,7 @@ struct SkillPluginTests {
         init(path: String?) {
             currentProject = path.map { ProjectInfo(name: "test", path: $0) }
         }
-        func openProject(at path: String) async throws {}
+        func openProject(at path: String, reason: ProjectChangeReason) async throws {}
         func closeProject() async {}
         func refreshProjects() async throws {}
         func updateCurrentFile(_ fileURL: URL?) {}

@@ -15,7 +15,7 @@ struct ProviderProjectTests {
         var openFileURLs: [URL] = []
         var currentFileURL: URL?
 
-        func openProject(at path: String) async throws {
+        func openProject(at path: String, reason: ProjectChangeReason) async throws {
             currentProject = ProjectInfo(name: (path as NSString).lastPathComponent, path: path)
         }
 

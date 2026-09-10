@@ -136,7 +136,7 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
 
         if wasCurrentProject {
             if let first = remaining.first {
-                openProject(at: first.path)
+                openProject(at: first.path, reason: .projectRemoved)
             } else {
                 Task { @MainActor [projectCapability] in
                     await projectCapability.closeProject()
@@ -166,12 +166,12 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
 
         // 查找已存在的项目
         if let existing = projectCapability.projects.first(where: { $0.path == normalized }) ?? projectCapability.projects.first(where: { $0.path == trimmed }) {
-            openProject(at: existing.path)
+            openProject(at: existing.path, reason: .settingsChange)
             return
         }
 
         // 项目不在列表中：构造条目并选中（探测一次语言，供插件按项目类型筛选工具）
-        openProject(at: normalized)
+        openProject(at: normalized, reason: .settingsChange)
     }
 
     /// 便捷方法：通过路径添加项目
@@ -185,10 +185,10 @@ public final class ProjectsViewModel: ObservableObject, SuperLog {
         _ = try? add(path: url.path, select: true)
     }
 
-    private func openProject(at path: String) {
+    private func openProject(at path: String, reason: ProjectChangeReason = .userSelected) {
         Task { @MainActor [projectCapability] in
             do {
-                try await projectCapability.openProject(at: path)
+                try await projectCapability.openProject(at: path, reason: reason)
             } catch {
                 Self.logger.error("\(Self.t)打开项目失败: \(error.localizedDescription)")
             }

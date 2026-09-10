@@ -79,7 +79,7 @@ struct MessageEmptyStateView: View {
         .fileImporter(isPresented: $importingFolder, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
             guard case .success(let urls) = result, let url = urls.first else { return }
             Task { @MainActor in
-                do { try await services.project?.openProject(at: url.path) }
+                do { try await services.project?.openProject(at: url.path, reason: .userSelected) }
                 catch { projectError = error.localizedDescription }
             }
         }

@@ -44,7 +44,7 @@ public enum KernelFactory {
                 return false
             }
             do {
-                try await project.openProject(at: normalizedPath)
+                try await project.openProject(at: normalizedPath, reason: .externalOpen)
                 return true
             } catch {
                 return false

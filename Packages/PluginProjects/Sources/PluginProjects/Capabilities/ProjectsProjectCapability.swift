@@ -17,7 +17,7 @@ protocol ProjectsProjectCapability: AnyObject {
     func synchronizeProjects(_ projects: [ProjectInfo])
 
     /// 打开项目。
-    func openProject(at path: String) async throws
+    func openProject(at path: String, reason: ProjectChangeReason) async throws
 
     /// 关闭当前项目。
     func closeProject() async
@@ -40,8 +40,8 @@ final class ProjectsProjectCapabilityAdapter: ProjectsProjectCapability {
         project.synchronizeProjects(projects)
     }
 
-    func openProject(at path: String) async throws {
-        try await project.openProject(at: path)
+    func openProject(at path: String, reason: ProjectChangeReason) async throws {
+        try await project.openProject(at: path, reason: reason)
     }
 
     func closeProject() async {
