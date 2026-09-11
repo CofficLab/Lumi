@@ -191,6 +191,27 @@ func testMessageToLLMMessagePreservesUserImage() {
     #expect(llmMessage.images == [MessageImage(data: imageData, mimeType: "image/png")])
 }
 
+@Test("用户文本文件附件会转换为 LLM 用户正文")
+func testMessageToLLMMessagePreservesUserFile() {
+    let message = Message(
+        conversationID: UUID(),
+        role: .user,
+        content: "第64行，else区块内加上 error 日志",
+        metadata: UserAttachmentMetadata.encodeFileAttachments([
+            UserFileAttachment(
+                fileName: "ControlButtonsViewModel.swift",
+                mimeType: "text/x-swift",
+                textContent: "else { logger.error(\"failed\") }"
+            ),
+        ])
+    )
+
+    let llmMessage = message.llmMessage
+
+    #expect(llmMessage.content.contains("ControlButtonsViewModel.swift"))
+    #expect(llmMessage.content.contains("else { logger.error(\"failed\") }"))
+}
+
 @Test("LLM 图片恢复为消息时会保留附件 metadata")
 func testMessageFromLLMMessagePreservesUserImage() {
     let conversationID = UUID()

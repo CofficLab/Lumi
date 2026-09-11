@@ -12,6 +12,11 @@ import os
 /// 由旧版 `ConversationInputView` 复刻而来；`kernel` 依赖改为注入
 /// 内核的 `ConversationInputProviding` 与 `MessageSendingProviding`。
 struct ConversationInputView: View {
+    private static let logger = Logger(
+        subsystem: "com.coffic.lumi.plugin.conversation-input",
+        category: "Send"
+    )
+
     @LumiTheme private var theme
 
     let input: (any ConversationInputProviding)?
@@ -79,6 +84,9 @@ struct ConversationInputView: View {
                         fileAttachments: fileAttachments,
                         conversationID: nil
                     ) else { return }
+                    Self.logger.info(
+                        "[ConversationInput] Return attachment commit completed queued=\(commit.wasQueued), userMessageID=\(commit.userMessageID?.uuidString.prefix(8) ?? "nil")"
+                    )
                     if let trace {
                         metrics?.mark(trace, stage: "message.committed")
                         metrics?.end(trace)

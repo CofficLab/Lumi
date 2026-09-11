@@ -23,7 +23,7 @@ public final class MessageSenderPlugin: SuperPlugin, SuperLog {
         policy: .required
     )
 
-    private var agentLoopObserver: MessageSenderAgentLoopObserver?
+    private var agentLoopObserver: AgentLoopObserver?
 
     public init() {}
 
@@ -41,8 +41,7 @@ public final class MessageSenderPlugin: SuperPlugin, SuperLog {
             agentLoop: agentLoop
         )
         try kernel.registerProvider((any MessageSendingProviding).self, sender)
-
-        agentLoopObserver = MessageSenderAgentLoopObserver(agentLoop: agentLoop, sender: sender)
+        agentLoopObserver = AgentLoopObserver(agentLoop: agentLoop, sender: sender)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {

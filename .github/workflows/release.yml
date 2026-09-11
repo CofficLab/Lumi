@@ -611,6 +611,16 @@ jobs:
             cp "${{ github.workspace }}/appcast-${{ env.DEFAULT_UPDATE_ARCH }}.xml" "${{ github.workspace }}/appcast.xml"
           fi
 
+      # Preview fallback feeds are read from the pre branch when the primary
+      # CDN is unavailable, so keep the generated preview appcasts there.
+      - name: Commit and Push Preview Appcasts
+        if: success() && env.UPDATE_CHANNEL == 'preview'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci: update preview appcasts for ${{ env.new_version }}"
+          commit_user_name: GitHub Action
+          file_pattern: "appcast-pre.xml appcast-pre-arm64.xml appcast-pre-x86_64.xml"
+
       - name: Prepare Release Assets
         if: success()
         run: |

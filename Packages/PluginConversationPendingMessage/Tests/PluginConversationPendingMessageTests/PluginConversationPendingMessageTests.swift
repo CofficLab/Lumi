@@ -31,13 +31,14 @@ struct ConversationPendingMessagePluginTests {
 
         let plugin = ConversationPendingMessagePlugin()
         try plugin.onBoot(kernel: kernel)
+        try plugin.onReady(kernel: kernel)
         #expect(kernel.resolveProvider((any MessageSendingProviding).self) != nil)
 
         try plugin.onShutdown(kernel: kernel)
     }
 
-    @Test("MessageSendingBox 持有 sender 并支持取消")
-    func boxBridges() {
+    @Test("PendingMessageViewModel 保存选中会话和 pending 快照")
+    func viewModelStoresPresentationState() throws {
         let conversations = DefaultConversationManager()
         let messages = DefaultMessageManager()
         let loop = StubAgentLoop(messages: messages)
@@ -46,14 +47,29 @@ struct ConversationPendingMessagePluginTests {
             messages: messages,
             agentLoop: loop
         )
-        let box = MessageSendingBox(sender: sender)
-        #expect(box.sender.isSending == false)
-        box.cancel()
+        let conversationID = try conversations.createConversation(
+            title: "A", projectPath: nil, providerID: nil, modelName: nil
+        )
+        let pending = PendingChatMessage(conversationID: conversationID, content: "2")
+        let capability = PendingMessageSendingCapabilityAdapter(sender: sender)
+        let viewModel = PendingMessageViewModel(capability: capability)
+
+        viewModel.selectConversation(conversationID, pendingMessages: [pending])
+
+        #expect(viewModel.selectedConversationID == conversationID)
+        #expect(viewModel.pendingMessages == [pending])
     }
 
-    @Test("pending UI 的会话选择事件会跟随快速切换")
-    func selectionBoxTracksConversationSwitches() throws {
+    @Test("observer 会把会话选择变化同步到 ViewModel")
+    func observerTracksConversationSwitches() throws {
         let conversations = DefaultConversationManager()
+        let messages = DefaultMessageManager()
+        let loop = StubAgentLoop(messages: messages)
+        let sender = DefaultMessageSender(
+            conversations: conversations,
+            messages: messages,
+            agentLoop: loop
+        )
         let first = try conversations.createConversation(
             title: "A", projectPath: nil, providerID: nil, modelName: nil
         )
@@ -62,22 +78,22 @@ struct ConversationPendingMessagePluginTests {
         )
         conversations.selectConversation(id: first)
 
-        let box = ConversationSelectionBox(conversations: conversations)
-        var received: [UUID?] = []
-        let observer = box.addObserver { event in
-            guard case let .selectedConversationChanged(id) = event else { return }
-            received.append(id)
-        }
-        #expect(box.selectedConversationID == first)
+        let messageCapability = PendingMessageSendingCapabilityAdapter(sender: sender)
+        let conversationCapability = PendingMessageConversationCapabilityAdapter(conversations: conversations)
+        let viewModel = PendingMessageViewModel(capability: messageCapability)
+        let observer = PendingMessageObserver(
+            messageCapability: messageCapability,
+            conversationCapability: conversationCapability,
+            viewModel: viewModel
+        )
+        #expect(viewModel.selectedConversationID == first)
 
         conversations.selectConversation(id: second)
-        #expect(box.selectedConversationID == second)
+        #expect(viewModel.selectedConversationID == second)
 
         conversations.selectConversation(id: first)
-        #expect(box.selectedConversationID == first)
-        #expect(received == [second, first])
+        #expect(viewModel.selectedConversationID == first)
         observer.cancel()
-        box.cancel()
     }
 }
 

@@ -118,6 +118,32 @@ public enum UserAttachmentMetadata {
         decode([UserFileAttachment].self, from: metadata, key: fileAttachmentsKey) ?? []
     }
 
+    /// 将文本文件附件追加到用户消息正文，供不支持独立文件字段的 LLM 协议使用。
+    ///
+    /// 二进制附件只保留文件名和 MIME 类型提示，不把 base64 字节直接混入提示词。
+    public static func appendingFileAttachments(
+        _ attachments: [UserFileAttachment],
+        to content: String
+    ) -> String {
+        guard !attachments.isEmpty else { return content }
+
+        let renderedAttachments = attachments.map { attachment in
+            let name = escapeAttribute(attachment.fileName)
+            let mimeType = escapeAttribute(attachment.mimeType)
+            let body = attachment.textContent
+                ?? "[Binary file attachment; content is not decoded. MIME type: \(attachment.mimeType)]"
+
+            return """
+            <attached_file name="\(name)" mime_type="\(mimeType)">
+            \(body)
+            </attached_file>
+            """
+        }.joined(separator: "\n\n")
+
+        guard !content.isEmpty else { return renderedAttachments }
+        return "\(content)\n\n\(renderedAttachments)"
+    }
+
     private static func decode<T: Decodable>(
         _ type: T.Type,
         from metadata: [String: String],
@@ -127,6 +153,14 @@ public enum UserAttachmentMetadata {
             return nil
         }
         return try? JSONDecoder().decode(type, from: data)
+    }
+
+    private static func escapeAttribute(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
     }
 
     // MARK: Extract from history

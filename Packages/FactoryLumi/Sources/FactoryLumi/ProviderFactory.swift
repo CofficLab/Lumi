@@ -102,9 +102,8 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     /// 产出 `MessageSendingProviding` 实现。
     ///
-    /// `DefaultMessageSender` 在其 `init` 中自动向 `agentLoop` 注册事件观察器，
-    /// 无需外部额外接线。`PluginAgentLoop` 替换 `AgentLoopProviding` 后会在
-    /// `onBoot` 中重新注册本 Provider 以指向新的 AgentLoop 实例。
+    /// 默认 Lumi 装配由 `MessageSenderPlugin` 负责；保留该工厂钩子供宿主
+    /// 覆盖 Provider 产出策略。
     public func makeMessageSenderProvider(
         conversations: any ConversationManaging,
         messages: any MessageManaging,
@@ -345,10 +344,6 @@ public struct DefaultProviderFactory: ProviderFactory {
             agentLoop.setLifecycleHooks(lifecycleHooks)
         }
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop)
-        try kernel.registerProvider(
-            (any MessageSendingProviding).self,
-            makeMessageSenderProvider(conversations: conversations, messages: messages, agentLoop: agentLoop)
-        )
         // 输入插件通过自己的窄播观察器消费文本、光标和高度等高频状态。
         try kernel.registerProvider(
             (any ConversationInputProviding).self,
