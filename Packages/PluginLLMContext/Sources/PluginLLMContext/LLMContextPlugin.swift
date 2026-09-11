@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import KitSuperLog
 import os
+import ProviderChatSection
 import ProviderConversation
 import ProviderLifecycleHooks
 import ProviderLLMContext
@@ -29,13 +30,16 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
     )
 
     private var provider: LLMContextProvider?
+    private let toolbarState = ContextCompactionToolbarState()
+    private var toolbarObserver: ContextCompactionToolbarObserver?
     /// `turnFinished` 钩子（见 `Hooks/LLMContextTurnFinishedHook.swift`）。
     private var turnFinishedHook: LLMContextTurnFinishedHook?
 
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        guard let messages = kernel.resolveProvider((any MessageManaging).self),
+        guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
+              let messages = kernel.resolveProvider((any MessageManaging).self),
               let conversations = kernel.resolveProvider((any ConversationManaging).self),
               let llmProvider = kernel.resolveProvider((any LLMManaging).self) else {
             Self.logger.error("\(Self.t)上下文插件缺少消息、会话或 LLM Provider，跳过启动")
@@ -62,6 +66,32 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
         )
         self.provider = provider
 
+        toolbarObserver?.cancel()
+        toolbarObserver = ContextCompactionToolbarObserver(
+            conversations: conversations,
+            messages: messages,
+            onConversationChange: { [weak toolbarState] id in
+                toolbarState?.setSelectedConversationID(id)
+            },
+            onMessageInsert: { [weak toolbarState] conversationID in
+                guard conversationID == toolbarState?.selectedConversationID else { return }
+                toolbarState?.markMessagesChanged(conversationID: conversationID)
+            }
+        )
+
+        chat.addBarItems([
+            ChatSectionBarItem(
+                id: "\(id).toolbar-button",
+                order: 87,
+                placement: .toolbarLeading
+            ) {
+                ContextCompactionToolbarView(
+                    messages: messages,
+                    state: self.toolbarState
+                )
+            },
+        ])
+
         kernel.unregisterProvider((any LLMContextProviding).self)
         try kernel.registerProvider((any LLMContextProviding).self, provider)
 
@@ -74,6 +104,10 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        toolbarObserver?.cancel()
+        toolbarObserver = nil
+        kernel.resolveProvider((any ChatSectionProviding).self)?
+            .removeBarItem(id: "\(id).toolbar-button")
         turnFinishedHook = nil
         provider?.shutdown()
         provider = nil

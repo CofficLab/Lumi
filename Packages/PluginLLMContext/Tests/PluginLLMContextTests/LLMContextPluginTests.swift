@@ -116,6 +116,13 @@ struct LLMContextPluginTests {
                 #expect(messages.messages(for: conversationID).contains {
                     MessageTimelineEvent.isActualContextCompaction($0)
                 })
+                let event = messages.messages(for: conversationID).first {
+                    MessageTimelineEvent.isActualContextCompaction($0)
+                }
+                #expect(event?.providerID == summaryProvider.providerID)
+                #expect(event?.modelName == "summary-model")
+                #expect(event?.metadata[MessageTimelineEvent.contextCompactionReasonKey] == "hard-threshold")
+                #expect(event?.metadata[MessageTimelineEvent.contextCompactionContextWindowTokensKey] == "5000")
                 #expect(!messages.messages(for: conversationID).contains {
                     MessageTimelineEvent.isContextCompaction($0)
                         && !MessageTimelineEvent.isActualContextCompaction($0)
@@ -172,6 +179,73 @@ struct LLMContextPluginTests {
         #expect(result.estimatedInputTokens <= result.inputTokenLimit)
         #expect(result.messages.contains { $0.metadata["llmContext"] == "summary" })
         #expect(messages.messages(for: conversationID).contains {
+            MessageTimelineEvent.isActualContextCompaction($0)
+        })
+        let event = messages.messages(for: conversationID).first {
+            MessageTimelineEvent.isActualContextCompaction($0)
+        }
+        #expect(event?.providerID == summaryProvider.providerID)
+        #expect(event?.modelName == "summary-model")
+        #expect(event?.metadata[MessageTimelineEvent.contextCompactionReasonKey] == "hard-threshold")
+        #expect(event?.metadata[MessageTimelineEvent.contextCompactionContextWindowTokensKey] == "20000")
+    }
+
+    @Test("软阈值只预热，不记录实际压缩")
+    func softThresholdOnlyPrewarms() async throws {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider()
+        try llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        for index in 0..<17 {
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "短内容 ", count: 150) + "\(index)"
+                ),
+                to: conversationID
+            )
+        }
+
+        let prewarmRequest = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 15_000,
+                reservedOutputTokens: 2_000,
+                safetyMarginTokens: 1_000
+            ),
+            mode: .prewarm
+        )
+        _ = await provider.prepareContext(for: prewarmRequest)
+
+        for _ in 0..<12 {
+            try await Task.sleep(nanoseconds: 100_000_000)
+            if summaryProvider.completeCalls == 1 { break }
+        }
+        #expect(summaryProvider.completeCalls == 1)
+
+        let beforeSendRequest = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: prewarmRequest.budget,
+            mode: .beforeSend
+        )
+        let result = await provider.prepareContext(for: beforeSendRequest)
+
+        #expect(!result.didCompact)
+        #expect(!messages.messages(for: conversationID).contains {
             MessageTimelineEvent.isActualContextCompaction($0)
         })
     }

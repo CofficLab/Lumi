@@ -13,11 +13,13 @@ let package = Package(
         .package(path: "../KitLLM"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderConversation"),
+        .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderLifecycleHooks"),
         .package(path: "../ProviderLLMContext"),
         .package(path: "../ProviderLLMManager"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderStorage"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -27,11 +29,13 @@ let package = Package(
                 "KitLLM",
                 "KitSuperLog",
                 "ProviderConversation",
+                "ProviderChatSection",
                 "ProviderLifecycleHooks",
                 "ProviderLLMContext",
                 "ProviderLLMManager",
                 "ProviderMessage",
                 "ProviderStorage",
+                "LumiUI",
             ],
             path: "Sources/PluginLLMContext"
         ),
