@@ -28,6 +28,9 @@ struct PluginManagementView: View {
     @State private var searchText = ""
     @State private var selectedCategory: PluginCategory?
 
+    /// 停用所有操作进行中标记：避免连点触发并发启停。
+    @State private var isDisablingAll = false
+
     init(manager: any PluginManaging, docsProvider: (any DocsViewProviding)? = nil) {
         _model = StateObject(wrappedValue: PluginManagementViewModel(manager: manager))
         self.docsProvider = docsProvider
@@ -36,7 +39,21 @@ struct PluginManagementView: View {
     var body: some View {
         AppSettingsContentScaffold(scrollsContent: false, maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 14) {
-                PluginManagementHeader(totalCount: plugins.count, enabledCount: enabledCount)
+                HStack(spacing: 10) {
+                    PluginManagementHeader(totalCount: plugins.count, enabledCount: enabledCount)
+                    Spacer()
+                    AppButton(
+                        isDisablingAll ? PluginPluginManagerText.disablingAll : PluginPluginManagerText.disableAll,
+                        systemImage: "xmark.circle",
+                        style: .secondary,
+                        size: .small
+                    ) {
+                        disableAllPlugins()
+                    }
+                    .disabled(isDisablingAll || enabledCount == 0)
+                }
+                .font(.appCaption)
+                .foregroundStyle(theme.textSecondary)
 
                 HStack(spacing: 0) {
                     pluginListPane
@@ -186,6 +203,24 @@ struct PluginManagementView: View {
                 )
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Actions
+
+    /// 停用所有当前已启用的可配置插件。
+    ///
+    /// 逐个调用 `disablePlugin`，操作期间按钮显示"停用中…"并禁用，
+    /// 防止连点触发并发启停的竞态。
+    private func disableAllPlugins() {
+        guard !isDisablingAll else { return }
+        isDisablingAll = true
+        let enabledPluginIDs = plugins.filter { model.manager.isEnabled(id: $0.id) }.map(\.id)
+        Task { @MainActor in
+            defer { isDisablingAll = false }
+            for id in enabledPluginIDs {
+                _ = await model.manager.disablePlugin(id: id)
+            }
+        }
     }
 
     // MARK: - Detail Pane

@@ -7,7 +7,7 @@ import ProviderPluginManaging
 import ProviderRootView
 import ProviderStorage
 
-/// ActivityBar 自定义插件（KernelCore 生态）。
+/// ActivityBar 自定义插件。
 ///
 /// 替换 `DefaultProviderFactory.registerProviders` 预注册的 `DefaultActivityBarProviding`，
 /// 为后续解析 `ActivityBarProviding` 的视图工厂（`DefaultViewFactory.makeMainView`）以

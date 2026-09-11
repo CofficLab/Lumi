@@ -22,6 +22,8 @@ enum PluginPluginManagerText {
     static let noDetailsProvided = "无详细信息"
     static let noDetailsHint = "插件作者未提供详情视图。"
     static let enable = "启用"
+    static let disableAll = "停用所有"
+    static let disablingAll = "停用中…"
 
     // 详情面板信息区
     static let categoryLabel = "分类"
