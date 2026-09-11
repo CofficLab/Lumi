@@ -14,7 +14,6 @@ concurrency:
 
 permissions:
   contents: write
-  actions: write
 
 env:
   # 基础环境变量
@@ -80,17 +79,14 @@ jobs:
           echo "- **上一个版本**: \`$LAST_TAG\`" >> $GITHUB_STEP_SUMMARY
           echo "- **新版本**: \`$NEW_VERSION\`" >> $GITHUB_STEP_SUMMARY
 
-      - name: Reserve Monotonic Build Number
+      - name: Generate Monotonic Date Build Number
         id: build_number
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
-          # Sparkle compares sparkle:version / CFBundleVersion. Keep the
-          # counter outside the source tree so publishing does not create a
-          # version-only commit. A failed release may consume a number; gaps
-          # are harmless, while reuse or rollback is not.
+          # Sparkle compares sparkle:version / CFBundleVersion. Use a UTC
+          # timestamp so the build number is readable without storing a
+          # mutable counter in GitHub or the source tree.
           extract_max() {
             awk -F'[<>]' '/<sparkle:version>/{ value = $3 + 0; if (value > max) max = value } END { print max + 0 }'
           }
@@ -142,26 +138,24 @@ jobs:
             fi
           done
 
-          counter=0
-          if stored_counter=$(gh variable get LUMI_BUILD_NUMBER \
-            --repo "$GITHUB_REPOSITORY" --json value --jq .value 2>/dev/null); then
-            if ! [[ "$stored_counter" =~ ^[0-9]+$ ]]; then
-              echo "❌ GitHub Actions variable LUMI_BUILD_NUMBER 不是正整数: $stored_counter"
-              exit 1
-            fi
-            counter=$stored_counter
+          timestamp_build=$(date -u +%Y%m%d%H%M%S)
+          if ! [[ "$timestamp_build" =~ ^[0-9]{14}$ ]]; then
+            echo "❌ 无法生成 14 位 UTC 日期构建号: $timestamp_build"
+            exit 1
           fi
 
-          known_max=$(printf '%s\n' "$source_max" "$history_max" "$online_max" "$counter" | sort -n | tail -1)
-          new_build=$((known_max + 1))
-
-          # Persist the reservation before building. If a later step fails,
-          # the next release receives a new number instead of reusing it.
-          gh variable set LUMI_BUILD_NUMBER \
-            --repo "$GITHUB_REPOSITORY" --body "$new_build"
+          known_max=$(printf '%s\n' "$source_max" "$history_max" "$online_max" | sort -n | tail -1)
+          if (( timestamp_build > known_max )); then
+            new_build="$timestamp_build"
+          else
+            # Handles clock rollback and the rare case of two releases in the
+            # same second without allowing Sparkle's version to go backwards.
+            new_build=$((known_max + 1))
+            echo "⚠️ UTC 时间构建号不大于已知最大值，使用 $new_build"
+          fi
 
           echo "Known maximum Sparkle build: $known_max"
-          echo "Reserved Sparkle build: $new_build"
+          echo "Generated Sparkle build: $new_build"
           echo "build_number=$new_build" >> "$GITHUB_ENV"
           echo "build_number=$new_build" >> "$GITHUB_OUTPUT"
           echo "build_floor=$known_max" >> "$GITHUB_ENV"

@@ -23,7 +23,7 @@
 
 两个通道分别存放 DMG 和 appcast。稳定版客户端优先读取 R2，R2 不可访问时回退到 GitHub Release 的架构 appcast。预览版使用 `pre` 前缀的 R2 路径；预览版的备用地址由客户端通道配置决定。
 
-Sparkle 的构建号保存在 GitHub Actions 的仓库变量 `LUMI_BUILD_NUMBER` 中。发布时先把它与仓库历史、线上 appcast 的最大构建号比较，再预留下一个编号；stable 和 preview 共用同一计数器。版本配置和 appcast 只在 CI 工作目录中临时生成，不提交回代码仓库。
+Sparkle 的构建号使用 UTC 日期格式 `YYYYMMDDHHmmss`，例如 `20260101120000`。发布时先与仓库历史、线上 appcast 的最大构建号比较；如果发生时钟回退或同秒发布，则使用已知最大值加一。stable 和 preview 共用全局发布锁。版本配置和 appcast 只在 CI 工作目录中临时生成，不提交回代码仓库。
 
 ## 二、需要准备的东西
 
@@ -34,7 +34,7 @@ Sparkle 的构建号保存在 GitHub Actions 的仓库变量 `LUMI_BUILD_NUMBER`
 | 证书私钥（p12） | CI 中使用 |
 | App Store Connect API Key | 用于 Notarization |
 | SPARKLE_PRIVATE_KEY | Sparkle使用，保存在 GitHub Actions 中 |
-| LUMI_BUILD_NUMBER | Sparkle 构建号计数器；首次发布时由 workflow 根据历史最大值自动初始化 |
+| UTC 日期构建号 | 格式为 `YYYYMMDDHHmmss`，由 workflow 自动生成并校验单调递增 |
 
 为了实现自动检查更新，还需要确保`target - info`中有以下内容：
 
