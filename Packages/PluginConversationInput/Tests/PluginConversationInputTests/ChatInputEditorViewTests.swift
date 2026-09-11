@@ -118,6 +118,24 @@ struct ChatInputEditorViewTests {
         #expect(!textView.isIMEComposing)
     }
 
+    @Test("provisional zero-width layout does not publish an editor height")
+    func zeroWidthLayoutDoesNotProduceHeight() {
+        #expect(
+            ChatInputEditorView.measuredHeight(
+                usedRectHeight: 152,
+                insetHeight: 8,
+                availableWidth: 0
+            ) == nil
+        )
+        #expect(
+            ChatInputEditorView.measuredHeight(
+                usedRectHeight: 152,
+                insetHeight: 8,
+                availableWidth: 640
+            ) == 160
+        )
+    }
+
     @Test("dismantling the editor cancels deferred bindings")
     func dismantlingEditorCancelsDeferredBinding() async {
         var draft = ""

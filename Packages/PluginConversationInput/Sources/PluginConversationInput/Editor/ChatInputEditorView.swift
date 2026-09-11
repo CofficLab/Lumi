@@ -71,7 +71,7 @@ public struct ChatInputEditorView: NSViewRepresentable {
     }
 
     public func makeNSView(context: Context) -> NSScrollView {
-        let scrollView = NSScrollView()
+        let scrollView = ChatInputScrollView()
         scrollView.drawsBackground = false
         scrollView.borderType = .noBorder
         scrollView.hasVerticalScroller = false
@@ -119,6 +119,14 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
         scrollView.documentView = textView
         context.coordinator.attach(to: textView)
+        scrollView.onContentWidthChange = { [weak coordinator = context.coordinator, weak textView] width in
+            guard let coordinator, let textView, coordinator.accepts(textView) else { return }
+            textView.textContainer?.containerSize = NSSize(
+                width: width,
+                height: CGFloat.greatestFiniteMagnitude
+            )
+            coordinator.scheduleHeightUpdate(for: textView, immediately: true)
+        }
 
         let placeholderLabel = ChatInputPlaceholderLabel(labelWithString: placeholder)
         placeholderLabel.tag = Self.placeholderLabelTag
@@ -213,8 +221,14 @@ public struct ChatInputEditorView: NSViewRepresentable {
 
         let usedRect = layoutManager.usedRect(for: textContainer)
         let insetHeight = textView.textContainerInset.height * 2
+        guard let newHeight = Self.measuredHeight(
+            usedRectHeight: usedRect.height,
+            insetHeight: insetHeight,
+            availableWidth: textContainer.containerSize.width
+        ) else {
+            return
+        }
         let contentHeight = usedRect.height + insetHeight
-        let newHeight = min(max(contentHeight, Self.minHeight), Self.maxHeight)
 
         if let scrollView = textView.enclosingScrollView {
             scrollView.hasVerticalScroller = contentHeight > Self.maxHeight
@@ -253,6 +267,39 @@ public struct ChatInputEditorView: NSViewRepresentable {
         }
 
         return result
+    }
+
+    static func measuredHeight(
+        usedRectHeight: CGFloat,
+        insetHeight: CGFloat,
+        availableWidth: CGFloat
+    ) -> CGFloat? {
+        guard availableWidth.isFinite, availableWidth > 0,
+              usedRectHeight.isFinite, insetHeight.isFinite else {
+            return nil
+        }
+
+        let contentHeight = usedRectHeight + insetHeight
+        return min(max(contentHeight, Self.minHeight), Self.maxHeight)
+    }
+}
+
+private final class ChatInputScrollView: NSScrollView {
+    var onContentWidthChange: ((CGFloat) -> Void)?
+
+    private var lastContentWidth: CGFloat?
+
+    override func layout() {
+        super.layout()
+
+        let width = contentView.bounds.width
+        guard width > 0,
+              lastContentWidth.map({ abs($0 - width) > 0.5 }) ?? true else {
+            return
+        }
+
+        lastContentWidth = width
+        onContentWidthChange?(width)
     }
 }
 
