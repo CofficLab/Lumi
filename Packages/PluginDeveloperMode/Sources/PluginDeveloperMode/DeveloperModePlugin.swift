@@ -27,6 +27,9 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
     )
 
     private var provider: (any DeveloperModeProviding)?
+    private var capability: DeveloperModeCapabilityAdapter?
+    private var viewModel: DeveloperModeViewModel?
+    private var observer: DeveloperModeObserver?
 
     public init() {}
 
@@ -36,6 +39,12 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
             return
         }
         self.provider = provider
+        let capability = DeveloperModeCapabilityAdapter(provider: provider)
+        let viewModel = DeveloperModeViewModel(capability: capability)
+        let observer = DeveloperModeObserver(capability: capability, viewModel: viewModel)
+        self.capability = capability
+        self.viewModel = viewModel
+        self.observer = observer
 
         guard let toolbar = kernel.resolveProvider((any ToolbarProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve ToolbarProviding from kernel")
@@ -52,7 +61,7 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
                 category: .global,
                 order: 5
             ) {
-                DeveloperModeToggleView(provider: provider)
+                DeveloperModeToggleView(viewModel: viewModel)
             }
         )
 #endif
@@ -80,6 +89,10 @@ public final class DeveloperModePlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(
             ids: Set(toolbarItemIDs)
         )
+        observer?.cancel()
+        observer = nil
+        viewModel = nil
+        capability = nil
         provider = nil
     }
 }

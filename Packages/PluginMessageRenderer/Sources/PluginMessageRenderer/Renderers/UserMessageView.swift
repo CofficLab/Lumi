@@ -1,18 +1,14 @@
 import KitAgentTool
-import KernelCore
 import KitLocalization
 import LumiUI
 import KitMarkdown
 import ProviderConversation
 import ProviderMessage
-import ProviderMessageRendering
-import ProviderMessageSender
-import ProviderToolManager
-import LumiUI
 import SwiftUI
 
 struct UserMessageView: View {
-    let kernel: KernelCoreContainer
+    let capability: any MessageRendererCapability
+    @ObservedObject var stateViewModel: MessageRendererStateViewModel
     let message: Message
     let verbosity: ResponseVerbosity
 
@@ -22,7 +18,12 @@ struct UserMessageView: View {
         // 单次取用(带进程级缓存):历史上 userImageData / decodedFileAttachments
         // 各计算两次(JSON+base64 解码),且每次滚动重物化都重复执行。
         let attachments = message.cachedDecodedAttachments
-        return MessageViewChrome(kernel: kernel, message: message, showsResendButton: true, verbosity: verbosity) {
+        return MessageViewChrome(
+            capability: capability,
+            message: message,
+            showsResendButton: true,
+            verbosity: verbosity
+        ) {
             VStack(alignment: .leading, spacing: 8) {
                 if !attachments.imageData.isEmpty {
                     AppImagePreviewGrid(imageDataList: attachments.imageData)
