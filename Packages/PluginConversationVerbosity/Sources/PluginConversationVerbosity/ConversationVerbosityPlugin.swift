@@ -28,7 +28,7 @@ public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
     )
 
     private var capabilityAdapter: ConversationVerbosityCapabilityAdapter?
-    private var conversationObservation: ConversationManagerObservationBox?
+    private var verbosityObserver: VerbosityObserver?
 
     public init() {}
 
@@ -40,9 +40,10 @@ public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
         }
         let adapter = ConversationVerbosityCapabilityAdapter(conversations: conversations)
         capabilityAdapter = adapter
-        conversationObservation?.cancel()
-        let observation = ConversationManagerObservationBox(capability: adapter)
-        conversationObservation = observation
+        let viewModel = VerbosityViewModel(capability: adapter)
+        verbosityObserver?.cancel()
+        let observer = VerbosityObserver(capability: adapter, viewModel: viewModel)
+        verbosityObserver = observer
 
         chat.addBarItems([
             ChatSectionBarItem(
@@ -50,16 +51,14 @@ public final class ConversationVerbosityPlugin: SuperPlugin, SuperLog {
                 order: 85,
                 placement: .toolbarTrailing
             ) {
-                VerbosityToolbarView(
-                    observation: observation
-                )
+                VerbosityToolbarView(viewModel: viewModel)
             },
         ])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        conversationObservation?.cancel()
-        conversationObservation = nil
+        verbosityObserver?.cancel()
+        verbosityObserver = nil
         capabilityAdapter = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar-button")

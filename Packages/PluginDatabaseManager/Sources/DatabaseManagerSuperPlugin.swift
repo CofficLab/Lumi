@@ -48,7 +48,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        EmbeddedEditorServiceLocator.provider = kernel.resolveProvider(EditorEmbeddedEditorProviding.self)
+        viewModel.embeddedEditorProvider = kernel.resolveProvider(EditorEmbeddedEditorProviding.self)
         if let editor = kernel.resolveProvider(EditorService.self) {
             editor.editorExtensions.registerLanguage(DatabaseSQLLanguageSupport.descriptor)
             editor.editorExtensions.registerGrammarProvider(DatabaseSQLGrammarProvider())
@@ -144,7 +144,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
         tools?.remove(id: DatabaseDescribeSchemaV2Tool.toolName)
         tools?.remove(id: DatabaseReadonlyQueryV2Tool.toolName)
         tools?.remove(id: DatabaseSampleTableV2Tool.toolName)
-        EmbeddedEditorServiceLocator.provider = nil
+        viewModel.embeddedEditorProvider = nil
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

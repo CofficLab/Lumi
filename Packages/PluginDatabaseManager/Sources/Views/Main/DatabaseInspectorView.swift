@@ -311,7 +311,8 @@ public struct DatabaseInspectorView: View {
                         isEditable: false,
                         wrapLines: false,
                         fontSize: NSFont.smallSystemFontSize
-                    )
+                    ),
+                    provider: viewModel.embeddedEditorProvider
                 )
                 .frame(minHeight: 260)
                 .clipShape(RoundedRectangle(cornerRadius: 6))

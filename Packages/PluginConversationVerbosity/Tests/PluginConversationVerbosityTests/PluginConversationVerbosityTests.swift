@@ -39,22 +39,23 @@ struct PluginConversationVerbosityTests {
         #expect(conversations.globalVerbosity == .brief)
     }
 
-    @Test("ObservationBox 转发 conversation typed events 并支持取消")
-    func observationBoxForwardsTypedEvents() throws {
+    @Test("Observer 直接更新 ViewModel 并支持取消")
+    func observerWritesViewModelDirectlyAndSupportsCancel() throws {
         let conversations = DefaultConversationManager()
         let adapter = ConversationVerbosityCapabilityAdapter(conversations: conversations)
-        let box = ConversationManagerObservationBox(capability: adapter)
-        var eventCount = 0
-        let handle = box.addObserver { _ in eventCount += 1 }
+        let viewModel = VerbosityViewModel(capability: adapter)
+        let observer = VerbosityObserver(capability: adapter, viewModel: viewModel)
 
+        // 初值写入
+        #expect(viewModel.selectedVerbosity == .defaultVerbosity)
+
+        let revisionAfterBoot = viewModel.observationRevision
         _ = try conversations.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil)
-        #expect(eventCount > 0)
+        #expect(viewModel.observationRevision > revisionAfterBoot)
 
-        handle.cancel()
-        let countAfterCancel = eventCount
+        observer.cancel()
+        let revisionAfterCancel = viewModel.observationRevision
         conversations.setGlobalVerbosity(.detailed)
-        #expect(eventCount == countAfterCancel)
-
-        box.cancel()
+        #expect(viewModel.observationRevision == revisionAfterCancel)
     }
 }

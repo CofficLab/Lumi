@@ -31,7 +31,7 @@ public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
     )
 
     private var autoTitleService: TitleService?
-    private let headerState = ConversationTitleHeaderState()
+    private let headerViewModel = ConversationTitleViewModel()
     private var headerObserver: ConversationTitleHeaderObserver?
 
     public init() {}
@@ -63,9 +63,7 @@ public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
         headerObserver?.cancel()
         headerObserver = ConversationTitleHeaderObserver(
             conversations: conversations,
-            onChange: { [weak self] in
-                self?.headerState.title = conversations.currentTitle
-            }
+            viewModel: headerViewModel
         )
 
         // 注册标题更新 Agent 工具。
@@ -84,7 +82,7 @@ public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
                 order: 0,
                 placement: .header
             ) {
-                HeaderView(state: self.headerState)
+                HeaderView(viewModel: self.headerViewModel)
             },
         ])
     }
@@ -110,9 +108,4 @@ public final class ConversationTitlePlugin: SuperPlugin, SuperLog {
         }
         toolManager.remove(id: TitleUpdateTool.toolName)
     }
-}
-
-@MainActor
-final class ConversationTitleHeaderState: ObservableObject {
-    @Published var title = ""
 }

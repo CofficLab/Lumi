@@ -42,6 +42,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     private var projectObserver: ProjectProvidingObserver?
     private var openedFilesPersistence: ProjectOpenedFilesPersistence?
     private var conversationProjectSyncObserver: ConversationProjectSyncObserver?
+    private var ragStatusObservers: [String: ProjectRAGStatusObserver] = [:]
     /// `willSendToLLM` 项目路径注入钩子（见 `Hooks/ProjectPathInjectionHook.swift`）。
     private var projectPathInjectionHook: ProjectPathInjectionHook?
     private var projectPathInjectionHookHandle: (any LifecycleHookHandle)?
@@ -144,9 +145,22 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
                     id: "\(id).rag-status",
                     order: 150
                 ) { projectPath in
-                    ProjectRAGStatusSection(projectPath: projectPath) {
+                    let capability = ProjectRAGStatusCapability {
                         kernel.resolveProvider((any ProjectRAGProviding).self)
                     }
+                    let viewModel = ProjectRAGStatusViewModel(
+                        projectPath: projectPath,
+                        capability: capability
+                    )
+                    let observer = ProjectRAGStatusObserver(
+                        capability: capability,
+                        viewModel: viewModel
+                    )
+                    self.ragStatusObservers[projectPath] = observer
+                    return ProjectRAGStatusSection(
+                        projectPath: projectPath,
+                        viewModel: viewModel
+                    )
                 }
             ])
             settings.addEntries([
@@ -225,6 +239,10 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
             .removeEntries(ids: ["\(id).settings"])
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeProjectDetailSections(ids: ["\(id).rag-status"])
+        for observer in ragStatusObservers.values {
+            observer.cancel()
+        }
+        ragStatusObservers.removeAll()
         ProjectsRuntime.reset()
     }
 
