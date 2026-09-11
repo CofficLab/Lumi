@@ -1,0 +1,18 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Lumi</title>
+        <item>
+            <title>5.24.5</title>
+            <pubDate>Fri, 11 Sep 2026 05:02:45 +0000</pubDate>
+            <sparkle:version>20260911040858</sparkle:version>
+            <sparkle:shortVersionString>5.24.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h2>Preview p5.24.5(20260911040858)</h2>
+<p>This preview build was published from the pre branch and may contain unfinished changes.</p>]]></description>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/p5.24.5(20260911040858)</sparkle:fullReleaseNotesLink>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://s.kuaiyizhi.cn/lumi/pre/Lumi_5.24.5_arm64.dmg" length="36428426" type="application/octet-stream" sparkle:edSignature="tKTmw5PldmXthDiB+2GN66zLkXgUKCiW1vQgOOg6m0z98dYoHnVl2I7BfuYrHhWNrgAuU/YZ6PCTyd1zVEQQCA=="/>
+        </item>
+    </channel>
+</rss>
