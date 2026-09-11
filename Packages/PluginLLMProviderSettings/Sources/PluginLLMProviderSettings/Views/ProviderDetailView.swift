@@ -128,47 +128,66 @@ public struct ProviderDetailView: View {
     // MARK: - API Key Section
 
     private var apiKeySection: some View {
-        AppSettingsSection(title: "API 密钥", subtitle: "配置访问凭证") {
-            AppSettingsSecureFieldRow(
-                "API Key",
-                placeholder: "输入 API Key",
-                allowsReveal: true,
-                allowsCopy: true,
-                text: $apiKey
-            )
-            .id(info.id)
-
-            HStack(spacing: 8) {
-                AppButton(LumiPluginLocalization.string("Save API Key", bundle: .module), systemImage: "checkmark", style: .primary, size: .small) {
-                    saveAPIKey()
+        AppSettingSection(title: "API 密钥") {
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: "API Key",
+                    description: "配置访问凭证",
+                    icon: "key"
+                ) {
+                    SecureField("输入 API Key", text: $apiKey)
+                        .textFieldStyle(.plain)
+                        .font(.appBody)
+                        .frame(width: 280)
                 }
-                .disabled(
-                    apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        || apiKey == savedAPIKey
-                )
 
-                if !savedAPIKey.isEmpty {
-                    AppButton(LumiPluginLocalization.string("Delete API Key", bundle: .module), systemImage: "trash", style: .destructive, size: .small) {
-                        removeAPIKey()
+                Divider()
+                    .padding(.vertical, 8)
+
+                AppSettingRow(
+                    title: "操作",
+                    description: savedAPIKey.isEmpty ? "尚未保存 API Key" : "已保存 API Key"
+                ) {
+                    HStack(spacing: 8) {
+                        AppButton("保存", systemImage: "checkmark", style: .primary, size: .small) {
+                            saveAPIKey()
+                        }
+                        .disabled(
+                            apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                || apiKey == savedAPIKey
+                        )
+
+                        if !savedAPIKey.isEmpty {
+                            AppButton("删除", systemImage: "trash", style: .destructive, size: .small) {
+                                removeAPIKey()
+                            }
+                        }
+
+                        if !savedAPIKey.isEmpty, apiKey == savedAPIKey {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(theme.success)
+                                    .font(.appCaption)
+                                Text("已保存")
+                                    .font(.appCaption)
+                                    .foregroundColor(theme.success)
+                            }
+                        }
                     }
                 }
 
-                if !savedAPIKey.isEmpty, apiKey == savedAPIKey {
-                    HStack(spacing: 6) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(theme.success)
-                        Text("已保存")
-                            .font(.appCaption)
-                            .foregroundColor(theme.success)
-                    }
-                }
-            }
+                if let apiKeySaveError {
+                    Divider()
+                        .padding(.vertical, 8)
 
-            if let apiKeySaveError {
-                Text(apiKeySaveError)
-                    .font(.appCaption)
-                    .foregroundStyle(theme.error)
-                    .textSelection(.enabled)
+                    AppSettingRow(
+                        title: "错误",
+                        description: apiKeySaveError
+                    ) {
+                        EmptyView()
+                    }
+                    .foregroundColor(theme.error)
+                }
             }
         }
     }
@@ -176,34 +195,37 @@ public struct ProviderDetailView: View {
     // MARK: - Model Section
 
     private var modelSection: some View {
-        AppSettingsSection(
-            title: "可用模型"
-        ) {
-            ForEach(info.models, id: \.id) { model in
-                modelRow(model)
+        AppSettingSection(title: "可用模型") {
+            VStack(spacing: 0) {
+                ForEach(info.models.enumerated().map({ $0 }), id: \.element.id) { index, model in
+                    if index > 0 {
+                        Divider()
+                            .padding(.vertical, 4)
+                    }
+                    modelRow(model)
+                }
             }
         }
     }
 
     private func modelRow(_ model: LLMModelInfo) -> some View {
-        AppSettingsRow(horizontalPadding: 10, verticalPadding: 10) {
-            HStack(spacing: 10) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(model.displayName)
-                        .font(.appBody)
-                        .foregroundStyle(theme.textPrimary)
-                    if let context = model.contextWindowSize {
-                        Text("上下文 \(Self.formatted(context))")
-                            .font(.appMicro)
-                            .foregroundStyle(theme.textSecondary)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
+        let isSelected = manager.selectedProviderID == info.id && manager.selectedModel == model.id
+        return AppSettingRow(
+            title: model.displayName,
+            description: model.contextWindowSize.map { "上下文 \(Self.formatted($0))" },
+            icon: isSelected ? "checkmark.circle.fill" : (model.supportsVision ? "eye" : "cpu")
+        ) {
+            HStack(spacing: 6) {
                 if model.supportsVision {
-                    AppTag("视觉", systemImage: "eye")
+                    AppTag("视觉", systemImage: "eye", style: .accent)
+                }
+                if isSelected {
+                    AppTag("当前", systemImage: "checkmark", style: .accent)
                 }
             }
+        }
+        .onTapGesture {
+            manager.select(providerID: info.id, model: model.id)
         }
     }
 
