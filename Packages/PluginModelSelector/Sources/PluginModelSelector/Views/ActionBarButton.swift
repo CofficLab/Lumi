@@ -1,22 +1,19 @@
 import LumiUI
-import ProviderLLMManager
-import ProviderToast
 import SwiftUI
 
 /// Action Bar 上的模型选择按钮（由旧版 ModelSelectorPlugin 复刻）。
 ///
-/// 通过 `LLMProviderManagerBox` 订阅内核 `LLMManaging`
-/// 的选中/注册变化（替代旧版的 `.onLumiSelectedRemoteProviderIDDidChange`
-/// 等通知订阅），按钮标签实时反映「供应商 · 模型」。
+/// View 只依赖 `ModelSelectorViewModel`；Provider/模型目录与用量变化由
+/// ViewModel 内部订阅，按钮标签实时反映「供应商 · 模型」。
 struct ActionBarButton: View {
     @LumiTheme private var theme
-    let box: LLMProviderManagerBox
-    @ObservedObject var usageStore: ProviderUsageStore
-    let toast: (any ToastProviding)?
+    @ObservedObject private var viewModel: ModelSelectorViewModel
 
     @State private var isPopoverPresented = false
-    @State private var observationRevision = 0
-    @State private var observerHandle: (any LLMProviderManagerBox.ObserverHandle)?
+
+    init(viewModel: ModelSelectorViewModel) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         Button {
@@ -25,7 +22,7 @@ struct ActionBarButton: View {
             HStack(spacing: 6) {
                 Image(systemName: "globe")
                     .font(.appCallout)
-                Text(buttonLabel)
+                Text(viewModel.buttonLabel)
                     .font(.appCaptionEmphasized)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -45,35 +42,10 @@ struct ActionBarButton: View {
         .buttonStyle(.plain)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .top) {
             PopoverContent(
-                box: box,
-                usageStore: usageStore,
-                toast: toast,
+                viewModel: viewModel,
                 isPresented: $isPopoverPresented
             )
         }
         .accessibilityLabel("Select Model")
-        .onAppear {
-            guard observerHandle == nil else { return }
-            observerHandle = box.addObserver { _ in
-                observationRevision += 1
-            }
-        }
-        .onDisappear {
-            observerHandle?.cancel()
-            observerHandle = nil
-        }
-    }
-
-    private var buttonLabel: String {
-        guard let providerID = box.selectedProviderID,
-              let info = box.providerInfo(id: providerID)
-        else {
-            return "Select Provider"
-        }
-        // 当前生效模型：显式选中项 > 供应商默认模型（与内核 `resolveSelected()` 回退一致），
-        // 保证按钮始终反映「当前供应商 + 模型」。
-        let model = box.selectedModel ?? info.defaultModel
-        let displayModel = info.models.first(where: { $0.id == model })?.displayName ?? model
-        return "\(info.displayName) · \(displayModel)"
     }
 }

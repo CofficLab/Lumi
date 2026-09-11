@@ -1,29 +1,25 @@
 import Foundation
 import LumiUI
-import ProviderLLMManager
-import ProviderToast
 import SwiftUI
 
 /// 模型选择弹窗：左侧供应商列表 + 右侧模型列表（由旧版复刻）。
+///
+/// View 只依赖 `ModelSelectorViewModel`，不持有 Provider/Store/Observer。
 struct PopoverContent: View {
     @LumiTheme private var theme
-    let box: LLMProviderManagerBox
-    @ObservedObject var usageStore: ProviderUsageStore
-    let toast: (any ToastProviding)?
+    @ObservedObject private var viewModel: ModelSelectorViewModel
     @Binding var isPresented: Bool
 
-    /// 当前选中的供应商（初始来自内核 `LLMManaging`）。
-    @State private var selectedProviderID: String?
-    @State private var observationRevision = 0
-    @State private var observerHandle: (any LLMProviderManagerBox.ObserverHandle)?
+    init(viewModel: ModelSelectorViewModel, isPresented: Binding<Bool>) {
+        self.viewModel = viewModel
+        self._isPresented = isPresented
+    }
 
     var body: some View {
         HStack(spacing: 0) {
             // Left: Provider List
             ProviderListView(
-                box: box,
-                usageStore: usageStore,
-                selectedProviderID: $selectedProviderID,
+                viewModel: viewModel,
                 onClose: { isPresented = false }
             )
             .frame(width: 300)
@@ -32,33 +28,12 @@ struct PopoverContent: View {
 
             // Right: Model List for selected provider
             ModelListView(
-                box: box,
-                selectedProviderID: selectedProviderID,
-                initialModel: box.selectedModel,
-                toast: toast,
-                onSelect: { providerID, _ in
-                    usageStore.recordUse(providerID: providerID)
+                viewModel: viewModel,
+                onSelect: { _, _ in
                     isPresented = false
                 }
             )
         }
         .frame(width: 780, height: 600)
-        .onAppear {
-            // Use initial selection if available
-            if selectedProviderID == nil {
-                selectedProviderID = box.selectedProviderID
-                    ?? box.providerInfos.first.map { $0.id }
-            }
-        }
-        .onAppear {
-            guard observerHandle == nil else { return }
-            observerHandle = box.addObserver { _ in
-                observationRevision += 1
-            }
-        }
-        .onDisappear {
-            observerHandle?.cancel()
-            observerHandle = nil
-        }
     }
 }

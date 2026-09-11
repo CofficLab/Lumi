@@ -8,29 +8,28 @@ import SwiftUI
 
 /// 支持模型下载的供应商通用下载视图。
 ///
-/// 该视图只依赖 KitLLM 的下载能力协议，不感知具体供应商实现。
+/// 该视图只依赖 `ModelDownloadCapability` 与 `ProviderModelDownloadViewModel`，
+/// 不感知具体供应商实现，也不直接持有 downloader。
 @MainActor
 struct ProviderModelDownloadView: View {
     @LumiTheme private var theme
 
-    private let downloader: any LLMModelDownloadProviding
+    private let capability: any ModelDownloadCapability
     private let models: [LLMModelInfo]
     private let onSelectModel: (String) -> Void
     private let isModelSelected: (String) -> Bool
     @ObservedObject private var viewModel: ProviderModelDownloadViewModel
     @State private var speedLimitBytes: Int
-    @State private var errorModelID: String?
-    @State private var errorMessage: String?
 
     init(
         models: [LLMModelInfo],
-        downloader: any LLMModelDownloadProviding,
+        capability: any ModelDownloadCapability,
         viewModel: ProviderModelDownloadViewModel,
         onSelectModel: @escaping (String) -> Void,
         isModelSelected: @escaping (String) -> Bool
     ) {
         self.models = models
-        self.downloader = downloader
+        self.capability = capability
         self.viewModel = viewModel
         self.onSelectModel = onSelectModel
         self.isModelSelected = isModelSelected
@@ -60,7 +59,7 @@ struct ProviderModelDownloadView: View {
                 }
             }
         }
-        .onAppear { downloader.refreshDownloadState() }
+        .onAppear { capability.refreshDownloadState() }
     }
 
     private var downloadState: LLMModelDownloadState { viewModel.downloadState }
@@ -73,7 +72,7 @@ struct ProviderModelDownloadView: View {
         ) {
             #if os(macOS)
             AppButton("打开", systemImage: "folder", style: .secondary, size: .small) {
-                NSWorkspace.shared.open(downloader.modelCacheDirectoryURL)
+                NSWorkspace.shared.open(capability.modelCacheDirectoryURL)
             }
             #endif
         }
@@ -96,7 +95,7 @@ struct ProviderModelDownloadView: View {
             .pickerStyle(.menu)
             .frame(width: 120)
             .onChange(of: speedLimitBytes) { _, value in
-                downloader.setDownloadSpeedLimit(bytesPerSecond: value > 0 ? value : nil)
+                capability.setDownloadSpeedLimit(bytesPerSecond: value > 0 ? value : nil)
             }
         }
     }
@@ -180,7 +179,7 @@ struct ProviderModelDownloadView: View {
         }
         
         // 错误信息
-        if errorModelID == model.id, let errorMessage {
+        if viewModel.errorModelID == model.id, let errorMessage = viewModel.errorMessage {
             Text(errorMessage)
                 .font(.appMicro)
                 .foregroundStyle(theme.error)
@@ -202,16 +201,16 @@ struct ProviderModelDownloadView: View {
             }
         } else if isDownloading {
             AppButton(systemImage: "pause.fill", style: .tonal, size: .small) {
-                downloader.pauseDownload()
+                capability.pauseDownload()
             }
             .help("暂停下载")
         } else if isPaused {
             AppButton(systemImage: "play.fill", style: .tonal, size: .small) {
-                Task { await downloader.resumeDownload() }
+                Task { await capability.resumeDownload() }
             }
             .help("继续下载")
             AppButton(systemImage: "xmark", style: .ghost, size: .small) {
-                downloader.cancelDownload()
+                capability.cancelDownload()
             }
             .help("取消下载")
         } else {
@@ -222,27 +221,23 @@ struct ProviderModelDownloadView: View {
     }
 
     private func startDownload(_ modelID: String) {
-        errorModelID = nil
-        errorMessage = nil
+        viewModel.clearError()
         Task {
-            await downloader.download(modelID: modelID)
-            downloader.refreshDownloadState()
-            if case .failed(let message) = downloader.downloadState.status {
-                errorModelID = modelID
-                errorMessage = message
+            await capability.download(modelID: modelID)
+            capability.refreshDownloadState()
+            if case .failed(let message) = viewModel.downloadState.status {
+                viewModel.reportError(modelID: modelID, message: message)
             }
         }
     }
 
     private func delete(_ modelID: String) {
-        errorModelID = nil
-        errorMessage = nil
+        viewModel.clearError()
         do {
-            try downloader.deleteDownloadedModel(modelID: modelID)
-            downloader.refreshDownloadState()
+            try capability.deleteDownloadedModel(modelID: modelID)
+            capability.refreshDownloadState()
         } catch {
-            errorModelID = modelID
-            errorMessage = error.localizedDescription
+            viewModel.reportError(modelID: modelID, message: error.localizedDescription)
         }
     }
 }

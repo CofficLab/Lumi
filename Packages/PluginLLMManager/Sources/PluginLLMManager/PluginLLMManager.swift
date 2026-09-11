@@ -40,10 +40,14 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
 
     /// onBoot 创建并注册的 LLMManaging 实现。
     private var manager: CustomLLMManager?
+    /// 本插件的最小供应商能力，供 ViewModel/渲染器使用。
+    private var capability: LLMManagerCapabilityAdapter?
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let manager = CustomLLMManager()
         self.manager = manager
+        let capability = LLMManagerCapabilityAdapter(manager: manager)
+        self.capability = capability
 
         // 1. 注销 ProviderFactory 预注册的默认实现（避免 providerAlreadyRegistered）。
         kernel.unregisterProvider((any LLMManaging).self)
@@ -53,8 +57,8 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
 
         // 3. 注册 API Key 相关消息渲染器（order 350/340，优先于 core-error-message 的 300）。
         if let rendering = kernel.resolveProvider((any MessageRenderingProviding).self) {
-            rendering.register(APIKeyMissingRenderer.item(manager: manager))
-            rendering.register(APIKeyAccessFailedRenderer.item(manager: manager))
+            rendering.register(APIKeyMissingRenderer.item(capability: capability))
+            rendering.register(APIKeyAccessFailedRenderer.item(capability: capability))
             if Self.verbose {
                 Self.logger.info("\(Self.t)registered API Key message renderers (missing / access-failed)")
             }
@@ -91,6 +95,7 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         }
 
         let customStore = storeProvider?.store
+        let resolvedCapability = capability ?? LLMManagerCapabilityAdapter(manager: manager)
 
         if customStore == nil, Self.verbose {
             Self.logger.info("\(Self.t)UserDefinedCloudProviderStore not resolved, onboarding page registered without custom provider support")
@@ -100,11 +105,12 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
             OnboardingPageItem(
                 id: Self.onboardingPageID,
                 title: LumiPluginLocalization.string("Set up your AI provider", bundle: .module)
-            ) {
-                AISetupPage(
-                    manager: manager,
+            ) { [resolvedCapability] in
+                let viewModel = AISetupViewModel(
+                    capability: resolvedCapability,
                     customProviderStore: customStore
                 )
+                AISetupPage(viewModel: viewModel)
             }
         )
     }
@@ -113,6 +119,7 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         if let onboarding = kernel.resolveProvider((any OnboardingProviding).self) {
             onboarding.unregister(id: Self.onboardingPageID)
         }
+        capability = nil
         manager = nil
         // 内核会按插件归属自动撤回 onBoot 注册的 Provider，无需手动处理。
     }

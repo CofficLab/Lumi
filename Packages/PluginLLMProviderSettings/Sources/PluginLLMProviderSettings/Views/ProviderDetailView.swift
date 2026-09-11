@@ -1,6 +1,5 @@
 import Foundation
 import LumiUI
-import ProviderLLMManager
 import KitLLM
 import SwiftUI
 
@@ -8,68 +7,47 @@ import SwiftUI
 ///
 /// - 云端供应商：API Key 读写/删除 + 模型列表（点击切换选中模型）；
 /// - 本地供应商：仅模型列表（无需 API Key）。
+///
+/// View 只依赖 `ProviderDetailViewModel`，不再直接持有 manager / Provider / Store，
+/// 也不对外部 Provider 做 downcast（下载能力由 ViewModel 解析）。
 @MainActor
 public struct ProviderDetailView: View {
     @LumiTheme private var theme
 
-    private let manager: any LLMManaging
-    private let provider: any SuperLLMProvider
-    private let customProviderStore: UserDefinedCloudProviderStore
-    private let downloadViewModel: ProviderModelDownloadViewModel?
-
-    @State private var apiKey: String = ""
-    @State private var savedAPIKey: String = ""
-    @State private var apiKeySaveError: String?
+    @ObservedObject private var viewModel: ProviderDetailViewModel
     @State private var isEditorPresented = false
     @State private var isDeleteConfirmationPresented = false
 
-    public init(
-        manager: any LLMManaging,
-        provider: any SuperLLMProvider,
-        customProviderStore: UserDefinedCloudProviderStore,
-        downloadViewModel: ProviderModelDownloadViewModel? = nil
-    ) {
-        self.manager = manager
-        self.provider = provider
-        self.customProviderStore = customProviderStore
-        self.downloadViewModel = downloadViewModel
+    init(viewModel: ProviderDetailViewModel) {
+        self.viewModel = viewModel
     }
-
-    private var info: LLMProviderInfo { provider.providerInfo }
-    private var isLocal: Bool { info.isLocal }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             header
-            if !isLocal {
+            if !viewModel.isLocal {
                 apiKeySection
             }
-            if let downloader = provider as? any LLMModelDownloadProviding,
-               let downloadViewModel {
+            if let downloadViewModel = viewModel.downloadViewModel,
+               let capability = viewModel.downloadCapability {
                 ProviderModelDownloadView(
-                    models: info.models,
-                    downloader: downloader,
+                    models: viewModel.models,
+                    capability: capability,
                     viewModel: downloadViewModel,
                     onSelectModel: { modelID in
-                        manager.select(providerID: info.id, model: modelID)
+                        viewModel.select(modelID: modelID)
                     },
                     isModelSelected: { modelID in
-                        manager.selectedProviderID == info.id && manager.selectedModel == modelID
+                        viewModel.isModelSelected(modelID)
                     }
                 )
             } else {
                 modelSection
             }
         }
-        .onAppear {
-            loadAPIKey()
-        }
-        .onChange(of: provider.providerInfo.id) { _, _ in
-            loadAPIKey()
-        }
         .sheet(isPresented: $isEditorPresented) {
-            if let configuration = customProviderStore.configurations.first(where: { $0.id == info.id }) {
-                CustomCloudProviderEditor(store: customProviderStore, configuration: configuration)
+            if let editor = viewModel.makeCustomProviderEditor() {
+                editor
                     .frame(width: 580, height: 640)
             }
         }
@@ -79,7 +57,7 @@ public struct ProviderDetailView: View {
             titleVisibility: .visible
         ) {
             Button("删除", role: .destructive) {
-                try? customProviderStore.remove(id: info.id)
+                viewModel.removeCustomProvider()
             }
             Button("取消", role: .cancel) {}
         } message: {
@@ -92,19 +70,19 @@ public struct ProviderDetailView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
-                Image(systemName: isLocal ? "cpu" : "cloud.fill")
+                Image(systemName: viewModel.isLocal ? "cpu" : "cloud.fill")
                     .font(.title3)
                     .foregroundStyle(theme.primary)
-                Text(info.displayName)
+                Text(viewModel.displayName)
                     .font(.appTitle)
                 Spacer()
-                if let url = info.websiteURL {
+                if let url = viewModel.websiteURL {
                     Link(destination: url) {
                         AppTag("访问官网", systemImage: "arrow.up.right.square", style: .accent)
                     }
                     .buttonStyle(.plain)
                 }
-                if customProviderStore.isCustomProvider(id: info.id) {
+                if viewModel.canEditCustomProvider {
                     AppButton("编辑", systemImage: "pencil", style: .secondary, size: .small) {
                         isEditorPresented = true
                     }
@@ -113,12 +91,12 @@ public struct ProviderDetailView: View {
                     }
                 }
             }
-            if !info.description.isEmpty {
-                Text(info.description)
+            if !viewModel.providerDescription.isEmpty {
+                Text(viewModel.providerDescription)
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
             }
-            Text(info.id)
+            Text(viewModel.providerID)
                 .font(.appMicro)
                 .foregroundStyle(theme.textTertiary)
                 .textSelection(.enabled)
@@ -135,7 +113,7 @@ public struct ProviderDetailView: View {
                     description: "配置访问凭证",
                     icon: "key"
                 ) {
-                    SecureField("输入 API Key", text: $apiKey)
+                    SecureField("输入 API Key", text: $viewModel.apiKey)
                         .textFieldStyle(.plain)
                         .font(.appBody)
                         .frame(width: 280)
@@ -146,24 +124,24 @@ public struct ProviderDetailView: View {
 
                 AppSettingRow(
                     title: "操作",
-                    description: savedAPIKey.isEmpty ? "尚未保存 API Key" : "已保存 API Key"
+                    description: viewModel.savedAPIKey.isEmpty ? "尚未保存 API Key" : "已保存 API Key"
                 ) {
                     HStack(spacing: 8) {
                         AppButton("保存", systemImage: "checkmark", style: .primary, size: .small) {
-                            saveAPIKey()
+                            viewModel.saveAPIKey()
                         }
                         .disabled(
-                            apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                || apiKey == savedAPIKey
+                            viewModel.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                || viewModel.apiKey == viewModel.savedAPIKey
                         )
 
-                        if !savedAPIKey.isEmpty {
+                        if !viewModel.savedAPIKey.isEmpty {
                             AppButton("删除", systemImage: "trash", style: .destructive, size: .small) {
-                                removeAPIKey()
+                                viewModel.removeAPIKey()
                             }
                         }
 
-                        if !savedAPIKey.isEmpty, apiKey == savedAPIKey {
+                        if !viewModel.savedAPIKey.isEmpty, viewModel.apiKey == viewModel.savedAPIKey {
                             HStack(spacing: 4) {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundColor(theme.success)
@@ -176,7 +154,7 @@ public struct ProviderDetailView: View {
                     }
                 }
 
-                if let apiKeySaveError {
+                if let apiKeySaveError = viewModel.apiKeySaveError {
                     Divider()
                         .padding(.vertical, 8)
 
@@ -197,7 +175,7 @@ public struct ProviderDetailView: View {
     private var modelSection: some View {
         AppSettingSection(title: "可用模型") {
             VStack(spacing: 0) {
-                ForEach(info.models.enumerated().map({ $0 }), id: \.element.id) { index, model in
+                ForEach(viewModel.models.enumerated().map({ $0 }), id: \.element.id) { index, model in
                     if index > 0 {
                         Divider()
                             .padding(.vertical, 4)
@@ -209,7 +187,7 @@ public struct ProviderDetailView: View {
     }
 
     private func modelRow(_ model: LLMModelInfo) -> some View {
-        let isSelected = manager.selectedProviderID == info.id && manager.selectedModel == model.id
+        let isSelected = viewModel.isModelSelected(model.id)
         return AppSettingRow(
             title: model.displayName,
             description: model.contextWindowSize.map { "上下文 \(Self.formatted($0))" },
@@ -225,32 +203,8 @@ public struct ProviderDetailView: View {
             }
         }
         .onTapGesture {
-            manager.select(providerID: info.id, model: model.id)
+            viewModel.select(modelID: model.id)
         }
-    }
-
-    // MARK: - API Key Actions
-
-    private func loadAPIKey() {
-        savedAPIKey = provider.getApiKey()
-        apiKey = savedAPIKey
-        apiKeySaveError = nil
-    }
-
-    private func saveAPIKey() {
-        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        provider.setApiKey(trimmed)
-        savedAPIKey = trimmed
-        apiKey = trimmed
-        apiKeySaveError = nil
-    }
-
-    private func removeAPIKey() {
-        provider.removeApiKey()
-        savedAPIKey = ""
-        apiKey = ""
-        apiKeySaveError = nil
     }
 
     // MARK: - Helpers

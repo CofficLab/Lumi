@@ -1,7 +1,5 @@
 import Foundation
 import LumiUI
-import ProviderLLMManager
-import ProviderToast
 import KitLLM
 import SwiftUI
 
@@ -89,22 +87,24 @@ enum ModelCategory: String, CaseIterable {
 /// 模型列表视图（由旧版 ModelSelectorPlugin 复刻）。
 ///
 /// 显示指定供应商的模型列表，支持搜索、能力筛选和选择。
-/// 数据源为内核 `LLMManaging`（经 `LLMProviderManagerBox` 订阅）。
+/// View 只依赖 `ModelSelectorViewModel`，选择操作由 ViewModel 意图执行。
 struct ModelListView: View {
     @LumiTheme private var theme
-    let box: LLMProviderManagerBox
-    let selectedProviderID: String?
-    let initialModel: String?
-    let toast: (any ToastProviding)?
+    @ObservedObject private var viewModel: ModelSelectorViewModel
     var onSelect: ((_ providerID: String, _ model: String) -> Void)? = nil
 
-    @State private var searchText = ""
-    @State private var selectedCategory: ModelCategory = .all
+    init(
+        viewModel: ModelSelectorViewModel,
+        onSelect: ((_ providerID: String, _ model: String) -> Void)? = nil
+    ) {
+        self.viewModel = viewModel
+        self.onSelect = onSelect
+    }
 
     /// 当前选中供应商的模型元数据字典（id → LLMModelInfo）
     private var selectedProviderModelInfos: [String: LLMModelInfo] {
-        guard let providerID = selectedProviderID,
-              let info = box.providerInfo(id: providerID)
+        guard let providerID = viewModel.selectedProviderID,
+              let info = viewModel.providerInfo(id: providerID)
         else {
             return [:]
         }
@@ -114,20 +114,20 @@ struct ModelListView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Category filter
-            ModelCategoryFilterBar(selectedCategory: $selectedCategory)
+            ModelCategoryFilterBar(selectedCategory: $viewModel.selectedCategory)
 
             AppDivider()
 
             // Search
-            AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search models", bundle: .module)))
+            AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search models", bundle: .module)))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
 
             AppDivider()
 
             // Model items
-            if let providerID = selectedProviderID {
-                let models = box.models(for: providerID)
+            if let providerID = viewModel.selectedProviderID {
+                let models = viewModel.models(for: providerID)
                 let modelInfos = selectedProviderModelInfos
                 let visibleModels = applyCategoryAndSearch(to: models, modelInfos: modelInfos)
 
@@ -136,7 +136,7 @@ struct ModelListView: View {
                         ForEach(visibleModels, id: \.self) { model in
                             let modelInfo = modelInfos[model]
                             let displayName = modelInfo?.displayName ?? model
-                            let isSelected = model == initialModel
+                            let isSelected = model == viewModel.selectedModel
 
                             ModelListItem(
                                 displayName: displayName,
@@ -144,16 +144,8 @@ struct ModelListView: View {
                                 isSelected: isSelected,
                                 modelInfo: modelInfo,
                                 onSelect: {
+                                    viewModel.select(providerID: providerID, model: model)
                                     onSelect?(providerID, model)
-                                    box.select(providerID: providerID, model: model)
-                                    // 通过内核 Toast 能力通知用户模型已切换
-                                    let providerDisplayName = box.providerInfo(id: providerID)?.displayName ?? providerID
-                                    let modelDisplayName = modelInfo?.displayName ?? model
-                                    toast?.show(
-                                        LumiPluginLocalization.string("Switched to", bundle: .module),
-                                        detail: "\(providerDisplayName) · \(modelDisplayName)",
-                                        style: .success
-                                    )
                                 }
                             )
                         }
@@ -180,15 +172,15 @@ struct ModelListView: View {
     ) -> [String] {
         models
             .filter { model in
-                selectedCategory.includes(model: model, modelInfo: modelInfos[model])
+                viewModel.selectedCategory.includes(model: model, modelInfo: modelInfos[model])
             }
             .sorted { lhs, rhs in
                 lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
             }
             .filter { model in
-                searchText.isEmpty
-                    || model.localizedCaseInsensitiveContains(searchText)
-                    || (modelInfos[model]?.displayName ?? model).localizedCaseInsensitiveContains(searchText)
+                viewModel.searchText.isEmpty
+                    || model.localizedCaseInsensitiveContains(viewModel.searchText)
+                    || (modelInfos[model]?.displayName ?? model).localizedCaseInsensitiveContains(viewModel.searchText)
             }
     }
 }

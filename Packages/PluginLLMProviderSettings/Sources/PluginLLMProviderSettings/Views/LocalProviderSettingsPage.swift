@@ -1,29 +1,17 @@
-import ProviderLLMManager
 import SwiftUI
 
 /// 本地供应商设置页面。
+///
+/// View 只依赖 `ProviderSettingsPageViewModel`，不直接持有 manager / Store / downloader。
 @MainActor
 public struct LocalProviderSettingsPage: View {
-    private let manager: any LLMManaging
-    private let customProviderStore: UserDefinedCloudProviderStore
-    private let downloadViewModel: (String) -> ProviderModelDownloadViewModel?
+    @ObservedObject private var viewModel: ProviderSettingsPageViewModel
 
-    public init(
-        manager: any LLMManaging,
-        customProviderStore: UserDefinedCloudProviderStore,
-        downloadViewModel: @escaping (String) -> ProviderModelDownloadViewModel? = { _ in nil }
-    ) {
-        self.manager = manager
-        self.customProviderStore = customProviderStore
-        self.downloadViewModel = downloadViewModel
+    init(viewModel: ProviderSettingsPageViewModel) {
+        self.viewModel = viewModel
     }
 
     public var body: some View {
-        ProviderSettingsPageContent(
-            manager: manager,
-            isLocal: true,
-            customProviderStore: customProviderStore,
-            downloadViewModel: downloadViewModel
-        )
+        ProviderSettingsPageContent(viewModel: viewModel)
     }
 }

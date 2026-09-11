@@ -33,6 +33,8 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
     private var downloadViewModels: [String: ProviderModelDownloadViewModel] = [:]
     private var downloadObservers: [String: ProviderModelDownloadObserver] = [:]
     private var userProviderStore: UserDefinedCloudProviderStore?
+    private var settingsCapability: ProviderSettingsCapabilityAdapter?
+    private var pageViewModels: [ProviderSettingsPageViewModel] = []
 
     public init() {}
 
@@ -73,6 +75,28 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
                 viewModel: viewModel
             )
         }
+        let capability = ProviderSettingsCapabilityAdapter(
+            manager: manager,
+            customProviderStore: store
+        )
+        settingsCapability = capability
+
+        let cloudViewModel = ProviderSettingsPageViewModel(
+            capability: capability,
+            isLocal: false,
+            downloadViewModel: { [weak self] providerID in
+                self?.downloadViewModels[providerID]
+            }
+        )
+        let localViewModel = ProviderSettingsPageViewModel(
+            capability: capability,
+            isLocal: true,
+            downloadViewModel: { [weak self] providerID in
+                self?.downloadViewModels[providerID]
+            }
+        )
+        pageViewModels = [cloudViewModel, localViewModel]
+
         settings.addEntries([
             SettingEntryItem(
                 id: "\(id).remote-providers",
@@ -80,13 +104,7 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
                 systemImage: "cloud",
                 order: 100
             ) {
-                CloudProviderSettingsPage(
-                    manager: manager,
-                    customProviderStore: store,
-                    downloadViewModel: { [weak self] providerID in
-                        self?.downloadViewModels[providerID]
-                    }
-                )
+                CloudProviderSettingsPage(viewModel: cloudViewModel)
             },
             SettingEntryItem(
                 id: "\(id).local-providers",
@@ -94,18 +112,15 @@ public final class LLMProviderSettingsPlugin: SuperPlugin, SuperLog {
                 systemImage: "cpu",
                 order: 101
             ) {
-                LocalProviderSettingsPage(
-                    manager: manager,
-                    customProviderStore: store,
-                    downloadViewModel: { [weak self] providerID in
-                        self?.downloadViewModels[providerID]
-                    }
-                )
+                LocalProviderSettingsPage(viewModel: localViewModel)
             },
         ])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        pageViewModels.forEach { $0.cancel() }
+        pageViewModels.removeAll()
+        settingsCapability = nil
         downloadObservers.values.forEach { $0.cancel() }
         downloadObservers.removeAll()
         downloadViewModels.removeAll()
