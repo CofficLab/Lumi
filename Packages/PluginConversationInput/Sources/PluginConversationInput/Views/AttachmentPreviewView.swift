@@ -2,48 +2,41 @@ import AppKit
 import Combine
 import LumiUI
 import ProviderMessage
-import ProviderMessageSender
 import SwiftUI
 
 /// 聊天输入框上方的待发送附件预览。
 ///
-/// 发送器通过 existential provider 注入，因此使用 typed sender event + revision
-/// 驱动 SwiftUI 重建，避免把具体的发送器实现泄漏到输入插件中。
+/// 附件列表与移除操作全部通过 `ConversationInputViewModel` 表达，
+/// 不再直接访问发送器 Provider。
 struct AttachmentPreviewView: View {
     @LumiTheme private var theme
+    @ObservedObject private var viewModel: ConversationInputViewModel
 
-    let sender: (any MessageSendingProviding)?
-    @ObservedObject var state: ConversationInputViewState
-
-    private var attachments: [UserImageAttachment] {
-        sender?.pendingImageAttachments ?? []
-    }
-
-    private var fileAttachments: [UserFileAttachment] {
-        sender?.pendingFileAttachments ?? []
+    init(viewModel: ConversationInputViewModel) {
+        self.viewModel = viewModel
     }
 
     var body: some View {
-        let _ = state.revision
+        let _ = viewModel.revision
 
         Group {
-            if !attachments.isEmpty || !fileAttachments.isEmpty {
+            if !viewModel.imageAttachments.isEmpty || !viewModel.fileAttachments.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(attachments) { attachment in
+                        ForEach(viewModel.imageAttachments) { attachment in
                             AttachmentThumbnail(
                                 attachment: attachment,
                                 onRemove: {
-                                    sender?.removeImageAttachment(id: attachment.id)
+                                    viewModel.removeImageAttachment(id: attachment.id)
                                 }
                             )
                         }
 
-                        ForEach(fileAttachments) { attachment in
+                        ForEach(viewModel.fileAttachments) { attachment in
                             FileAttachmentChip(
                                 attachment: attachment,
                                 onRemove: {
-                                    sender?.removeFileAttachment(id: attachment.id)
+                                    viewModel.removeFileAttachment(id: attachment.id)
                                 }
                             )
                         }

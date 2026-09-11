@@ -1,70 +1,25 @@
-import AppKit
 import LumiUI
-import ProviderMessage
 import ProviderConversation
+import ProviderMessage
 import SwiftUI
 
 /// 会话存储设置视图（v2 复刻版）
 ///
-/// 展示对话列表、日活统计、消息预览与数据目录入口。依赖注入的
-/// `ConversationManager`（SwiftData 实现）与 `MessageManaging`，
-/// 不依赖 KernelLumi。
+/// 展示对话列表、日活统计、消息预览与数据目录入口。View 只依赖
+/// `ConversationStoreSettingsViewModel`，会话/消息/迁移状态由 Observer 与
+/// ViewModel 维护，不再直接访问 ConversationManager 或 MessageManaging。
 @MainActor
 public struct ConversationStoreSettingsView: View {
     @LumiTheme private var theme
-    private let conversationManager: ConversationManager
-    @ObservedObject private var migrationProgress: ConversationMigrationProgressStore
-
-    private let messageManager: (any MessageManaging)?
-
-    @State private var selectedConversationID: UUID?
-    @State private var didSeedSelection = false
-    @State private var conversations: [ConversationSummary] = []
-    @State private var totalConversationCount: Int?
-    @State private var isLoadingConversations = true
-    @State private var isLoadingMoreConversations = false
-    @State private var hasMoreConversations = true
-    @State private var dailyCountSeries = ConversationDailyCountSeries(points: [])
-    @State private var messageCounts: [UUID: Int] = [:]
-    @State private var messagesForSelected: [Message] = []
-
-    private let conversationPageSize = 40
-    private let messageDisplayLimit = 40
+    @ObservedObject private var viewModel: ConversationStoreSettingsViewModel
 
     private func L(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: .module)
     }
 
-    /// - Parameters:
-    ///   - manager: SwiftData 实现的 ConversationManager；nil 时显示不可用占位。
-    ///   - messageManager: 消息存储，用于展示会话的消息数/最近消息。
-    public init(
-        manager: ConversationManager?,
-        messageManager: (any MessageManaging)? = nil,
-        migrationProgress: ConversationMigrationProgressStore
-    ) {
-        if let manager {
-            self.conversationManager = manager
-        } else {
-            // 占位 manager：仅当插件初始化失败时出现，理论上不会走到。
-            self.conversationManager = ConversationManager(
-                store: nil,
-                dataDirectory: ConversationStore.defaultDatabaseRootURL
-            )
-        }
-        self.messageManager = messageManager
-        self.migrationProgress = migrationProgress
+    init(viewModel: ConversationStoreSettingsViewModel) {
+        self.viewModel = viewModel
     }
-
-    private var selectedConversation: ConversationSummary? {
-        guard let selectedConversationID else { return nil }
-        return conversations.first { $0.id == selectedConversationID }
-    }
-
-    private var conversationIDs: [UUID] {
-        conversations.map(\.id)
-    }
-
     public var body: some View {
         PluginSettingsScaffold(
             title: L("Conversation Manager"),
@@ -75,16 +30,16 @@ public struct ConversationStoreSettingsView: View {
             VStack(spacing: 12) {
                 HStack {
                     Spacer()
-                    Label(conversationCountLabel, systemImage: "bubble.left.and.bubble.right")
+                    Label(viewModel.conversationCountLabel, systemImage: "bubble.left.and.bubble.right")
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
-                    if migrationProgress.isActive {
+                    if viewModel.isMigrationActive {
                         ProgressView()
                             .controlSize(.small)
                     }
 #if DEBUG
                     AppButton(L("Open Data Directory"), systemImage: "folder", size: .small) {
-                        openDataDirectory()
+                        viewModel.openDataDirectory()
                     }
 #endif
                 }
@@ -111,16 +66,16 @@ public struct ConversationStoreSettingsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .task {
-            await loadInitialConversations()
+            await viewModel.loadInitialIfNeeded()
         }
-        .task(id: selectedConversationID) {
-            await loadMessages()
+        .task(id: viewModel.selectedConversationID) {
+            await viewModel.loadMessages()
         }
         .onAppear {
-            seedSelectionIfNeeded()
+            viewModel.seedSelectionIfNeeded()
         }
-        .onChange(of: conversationIDs) { _, _ in
-            syncSelectionAfterConversationChange()
+        .onChange(of: viewModel.conversationIDs) { _, _ in
+            viewModel.syncSelectionAfterConversationChange()
         }
     }
 
@@ -136,12 +91,12 @@ public struct ConversationStoreSettingsView: View {
                         .font(.appCaptionEmphasized)
                         .foregroundStyle(theme.textPrimary)
                     Spacer(minLength: 0)
-                    Text(String(format: L("Peak (%lld)"), dailyCountSeries.peakCount))
+                    Text(String(format: L("Peak (%lld)"), viewModel.dailyCountSeries.peakCount))
                         .font(.appMicro)
                         .monospacedDigit()
                         .foregroundStyle(theme.textSecondary)
                 }
-                ConversationDailyCountChart(series: dailyCountSeries)
+                ConversationDailyCountChart(series: viewModel.dailyCountSeries)
                     .frame(height: 132)
             }
             .padding(14)
@@ -158,9 +113,9 @@ public struct ConversationStoreSettingsView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            if isLoadingConversations && conversations.isEmpty {
+            if viewModel.isLoadingConversations && viewModel.conversations.isEmpty {
                 loadingView
-            } else if conversations.isEmpty {
+            } else if viewModel.conversations.isEmpty {
                 AppEmptyState(
                     icon: "bubble.left.and.bubble.right",
                     title: L("No conversations")
@@ -169,11 +124,11 @@ public struct ConversationStoreSettingsView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 4) {
-                        ForEach(conversations) { conversation in
+                        ForEach(viewModel.conversations) { conversation in
                             conversationRow(conversation)
                                 .onAppear {
-                                    if conversation.id == conversations.last?.id {
-                                        Task { await loadMoreConversationsIfNeeded() }
+                                    if conversation.id == viewModel.conversations.last?.id {
+                                        Task { await viewModel.loadMoreIfNeeded() }
                                     }
                                 }
                         }
@@ -182,7 +137,7 @@ public struct ConversationStoreSettingsView: View {
                 }
                 .frame(maxHeight: .infinity)
 
-                if isLoadingMoreConversations {
+                if viewModel.isLoadingMoreConversations {
                     ProgressView()
                         .controlSize(.small)
                         .padding(.bottom, 8)
@@ -193,10 +148,9 @@ public struct ConversationStoreSettingsView: View {
     }
 
     private func conversationRow(_ conversation: ConversationSummary) -> some View {
-        let isSelected = selectedConversationID == conversation.id
+        let isSelected = viewModel.selectedConversationID == conversation.id
         return AppListRow(isSelected: isSelected, action: {
-            selectedConversationID = conversation.id
-            didSeedSelection = true
+            viewModel.selectConversation(id: conversation.id)
         }) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -225,7 +179,7 @@ public struct ConversationStoreSettingsView: View {
 
     @ViewBuilder
     private var detailPane: some View {
-        if let conversation = selectedConversation {
+        if let conversation = viewModel.selectedConversation {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     AppSettingsSection(title: L("Overview"), subtitle: L("Read-only summary of the selected conversation")) {
@@ -286,10 +240,10 @@ public struct ConversationStoreSettingsView: View {
         } else {
             AppEmptyState(
                 icon: "bubble.left.and.bubble.right",
-                title: isLoadingConversations ? L("Loading…") : (conversations.isEmpty ? L("No conversations") : L("Select a conversation"))
+                title: viewModel.isLoadingConversations ? L("Loading…") : (viewModel.conversations.isEmpty ? L("No conversations") : L("Select a conversation"))
             )
             .overlay {
-                if isLoadingConversations {
+                if viewModel.isLoadingConversations {
                     loadingView
                 }
             }
@@ -312,7 +266,7 @@ public struct ConversationStoreSettingsView: View {
 
     @ViewBuilder
     private var messagesSection: some View {
-        let messages = messagesForSelected
+        let messages = viewModel.messagesForSelected
         AppSettingsSection(title: L("Messages"), subtitle: String(format: L("Showing %lld of the most recent messages (read-only)"), messages.count)) {
             if messages.isEmpty {
                 Text(L("No messages in this conversation"))
@@ -370,119 +324,18 @@ public struct ConversationStoreSettingsView: View {
         }
     }
 
-    // MARK: - Selection
+    // MARK: - Formatting
 
-    private func seedSelectionIfNeeded() {
-        guard !didSeedSelection else { return }
-        didSeedSelection = true
-
-        if let initialSelected = conversationManager.selectedConversationID,
-           conversations.contains(where: { $0.id == initialSelected }) {
-            selectedConversationID = initialSelected
-        } else {
-            selectedConversationID = conversations.first?.id
-        }
-    }
-
-    private func syncSelectionAfterConversationChange() {
-        if !didSeedSelection {
-            seedSelectionIfNeeded()
-            return
-        }
-
-        guard let selectedConversationID else {
-            selectedConversationID = conversations.first?.id
-            return
-        }
-
-        guard conversations.contains(where: { $0.id == selectedConversationID }) else {
-            self.selectedConversationID = conversations.first?.id
-            return
-        }
-    }
-
-    // MARK: - Data
-
-    /// 异步加载当前选中会话的最近一页消息到 `@State`。
-    private func loadMessages() async {
-        guard let id = selectedConversationID else {
-            messagesForSelected = []
-            return
-        }
-        let all = await messageManager?.messagesSnapshot(in: id) ?? []
-        let loaded = Array(all.suffix(messageDisplayLimit))
-        guard selectedConversationID == id else { return }
-        messagesForSelected = loaded
-    }
-
-    private var conversationCountLabel: String {
-        if let totalConversationCount {
-            return String(format: L("%lld conversations"), totalConversationCount)
-        }
-        return L("Loading conversations…")
-    }
-
-    private func loadInitialConversations() async {
-        guard conversations.isEmpty, isLoadingConversations else { return }
-
-        isLoadingConversations = true
-        async let page = conversationManager.fetchConversationPage(
-            limit: conversationPageSize,
-            includingChildConversations: true
-        )
-        async let count = conversationManager.conversationCount(
-            projectPath: nil,
-            includingChildConversations: true
-        )
-        async let series = conversationManager.fetchDailyCountSeries()
-        let (loaded, total, dailySeries) = await (page, count, series)
-        conversations = loaded
-        totalConversationCount = total
-        dailyCountSeries = dailySeries
-        hasMoreConversations = loaded.count == conversationPageSize
-        isLoadingConversations = false
-        syncSelectionAfterConversationChange()
-        await loadMessageCounts(for: loaded)
-    }
-
-    private func loadMoreConversationsIfNeeded() async {
-        guard !isLoadingConversations,
-              !isLoadingMoreConversations,
-              hasMoreConversations,
-              let last = conversations.last else { return }
-
-        isLoadingMoreConversations = true
-        let page = await conversationManager.fetchConversationPage(
-            limit: conversationPageSize,
-            beforeUpdatedAt: last.lastMessageAt,
-            beforeID: last.id,
-            includingChildConversations: true
-        )
-        conversations.append(contentsOf: page)
-        hasMoreConversations = page.count == conversationPageSize
-        isLoadingMoreConversations = false
-        syncSelectionAfterConversationChange()
-        await loadMessageCounts(for: page)
-    }
-
-    private func loadMessageCounts(for conversations: [ConversationSummary]) async {
-        guard let messageManager else { return }
-
-        for conversation in conversations where messageCounts[conversation.id] == nil {
-            let count = messageManager.messageCount(for: conversation.id)
-            messageCounts[conversation.id] = count
-        }
-    }
-
-    private func messageCountLabel(for conversationID: UUID) -> String {
-        guard let count = messageCounts[conversationID] else {
-            return L("Loading…")
-        }
-        return count == 1 ? L("1 message") : String(format: L("%lld messages"), count)
+    private func displayTitle(for conversation: ConversationSummary) -> String {
+        conversation.displayTitle
     }
 
     private func formattedListDate(_ date: Date) -> String {
         date.formatted(date: .abbreviated, time: .standard)
+    }
+
+    private func formattedDate(_ date: Date) -> String {
+        date.formatted(date: .abbreviated, time: .shortened)
     }
 
     private var loadingView: some View {
@@ -492,19 +345,10 @@ public struct ConversationStoreSettingsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - Formatting
-
-    private func displayTitle(for conversation: ConversationSummary) -> String {
-        conversation.displayTitle
-    }
-
-    private func formattedDate(_ date: Date) -> String {
-        date.formatted(date: .abbreviated, time: .shortened)
-    }
-
-    private func openDataDirectory() {
-        let url = conversationManager.dataDirectory
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        _ = NSWorkspace.shared.open(url)
+    private func messageCountLabel(for conversationID: UUID) -> String {
+        guard let count = viewModel.messageCounts[conversationID] else {
+            return L("Loading…")
+        }
+        return count == 1 ? L("1 message") : String(format: L("%lld messages"), count)
     }
 }

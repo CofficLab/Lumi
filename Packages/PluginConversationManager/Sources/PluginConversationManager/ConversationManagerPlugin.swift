@@ -32,6 +32,9 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
     )
 
     private var migrationProgress: ConversationMigrationProgressStore?
+    private var capability: ConversationStoreCapabilityAdapter?
+    private var viewModel: ConversationStoreSettingsViewModel?
+    private var observer: ConversationStoreObserver?
 
     public init() {}
 
@@ -68,17 +71,30 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
         }
 
         // 4. 注册「Conversations」设置入口。
+        //    组装层创建 Capability + ViewModel + Observer，注入设置页。
+        let messageManager = kernel.resolveProvider((any MessageManaging).self)
+        let settingsCapability = ConversationStoreCapabilityAdapter(
+            manager: manager,
+            messageManager: messageManager
+        )
+        let settingsViewModel = ConversationStoreSettingsViewModel(capability: settingsCapability)
+        let settingsObserver = ConversationStoreObserver(
+            capability: settingsCapability,
+            viewModel: settingsViewModel,
+            migrationProgress: ConversationMigrationProgressStore.shared
+        )
+        self.capability = settingsCapability
+        self.viewModel = settingsViewModel
+        self.observer = settingsObserver
+
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
                 id: "\(id).settings",
                 title: LumiPluginLocalization.string("Conversations", bundle: .module),
                 systemImage: "bubble.left.and.bubble.right",
                 order: 7
-            ) { [weak manager, weak self] in
-                ConversationStoreSettingsView(
-                    manager: manager,
-                    migrationProgress: self?.migrationProgress ?? ConversationMigrationProgressStore.shared
-                )
+            ) { [settingsViewModel] in
+                ConversationStoreSettingsView(viewModel: settingsViewModel)
             },
         ])
 
@@ -105,6 +121,10 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         // Provider（ConversationManaging）由内核按插件归属自动移除；
         // 这里只撤回设置入口。若宿主希望回退到内存实现，可在此重建注册。
+        observer?.cancel()
+        observer = nil
+        viewModel = nil
+        capability = nil
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(
             ids: ["\(id).settings"]
         )
