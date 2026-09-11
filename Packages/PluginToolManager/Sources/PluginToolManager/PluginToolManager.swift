@@ -79,10 +79,12 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
                     order: 6
                 ) { [weak service] in
                     if let service {
-                        ToolManagerSettingsView(
+                        let capability = ToolManagerCapabilityAdapter(
                             manager: service,
                             store: service.recordStore
                         )
+                        let viewModel = ToolManagerViewModel(capability: capability)
+                        ToolManagerSettingsView(viewModel: viewModel)
                     } else {
                         EmptyView()
                     }

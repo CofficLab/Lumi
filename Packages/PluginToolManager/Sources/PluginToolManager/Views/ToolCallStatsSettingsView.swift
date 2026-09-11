@@ -1,15 +1,15 @@
 import LumiUI
-import ProviderToolManager
 import SwiftUI
 
 /// 工具调用统计，按工具聚合。
 ///
-/// 新版 `ToolCallRecordStore` 未提供聚合接口，这里分页拉取后在本视图内聚合。
+/// 只依赖 `ToolManagerViewModel`；分页拉取与聚合逻辑在 ViewModel 内完成。
 struct ToolCallStatsSettingsView: View {
-    let store: ProviderToolManager.ToolCallRecordStore
+    @ObservedObject var viewModel: ToolManagerViewModel
 
-    @State private var stats: [ToolStatEntry] = []
-    @State private var totalCount = 0
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
+    }
 
     var body: some View {
         AppSettingSection(
@@ -18,7 +18,7 @@ struct ToolCallStatsSettingsView: View {
         ) {
             VStack(spacing: 0) {
                 AppSettingRow(
-                    title: String(format: L("%lld total calls"), totalCount),
+                    title: String(format: L("%lld total calls"), viewModel.totalCallCount),
                     description: L("Tool usage statistics will appear here once tools are called."),
                     icon: "chart.bar.xaxis"
                 ) {
@@ -28,7 +28,7 @@ struct ToolCallStatsSettingsView: View {
                         style: .secondary,
                         size: .small
                     ) {
-                        Task { await reload() }
+                        viewModel.reloadStatsRequested()
                     }
                 }
 
@@ -37,14 +37,14 @@ struct ToolCallStatsSettingsView: View {
 
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(Array(stats.enumerated()), id: \.element.id) { index, stat in
+                        ForEach(Array(viewModel.stats.enumerated()), id: \.element.id) { index, stat in
                             if index > 0 {
                                 Divider()
                                     .padding(.vertical, 8)
                             }
                             ToolStatRowView(stat: stat)
                         }
-                        if stats.isEmpty {
+                        if viewModel.stats.isEmpty {
                             AppEmptyState(
                                 icon: "chart.bar.xaxis",
                                 title: L("No statistics yet"),
@@ -59,55 +59,7 @@ struct ToolCallStatsSettingsView: View {
             .frame(maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .task { await reload() }
-    }
-
-    @MainActor
-    private func reload() async {
-        await Task.yield()
-        totalCount = await store.count()
-
-        var all: [ToolCallRecord] = []
-        var beforeCreatedAt: Date?
-        var beforeID: String?
-        var hasMore = true
-        while hasMore {
-            let page = await store.fetchPage(
-                limit: 500,
-                beforeCreatedAt: beforeCreatedAt,
-                beforeID: beforeID
-            )
-            all.append(contentsOf: page)
-            guard let last = page.last else {
-                hasMore = false
-                break
-            }
-            beforeCreatedAt = last.createdAt
-            beforeID = last.id
-            hasMore = page.count >= 500
-        }
-
-        var map: [String: Accumulator] = [:]
-        for record in all {
-            var acc = map[record.toolName] ?? Accumulator()
-            acc.totalCount += 1
-            if record.resultIsError { acc.errorCount += 1 }
-            if let duration = record.duration { acc.totalDuration += duration }
-            map[record.toolName] = acc
-        }
-        stats = map.map { name, acc in
-            ToolStatEntry(
-                toolName: name,
-                errorCount: acc.errorCount,
-                totalCount: acc.totalCount,
-                averageDuration: acc.totalCount > 0 ? acc.totalDuration / Double(acc.totalCount) : 0
-            )
-        }
-        .sorted { $0.totalCount > $1.totalCount }
-    }
-
-    private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+        .task { await viewModel.reloadStats() }
     }
 }
 
@@ -132,19 +84,4 @@ private struct ToolStatRowView: View {
             }
         }
     }
-}
-
-/// 单工具统计。
-struct ToolStatEntry: Identifiable {
-    var id: String { toolName }
-    let toolName: String
-    let errorCount: Int
-    let totalCount: Int
-    let averageDuration: Double
-}
-
-private struct Accumulator {
-    var totalCount = 0
-    var errorCount = 0
-    var totalDuration: TimeInterval = 0
 }

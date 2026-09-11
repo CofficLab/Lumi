@@ -1,46 +1,18 @@
 import KitAgentTool
-import AppKit
 import LumiUI
-import ProviderToolManager
 import SwiftUI
 
 /// 工具管理器设置视图。
 ///
 /// 顶部 Tab：Tools（可用工具列表）/ Execution Log（执行日志）/
 /// Usage Statistics（调用统计）；右上角可打开数据目录。
+/// 只依赖 `ToolManagerViewModel`；工具分组、执行日志与统计状态
+/// 全部由 ViewModel 提供。
 struct ToolManagerSettingsView: View {
-    let manager: any ToolManagerProviding
-    let store: ProviderToolManager.ToolCallRecordStore?
-
-    @State private var selectedTabID: Tab = .tools
-    @State private var groups: [(pluginID: String, tools: [any SuperAgentTool])] = []
+    @ObservedObject var viewModel: ToolManagerViewModel
 
     private func L(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: .module)
-    }
-
-    enum Tab: String, Identifiable {
-        case tools
-        case executionLog
-        case toolStats
-
-        var id: String { rawValue }
-
-        var title: String {
-            switch self {
-            case .tools: LumiPluginLocalization.string("Tools", bundle: .module)
-            case .executionLog: LumiPluginLocalization.string("Execution Log", bundle: .module)
-            case .toolStats: LumiPluginLocalization.string("Usage Statistics", bundle: .module)
-            }
-        }
-
-        var icon: String {
-            switch self {
-            case .tools: "wrench.and.screwdriver"
-            case .executionLog: "list.bullet.rectangle.portrait"
-            case .toolStats: "chart.bar.xaxis"
-            }
-        }
     }
 
     var body: some View {
@@ -55,7 +27,14 @@ struct ToolManagerSettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .task { await reload() }
+        .task {
+            switch viewModel.selectedTabID {
+            case .tools:
+                await viewModel.reloadTools()
+            case .executionLog, .toolStats:
+                break
+            }
+        }
     }
 
     // MARK: - Tab Bar
@@ -63,7 +42,7 @@ struct ToolManagerSettingsView: View {
     private var tabBar: some View {
         HStack(spacing: 8) {
             tabButton(.tools)
-            if store != nil {
+            if viewModel.hasLogStore {
                 tabButton(.executionLog)
                 tabButton(.toolStats)
             }
@@ -75,7 +54,7 @@ struct ToolManagerSettingsView: View {
                 style: .warning,
                 size: .small
             ) {
-                openDataDirectory()
+                viewModel.openDataDirectory()
             }
 #endif
         }
@@ -83,14 +62,30 @@ struct ToolManagerSettingsView: View {
         .zIndex(1)
     }
 
-    private func tabButton(_ tab: Tab) -> some View {
+    private func tabButton(_ tab: ToolManagerViewModel.Tab) -> some View {
         AppButton(
-            tab.title,
-            systemImage: tab.icon,
-            style: selectedTabID == tab ? .primary : .secondary,
+            tabTitle(tab),
+            systemImage: tabIcon(tab),
+            style: viewModel.selectedTabID == tab ? .primary : .secondary,
             size: .small
         ) {
-            selectedTabID = tab
+            viewModel.selectTab(tab)
+        }
+    }
+
+    private func tabTitle(_ tab: ToolManagerViewModel.Tab) -> String {
+        switch tab {
+        case .tools: L("Tools")
+        case .executionLog: L("Execution Log")
+        case .toolStats: L("Usage Statistics")
+        }
+    }
+
+    private func tabIcon(_ tab: ToolManagerViewModel.Tab) -> String {
+        switch tab {
+        case .tools: "wrench.and.screwdriver"
+        case .executionLog: "list.bullet.rectangle.portrait"
+        case .toolStats: "chart.bar.xaxis"
         }
     }
 
@@ -98,12 +93,12 @@ struct ToolManagerSettingsView: View {
 
     @ViewBuilder
     private var contentArea: some View {
-        switch selectedTabID {
+        switch viewModel.selectedTabID {
         case .tools:
             toolsContent
         case .executionLog:
-            if let store {
-                ToolCallLogSettingsView(store: store)
+            if viewModel.hasLogStore {
+                ToolCallLogSettingsView(viewModel: viewModel)
             } else {
                 AppEmptyState(
                     icon: "list.bullet.rectangle.portrait",
@@ -113,8 +108,8 @@ struct ToolManagerSettingsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         case .toolStats:
-            if let store {
-                ToolCallStatsSettingsView(store: store)
+            if viewModel.hasLogStore {
+                ToolCallStatsSettingsView(viewModel: viewModel)
             } else {
                 AppEmptyState(
                     icon: "chart.bar.xaxis",
@@ -131,7 +126,7 @@ struct ToolManagerSettingsView: View {
     private var toolsContent: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
-                Label(String(format: L("%lld tools"), totalToolCount), systemImage: "wrench.and.screwdriver")
+                Label(String(format: L("%lld tools"), viewModel.totalToolCount), systemImage: "wrench.and.screwdriver")
                 Spacer()
             }
             .font(.appCaption)
@@ -139,7 +134,7 @@ struct ToolManagerSettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    if groups.isEmpty {
+                    if viewModel.groups.isEmpty {
                         AppEmptyState(
                             icon: "wrench.and.screwdriver",
                             title: L("No Tools Registered"),
@@ -147,7 +142,7 @@ struct ToolManagerSettingsView: View {
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
-                        ForEach(groups, id: \.pluginID) { group in
+                        ForEach(viewModel.groups, id: \.pluginID) { group in
                             AppSettingSection(title: group.pluginID, titleAlignment: .leading) {
                                 VStack(spacing: 0) {
                                     ForEach(Array(group.tools.enumerated()), id: \.element.name) { index, tool in
@@ -167,27 +162,6 @@ struct ToolManagerSettingsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    private var totalToolCount: Int {
-        groups.reduce(0) { $0 + $1.tools.count }
-    }
-
-    // MARK: - Data
-
-    @MainActor
-    private func reload() async {
-        await Task.yield()
-        groups = manager.toolsGroupedByPlugin()
-    }
-
-    private func openDataDirectory() {
-        let url = store?.directory
-            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
-                .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
-        guard let url else { return }
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(url)
     }
 }
 

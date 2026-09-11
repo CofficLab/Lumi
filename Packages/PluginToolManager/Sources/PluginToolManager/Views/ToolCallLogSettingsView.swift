@@ -3,26 +3,15 @@ import ProviderToolManager
 import SwiftUI
 
 /// 工具调用执行日志：左侧为分页列表，右侧为选中记录的详情。
+///
+/// 只依赖 `ToolManagerViewModel`；记录、分页、选中与刷新状态全部由 ViewModel 提供。
 struct ToolCallLogSettingsView: View {
     @LumiTheme private var theme
 
-    let store: ProviderToolManager.ToolCallRecordStore
-
-    @State private var records: [ToolCallRecord] = []
-    @State private var selectedRecordID: String?
-    @State private var isLoading = false
-    @State private var hasMore = true
-    @State private var beforeCreatedAt: Date?
-    @State private var beforeID: String?
-    private let pageSize = 50
+    @ObservedObject var viewModel: ToolManagerViewModel
 
     private func L(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: .module)
-    }
-
-    private var selectedRecord: ToolCallRecord? {
-        guard let selectedRecordID else { return nil }
-        return records.first { $0.id == selectedRecordID }
     }
 
     var body: some View {
@@ -32,7 +21,7 @@ struct ToolCallLogSettingsView: View {
                 titleAlignment: .leading
             ) {
                 AppSettingRow(
-                    title: String(format: L("%lld records loaded"), records.count),
+                    title: String(format: L("%lld records loaded"), viewModel.records.count),
                     description: L("Tool executions will appear here once recorded."),
                     icon: "list.bullet.rectangle.portrait"
                 ) {
@@ -42,7 +31,7 @@ struct ToolCallLogSettingsView: View {
                         style: .secondary,
                         size: .small
                     ) {
-                        Task { await refresh() }
+                        viewModel.refreshLogRequested()
                     }
                 }
             }
@@ -65,12 +54,12 @@ struct ToolCallLogSettingsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .task { await refresh() }
+        .task { await viewModel.refreshLog() }
     }
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            if isLoading && records.isEmpty {
+            if viewModel.isLoadingLog && viewModel.records.isEmpty {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.small)
@@ -79,7 +68,7 @@ struct ToolCallLogSettingsView: View {
                         .foregroundStyle(theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if records.isEmpty {
+            } else if viewModel.records.isEmpty {
                 AppEmptyState(
                     icon: "list.bullet.rectangle.portrait",
                     title: L("No tool calls recorded"),
@@ -89,16 +78,16 @@ struct ToolCallLogSettingsView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 4) {
-                        ForEach(records) { record in
+                        ForEach(viewModel.records) { record in
                             recordRow(record)
                                 .onAppear {
-                                    if record.id == records.last?.id {
-                                        Task { await loadMore() }
+                                    if record.id == viewModel.records.last?.id {
+                                        Task { await viewModel.loadMoreLog() }
                                     }
                                 }
                         }
 
-                        if hasMore {
+                        if viewModel.hasMoreLog {
                             ProgressView()
                                 .controlSize(.small)
                                 .frame(maxWidth: .infinity)
@@ -114,9 +103,9 @@ struct ToolCallLogSettingsView: View {
     }
 
     private func recordRow(_ record: ToolCallRecord) -> some View {
-        let isSelected = selectedRecordID == record.id
+        let isSelected = viewModel.selectedRecordID == record.id
         return AppListRow(isSelected: isSelected, action: {
-            selectedRecordID = record.id
+            viewModel.selectRecord(id: record.id)
         }) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -143,7 +132,7 @@ struct ToolCallLogSettingsView: View {
 
     @ViewBuilder
     private var detailPane: some View {
-        if let selectedRecord {
+        if let selectedRecord = viewModel.selectedRecord {
             ToolCallRecordDetailView(record: selectedRecord)
         } else {
             AppEmptyState(
@@ -154,49 +143,7 @@ struct ToolCallLogSettingsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
-
-    @MainActor
-    private func refresh() async {
-        guard !isLoading else { return }
-        isLoading = true
-        beforeCreatedAt = nil
-        beforeID = nil
-        hasMore = true
-        let page = await store.fetchPage(limit: pageSize)
-        records = page
-        updateCursor(page)
-        if selectedRecordID == nil || !records.contains(where: { $0.id == selectedRecordID }) {
-            selectedRecordID = records.first?.id
-        }
-        isLoading = false
-    }
-
-    @MainActor
-    private func loadMore() async {
-        guard hasMore, !isLoading else { return }
-        isLoading = true
-        let page = await store.fetchPage(
-            limit: pageSize,
-            beforeCreatedAt: beforeCreatedAt,
-            beforeID: beforeID
-        )
-        records.append(contentsOf: page)
-        updateCursor(page)
-        isLoading = false
-    }
-
-    @MainActor
-    private func updateCursor(_ page: [ToolCallRecord]) {
-        guard let last = page.last else {
-            hasMore = false
-            return
-        }
-        beforeCreatedAt = last.createdAt
-        beforeID = last.id
-        hasMore = page.count >= pageSize
-    }
 }
-
 /// 单条工具调用记录详情。
 private struct ToolCallRecordDetailView: View {
     @LumiTheme private var theme
