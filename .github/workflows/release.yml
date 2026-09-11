@@ -7,11 +7,14 @@ on:
       - main
 
 concurrency:
-  group: release-${{ github.ref }}
+  # Stable and preview share one build counter. Serialize both channels so
+  # two releases cannot reserve the same Sparkle build number.
+  group: release-lumi
   cancel-in-progress: false
 
 permissions:
   contents: write
+  actions: write
 
 env:
   # 基础环境变量
@@ -77,6 +80,92 @@ jobs:
           echo "- **上一个版本**: \`$LAST_TAG\`" >> $GITHUB_STEP_SUMMARY
           echo "- **新版本**: \`$NEW_VERSION\`" >> $GITHUB_STEP_SUMMARY
 
+      - name: Reserve Monotonic Build Number
+        id: build_number
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Sparkle compares sparkle:version / CFBundleVersion. Keep the
+          # counter outside the source tree so publishing does not create a
+          # version-only commit. A failed release may consume a number; gaps
+          # are harmless, while reuse or rollback is not.
+          extract_max() {
+            awk -F'[<>]' '/<sparkle:version>/{ value = $3 + 0; if (value > max) max = value } END { print max + 0 }'
+          }
+
+          source_max=0
+          for file in LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig; do
+            if [ -f "$file" ]; then
+              value=$(sed -n 's/^CURRENT_PROJECT_VERSION = \([0-9][0-9]*\);/\1/p' "$file" | head -1)
+              if [[ "$value" =~ ^[0-9]+$ ]] && (( value > source_max )); then
+                source_max=$value
+              fi
+            fi
+          done
+
+          history_max=$(git log --all -p -- \
+            appcast.xml appcast-arm64.xml appcast-x86_64.xml \
+            appcast-pre.xml appcast-pre-arm64.xml appcast-pre-x86_64.xml \
+            | extract_max)
+
+          online_max=0
+          stable_feeds=(
+            "${{ env.UPDATE_DOWNLOAD_BASE_URL }}/appcast.xml"
+            "${{ env.UPDATE_DOWNLOAD_BASE_URL }}/appcast-arm64.xml"
+            "${{ env.UPDATE_DOWNLOAD_BASE_URL }}/appcast-x86_64.xml"
+          )
+          preview_feeds=(
+            "${{ env.UPDATE_DOWNLOAD_BASE_URL }}/pre/appcast-pre.xml"
+            "${{ env.UPDATE_DOWNLOAD_BASE_URL }}/pre/appcast-pre-arm64.xml"
+            "${{ env.UPDATE_DOWNLOAD_BASE_URL }}/pre/appcast-pre-x86_64.xml"
+          )
+
+          for url in "${stable_feeds[@]}"; do
+            feed=$(curl -fsSL --retry 3 --max-time 20 "$url") || {
+              echo "❌ 无法读取稳定版线上 appcast，拒绝继续发布: $url"
+              exit 1
+            }
+            value=$(printf '%s' "$feed" | extract_max)
+            if (( value > online_max )); then online_max=$value; fi
+          done
+
+          # Preview feeds may not exist yet, but an existing preview build
+          # must still participate in the global counter.
+          for url in "${preview_feeds[@]}"; do
+            if feed=$(curl -fsSL --retry 3 --max-time 20 "$url"); then
+              value=$(printf '%s' "$feed" | extract_max)
+              if (( value > online_max )); then online_max=$value; fi
+            else
+              echo "ℹ️ Preview appcast not available, skipping: $url"
+            fi
+          done
+
+          counter=0
+          if stored_counter=$(gh variable get LUMI_BUILD_NUMBER \
+            --repo "$GITHUB_REPOSITORY" --json value --jq .value 2>/dev/null); then
+            if ! [[ "$stored_counter" =~ ^[0-9]+$ ]]; then
+              echo "❌ GitHub Actions variable LUMI_BUILD_NUMBER 不是正整数: $stored_counter"
+              exit 1
+            fi
+            counter=$stored_counter
+          fi
+
+          known_max=$(printf '%s\n' "$source_max" "$history_max" "$online_max" "$counter" | sort -n | tail -1)
+          new_build=$((known_max + 1))
+
+          # Persist the reservation before building. If a later step fails,
+          # the next release receives a new number instead of reusing it.
+          gh variable set LUMI_BUILD_NUMBER \
+            --repo "$GITHUB_REPOSITORY" --body "$new_build"
+
+          echo "Known maximum Sparkle build: $known_max"
+          echo "Reserved Sparkle build: $new_build"
+          echo "build_number=$new_build" >> "$GITHUB_ENV"
+          echo "build_number=$new_build" >> "$GITHUB_OUTPUT"
+          echo "build_floor=$known_max" >> "$GITHUB_ENV"
+
       - name: Update Lumi Marketing Version
         run: |
           set -euo pipefail
@@ -96,27 +185,17 @@ jobs:
 
           echo "✅ Lumi MARKETING_VERSION 已更新为 ${{ env.new_version }}"
 
-      - name: Update Lumi Build Number
-        run: |
-          set -euo pipefail
-
-          # Sparkle compares the numeric bundle version. A branch-local
-          # increment can produce the same build on pre and main, so use the
-          # workflow run number, which is monotonic for this workflow across
-          # both channels.
-          NEW_BUILD_VERSION="${GITHUB_RUN_NUMBER}"
-          echo "📝 Updating Lumi CURRENT_PROJECT_VERSION to $NEW_BUILD_VERSION..."
-
+          # Inject the reserved build number only into this CI checkout. The
+          # value is embedded in the app but is intentionally not committed.
           for f in LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig; do
-            sed -i '' "s/^CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION;/" "$f"
-            if ! grep -q "^CURRENT_PROJECT_VERSION = $NEW_BUILD_VERSION;" "$f"; then
-              echo "❌ $f 的 CURRENT_PROJECT_VERSION 未更新为 $NEW_BUILD_VERSION"
+            sed -i '' "s/^CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = ${{ env.build_number }};/" "$f"
+            if ! grep -q "^CURRENT_PROJECT_VERSION = ${{ env.build_number }};" "$f"; then
+              echo "❌ $f 的 CURRENT_PROJECT_VERSION 未注入为 ${{ env.build_number }}"
               exit 1
             fi
           done
 
-          echo "✅ Lumi build number 已更新为 $NEW_BUILD_VERSION"
-          echo "build_number=$NEW_BUILD_VERSION" >> $GITHUB_ENV
+          echo "✅ Lumi CURRENT_PROJECT_VERSION 已临时注入为 ${{ env.build_number }}"
 
       - name: Determine Tag and Prerelease Status
         run: |
@@ -294,6 +373,32 @@ jobs:
               "${{ env.SCHEME }}"
 
             echo "Created: $DMG_NAME"
+          done
+
+      - name: Verify Release Build Number
+        run: |
+          set -euo pipefail
+
+          expected="${{ env.build_number }}"
+          floor="${{ env.build_floor }}"
+
+          if ! [[ "$expected" =~ ^[0-9]+$ ]] || ! [[ "$floor" =~ ^[0-9]+$ ]]; then
+            echo "❌ 构建号校验输入无效: expected=$expected floor=$floor"
+            exit 1
+          fi
+          if (( expected <= floor )); then
+            echo "❌ Sparkle 构建号没有递增: $expected <= $floor"
+            exit 1
+          fi
+
+          for arch in ${{ env.RELEASE_ARCHS }}; do
+            app_path="./temp/${{ env.SCHEME }}-${arch}.app"
+            actual=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Contents/Info.plist")
+            if [ "$actual" != "$expected" ]; then
+              echo "❌ $arch 的 CFBundleVersion=$actual，预期=$expected"
+              exit 1
+            fi
+            echo "✅ $arch CFBundleVersion=$actual (> $floor)"
           done
 
       - name: Notary
@@ -511,31 +616,6 @@ jobs:
             # 兼容旧版本客户端（仍读取 appcast.xml），使用默认架构
             cp "${{ github.workspace }}/appcast-${{ env.DEFAULT_UPDATE_ARCH }}.xml" "${{ github.workspace }}/appcast.xml"
           fi
-
-      # =================================================================================================
-      # 4. 提交更改与推送
-      # =================================================================================================
-      - name: Commit and Push Stable Changes
-        if: success() && env.UPDATE_CHANNEL == 'stable'
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "ci: bump to ${{ env.new_version }}"
-          commit_user_name: GitHub Action
-          tagging_message: ${{ env.tag }}
-          push_options: "--follow-tags"
-          # 仅提交版本号 xcconfig 和 appcast（pbxproj 不再随版本号变动）
-          file_pattern: "LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig appcast.xml appcast-arm64.xml appcast-x86_64.xml"
-
-      - name: Commit and Push Preview Changes
-        if: success() && env.UPDATE_CHANNEL == 'preview'
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "ci: bump to ${{ env.new_version }}"
-          commit_user_name: GitHub Action
-          tagging_message: ${{ env.tag }}
-          push_options: "--follow-tags"
-          # 仅提交版本号 xcconfig 和预览版 appcast
-          file_pattern: "LumiApp/Config/Lumi-Debug.xcconfig LumiApp/Config/Lumi-Release.xcconfig appcast-pre.xml appcast-pre-arm64.xml appcast-pre-x86_64.xml"
 
       - name: Prepare Release Assets
         if: success()
