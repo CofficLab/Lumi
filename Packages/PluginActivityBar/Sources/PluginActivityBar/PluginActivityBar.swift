@@ -25,7 +25,7 @@ import ProviderStorage
 public final class PluginActivityBar: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.activity-bar", category: "Plugin")
     public nonisolated static let emoji = "🧱"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     public let id = "com.coffic.lumi.plugin.activity-bar"
     public let order = 10
@@ -41,14 +41,12 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
 
     /// 本插件注册的自定义 Provider（保存引用便于 onShutdown / 调试诊断）。
     private var provider: ActivityBarProvider?
+    /// ActivityBar 视图唯一使用的数据源，由 Observer 更新。
+    private var viewModel: ActivityBarViewModel?
 
-    /// 插件管理 Provider 的精准观察令牌；deinit 时自动取消。
+    /// 插件管理 Observer；内部负责处理插件启停事件与入口可见性同步。
     private var pluginManagerObserver: PluginManagerObserver?
-    private var pluginManager: (any PluginManaging)?
     private weak var rootView: (any RootViewProviding)?
-
-    /// 上一次快照：已注册且启用的插件 id 集合，用于 diff 检测变化。
-    private var lastKnownEnabledPluginIDs: Set<String> = []
 
     private static let storageDirectoryKey = "ActivityBar"
     private var stateStore: ActivityBarStateStore?
@@ -57,6 +55,9 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)onBoot begin")
+        }
         // 1. 在 `unregisterProvider` 之前先把旧实例的 items + activeItemID 抽出来，
         //    避免旧 `DefaultActivityBarProviding`（被 ProviderFactory 预注册的）随
         //    `unregisterProvider` 被释放时，连带丢失前序业务插件（如
@@ -65,6 +66,9 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
         let existingProvider = kernel.resolveProvider((any ActivityBarProviding).self)
         let preloadedItems = existingProvider?.items ?? []
         let preloadedActiveItemID = existingProvider?.activeItemID
+        if Self.verbose {
+            Self.logger.info("\(Self.t)preloaded items=\(preloadedItems.count, privacy: .public), active=\(preloadedActiveItemID ?? "nil", privacy: .public)")
+        }
 
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let stateStore = ActivityBarStateStore(
@@ -86,6 +90,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
             activeItemID: pendingActiveItemID ?? preloadedActiveItemID
         )
         self.provider = provider
+        self.viewModel = provider.viewModel
 
         // 4. 注册本插件实现。消费者直接观察 ActivityBarProvider，Kernel 不转发
         // 其高频状态变化。
@@ -121,64 +126,42 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
             Self.logger.info("\(Self.t)bootstrapped built-in items: \(provider.items.count, privacy: .public) 项")
         }
 
-        // 记录当前已启用的插件集合，作为后续 diff 的基线。
+        // Observer 自己读取当前已启用插件集合，并在内部处理后续 diff。
         guard let pluginManager = kernel.resolveProvider((any PluginManaging).self) else {
             Self.logger.error("\(Self.emoji)PluginManaging 未注册，无法监听 ActivityBar 插件可见性")
             return
         }
-        self.pluginManager = pluginManager
-        lastKnownEnabledPluginIDs = currentEnabledPluginIDs(pluginManager: pluginManager)
-        pluginManagerObserver = PluginManagerObserver(pluginManager: pluginManager) { [weak self] in
-            guard let self, let pluginManager = self.pluginManager else { return }
-            self.syncPluginVisibility(pluginManager: pluginManager)
+        guard let viewModel else {
+            Self.logger.error("\(Self.emoji)ActivityBarViewModel 未初始化，无法监听 ActivityBar 状态")
+            return
         }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)create PluginManagerObserver; items=\(provider.items.count, privacy: .public), pendingActive=\(self.pendingActiveItemID ?? "nil", privacy: .public)")
+        }
+        pluginManagerObserver = PluginManagerObserver(
+            pluginManager: pluginManager,
+            provider: provider,
+            rootView: rootView,
+            pendingActiveItemID: pendingActiveItemID,
+            viewModel: viewModel
+        )
+        pendingActiveItemID = nil
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         pluginManagerObserver?.cancel()
         pluginManagerObserver = nil
-        pluginManager = nil
         provider?.onActiveItemChanged = nil
         // ActivityBar Provider 由宿主持有，停止插件时不会随插件自动释放；
         // 清空本插件目录中所有业务入口，保证 stop/start 生命周期之间不残留旧贡献。
         provider?.registerItems([])
         provider = nil
+        viewModel = nil
         rootView?.setContentFooterViewHidden(false)
         rootView = nil
         stateStore = nil
         pendingActiveItemID = nil
-        lastKnownEnabledPluginIDs = []
         // 内核会按插件归属自动撤回 onBoot 注册的 Provider，无需手动处理。
-    }
-
-    // MARK: - Plugin Visibility Sync
-
-    /// 对比当前已启用插件集合与上次快照，执行隐藏/恢复操作。
-    private func syncPluginVisibility(pluginManager: any PluginManaging) {
-        guard let provider else { return }
-        let currentIDs = currentEnabledPluginIDs(pluginManager: pluginManager)
-
-        // 被卸载或禁用的插件：从快照中消失。
-        let removed = lastKnownEnabledPluginIDs.subtracting(currentIDs)
-        for pluginID in removed {
-            provider.hideItems(forPluginID: pluginID)
-        }
-
-        // 新启用的插件：在快照中新增。
-        let added = currentIDs.subtracting(lastKnownEnabledPluginIDs)
-        for pluginID in added {
-            provider.restoreItems(forPluginID: pluginID)
-        }
-
-        restorePendingActiveItemIfAvailable(provider)
-
-        lastKnownEnabledPluginIDs = currentIDs
-        syncContentFooterVisibility(provider: provider)
-    }
-
-    /// 获取当前所有已注册且启用的插件 id 集合。
-    private func currentEnabledPluginIDs(pluginManager: any PluginManaging) -> Set<String> {
-        Set(pluginManager.allPlugins.filter { pluginManager.isEnabled(id: $0.id) }.map(\.id))
     }
 
     private func restorePendingActiveItemIfAvailable(_ provider: ActivityBarProvider) {

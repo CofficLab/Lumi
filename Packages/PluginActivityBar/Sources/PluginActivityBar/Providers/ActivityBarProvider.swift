@@ -9,7 +9,7 @@ import SwiftUI
 public final class ActivityBarProvider: ActivityBarProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.activity-bar", category: "Provider")
     public nonisolated static let emoji = "🧱"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     /// 当前已激活入口的 id。
     public private(set) var activeItemID: String?
@@ -23,6 +23,12 @@ public final class ActivityBarProvider: ActivityBarProviding, SuperLog {
     /// 隐藏缓存：按插件 id 存储被隐藏的入口，以便插件重新启用时恢复。
     private var hiddenItemCache: [String: [ActivityBarItem]] = [:]
     private var observers: [UUID: (ActivityBarEvent) -> Void] = [:]
+    private lazy var viewModelStorage = ActivityBarViewModel(provider: self)
+
+    /// 与 Provider 生命周期一致的 ActivityBar 视图模型。
+    /// PluginActivityBar 会持有同一个实例，确保 Provider 创建的视图与 Observer
+    /// 更新的是同一份状态。
+    var viewModel: ActivityBarViewModel { viewModelStorage }
 
     /// 入口被显式激活后的回调，由 PluginActivityBar 用于持久化全局激活态。
     var onActiveItemChanged: ((String?) -> Void)?
@@ -35,7 +41,13 @@ public final class ActivityBarProvider: ActivityBarProviding, SuperLog {
     ) -> any ActivityBarObserverHandle {
         let id = UUID()
         observers[id] = callback
+        if Self.verbose {
+            Self.logger.info("\(Self.t)add observer: id=\(id.uuidString, privacy: .public), observerCount=\(self.observers.count, privacy: .public), items=\(self.items.count, privacy: .public), shouldDisplay=\(self.shouldDisplayActivityBar, privacy: .public)")
+        }
         return ObserverHandle { [weak self] in
+            if let self, Self.verbose {
+                Self.logger.info("\(Self.t)remove observer: id=\(id.uuidString, privacy: .public), observerCountBefore=\(self.observers.count, privacy: .public)")
+            }
             self?.observers.removeValue(forKey: id)
         }
     }
@@ -73,6 +85,10 @@ public final class ActivityBarProvider: ActivityBarProviding, SuperLog {
         }
         let previousItems = self.items
         self.items = items.sorted { $0.order < $1.order }
+
+        if Self.verbose {
+            Self.logger.info("\(Self.t)items updated: before=\(previousItems.count, privacy: .public), after=\(self.items.count, privacy: .public), ids=\(self.items.map(\.id).joined(separator: ","), privacy: .public), shouldDisplay=\(self.shouldDisplayActivityBar, privacy: .public)")
+        }
 
         // 激活态校正：当前激活项若仍存在则保留，否则回退到首个（无入口时 nil）。
         let nextActiveID: String?
@@ -123,7 +139,10 @@ public final class ActivityBarProvider: ActivityBarProviding, SuperLog {
 
     /// 返回 ActivityBar 视图（基于本类自渲染的竖直入口栏）。
     public func makeActivityBarView() -> AnyView {
-        AnyView(ActivityBarView(provider: self))
+        if Self.verbose {
+            Self.logger.info("\(Self.t)makeActivityBarView: items=\(self.items.count, privacy: .public), shouldDisplay=\(self.shouldDisplayActivityBar, privacy: .public)")
+        }
+        return AnyView(ActivityBarView(viewModel: viewModel))
     }
 
     /// 内置默认入口（已清空）。
@@ -138,7 +157,12 @@ public final class ActivityBarProvider: ActivityBarProviding, SuperLog {
     /// 内置入口（`ownerPluginID == nil`）不受影响。
     public func hideItems(forPluginID pluginID: String) {
         let hidden = items.filter { $0.ownerPluginID == pluginID }
-        guard !hidden.isEmpty else { return }
+        guard !hidden.isEmpty else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)hide items skipped: plugin=\(pluginID, privacy: .public), no visible owned items, visibleItems=\(self.items.count, privacy: .public), cachedItems=\(self.hiddenItemCache[pluginID]?.count ?? 0, privacy: .public)")
+            }
+            return
+        }
         hiddenItemCache[pluginID, default: []].append(contentsOf: hidden)
         let idsToHide = Set(hidden.map(\.id))
         let remaining = items.filter { !idsToHide.contains($0.id) }
@@ -152,7 +176,12 @@ public final class ActivityBarProvider: ActivityBarProviding, SuperLog {
     ///
     /// 插件重新启用时调用，将隐藏缓存中的入口重新合入可见列表。
     public func restoreItems(forPluginID pluginID: String) {
-        guard let cached = hiddenItemCache.removeValue(forKey: pluginID), !cached.isEmpty else { return }
+        guard let cached = hiddenItemCache.removeValue(forKey: pluginID), !cached.isEmpty else {
+            if Self.verbose {
+                Self.logger.info("\(Self.t)restore items skipped: plugin=\(pluginID, privacy: .public), no cached items, visibleItems=\(self.items.count, privacy: .public)")
+            }
+            return
+        }
         addItems(cached)
         if Self.verbose {
             Self.logger.info("\(Self.t)恢复插件 \(pluginID, privacy: .public) 的 \(cached.count, privacy: .public) 个入口")
@@ -180,6 +209,9 @@ public final class ActivityBarProvider: ActivityBarProviding, SuperLog {
     }
 
     private func notify(_ event: ActivityBarEvent) {
+        if Self.verbose {
+            Self.logger.info("\(Self.t)notify \(String(describing: event), privacy: .public): observers=\(self.observers.count, privacy: .public), items=\(self.items.count, privacy: .public), shouldDisplay=\(self.shouldDisplayActivityBar, privacy: .public)")
+        }
         observers.values.forEach { $0(event) }
     }
 
