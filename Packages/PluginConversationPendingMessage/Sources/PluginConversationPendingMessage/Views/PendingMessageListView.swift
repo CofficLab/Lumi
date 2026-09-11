@@ -1,26 +1,22 @@
 import SwiftUI
-import Foundation
+import os
 
 /// 待发消息列表视图。
 struct PendingMessageListView: View {
-    let box: MessageSendingBox
-    let selection: ConversationSelectionBox
-    @State private var selectedConversationID: UUID?
-    @State private var selectionRevision = 0
-    @State private var selectionObserverHandle: (any ConversationSelectionBox.ObserverHandle)?
-    @State private var sendingRevision = 0
-    @State private var sendingObserverHandle: (any MessageSendingBox.ObserverHandle)?
+    private static let logger = Logger(
+        subsystem: "com.coffic.lumi.plugin.conversation-pending-message",
+        category: "PendingMessageListView"
+    )
+
+    @ObservedObject var viewModel: PendingMessageViewModel
 
     var body: some View {
-        let _ = selectionRevision
-        let _ = sendingRevision
         Group {
-            // 仅当选中会话有待发消息时显示。
-            if let conversationID = selectedConversationID {
-                let pending = box.sender.pendingMessages(for: conversationID)
-                if !pending.isEmpty {
+            if let conversationID = viewModel.selectedConversationID,
+               !viewModel.pendingMessages.isEmpty {
+                let _ = Self.logger.debug("body evaluated: conversation=\(conversationID.uuidString.prefix(8)), pending=\(viewModel.pendingMessages.count)")
                     VStack(alignment: .leading, spacing: 4) {
-                        ForEach(pending) { message in
+                        ForEach(viewModel.pendingMessages) { message in
                             HStack(spacing: 6) {
                                 Image(systemName: "clock.fill")
                                     .font(.system(size: 9))
@@ -41,7 +37,7 @@ struct PendingMessageListView: View {
                                 }
                                 Spacer()
                                 Button {
-                                    box.sender.cancelPendingMessage(id: message.id, in: conversationID)
+                                    viewModel.cancelPendingMessage(id: message.id)
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
                                         .font(.system(size: 10))
@@ -56,31 +52,11 @@ struct PendingMessageListView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 2)
-                }
             }
         }
         .onAppear {
-            guard selectionObserverHandle == nil else { return }
-            selectedConversationID = selection.selectedConversationID
-            selectionObserverHandle = selection.addObserver { event in
-                guard case let .selectedConversationChanged(id) = event else { return }
-                selectedConversationID = id
-                selectionRevision &+= 1
-            }
-        }
-        .onDisappear {
-            selectionObserverHandle?.cancel()
-            selectionObserverHandle = nil
-        }
-        .onAppear {
-            guard sendingObserverHandle == nil else { return }
-            sendingObserverHandle = box.addObserver { _ in
-                sendingRevision &+= 1
-            }
-        }
-        .onDisappear {
-            sendingObserverHandle?.cancel()
-            sendingObserverHandle = nil
+            let selectedConversation = viewModel.selectedConversationID?.uuidString.prefix(8) ?? "nil"
+            Self.logger.info("view appeared: selectedConversation=\(selectedConversation)")
         }
     }
 }

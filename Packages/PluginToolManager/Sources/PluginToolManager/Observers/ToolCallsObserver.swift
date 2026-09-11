@@ -11,7 +11,7 @@ import ProviderToolManager
 final class ToolCallsObserver: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "AgentLoopToolCallsObserver")
     nonisolated static let emoji = "🔧"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     private let toolManager: ToolManager
     private let conversationManager: any ConversationManaging

@@ -5,6 +5,12 @@ import ProviderMessage
 import ProviderMessageSender
 import SwiftUI
 import UniformTypeIdentifiers
+import os
+
+private let composerInputLog = Logger(
+    subsystem: "com.coffic.lumi.plugin.conversation-input",
+    category: "Editor"
+)
 
 /// 输入框组合视图
 ///
@@ -43,6 +49,8 @@ struct ComposerView: View {
             height: heightBinding,
             textColor: NSColor(theme.textPrimary),
             placeholder: "输入消息，按 Return 发送…",
+            isVerbose: true,
+            log: { _ in },
             onSubmit: onSend,
             onEnter: onSend,
             onFileDrop: { url in

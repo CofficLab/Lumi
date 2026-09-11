@@ -31,21 +31,18 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
     )
 
     public init() {}
-    private var sendingBox: MessageSendingBox? = nil
-    private var selectionBox: ConversationSelectionBox? = nil
+    private var viewModel: PendingMessageViewModel?
+    private var observer: PendingMessageObserver?
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
-              let conversations = kernel.resolveProvider((any ConversationManaging).self),
               let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
-            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding, ConversationManaging, MessageSendingProviding from kernel")
+            Self.logger.error("\(Self.t)Failed to resolve ChatSectionProviding or MessageSendingProviding from kernel")
             return
         }
 
-        let box = MessageSendingBox(sender: sender)
-        let selectionBox = ConversationSelectionBox(conversations: conversations)
-        sendingBox = box
-        self.selectionBox = selectionBox
+        let viewModel = PendingMessageViewModel(sender: sender)
+        self.viewModel = viewModel
         chat.addItems([
             ChatSectionItem(
                 id: "\(id).pending-list",
@@ -54,19 +51,32 @@ public final class ConversationPendingMessagePlugin: SuperPlugin, SuperLog {
                 fillsRemainingHeight: false,
                 showsTrailingDivider: false
             ) {
-                PendingMessageListView(box: box, selection: selectionBox)
+                PendingMessageListView(viewModel: viewModel)
             },
         ])
     }
 
+    public func onReady(kernel: KernelCoreContainer) throws {
+        guard let viewModel,
+              let conversations = kernel.resolveProvider((any ConversationManaging).self),
+              let sender = kernel.resolveProvider((any MessageSendingProviding).self) else {
+            Self.logger.error("\(Self.t)Failed to initialize PendingMessageObserver: required providers unavailable")
+            return
+        }
+
+        observer?.cancel()
+        observer = PendingMessageObserver(
+            conversations: conversations,
+            sender: sender,
+            viewModel: viewModel
+        )
+    }
+
     public func onShutdown(kernel: KernelCoreContainer) throws {
-        sendingBox?.cancel()
-        sendingBox = nil
-        selectionBox?.cancel()
-        selectionBox = nil
+        observer?.cancel()
+        observer = nil
+        viewModel = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeItem(id: "\(id).pending-list")
     }
 }
-
-

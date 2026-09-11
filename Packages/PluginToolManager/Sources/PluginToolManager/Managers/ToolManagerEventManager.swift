@@ -14,7 +14,7 @@ final class ToolManagerEventManager: SuperLog {
         category: "ToolManagerEventManager"
     )
     public nonisolated static let emoji = "📣"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     private var observers: [UUID: (ToolManagerEvent) -> Void] = [:]
 
@@ -30,11 +30,6 @@ final class ToolManagerEventManager: SuperLog {
     }
 
     func send(_ event: ToolManagerEvent) {
-        if Self.verbose {
-            Self.logger.info(
-                "\(Self.t)通知\(self.observers.count)个事件监听者，事件是\(self.eventName(event))"
-            )
-        }
         for callback in observers.values {
             callback(event)
         }

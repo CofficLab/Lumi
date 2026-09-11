@@ -18,7 +18,7 @@ private struct ToolInteractionPayload: Codable {
 public final class ToolManager: ToolManagerProviding, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "ToolManager")
     public nonisolated static let emoji = "🛠️"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     private var recordStoreValue: ToolCallRecordStore? {
         didSet {
