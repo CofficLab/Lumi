@@ -61,7 +61,6 @@ final class TitleService: SuperLog {
         let content = message.content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !content.isEmpty else { return }
         guard runningConversationIDs.insert(conversationID).inserted else {
-            Self.logger.debug("\(Self.t)Skipped duplicate title generation request for conversation \(conversationID, privacy: .public)")
             return
         }
         defer { runningConversationIDs.remove(conversationID) }

@@ -11,10 +11,10 @@ final class PendingMessageViewModel: ObservableObject {
     @Published private(set) var selectedConversationID: UUID?
     @Published private(set) var pendingMessages: [PendingChatMessage] = []
 
-    private let sender: any MessageSendingProviding
+    private let capability: any PendingMessageSendingCapability
 
-    init(sender: any MessageSendingProviding) {
-        self.sender = sender
+    init(capability: any PendingMessageSendingCapability) {
+        self.capability = capability
     }
 
     func selectConversation(
@@ -35,6 +35,6 @@ final class PendingMessageViewModel: ObservableObject {
 
     func cancelPendingMessage(id: UUID) {
         guard let conversationID = selectedConversationID else { return }
-        sender.cancelPendingMessage(id: id, in: conversationID)
+        capability.cancelPendingMessage(id: id, in: conversationID)
     }
 }

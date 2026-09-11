@@ -9,7 +9,6 @@ import ProviderLifecycleHooks
 import ProviderLLMContext
 import ProviderLLMManager
 import ProviderMessage
-import ProviderMessageSender
 import ProviderMessageStreaming
 import ProviderToolManager
 
@@ -89,21 +88,7 @@ public final class PluginAgentLoop: SuperPlugin, SuperLog {
         // 3. 注销默认的 AgentLoopProviding
         kernel.unregisterProvider((any AgentLoopProviding).self)
 
-        // 4. 重新注册依赖 AgentLoop 的 MessageSendingProviding
-        // DefaultMessageSender 在 factory 中注册时持有旧的 DefaultAgentLoopProvider，
-        // 需要用替换后的 AgentLoopManager 重新创建。
-        if let conversations = kernel.resolveProvider((any ConversationManaging).self),
-           let messages = kernel.resolveProvider((any MessageManaging).self) {
-            kernel.unregisterProvider((any MessageSendingProviding).self)
-            let sender = DefaultMessageSender(
-                conversations: conversations,
-                messages: messages,
-                agentLoop: agentLoop
-            )
-            try kernel.registerProvider((any MessageSendingProviding).self, sender)
-        }
-
-        // 5. 注册自定义实现；消费者直接观察 AgentLoop Provider。
+        // 4. 注册自定义实现；消息发送器由 MessageSenderPlugin 在此之后装配。
         try kernel.registerProvider((any AgentLoopProviding).self, agentLoop)
 
     }

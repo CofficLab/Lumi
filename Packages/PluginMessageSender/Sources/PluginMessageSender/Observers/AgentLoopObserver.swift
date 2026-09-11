@@ -3,7 +3,7 @@ import ProviderAgentLoop
 
 /// Forwards AgentLoop lifecycle events to the message sender.
 @MainActor
-final class MessageSenderAgentLoopObserver {
+final class AgentLoopObserver {
     private var handle: (any AgentLoopObserverHandle)?
 
     init(agentLoop: any AgentLoopProviding, sender: MessageSender) {

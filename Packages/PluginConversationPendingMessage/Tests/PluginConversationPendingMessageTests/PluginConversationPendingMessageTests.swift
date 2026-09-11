@@ -51,7 +51,8 @@ struct ConversationPendingMessagePluginTests {
             title: "A", projectPath: nil, providerID: nil, modelName: nil
         )
         let pending = PendingChatMessage(conversationID: conversationID, content: "2")
-        let viewModel = PendingMessageViewModel(sender: sender)
+        let capability = PendingMessageSendingCapabilityAdapter(sender: sender)
+        let viewModel = PendingMessageViewModel(capability: capability)
 
         viewModel.selectConversation(conversationID, pendingMessages: [pending])
 
@@ -77,10 +78,12 @@ struct ConversationPendingMessagePluginTests {
         )
         conversations.selectConversation(id: first)
 
-        let viewModel = PendingMessageViewModel(sender: sender)
+        let messageCapability = PendingMessageSendingCapabilityAdapter(sender: sender)
+        let conversationCapability = PendingMessageConversationCapabilityAdapter(conversations: conversations)
+        let viewModel = PendingMessageViewModel(capability: messageCapability)
         let observer = PendingMessageObserver(
-            conversations: conversations,
-            sender: sender,
+            messageCapability: messageCapability,
+            conversationCapability: conversationCapability,
             viewModel: viewModel
         )
         #expect(viewModel.selectedConversationID == first)

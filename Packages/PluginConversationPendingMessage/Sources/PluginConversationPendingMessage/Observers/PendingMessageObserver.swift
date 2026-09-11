@@ -1,46 +1,52 @@
 import Foundation
 import os
-import ProviderConversation
+import KitSuperLog
 import ProviderMessageSender
 
-/// 把发送器和会话选择的外部变化同步到插件自己的 ViewModel。
+/// 把插件 Capability 的外部变化同步到插件自己的 ViewModel。
 @MainActor
-final class PendingMessageObserver {
-    private static let logger = Logger(
-        subsystem: "com.coffic.lumi.plugin.conversation-pending-message",
-        category: "PendingMessageObserver"
+final class PendingMessageObserver: SuperLog {
+    nonisolated static let logger = Logger(
+        subsystem: "com.coffic.lumi",
+        category: "plugin.conversation-pending-message"
     )
+    nonisolated static let emoji = "🐒"
+    nonisolated static let verbose = false
 
-    private let sender: any MessageSendingProviding
+    private let messageCapability: any PendingMessageSendingCapability
+    private let conversationCapability: any PendingMessageConversationCapability
     private weak var viewModel: PendingMessageViewModel?
-    private var senderObserver: (any MessageSenderObserverHandle)?
-    private var conversationObserver: (any SelectedConversationObserverHandle)?
+    private var senderObserver: (any PendingMessageSendingObserverHandle)?
+    private var conversationObserver: (any PendingMessageConversationObserverHandle)?
 
     init(
-        conversations: any ConversationManaging,
-        sender: any MessageSendingProviding,
+        messageCapability: any PendingMessageSendingCapability,
+        conversationCapability: any PendingMessageConversationCapability,
         viewModel: PendingMessageViewModel
     ) {
-        self.sender = sender
+        self.messageCapability = messageCapability
+        self.conversationCapability = conversationCapability
         self.viewModel = viewModel
 
         viewModel.selectConversation(
-            conversations.selectedConversationID,
+            conversationCapability.selectedConversationID,
             pendingMessages: Self.pendingMessages(
-                for: conversations.selectedConversationID,
-                sender: sender
+                for: conversationCapability.selectedConversationID,
+                capability: messageCapability
             )
         )
 
-        senderObserver = sender.addMessageSenderObserver { [weak self] event in
-            self?.handle(senderEvent: event)
+        senderObserver = messageCapability.addObserver { [weak self] event in
+            self?.handle(messageEvent: event)
         }
-        conversationObserver = conversations.addSelectedConversationObserver { [weak self] conversationID in
+        conversationObserver = conversationCapability.addObserver { [weak self] conversationID in
             self?.handleSelectedConversationChange(conversationID)
         }
 
-        let selectedConversation = conversations.selectedConversationID?.uuidString.prefix(8) ?? "nil"
-        Self.logger.info("observer initialized: selectedConversation=\(selectedConversation)")
+        let selectedConversation = conversationCapability.selectedConversationID?.uuidString.prefix(8) ?? "nil"
+        if Self.verbose {
+            Self.logger.info("\(Self.t)observer initialized: selectedConversation=\(selectedConversation)")
+        }
     }
 
     func cancel() {
@@ -51,25 +57,29 @@ final class PendingMessageObserver {
         viewModel = nil
     }
 
-    private func handle(senderEvent: MessageSenderEvent) {
-        guard case let .pendingMessagesChanged(conversationID) = senderEvent else { return }
-        let messages = sender.pendingMessages(for: conversationID)
-        Self.logger.info("pending event -> viewModel: conversation=\(conversationID.uuidString.prefix(8)), count=\(messages.count)")
+    private func handle(messageEvent: PendingMessageSendingEvent) {
+        guard case let .pendingMessagesChanged(conversationID) = messageEvent else { return }
+        let messages = messageCapability.pendingMessages(for: conversationID)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)pending event -> viewModel: conversation=\(conversationID.uuidString.prefix(8)), count=\(messages.count)")
+        }
         viewModel?.updatePendingMessages(for: conversationID, pendingMessages: messages)
     }
 
     private func handleSelectedConversationChange(_ conversationID: UUID?) {
-        let messages = Self.pendingMessages(for: conversationID, sender: sender)
+        let messages = Self.pendingMessages(for: conversationID, capability: messageCapability)
         let selectedConversation = conversationID?.uuidString.prefix(8) ?? "nil"
-        Self.logger.info("conversation changed -> viewModel: conversation=\(selectedConversation), count=\(messages.count)")
+        if Self.verbose {
+            Self.logger.info("\(Self.t)conversation changed -> viewModel: conversation=\(selectedConversation), count=\(messages.count)")
+        }
         viewModel?.selectConversation(conversationID, pendingMessages: messages)
     }
 
     private static func pendingMessages(
         for conversationID: UUID?,
-        sender: any MessageSendingProviding
+        capability: any PendingMessageSendingCapability
     ) -> [PendingChatMessage] {
         guard let conversationID else { return [] }
-        return sender.pendingMessages(for: conversationID)
+        return capability.pendingMessages(for: conversationID)
     }
 }
