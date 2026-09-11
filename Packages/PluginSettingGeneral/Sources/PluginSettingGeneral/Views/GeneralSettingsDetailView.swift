@@ -360,19 +360,21 @@ struct GeneralSettingsDetailView: View {
 
             AppDivider()
 
-            if let uninstallScan, uninstallScan.keychainTargetCount > 0 {
-                AppToggleRow(
-                    title: "同时删除 Keychain 中的 API Key、密码和凭据",
-                    systemImage: "key.fill",
-                    isOn: $removeKeychainCredentials
+            VStack(spacing: 0) {
+                AppSettingsToggleRow(
+                    "同时将 Lumi 应用移到废纸篓",
+                    systemImage: "trash",
+                    isOn: $removeApplication
                 )
-            }
 
-            AppToggleRow(
-                title: "同时将 Lumi 应用移到废纸篓",
-                systemImage: "trash",
-                isOn: $removeApplication
-            )
+                if let uninstallScan, uninstallScan.keychainTargetCount > 0 {
+                    AppSettingsToggleRow(
+                        "同时删除 Keychain 中的 API Key、密码和凭据",
+                        systemImage: "key.fill",
+                        isOn: $removeKeychainCredentials
+                    )
+                }
+            }
 
             HStack {
                 Spacer()
@@ -402,32 +404,39 @@ struct GeneralSettingsDetailView: View {
 
     @ViewBuilder
     private func uninstallSummary(scan: UninstallScan) -> some View {
-        AppCard(
-            style: .subtle,
-            cornerRadius: 10,
-            padding: EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12),
-            showShadow: false
+        AppSettingSection(
+            title: "将处理 \(scan.targets.count) 项 Lumi 数据，总计 \(formattedBytes(scan.totalSizeInBytes))。",
+            titleAlignment: .leading
         ) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("将处理 \(scan.targets.count) 项 Lumi 数据，总计 \(formattedBytes(scan.totalSizeInBytes))。")
-                    .font(.appBody)
-
-                ForEach(scan.targets.prefix(8)) { target in
-                    AppInfoRow(
-                        icon: target.isSensitive ? "key.fill" : "folder",
+            VStack(spacing: 0) {
+                ForEach(Array(scan.targets.prefix(8).enumerated()), id: \.element.id) { index, target in
+                    AppSettingRow(
                         title: target.kind.displayName,
                         description: target.sizeInBytes > 0 ? formattedBytes(target.sizeInBytes) : "—",
-                        tint: target.isSensitive ? .orange : .secondary
-                    )
+                        icon: uninstallIcon(for: target)
+                    ) {
+                        EmptyView()
+                    }
+
+                    if index < min(scan.targets.count, 8) - 1 {
+                        Divider()
+                            .padding(.vertical, 8)
+                    }
                 }
 
                 if scan.targets.count > 8 {
                     Text("还有 \(scan.targets.count - 8) 项，将在确认后一起处理。")
                         .font(.appCaption)
                         .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 8)
                 }
             }
         }
+    }
+
+    private func uninstallIcon(for target: UninstallTarget) -> String {
+        target.kind == .application ? "folder" : "key.fill"
     }
 
     @MainActor
