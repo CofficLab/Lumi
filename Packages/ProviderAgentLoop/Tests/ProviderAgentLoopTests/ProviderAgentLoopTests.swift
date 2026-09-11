@@ -16,6 +16,27 @@ struct ProviderAgentLoopTests {
     // 消除 KitLLMVendors.ToolCall 与 KitAgentTool.ToolCall 的歧义
     private typealias ToolCall = KitAgentTool.ToolCall
 
+    @Test("用户文本文件附件会转换为 LLM 用户正文")
+    func messageToLLMMessagePreservesUserFile() {
+        let message = Message(
+            conversationID: UUID(),
+            role: .user,
+            content: "第64行，else区块内加上 error 日志",
+            metadata: UserAttachmentMetadata.encodeFileAttachments([
+                UserFileAttachment(
+                    fileName: "ControlButtonsViewModel.swift",
+                    mimeType: "text/x-swift",
+                    textContent: "else { logger.error(\"failed\") }"
+                ),
+            ])
+        )
+
+        let llmMessage = message.llmMessage
+
+        #expect(llmMessage.content.contains("ControlButtonsViewModel.swift"))
+        #expect(llmMessage.content.contains("else { logger.error(\"failed\") }"))
+    }
+
     @MainActor
     private final class TestLLMProvider: SuperLLMProvider {
         nonisolated let providerID = "test"

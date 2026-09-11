@@ -20,6 +20,13 @@ extension Message {
                 guard let data = Data(base64Encoded: attachment.base64Data) else { return nil }
                 return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
             }
+        let userFiles = role == .user
+            ? UserAttachmentMetadata.decodeFileAttachments(from: metadata)
+            : []
+        let contentWithFileAttachments = UserAttachmentMetadata.appendingFileAttachments(
+            userFiles,
+            to: content
+        )
         let toolImages: [KitLLM.MessageImage] = (toolCalls ?? [])
             .compactMap { $0.result }
             .flatMap { $0.imageAttachments }
@@ -30,7 +37,7 @@ extension Message {
 
         return LLMMessage(
             role: KitLLM.MessageRole(rawValue: role.rawValue) ?? .unknown,
-            content: content,
+            content: contentWithFileAttachments,
             toolCalls: toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
             toolCallID: toolCallID,
             reasoningContent: reasoningContent,

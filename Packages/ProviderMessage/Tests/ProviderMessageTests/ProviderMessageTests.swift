@@ -130,4 +130,43 @@ struct ProviderMessageTests {
         #expect(attachment.textContent == nil)
         #expect(Data(base64Encoded: attachment.base64Data ?? "") == data)
     }
+
+    @Test("文本文件附件会渲染到发送给 LLM 的用户正文")
+    func rendersTextFileAttachmentForLLM() {
+        let content = UserAttachmentMetadata.appendingFileAttachments(
+            [
+                UserFileAttachment(
+                    fileName: "ControlButtonsViewModel.swift",
+                    mimeType: "text/x-swift",
+                    textContent: "else { logger.error(\"failed\") }"
+                ),
+            ],
+            to: "第64行，else区块内加上 error 日志"
+        )
+
+        #expect(content.contains("第64行，else区块内加上 error 日志"))
+        #expect(content.contains("ControlButtonsViewModel.swift"))
+        #expect(content.contains("else { logger.error(\"failed\") }"))
+        #expect(content.contains("<attached_file"))
+        #expect(content.contains("</attached_file>"))
+    }
+
+    @Test("二进制文件附件只渲染描述，不把 base64 混入提示词")
+    func rendersBinaryFileDescriptionForLLM() {
+        let content = UserAttachmentMetadata.appendingFileAttachments(
+            [
+                UserFileAttachment(
+                    fileName: "archive.bin",
+                    mimeType: "application/octet-stream",
+                    base64Data: "AAEC"
+                ),
+            ],
+            to: "请检查这个文件"
+        )
+
+        #expect(content.contains("archive.bin"))
+        #expect(content.contains("application/octet-stream"))
+        #expect(content.contains("content is not decoded"))
+        #expect(!content.contains("AAEC"))
+    }
 }
