@@ -103,6 +103,12 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {
+        // `onBoot` runs in plugin order. Plugins with a later order may not have
+        // been registered when the settings ViewModel first snapshots the list.
+        // Refresh after every plugin has completed Boot so the settings page
+        // sees the complete registry, matching the old live Provider lookup.
+        viewModel?.refresh()
+
         registerPromptSuggestion(kernel: kernel, requiresEnable: false)
 
         // 确保每个已启动插件都有 AboutView。插件自己的品牌化页面优先，
