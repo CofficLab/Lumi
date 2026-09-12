@@ -36,5 +36,11 @@ let package = Package(
         .product(name: "LumiUI", package: "LumiUI"),
     ],
         resources: [.process("../../Resources/Localizable.xcstrings")]
+    ), .testTarget(
+        name: "PluginConversationListTests",
+        dependencies: [
+            "PluginConversationList",
+            .product(name: "KitAgentTool", package: "KitAgentTool"),
+        ]
     )]
 )
