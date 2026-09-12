@@ -180,21 +180,21 @@ struct AgentLoopFullLoopTests {
     /// 内存会话管理器：自动化级别可控。
     @MainActor
     private final class TestConversationManager: ConversationManaging {
-        var conversations: [LumiConversationSummary] = []
+        var conversations: [ConversationSummary] = []
         var selectedConversationID: UUID?
         var currentTitle: String = "No conversation"
-        var globalVerbosity: LumiResponseVerbosity = .standard
-        var globalReasoningEffort: LumiReasoningEffort?
-        var globalAutomationLevel: LumiAutomationLevel = .build
-        var globalLanguage: LumiConversationLanguage = .chinese
-        private var automation: [UUID: LumiAutomationLevel] = [:]
+        var globalVerbosity: ResponseVerbosity = .standard
+        var globalReasoningEffort: ReasoningEffort?
+        var globalAutomationLevel: AutomationLevel = .build
+        var globalLanguage: ConversationLanguage = .chinese
+        private var automation: [UUID: AutomationLevel] = [:]
         private var providerIDs: [UUID: String] = [:]
         private var modelNames: [UUID: String] = [:]
 
         @Published var tick = false
 
-        func setAutomation(_ level: LumiAutomationLevel, for id: UUID) { automation[id] = level }
-        func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel {
+        func setAutomation(_ level: AutomationLevel, for id: UUID) { automation[id] = level }
+        func automationLevel(for conversationID: UUID?) -> AutomationLevel {
             guard let conversationID else { return globalAutomationLevel }
             return automation[conversationID] ?? globalAutomationLevel
         }
@@ -220,19 +220,19 @@ struct AgentLoopFullLoopTests {
             NoopSelectedConversationObserverHandle()
         }
         func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
-        func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity) { globalVerbosity = verbosity }
-        func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
-        func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { globalVerbosity }
-        func setGlobalReasoningEffort(_ reasoningEffort: LumiReasoningEffort?) { globalReasoningEffort = reasoningEffort }
-        func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { globalReasoningEffort ?? .defaultEffort }
-        func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? { globalReasoningEffort }
-        func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {}
+        func setGlobalVerbosity(_ verbosity: ResponseVerbosity) { globalVerbosity = verbosity }
+        func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {}
+        func verbosity(for conversationID: UUID?) -> ResponseVerbosity { globalVerbosity }
+        func setGlobalReasoningEffort(_ reasoningEffort: ReasoningEffort?) { globalReasoningEffort = reasoningEffort }
+        func reasoningEffort(for conversationID: UUID?) -> ReasoningEffort { globalReasoningEffort ?? .defaultEffort }
+        func reasoningEffortOptional(for conversationID: UUID?) -> ReasoningEffort? { globalReasoningEffort }
+        func setReasoningEffort(_ reasoningEffort: ReasoningEffort, for conversationID: UUID?) {}
         func clearReasoningEffort(for conversationID: UUID?) {}
-        func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel) { globalAutomationLevel = automationLevel }
-        func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
-        func setGlobalLanguage(_ language: LumiConversationLanguage) { globalLanguage = language }
-        func language(for conversationID: UUID?) -> LumiConversationLanguage { globalLanguage }
-        func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}
+        func setGlobalAutomationLevel(_ automationLevel: AutomationLevel) { globalAutomationLevel = automationLevel }
+        func setAutomationLevel(_ automationLevel: AutomationLevel, for conversationID: UUID?) {}
+        func setGlobalLanguage(_ language: ConversationLanguage) { globalLanguage = language }
+        func language(for conversationID: UUID?) -> ConversationLanguage { globalLanguage }
+        func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?) {}
     }
 
     /// 组装测试用的 AgentLoop（构造注入）。
@@ -240,10 +240,10 @@ struct AgentLoopFullLoopTests {
         messages: any MessageManaging,
         provider: any SuperLLMProvider,
         toolManager: any ToolManagerProviding = TestToolManager(),
-        conversations: any ConversationManaging = TestConversationManager()
+        conversations: any ConversationManaging = TestConversationManager(),
+        streaming: DefaultMessageStreamingProviding = DefaultMessageStreamingProviding()
     ) -> DefaultAgentLoopProvider {
         let llmManager = ScriptedLLMManager(provider: provider)
-        let streaming = DefaultMessageStreamingProviding()
         return DefaultAgentLoopProvider(
             messages: messages,
             llmManager: llmManager,
@@ -267,6 +267,8 @@ struct AgentLoopFullLoopTests {
                 onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
             ) async throws -> LLMResponse {
                 streamed = true
+                await onChunk(LLMStreamChunk(reasoningContent: "think "))
+                await onChunk(LLMStreamChunk(content: "hello", reasoningContent: "reason"))
                 await onChunk(LLMStreamChunk(content: "你"))
                 await onChunk(LLMStreamChunk(content: "好"))
                 return LLMResponse(content: "你好", model: "test")
@@ -277,17 +279,32 @@ struct AgentLoopFullLoopTests {
         let conversationID = UUID()
         messages.insertMessage(Message(conversationID: conversationID, role: .user, content: "hi"), to: conversationID)
         let provider = StreamingProvider()
-        let loop = makeLoop(messages: messages, provider: provider)
+        let streaming = DefaultMessageStreamingProviding()
+        var snapshots: [(stage: MessageStreamingStage, content: String?, reasoning: String?)] = []
+        let observer = streaming.addMessageStreamingObserver { _ in
+            let row = streaming.streamingMessage(for: conversationID)
+            snapshots.append((streaming.stage(for: conversationID), row?.content, row?.reasoningContent))
+        }
+        let loop = makeLoop(messages: messages, provider: provider, streaming: streaming)
 
         let outcome = try await loop.runTurn(in: conversationID)
+        observer.cancel()
         #expect(outcome == .completed)
         #expect(provider.streamed)
         #expect(messages.lastMessage(in: conversationID)?.content == "你好")
         #expect(messages.lastMessage(in: conversationID)?.latencyMs != nil)
         #expect(messages.lastMessage(in: conversationID)?.timeToFirstTokenMs != nil)
         #expect(messages.lastMessage(in: conversationID)?.streamingDurationMs != nil)
-        // 临时行已清理
-        #expect(DefaultMessageStreamingProviding().streamingMessage(for: conversationID) == nil)
+        #expect(snapshots.contains { $0.stage == .thinking && $0.reasoning == "think " })
+        let snapshotDescriptions = snapshots.map {
+            "\($0.stage.rawValue)|\($0.content ?? "nil")|\($0.reasoning ?? "nil")"
+        }
+        #expect(
+            snapshots.contains { $0.stage == .generating && $0.content == "hello" && $0.reasoning == "think reason" },
+            "Snapshots: \(snapshotDescriptions)"
+        )
+        #expect(snapshots.last?.content == nil)
+        #expect(streaming.streamingMessage(for: conversationID) == nil)
     }
 
     @Test("工具调用循环：assistant 带工具 → 执行 → 结果回传 → 最终回复")

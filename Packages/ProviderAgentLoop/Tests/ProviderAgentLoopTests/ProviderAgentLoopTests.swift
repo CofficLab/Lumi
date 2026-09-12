@@ -78,13 +78,13 @@ struct ProviderAgentLoopTests {
     @MainActor
     private final class TestConversationManager: ConversationManaging {
         var dataDirectory: URL { URL(fileURLWithPath: "/tmp") }
-        var conversations: [LumiConversationSummary] = []
+        var conversations: [ConversationSummary] = []
         var selectedConversationID: UUID?
         var currentTitle: String = "No conversation"
-        var globalVerbosity: LumiResponseVerbosity = .standard
-        var globalReasoningEffort: LumiReasoningEffort?
-        var globalAutomationLevel: LumiAutomationLevel = .build
-        var globalLanguage: LumiConversationLanguage = .chinese
+        var globalVerbosity: ResponseVerbosity = .standard
+        var globalReasoningEffort: ReasoningEffort?
+        var globalAutomationLevel: AutomationLevel = .build
+        var globalLanguage: ConversationLanguage = .chinese
 
         @Published var tick = false
 
@@ -100,20 +100,20 @@ struct ProviderAgentLoopTests {
             NoopSelectedConversationObserverHandle()
         }
         func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
-        func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity) { globalVerbosity = verbosity }
-        func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
-        func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { globalVerbosity }
-        func setGlobalReasoningEffort(_ reasoningEffort: LumiReasoningEffort?) { globalReasoningEffort = reasoningEffort }
-        func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { globalReasoningEffort ?? .defaultEffort }
-        func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? { globalReasoningEffort }
-        func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {}
+        func setGlobalVerbosity(_ verbosity: ResponseVerbosity) { globalVerbosity = verbosity }
+        func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {}
+        func verbosity(for conversationID: UUID?) -> ResponseVerbosity { globalVerbosity }
+        func setGlobalReasoningEffort(_ reasoningEffort: ReasoningEffort?) { globalReasoningEffort = reasoningEffort }
+        func reasoningEffort(for conversationID: UUID?) -> ReasoningEffort { globalReasoningEffort ?? .defaultEffort }
+        func reasoningEffortOptional(for conversationID: UUID?) -> ReasoningEffort? { globalReasoningEffort }
+        func setReasoningEffort(_ reasoningEffort: ReasoningEffort, for conversationID: UUID?) {}
         func clearReasoningEffort(for conversationID: UUID?) {}
-        func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel) { globalAutomationLevel = automationLevel }
-        func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel { globalAutomationLevel }
-        func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
-        func setGlobalLanguage(_ language: LumiConversationLanguage) { globalLanguage = language }
-        func language(for conversationID: UUID?) -> LumiConversationLanguage { globalLanguage }
-        func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}
+        func setGlobalAutomationLevel(_ automationLevel: AutomationLevel) { globalAutomationLevel = automationLevel }
+        func automationLevel(for conversationID: UUID?) -> AutomationLevel { globalAutomationLevel }
+        func setAutomationLevel(_ automationLevel: AutomationLevel, for conversationID: UUID?) {}
+        func setGlobalLanguage(_ language: ConversationLanguage) { globalLanguage = language }
+        func language(for conversationID: UUID?) -> ConversationLanguage { globalLanguage }
+        func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?) {}
         func providerID(for conversationID: UUID?) -> String? { nil }
         func modelName(for conversationID: UUID?) -> String? { nil }
     }

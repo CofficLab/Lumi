@@ -397,8 +397,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                     guard let bridge else { return }
                     if let reasoning = chunk.reasoningContent, !reasoning.isEmpty {
                         await bridge.appendThinking(reasoning, conversationID: conversationID)
-                    } else {
-                        await bridge.appendContent(chunk.content ?? "", conversationID: conversationID)
+                    }
+                    if let content = chunk.content, !content.isEmpty {
+                        await bridge.appendContent(content, conversationID: conversationID)
                     }
                 }
             } else {
@@ -589,11 +590,11 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                     let bridge = StreamingBridge(streaming: streaming)
                     response = try await streamingManager.streamComplete(request) { [weak bridge] chunk in
                         guard let bridge else { return }
-                        let piece = chunk.content ?? ""
-                        if let rc = chunk.reasoningContent, !rc.isEmpty {
-                            await bridge.appendThinking(piece, conversationID: conversationID)
-                        } else {
-                            await bridge.appendContent(piece, conversationID: conversationID)
+                        if let reasoning = chunk.reasoningContent, !reasoning.isEmpty {
+                            await bridge.appendThinking(reasoning, conversationID: conversationID)
+                        }
+                        if let content = chunk.content, !content.isEmpty {
+                            await bridge.appendContent(content, conversationID: conversationID)
                         }
                     }
                 } else {
