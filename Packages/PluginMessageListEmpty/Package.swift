@@ -35,5 +35,18 @@ let package = Package(
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
+        .testTarget(
+            name: "PluginMessageListEmptyTests",
+            dependencies: [
+                "PluginMessageListEmpty",
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderProject", package: "ProviderProject"),
+                .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
+                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
+            ]
+        ),
     ]
 )

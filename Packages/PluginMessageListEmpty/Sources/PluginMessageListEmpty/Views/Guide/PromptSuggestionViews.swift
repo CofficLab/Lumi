@@ -105,27 +105,59 @@ func visibleSuggestions(
     }
 }
 
+struct FlowLayoutGeometry {
+    let size: CGSize
+    let origins: [CGPoint]
+}
+
+func flowLayoutGeometry(for sizes: [CGSize], width: CGFloat, spacing: CGFloat) -> FlowLayoutGeometry {
+    var x: CGFloat = 0
+    var y: CGFloat = 0
+    var rowHeight: CGFloat = 0
+    var widestRow: CGFloat = 0
+    var origins: [CGPoint] = []
+
+    for size in sizes {
+        if x > 0 && x + spacing + size.width > width {
+            widestRow = max(widestRow, x)
+            y += rowHeight + spacing
+            x = 0
+            rowHeight = 0
+        }
+
+        let gap = x == 0 ? 0 : spacing
+        origins.append(CGPoint(x: x + gap, y: y))
+        x += gap + size.width
+        rowHeight = max(rowHeight, size.height)
+    }
+
+    widestRow = max(widestRow, x)
+    return FlowLayoutGeometry(
+        size: CGSize(width: min(widestRow, width), height: y + rowHeight),
+        origins: origins
+    )
+}
+
 private struct FlowLayout: Layout {
     let spacing: CGFloat
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let width = proposal.width ?? .greatestFiniteMagnitude
-        var x: CGFloat = 0; var y: CGFloat = 0; var row: CGFloat = 0
-        for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
-            if x > 0 && x + spacing + size.width > width { y += row + spacing; x = 0; row = 0 }
-            x += (x == 0 ? 0 : spacing) + size.width; row = max(row, size.height)
-        }
-        return CGSize(width: min(x, width), height: y + row)
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        return flowLayoutGeometry(
+            for: sizes,
+            width: proposal.width ?? .greatestFiniteMagnitude,
+            spacing: spacing
+        ).size
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX; var y = bounds.minY; var row: CGFloat = 0
-        for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
-            if x > bounds.minX && x + size.width > bounds.maxX { x = bounds.minX; y += row + spacing; row = 0 }
-            view.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
-            x += size.width + spacing; row = max(row, size.height)
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let geometry = flowLayoutGeometry(for: sizes, width: bounds.width, spacing: spacing)
+        for ((view, size), origin) in zip(zip(subviews, sizes), geometry.origins) {
+            view.place(
+                at: CGPoint(x: bounds.minX + origin.x, y: bounds.minY + origin.y),
+                proposal: ProposedViewSize(size)
+            )
         }
     }
 }
