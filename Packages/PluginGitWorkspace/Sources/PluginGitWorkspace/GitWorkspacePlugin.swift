@@ -80,6 +80,7 @@ public final class GitWorkspacePlugin: SuperPlugin, SuperLog {
                     root?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
                     root?.setContentHeaderViewHidden(false)
                     chat?.setVisible(true)
+                    content?.setContentView(nil)
                 }
             },
         ])

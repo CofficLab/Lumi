@@ -48,7 +48,18 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginGitWorkspaceTests",
-            dependencies: ["PluginGitWorkspace", "KernelCore", "ProviderActivityBar", "ProviderContentView", "ProviderProject", "ProviderRootView", "ProviderToolbar"]
+            dependencies: [
+                "PluginGitWorkspace",
+                .product(name: "PluginGit", package: "PluginGit"),
+                "KernelCore",
+                "ProviderActivityBar",
+                "ProviderChatSection",
+                "ProviderContentView",
+                "ProviderProject",
+                "ProviderRailView",
+                "ProviderRootView",
+                "ProviderToolbar",
+            ]
         ),
     ]
 )
