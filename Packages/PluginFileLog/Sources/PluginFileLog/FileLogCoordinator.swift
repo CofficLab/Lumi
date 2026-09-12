@@ -37,11 +37,12 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
     // MARK: - Constants
 
     private let subsystem = "com.coffic.lumi"
-    private let maxFileSize: Int = 5 * 1024 * 1024  // 5 MB
-    private let maxDirectorySize: Int = 50 * 1024 * 1024  // 50 MB
-    private let maxRetentionDays: Int = 7
-    private let pollInterval: TimeInterval = 2.0
-    private let writeDelay: TimeInterval = 3.0
+    private let directoryOverride: URL?
+    private let maxFileSize: Int
+    private let maxDirectorySize: Int
+    private let maxRetentionDays: Int
+    private let pollInterval: TimeInterval
+    private let writeDelay: TimeInterval
 
     // MARK: - State
 
@@ -69,7 +70,7 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
     // MARK: - Log Directory
 
     private var logsDirectory: URL {
-        FileLogRuntimeBridge.logsDirectory ?? fallbackDirectory
+        directoryOverride ?? FileLogRuntimeBridge.logsDirectory ?? fallbackDirectory
     }
 
     var logsDirectoryURL: URL { logsDirectory }
@@ -85,7 +86,21 @@ final class FileLogCoordinator: @unchecked Sendable, SuperLog, DiagnosticsProvid
 
     // MARK: - Public Lifecycle
 
-    private init() {}
+    init(
+        logsDirectory: URL? = nil,
+        maxFileSize: Int = 5 * 1024 * 1024,
+        maxDirectorySize: Int = 50 * 1024 * 1024,
+        maxRetentionDays: Int = 7,
+        pollInterval: TimeInterval = 2.0,
+        writeDelay: TimeInterval = 3.0
+    ) {
+        self.directoryOverride = logsDirectory
+        self.maxFileSize = maxFileSize
+        self.maxDirectorySize = maxDirectorySize
+        self.maxRetentionDays = maxRetentionDays
+        self.pollInterval = pollInterval
+        self.writeDelay = writeDelay
+    }
 
     /// 启动磁盘日志收集
     func start() {
