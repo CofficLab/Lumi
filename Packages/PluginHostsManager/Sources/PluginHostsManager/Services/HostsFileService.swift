@@ -7,9 +7,10 @@ public class HostsFileService: SuperLog {
     public nonisolated static let emoji = "📝"
     public nonisolated static let verbose: Bool = false
     public static let shared = HostsFileService()
-    private let hostsPath = "/etc/hosts"
+    private let hostsPath: String
 
-    private init() {
+    init(hostsPath: String = "/etc/hosts") {
+        self.hostsPath = hostsPath
         if Self.verbose {
             if HostsManagerPlugin.verbose {
                             HostsManagerPlugin.logger.info("\(self.t)Hosts file service initialized")
