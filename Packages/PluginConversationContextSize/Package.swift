@@ -10,6 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../KitLLM"),
         .package(path: "../KitSuperLog"),
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
@@ -36,7 +37,15 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginConversationContextSizeTests",
-            dependencies: ["PluginConversationContextSize"],
+            dependencies: [
+                "PluginConversationContextSize",
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KitLLM", package: "KitLLM"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderLLMManager", package: "ProviderLLMManager"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
+            ],
             path: "Tests/PluginConversationContextSizeTests"
         ),
     ]

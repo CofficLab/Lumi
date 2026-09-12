@@ -3,7 +3,9 @@ import Foundation
 extension Int {
     /// 格式化 token 数量为简短显示：1000 → "1K"，1500 → "2K"。
     var formattedTokensShort: String {
-        let k = (self + 999) / 1000
+        let k = self > 0
+            ? self / 1000 + (self % 1000 == 0 ? 0 : 1)
+            : (self + 999) / 1000
         return "\(k)K"
     }
 
