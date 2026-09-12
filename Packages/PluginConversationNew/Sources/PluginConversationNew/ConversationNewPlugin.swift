@@ -27,6 +27,8 @@ public final class ConversationNewPlugin: SuperPlugin, SuperLog {
     /// - stage .beta → .preview
 
     private var toolbarObserver: NewChatToolbarObserver?
+    private var capability: NewChatCapabilityAdapter?
+    private var viewModel: NewChatViewModel?
 
     public init() {}
 
@@ -37,6 +39,12 @@ public final class ConversationNewPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve ToolbarProviding, ConversationManaging or ChatSectionProviding from kernel")
             return
         }
+
+        // 组装层：创建 Capability + ViewModel，注入视图。
+        let capability = NewChatCapabilityAdapter(conversations: conversations)
+        let viewModel = NewChatViewModel(capability: capability)
+        self.capability = capability
+        self.viewModel = viewModel
 
         let toolbarItemID = "\(id).new-chat"
         toolbarObserver = NewChatToolbarObserver(
@@ -52,7 +60,7 @@ public final class ConversationNewPlugin: SuperPlugin, SuperLog {
                 category: .chat,
                 order: 30
             ) {
-                NewChatButton(kernel: kernel)
+                NewChatButton(viewModel: viewModel)
             }
         }
     }
@@ -60,6 +68,8 @@ public final class ConversationNewPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         toolbarObserver?.cancel()
         toolbarObserver = nil
+        viewModel = nil
+        capability = nil
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).new-chat"])
     }
 }

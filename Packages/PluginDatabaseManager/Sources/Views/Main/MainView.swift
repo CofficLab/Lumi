@@ -62,7 +62,8 @@ public struct MainView: View {
     private var queryEditor: some View {
         EmbeddedCodeEditorView(
             text: $viewModel.queryText,
-            options: EditorEmbeddedEditorOptions(languageID: "sql")
+            options: EditorEmbeddedEditorOptions(languageID: "sql"),
+            provider: viewModel.embeddedEditorProvider
         )
             .frame(minHeight: 100, maxHeight: 200)
             .border(theme.appSubtleBorder)

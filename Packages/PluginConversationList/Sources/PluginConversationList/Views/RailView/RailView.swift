@@ -1,39 +1,20 @@
 import SwiftUI
 
 /// 对话列表侧栏视图：组合 HeaderBarView 与 ListView。
+///
+/// View 只依赖 `ConversationListViewModel`。
 struct RailView: View {
-    private let attentionStore: ConversationAttentionStore
-    private let sortStabilizer: ConversationSortStabilizer
-    private let context: ConversationListContext
-    private let scopeToCurrentProject: Bool
+    @ObservedObject private var viewModel: ConversationListViewModel
 
-    init(
-        context: ConversationListContext,
-        attentionStore: ConversationAttentionStore,
-        sortStabilizer: ConversationSortStabilizer,
-        scopeToCurrentProject: Bool = false
-    ) {
-        self.context = context
-        self.attentionStore = attentionStore
-        self.sortStabilizer = sortStabilizer
-        self.scopeToCurrentProject = scopeToCurrentProject
-    }
-
-    private var projectPath: String? {
-        guard scopeToCurrentProject else { return nil }
-        return context.currentProjectPath
+    init(viewModel: ConversationListViewModel) {
+        self.viewModel = viewModel
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            HeaderBarView(scopeToCurrentProject: scopeToCurrentProject, context: context)
+            HeaderBarView(viewModel: viewModel)
 
-            ListView(
-                context: context,
-                attentionStore: attentionStore,
-                sortStabilizer: sortStabilizer,
-                projectPath: projectPath
-            )
+            ListView(viewModel: viewModel)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }

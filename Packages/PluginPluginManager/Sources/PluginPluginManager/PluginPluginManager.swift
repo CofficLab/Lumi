@@ -29,6 +29,10 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
     /// `SettingEntryItem` 的稳定 ID，供设置深链和入口注册共同使用。
     static let settingsEntryID = "plugin-manager"
 
+    private var capability: PluginManagementCapabilityAdapter?
+    private var viewModel: PluginManagementViewModel?
+    private var observer: PluginManagementObserver?
+
     public init() {}
 
     private var promptSuggestion: PromptSuggestion {
@@ -73,19 +77,38 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t) DocsViewProviding not found")
         }
 
+        let capability = PluginManagementCapabilityAdapter(manager: manager)
+        let viewModel = PluginManagementViewModel(
+            capability: capability,
+            docsProvider: docsProvider
+        )
+        observer?.cancel()
+        observer = PluginManagementObserver(
+            capability: capability,
+            viewModel: viewModel
+        )
+        self.capability = capability
+        self.viewModel = viewModel
+
         let entry = SettingEntryItem(
             id: Self.settingsEntryID,
             title: "插件管理",
             systemImage: "puzzlepiece.extension",
             order: 3
-        ) { [manager, docsProvider] in
-            PluginManagementView(manager: manager, docsProvider: docsProvider)
+        ) { [viewModel] in
+            PluginManagementView(viewModel: viewModel)
         }
 
         settings.addEntries([entry])
     }
 
     public func onReady(kernel: KernelCoreContainer) throws {
+        // `onBoot` runs in plugin order. Plugins with a later order may not have
+        // been registered when the settings ViewModel first snapshots the list.
+        // Refresh after every plugin has completed Boot so the settings page
+        // sees the complete registry, matching the old live Provider lookup.
+        viewModel?.refresh()
+
         registerPromptSuggestion(kernel: kernel, requiresEnable: false)
 
         // 确保每个已启动插件都有 AboutView。插件自己的品牌化页面优先，
@@ -106,6 +129,10 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        observer?.cancel()
+        observer = nil
+        viewModel = nil
+        capability = nil
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: [Self.settingsEntryID])
 

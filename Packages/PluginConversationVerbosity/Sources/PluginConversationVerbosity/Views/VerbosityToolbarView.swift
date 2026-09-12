@@ -2,37 +2,27 @@ import ProviderConversation
 import SwiftUI
 
 /// 详细度 chip：显示当前会话的 verbosity，点击弹出三档选择。
+///
+/// 只依赖 `VerbosityViewModel`；外部事件由插件组装层的 `VerbosityObserver`
+/// 直接写入 ViewModel，View 不再创建 Observer。
 struct VerbosityToolbarView: View {
-    private let conversationObservation: ConversationManagerObservationBox
+    @ObservedObject private var viewModel: VerbosityViewModel
 
     @State private var isPopoverPresented = false
-    @State private var observationRevision = 0
-    @State private var observerHandle: (any ConversationManagerObservationBox.ObserverHandle)?
 
-    init(observation: ConversationManagerObservationBox) {
-        self.conversationObservation = observation
-    }
-
-    private var capability: any ConversationVerbosityCapability {
-        conversationObservation.capability
-    }
-
-    private var selectedVerbosity: ResponseVerbosity {
-        if let id = capability.selectedConversationID {
-            return capability.verbosity(for: id)
-        }
-        return capability.globalVerbosity
+    init(viewModel: VerbosityViewModel) {
+        self.viewModel = viewModel
     }
 
     var body: some View {
-        let _ = observationRevision
+        let _ = viewModel.observationRevision
         Button {
             isPopoverPresented.toggle()
         } label: {
             HStack(spacing: ToolbarMetrics.chipSpacing) {
-                Image(systemName: selectedVerbosity.iconName)
+                Image(systemName: viewModel.selectedVerbosity.iconName)
                     .font(.system(size: ToolbarMetrics.chipIconSize, weight: .medium))
-                Text(selectedVerbosity.levelCode)
+                Text(viewModel.selectedVerbosity.levelCode)
                     .font(.system(size: ToolbarMetrics.chipTextSize, weight: ToolbarMetrics.chipTextWeight))
             }
             .foregroundColor(.primary)
@@ -41,28 +31,12 @@ struct VerbosityToolbarView: View {
             .background(Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: ToolbarMetrics.chipCornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
-        .help(selectedVerbosity.description)
+        .help(viewModel.selectedVerbosity.description)
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            VerbosityPopover(selected: selectedVerbosity) { level in
-                if let conversationID = capability.selectedConversationID {
-                    Task { @MainActor in
-                        await capability.setVerbosityAndWait(level, for: conversationID)
-                    }
-                } else {
-                    capability.setGlobalVerbosity(level)
-                }
+            VerbosityPopover(selected: viewModel.selectedVerbosity) { level in
+                viewModel.select(level)
                 isPopoverPresented = false
             }
-        }
-        .onAppear {
-            guard observerHandle == nil else { return }
-            observerHandle = conversationObservation.addObserver { _ in
-                observationRevision &+= 1
-            }
-        }
-        .onDisappear {
-            observerHandle?.cancel()
-            observerHandle = nil
         }
     }
 }

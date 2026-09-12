@@ -1,15 +1,12 @@
-import KernelCore
+import Foundation
 import KitAgentTool
 import KitLocalization
 import KitMarkdown
 import LumiUI
 import os
 import ProviderConversation
-import ProviderDeveloperMode
 import ProviderMessage
 import ProviderMessageRendering
-import ProviderMessageSender
-import ProviderToolManager
 import SwiftUI
 
 // MARK: - ToolCallRowsView
@@ -65,22 +62,25 @@ final class ToolCallResolutionCache: @unchecked Sendable {
 }
 
 struct ToolCallRowsView: View {
-    let kernel: KernelCoreContainer
+    let capability: any MessageRendererCapability
+    @ObservedObject var stateViewModel: MessageRendererStateViewModel
     let message: Message
     let verbosity: ResponseVerbosity
 
     @State private var parameterPopoverToolCallID: String?
     @State private var resultPopoverToolCallID: String?
     @State private var resolvedToolCalls: [MessageToolCall]?
-    @State private var isDeveloperModeEnabled = false
-    @State private var developerModeObserverHandle: (any DeveloperModeProvidingObserverHandle)?
-    private let developerModeProvider: (any DeveloperModeProviding)?
 
-    init(kernel: KernelCoreContainer, message: Message, verbosity: ResponseVerbosity) {
-        self.kernel = kernel
+    init(
+        capability: any MessageRendererCapability,
+        stateViewModel: MessageRendererStateViewModel,
+        message: Message,
+        verbosity: ResponseVerbosity
+    ) {
+        self.capability = capability
+        self.stateViewModel = stateViewModel
         self.message = message
         self.verbosity = verbosity
-        self.developerModeProvider = kernel.resolveProvider((any DeveloperModeProviding).self)
     }
 
     private var toolCalls: [MessageToolCall] {
@@ -108,7 +108,8 @@ struct ToolCallRowsView: View {
             if verbosity == .brief {
                 // V1:直接逐行显示默认工具调用，不使用自定义 renderer 或折叠摘要。
                 CollapsibleToolStepGroup(
-                    kernel: kernel,
+                    capability: capability,
+                    stateViewModel: stateViewModel,
                     message: message,
                     toolCalls: message.toolCalls ?? [],
                     verbosity: verbosity
@@ -120,7 +121,7 @@ struct ToolCallRowsView: View {
         .task(id: resolutionTaskID) {
             guard verbosity != .brief else { return }
             // 命中"完全解析"缓存:List 惰性行滚出视口被拆除后 @State 丢失,
-            // 历史上每次滚回都重新逐个 await kernel 查询工具结果。
+            // 历史上每次滚回都重新逐个 await 查询工具结果。
             if let cached = ToolCallResolutionCache.shared.resolvedCalls(
                 messageID: message.id,
                 toolCalls: message.toolCalls
@@ -132,31 +133,14 @@ struct ToolCallRowsView: View {
             }
             await resolveResults()
         }
-        .onAppear {
-            guard developerModeObserverHandle == nil else { return }
-            guard let developerModeProvider else { return }
-            isDeveloperModeEnabled = developerModeProvider.isEnabled
-            developerModeObserverHandle = developerModeProvider.addObserver { event in
-                guard case let .enabledChanged(value) = event else { return }
-                isDeveloperModeEnabled = value
-            }
-        }
-        .onDisappear {
-            developerModeObserverHandle?.cancel()
-            developerModeObserverHandle = nil
-        }
     }
 
     @MainActor
     private func resolveResults() async {
-        guard let manager = kernel.resolveProvider((any ToolManagerProviding).self) else {
-            ToolCallResolutionCache.logger.error("Failed to resolve ToolManagerProviding from kernel")
-            return
-        }
         var resolved = message.toolCalls ?? []
         var didResolveAnyResult = false
         for index in resolved.indices where resolved[index].result == nil {
-            if let raw = await manager.toolCallResult(
+            if let raw = await capability.toolCallResult(
                 for: resolved[index].id,
                 conversationID: message.conversationID,
                 turnID: message.turnID
@@ -193,19 +177,19 @@ struct ToolCallRowsView: View {
         // V1 (brief) 模式不使用自定义工具渲染器，统一走默认卡片路径。
         let useCustomRenderer = verbosity != .brief
         if useCustomRenderer,
-           let rendering = kernel.resolveProvider((any ToolCallRenderingProviding).self),
-           let customRenderer = rendering.renderer(for: toolCall.agentToolCall) {
+           let customRenderer = capability.toolCallRenderer(for: toolCall.agentToolCall) {
             customRenderer.render(
                 toolCall: toolCall.agentToolCall,
                 message: rowContext
             )
             .toolCallRendererIdBadge(
                 type(of: customRenderer).id,
-                isEnabled: isDeveloperModeEnabled
+                isEnabled: stateViewModel.isDeveloperModeEnabled
             )
         } else {
             ToolCallRowView(
-                kernel: kernel,
+                capability: capability,
+                stateViewModel: stateViewModel,
                 message: message,
                 toolCall: toolCall,
                 verbosity: verbosity,
@@ -224,7 +208,8 @@ struct ToolCallRowsView: View {
 struct ToolCallRowView: View {
     @LumiTheme private var theme
 
-    let kernel: KernelCoreContainer
+    let capability: any MessageRendererCapability
+    @ObservedObject var stateViewModel: MessageRendererStateViewModel
     let message: Message
     let toolCall: MessageToolCall
     let verbosity: ResponseVerbosity
@@ -241,7 +226,8 @@ struct ToolCallRowView: View {
     @StateObject private var jobActivity: ToolJobActivityModel
 
     init(
-        kernel: KernelCoreContainer,
+        capability: any MessageRendererCapability,
+        stateViewModel: MessageRendererStateViewModel,
         message: Message,
         toolCall: MessageToolCall,
         verbosity: ResponseVerbosity,
@@ -249,15 +235,15 @@ struct ToolCallRowView: View {
         parameterPopoverToolCallID: Binding<String?>,
         resultPopoverToolCallID: Binding<String?>
     ) {
-        self.kernel = kernel
+        self.capability = capability
+        self.stateViewModel = stateViewModel
         self.message = message
         self.toolCall = toolCall
         self.verbosity = verbosity
         self.showsDetails = showsDetails
         self._parameterPopoverToolCallID = parameterPopoverToolCallID
         self._resultPopoverToolCallID = resultPopoverToolCallID
-        self._jobActivity = StateObject(wrappedValue: ToolJobActivityModel(
-            manager: kernel.resolveProvider((any ToolManagerProviding).self),
+        self._jobActivity = StateObject(wrappedValue: capability.makeToolJobActivityModel(
             toolCallID: toolCall.id,
             conversationID: message.conversationID,
             turnID: message.turnID
@@ -457,10 +443,10 @@ struct ToolCallRowView: View {
         }
         .help(LumiPluginLocalization.string("调用结果", bundle: .module))
         .popover(isPresented: popoverBinding(selection: $resultPopoverToolCallID), arrowEdge: .bottom) {
-            // 结果按钮本身不持有数据:打开时先显示 loading,再去 kernel 查询该工具调用结果,
+            // 结果按钮本身不持有数据:打开时先显示 loading,再去能力层查询该工具调用结果,
             // 查到后再渲染。
             ToolCallResultLazyPopover(
-                kernel: kernel,
+                capability: capability,
                 toolCallID: toolCall.id,
                 conversationID: message.conversationID,
                 turnID: message.turnID,
@@ -741,7 +727,7 @@ private struct ToolResultEmptyStateView: View {
 ///
 /// 工具执行耗时从行内移除后,统一在此 popover 内容区顶部展示(见 `ToolCallResultView`)。
 private struct ToolCallResultLazyPopover: View {
-    let kernel: KernelCoreContainer
+    let capability: any MessageRendererCapability
     let toolCallID: String
     let conversationID: UUID
     let turnID: UUID?
@@ -778,7 +764,7 @@ private struct ToolCallResultLazyPopover: View {
         }
         .task {
             guard !didLoad else { return }
-            let resolved = await kernel.resolveProvider((any ToolManagerProviding).self)?.toolCallResult(
+            let resolved = await capability.toolCallResult(
                 for: toolCallID,
                 conversationID: conversationID,
                 turnID: turnID

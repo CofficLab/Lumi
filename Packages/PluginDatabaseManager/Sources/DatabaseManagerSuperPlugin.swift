@@ -48,7 +48,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        EmbeddedEditorServiceLocator.provider = kernel.resolveProvider(EditorEmbeddedEditorProviding.self)
+        viewModel.embeddedEditorProvider = kernel.resolveProvider(EditorEmbeddedEditorProviding.self)
         if let editor = kernel.resolveProvider(EditorService.self) {
             editor.editorExtensions.registerLanguage(DatabaseSQLLanguageSupport.descriptor)
             editor.editorExtensions.registerGrammarProvider(DatabaseSQLGrammarProvider())
@@ -88,7 +88,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                 ownerPluginID: id
             ) { state in
                 if state == .activated {
-                    toolbar?.setVisibleCategories([.global, .project])
+                    toolbar?.setVisibleCategories([.global])
                     railView?.setVisibleTabID(Self.railTabID)
                     railView?.activateWidthProfile(
                         ownerID: pluginID,
@@ -101,7 +101,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
                         AnyView(DatabaseManagerV2Workspace(viewModel: self.viewModel))
                     )
                     toolbar?.addToolbarItems([
-                        ToolbarItem(id: "\(self.id).title", title: self.metadata.name, placement: .center, category: .project, order: 0) {
+                        ToolbarItem(id: "\(self.id).title", title: self.metadata.name, placement: .center, category: .global, order: 0) {
                             Text(self.metadata.name).font(.headline)
                         },
                     ])
@@ -144,7 +144,7 @@ public final class DatabaseManagerSuperPlugin: SuperPlugin, SuperLog {
         tools?.remove(id: DatabaseDescribeSchemaV2Tool.toolName)
         tools?.remove(id: DatabaseReadonlyQueryV2Tool.toolName)
         tools?.remove(id: DatabaseSampleTableV2Tool.toolName)
-        EmbeddedEditorServiceLocator.provider = nil
+        viewModel.embeddedEditorProvider = nil
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

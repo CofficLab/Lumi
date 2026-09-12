@@ -3,31 +3,31 @@ import SwiftUI
 import KitLocalization
 import LumiUI
 
+/// 开发者模式开关视图：View 只依赖 `DeveloperModeViewModel`，
+/// 不直接访问 `DeveloperModeProviding`。
 struct DeveloperModeToggleView: View {
     @LumiTheme private var theme
-    private let provider: any DeveloperModeProviding
-    @State private var isEnabled = false
-    @State private var observerHandle: (any DeveloperModeProvidingObserverHandle)?
+    @ObservedObject private var viewModel: DeveloperModeViewModel
 
-    init(provider: any DeveloperModeProviding) {
-        self.provider = provider
+    init(viewModel: DeveloperModeViewModel) {
+        self.viewModel = viewModel
     }
 
     var body: some View {
         Button {
-            provider.toggle()
+            viewModel.toggle()
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: isEnabled ? "hammer.fill" : "hammer")
+                Image(systemName: viewModel.isEnabled ? "hammer.fill" : "hammer")
                 Text(LumiPluginLocalization.string("DEV"))
             }
             .font(.appMicroEmphasized)
             .tracking(0.3)
-            .foregroundStyle(isEnabled ? .white : theme.textSecondary)
+            .foregroundStyle(viewModel.isEnabled ? .white : theme.textSecondary)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(
-                isEnabled
+                viewModel.isEnabled
                     ? theme.warning
                     : theme.textSecondary.opacity(0.12),
                 in: Capsule(style: .continuous)
@@ -36,26 +36,14 @@ struct DeveloperModeToggleView: View {
         .buttonStyle(.plain)
         .help(
             LumiPluginLocalization.string(
-                isEnabled ? "Developer mode is enabled" : "Developer mode is disabled"
+                viewModel.isEnabled ? "Developer mode is enabled" : "Developer mode is disabled"
             )
         )
         .accessibilityLabel(LumiPluginLocalization.string("Developer mode"))
         .accessibilityValue(
             LumiPluginLocalization.string(
-                isEnabled ? "Developer mode is enabled" : "Developer mode is disabled"
+                viewModel.isEnabled ? "Developer mode is enabled" : "Developer mode is disabled"
             )
         )
-        .onAppear {
-            guard observerHandle == nil else { return }
-            isEnabled = provider.isEnabled
-            observerHandle = provider.addObserver { event in
-                guard case let .enabledChanged(value) = event else { return }
-                isEnabled = value
-            }
-        }
-        .onDisappear {
-            observerHandle?.cancel()
-            observerHandle = nil
-        }
     }
 }

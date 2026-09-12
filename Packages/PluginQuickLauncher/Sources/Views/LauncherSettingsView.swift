@@ -3,18 +3,15 @@ import Carbon.HIToolbox
 import LumiUI
 import SwiftUI
 
-/// 启动器设置页：全局热键录制 + 内容源开关
+/// 启动器设置页：全局热键录制 + 内容源开关。
+///
+/// 只依赖 `QuickLauncherSettingsViewModel`；热键、录制与持久化配置
+/// 全部由 ViewModel 提供。
 public struct LauncherSettingsView: View {
-    @ObservedObject private var hotkeyManager: GlobalHotkeyManager
-    @AppStorage("QuickLauncher.Source.apps") private var appsEnabled = true
-    @AppStorage("QuickLauncher.Source.files") private var filesEnabled = true
-    @AppStorage("QuickLauncher.Source.commands") private var commandsEnabled = true
+    @ObservedObject private var viewModel: QuickLauncherSettingsViewModel
 
-    @State private var isRecording = false
-    @State private var recordMonitor: Any?
-
-    init(hotkeyManager: GlobalHotkeyManager) {
-        self.hotkeyManager = hotkeyManager
+    init(viewModel: QuickLauncherSettingsViewModel) {
+        self.viewModel = viewModel
     }
 
     public var body: some View {
@@ -24,7 +21,7 @@ public struct LauncherSettingsView: View {
                 HStack {
                     Spacer()
                     AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
-                        openDataDirectory()
+                        viewModel.openDataDirectory()
                     }
                 }
 #endif
@@ -35,7 +32,7 @@ public struct LauncherSettingsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onDisappear {
-            stopRecording()
+            viewModel.stopRecording()
         }
     }
 
@@ -52,16 +49,16 @@ public struct LauncherSettingsView: View {
                 icon: "command"
             ) {
                 HStack(spacing: 8) {
-                    AppTag(hotkeyManager.currentCombo.displayString, systemImage: "command", style: .accent)
+                    AppTag(viewModel.currentComboDisplay, systemImage: "command", style: .accent)
 
-                    if isRecording {
+                    if viewModel.isRecording {
                         AppButton(
                             LumiPluginLocalization.string("Cancel", bundle: .module),
                             systemImage: "xmark",
                             style: .secondary,
                             size: .small
                         ) {
-                            stopRecording()
+                            viewModel.stopRecording()
                         }
                     } else {
                         AppButton(
@@ -70,7 +67,7 @@ public struct LauncherSettingsView: View {
                             style: .secondary,
                             size: .small
                         ) {
-                            startRecording()
+                            viewModel.startRecording()
                         }
                         AppButton(
                             LumiPluginLocalization.string("Reset", bundle: .module),
@@ -78,7 +75,7 @@ public struct LauncherSettingsView: View {
                             style: .secondary,
                             size: .small
                         ) {
-                            hotkeyManager.resetToDefault()
+                            viewModel.resetHotkey()
                         }
                     }
                 }
@@ -97,21 +94,21 @@ public struct LauncherSettingsView: View {
                 AppSettingToggleRow(
                     LumiPluginLocalization.string("Applications", bundle: .module),
                     icon: "app.fill",
-                    isOn: $appsEnabled
+                    isOn: $viewModel.appsEnabled
                 )
                 Divider()
                     .padding(.vertical, 8)
                 AppSettingToggleRow(
                     LumiPluginLocalization.string("Files (Spotlight)", bundle: .module),
                     icon: "doc.text.magnifyingglass",
-                    isOn: $filesEnabled
+                    isOn: $viewModel.filesEnabled
                 )
                 Divider()
                     .padding(.vertical, 8)
                 AppSettingToggleRow(
                     LumiPluginLocalization.string("Commands", bundle: .module),
                     icon: "terminal",
-                    isOn: $commandsEnabled
+                    isOn: $viewModel.commandsEnabled
                 )
             }
         }
@@ -126,7 +123,7 @@ public struct LauncherSettingsView: View {
         ) {
             VStack(spacing: 0) {
                 instructionRow(
-                    key: hotkeyManager.currentCombo.displayString,
+                    key: viewModel.currentComboDisplay,
                     description: LumiPluginLocalization.string("Open the launcher anywhere", bundle: .module),
                     icon: "command"
                 )
@@ -170,51 +167,10 @@ public struct LauncherSettingsView: View {
             AppTag(key, style: .subtle)
         }
     }
-
-    // MARK: - Recording
-
-    private func startRecording() {
-        isRecording = true
-        // 应用内监听下一次按键组合
-        recordMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [self] event in
-            let combo = HotkeyCombo(
-                keyCode: UInt32(event.keyCode),
-                eventModifiers: event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-            )
-            // 至少一个功能修饰键才有效；Esc 取消录制
-            if event.keyCode == kVK_Escape {
-                stopRecording()
-            } else if combo.hasFunctionModifier {
-                hotkeyManager.updateCombo(combo)
-                stopRecording()
-            }
-            return nil
-        }
-    }
-
-    private func stopRecording() {
-        if let recordMonitor {
-            NSEvent.removeMonitor(recordMonitor)
-            self.recordMonitor = nil
-        }
-        isRecording = false
-    }
-
-    // MARK: - Debug Helpers
-
-    #if DEBUG
-    private func openDataDirectory() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
-        guard let url = appSupport else { return }
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(url)
-    }
-    #endif
 }
 
 #Preview("Launcher Settings") {
-    LauncherSettingsView(hotkeyManager: GlobalHotkeyManager.shared)
+    LauncherSettingsView(viewModel: QuickLauncherSettingsViewModel(hotkeyManager: .shared))
         .inRootView()
         .frame(width: 600, height: 520)
 }

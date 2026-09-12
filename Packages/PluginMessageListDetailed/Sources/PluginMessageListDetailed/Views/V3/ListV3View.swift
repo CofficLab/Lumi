@@ -17,6 +17,7 @@ import SwiftUI
 /// 懒加载但不经过 LazyStack 那套尺寸协商，天然避开已踩过的活锁。
 struct ListV3View: View {
     let services: MessageListServices
+    @ObservedObject private var developerModeState: DeveloperModeStateViewModel
     @ObservedObject private var viewModel: ListV3ViewModel
 
     @LumiTheme private var theme
@@ -34,9 +35,11 @@ struct ListV3View: View {
 
     init(
         services: MessageListServices,
+        developerModeState: DeveloperModeStateViewModel,
         viewModel: ListV3ViewModel
     ) {
         self.services = services
+        _developerModeState = ObservedObject(wrappedValue: developerModeState)
         _viewModel = ObservedObject(wrappedValue: viewModel)
     }
 
@@ -212,6 +215,7 @@ struct ListV3View: View {
         ForEach(viewModel.historyRows) { message in
             MessageRowView(
                 services: services,
+                developerModeState: developerModeState,
                 message: message,
                 verbosity: viewModel.verbosity
             )
@@ -228,6 +232,7 @@ struct ListV3View: View {
         if let streaming = viewModel.streamingRow {
             MessageRowView(
                 services: services,
+                developerModeState: developerModeState,
                 message: streaming,
                 verbosity: viewModel.verbosity
             )
@@ -239,7 +244,7 @@ struct ListV3View: View {
     @ViewBuilder
     private var activityRowView: some View {
         if let activity = viewModel.activityMessage, viewModel.streamingRow == nil {
-            MessageRowView(services: services, message: activity, verbosity: viewModel.verbosity)
+            MessageRowView(services: services, developerModeState: developerModeState, message: activity, verbosity: viewModel.verbosity)
                 .id("conversation-activity")
                 .plainMessageListRow()
         }

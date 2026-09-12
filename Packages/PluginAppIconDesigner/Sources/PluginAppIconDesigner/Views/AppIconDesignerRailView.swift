@@ -5,12 +5,14 @@ private typealias L = AppIconDesignerLocalization
 
 /// Source-file browser injected into the workspace Rail. Shows project- and app-scope
 /// document libraries as two collapsible sections, mirroring the Promo Designer rail.
+///
+/// 只依赖 `AppIconDesignerViewModel`；文档列表、选中与新建删除状态全部由 ViewModel 提供。
 public struct AppIconDesignerRailView: View {
-    @ObservedObject private var documentStore: IconDocumentStore
+    @ObservedObject private var viewModel: AppIconDesignerViewModel
     @State private var expandedScopes: Set<IconScope> = [.project, .app]
 
-    init(documentStore: IconDocumentStore) {
-        self.documentStore = documentStore
+    init(viewModel: AppIconDesignerViewModel) {
+        self.viewModel = viewModel
     }
 
     public var body: some View {
@@ -35,7 +37,7 @@ public struct AppIconDesignerRailView: View {
 
             Divider()
 
-            if documentStore.appStoragePath.isEmpty {
+            if viewModel.appStoragePath.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "app.dashed")
                         .foregroundStyle(.secondary)
@@ -60,13 +62,13 @@ public struct AppIconDesignerRailView: View {
     }
 
     private var totalCount: Int {
-        documentStore.projectDocuments.count + documentStore.appDocuments.count
+        viewModel.totalCount
     }
 
     @ViewBuilder
     private func scopeSection(_ scope: IconScope) -> some View {
-        let documents = documentStore.documents(for: scope)
-        let isUnavailable = scope == .project && documentStore.projectStoragePath.isEmpty
+        let documents = viewModel.documents(for: scope)
+        let isUnavailable = scope == .project && viewModel.projectStoragePath.isEmpty
         IconDesignerScopeSectionView(
             isExpanded: binding(for: scope),
             icon: scope == .project ? "folder" : "app.badge",
@@ -96,7 +98,7 @@ public struct AppIconDesignerRailView: View {
     private func subtitle(for scope: IconScope) -> String {
         switch scope {
         case .project:
-            if let path = documentStore.currentProjectPath?.split(separator: "/").last {
+            if let path = viewModel.currentProjectPath?.split(separator: "/").last {
                 return "· \(path)"
             }
             return ""
@@ -119,9 +121,9 @@ public struct AppIconDesignerRailView: View {
     }
 
     private func documentRow(_ document: IconDocument, scope: IconScope) -> some View {
-        let isSelected = documentStore.selectedScope == scope && documentStore.selectedDocumentId == document.id
+        let isSelected = viewModel.selectedScope == scope && viewModel.selectedDocumentId == document.id
         return Button {
-            try? documentStore.selectDocument(id: document.id, scope: scope)
+            try? viewModel.selectDocument(id: document.id, scope: scope)
         } label: {
             HStack(spacing: 9) {
                 IconRenderedDocumentView(document: document)
@@ -150,7 +152,7 @@ public struct AppIconDesignerRailView: View {
         .buttonStyle(.plain)
         .contextMenu {
             Button(role: .destructive) {
-                documentStore.deleteDocument(id: document.id, scope: scope)
+                viewModel.deleteDocument(id: document.id, scope: scope)
             } label: {
                 Label(L.string("Delete"), systemImage: "trash")
             }
@@ -160,14 +162,14 @@ public struct AppIconDesignerRailView: View {
     /// 在可用作用域（优先当前选中作用域）中新建文档。
     private func createDocument() {
         let scope: IconScope
-        if !documentStore.storagePath(for: documentStore.selectedScope).isEmpty {
-            scope = documentStore.selectedScope
-        } else if !documentStore.appStoragePath.isEmpty {
+        if !viewModel.storagePath(for: viewModel.selectedScope).isEmpty {
+            scope = viewModel.selectedScope
+        } else if !viewModel.appStoragePath.isEmpty {
             scope = .app
         } else {
-            scope = documentStore.selectedScope
+            scope = viewModel.selectedScope
         }
-        documentStore.createDocument(
+        viewModel.createDocument(
             title: nil,
             width: 1024,
             height: 1024,

@@ -13,9 +13,9 @@ import Foundation
     #expect(plugin.id == "com.coffic.lumi.plugin.agent-rules")
     #expect(plugin.name.isEmpty == false)
     #expect(plugin.order == 50)
-    #expect(plugin.metadata.policy == .enabledByDefault)
+    #expect(plugin.metadata.policy == .alwaysOn)
     #expect(plugin.metadata.category == .general)
-    #expect(plugin.metadata.stage == .preview)
+    #expect(plugin.metadata.stage == .stable)
     #expect(AgentRulesPlugin.agentTools.count == 2)
 }
 

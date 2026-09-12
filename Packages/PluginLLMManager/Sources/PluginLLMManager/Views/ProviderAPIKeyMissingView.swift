@@ -1,43 +1,26 @@
 import LumiUI
-import ProviderLLMManager
-import KitLLM
 import ProviderMessage
 import SwiftUI
 
 /// API Key 缺失消息卡片：内联输入 Key → 保存 → 重发引导。
 ///
 /// 复刻老版 `ProviderAPIKeyMissingView`（LLMProviderManagerPlugin）的交互，
-/// 供应商类型换成新体系 `SuperLLMProvider`（`setApiKey/getApiKey/hasApiKey`）。
+/// 供应商解析与 Key 读写由 `ProviderAPIKeyViewModel` 提供，View 不持有
+/// `LLMManaging` 或任何 Provider。
 struct ProviderAPIKeyMissingView: View {
     @LumiTheme private var theme
 
     let message: Message
-    let manager: any LLMManaging
+    @ObservedObject private var viewModel: ProviderAPIKeyViewModel
 
-    @State private var apiKey: String = ""
-    @State private var keyIsReadable = false
-    @State private var isAPIKeyVisible = false
-    @State private var saveError: String?
-    @State private var didSaveAPIKey = false
     /// 内联 "Details" 展开状态。
     @State private var isDetailsExpanded = false
+    /// API Key 明文/密文切换（纯 UI 状态）。
+    @State private var isAPIKeyVisible = false
 
-    private var provider: (any SuperLLMProvider)? {
-        // 错误消息通常不带 providerID(AgentLoop.appendError 未填),用当前选中兜底,
-        // 否则 provider == nil 会把输入框 disabled,表现为"点不进去"。
-        let providerID = message.providerID ?? manager.selectedProviderID
-        guard let providerID else { return nil }
-        return manager.provider(id: providerID)
-    }
-
-    private var providerName: String {
-        provider.map { $0.providerInfo.displayName }
-            ?? message.rawErrorDetail?.replacingOccurrences(of: "\(LLMProviderAPIKeyMessage.rawErrorPrefix) ", with: "")
-            ?? "LLM Provider"
-    }
-
-    private var providerWebsiteURL: URL? {
-        provider?.providerInfo.websiteURL
+    init(message: Message, viewModel: ProviderAPIKeyViewModel) {
+        self.message = message
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -48,9 +31,9 @@ struct ProviderAPIKeyMissingView: View {
                     .foregroundStyle(theme.primary)
 
                 Text(
-                    keyIsReadable
-                        ? String(format: "%@ API Key available", providerName)
-                        : String(format: "%@ API Key required", providerName)
+                    viewModel.keyIsReadable
+                        ? String(format: "%@ API Key available", viewModel.providerName)
+                        : String(format: "%@ API Key required", viewModel.providerName)
                 )
                     .font(.appCallout)
                     .fontWeight(.semibold)
@@ -61,7 +44,7 @@ struct ProviderAPIKeyMissingView: View {
 
             Text(
                 LumiPluginLocalization.string(
-                    keyIsReadable
+                    viewModel.keyIsReadable
                         ? "The API Key is readable again. Resend the message to continue."
                         : "Enter an API Key here, then resend your message.",
                     bundle: .module
@@ -70,7 +53,7 @@ struct ProviderAPIKeyMissingView: View {
                 .font(.appCaption)
                 .foregroundStyle(theme.textSecondary)
 
-            if let providerWebsiteURL {
+            if let providerWebsiteURL = viewModel.providerWebsiteURL {
                 Link(destination: providerWebsiteURL) {
                     Label(LumiPluginLocalization.string("Open provider website", bundle: .module), systemImage: "arrow.up.right.square")
                         .font(.appCaption)
@@ -86,12 +69,12 @@ struct ProviderAPIKeyMissingView: View {
                 AppFocusableInputField(
                     "Enter API Key",
                     text: Binding(
-                        get: { apiKey },
-                        set: { apiKey = $0 }
+                        get: { viewModel.apiKey },
+                        set: { viewModel.apiKey = $0 }
                     ),
                     fieldType: isAPIKeyVisible ? .plain : .secure
                 )
-                .disabled(provider == nil)
+                .disabled(!viewModel.providerAvailable)
 
                 AppIconButton(
                     systemImage: isAPIKeyVisible ? "eye.slash" : "eye",
@@ -104,7 +87,7 @@ struct ProviderAPIKeyMissingView: View {
                 .help(isAPIKeyVisible ? "Hide API Key" : "Show API Key")
             }
 
-            if provider != nil, !keyIsReadable {
+            if viewModel.providerAvailable, !viewModel.keyIsReadable {
                 HStack(spacing: 8) {
                     AppButton(
                         LumiPluginLocalization.string("Save API Key", bundle: .module),
@@ -112,11 +95,11 @@ struct ProviderAPIKeyMissingView: View {
                         style: .primary,
                         size: .small
                     ) {
-                        saveAPIKey()
+                        viewModel.saveAPIKey()
                     }
-                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(viewModel.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                    if didSaveAPIKey {
+                    if viewModel.didSaveAPIKey {
                         Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
                             .font(.appCaption)
                             .foregroundStyle(theme.success)
@@ -124,14 +107,14 @@ struct ProviderAPIKeyMissingView: View {
                 }
             }
 
-            if let saveError {
+            if let saveError = viewModel.saveError {
                 Text(saveError)
                     .font(.appCaption)
                     .foregroundStyle(theme.error)
                     .textSelection(.enabled)
             }
 
-            if provider == nil {
+            if !viewModel.providerAvailable {
                 Text(LumiPluginLocalization.string("Provider is not registered yet. Open Settings to configure this key.", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
@@ -158,19 +141,5 @@ struct ProviderAPIKeyMissingView: View {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .strokeBorder(theme.divider, lineWidth: 1)
         }
-        .onAppear {
-            let value = provider?.getApiKey() ?? ""
-            apiKey = value
-            keyIsReadable = !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        }
-    }
-
-    private func saveAPIKey() {
-        guard let provider else { return }
-        provider.setApiKey(apiKey)
-        apiKey = provider.getApiKey()
-        keyIsReadable = !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        saveError = nil
-        didSaveAPIKey = true
     }
 }

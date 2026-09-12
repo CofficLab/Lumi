@@ -40,12 +40,16 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
     }
 
     private var projectObserver: AgentRulesProjectObserver?
+    private let settingsViewModel = AgentRulesViewModel()
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 配置运行时：项目服务（工具 fallback 到当前项目路径）。
         let project = kernel.resolveProvider((any ProjectProviding).self)
         AgentRulesRuntime.configure(project: project)
-        let projectObserver = AgentRulesProjectObserver(projectProvider: project)
+        let projectObserver = AgentRulesProjectObserver(
+            projectProvider: project,
+            viewModel: settingsViewModel
+        )
         self.projectObserver = projectObserver
 
         // 注册 Agent 工具。
@@ -64,7 +68,7 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
                     systemImage: "doc.text",
                     order: order
                 ) {
-                    AgentRulesSettingsView(projectObserver: projectObserver)
+                    AgentRulesSettingsView(viewModel: self.settingsViewModel)
                 },
             ])
         }

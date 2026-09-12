@@ -186,8 +186,7 @@ struct ConnectionFormView: View {
         testSuccess = false
         Task {
             do {
-                await DatabaseDriverBootstrap.registerBuiltinsIfNeeded()
-                try await DatabaseManagerCore.shared.probe(config: config)
+                try await viewModel.testConnection(config: config)
                 testMessage = LumiPluginLocalization.string("Connection succeeded", bundle: .module)
                 testSuccess = true
             } catch {

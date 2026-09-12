@@ -1,4 +1,3 @@
-import KernelCore
 import LumiUI
 import SwiftUI
 
@@ -6,21 +5,11 @@ import SwiftUI
 ///
 /// 行为完全对齐旧版：左侧展示分类图标 + 启用状态点，
 /// 右侧两行文字（名称 + 描述），整体被 `AppListRow` 包裹以提供选中态。
-///
-/// 仅供 `PluginManagementView` 内部使用。
 struct PluginListRow: View {
     @LumiTheme private var theme
 
-    /// 列表行绑定的目标插件。
-    let plugin: any SuperPlugin
-
-    /// 当前是否处于选中状态。
+    let plugin: PluginManagementItem
     let isSelected: Bool
-
-    /// 当前是否有效启用（考虑 required 等策略）。
-    let isEnabled: Bool
-
-    /// 点击整行触发的回调，用于通知父视图更新选中项。
     let onSelect: () -> Void
 
     var body: some View {
@@ -32,9 +21,6 @@ struct PluginListRow: View {
         }
     }
 
-    // MARK: - Subviews
-
-    /// 左侧图标 + 启用状态指示点。
     private var leadingAccessory: some View {
         VStack(spacing: 6) {
             Image(systemName: plugin.metadata.category.systemImage)
@@ -43,21 +29,18 @@ struct PluginListRow: View {
                 .frame(width: 22, height: 22)
 
             Circle()
-                .fill(isEnabled ? theme.success : theme.textTertiary.opacity(0.5))
+                .fill(plugin.isEnabled ? theme.success : theme.textTertiary.opacity(0.5))
                 .frame(width: 6, height: 6)
         }
         .frame(width: 22)
     }
 
-    /// 右侧文本：名称 + 描述（描述为空时回退到 plugin.id）。
     private var textContent: some View {
         VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 6) {
-                Text(plugin.metadata.name)
-                    .font(.appCaptionEmphasized)
-                    .foregroundStyle(theme.textPrimary)
-                    .lineLimit(1)
-            }
+            Text(plugin.metadata.name)
+                .font(.appCaptionEmphasized)
+                .foregroundStyle(theme.textPrimary)
+                .lineLimit(1)
 
             Text(plugin.metadata.description.isEmpty ? plugin.id : plugin.metadata.description)
                 .font(.appMicro)

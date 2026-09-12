@@ -38,6 +38,11 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
     private var context: ConversationListContext?
     private var contextObserver: ConversationListContextObserver?
     private var railTabController: ConversationRailTabController?
+    private var toolbarViewModel: ConversationListToolbarViewModel?
+    private var railChatsViewModel: ConversationListViewModel?
+    private var railProjectViewModel: ConversationListViewModel?
+    private var popoverAllViewModel: ConversationListViewModel?
+    private var popoverCurrentViewModel: ConversationListViewModel?
     /// 复刻旧版 onTurnFinished：轮询 AgentTurn 状态迁移（running → 非 running）。
     private var attentionMonitorTask: Task<Void, Never>?
     private var runningConversationIDs: Set<UUID> = []
@@ -62,18 +67,36 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
         )
         self.context = context
 
-        // 0. 观察对话选择与列表结构变化，转成上下文 typed events 供视图订阅。
+        // 0. 观察对话选择与列表结构变化，转成上下文 typed events 供 ViewModel 订阅。
         contextObserver = ConversationListContextObserver(
             conversations: conversations,
             conversationState: conversationState,
             context: context
         )
 
+        // 组装层：为每个展示面创建 ViewModel。
+        let railChatsViewModel = ConversationListViewModel(
+            context: context,
+            attentionStore: attentionStore,
+            sortStabilizer: sortStabilizer,
+            scope: .all
+        )
+        let railProjectViewModel = ConversationListViewModel(
+            context: context,
+            attentionStore: attentionStore,
+            sortStabilizer: sortStabilizer,
+            scope: .currentProject
+        )
+        self.railChatsViewModel = railChatsViewModel
+        self.railProjectViewModel = railProjectViewModel
+
         // 1. Rail 侧栏：chats / project-chats 动态注册。
         let controller = ConversationRailTabController(
             context: context,
             attentionStore: attentionStore,
             sortStabilizer: sortStabilizer,
+            chatsViewModel: railChatsViewModel,
+            projectViewModel: railProjectViewModel,
             order: order,
             pluginID: id
         )
@@ -81,6 +104,23 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
         railTabController = controller
 
         // 2. 全局标题栏按钮 + popover（复刻旧版 titleToolbarItems / .trailing）。
+        let toolbarViewModel = ConversationListToolbarViewModel(context: context)
+        let popoverAllViewModel = ConversationListViewModel(
+            context: context,
+            attentionStore: attentionStore,
+            sortStabilizer: sortStabilizer,
+            scope: .all
+        )
+        let popoverCurrentViewModel = ConversationListViewModel(
+            context: context,
+            attentionStore: attentionStore,
+            sortStabilizer: sortStabilizer,
+            scope: .currentProject
+        )
+        self.toolbarViewModel = toolbarViewModel
+        self.popoverAllViewModel = popoverAllViewModel
+        self.popoverCurrentViewModel = popoverCurrentViewModel
+
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         toolbar?.addToolbarItems([
             ToolbarItem(
@@ -89,11 +129,11 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
                 placement: .trailing,
                 category: .chat,
                 order: 200
-            ) { [self] in
+            ) { [toolbarViewModel, popoverAllViewModel, popoverCurrentViewModel] in
                 ToolbarButton(
-                    context: context,
-                    attentionStore: attentionStore,
-                    sortStabilizer: sortStabilizer
+                    viewModel: toolbarViewModel,
+                    popoverAllViewModel: popoverAllViewModel,
+                    popoverCurrentViewModel: popoverCurrentViewModel
                 )
             },
         ])
@@ -130,6 +170,16 @@ public final class ConversationListPlugin: SuperPlugin, SuperLog {
 
         railTabController?.stop()
         railTabController = nil
+        railChatsViewModel?.cancel()
+        railChatsViewModel = nil
+        railProjectViewModel?.cancel()
+        railProjectViewModel = nil
+        toolbarViewModel?.cancel()
+        toolbarViewModel = nil
+        popoverAllViewModel?.cancel()
+        popoverAllViewModel = nil
+        popoverCurrentViewModel?.cancel()
+        popoverCurrentViewModel = nil
 
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(
             ids: ["\(id).conversation-list"]

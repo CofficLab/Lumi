@@ -4,22 +4,18 @@ import SwiftUI
 
 /// 项目详情中的 RAG 索引状态。
 ///
-/// Provider 在视图加载时通过 Kernel 动态解析，避免 ProjectsPlugin 依赖
-/// ProjectRAGPlugin 的启动顺序或具体实现。
+/// 只依赖 `ProjectRAGStatusViewModel`；Provider 解析与状态加载由
+/// ViewModel/Observer 承担，View 不再直接接触 Provider。
 @MainActor
 struct ProjectRAGStatusSection: View {
     let projectPath: String
-    let providerResolver: @MainActor () -> (any ProjectRAGProviding)?
+    @ObservedObject private var viewModel: ProjectRAGStatusViewModel
 
     @LumiTheme private var theme
-    @State private var state: LoadState = .loading
 
-    enum LoadState {
-        case loading
-        case unavailable
-        case notIndexed
-        case indexed(ProjectRAGIndexStatus)
-        case failed
+    init(projectPath: String, viewModel: ProjectRAGStatusViewModel) {
+        self.projectPath = projectPath
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -28,7 +24,7 @@ struct ProjectRAGStatusSection: View {
                         titleAlignment: .leading
                     ) {
             VStack(alignment: .leading, spacing: 10) {
-                switch state {
+                switch viewModel.state {
                 case .loading:
                     statusRow(icon: "hourglass", title: LumiPluginLocalization.string("Checking index status…", bundle: .module), color: theme.textSecondary)
                 case .unavailable:
@@ -41,11 +37,11 @@ struct ProjectRAGStatusSection: View {
                     statusRow(icon: "exclamationmark.triangle", title: LumiPluginLocalization.string("Unable to read index status", bundle: .module), color: .orange)
                 }
 
-                if !isLoading {
+                if !viewModel.isLoading {
                     HStack {
                         Spacer()
                         Button(LumiPluginLocalization.string("Refresh", bundle: .module)) {
-                            Task { await loadStatus() }
+                            Task { await viewModel.loadStatus() }
                         }
                         .buttonStyle(.borderless)
                         .foregroundStyle(Color.accentColor)
@@ -54,13 +50,8 @@ struct ProjectRAGStatusSection: View {
             }
         }
         .task(id: projectPath) {
-            await loadStatus()
+            await viewModel.loadStatus()
         }
-    }
-
-    private var isLoading: Bool {
-        if case .loading = state { return true }
-        return false
     }
 
     @ViewBuilder
@@ -103,17 +94,4 @@ struct ProjectRAGStatusSection: View {
         }
     }
 
-    private func loadStatus() async {
-        state = .loading
-        guard let provider = providerResolver() else {
-            state = .unavailable
-            return
-        }
-
-        do {
-            state = try await provider.indexStatus(projectPath: projectPath).map(LoadState.indexed) ?? .notIndexed
-        } catch {
-            state = .failed
-        }
-    }
 }

@@ -6,8 +6,7 @@ import SwiftUI
 /// GitHub-style commit activity rendered inside Settings → Projects.
 struct GitActivityHeatmapProjectSection: View {
     let projectPath: String
-    @StateObject private var viewModel: GitActivityHeatmapProjectViewModel
-    @State private var observer: GitActivityHeatmapProjectObserver
+    @ObservedObject private var viewModel: GitActivityHeatmapProjectViewModel
     @LumiTheme private var theme
 
     private let calendar: Calendar
@@ -15,11 +14,9 @@ struct GitActivityHeatmapProjectSection: View {
     private let cellSize: CGFloat = 10
     private let cellSpacing: CGFloat = 3
 
-    init(projectPath: String, provider: any ActivityHeatmapProviding, calendar: Calendar = .current) {
+    init(projectPath: String, viewModel: GitActivityHeatmapProjectViewModel, calendar: Calendar = .current) {
         self.projectPath = projectPath
-        let viewModel = GitActivityHeatmapProjectViewModel(projectPath: projectPath)
-        _viewModel = StateObject(wrappedValue: viewModel)
-        _observer = State(initialValue: GitActivityHeatmapProjectObserver(provider: provider, viewModel: viewModel))
+        self.viewModel = viewModel
         var calendar = calendar
         calendar.firstWeekday = 1
         self.calendar = calendar
@@ -42,7 +39,7 @@ struct GitActivityHeatmapProjectSection: View {
                             .foregroundStyle(theme.textSecondary)
                     }
                     Button {
-                        observer.refresh(for: projectPath)
+                        viewModel.refresh()
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
@@ -80,10 +77,10 @@ struct GitActivityHeatmapProjectSection: View {
             }
         }
         .onChange(of: projectPath) { _, path in
-            observer.update(projectPath: path)
+            viewModel.update(projectPath: path)
         }
         .task(id: projectPath) {
-            observer.refresh(for: projectPath)
+            viewModel.refresh()
         }
     }
 

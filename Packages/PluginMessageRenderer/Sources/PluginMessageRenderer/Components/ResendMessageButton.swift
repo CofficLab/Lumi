@@ -1,14 +1,12 @@
-import KernelCore
 import LumiUI
 import ProviderConversation
 import ProviderMessage
-import ProviderMessageSender
 import SwiftUI
 
 struct ResendMessageButton: View {
     @LumiTheme private var theme
 
-    let kernel: KernelCoreContainer
+    let capability: (any MessageRendererCapability)?
     let message: Message
 
     var body: some View {
@@ -23,10 +21,13 @@ struct ResendMessageButton: View {
     }
 
     private func resend() {
+        guard let capability else { return }
         Task {
             // 新版 MessageSendingProviding 无 id 级重发；以相同内容再次发送，行为等价。
-            try? await kernel.resolveProvider((any MessageSendingProviding).self)?
-                .sendMessage(message.content, conversationID: message.conversationID)
+            await capability.resendMessage(
+                content: message.content,
+                conversationID: message.conversationID
+            )
         }
     }
 }

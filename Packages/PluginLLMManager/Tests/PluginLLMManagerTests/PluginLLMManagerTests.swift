@@ -151,14 +151,21 @@ struct PluginLLMManagerTests {
     }
 
     @Test("onboarding 供应商选择器仅包含云服务商")
-    func onboardingProviderSelectionFiltersRelaysAndLocalProviders() {
+    func onboardingProviderSelectionFiltersRelaysAndLocalProviders() throws {
         let cloud = EchoProvider(id: "cloud", model: "cloud-model", providerType: .cloudService)
         let relay = EchoProvider(id: "relay", model: "relay-model", providerType: .relay)
         let local = EchoProvider(id: "local", model: "local-model", providerType: .local, isLocal: true)
 
-        let providers = AISetupPage.cloudServiceProviders(from: [cloud, relay, local])
+        let manager = DefaultLLMManager()
+        try manager.register(cloud)
+        try manager.register(relay)
+        try manager.register(local)
+        let viewModel = AISetupViewModel(
+            capability: LLMManagerCapabilityAdapter(manager: manager),
+            customProviderStore: nil
+        )
 
-        #expect(providers.map(\.providerID) == ["cloud"])
+        #expect(viewModel.providers.map(\.providerID) == ["cloud"])
     }
 
     /// 测试用最小 LLM 供应商：回显最后一条用户消息。

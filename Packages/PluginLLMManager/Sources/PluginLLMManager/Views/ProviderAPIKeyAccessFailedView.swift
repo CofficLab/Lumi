@@ -1,45 +1,23 @@
 import LumiUI
-import ProviderLLMManager
-import KitLLM
 import ProviderMessage
 import SwiftUI
 
 /// API Key 读取失败（Keychain 访问异常）消息卡片。
 ///
-/// 复刻老版 `ProviderAPIKeyAccessFailedView` 的交互；新体系用
-/// `hasApiKey()`/`getApiKey()` 代替旧版 Keychain 诊断。
+/// 复刻老版 `ProviderAPIKeyAccessFailedView` 的交互；供应商解析与 Key 读写
+/// 由 `ProviderAPIKeyViewModel` 提供，View 不持有 `LLMManaging`。
 struct ProviderAPIKeyAccessFailedView: View {
     @LumiTheme private var theme
 
     let message: Message
-    let manager: any LLMManaging
+    @ObservedObject private var viewModel: ProviderAPIKeyViewModel
 
-    @State private var apiKey: String = ""
+    /// API Key 明文/密文切换（纯 UI 状态）。
     @State private var isAPIKeyVisible = false
-    @State private var keyIsReadable = false
-    @State private var isChecking = false
-    @State private var saveError: String?
-    @State private var didSaveAPIKey = false
 
-    private var provider: (any SuperLLMProvider)? {
-        // 错误消息通常不带 providerID(AgentLoop.appendError 未填),用当前选中兜底,
-        // 否则 provider == nil 会把输入框 disabled,表现为"点不进去"。
-        let providerID = message.providerID ?? manager.selectedProviderID
-        guard let providerID else { return nil }
-        return manager.provider(id: providerID)
-    }
-
-    private var providerName: String {
-        provider.map { $0.providerInfo.displayName } ?? "LLM Provider"
-    }
-
-    private var providerWebsiteURL: URL? {
-        provider?.providerInfo.websiteURL
-    }
-
-    private var details: String {
-        let raw = message.rawErrorDetail?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return raw.isEmpty ? "Keychain returned an unknown read error." : raw
+    init(message: Message, viewModel: ProviderAPIKeyViewModel) {
+        self.message = message
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -49,7 +27,7 @@ struct ProviderAPIKeyAccessFailedView: View {
                     .font(.appCallout)
                     .foregroundStyle(theme.warning)
 
-                Text(String(format: "%@ API Key unavailable", providerName))
+                Text(String(format: "%@ API Key unavailable", viewModel.providerName))
                     .font(.appCallout)
                     .fontWeight(.semibold)
                     .foregroundStyle(theme.textPrimary)
@@ -61,7 +39,7 @@ struct ProviderAPIKeyAccessFailedView: View {
                 .font(.appCaption)
                 .foregroundStyle(theme.textSecondary)
 
-            if let providerWebsiteURL {
+            if let providerWebsiteURL = viewModel.providerWebsiteURL {
                 Link(destination: providerWebsiteURL) {
                     Label(LumiPluginLocalization.string("Open provider website", bundle: .module), systemImage: "arrow.up.right.square")
                         .font(.appCaption)
@@ -76,12 +54,12 @@ struct ProviderAPIKeyAccessFailedView: View {
                 AppFocusableInputField(
                     "Enter API Key",
                     text: Binding(
-                        get: { apiKey },
-                        set: { apiKey = $0 }
+                        get: { viewModel.apiKey },
+                        set: { viewModel.apiKey = $0 }
                     ),
                     fieldType: isAPIKeyVisible ? .plain : .secure
                 )
-                .disabled(provider == nil)
+                .disabled(!viewModel.providerAvailable)
 
                 AppIconButton(
                     systemImage: isAPIKeyVisible ? "eye.slash" : "eye",
@@ -94,7 +72,7 @@ struct ProviderAPIKeyAccessFailedView: View {
                 .help(isAPIKeyVisible ? "Hide API Key" : "Show API Key")
             }
 
-            if provider != nil {
+            if viewModel.providerAvailable {
                 HStack(spacing: 8) {
                     AppButton(
                         LumiPluginLocalization.string("Save API Key", bundle: .module),
@@ -102,20 +80,20 @@ struct ProviderAPIKeyAccessFailedView: View {
                         style: .primary,
                         size: .small
                     ) {
-                        saveAPIKey()
+                        viewModel.saveAPIKey()
                     }
-                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(viewModel.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                     AppButton(
                         LumiPluginLocalization.string("Recheck Keychain", bundle: .module),
                         systemImage: "arrow.clockwise",
                         size: .small
                     ) {
-                        recheckKeychain()
+                        viewModel.recheckKeychain()
                     }
-                    .disabled(isChecking)
+                    .disabled(viewModel.isChecking)
 
-                    if didSaveAPIKey {
+                    if viewModel.didSaveAPIKey {
                         Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
                             .font(.appCaption)
                             .foregroundStyle(theme.success)
@@ -125,19 +103,19 @@ struct ProviderAPIKeyAccessFailedView: View {
                 }
             }
 
-            if let saveError {
+            if let saveError = viewModel.saveError {
                 Text(saveError)
                     .font(.appCaption)
                     .foregroundStyle(theme.error)
                     .textSelection(.enabled)
             }
 
-            if keyIsReadable {
+            if viewModel.keyIsReadable {
                 Text(LumiPluginLocalization.string("The API Key is readable again. Resend the message to continue.", bundle: .module))
                     .font(.appCaption)
                     .foregroundStyle(theme.success)
-            } else if !isChecking {
-                Text(details)
+            } else if !viewModel.isChecking {
+                Text(viewModel.details)
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
                     .textSelection(.enabled)
@@ -151,27 +129,7 @@ struct ProviderAPIKeyAccessFailedView: View {
                 .strokeBorder(theme.divider, lineWidth: 1)
         }
         .task {
-            apiKey = provider?.getApiKey() ?? ""
-            recheckKeychain()
-        }
-    }
-
-    private func saveAPIKey() {
-        guard let provider else { return }
-        provider.setApiKey(apiKey)
-        apiKey = provider.getApiKey()
-        keyIsReadable = provider.hasApiKey()
-        saveError = nil
-        didSaveAPIKey = true
-    }
-
-    private func recheckKeychain() {
-        guard let provider, !isChecking else { return }
-        isChecking = true
-        Task { @MainActor in
-            keyIsReadable = provider.hasApiKey()
-            apiKey = provider.getApiKey()
-            isChecking = false
+            viewModel.recheckKeychain()
         }
     }
 }

@@ -27,6 +27,8 @@ final class ConversationRailTabController {
     private let context: ConversationListContext
     private let attentionStore: ConversationAttentionStore
     private let sortStabilizer: ConversationSortStabilizer
+    private let chatsViewModel: ConversationListViewModel
+    private let projectViewModel: ConversationListViewModel
 
     private weak var rail: (any RailViewProviding)?
     private var conversationsObserver: (any ConversationObserverHandle)?
@@ -37,12 +39,16 @@ final class ConversationRailTabController {
         context: ConversationListContext,
         attentionStore: ConversationAttentionStore,
         sortStabilizer: ConversationSortStabilizer,
+        chatsViewModel: ConversationListViewModel,
+        projectViewModel: ConversationListViewModel,
         order: Int,
         pluginID: String
     ) {
         self.context = context
         self.attentionStore = attentionStore
         self.sortStabilizer = sortStabilizer
+        self.chatsViewModel = chatsViewModel
+        self.projectViewModel = projectViewModel
         self.order = order
         self.chatsTabID = "\(pluginID).chats"
         self.projectTabID = "\(pluginID).project-chats"
@@ -65,6 +71,11 @@ final class ConversationRailTabController {
             projectObserver = project.addObserver { [weak self] event in
                 guard case .currentProjectChanged = event else { return }
                 self?.scheduleRefresh()
+                if let projectViewModel = self?.projectViewModel {
+                    Task { @MainActor in
+                        await projectViewModel.reload()
+                    }
+                }
                 }
         }
 
@@ -80,6 +91,8 @@ final class ConversationRailTabController {
         conversationsObserver = nil
         projectObserver?.cancel()
         projectObserver = nil
+        chatsViewModel.cancel()
+        projectViewModel.cancel()
     }
 
     /// 去抖调度：取消上一个待执行任务，延迟刷新。
@@ -139,42 +152,27 @@ final class ConversationRailTabController {
     /// 构造 `chats` 标签项（`order` 显式设置以匹配插件排序——动态注册不经
     /// 插件的 order 赋值流程）。
     private func makeChatsItem() -> RailTabItem {
-        let context = context
-        let attentionStore = attentionStore
-        let sortStabilizer = sortStabilizer
         return RailTabItem(
             id: chatsTabID,
             category: .chat,
             title: "对话",
             systemImage: "message.fill",
             order: order
-        ) {
-            RailView(
-                context: context,
-                attentionStore: attentionStore,
-                sortStabilizer: sortStabilizer
-            )
+        ) { [chatsViewModel] in
+            RailView(viewModel: chatsViewModel)
         }
     }
 
     /// 构造 `project-chats` 标签项。
     private func makeProjectItem() -> RailTabItem {
-        let context = context
-        let attentionStore = attentionStore
-        let sortStabilizer = sortStabilizer
         return RailTabItem(
             id: projectTabID,
             category: .chat,
             title: "项目",
             systemImage: "folder.fill",
             order: order
-        ) {
-            RailView(
-                context: context,
-                attentionStore: attentionStore,
-                sortStabilizer: sortStabilizer,
-                scopeToCurrentProject: true
-            )
+        ) { [projectViewModel] in
+            RailView(viewModel: projectViewModel)
         }
     }
 }

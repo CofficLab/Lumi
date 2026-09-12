@@ -41,6 +41,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
     private var cacheDirectory: URL?
     private var gitActivityProvider: LocalGitActivityHeatmapProvider?
     private var gitWatchHandle: (any GitRepositoryWatchingObserverHandle)?
+    private var projectSectionObservers: [String: GitActivityHeatmapProjectObserver] = [:]
     private var viewModel: ActivityHeatmapViewModel?
     private var insertionObserver: MessageObserver?
     private var idleTimeState: ActivityHeatmapIdleTimeState?
@@ -70,9 +71,19 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
                         id: "\(id).project-activity",
                         order: 180
                     ) { path in
-                        GitActivityHeatmapProjectSection(
+                        let capability = GitActivityHeatmapProjectCapability(provider: provider)
+                        let viewModel = GitActivityHeatmapProjectViewModel(
                             projectPath: path,
-                            provider: provider
+                            capability: capability
+                        )
+                        let observer = GitActivityHeatmapProjectObserver(
+                            capability: capability,
+                            viewModel: viewModel
+                        )
+                        self.projectSectionObservers[path] = observer
+                        return GitActivityHeatmapProjectSection(
+                            projectPath: path,
+                            viewModel: viewModel
                         )
                     }
                 ])
@@ -153,6 +164,10 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any SettingViewProviding).self)?.removeProjectDetailSections(
             ids: ["\(id).project-activity"]
         )
+        for observer in projectSectionObservers.values {
+            observer.cancel()
+        }
+        projectSectionObservers.removeAll()
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
         insertionObserver?.cancel()
         insertionObserver = nil

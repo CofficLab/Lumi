@@ -86,8 +86,8 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         let limit = request.budget.inputTokenLimit
         let softLimit = max(Int(Double(limit) * Self.softThresholdRatio), 1_024)
         let hardLimit = max(Int(Double(limit) * Self.hardThresholdRatio), softLimit + 1)
-        let isEmergency = request.mode == .emergency
-            || forcedCompactionIDs.remove(request.conversationID) != nil
+        let wasForced = forcedCompactionIDs.remove(request.conversationID) != nil
+        let isEmergency = request.mode == .emergency || wasForced
         let unknownWindowPrewarm = request.budget.usesFallbackWindow
             && history.count > Self.compactionMessageThreshold
 
@@ -101,7 +101,18 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
         await loadPersistedSummaryIfNeeded(for: request.conversationID)
 
-        let shouldUseCompactedContext = isEmergency || estimate >= softLimit
+        // The soft threshold only starts background prewarming. Switching to a
+        // compacted context below the hard threshold makes a short conversation
+        // appear to have been compacted merely because a summary finished early.
+        let shouldUseCompactedContext = isEmergency || estimate >= hardLimit
+        let compactionReason: MessageTimelineEvent.ContextCompactionReason
+        if wasForced {
+            compactionReason = .contextLimitRetry
+        } else if request.mode == .emergency {
+            compactionReason = .emergency
+        } else {
+            compactionReason = .hardThreshold
+        }
         if shouldUseCompactedContext,
            let snapshot = summaries[request.conversationID],
            let compacted = compactedHistory(history, snapshot: snapshot, request: request) {
@@ -112,7 +123,8 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                     for: request,
                     snapshot: snapshot,
                     originalEstimate: estimate,
-                    compactedEstimate: compactedEstimate
+                    compactedEstimate: compactedEstimate,
+                    reason: compactionReason
                 )
                 return result(
                     messages: compacted,
@@ -137,7 +149,8 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                     for: request,
                     snapshot: snapshot,
                     originalEstimate: estimate,
-                    compactedEstimate: compactedEstimate
+                    compactedEstimate: compactedEstimate,
+                    reason: compactionReason
                 )
                 return result(
                     messages: compacted,
@@ -239,17 +252,40 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         for request: LLMContextPreparationRequest,
         snapshot: SummarySnapshot,
         originalEstimate: Int,
-        compactedEstimate: Int
+        compactedEstimate: Int,
+        reason: MessageTimelineEvent.ContextCompactionReason
     ) {
         // 预热只准备摘要，不代表某个用户请求实际发送了压缩上下文。
         guard request.mode != .prewarm else { return }
 
         let alreadyRecorded = messages.messages(for: request.conversationID).contains {
             MessageTimelineEvent.isActualContextCompaction($0)
-                && $0.metadata["contextCompactionSourceLastMessageID"]
+                && $0.metadata[MessageTimelineEvent.contextCompactionSourceLastMessageIDKey]
                     == snapshot.sourceLastMessageID.uuidString
         }
         guard !alreadyRecorded else { return }
+
+        var metadata: [String: String] = [
+            MessageTimelineEvent.metadataKey: MessageTimelineEvent.contextCompaction,
+            MessageTimelineEvent.actualContextCompactionKey:
+                MessageTimelineEvent.actualContextCompactionValue,
+            MessageTimelineEvent.contextCompactionSchemaVersionKey: "1",
+            MessageTimelineEvent.contextCompactionReasonKey: reason.rawValue,
+            MessageTimelineEvent.contextCompactionEffectiveWindowTokensKey:
+                "\(request.budget.effectiveContextWindowTokens)",
+            MessageTimelineEvent.contextCompactionInputTokenLimitKey:
+                "\(request.budget.inputTokenLimit)",
+            MessageTimelineEvent.contextCompactionEstimateSourceKey:
+                request.budget.usesFallbackWindow ? "fallback" : "estimated",
+            MessageTimelineEvent.contextCompactionOriginalEstimateKey: "\(originalEstimate)",
+            MessageTimelineEvent.contextCompactionCompactedEstimateKey: "\(compactedEstimate)",
+            MessageTimelineEvent.contextCompactionSourceLastMessageIDKey:
+                snapshot.sourceLastMessageID.uuidString,
+        ]
+        if let contextWindowTokens = request.budget.contextWindowTokens {
+            metadata[MessageTimelineEvent.contextCompactionContextWindowTokensKey] =
+                "\(contextWindowTokens)"
+        }
 
         messages.insertMessage(
             Message(
@@ -257,14 +293,9 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                 role: .system,
                 content: String(localized: "Conversation compacted", defaultValue: "对话已压缩"),
                 createdAt: Date(),
-                metadata: [
-                    MessageTimelineEvent.metadataKey: MessageTimelineEvent.contextCompaction,
-                    MessageTimelineEvent.actualContextCompactionKey:
-                        MessageTimelineEvent.actualContextCompactionValue,
-                    "contextCompactionOriginalEstimate": "\(originalEstimate)",
-                    "contextCompactionCompactedEstimate": "\(compactedEstimate)",
-                    "contextCompactionSourceLastMessageID": snapshot.sourceLastMessageID.uuidString,
-                ],
+                metadata: metadata,
+                providerID: request.providerID,
+                modelName: request.model,
                 renderKind: MessageTimelineEvent.contextCompactionRenderKind,
                 preferredRendererID: "core-context-compaction"
             ),
