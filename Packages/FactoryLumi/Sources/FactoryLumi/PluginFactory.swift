@@ -82,6 +82,7 @@ import PluginLLMProviderMegaLLM
 import PluginLLMProviderMiniMax
 import PluginLLMProviderOpenAI
 import PluginLLMProviderOpenCode
+import PluginLLMProviderCommandCode
 import PluginLLMProviderOpenRouter
 import PluginLLMProviderSettings
 import PluginLLMProviderStepFun
@@ -297,6 +298,7 @@ public struct DefaultPluginFactory: PluginFactory {
             MiniMaxProviderPlugin(),
             OpenAIProviderPlugin(),
             OpenCodeProviderPlugin(),
+            CommandCodeProviderPlugin(),
             OpenRouterProviderPlugin(),
             StepFunProviderPlugin(),
             SublyxProviderPlugin(),
