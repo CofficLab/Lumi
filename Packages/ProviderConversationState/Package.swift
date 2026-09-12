@@ -18,5 +18,9 @@ let package = Package(
             ],
             path: "Sources/ProviderConversationState"
         ),
+        .testTarget(
+            name: "ProviderConversationStateTests",
+            dependencies: ["ProviderConversationState"]
+        ),
     ]
 )
