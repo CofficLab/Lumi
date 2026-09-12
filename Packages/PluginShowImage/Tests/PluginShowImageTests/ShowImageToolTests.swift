@@ -45,29 +45,29 @@ import Testing
     let state = ShowImageState.shared
     state.clear()
 
-    let missingSource = await tool.execute(arguments: [:])
+    let missingSource = try await tool.execute(arguments: [:])
     #expect(missingSource.contains("Missing required 'source'"))
-    let emptySource = await tool.execute(arguments: ["source": ToolArgument(" \n ")])
+    let emptySource = try await tool.execute(arguments: ["source": ToolArgument(" \n ")])
     #expect(emptySource.contains("Missing required 'source'"))
 
-    let unsupportedScheme = await tool.execute(arguments: ["source": ToolArgument("data:image/png;base64,AAAA")])
+    let unsupportedScheme = try await tool.execute(arguments: ["source": ToolArgument("data:image/png;base64,AAAA")])
     #expect(unsupportedScheme.contains("Unsupported image URL scheme 'data'"))
 
     let missingPath = FileManager.default.temporaryDirectory.appendingPathComponent("missing-image-\(UUID()).png")
-    let missingFile = await tool.execute(arguments: ["source": ToolArgument(missingPath.path)])
+    let missingFile = try await tool.execute(arguments: ["source": ToolArgument(missingPath.path)])
     #expect(missingFile.contains("File not found"))
 
     let textURL = FileManager.default.temporaryDirectory.appendingPathComponent("not-an-image-\(UUID()).txt")
     try Data("text".utf8).write(to: textURL)
     defer { try? FileManager.default.removeItem(at: textURL) }
-    let unsupportedFormat = await tool.execute(arguments: ["source": ToolArgument(textURL.path)])
+    let unsupportedFormat = try await tool.execute(arguments: ["source": ToolArgument(textURL.path)])
     #expect(unsupportedFormat.contains("Unsupported image format 'txt'"))
     #expect(state.displayItem == nil)
 
     let imageURL = FileManager.default.temporaryDirectory.appendingPathComponent("valid-image-\(UUID()).png")
     try Data([0x89, 0x50, 0x4E, 0x47]).write(to: imageURL)
     defer { try? FileManager.default.removeItem(at: imageURL) }
-    let result = await tool.execute(arguments: [
+    let result = try await tool.execute(arguments: [
         "source": ToolArgument("  \(imageURL.path)  "),
         "title": ToolArgument("  Diagram  "),
         "caption": ToolArgument(" \n "),
