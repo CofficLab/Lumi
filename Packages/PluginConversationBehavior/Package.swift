@@ -41,8 +41,10 @@ let package = Package(
             name: "PluginConversationBehaviorTests",
             dependencies: [
                 "PluginConversationBehavior",
+                .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
+                .product(name: "ProviderToast", package: "ProviderToast"),
             ],
             path: "Tests/PluginConversationBehaviorTests"
         ),
