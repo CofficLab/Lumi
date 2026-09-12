@@ -598,11 +598,11 @@ extension AgentLoopManager {
                     timingRecorder.markFirstOutput()
                 }
                 guard let bridge else { return }
-                let piece = chunk.content ?? ""
-                if let rc = chunk.reasoningContent, !rc.isEmpty {
-                    await bridge.appendThinking(piece, conversationID: conversationID)
-                } else {
-                    await bridge.appendContent(piece, conversationID: conversationID)
+                if let reasoning = chunk.reasoningContent, !reasoning.isEmpty {
+                    await bridge.appendThinking(reasoning, conversationID: conversationID)
+                }
+                if let content = chunk.content, !content.isEmpty {
+                    await bridge.appendContent(content, conversationID: conversationID)
                 }
             }
             // A few OpenAI-compatible gateways reuse short IDs such as
