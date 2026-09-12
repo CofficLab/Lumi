@@ -118,6 +118,24 @@ struct ChatInputEditorViewTests {
         #expect(!textView.isIMEComposing)
     }
 
+    @Test("editor cursor binding stays current after a committed character")
+    func viewModelKeepsCursorBindingInSync() {
+        let input = DefaultConversationInputProvider()
+        let capability = ConversationInputCapabilityAdapter(
+            input: input,
+            sender: nil,
+            conversations: nil,
+            conversationState: nil,
+            metrics: nil
+        )
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        viewModel.setCursorPosition(1)
+
+        #expect(viewModel.inputCursorPosition == 1)
+        #expect(input.inputCursorPosition == 1)
+    }
+
     @Test("provisional zero-width layout does not publish an editor height")
     func zeroWidthLayoutDoesNotProduceHeight() {
         #expect(
