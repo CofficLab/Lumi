@@ -24,5 +24,13 @@ let package = Package(
             path: "Sources/OpenInKit",
             resources: [.process("../../Resources")]
         ),
+        .testTarget(
+            name: "OpenInKitTests",
+            dependencies: [
+                "OpenInKit",
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
+                .product(name: "ProviderProject", package: "ProviderProject"),
+            ]
+        ),
     ]
 )

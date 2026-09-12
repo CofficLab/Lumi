@@ -103,10 +103,16 @@ public struct OpenInTool: SuperAgentTool, @unchecked Sendable {
     /// 解析目标路径：显式参数 > 当前项目路径。ProjectProviding 是 MainActor
     /// 隔离，经 MainActor.run 跳回主线程读取。
     private func resolvedPath(_ arguments: [String: ToolArgument]) async -> String? {
-        if let path = arguments["path"]?.value as? String, !path.isEmpty {
-            return path
-        }
-        return await MainActor.run { project?.currentProject?.path }
+        let currentProjectPath = await MainActor.run { project?.currentProject?.path }
+        return Self.resolvedTargetPath(
+            explicitPath: arguments["path"]?.value as? String,
+            currentProjectPath: currentProjectPath
+        )
+    }
+
+    static func resolvedTargetPath(explicitPath: String?, currentProjectPath: String?) -> String? {
+        if let explicitPath, !explicitPath.isEmpty { return explicitPath }
+        return currentProjectPath
     }
 }
 
