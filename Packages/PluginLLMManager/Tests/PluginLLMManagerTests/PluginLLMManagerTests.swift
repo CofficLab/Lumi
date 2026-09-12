@@ -150,6 +150,98 @@ struct PluginLLMManagerTests {
         #expect(manager.selectedModel == "echo-1")
     }
 
+    /// 用户主动切换当前对话的供应商/模型时，应同步到全局选中。
+    @Test("切换当前对话的供应商/模型会同步到全局")
+    func selectedConversationChangeSyncsGlobalSelection() throws {
+        let kernel = KernelCoreContainer()
+        let conversations = DefaultConversationManager()
+        try kernel.registerProvider((any ConversationManaging).self, conversations)
+
+        let plugin = PluginLLMManager()
+        try plugin.onBoot(kernel: kernel)
+        try plugin.onReady(kernel: kernel)
+
+        let manager = try #require(kernel.resolveProvider((any LLMManaging).self))
+        try manager.register(EchoProvider(id: "global"))
+        try manager.register(EchoProvider(id: "conversation", model: "conversation-model"))
+        manager.select(providerID: "global", model: "echo-1")
+
+        // 顶层对话创建后自动选中，随后用户在该对话内切换供应商与模型。
+        let id = try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: "global",
+            modelName: "echo-1"
+        )
+        conversations.selectProvider(id: "conversation", model: "conversation-model", for: id)
+
+        #expect(manager.selectedProviderID == "conversation")
+        #expect(manager.selectedModel == "conversation-model")
+    }
+
+    /// 对话残留的过期模型不属于目标供应商时，全局模型应回退（置空）而非照搬。
+    @Test("不属于目标供应商的模型不会写入全局")
+    func staleModelFallsBackWhenSyncingGlobalSelection() throws {
+        let kernel = KernelCoreContainer()
+        let conversations = DefaultConversationManager()
+        try kernel.registerProvider((any ConversationManaging).self, conversations)
+
+        let plugin = PluginLLMManager()
+        try plugin.onBoot(kernel: kernel)
+        try plugin.onReady(kernel: kernel)
+
+        let manager = try #require(kernel.resolveProvider((any LLMManaging).self))
+        try manager.register(EchoProvider(id: "conversation", model: "conversation-model"))
+
+        let id = try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: "conversation",
+            modelName: "stale-model"
+        )
+        conversations.selectProvider(id: "conversation", model: "stale-model", for: id)
+
+        #expect(manager.selectedProviderID == "conversation")
+        #expect(manager.selectedModel == nil)
+    }
+
+    /// 非当前选中对话的供应商/模型变更不应干扰全局选中。
+    @Test("非当前对话的变更不影响全局")
+    func nonSelectedConversationChangeDoesNotSyncGlobalSelection() throws {
+        let kernel = KernelCoreContainer()
+        let conversations = DefaultConversationManager()
+        try kernel.registerProvider((any ConversationManaging).self, conversations)
+
+        let plugin = PluginLLMManager()
+        try plugin.onBoot(kernel: kernel)
+        try plugin.onReady(kernel: kernel)
+
+        let manager = try #require(kernel.resolveProvider((any LLMManaging).self))
+        try manager.register(EchoProvider(id: "global"))
+        try manager.register(EchoProvider(id: "other", model: "other-model"))
+        manager.select(providerID: "global", model: "echo-1")
+
+        let selected = try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: "global",
+            modelName: "echo-1"
+        )
+        let background = try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: "global",
+            modelName: "echo-1"
+        )
+        // 复选回第一个对话，让后台对话的变更不命中当前选中项。
+        conversations.selectConversation(id: selected)
+
+        conversations.selectProvider(id: "other", model: "other-model", for: background)
+
+        #expect(manager.selectedProviderID == "global")
+        #expect(manager.selectedModel == "echo-1")
+    }
+
     @Test("onboarding 供应商选择器仅包含云服务商")
     func onboardingProviderSelectionFiltersRelaysAndLocalProviders() throws {
         let cloud = EchoProvider(id: "cloud", model: "cloud-model", providerType: .cloudService)

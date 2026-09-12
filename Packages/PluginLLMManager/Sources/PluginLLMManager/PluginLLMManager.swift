@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import os
 import PluginLLMProviderSettings
+import ProviderConversation
 import ProviderLLMManager
 import ProviderMessageRendering
 import ProviderOnboarding
@@ -42,6 +43,8 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
     private var manager: CustomLLMManager?
     /// 本插件的最小供应商能力，供 ViewModel/渲染器使用。
     private var capability: LLMManagerCapabilityAdapter?
+    /// 监听当前对话的供应商/模型变更，同步到全局选中。
+    private var conversationProviderObserver: ConversationProviderObserver?
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let manager = CustomLLMManager()
@@ -83,6 +86,10 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
     public func onReady(kernel: KernelCoreContainer) throws {
         guard let manager else { return }
 
+        // 必须在 onboarding guard 之前：用户主动切换对话的供应商/模型时同步到全局
+        // 选中，使下次新建对话继承用户最近一次的选择。
+        // TEMP-DISABLED observeConversationProviderChanges(kernel: kernel, manager: manager)
+
         let onboarding = kernel.resolveProvider((any OnboardingProviding).self)
         let storeProvider = kernel.resolveProvider((any UserDefinedCloudProviderStoreProviding).self)
 
@@ -119,8 +126,46 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         if let onboarding = kernel.resolveProvider((any OnboardingProviding).self) {
             onboarding.unregister(id: Self.onboardingPageID)
         }
+        conversationProviderObserver?.cancel()
+        conversationProviderObserver = nil
         capability = nil
         manager = nil
         // 内核会按插件归属自动撤回 onBoot 注册的 Provider，无需手动处理。
+    }
+
+    // MARK: - Private
+
+    /// 订阅当前对话的供应商/模型变更，并同步到全局选中。
+    ///
+    /// 仅响应用户对**当前选中对话**的主动切换；后台修改其它对话不干扰全局。
+    /// 模型若不属于目标供应商则置空，交由管理器回退默认模型，避免把过期模型
+    /// 写入持久化的全局选中。
+    private func observeConversationProviderChanges(
+        kernel: KernelCoreContainer,
+        manager: CustomLLMManager
+    ) {
+        guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)ConversationManaging not resolved, global selection sync skipped")
+            }
+            return
+        }
+
+        conversationProviderObserver = ConversationProviderObserver(
+            conversations: conversations
+        ) { [weak manager, weak conversations] conversationID in
+            guard let conversations,
+                  conversationID == conversations.selectedConversationID,
+                  let providerID = conversations.providerID(for: conversationID),
+                  manager?.provider(id: providerID) != nil else { return }
+
+            let model = conversations.modelName(for: conversationID)
+            let validModel = model.flatMap { manager?.models(for: providerID).contains($0) == true ? $0 : nil }
+            manager?.select(providerID: providerID, model: validModel)
+
+            if Self.verbose {
+                Self.logger.info("\(Self.t)global selection synced from conversation: provider=\(providerID, privacy: .public), model=\(validModel ?? "nil", privacy: .public)")
+            }
+        }
     }
 }
