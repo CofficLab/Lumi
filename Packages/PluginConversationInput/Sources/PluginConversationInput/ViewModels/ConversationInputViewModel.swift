@@ -70,14 +70,21 @@ final class ConversationInputViewModel: ObservableObject, SuperLog {
     }
 
     func setInputHeight(_ value: CGFloat) {
+        inputHeight = value
         capability.inputHeight = value
     }
 
     func setFocused(_ value: Bool) {
+        isInputFocused = value
         capability.isInputFocused = value
     }
 
     func setCursorPosition(_ value: Int) {
+        // These bindings are written by the AppKit editor while it is handling
+        // an edit. Keep the ViewModel in sync before SwiftUI performs its next
+        // update; otherwise updateNSView reads the old position and moves the
+        // insertion point back to the left of the newly typed character.
+        inputCursorPosition = value
         capability.inputCursorPosition = value
     }
 
