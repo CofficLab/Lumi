@@ -23,6 +23,7 @@ let package = Package(
             name: "PluginChatFileAttachment",
             dependencies: [
                 "KernelCore",
+                "KitSuperLog",
                 "KitLocalization",
                 "LumiUI",
                 "ProviderChatSection",
@@ -31,6 +32,14 @@ let package = Package(
                 "ProviderMessageSender",
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
+        ),
+        .testTarget(
+            name: "PluginChatFileAttachmentTests",
+            dependencies: [
+                "PluginChatFileAttachment",
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+            ]
         ),
     ]
 )
