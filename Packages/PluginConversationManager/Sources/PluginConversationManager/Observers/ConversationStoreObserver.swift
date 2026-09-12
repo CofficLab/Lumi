@@ -34,8 +34,8 @@ final class ConversationStoreObserver: SuperLog {
         conversationHandle = capability.addConversationObserver { [weak self] event in
             self?.handle(event)
         }
-        migrationCancellable = migrationProgress?.$phase.sink { [weak self] _ in
-            self?.handleMigrationChange()
+        migrationCancellable = migrationProgress?.$phase.sink { [weak self] phase in
+            self?.handleMigrationChange(phase)
         }
     }
 
@@ -55,8 +55,8 @@ final class ConversationStoreObserver: SuperLog {
         viewModel?.handleConversationEvent(event)
     }
 
-    private func handleMigrationChange() {
-        let isActive = migrationProgress?.isActive ?? false
+    private func handleMigrationChange(_ phase: ConversationMigrationProgressStore.Phase) {
+        let isActive = phase == .running
         viewModel?.updateMigration(isActive: isActive)
         if !isActive {
             // 迁移结束（完成或失败）：重新装载会话列表。

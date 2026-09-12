@@ -28,7 +28,7 @@ public final class ConversationMigrationProgressStore: ObservableObject {
     /// 是否正在迁移(设置视图据此决定显隐)
     public var isActive: Bool { phase == .running }
 
-    private init() {}
+    init() {}
 
     // MARK: - 由 ConversationLegacyMigration 调用的更新方法
 

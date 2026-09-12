@@ -14,7 +14,8 @@ import SwiftData
 /// - **单点打开**：复制副本 + 打开一次，后续 fetch 复用同一快照。
 /// - **allowsSave: true**：SwiftData 打开库时会做 store 元数据校验/轻量迁移；
 ///   只读打开会因「Cannot migrate store in-place」失败。操作的是临时副本，安全。
-/// - **吞错**：fetch 失败返回空数组并记日志，绝不向上抛（避免阻塞 onBoot）。
+/// - **错误交由迁移层处理**：打开或读取失败时抛出，让迁移层保留重试机会；
+///   `ConversationLegacyMigration` 会捕获错误，不会阻塞 onBoot。
 @MainActor
 public final class V4ConversationReader: SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "conversation.v4-reader")
@@ -55,12 +56,10 @@ public final class V4ConversationReader: SuperLog {
 
     /// 读取 v4 全部历史会话（转换成与存储无关的 `LumiConversationSummary`）。
     ///
-    /// - Returns: 读取失败时返回空数组（吞错，不向上抛）。
-    public func fetchLegacyConversations() -> [ConversationSummary] {
-        guard let container = try? ensureSnapshot() else {
-            Self.logger.error("\(Self.t)建立 v4 只读快照失败，跳过会话迁移")
-            return []
-        }
+    /// - Returns: 读取成功时的全部历史会话，空库返回空数组。
+    /// - Throws: 快照复制、数据库打开或数据读取失败时抛出，避免把失败误判为空库。
+    public func fetchLegacyConversations() throws -> [ConversationSummary] {
+        let container = try ensureSnapshot()
 
         let context = ModelContext(container)
         let descriptor = FetchDescriptor<Conversation>(
@@ -72,13 +71,17 @@ public final class V4ConversationReader: SuperLog {
             return entities.map { Self.convert($0) }
         } catch {
             Self.logger.error("\(Self.t)读取 v4 历史会话失败：\(error.localizedDescription)")
-            return []
+            throw error
         }
     }
 
     /// 释放只读快照资源（幂等）。
     public func releaseLegacySnapshot() {
+        let copyDirectory = snapshot?.copyDirectory
         snapshot = nil
+        if let copyDirectory {
+            try? FileManager.default.removeItem(at: copyDirectory)
+        }
     }
 
     // MARK: - Snapshot Management
@@ -113,6 +116,7 @@ public final class V4ConversationReader: SuperLog {
                 try FileManager.default.copyItem(at: srcURL, to: dstURL)
             }
         } catch {
+            try? FileManager.default.removeItem(at: copyDir)
             throw V4ConversationReaderError.snapshotCopyFailed(underlying: error)
         }
 
@@ -138,6 +142,7 @@ public final class V4ConversationReader: SuperLog {
             }
             return container
         } catch {
+            try? FileManager.default.removeItem(at: copyDir)
             throw V4ConversationReaderError.openFailed(underlying: error)
         }
     }

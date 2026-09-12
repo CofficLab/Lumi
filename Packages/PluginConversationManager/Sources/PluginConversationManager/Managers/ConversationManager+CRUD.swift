@@ -132,14 +132,15 @@ extension ConversationManager {
     }
 
     public func transferObservers(to replacement: any ConversationManaging) {
+        guard (replacement as AnyObject) !== self else { return }
         selectedConversationObservers.removeAll { $0.handle == nil }
         conversationObservers.removeAll { $0.handle == nil }
 
-        for callback in selectedConversationObservers.compactMap({ $0.handle?.callback }) {
-            _ = replacement.addSelectedConversationObserver(callback)
+        for handle in selectedConversationObservers.compactMap(\.handle) {
+            handle.transfer(to: replacement)
         }
-        for callback in conversationObservers.compactMap({ $0.handle?.callback }) {
-            _ = replacement.addConversationObserver(callback)
+        for handle in conversationObservers.compactMap(\.handle) {
+            handle.transfer(to: replacement)
         }
     }
 

@@ -308,6 +308,7 @@ final class ConversationSelectedConversationObserverHandle: SelectedConversation
     private weak var owner: ConversationManager?
     let callback: (UUID?) -> Void
     private var isCancelled = false
+    private var forwardedHandle: (any SelectedConversationObserverHandle)?
 
     init(owner: ConversationManager, callback: @escaping (UUID?) -> Void) {
         self.owner = owner
@@ -318,6 +319,13 @@ final class ConversationSelectedConversationObserverHandle: SelectedConversation
         guard !isCancelled else { return }
         isCancelled = true
         owner?.removeSelectedConversationObserver(self)
+        forwardedHandle?.cancel()
+        forwardedHandle = nil
+    }
+
+    func transfer(to replacement: any ConversationManaging) {
+        forwardedHandle?.cancel()
+        forwardedHandle = replacement.addSelectedConversationObserver(callback)
     }
 
     /// 通知回调（已注销的令牌不再触发）。
