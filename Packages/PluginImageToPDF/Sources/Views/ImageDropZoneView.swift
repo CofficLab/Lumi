@@ -53,7 +53,7 @@ struct ImageDropZoneView: View {
 
     private func handleDrop(providers: [NSItemProvider]) -> Bool {
         let group = DispatchGroup()
-        var urls: [URL] = []
+        let urls = FileURLCollection()
 
         for provider in providers {
             guard provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) else {
@@ -70,9 +70,29 @@ struct ImageDropZoneView: View {
         }
 
         group.notify(queue: .main) {
-            viewModel.addImages(from: urls)
+            viewModel.addImages(from: urls.snapshot())
         }
         return true
+    }
+}
+
+/// NSItemProvider completes each dropped file request independently, often on
+/// different queues. Collect the URLs behind a lock before applying them to UI
+/// state on the main queue.
+final class FileURLCollection: @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [URL] = []
+
+    func append(_ url: URL) {
+        lock.lock()
+        defer { lock.unlock() }
+        values.append(url)
+    }
+
+    func snapshot() -> [URL] {
+        lock.lock()
+        defer { lock.unlock() }
+        return values
     }
 }
 
