@@ -27,5 +27,14 @@ let package = Package(
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
+        .testTarget(
+            name: "PluginDocxReadTests",
+            dependencies: [
+                "PluginDocxRead",
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+            ]
+        ),
     ]
 )
