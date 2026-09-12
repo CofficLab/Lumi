@@ -48,7 +48,7 @@ enum ComputerUseInputExecutor {
         CGEventSource(stateID: .hidSystemState)
     }
 
-    private static func screenPoint(
+    static func screenPoint(
         x: Double,
         y: Double,
         observation: ComputerUseObservation
@@ -58,7 +58,7 @@ enum ComputerUseInputExecutor {
               y <= Double(observation.imageHeight)
         else {
             throw ComputerUseError.invalidArguments(
-                "coordinate (\(Int(x)), \(Int(y))) is outside \(observation.imageWidth)x\(observation.imageHeight)"
+                "coordinate (\(x), \(y)) is outside \(observation.imageWidth)x\(observation.imageHeight)"
             )
         }
         return observation.screenPoint(imageX: x, imageY: y)
@@ -210,7 +210,7 @@ enum ComputerUseInputExecutor {
         }
     }
 
-    private static func keyCode(for key: String) -> CGKeyCode? {
+    static func keyCode(for key: String) -> CGKeyCode? {
         let letters: [String: Int] = [
             "A": kVK_ANSI_A, "B": kVK_ANSI_B, "C": kVK_ANSI_C, "D": kVK_ANSI_D,
             "E": kVK_ANSI_E, "F": kVK_ANSI_F, "G": kVK_ANSI_G, "H": kVK_ANSI_H,

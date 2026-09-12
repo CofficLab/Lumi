@@ -7,12 +7,12 @@ import Combine
 final class ApplicationActivationObserver {
     private var token: NSObjectProtocol?
 
-    init(onActivate: @escaping () -> Void) {
+    init(onActivate: @escaping @MainActor @Sendable () -> Void) {
         token = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification,
             object: nil,
             queue: .main
-        ) { _ in onActivate() }
+        ) { _ in MainActor.assumeIsolated { onActivate() } }
     }
 
     func cancel() {
