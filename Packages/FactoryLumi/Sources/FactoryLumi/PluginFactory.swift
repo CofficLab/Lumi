@@ -48,7 +48,6 @@ import PluginChatScreenshot
 import PluginConversationBehavior
 import PluginConversationVerbosity
 import PluginConversationCacheHitRate
-import PluginConversationContextSize
 import PluginConversationFork
 import PluginConversationInput
 import PluginConversationList
@@ -204,7 +203,6 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationReasoningPlugin(),
             // 会话统计：消息计数 / 上下文用量
             ConversationMessageCountPlugin(),
-            ConversationContextSizePlugin(),
             ConversationCacheHitRatePlugin(),
             ConversationSpeedPlugin(),
             ConversationAgentTurnCountPlugin(),

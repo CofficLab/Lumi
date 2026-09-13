@@ -1,5 +1,6 @@
 import LumiUI
 import ProviderConversation
+import ProviderLLMManager
 import ProviderMessage
 import SwiftUI
 
@@ -59,6 +60,8 @@ struct ContextCompactionToolbarView: View {
                 case let .messagesChanged(conversationID):
                     guard conversationID == selectedConversationID else { return }
                     refreshRevision &+= 1
+                case .llmChanged:
+                    break
                 }
             }
         }
@@ -89,6 +92,7 @@ final class ContextCompactionToolbarState {
     enum Event {
         case selectedConversationChanged(UUID?)
         case messagesChanged(conversationID: UUID)
+        case llmChanged
     }
 
     protocol ObserverHandle: AnyObject {
@@ -132,6 +136,10 @@ final class ContextCompactionToolbarState {
         notify(.messagesChanged(conversationID: conversationID))
     }
 
+    func markLLMChanged() {
+        notify(.llmChanged)
+    }
+
     private func notify(_ event: Event) {
         for callback in Array(observers.values) {
             callback(event)
@@ -143,12 +151,15 @@ final class ContextCompactionToolbarState {
 final class ContextCompactionToolbarObserver {
     private var conversationHandle: (any SelectedConversationObserverHandle)?
     private var messageHandle: (any MessageInsertedObserverHandle)?
+    private var llmHandle: (any LLMManagerObserverHandle)?
 
     init(
         conversations: any ConversationManaging,
         messages: any MessageManaging,
+        llmManager: any LLMManaging,
         onConversationChange: @escaping (UUID?) -> Void,
-        onMessageInsert: @escaping (UUID) -> Void
+        onMessageInsert: @escaping (UUID) -> Void,
+        onLLMChange: @escaping () -> Void
     ) {
         onConversationChange(conversations.selectedConversationID)
         conversationHandle = conversations.addSelectedConversationObserver { id in
@@ -157,6 +168,9 @@ final class ContextCompactionToolbarObserver {
         messageHandle = messages.addMessageInsertedObserver { _, conversationID in
             onMessageInsert(conversationID)
         }
+        llmHandle = llmManager.addObserver { _ in
+            onLLMChange()
+        }
     }
 
     func cancel() {
@@ -164,5 +178,7 @@ final class ContextCompactionToolbarObserver {
         conversationHandle = nil
         messageHandle?.cancel()
         messageHandle = nil
+        llmHandle?.cancel()
+        llmHandle = nil
     }
 }

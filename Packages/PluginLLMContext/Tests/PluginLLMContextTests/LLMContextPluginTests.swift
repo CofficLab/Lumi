@@ -33,6 +33,52 @@ struct LLMContextPluginTests {
         #expect(result[0].content == "你好")
     }
 
+    @Test("工具栏统计复用 LLMContext 请求的估算和预算")
+    func contextWindowUsageMatchesPreparedRequest() async throws {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider(contextWindowTokens: 24_000)
+        try llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 24_000,
+                reservedOutputTokens: 2_000,
+                toolSchemaTokens: 400,
+                safetyMarginTokens: 1_000
+            )
+        )
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .user, content: "第一条消息"),
+            to: conversationID
+        )
+
+        let prepared = await provider.prepareContext(for: request)
+        let initialUsage = await provider.contextWindowUsage(for: conversationID)
+
+        #expect(initialUsage?.contextWindowTokens == 24_000)
+        #expect(initialUsage?.inputTokenLimit == prepared.inputTokenLimit)
+        #expect(initialUsage?.estimatedInputTokens == prepared.estimatedInputTokens)
+
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .user, content: "第二条消息"),
+            to: conversationID
+        )
+        let updatedUsage = await provider.contextWindowUsage(for: conversationID)
+        #expect((updatedUsage?.estimatedInputTokens ?? 0) > (initialUsage?.estimatedInputTokens ?? 0))
+    }
+
     @Test("摘要生成失败时不阻塞，继续返回完整历史")
     func summaryFailureFallsBackToFullHistory() async {
         let messages = DefaultMessageManager()
@@ -504,12 +550,12 @@ struct LLMContextPluginTests {
 private final class SummaryLLMProvider: SuperLLMProvider {
     let providerInfo: LLMProviderInfo
 
-    init(id: String = "summary-test-provider") {
+    init(id: String = "summary-test-provider", contextWindowTokens: Int? = nil) {
         providerInfo = LLMProviderInfo(
             id: id,
             displayName: "Summary Test Provider",
             defaultModel: "summary-model",
-            models: [LLMModelInfo(id: "summary-model")]
+            models: [LLMModelInfo(id: "summary-model", contextWindowSize: contextWindowTokens)]
         )
     }
     private(set) var completeCalls = 0
