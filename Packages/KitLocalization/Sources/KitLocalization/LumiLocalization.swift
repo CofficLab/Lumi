@@ -154,7 +154,7 @@ public enum LumiLocalization {
     ///
     /// 系统给出的偏好语言可能是 `zh-Hant-TW`，而 catalog 里只翻译了 `zh-TW`
     /// （反之亦然）。没有这层回退时，繁体用户会直接掉到 `en`。
-    private static func variantFallbacks(for languageID: String) -> [String] {
+    static func variantFallbacks(for languageID: String) -> [String] {
         switch languageID {
         case "zh-Hant": ["zh-Hant", "zh-TW", "zh-HK"]
         case "zh-TW": ["zh-TW", "zh-Hant", "zh-HK"]
@@ -163,7 +163,7 @@ public enum LumiLocalization {
         }
     }
 
-    private static func normalizeLanguageID(_ raw: String) -> String {
+    static func normalizeLanguageID(_ raw: String) -> String {
         let id = raw.replacingOccurrences(of: "_", with: "-")
 
         if id.hasPrefix("zh-Hans") || id.hasPrefix("zh-CN") {

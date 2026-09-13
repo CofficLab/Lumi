@@ -58,4 +58,119 @@ struct PluginConversationVerbosityTests {
         conversations.setGlobalVerbosity(.detailed)
         #expect(viewModel.observationRevision == revisionAfterCancel)
     }
+
+    @Test("resolve uses conversation verbosity when a conversation is selected")
+    func viewModelReadsConversationVerbosityWhenSelected() {
+        let id = UUID()
+        let capability = FakeVerbosityCapability(
+            selectedConversationID: id,
+            global: .brief,
+            conversation: .detailed
+        )
+        let viewModel = VerbosityViewModel(capability: capability)
+
+        #expect(viewModel.selectedVerbosity == .detailed)
+    }
+
+    @Test("resolve falls back to global verbosity when no conversation is selected")
+    func viewModelReadsGlobalVerbosityWhenNoneSelected() {
+        let capability = FakeVerbosityCapability(
+            selectedConversationID: nil,
+            global: .detailed,
+            conversation: .brief
+        )
+        let viewModel = VerbosityViewModel(capability: capability)
+
+        #expect(viewModel.selectedVerbosity == .detailed)
+    }
+
+    @Test("select without a conversation updates global verbosity")
+    func selectWithoutConversationUpdatesGlobal() {
+        let capability = FakeVerbosityCapability(
+            selectedConversationID: nil,
+            global: .brief,
+            conversation: .brief
+        )
+        let viewModel = VerbosityViewModel(capability: capability)
+
+        viewModel.select(.detailed)
+
+        #expect(capability.globalSet == [.detailed])
+        #expect(capability.awaitedSets.isEmpty)
+    }
+
+    @Test("select with a conversation updates that conversation and waits")
+    @MainActor
+    func selectWithConversationUpdatesConversation() async {
+        let id = UUID()
+        let capability = FakeVerbosityCapability(
+            selectedConversationID: id,
+            global: .brief,
+            conversation: .brief
+        )
+        let viewModel = VerbosityViewModel(capability: capability)
+
+        viewModel.select(.detailed)
+
+        // select dispatches an async Task; yield to let it run.
+        await Task.yield()
+        await Task.yield()
+
+        #expect(capability.awaitedSets.map(\.0) == [.detailed])
+        #expect(capability.awaitedSets.map(\.1) == [id])
+        #expect(capability.globalSet.isEmpty)
+    }
+
+    @Test("refresh re-resolves verbosity and bumps observation revision")
+    func refreshBumpsRevisionAndReadsCapability() {
+        let capability = FakeVerbosityCapability(
+            selectedConversationID: nil,
+            global: .brief,
+            conversation: .brief
+        )
+        let viewModel = VerbosityViewModel(capability: capability)
+        let before = viewModel.observationRevision
+
+        capability.globalVerbosity = .detailed
+        viewModel.refresh()
+
+        #expect(viewModel.selectedVerbosity == .detailed)
+        #expect(viewModel.observationRevision == before + 1)
+    }
+}
+
+@MainActor
+private final class FakeVerbosityCapability: ConversationVerbosityCapability {
+    var selectedConversationID: UUID?
+    var globalVerbosity: ResponseVerbosity
+    var conversationVerbosity: ResponseVerbosity
+    private(set) var globalSet: [ResponseVerbosity] = []
+    private(set) var awaitedSets: [(ResponseVerbosity, UUID?)] = []
+
+    init(selectedConversationID: UUID?, global: ResponseVerbosity, conversation: ResponseVerbosity) {
+        self.selectedConversationID = selectedConversationID
+        self.globalVerbosity = global
+        self.conversationVerbosity = conversation
+    }
+
+    func verbosity(for conversationID: UUID?) -> ResponseVerbosity { conversationVerbosity }
+
+    func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {}
+
+    func setVerbosityAndWait(_ verbosity: ResponseVerbosity, for conversationID: UUID?) async {
+        awaitedSets.append((verbosity, conversationID))
+    }
+
+    func setGlobalVerbosity(_ verbosity: ResponseVerbosity) {
+        globalSet.append(verbosity)
+    }
+
+    func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle {
+        NoopConversationObserverHandle()
+    }
+}
+
+@MainActor
+private final class NoopConversationObserverHandle: ConversationObserverHandle {
+    func cancel() {}
 }

@@ -95,6 +95,64 @@ struct ConversationPendingMessagePluginTests {
         #expect(viewModel.selectedConversationID == first)
         observer.cancel()
     }
+
+    @Test("updatePendingMessages ignores updates for a non-selected conversation")
+    func updatePendingMessagesIgnoresOtherConversation() {
+        let cap = FakeSendingCapability()
+        let viewModel = PendingMessageViewModel(capability: cap)
+        let selected = UUID()
+        let other = UUID()
+        let msg = PendingChatMessage(conversationID: selected, content: "hi")
+
+        viewModel.selectConversation(selected, pendingMessages: [msg])
+        viewModel.updatePendingMessages(for: other, pendingMessages: [])
+
+        #expect(viewModel.pendingMessages == [msg])
+    }
+
+    @Test("cancelPendingMessage is a no-op when no conversation is selected")
+    func cancelNoConversationIsNoOp() {
+        let cap = FakeSendingCapability()
+        let viewModel = PendingMessageViewModel(capability: cap)
+
+        viewModel.cancelPendingMessage(id: UUID())
+
+        #expect(cap.cancelledCalls.isEmpty)
+    }
+
+    @Test("cancelPendingMessage forwards id and selected conversation")
+    func cancelForwardsToCapability() {
+        let cap = FakeSendingCapability()
+        let viewModel = PendingMessageViewModel(capability: cap)
+        let selected = UUID()
+        viewModel.selectConversation(selected, pendingMessages: [])
+
+        let target = UUID()
+        viewModel.cancelPendingMessage(id: target)
+
+        #expect(cap.cancelledCalls.map(\.id) == [target])
+        #expect(cap.cancelledCalls.map(\.conversationID) == [selected])
+    }
+}
+
+@MainActor
+private final class FakeSendingCapability: PendingMessageSendingCapability {
+    private(set) var cancelledCalls: [(id: UUID, conversationID: UUID)] = []
+
+    func pendingMessages(for conversationID: UUID) -> [PendingChatMessage] { [] }
+
+    func cancelPendingMessage(id: UUID, in conversationID: UUID) {
+        cancelledCalls.append((id, conversationID))
+    }
+
+    func addObserver(_ callback: @escaping (PendingMessageSendingEvent) -> Void) -> any PendingMessageSendingObserverHandle {
+        NoopSendingObserverHandle()
+    }
+}
+
+@MainActor
+private final class NoopSendingObserverHandle: PendingMessageSendingObserverHandle {
+    func cancel() {}
 }
 
 /// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。

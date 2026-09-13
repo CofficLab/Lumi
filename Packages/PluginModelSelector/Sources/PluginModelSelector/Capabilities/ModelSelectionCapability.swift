@@ -1,4 +1,5 @@
 import Foundation
+import KitLLM
 import ProviderConversation
 import ProviderLLMManager
 
@@ -14,12 +15,26 @@ public protocol ModelSelectionCapability: AnyObject {
     /// 当前上下文实际显示的供应商与模型。
     var selectedProviderID: String? { get }
     var selectedModel: String? { get }
+    var selectedModelID: String? { get }
 
     /// 在当前上下文中选择供应商与模型。
     func select(providerID: String, model: String?)
+    func select(modelID: String)
 
     /// 订阅会话选择或会话模型变化，用于刷新选择器显示。
     func addConversationObserver(_ callback: @escaping (ConversationEvent) -> Void) -> any ConversationObserverHandle
+}
+
+public extension ModelSelectionCapability {
+    var selectedModelID: String? {
+        guard let selectedProviderID, let selectedModel else { return nil }
+        return LLMModelID(providerID: selectedProviderID, modelID: selectedModel)?.rawValue
+    }
+
+    func select(modelID rawValue: String) {
+        guard let modelID = LLMModelID(rawValue: rawValue) else { return }
+        select(providerID: modelID.providerID, model: modelID.modelID)
+    }
 }
 
 /// 将内核的会话与 LLM 管理能力收窄为模型选择插件所需的 capability。
@@ -41,28 +56,38 @@ final class ModelSelectionCapabilityAdapter: ModelSelectionCapability {
     }
 
     var selectedProviderID: String? {
-        guard let conversationID = selectedConversationID else {
-            return llmManager.selectedProviderID
-        }
-        return conversations?.providerID(for: conversationID) ?? llmManager.selectedProviderID
+        guard let modelID = selectedModelID.flatMap(LLMModelID.init(rawValue:)) else { return nil }
+        return modelID.providerID
     }
 
     var selectedModel: String? {
+        selectedModelID.flatMap(LLMModelID.init(rawValue:))?.modelID
+    }
+
+    var selectedModelID: String? {
         guard let conversationID = selectedConversationID else {
-            return llmManager.selectedModel
+            return llmManager.selectedModelID?.rawValue
         }
-        return conversations?.modelName(for: conversationID) ?? llmManager.selectedModel
+        if let conversationModelID = conversations?.modelID(for: conversationID),
+           let parsed = LLMModelID(rawValue: conversationModelID),
+           llmManager.modelRoute(for: parsed) != nil {
+            return parsed.rawValue
+        }
+        return llmManager.selectedModelID?.rawValue
     }
 
     func select(providerID: String, model: String?) {
+        guard let modelID = llmManager.modelID(providerID: providerID, model: model) else { return }
+        select(modelID: modelID.rawValue)
+    }
+
+    func select(modelID rawValue: String) {
+        guard let modelID = LLMModelID(rawValue: rawValue),
+              llmManager.modelRoute(for: modelID) != nil else { return }
         if let conversationID = selectedConversationID, let conversations {
-            conversations.selectProvider(
-                id: providerID,
-                model: model,
-                for: conversationID
-            )
+            conversations.selectModel(id: modelID.rawValue, for: conversationID)
         } else {
-            llmManager.select(providerID: providerID, model: model)
+            llmManager.select(modelID: modelID, reason: .userSelected)
         }
     }
 

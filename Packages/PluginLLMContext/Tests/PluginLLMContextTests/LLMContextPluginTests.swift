@@ -70,7 +70,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let provider = LLMContextProvider(
             messages: messages,
@@ -135,6 +135,54 @@ struct LLMContextPluginTests {
         #expect(Bool(false), "后台摘要未在测试窗口内生成")
     }
 
+    @Test("后台摘要沿用对话模型 ID，不会误路由到同名全局模型")
+    func backgroundSummaryUsesConversationModelID() async throws {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let globalProvider = SummaryLLMProvider(id: "global-summary-provider")
+        let conversationProvider = SummaryLLMProvider(id: "conversation-summary-provider")
+        try llm.register(globalProvider)
+        try llm.register(conversationProvider)
+        llm.select(providerID: globalProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let conversationID = try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: nil,
+            modelName: nil
+        )
+        let conversationModelID = try #require(
+            llm.modelID(providerID: conversationProvider.providerID, model: "summary-model")
+        )
+        conversations.selectModel(id: conversationModelID.rawValue, for: conversationID)
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        for index in 0...LLMContextProvider.compactionMessageThreshold {
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "按对话模型生成摘要 ", count: 100) + "\(index)"
+                ),
+                to: conversationID
+            )
+        }
+
+        _ = await provider.messagesForLLM(in: conversationID)
+        for _ in 0..<12 {
+            if conversationProvider.completeCalls > 0 { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+
+        #expect(conversationProvider.completeCalls == 1)
+        #expect(globalProvider.completeCalls == 0)
+    }
+
     @Test("硬阈值请求会在发送前等待摘要")
     func hardBudgetWaitsForCompaction() async {
         let messages = DefaultMessageManager()
@@ -142,7 +190,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try? llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let provider = LLMContextProvider(
             messages: messages,
@@ -197,7 +245,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let provider = LLMContextProvider(
             messages: messages,
@@ -257,7 +305,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let provider = LLMContextProvider(
             messages: messages,
@@ -308,7 +356,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("LLMContextStoreTests-\(UUID().uuidString)", isDirectory: true)
@@ -362,12 +410,16 @@ struct LLMContextPluginTests {
 
 @MainActor
 private final class SummaryLLMProvider: SuperLLMProvider {
-    let providerInfo = LLMProviderInfo(
-        id: "summary-test-provider",
-        displayName: "Summary Test Provider",
-        defaultModel: "summary-model",
-        models: [LLMModelInfo(id: "summary-model")]
-    )
+    let providerInfo: LLMProviderInfo
+
+    init(id: String = "summary-test-provider") {
+        providerInfo = LLMProviderInfo(
+            id: id,
+            displayName: "Summary Test Provider",
+            defaultModel: "summary-model",
+            models: [LLMModelInfo(id: "summary-model")]
+        )
+    }
     private(set) var completeCalls = 0
 
     var providerID: String { providerInfo.id }

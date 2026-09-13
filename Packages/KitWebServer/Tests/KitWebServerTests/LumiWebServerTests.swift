@@ -165,6 +165,33 @@ final class LumiWebServerTests: XCTestCase {
     }
 }
 
+final class LumiWebServerQueryParsingTests: XCTestCase {
+    func testNilAndEmptyQueryReturnEmptyDictionary() {
+        XCTAssertEqual(LumiWebServer.parseQuery(nil), [:])
+        XCTAssertEqual(LumiWebServer.parseQuery(""), [:])
+    }
+
+    func testParsesMultipleKeyValuePairs() {
+        XCTAssertEqual(LumiWebServer.parseQuery("a=1&b=2"), ["a": "1", "b": "2"])
+    }
+
+    func testPairWithoutEqualsSignGetsEmptyValue() {
+        XCTAssertEqual(LumiWebServer.parseQuery("flag"), ["flag": ""])
+        XCTAssertEqual(LumiWebServer.parseQuery("flag&b=2"), ["flag": "", "b": "2"])
+    }
+
+    func testPercentDecodesKeysAndValues() {
+        XCTAssertEqual(
+            LumiWebServer.parseQuery("q=hello%20world&lang=en-US"),
+            ["q": "hello world", "lang": "en-US"]
+        )
+    }
+
+    func testEqualsSignInsideValueIsPreserved() {
+        XCTAssertEqual(LumiWebServer.parseQuery("data=a=b"), ["data": "a=b"])
+    }
+}
+
 /// 线程安全的单值容器,用于在跨线程回调中捕获结果供断言。
 private final class LockedBox<T>: @unchecked Sendable {
     private let lock = NSLock()

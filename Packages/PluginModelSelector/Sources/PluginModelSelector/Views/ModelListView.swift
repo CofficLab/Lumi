@@ -136,7 +136,7 @@ struct ModelListView: View {
                         ForEach(visibleModels, id: \.self) { model in
                             let modelInfo = modelInfos[model]
                             let displayName = modelInfo?.displayName ?? model
-                            let isSelected = model == viewModel.selectedModel
+                            let isSelected = viewModel.isSelected(providerID: providerID, model: model)
 
                             ModelListItem(
                                 displayName: displayName,
@@ -175,7 +175,9 @@ struct ModelListView: View {
                 viewModel.selectedCategory.includes(model: model, modelInfo: modelInfos[model])
             }
             .sorted { lhs, rhs in
-                lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+                let lhsName = modelInfos[lhs]?.displayName ?? lhs
+                let rhsName = modelInfos[rhs]?.displayName ?? rhs
+                return lhsName.localizedCaseInsensitiveCompare(rhsName) == .orderedAscending
             }
             .filter { model in
                 viewModel.searchText.isEmpty

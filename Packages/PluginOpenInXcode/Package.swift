@@ -32,5 +32,15 @@ let package = Package(
             path: "Sources/PluginOpenInXcode",
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
+        .testTarget(
+            name: "PluginOpenInXcodeTests",
+            dependencies: [
+                "PluginOpenInXcode",
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "OpenInKit", package: "OpenInKit"),
+                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+            ]
+        ),
     ]
 )

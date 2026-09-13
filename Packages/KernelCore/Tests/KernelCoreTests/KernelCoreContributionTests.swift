@@ -73,4 +73,35 @@ struct KernelCoreContributionTests {
             try kernel.trackContribution {}
         }
     }
+
+    @Test("显式指定已注册 owner 可登记贡献；未知 owner 抛错")
+    func explicitOwnerMustExist() throws {
+        let plugin = ContributionPlugin()
+        let kernel = KernelCoreContainer()
+        try kernel.start(plugins: [plugin])
+
+        #expect(throws: KernelCoreError.self) {
+            try kernel.trackContribution(ownerPluginID: "ghost") {}
+        }
+
+        let token = try kernel.trackContribution(ownerPluginID: plugin.id) {}
+        #expect(token.isActive)
+        #expect(kernel.activeContributionCount(ownedBy: plugin.id) == 2)
+        try kernel.stop()
+    }
+
+    @Test("单独取消一个 token 只减少其自身计数")
+    func cancellingSingleTokenDecrementsOnlyItself() throws {
+        let kernel = KernelCoreContainer()
+        let plugin = ContributionPlugin()
+        try kernel.start(plugins: [plugin])
+
+        let token = try kernel.trackContribution(ownerPluginID: plugin.id) {}
+        #expect(kernel.activeContributionCount(ownedBy: plugin.id) == 2)
+
+        token.cancel()
+        #expect(!token.isActive)
+        #expect(kernel.activeContributionCount(ownedBy: plugin.id) == 1)
+        try kernel.stop()
+    }
 }

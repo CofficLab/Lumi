@@ -2,6 +2,7 @@ import Foundation
 import KitLLM
 import ProviderAgentLoop
 import ProviderMessage
+import ProviderLLMManager
 
 // MARK: - TurnPhase
 
@@ -108,6 +109,9 @@ public struct TurnRuntime {
     /// 下一次 LLM 请求使用的一次性恢复提示，不写入会话历史。
     public var llmRecoveryHint: String?
 
+    /// 当前 Turn 固定使用的模型路由；对话或全局选模变化只影响下一 Turn。
+    public var modelRoute: LLMModelRoute?
+
     // MARK: - 便捷查询
 
     public var isRunning: Bool { phase.isRunning }
@@ -130,6 +134,7 @@ public struct TurnRuntime {
         completionDelivered = false
         llmRecoveryAttempts = 0
         llmRecoveryHint = nil
+        modelRoute = nil
     }
 }
 

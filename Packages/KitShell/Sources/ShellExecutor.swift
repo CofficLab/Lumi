@@ -5,7 +5,7 @@ import Foundation
 ///
 /// Live callbacks still receive every chunk. Only the final aggregate is
 /// bounded so an untrusted command cannot grow memory without limit.
-private final class BoundedOutputBuffer: @unchecked Sendable {
+final class BoundedOutputBuffer: @unchecked Sendable {
     private let maxBytes: Int
     private var data = Data()
     private var truncated = false

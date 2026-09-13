@@ -88,6 +88,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     private var cancelledConversations: Set<UUID> = []
     private var awaitingConversations: Set<UUID> = []
     private var failedConversations: Set<UUID> = []
+    private var modelRoutes: [UUID: LLMModelRoute] = [:]
     private var agentLoopObservers: [UUID: (AgentLoopEvent) -> Void] = [:]
     private var eventTasks: [UUID: Task<Void, Never>] = [:]
     private var completionWaiters: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
@@ -198,6 +199,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
 
         let turnID = UUID()
         turnIDs[conversationID] = turnID
+        modelRoutes[conversationID] = resolveModelRoute(for: conversationID)
         states[conversationID] = .running
         revision += 1
         if let lifecycleHooks {
@@ -314,6 +316,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             // 挂起回合需要在 resume 时沿用原 turnID。
         } else {
             turnIDs[conversationID] = nil
+            modelRoutes.removeValue(forKey: conversationID)
         }
         revision += 1
         switch outcome {
@@ -381,7 +384,8 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             let result = await lifecycleHooks.runWillSendToLLM(WillSendToLLMContext(messages: llmHistory, conversationID: conversationID))
             preparedMessages = result.messages
         }
-        let request = LLMRequest(conversationID: conversationID, messages: preparedMessages, model: conversations.modelName(for: conversationID), tools: schemas.isEmpty ? nil : schemas, reasoningEffort: conversations.reasoningEffortOptional(for: conversationID).flatMap { $0.rawValue })
+        let route = modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID)
+        let request = LLMRequest(conversationID: conversationID, providerID: route?.providerID, modelID: route?.modelID, messages: preparedMessages, model: route?.modelName, tools: schemas.isEmpty ? nil : schemas, reasoningEffort: conversations.reasoningEffortOptional(for: conversationID).flatMap { $0.rawValue })
         streaming.start(conversationID: conversationID)
         let timingRecorder = LLMStreamTimingRecorder()
         let response: LLMResponse
@@ -397,8 +401,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                     guard let bridge else { return }
                     if let reasoning = chunk.reasoningContent, !reasoning.isEmpty {
                         await bridge.appendThinking(reasoning, conversationID: conversationID)
-                    } else {
-                        await bridge.appendContent(chunk.content ?? "", conversationID: conversationID)
+                    }
+                    if let content = chunk.content, !content.isEmpty {
+                        await bridge.appendContent(content, conversationID: conversationID)
                     }
                 }
             } else {
@@ -572,8 +577,10 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
 
             let request = LLMRequest(
                 conversationID: conversationID,
+                providerID: (modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID))?.providerID,
+                modelID: (modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID))?.modelID,
                 messages: preparedMessages,
-                model: conversations.modelName(for: conversationID),
+                model: (modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID))?.modelName,
                 tools: schemas.isEmpty ? nil : schemas,
                 reasoningEffort: reasoningEffort
             )
@@ -589,11 +596,11 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                     let bridge = StreamingBridge(streaming: streaming)
                     response = try await streamingManager.streamComplete(request) { [weak bridge] chunk in
                         guard let bridge else { return }
-                        let piece = chunk.content ?? ""
-                        if let rc = chunk.reasoningContent, !rc.isEmpty {
-                            await bridge.appendThinking(piece, conversationID: conversationID)
-                        } else {
-                            await bridge.appendContent(piece, conversationID: conversationID)
+                        if let reasoning = chunk.reasoningContent, !reasoning.isEmpty {
+                            await bridge.appendThinking(reasoning, conversationID: conversationID)
+                        }
+                        if let content = chunk.content, !content.isEmpty {
+                            await bridge.appendContent(content, conversationID: conversationID)
                         }
                     }
                 } else {
@@ -937,7 +944,17 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     }
 
     private func resolvedProviderID(for conversationID: UUID) -> String? {
-        conversations.providerID(for: conversationID)
+        modelRoutes[conversationID]?.providerID ?? resolveModelRoute(for: conversationID)?.providerID
+    }
+
+    private func resolveModelRoute(for conversationID: UUID) -> LLMModelRoute? {
+        let conversationModelID = conversations.modelID(for: conversationID)
+            .flatMap(LLMModelID.init(rawValue:))
+        if let conversationModelID,
+           let route = llmManager.modelRoute(for: conversationModelID) {
+            return route
+        }
+        return llmManager.selectedModelID.flatMap(llmManager.modelRoute(for:))
     }
 
 }

@@ -35,7 +35,12 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginFileLogTests",
-            dependencies: ["PluginFileLog"],
+            dependencies: [
+                "PluginFileLog",
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderDiagnostics", package: "ProviderDiagnostics"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
+            ],
             path: "Tests/PluginFileLogTests"
         )
     ]

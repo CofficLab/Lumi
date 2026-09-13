@@ -44,7 +44,7 @@ final class ConversationSpeedViewModel: ObservableObject {
         let history = SpeedSample.samples(from: messages)
         speedHistory = history
 
-        guard let lastMessage = messages.last else {
+        guard !messages.isEmpty else {
             cachedTPS = nil
             unavailabilityReason = .waitingForResponse
             clearDetails()
@@ -52,7 +52,14 @@ final class ConversationSpeedViewModel: ObservableObject {
         }
 
         let latestAssistantMessage = messages.last(where: { $0.role == .assistant })
-        let latestSpeedMessage = history.last?.message ?? latestAssistantMessage ?? lastMessage
+        let latestSpeedMessage = history.last?.message ?? latestAssistantMessage
+
+        guard let latestSpeedMessage else {
+            cachedTPS = nil
+            unavailabilityReason = .waitingForResponse
+            clearDetails()
+            return
+        }
 
         modelName = latestSpeedMessage.modelName
         outputTokens = latestSpeedMessage.outputTokenCount
@@ -60,7 +67,7 @@ final class ConversationSpeedViewModel: ObservableObject {
         timeToFirstTokenMs = latestSpeedMessage.timeToFirstTokenMs
         providerID = latestSpeedMessage.providerID
 
-        if let tps = history.last?.tokensPerSecond ?? lastMessage.speedTokensPerSecond {
+        if let tps = history.last?.tokensPerSecond {
             cachedTPS = tps
             unavailabilityReason = .waitingForResponse
             return

@@ -109,6 +109,8 @@ public struct LLMRequest: Sendable {
     /// 可选的显式供应商路由。对话绑定供应商时由上层传入；为空时由
     /// LLM 管理器使用全局选中供应商。
     public let providerID: String?
+    /// 可选的 Lumi 全局唯一模型 ID；存在时由 LLM 管理器解析路由和 API 模型名。
+    public let modelID: LLMModelID?
     public let messages: [LLMMessage]
     public let model: String?
     public let tools: [LLMFunctionSchema]?
@@ -117,6 +119,7 @@ public struct LLMRequest: Sendable {
     public init(
         conversationID: UUID = UUID(),
         providerID: String? = nil,
+        modelID: LLMModelID? = nil,
         messages: [LLMMessage],
         model: String? = nil,
         tools: [LLMFunctionSchema]? = nil,
@@ -124,6 +127,7 @@ public struct LLMRequest: Sendable {
     ) {
         self.conversationID = conversationID
         self.providerID = providerID
+        self.modelID = modelID
         self.messages = messages
         self.model = model
         self.tools = tools

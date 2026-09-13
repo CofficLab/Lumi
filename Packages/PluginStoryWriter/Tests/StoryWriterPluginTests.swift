@@ -1,6 +1,7 @@
 import KernelCore
 import ProviderActivityBar
 import ProviderContentView
+import ProviderDocsView
 import ProviderRailView
 import ProviderRootView
 import Testing
@@ -49,4 +50,20 @@ func activationScopesRailView() throws {
     #expect(rootView.isContentHeaderViewHidden == false)
 
     try plugin.onShutdown(kernel: kernel)
+}
+
+@MainActor
+@Test func documentationEntriesAreRemovedWhenPluginUnregisters() throws {
+    let kernel = KernelCoreContainer()
+    let docs = DefaultDocsViewProviding()
+    try kernel.registerProvider((any DocsViewProviding).self, docs)
+    let plugin = StoryWriterSuperPlugin()
+
+    try plugin.onRegister(kernel: kernel)
+    #expect(docs.aboutEntries.map(\.id) == [plugin.id])
+    #expect(docs.manualEntries.map(\.id) == [plugin.id])
+
+    try plugin.onUnregister(kernel: kernel)
+    #expect(docs.aboutEntries.isEmpty)
+    #expect(docs.manualEntries.isEmpty)
 }

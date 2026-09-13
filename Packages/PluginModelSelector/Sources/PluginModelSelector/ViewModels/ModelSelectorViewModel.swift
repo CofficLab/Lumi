@@ -14,6 +14,7 @@ final class ModelSelectorViewModel: ObservableObject {
     @Published private(set) var revision = 0
     @Published var selectedProviderID: String?
     @Published private(set) var selectedModel: String?
+    @Published private(set) var selectedModelID: String?
     @Published private(set) var providerInfos: [LLMProviderInfo] = []
     @Published private(set) var modelIDs: [String: [String]] = [:]
     @Published private(set) var usageRecords: [String: ProviderUsageRecord] = [:]
@@ -59,16 +60,11 @@ final class ModelSelectorViewModel: ObservableObject {
     // MARK: - Derived
 
     var buttonLabel: String {
-        guard let providerID = selectedProviderID,
-              let info = providerInfo(id: providerID)
-        else {
+        guard let selectedModelID,
+              let route = box.modelRoute(for: selectedModelID) else {
             return "Select Provider"
         }
-        // 当前生效模型：显式选中项 > 供应商默认模型（与内核 `resolveSelected()` 回退一致），
-        // 保证按钮始终反映「当前供应商 + 模型」。
-        let model = selectedModel ?? info.defaultModel
-        let displayModel = info.models.first(where: { $0.id == model })?.displayName ?? model
-        return "\(info.displayName) · \(displayModel)"
+        return "\(route.providerInfo.displayName) · \(route.modelInfo.displayName)"
     }
 
     func providerInfo(id: String) -> LLMProviderInfo? {
@@ -77,6 +73,14 @@ final class ModelSelectorViewModel: ObservableObject {
 
     func models(for providerID: String) -> [String] {
         modelIDs[providerID] ?? []
+    }
+
+    func modelID(providerID: String, model: String) -> String? {
+        box.modelID(providerID: providerID, model: model)
+    }
+
+    func isSelected(providerID: String, model: String) -> Bool {
+        modelID(providerID: providerID, model: model) == selectedModelID
     }
 
     func usageCount(for providerID: String) -> Int {
@@ -136,19 +140,19 @@ final class ModelSelectorViewModel: ObservableObject {
 
     /// 在当前上下文中选择供应商与模型（写入由 capability 路由）。
     func select(providerID: String, model: String?) {
-        box.select(providerID: providerID, model: model)
+        guard let model,
+              let modelID = box.modelID(providerID: providerID, model: model) else { return }
+        box.select(modelID: modelID)
         usageStore.recordUse(providerID: providerID)
 
-        if let model {
-            let providerDisplayName = providerInfo(id: providerID)?.displayName ?? providerID
-            let modelInfo = modelInfo(for: providerID, model: model)
-            let modelDisplayName = modelInfo?.displayName ?? model
-            toast?.show(
-                LumiPluginLocalization.string("Switched to", bundle: .module),
-                detail: "\(providerDisplayName) · \(modelDisplayName)",
-                style: .success
-            )
-        }
+        let providerDisplayName = providerInfo(id: providerID)?.displayName ?? providerID
+        let modelInfo = modelInfo(for: providerID, model: model)
+        let modelDisplayName = modelInfo?.displayName ?? model
+        toast?.show(
+            LumiPluginLocalization.string("Switched to", bundle: .module),
+            detail: "\(providerDisplayName) · \(modelDisplayName)",
+            style: .success
+        )
     }
 
     // MARK: - Private
@@ -160,6 +164,7 @@ final class ModelSelectorViewModel: ObservableObject {
     private func refreshSnapshots() {
         // 浏览中的选中态不随外部事件回跳，仅刷新目录快照。
         selectedModel = box.selectedModel
+        selectedModelID = box.selectedModelID
         providerInfos = box.providerInfos
         modelIDs = box.modelIDs
         usageRecords = usageStore.records

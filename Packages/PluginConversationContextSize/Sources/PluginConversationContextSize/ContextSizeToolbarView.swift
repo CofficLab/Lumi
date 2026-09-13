@@ -1,3 +1,4 @@
+import KitLLM
 import ProviderConversation
 import ProviderLLMManager
 import ProviderLLMVendors
@@ -88,25 +89,17 @@ struct ContextSizeToolbarView: View {
     }
 
     private func refreshSize(for conversationID: UUID?) async {
-        let providerID = conversationID.flatMap { conversations.providerID(for: $0) }
-            ?? llmManager.selectedProviderID
-            ?? llmManager.allProviders().first?.providerInfo.id
+        let conversationModelID = conversationID.flatMap { conversations.modelID(for: $0) }
+            .flatMap(LLMModelID.init(rawValue:))
+        let route = conversationModelID.flatMap(llmManager.modelRoute(for:))
+            ?? llmManager.selectedModelID.flatMap(llmManager.modelRoute(for:))
 
-        guard let providerID,
-              let provider = llmManager.provider(id: providerID) else {
+        guard let route else {
             maxContextSize = nil
             usedTokens = nil
             return
         }
-
-        let info = provider.providerInfo
-        let modelName = conversationID.flatMap { conversations.modelName(for: $0) }
-            ?? llmManager.selectedModel
-            ?? info.defaultModel
-
-        let modelInfo = info.models.first { $0.id == modelName }
-            ?? info.models.first { $0.id == info.defaultModel }
-        maxContextSize = modelInfo?.contextWindowSize
+        maxContextSize = route.modelInfo.contextWindowSize
         await refreshUsedTokens(for: conversationID)
     }
 

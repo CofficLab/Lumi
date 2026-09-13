@@ -19,21 +19,40 @@ struct ConversationListRefreshTests {
         let conversationID = UUID()
         manager.conversations = [ConversationSummary(id: conversationID)]
 
-        var notificationCount = 0
+        let notificationCount = LockedNotificationCount()
         let observer = center.addObserver(
             forName: .lumiConversationsDidChange,
             object: nil,
-            queue: .main
+            queue: nil
         ) { _ in
-            notificationCount += 1
+            notificationCount.increment()
         }
         defer { center.removeObserver(observer) }
 
         manager.markConversationActive(id: conversationID, messageDate: Date())
         manager.markConversationActive(id: conversationID, messageDate: Date().addingTimeInterval(1))
 
-        #expect(notificationCount == 0)
-        try await Task.sleep(for: .milliseconds(260))
-        #expect(notificationCount == 1)
+        #expect(notificationCount.value == 0)
+        for _ in 0..<100 where notificationCount.value == 0 {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(notificationCount.value == 1)
+    }
+}
+
+private final class LockedNotificationCount: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+
+    var value: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return count
+    }
+
+    func increment() {
+        lock.lock()
+        defer { lock.unlock() }
+        count += 1
     }
 }

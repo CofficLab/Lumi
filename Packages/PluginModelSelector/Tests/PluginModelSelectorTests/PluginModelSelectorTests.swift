@@ -131,7 +131,8 @@ struct ModelSelectionCapabilityTests {
         ))
         manager.select(
             providerID: "model-selection-conversation-provider",
-            model: "global-model"
+            model: "global-model",
+            reason: .userSelected
         )
 
         let conversations = DefaultConversationManager()
@@ -166,7 +167,8 @@ struct ModelSelectionCapabilityTests {
         ))
         manager.select(
             providerID: "model-selection-global-provider",
-            model: "global-model"
+            model: "global-model",
+            reason: .userSelected
         )
 
         let conversations = DefaultConversationManager()

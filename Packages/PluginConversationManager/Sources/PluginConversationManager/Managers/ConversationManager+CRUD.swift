@@ -1,4 +1,5 @@
 import Foundation
+import KitLLM
 import KernelCore
 import ProviderAgentLoop
 import ProviderConversation
@@ -13,9 +14,7 @@ extension ConversationManager {
         try createConversation(
             title: title,
             projectPath: projectPath,
-            providerID: providerID,
-            modelName: modelName,
-            parentConversationID: nil
+            modelID: legacyModelID(providerID: providerID, modelName: modelName)
         )
     }
 
@@ -26,6 +25,29 @@ extension ConversationManager {
         modelName: String?,
         parentConversationID: UUID?
     ) throws -> UUID {
+        try createConversation(
+            title: title,
+            projectPath: projectPath,
+            modelID: legacyModelID(providerID: providerID, modelName: modelName),
+            parentConversationID: parentConversationID
+        )
+    }
+
+    public func createConversation(title: String?, projectPath: String?, modelID: String?) throws -> UUID {
+        try createConversation(
+            title: title,
+            projectPath: projectPath,
+            modelID: modelID,
+            parentConversationID: nil
+        )
+    }
+
+    public func createConversation(
+        title: String?,
+        projectPath: String?,
+        modelID: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID {
         let now = Date()
         let id = UUID()
         let conversationTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -33,10 +55,8 @@ extension ConversationManager {
 
         // 如果未指定 projectPath，则自动使用当前项目
         let effectiveProjectPath = projectPath ?? project?.currentProject?.path
-        // 如果未指定 providerID，则自动使用当前选中的供应商
-        let effectiveProviderID = providerID ?? llmProviderManager?.selectedProviderID
-        // 如果未指定 modelName，则自动使用当前选中的模型
-        let effectiveModelName = modelName ?? llmProviderManager?.selectedModel
+        let effectiveModelID = modelID.flatMap { LLMModelID(rawValue: $0)?.rawValue }
+            ?? llmProviderManager?.selectedModelID?.rawValue
         // 继承全局设置（详细程度、推理强度、对话模式）
         let effectiveVerbosity = self.globalVerbosity
         let effectiveReasoningEffort = self.globalReasoningEffort
@@ -44,7 +64,7 @@ extension ConversationManager {
         let effectiveLanguage = self.language(for: selectedConversationID)
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)创建对话：\(normalizedTitle ?? "nil"), 项目：\(effectiveProjectPath ?? "nil"), 供应商：\(effectiveProviderID ?? "nil"), 模型：\(effectiveModelName ?? "nil"), 详细程度：\(effectiveVerbosity.rawValue)")
+            Self.logger.info("\(Self.t)创建对话：\(normalizedTitle ?? "nil"), 项目：\(effectiveProjectPath ?? "nil"), 模型 ID：\(effectiveModelID ?? "nil"), 详细程度：\(effectiveVerbosity.rawValue)")
         }
 
         let conversation = ConversationSummary(
@@ -57,8 +77,7 @@ extension ConversationManager {
             reasoningEffort: effectiveReasoningEffort,
             language: effectiveLanguage,
             automationLevel: effectiveAutomationLevel,
-            providerID: effectiveProviderID,
-            modelName: effectiveModelName,
+            modelID: effectiveModelID,
             projectPath: effectiveProjectPath,
             parentConversationID: parentConversationID
         )
@@ -84,8 +103,7 @@ extension ConversationManager {
                     preview: "",
                     createdAt: now,
                     verbosity: effectiveVerbosity,
-                    providerID: effectiveProviderID,
-                    modelName: effectiveModelName,
+                    modelID: effectiveModelID,
                     projectPath: effectiveProjectPath,
                     parentConversationID: parentConversationID,
                     reasoningEffort: effectiveReasoningEffort,
@@ -111,6 +129,25 @@ extension ConversationManager {
         return id
     }
 
+    private func legacyModelID(providerID: String?, modelName: String?) -> String? {
+        if let providerID {
+            if let modelName,
+               let modelID = llmProviderManager?.modelID(providerID: providerID, model: modelName) {
+                return modelID.rawValue
+            }
+            if let modelName {
+                return LLMModelID(providerID: providerID, modelID: modelName)?.rawValue
+            }
+            return llmProviderManager?.modelID(providerID: providerID, model: nil)?.rawValue
+        }
+
+        if let modelName, let selectedProviderID = llmProviderManager?.selectedProviderID {
+            return llmProviderManager?.modelID(providerID: selectedProviderID, model: modelName)?.rawValue
+                ?? LLMModelID(providerID: selectedProviderID, modelID: modelName)?.rawValue
+        }
+        return llmProviderManager?.selectedModelID?.rawValue
+    }
+
     public func selectConversation(id: UUID) {
         if Self.verbose {
             Self.logger.info("\(Self.t)Selecting conversation \(id.uuidString.prefix(8))...")
@@ -132,14 +169,15 @@ extension ConversationManager {
     }
 
     public func transferObservers(to replacement: any ConversationManaging) {
+        guard (replacement as AnyObject) !== self else { return }
         selectedConversationObservers.removeAll { $0.handle == nil }
         conversationObservers.removeAll { $0.handle == nil }
 
-        for callback in selectedConversationObservers.compactMap({ $0.handle?.callback }) {
-            _ = replacement.addSelectedConversationObserver(callback)
+        for handle in selectedConversationObservers.compactMap(\.handle) {
+            handle.transfer(to: replacement)
         }
-        for callback in conversationObservers.compactMap({ $0.handle?.callback }) {
-            _ = replacement.addConversationObserver(callback)
+        for handle in conversationObservers.compactMap(\.handle) {
+            handle.transfer(to: replacement)
         }
     }
 

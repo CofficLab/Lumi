@@ -1,4 +1,5 @@
 import Foundation
+import KitLLM
 import os
 import KitSuperLog
 
@@ -353,21 +354,31 @@ public final class DefaultConversationManager: ConversationManaging, SuperLog {
     // MARK: - Provider/Model
 
     public func providerID(for conversationID: UUID?) -> String? {
-        guard let conversationID else { return nil }
-        return conversations.first { $0.id == conversationID }?.providerID
+        guard let modelID = modelID(for: conversationID) else { return nil }
+        return LLMModelID(rawValue: modelID)?.providerID
     }
 
     public func modelName(for conversationID: UUID?) -> String? {
+        guard let modelID = modelID(for: conversationID) else { return nil }
+        return LLMModelID(rawValue: modelID)?.modelID
+    }
+
+    public func modelID(for conversationID: UUID?) -> String? {
         guard let conversationID else { return nil }
-        return conversations.first { $0.id == conversationID }?.modelName
+        return conversations.first { $0.id == conversationID }?.modelID
+    }
+
+    public func selectModel(id: String, for conversationID: UUID?) {
+        guard let conversationID,
+              let index = conversations.firstIndex(where: { $0.id == conversationID }),
+              LLMModelID(rawValue: id) != nil else { return }
+        conversations[index].modelID = id
+        notifyConversationObservers(.providerChanged(conversationID))
     }
 
     public func selectProvider(id: String, model: String?, for conversationID: UUID?) {
-        guard let conversationID,
-              let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
-        conversations[index].providerID = id
-        conversations[index].modelName = model
-        notifyConversationObservers(.providerChanged(conversationID))
+        guard let model, let modelID = LLMModelID(providerID: id, modelID: model) else { return }
+        selectModel(id: modelID.rawValue, for: conversationID)
     }
 
     // MARK: - Verbosity

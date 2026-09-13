@@ -104,4 +104,38 @@ struct KernelCoreEventBusTests {
         sub.cancel()
         center.removeObserver(legacyObserver)
     }
+
+    @Test("cancelling a subscription twice is safe")
+    func doubleCancelIsIdempotent() {
+        let bus = KernelCoreEventBus()
+        var count = 0
+        let sub = bus.subscribe(MessageEvent.self) { _ in count += 1 }
+
+        sub.cancel()
+        sub.cancel()
+        #expect(sub.isCancelled)
+        #expect(bus.activeSubscriptionCount == 0)
+
+        bus.publish(MessageEvent(text: "x"))
+        #expect(count == 0)
+    }
+
+    @Test("publish delivers only to subscribers of the same event type")
+    func publishFiltersByType() {
+        let bus = KernelCoreEventBus()
+        var messageCount = 0
+        var otherCount = 0
+
+        bus.subscribe(MessageEvent.self) { _ in messageCount += 1 }
+        bus.subscribe(OtherEvent.self) { _ in otherCount += 1 }
+
+        bus.publish(MessageEvent(text: "hi"))
+        #expect(messageCount == 1)
+        #expect(otherCount == 0)
+
+        // Publishing with no subscribers of a type must be a no-op.
+        let emptyBus = KernelCoreEventBus()
+        emptyBus.publish(MessageEvent(text: "nobody"))
+        #expect(emptyBus.activeSubscriptionCount == 0)
+    }
 }
