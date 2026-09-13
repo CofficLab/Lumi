@@ -39,6 +39,9 @@ let package = Package(
             dependencies: [
                 "PluginAgentRules",
                 "KitAgentTool",
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderProject", package: "ProviderProject"),
             ]
         ),
     ]

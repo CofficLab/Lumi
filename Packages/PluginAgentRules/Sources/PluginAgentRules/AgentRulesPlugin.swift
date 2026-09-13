@@ -42,8 +42,17 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
 
     private var projectObserver: AgentRulesProjectObserver?
     private let settingsViewModel = AgentRulesViewModel()
+    private var toolbarProjectObserver: AgentRulesToolbarProjectObserver?
+    private var toolbarViewModel: AgentRulesToolbarViewModel?
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        projectObserver?.cancel()
+        projectObserver = nil
+        toolbarProjectObserver?.cancel()
+        toolbarViewModel?.cancel()
+        toolbarProjectObserver = nil
+        toolbarViewModel = nil
+
         // 配置运行时：项目服务（工具 fallback 到当前项目路径）。
         let project = kernel.resolveProvider((any ProjectProviding).self)
         AgentRulesRuntime.configure(project: project)
@@ -76,13 +85,21 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
 
         // 3. Chat 工具栏规则入口。
         if let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
+            let toolbarViewModel = AgentRulesToolbarViewModel()
+            let toolbarProjectObserver = AgentRulesToolbarProjectObserver(
+                projectProvider: project,
+                viewModel: toolbarViewModel
+            )
+            self.toolbarViewModel = toolbarViewModel
+            self.toolbarProjectObserver = toolbarProjectObserver
+
             chat.addBarItems([
                 ChatSectionBarItem(
                     id: "\(id).toolbar",
                     order: 50,
                     placement: .toolbarTrailing
                 ) {
-                    AgentRulesChatToolbarView(project: project)
+                    AgentRulesChatToolbarView(viewModel: toolbarViewModel)
                 },
             ])
         }
@@ -98,6 +115,10 @@ public final class AgentRulesPlugin: SuperPlugin, SuperLog {
             .removeEntries(ids: ["\(id).settings"])
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar")
+        toolbarProjectObserver?.cancel()
+        toolbarProjectObserver = nil
+        toolbarViewModel?.cancel()
+        toolbarViewModel = nil
         projectObserver?.cancel()
         projectObserver = nil
         AgentRulesRuntime.reset()

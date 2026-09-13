@@ -3,16 +3,15 @@ import SwiftUI
 
 /// Chat Toolbar 弹出的规则列表：复刻 PluginSkill 的 LumiUI 样式。
 struct AgentRulesListView: View {
-    let rules: [AgentRuleMetadata]
-    @Binding var selectedRule: AgentRule?
+    @ObservedObject var viewModel: AgentRulesToolbarViewModel
 
     @State private var searchText = ""
 
     private var filteredRules: [AgentRuleMetadata] {
         if searchText.isEmpty {
-            return rules
+            return viewModel.rules
         }
-        return rules.filter {
+        return viewModel.rules.filter {
             $0.title.localizedCaseInsensitiveContains(searchText)
             || $0.id.localizedCaseInsensitiveContains(searchText)
             || $0.description.localizedCaseInsensitiveContains(searchText)
@@ -23,7 +22,7 @@ struct AgentRulesListView: View {
         VStack(spacing: 0) {
             header
             Divider()
-            if selectedRule != nil {
+            if viewModel.selectedRule != nil {
                 ruleDetailView
             } else {
                 listView
@@ -33,9 +32,9 @@ struct AgentRulesListView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            if selectedRule != nil {
+            if viewModel.selectedRule != nil {
                 Button {
-                    selectedRule = nil
+                    viewModel.clearSelectedRule()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 12, weight: .medium))
@@ -54,8 +53,11 @@ struct AgentRulesListView: View {
 
     @ViewBuilder
     private var listView: some View {
-        if filteredRules.isEmpty {
-            if rules.isEmpty {
+        if viewModel.isLoading {
+            ProgressView()
+                .frame(maxWidth: .infinity, minHeight: 126)
+        } else if filteredRules.isEmpty {
+            if viewModel.rules.isEmpty {
                 AppEmptyState(
                     icon: "doc.text",
                     title: LumiPluginLocalization.string("No Rules", bundle: .module),
@@ -73,11 +75,7 @@ struct AgentRulesListView: View {
             ScrollView {
                 LazyVStack(spacing: 4) {
                     ForEach(filteredRules) { rule in
-                        AgentRuleRowView(rule: rule) {
-                            Task {
-                                await loadRuleDetail(rule)
-                            }
-                        }
+                        AgentRuleRowView(rule: rule) { viewModel.selectRule(rule) }
                     }
                 }
                 .padding(8)
@@ -88,7 +86,7 @@ struct AgentRulesListView: View {
 
     @ViewBuilder
     private var ruleDetailView: some View {
-        if let rule = selectedRule {
+        if let rule = viewModel.selectedRule {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(rule.title)
@@ -109,15 +107,6 @@ struct AgentRulesListView: View {
                 }
                 .padding(16)
             }
-        }
-    }
-
-    private func loadRuleDetail(_ rule: AgentRuleMetadata) async {
-        guard let path = AgentRulesRuntime.project?.currentProject?.path else { return }
-        do {
-            selectedRule = try await AgentRulesService.shared.readRule(projectPath: path, filename: rule.filename)
-        } catch {
-            // 忽略错误
         }
     }
 }
