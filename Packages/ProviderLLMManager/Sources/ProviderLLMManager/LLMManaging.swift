@@ -75,7 +75,8 @@ public protocol LLMManaging: AnyObject, SuperLLMProvider {
 
     /// 切换选中的供应商与模型（模型可空，表示回退默认模型）。
     /// 供应商不存在时静默忽略（保持现状）。
-    func select(providerID: String, model: String?)
+    /// - Parameter reason: 本次切换的触发来源，随 `selectionChanged` 事件透传。
+    func select(providerID: String, model: String?, reason: ModelSelectionReason)
 
     /// 根据全局模型 ID 查询路由；未注册或模型已不可用时返回 `nil`。
     func modelRoute(for modelID: LLMModelID) -> LLMModelRoute?
@@ -84,7 +85,8 @@ public protocol LLMManaging: AnyObject, SuperLLMProvider {
     func modelID(providerID: String, model: String?) -> LLMModelID?
 
     /// 只按模型 ID 更新全局选择。
-    func select(modelID: LLMModelID)
+    /// - Parameter reason: 本次切换的触发来源，随 `selectionChanged` 事件透传。
+    func select(modelID: LLMModelID, reason: ModelSelectionReason)
 }
 
 public extension LLMManaging {
@@ -119,9 +121,9 @@ public extension LLMManaging {
         )
     }
 
-    func select(modelID: LLMModelID) {
+    func select(modelID: LLMModelID, reason: ModelSelectionReason) {
         guard modelRoute(for: modelID) != nil else { return }
-        select(providerID: modelID.providerID, model: modelID.modelID)
+        select(providerID: modelID.providerID, model: modelID.modelID, reason: reason)
     }
 }
 

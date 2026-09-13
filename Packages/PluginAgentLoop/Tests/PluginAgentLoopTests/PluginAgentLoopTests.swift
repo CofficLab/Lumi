@@ -549,7 +549,7 @@ private final class RoutingRecordingLLMManager: LLMManaging, LLMStreamingProvidi
     var selectedProviderID: String? { "global-provider" }
     var selectedModel: String? { "global-model" }
     func models(for providerID: String) -> [String] { providersByID[providerID]?.providerInfo.modelIDs ?? [] }
-    func select(providerID: String, model: String?) {}
+    func select(providerID: String, model: String?, reason: ModelSelectionReason) {}
 }
 
 @MainActor

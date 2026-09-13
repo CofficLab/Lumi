@@ -70,7 +70,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let provider = LLMContextProvider(
             messages: messages,
@@ -144,7 +144,7 @@ struct LLMContextPluginTests {
         let conversationProvider = SummaryLLMProvider(id: "conversation-summary-provider")
         try llm.register(globalProvider)
         try llm.register(conversationProvider)
-        llm.select(providerID: globalProvider.providerID, model: "summary-model")
+        llm.select(providerID: globalProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let conversationID = try conversations.createConversation(
             title: nil,
@@ -190,7 +190,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try? llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let provider = LLMContextProvider(
             messages: messages,
@@ -245,7 +245,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let provider = LLMContextProvider(
             messages: messages,
@@ -305,7 +305,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let provider = LLMContextProvider(
             messages: messages,
@@ -356,7 +356,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("LLMContextStoreTests-\(UUID().uuidString)", isDirectory: true)

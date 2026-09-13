@@ -160,7 +160,7 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
                     .flatMap(LLMModelID.init(rawValue:)),
                   let route = manager?.modelRoute(for: selectedModelID) else { return }
 
-            manager?.select(modelID: route.modelID)
+            manager?.select(modelID: route.modelID, reason: .conversationSwitch)
 
             if Self.verbose {
                 Self.logger.info("\(Self.t)global selection synced from conversation: modelID=\(route.modelID.rawValue, privacy: .public)")

@@ -71,7 +71,7 @@ struct ProviderAgentLoopTests {
         var selectedProviderID: String? { "test-manager" }
         var selectedModel: String? { nil }
         func models(for providerID: String) -> [String] { [] }
-        func select(providerID: String, model: String?) {}
+        func select(providerID: String, model: String?, reason: ModelSelectionReason) {}
     }
 
     /// 内存会话管理器（最小实现，默认 build 自动化级别）。

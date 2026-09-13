@@ -75,7 +75,7 @@ final class ProviderSettingsCapabilityAdapter: ProviderSettingsCapability {
     }
 
     func select(providerID: String, model: String?) {
-        manager.select(providerID: providerID, model: model)
+        manager.select(providerID: providerID, model: model, reason: .userSelected)
     }
 
     func modelID(providerID: String, model: String) -> String? {
@@ -84,7 +84,7 @@ final class ProviderSettingsCapabilityAdapter: ProviderSettingsCapability {
 
     func select(modelID: String) {
         guard let modelID = LLMModelID(rawValue: modelID) else { return }
-        manager.select(modelID: modelID)
+        manager.select(modelID: modelID, reason: .userSelected)
     }
 
     func apiKey(for providerID: String) -> String {

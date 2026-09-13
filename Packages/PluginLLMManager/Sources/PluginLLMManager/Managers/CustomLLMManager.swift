@@ -41,6 +41,10 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
     private var legacySelectedProviderID: String?
     private var legacySelectedModel: String?
 
+    /// 是否待广播一次 `.appRestore`（持久化 / 旧版恢复的选中首次校验通过时触发）。
+    /// 选中值在 `init` 中即已恢复，缺少可观察跃迁，故需在校验后主动补一次广播。
+    private var pendingRestoreBroadcast = false
+
     // MARK: - Observation
 
     private var observers: [UUID: (LLMManagerEvent) -> Void] = [:]
@@ -83,6 +87,8 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
             .flatMap(LLMModelID.init(rawValue:))
         legacySelectedProviderID = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedProviderID)
         legacySelectedModel = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModel)
+        // 持久化 / 旧版本身已恢复出选中值，缺少可观察跃迁，故标记为待广播 `.appRestore`。
+        pendingRestoreBroadcast = selectedModelID != nil || legacySelectedProviderID != nil
         if Self.verbose {
             Self.logger.info("\(Self.t)initialized, restored model ID: \(self.selectedModelID?.rawValue ?? "nil", privacy: .public)")
         }
@@ -163,14 +169,14 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
         )
     }
 
-    public func select(modelID: LLMModelID) {
+    public func select(modelID: LLMModelID, reason: ModelSelectionReason) {
         guard modelRoute(for: modelID) != nil, selectedModelID != modelID else { return }
         selectedModelID = modelID
         persistSelectedModelID()
-        notify(.selectionChanged(providerID: modelID.providerID, model: modelID.modelID))
+        notify(.selectionChanged(providerID: modelID.providerID, model: modelID.modelID, reason: reason))
     }
 
-    public func select(providerID: String, model: String?) {
+    public func select(providerID: String, model: String?, reason: ModelSelectionReason) {
         guard let modelID = modelID(providerID: providerID, model: model) else {
             if Self.verbose {
                 Self.logger.warning("\(Self.t)select ignored: provider/model not registered provider=\(providerID, privacy: .public), model=\(model ?? "default", privacy: .public)")
@@ -184,7 +190,7 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
             Self.logger.info("\(Self.t)selected: modelID=\(modelID.rawValue, privacy: .public)")
         }
         if didChange {
-            notify(.selectionChanged(providerID: modelID.providerID, model: modelID.modelID))
+            notify(.selectionChanged(providerID: modelID.providerID, model: modelID.modelID, reason: reason))
         }
     }
 
@@ -427,8 +433,20 @@ public final class CustomLLMManager: LLMManaging, @preconcurrency SuperLLMProvid
 
         selectedModelID = next
         persistSelectedModelID()
+
+        // 一次性 `.appRestore`：选中值在 `init` 中即已恢复（无 `nil → 值` 跃迁），
+        // 故在首次经校验解析出有效 `next` 后主动广播一次，让启动期已注册的观察者
+        // 感知「恢复的选中已生效」。仅对首个解析出选中的注册流程生效。
+        if pendingRestoreBroadcast {
+            pendingRestoreBroadcast = false
+            if let next {
+                notify(.selectionChanged(providerID: next.providerID, model: next.modelID, reason: .appRestore))
+                return
+            }
+        }
+
         guard previous != next else { return }
-        notify(.selectionChanged(providerID: next?.providerID, model: next?.modelID))
+        notify(.selectionChanged(providerID: next?.providerID, model: next?.modelID, reason: .providerChanged))
         if next == nil, Self.verbose {
             Self.logger.warning("\(Self.t)no model routes available, cleared selection")
         }

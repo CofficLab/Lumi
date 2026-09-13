@@ -39,6 +39,6 @@ final class LLMManagerCapabilityAdapter: LLMManagerCapability {
     }
 
     func select(providerID: String, model: String?) {
-        manager?.select(providerID: providerID, model: model)
+        manager?.select(providerID: providerID, model: model, reason: .userSelected)
     }
 }

@@ -519,7 +519,7 @@ struct FactoryLumiTests {
 
         try manager?.register(EchoManagedProvider(id: "echo"))
         // 启动时已选中内建列表首项 OpenAI；切到 echo 供应商再发送。
-        manager?.select(providerID: "echo", model: nil)
+        manager?.select(providerID: "echo", model: nil, reason: .userSelected)
         let response = try await manager?.complete(
             LLMRequest(
                 conversationID: UUID(),

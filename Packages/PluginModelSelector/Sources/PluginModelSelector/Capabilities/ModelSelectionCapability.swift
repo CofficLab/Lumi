@@ -87,7 +87,7 @@ final class ModelSelectionCapabilityAdapter: ModelSelectionCapability {
         if let conversationID = selectedConversationID, let conversations {
             conversations.selectModel(id: modelID.rawValue, for: conversationID)
         } else {
-            llmManager.select(modelID: modelID)
+            llmManager.select(modelID: modelID, reason: .userSelected)
         }
     }
 

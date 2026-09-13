@@ -69,7 +69,7 @@ struct PluginLLMManagerTests {
         let manager = CustomLLMManager()
         let provider = EchoProvider()
         try manager.register(provider)
-        manager.select(providerID: provider.providerInfo.id, model: nil)
+        manager.select(providerID: provider.providerInfo.id, model: nil, reason: .userSelected)
 
         #expect(manager.providerCount == 1)
         #expect(manager.selectedProviderID == provider.providerInfo.id)
@@ -109,7 +109,7 @@ struct PluginLLMManagerTests {
         let conversation = EchoProvider(id: "conversation", model: "conversation-model")
         try manager.register(global)
         try manager.register(conversation)
-        manager.select(providerID: "global", model: "global-model")
+        manager.select(providerID: "global", model: "global-model", reason: .userSelected)
 
         let response = try await manager.streamComplete(
             LLMRequest(
@@ -164,7 +164,7 @@ struct PluginLLMManagerTests {
         let manager = try #require(kernel.resolveProvider((any LLMManaging).self))
         try manager.register(EchoProvider(id: "global"))
         try manager.register(EchoProvider(id: "conversation"))
-        manager.select(providerID: "global", model: "echo-1")
+        manager.select(providerID: "global", model: "echo-1", reason: .userSelected)
 
         // 顶层对话创建后自动选中，但不能改写全局选择。
         let id = try conversations.createConversation(
@@ -192,7 +192,7 @@ struct PluginLLMManagerTests {
         let manager = try #require(kernel.resolveProvider((any LLMManaging).self))
         try manager.register(EchoProvider(id: "global"))
         try manager.register(EchoProvider(id: "conversation", model: "conversation-model"))
-        manager.select(providerID: "global", model: "echo-1")
+        manager.select(providerID: "global", model: "echo-1", reason: .userSelected)
 
         // 顶层对话创建后自动选中，随后用户在该对话内切换供应商与模型。
         let id = try conversations.createConversation(
@@ -247,7 +247,7 @@ struct PluginLLMManagerTests {
         let manager = try #require(kernel.resolveProvider((any LLMManaging).self))
         try manager.register(EchoProvider(id: "global"))
         try manager.register(EchoProvider(id: "other", model: "other-model"))
-        manager.select(providerID: "global", model: "echo-1")
+        manager.select(providerID: "global", model: "echo-1", reason: .userSelected)
 
         let selected = try conversations.createConversation(
             title: nil,

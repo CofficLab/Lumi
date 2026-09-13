@@ -78,7 +78,7 @@ import Testing
         Message(conversationID: conversationID, role: .user, content: "Current"),
         to: conversationID
     )
-    llmManager.select(providerID: provider.providerID, model: "another-model")
+    llmManager.select(providerID: provider.providerID, model: "another-model", reason: .userSelected)
 
     #expect(selectedConversations == [nil, conversationID])
     #expect(insertedMessages == [otherConversationID, conversationID])
@@ -91,7 +91,7 @@ import Testing
         Message(conversationID: conversationID, role: .assistant, content: "Done"),
         to: conversationID
     )
-    llmManager.select(providerID: provider.providerID, model: "third-model")
+    llmManager.select(providerID: provider.providerID, model: "third-model", reason: .userSelected)
 
     #expect(selectedConversations == [nil, conversationID])
     #expect(insertedMessages.count == 2)

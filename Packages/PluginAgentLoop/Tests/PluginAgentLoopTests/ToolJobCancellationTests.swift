@@ -228,5 +228,5 @@ private final class BlockingLLMManager: LLMManaging, LLMStreamingProviding, @unc
     var selectedProviderID: String? { providerID }
     var selectedModel: String? { "test-model" }
     func models(for providerID: String) -> [String] { ["test-model"] }
-    func select(providerID: String, model: String?) {}
+    func select(providerID: String, model: String?, reason: ModelSelectionReason) {}
 }

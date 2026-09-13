@@ -47,7 +47,7 @@ struct DefaultLLMProviderManagerProvidingTests {
         let manager = DefaultLLMProviderManagerProviding()
         try manager.register(MockManagedProvider(id: "a"))
         try manager.register(MockManagedProvider(id: "b"))
-        manager.select(providerID: "b", model: nil)
+        manager.select(providerID: "b", model: nil, reason: .userSelected)
 
         #expect(manager.selectedProviderID == "b")
         manager.unregister(id: "b")
@@ -82,13 +82,13 @@ struct DefaultLLMProviderManagerProvidingTests {
         try manager.register(MockManagedProvider(id: "a", models: ["a1"]))
         try manager.register(MockManagedProvider(id: "b", models: ["b1"], defaultModel: "b1"))
 
-        manager.select(providerID: "b", model: "b1")
+        manager.select(providerID: "b", model: "b1", reason: .userSelected)
         #expect(manager.selectedProviderID == "b")
         #expect(manager.selectedModel == "b1")
         #expect(manager.models(for: "b") == ["b1"])
 
         // 不存在的供应商被静默忽略。
-        manager.select(providerID: "missing", model: "x")
+        manager.select(providerID: "missing", model: "x", reason: .userSelected)
         #expect(manager.selectedProviderID == "b")
     }
 
@@ -103,7 +103,7 @@ struct DefaultLLMProviderManagerProvidingTests {
         let modelID = try #require(manager.modelID(providerID: "second/gateway", model: "gpt-5.5"))
         #expect(manager.modelRoute(for: modelID)?.providerID == "second/gateway")
         #expect(manager.provider(for: modelID)?.providerInfo.id == "second/gateway")
-        manager.select(modelID: modelID)
+        manager.select(modelID: modelID, reason: .userSelected)
 
         let response = try await manager.complete(LLMRequest(
             conversationID: UUID(),
@@ -158,7 +158,7 @@ struct DefaultLLMProviderManagerProvidingTests {
         let a = MockManagedProvider(id: "a", models: ["a1", "a2"], defaultModel: "a1")
         try manager.register(a)
 
-        manager.select(providerID: "a", model: "stale-not-exist")
+        manager.select(providerID: "a", model: "stale-not-exist", reason: .userSelected)
         let response = try await manager.complete(
             LLMRequest(conversationID: UUID(), messages: [makeMessage("hi")])
         )
@@ -177,7 +177,7 @@ struct DefaultLLMProviderManagerProvidingTests {
         try manager.register(a)
         try manager.register(b)
 
-        manager.select(providerID: "b", model: nil)
+        manager.select(providerID: "b", model: nil, reason: .userSelected)
         let response = try await manager.complete(
             LLMRequest(conversationID: UUID(), messages: [makeMessage("ping")])
         )
@@ -195,7 +195,7 @@ struct DefaultLLMProviderManagerProvidingTests {
         let conversation = MockManagedProvider(id: "conversation", models: ["conversation-model"], defaultModel: "conversation-model", prefix: "conversation")
         try manager.register(global)
         try manager.register(conversation)
-        manager.select(providerID: "global", model: "global-model")
+        manager.select(providerID: "global", model: "global-model", reason: .userSelected)
 
         let response = try await manager.complete(
             LLMRequest(
@@ -236,7 +236,7 @@ struct DefaultLLMProviderManagerProvidingTests {
         let manager = DefaultLLMProviderManagerProviding()
         let a = MockManagedProvider(id: "a", models: ["a1", "a2"], defaultModel: "a1", prefix: "A")
         try manager.register(a)
-        manager.select(providerID: "a", model: nil)
+        manager.select(providerID: "a", model: nil, reason: .userSelected)
 
         // 模拟会话残留模型（如 gpt-5）与当前供应商错配。
         let response = try await manager.complete(
@@ -265,7 +265,7 @@ struct DefaultLLMProviderManagerProvidingTests {
     func completeDoesNotMutateSelection() async throws {
         let manager = DefaultLLMProviderManagerProviding()
         try manager.register(MockManagedProvider(id: "a", models: ["a1"], defaultModel: "a1"))
-        manager.select(providerID: "a", model: "a1")
+        manager.select(providerID: "a", model: "a1", reason: .userSelected)
 
         _ = try await manager.complete(
             LLMRequest(conversationID: UUID(), messages: [makeMessage("hi")])
@@ -322,12 +322,13 @@ struct DefaultLLMProviderManagerProvidingTests {
         }
         #expect(removedID == "a")
         #expect(removeReason == .removed)
-        guard case .selectionChanged(let clearedProvider, let clearedModel) = events[1] else {
+        guard case .selectionChanged(let clearedProvider, let clearedModel, let clearedReason) = events[1] else {
             Issue.record("Expected selectionChanged, got \(events[1])")
             return
         }
         #expect(clearedProvider == nil)
         #expect(clearedModel == nil)
+        #expect(clearedReason == .providerChanged)
 
         handle.cancel()
     }
@@ -352,12 +353,13 @@ struct DefaultLLMProviderManagerProvidingTests {
 
         try manager.register(MockManagedProvider(id: "a", models: ["m1"], defaultModel: "m1"))
         #expect(events.count == 2)
-        guard case .selectionChanged(let providerID, let model) = events[1] else {
+        guard case .selectionChanged(let providerID, let model, let reason) = events[1] else {
             Issue.record("Expected selectionChanged, got \(events[1])")
             return
         }
         #expect(providerID == "a")
         #expect(model == "m1")
+        #expect(reason == .providerChanged)
 
         handle.cancel()
     }
@@ -372,20 +374,21 @@ struct DefaultLLMProviderManagerProvidingTests {
         // 首次注册已带 selectionChanged；此处清空后测 select 行为。
         events.removeAll()
 
-        manager.select(providerID: "a", model: "a1")
+        manager.select(providerID: "a", model: "a1", reason: .userSelected)
         #expect(events.isEmpty, "相同选中值不应重复投递")
 
-        manager.select(providerID: "a", model: "a2")
-        guard case .selectionChanged(let firstID, let firstModel) = events[0] else {
+        manager.select(providerID: "a", model: "a2", reason: .userSelected)
+        guard case .selectionChanged(let firstID, let firstModel, let firstReason) = events[0] else {
             Issue.record("Expected selectionChanged, got \(events[0])")
             return
         }
         #expect(firstID == "a")
         #expect(firstModel == "a2")
+        #expect(firstReason == .userSelected)
 
         events.removeAll()
         try manager.register(MockManagedProvider(id: "b", models: ["b1"], defaultModel: "b1"))
-        manager.select(providerID: "b", model: "b1")
+        manager.select(providerID: "b", model: "b1", reason: .userSelected)
 
         #expect(events.count == 2)
         guard case .providersChanged(let providerID, _) = events[0] else {
@@ -393,12 +396,66 @@ struct DefaultLLMProviderManagerProvidingTests {
             return
         }
         #expect(providerID == "b")
-        guard case .selectionChanged(let selID, let selModel) = events[1] else {
+        guard case .selectionChanged(let selID, let selModel, let selReason) = events[1] else {
             Issue.record("Expected selectionChanged, got \(events[1])")
             return
         }
         #expect(selID == "b")
         #expect(selModel == "b1")
+        #expect(selReason == .userSelected)
+
+        handle.cancel()
+    }
+
+    @Test("恢复持久化选中后，首次注册投递 .appRestore；后续注册回退为 .providerChanged")
+    func restoredSelectionBroadcastsAppRestoreOnce() throws {
+        let defaults = UserDefaults.standard
+        let modelIDKey = "com.coffic.lumi.llmProviderManager.selectedModelID"
+        let restored = try #require(LLMModelID(providerID: "a", modelID: "a1"))
+        defaults.set(restored.rawValue, forKey: modelIDKey)
+        defer { defaults.removeObject(forKey: modelIDKey) }
+
+        let manager = DefaultLLMProviderManagerProviding()
+        var events: [LLMManagerEvent] = []
+        let handle = manager.addObserver { events.append($0) }
+
+        // 首个注册让其所属 Provider 就位：校验通过，广播一次 `.appRestore`。
+        try manager.register(MockManagedProvider(id: "a", models: ["a1"], defaultModel: "a1"))
+        #expect(events.count == 2)
+        guard case .selectionChanged(let id, let model, let reason) = events[1] else {
+            Issue.record("Expected selectionChanged, got \(events[1])")
+            return
+        }
+        #expect(id == "a")
+        #expect(model == "a1")
+        #expect(reason == .appRestore)
+
+        // 第二次注册不重复广播恢复事件：新供应商自动选中回退为 `.providerChanged`。
+        events.removeAll()
+        try manager.register(MockManagedProvider(id: "b", models: ["b1"], defaultModel: "b1"))
+        manager.select(providerID: "b", model: "b1", reason: .userSelected)
+        let reasons = events.compactMap { event -> ModelSelectionReason? in
+            guard case .selectionChanged(_, _, let reason) = event else { return nil }
+            return reason
+        }
+        #expect(reasons.contains(.appRestore) == false)
+
+        handle.cancel()
+    }
+
+    @Test("无持久化选中时不广播 .appRestore")
+    func noRestoredSelectionDoesNotBroadcastAppRestore() throws {
+        let manager = DefaultLLMProviderManagerProviding()
+        var events: [LLMManagerEvent] = []
+        let handle = manager.addObserver { events.append($0) }
+
+        try manager.register(MockManagedProvider(id: "a", models: ["a1"], defaultModel: "a1"))
+        let reasons = events.compactMap { event -> ModelSelectionReason? in
+            guard case .selectionChanged(_, _, let reason) = event else { return nil }
+            return reason
+        }
+        #expect(reasons.contains(.appRestore) == false)
+        #expect(reasons.contains(.providerChanged))
 
         handle.cancel()
     }

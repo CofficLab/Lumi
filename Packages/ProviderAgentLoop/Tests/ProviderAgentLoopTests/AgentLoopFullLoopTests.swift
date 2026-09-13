@@ -74,7 +74,7 @@ struct AgentLoopFullLoopTests {
         var selectedProviderID: String? { "scripted-manager" }
         var selectedModel: String? { nil }
         func models(for providerID: String) -> [String] { [] }
-        func select(providerID: String, model: String?) {}
+        func select(providerID: String, model: String?, reason: ModelSelectionReason) {}
     }
 
     /// 可编程工具：返回预设结果。
