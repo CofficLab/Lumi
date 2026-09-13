@@ -60,7 +60,7 @@ final class ConversationRailTabController {
 
         conversationsObserver = context.conversations.addConversationObserver { [weak self] event in
             switch event {
-            case .selected:
+            case .selected, .automationChanged:
                 break
             default:
                 self?.scheduleRefresh()

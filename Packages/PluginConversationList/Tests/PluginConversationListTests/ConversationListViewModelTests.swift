@@ -125,6 +125,32 @@ import Testing
     contextObserver.cancel()
 }
 
+@Test @MainActor func automationLevelChangeUpdatesOnlyTheAffectedConversationRow() async throws {
+    let conversations = DefaultConversationManager()
+    let firstID = try conversations.createConversation(title: "First", projectPath: nil, providerID: nil, modelName: nil)
+    let secondID = try conversations.createConversation(title: "Second", projectPath: nil, providerID: nil, modelName: nil)
+    let context = makeListContext(conversations: conversations)
+    let contextObserver = ConversationListContextObserver(
+        conversations: conversations,
+        conversationState: nil,
+        context: context
+    )
+    let viewModel = ConversationListViewModel(
+        context: context,
+        attentionStore: ConversationAttentionStore(),
+        sortStabilizer: ConversationSortStabilizer(),
+        scope: .all
+    )
+    await viewModel.reload()
+
+    conversations.setAutomationLevel(.autonomous, for: firstID)
+
+    #expect(viewModel.conversations.first(where: { $0.id == firstID })?.automationLevel == .autonomous)
+    #expect(viewModel.conversations.first(where: { $0.id == secondID })?.automationLevel == nil)
+    viewModel.cancel()
+    contextObserver.cancel()
+}
+
 @MainActor
 private func makeListContext(
     conversations: any ConversationManaging,

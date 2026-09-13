@@ -185,7 +185,6 @@ extension ConversationManager {
         }
         conversations[index].automationLevel = automationLevel
         notifyConversationObservers(.automationChanged(conversationID))
-        notifyConversationsChanged()
 
         Task {
             await store?.updateConversationPreferences(id: conversationID, automationLevel: automationLevel)

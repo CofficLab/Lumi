@@ -17,6 +17,7 @@ import Testing
     let handle = context.addObserver { event in
         switch event {
         case .selectedConversationChanged(let id): events.append(.selection(id))
+        case .conversationAutomationChanged(let id): events.append(.automationChanged(id))
         case .conversationsChanged: events.append(.conversationsChanged)
         }
     }
@@ -70,10 +71,13 @@ import Testing
     )
     var conversationChanges = 0
     var selectionChanges = 0
+    var automationChanges: [UUID] = []
     let handle = context.addObserver { event in
         switch event {
         case .selectedConversationChanged:
             selectionChanges += 1
+        case .conversationAutomationChanged(let id):
+            automationChanges.append(id)
         case .conversationsChanged:
             conversationChanges += 1
         }
@@ -92,6 +96,11 @@ import Testing
     conversations.setVerbosity(.detailed, for: conversationID)
     #expect(conversationChanges == 1)
 
+    conversations.setAutomationLevel(.autonomous, for: conversationID)
+    conversations.setGlobalAutomationLevel(.chat)
+    #expect(conversationChanges == 1)
+    #expect(automationChanges == [conversationID])
+
     state.publish(.updated(conversationID))
     #expect(conversationChanges == 2)
 
@@ -107,6 +116,7 @@ import Testing
 
 private enum ContextEventSnapshot: Equatable {
     case selection(UUID?)
+    case automationChanged(UUID)
     case conversationsChanged
 }
 

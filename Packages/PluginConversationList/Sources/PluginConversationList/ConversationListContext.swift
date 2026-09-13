@@ -14,6 +14,7 @@ import ProviderProject
 final class ConversationListContext {
     enum Event {
         case selectedConversationChanged(UUID?)
+        case conversationAutomationChanged(UUID)
         case conversationsChanged
     }
 
@@ -81,6 +82,10 @@ final class ConversationListContext {
 
     func markConversationsChanged() {
         notify(.conversationsChanged)
+    }
+
+    func markAutomationLevelChanged(for conversationID: UUID) {
+        notify(.conversationAutomationChanged(conversationID))
     }
 
     func setSelectedConversationID(_ id: UUID?) {

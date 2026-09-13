@@ -60,6 +60,8 @@ final class ConversationListViewModel: ObservableObject {
             case let .selectedConversationChanged(id):
                 self?.selectedConversationID = id
                 self?.immediateSelectionID = id
+            case let .conversationAutomationChanged(id):
+                self?.updateAutomationLevel(for: id)
             case .conversationsChanged:
                 self?.scheduleReload()
             }
@@ -238,6 +240,13 @@ final class ConversationListViewModel: ObservableObject {
                 await reload()
             }
         }
+    }
+
+    private func updateAutomationLevel(for conversationID: UUID) {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
+        var updated = conversations[index]
+        updated.automationLevel = context.conversations.automationLevel(for: conversationID)
+        conversations[index] = updated
     }
 
     private func fetchPage(

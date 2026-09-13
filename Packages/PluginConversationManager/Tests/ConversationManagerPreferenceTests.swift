@@ -6,6 +6,24 @@ import Testing
 @MainActor
 @Suite(.serialized)
 struct ConversationManagerPreferenceTests {
+    @Test func automationPreferenceDoesNotPublishStructuralListChange() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ConversationAutomationTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let manager = ConversationManager(store: nil, dataDirectory: directory)
+        let conversationID = UUID()
+        manager.conversations = [ConversationSummary(id: conversationID, automationLevel: .chat)]
+        var events: [ConversationEvent] = []
+        let handle = manager.addConversationObserver { events.append($0) }
+        defer { handle.cancel() }
+
+        manager.setAutomationLevel(.autonomous, for: conversationID)
+
+        #expect(events == [.automationChanged(conversationID)])
+        #expect(manager.automationLevel(for: conversationID) == .autonomous)
+    }
+
     @Test func globalAndConversationPreferencesUpdateCacheAndNotifyObservers() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("ConversationPreferenceTests-\(UUID().uuidString)", isDirectory: true)
