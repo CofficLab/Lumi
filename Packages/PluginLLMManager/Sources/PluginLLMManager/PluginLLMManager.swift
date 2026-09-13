@@ -156,15 +156,14 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         ) { [weak manager, weak conversations] conversationID in
             guard let conversations,
                   conversationID == conversations.selectedConversationID,
-                  let providerID = conversations.providerID(for: conversationID),
-                  manager?.provider(id: providerID) != nil else { return }
+                  let selectedModelID = conversations.modelID(for: conversationID)
+                    .flatMap(LLMModelID.init(rawValue:)),
+                  let route = manager?.modelRoute(for: selectedModelID) else { return }
 
-            let model = conversations.modelName(for: conversationID)
-            let validModel = model.flatMap { manager?.models(for: providerID).contains($0) == true ? $0 : nil }
-            manager?.select(providerID: providerID, model: validModel)
+            manager?.select(modelID: route.modelID)
 
             if Self.verbose {
-                Self.logger.info("\(Self.t)global selection synced from conversation: provider=\(providerID, privacy: .public), model=\(validModel ?? "nil", privacy: .public)")
+                Self.logger.info("\(Self.t)global selection synced from conversation: modelID=\(route.modelID.rawValue, privacy: .public)")
             }
         }
     }

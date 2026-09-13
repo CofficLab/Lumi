@@ -9,8 +9,15 @@ import Testing
 @testable import PluginLLMManager
 
 @MainActor
-@Suite("PluginLLMManager")
+@Suite("PluginLLMManager", .serialized)
 struct PluginLLMManagerTests {
+
+    init() {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: "com.coffic.lumi.llmProviderManager.selectedModelID")
+        defaults.removeObject(forKey: "com.coffic.lumi.llmProviderManager.selectedProviderID")
+        defaults.removeObject(forKey: "com.coffic.lumi.llmProviderManager.selectedModel")
+    }
 
     /// onBoot 应替换 ProviderFactory 预注册的默认管理器，并注册本插件的实现。
     @Test("onBoot 替换默认 LLMManaging 为 CustomLLMManager")
@@ -72,6 +79,27 @@ struct PluginLLMManagerTests {
             messages: [LLMMessage(role: .user, content: "ping")]
         ))
         #expect(response.content == "echo:ping")
+    }
+
+    @Test("CustomLLMManager 按全局模型 ID 解析重复模型名")
+    func customManagerRoutesByGlobalModelID() async throws {
+        let manager = CustomLLMManager()
+        let first = EchoProvider(id: "first-gateway", model: "gpt-5.5")
+        let second = EchoProvider(id: "second-gateway", model: "gpt-5.5")
+        try manager.register(first)
+        try manager.register(second)
+        let modelID = try #require(manager.modelID(providerID: "second-gateway", model: "gpt-5.5"))
+
+        let response = try await manager.complete(LLMRequest(
+            conversationID: UUID(),
+            modelID: modelID,
+            messages: [LLMMessage(role: .user, content: "ping")],
+            model: "first-model"
+        ))
+
+        #expect(response.content == "second-gateway:ping")
+        #expect(second.receivedModels == ["gpt-5.5"])
+        #expect(first.receivedModels.isEmpty)
     }
 
     @Test("请求显式供应商时不会被 CustomLLMManager 的全局选择覆盖")
@@ -150,9 +178,9 @@ struct PluginLLMManagerTests {
         #expect(manager.selectedModel == "echo-1")
     }
 
-    /// 用户主动切换当前对话的供应商/模型时，应同步到全局选中。
-    @Test("切换当前对话的供应商/模型会同步到全局")
-    func selectedConversationChangeSyncsGlobalSelection() throws {
+    /// 对话模型 ID 是独立选择，不应改写全局模型 ID。
+    @Test("切换当前对话的模型不会同步到全局")
+    func selectedConversationModelDoesNotSyncGlobalSelection() throws {
         let kernel = KernelCoreContainer()
         let conversations = DefaultConversationManager()
         try kernel.registerProvider((any ConversationManaging).self, conversations)
@@ -175,13 +203,13 @@ struct PluginLLMManagerTests {
         )
         conversations.selectProvider(id: "conversation", model: "conversation-model", for: id)
 
-        #expect(manager.selectedProviderID == "conversation")
-        #expect(manager.selectedModel == "conversation-model")
+        #expect(manager.selectedProviderID == "global")
+        #expect(manager.selectedModel == "echo-1")
     }
 
-    /// 对话残留的过期模型不属于目标供应商时，全局模型应回退（置空）而非照搬。
-    @Test("不属于目标供应商的模型不会写入全局")
-    func staleModelFallsBackWhenSyncingGlobalSelection() throws {
+    /// 对话中暂存的过期模型 ID 不应改写全局模型选择。
+    @Test("对话过期模型 ID 不会改写全局选择")
+    func staleConversationModelDoesNotSyncGlobalSelection() throws {
         let kernel = KernelCoreContainer()
         let conversations = DefaultConversationManager()
         try kernel.registerProvider((any ConversationManaging).self, conversations)
@@ -192,6 +220,7 @@ struct PluginLLMManagerTests {
 
         let manager = try #require(kernel.resolveProvider((any LLMManaging).self))
         try manager.register(EchoProvider(id: "conversation", model: "conversation-model"))
+        let initialGlobalModelID = manager.selectedModelID
 
         let id = try conversations.createConversation(
             title: nil,
@@ -201,8 +230,7 @@ struct PluginLLMManagerTests {
         )
         conversations.selectProvider(id: "conversation", model: "stale-model", for: id)
 
-        #expect(manager.selectedProviderID == "conversation")
-        #expect(manager.selectedModel == nil)
+        #expect(manager.selectedModelID == initialGlobalModelID)
     }
 
     /// 非当前选中对话的供应商/模型变更不应干扰全局选中。
