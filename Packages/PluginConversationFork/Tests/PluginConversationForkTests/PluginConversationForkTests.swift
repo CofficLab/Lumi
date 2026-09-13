@@ -86,12 +86,35 @@ struct ConversationForkPluginTests {
 @MainActor
 private final class StubAgentLoop: AgentLoopProviding {
     private let messages: any MessageManaging
+    private var observers: [UUID: (AgentLoopEvent) -> Void] = [:]
+    private var messageObserver: (any MessageInsertedObserverHandle)?
+
     init(messages: any MessageManaging) {
         self.messages = messages
+        messageObserver = messages.addMessageInsertedObserver { [weak self] message, conversationID in
+            guard message.role == .user else { return }
+            Task { @MainActor in
+                _ = try? await self?.runTurn(in: conversationID)
+            }
+        }
+    }
+
+    func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return StubAgentLoopObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
     }
 
     func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
-        .completed
+        let event = AgentLoopEvent.completed(conversationID: conversationID, turnID: UUID())
+        for observer in observers.values {
+            observer(event)
+        }
+        return .completed
     }
 
     func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
@@ -105,4 +128,18 @@ private final class StubAgentLoop: AgentLoopProviding {
     func currentTurnID(for conversationID: UUID) -> UUID? { nil }
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
 
+}
+
+@MainActor
+private final class StubAgentLoopObserverHandle: AgentLoopObserverHandle {
+    private var cancelAction: (() -> Void)?
+
+    init(cancelAction: @escaping () -> Void) {
+        self.cancelAction = cancelAction
+    }
+
+    func cancel() {
+        cancelAction?()
+        cancelAction = nil
+    }
 }

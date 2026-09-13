@@ -61,8 +61,7 @@ struct ConversationForkButton: View {
             let newID = (try? conversations.createConversation(
                 title: oldSummary?.title,
                 projectPath: oldSummary?.projectPath,
-                providerID: conversations.providerID(for: currentID),
-                modelName: conversations.modelName(for: currentID)
+                modelID: conversations.modelID(for: currentID)
             )) ?? UUID()
             conversations.selectConversation(id: newID)
 

@@ -62,6 +62,7 @@ public struct ConversationSummarizer: @unchecked Sendable {
         do {
             let request = LLMRequest(
                 conversationID: conversationID,
+                modelID: conversations.modelID(for: conversationID).flatMap(LLMModelID.init(rawValue:)),
                 messages: [
                     LLMMessage(role: .system, content: Self.summarySystemPrompt),
                     LLMMessage(
@@ -69,7 +70,7 @@ public struct ConversationSummarizer: @unchecked Sendable {
                         content: "Conversation to summarize:\n\n\(Self.renderHistory(history))"
                     ),
                 ],
-                model: conversations.modelName(for: conversationID)
+                model: nil
             )
             let response = try await llmProvider.complete(request)
             let trimmed = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
