@@ -198,6 +198,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         scheduleBackgroundCompaction(
             for: LLMContextPreparationRequest(
                 conversationID: request.conversationID,
+                modelID: request.modelID,
                 providerID: request.providerID,
                 model: request.model,
                 budget: request.budget,
@@ -309,8 +310,23 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         guard isActive else { return }
 
         let history = await llmHistory(for: request.conversationID)
-        let providerID = request.providerID ?? activeProviderID
-        let modelName = request.model ?? conversations.modelName(for: request.conversationID)
+        let conversationModelID = conversations.modelID(for: request.conversationID)
+            .flatMap(LLMModelID.init(rawValue:))
+        let requestedModelID = request.modelID
+            ?? conversationModelID
+            ?? request.providerID.flatMap { providerID in
+                request.model.flatMap { llmProvider.modelID(providerID: providerID, model: $0) }
+            }
+        if let requestModelID = request.modelID,
+           llmProvider.modelRoute(for: requestModelID) == nil {
+            return
+        }
+        let route = requestedModelID.flatMap(llmProvider.modelRoute(for:))
+        let providerID = route?.providerID ?? request.providerID ?? activeProviderID
+        let modelName = route?.modelName ?? request.model ?? conversations.modelName(for: request.conversationID)
+        let modelID = route?.modelID ?? requestedModelID ?? providerID.flatMap { providerID in
+            modelName.flatMap { llmProvider.modelID(providerID: providerID, model: $0) }
+        }
         let existingSnapshot = summaries[request.conversationID]
         let compatibleSnapshot = existingSnapshot?.providerID == providerID
             && existingSnapshot?.modelName == modelName
@@ -332,12 +348,14 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
         // 摘要请求必须使用与当前请求相同的路由上下文；如果路由已切换，
         // 放弃本次预热，下一次请求会用新的 provider/model 重新调度。
-        if let providerID, providerID != activeProviderID {
+        if requestedModelID == nil, let providerID, providerID != activeProviderID {
             return
         }
 
         let summaryRequest = LLMRequest(
             conversationID: request.conversationID,
+            providerID: route?.providerID ?? providerID,
+            modelID: modelID,
             messages: [
                 LLMMessage(role: .system, content: Self.summarySystemPrompt),
                 LLMMessage(role: .user, content: Self.renderSummaryInput(source.messages)),
@@ -633,18 +651,23 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         for conversationID: UUID,
         mode: LLMContextPreparationMode
     ) -> LLMContextPreparationRequest {
-        let providerID = activeProviderID
+        let conversationModelID = conversations.modelID(for: conversationID)
+            .flatMap(LLMModelID.init(rawValue:))
+        let selectedModelID = conversationModelID ?? llmProvider.selectedModelID
+        let route = selectedModelID.flatMap(llmProvider.modelRoute(for:))
+        let providerID = route?.providerID ?? activeProviderID
         let provider = providerID.flatMap { llmProvider.provider(id: $0) }
-        let requestedModel = conversations.modelName(for: conversationID)
-        let model = provider?.providerInfo.models.contains(where: { $0.id == requestedModel }) == true
+        let requestedModel = route?.modelName ?? conversations.modelName(for: conversationID)
+        let model = route?.modelName ?? (provider?.providerInfo.models.contains(where: { $0.id == requestedModel }) == true
             ? requestedModel
             : llmProvider.selectedModel
                 ?? provider?.providerInfo.defaultModel
-                ?? requestedModel
-        let modelInfo = provider?.providerInfo.models.first { $0.id == model }
+                ?? requestedModel)
+        let modelInfo = route?.modelInfo ?? provider?.providerInfo.models.first { $0.id == model }
             ?? provider?.providerInfo.models.first { $0.id == provider?.providerInfo.defaultModel }
         return LLMContextPreparationRequest(
             conversationID: conversationID,
+            modelID: route?.modelID,
             providerID: providerID,
             model: model,
             budget: .conservative(
