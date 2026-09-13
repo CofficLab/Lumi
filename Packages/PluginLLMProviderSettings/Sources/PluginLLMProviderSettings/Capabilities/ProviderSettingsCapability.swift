@@ -12,9 +12,12 @@ protocol ProviderSettingsCapability: AnyObject {
     var allProviders: [any SuperLLMProvider] { get }
     var selectedProviderID: String? { get }
     var selectedModel: String? { get }
+    var selectedModelID: String? { get }
 
     func provider(id: String) -> (any SuperLLMProvider)?
     func select(providerID: String, model: String?)
+    func modelID(providerID: String, model: String) -> String?
+    func select(modelID: String)
 
     // MARK: API Key
 
@@ -63,12 +66,25 @@ final class ProviderSettingsCapabilityAdapter: ProviderSettingsCapability {
         manager.selectedModel
     }
 
+    var selectedModelID: String? {
+        manager.selectedModelID?.rawValue
+    }
+
     func provider(id: String) -> (any SuperLLMProvider)? {
         manager.provider(id: id)
     }
 
     func select(providerID: String, model: String?) {
         manager.select(providerID: providerID, model: model)
+    }
+
+    func modelID(providerID: String, model: String) -> String? {
+        manager.modelID(providerID: providerID, model: model)?.rawValue
+    }
+
+    func select(modelID: String) {
+        guard let modelID = LLMModelID(rawValue: modelID) else { return }
+        manager.select(modelID: modelID)
     }
 
     func apiKey(for providerID: String) -> String {

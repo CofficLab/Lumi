@@ -19,8 +19,7 @@ final class ProviderDetailViewModel: ObservableObject {
     @Published private(set) var websiteURL: URL?
     @Published private(set) var isLocal: Bool
     @Published private(set) var models: [LLMModelInfo] = []
-    @Published private(set) var selectedProviderID: String?
-    @Published private(set) var selectedModel: String?
+    @Published private(set) var selectedModelID: String?
     @Published private(set) var downloadCapability: (any ModelDownloadCapability)?
     @Published private(set) var downloadViewModel: ProviderModelDownloadViewModel?
 
@@ -41,8 +40,7 @@ final class ProviderDetailViewModel: ObservableObject {
         websiteURL = info?.websiteURL
         isLocal = info?.isLocal ?? false
         models = info?.models ?? []
-        selectedProviderID = capability.selectedProviderID
-        selectedModel = capability.selectedModel
+        selectedModelID = capability.selectedModelID
         downloadCapability = capability.makeModelDownloadCapability(for: providerID)
         isCustomProvider = capability.isCustomProvider(id: providerID)
         loadAPIKey()
@@ -60,13 +58,13 @@ final class ProviderDetailViewModel: ObservableObject {
     // MARK: - 用户意图
 
     func select(modelID: String) {
-        capability.select(providerID: providerID, model: modelID)
-        selectedProviderID = capability.selectedProviderID
-        selectedModel = capability.selectedModel
+        guard let globalModelID = capability.modelID(providerID: providerID, model: modelID) else { return }
+        capability.select(modelID: globalModelID)
+        selectedModelID = capability.selectedModelID
     }
 
     func isModelSelected(_ modelID: String) -> Bool {
-        selectedProviderID == providerID && selectedModel == modelID
+        capability.modelID(providerID: providerID, model: modelID) == selectedModelID
     }
 
     func saveAPIKey() {
