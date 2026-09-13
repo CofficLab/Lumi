@@ -1,4 +1,5 @@
 import Foundation
+import KitLLM
 import ProviderConversation
 import Testing
 @testable import PluginConversationManager
@@ -33,7 +34,27 @@ struct ConversationStoreTests {
         #expect(page.first?.title == "测试对话")
         #expect(page.first?.verbosity == .brief)
         #expect(page.first?.projectPath == "/tmp/project-a")
+        #expect(page.first?.modelID == LLMModelID(providerID: "openai", modelID: "gpt-4")?.rawValue)
         #expect(page.first?.providerID == "openai")
+    }
+
+    @Test("新对话只持久化全局唯一模型 ID")
+    func createStoresOnlyModelID() async throws {
+        let (store, dir) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let id = UUID()
+        let selectionID = try #require(LLMModelID(providerID: "gateway/alpha", modelID: "model:latest"))
+        let created = try await store.createConversation(
+            id: id,
+            title: "模型 ID 持久化",
+            modelID: selectionID.rawValue
+        )
+
+        #expect(created.modelID == selectionID.rawValue)
+        #expect(created.providerId == nil)
+        #expect(created.modelName == nil)
+        #expect(await store.fetchConversation(id: id)?.modelID == selectionID.rawValue)
     }
 
     @Test("更新会话详细程度后可持久化")

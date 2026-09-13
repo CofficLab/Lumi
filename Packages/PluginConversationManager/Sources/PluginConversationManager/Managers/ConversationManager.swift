@@ -109,6 +109,7 @@ public final class ConversationManager: ConversationManaging, SuperLog {
 
         // Synchronous load on MainActor - the store.fetchConversations is async but we await it
         Task { @MainActor in
+            _ = await store.migrateLegacyModelSelections()
             let persistedSelectedID = self.loadPersistedSelectedConversationID()
             var loaded = await store.fetchConversationPage(limit: Self.initialPageSize)
 
