@@ -124,14 +124,16 @@ import Testing
 
 @MainActor
 private final class ContextSizeTestLLMProvider: SuperLLMProvider, @unchecked Sendable {
-    let providerID = "context-size-test"
-    let providerInfo = LLMProviderInfo(
-        id: "context-size-test",
-        displayName: "Context Size Test",
-        defaultModel: "default-model",
-        models: [],
-        isLocal: true
-    )
+    let providerID = "context-size-test-\(UUID().uuidString)"
+    var providerInfo: LLMProviderInfo {
+        LLMProviderInfo(
+            id: providerID,
+            displayName: "Context Size Test",
+            defaultModel: "default-model",
+            models: [LLMModelInfo(id: "another-model"), LLMModelInfo(id: "third-model")],
+            isLocal: true
+        )
+    }
 
     func complete(_ request: LLMRequest) async throws -> LLMResponse {
         LLMResponse(content: "")

@@ -24,6 +24,7 @@ let package = Package(
             name: "PluginConversationContextSize",
             dependencies: [
                 "KernelCore",
+                .product(name: "KitLLM", package: "KitLLM"),
                 "KitSuperLog",
                 "ProviderChatSection",
                 "ProviderConversation",
