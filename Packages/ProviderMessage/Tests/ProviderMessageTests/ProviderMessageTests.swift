@@ -169,4 +169,92 @@ struct ProviderMessageTests {
         #expect(content.contains("content is not decoded"))
         #expect(!content.contains("AAEC"))
     }
+
+    @Test("no attachments returns original content unchanged")
+    func emptyAttachmentsReturnContent() {
+        let content = "plain user text"
+        #expect(UserAttachmentMetadata.appendingFileAttachments([], to: content) == content)
+    }
+
+    @Test("attachments to empty content render only the blocks")
+    func attachmentsWithEmptyContent() {
+        let content = UserAttachmentMetadata.appendingFileAttachments(
+            [UserFileAttachment(fileName: "a.txt", mimeType: "text/plain", textContent: "AAA")],
+            to: ""
+        )
+        #expect(content.hasPrefix("<attached_file"))
+        #expect(content.contains("</attached_file>"))
+        #expect(!content.contains("\n\n\n"))
+    }
+
+    @Test("special characters in names are attribute-escaped")
+    func escapesAttributeCharacters() {
+        let content = UserAttachmentMetadata.appendingFileAttachments(
+            [UserFileAttachment(
+                fileName: #"a<b>&"c".txt"#,
+                mimeType: "text/plain",
+                textContent: "x"
+            )],
+            to: ""
+        )
+        #expect(content.contains(#"name="a&lt;b&gt;&amp;&quot;c&quot;.txt""#))
+    }
+
+    @Test("multiple attachments are separated by a blank line")
+    func multipleAttachmentsJoined() {
+        let content = UserAttachmentMetadata.appendingFileAttachments(
+            [
+                UserFileAttachment(fileName: "1.txt", mimeType: "text/plain", textContent: "one"),
+                UserFileAttachment(fileName: "2.txt", mimeType: "text/plain", textContent: "two"),
+            ],
+            to: ""
+        )
+        #expect(content.components(separatedBy: "</attached_file>").count == 3)
+        #expect(content.contains("one"))
+        #expect(content.contains("two"))
+    }
+
+    @Test("file attachment metadata round-trips through encode/decode")
+    func fileAttachmentCodecRoundTrip() {
+        let attachments = [
+            UserFileAttachment(fileName: "n.md", mimeType: "text/markdown", textContent: "body"),
+            UserFileAttachment(fileName: "p.bin", mimeType: "application/octet-stream", base64Data: "QQ=="),
+        ]
+        let metadata = UserAttachmentMetadata.encodeFileAttachments(attachments)
+        let decoded = UserAttachmentMetadata.decodeFileAttachments(from: metadata)
+        #expect(decoded == attachments)
+
+        #expect(UserAttachmentMetadata.decodeFileAttachments(from: [:]).isEmpty)
+        #expect(UserAttachmentMetadata.decodeFileAttachments(from: ["bad": "{!!"]).isEmpty)
+    }
+
+    @Test("image attachment metadata round-trips")
+    func imageAttachmentCodecRoundTrip() {
+        let images = [
+            UserImageAttachment(mimeType: "image/png", base64Data: "QQ==", fileName: "a.png"),
+        ]
+        let metadata = UserAttachmentMetadata.encodeImageAttachments(images)
+        let decoded = UserAttachmentMetadata.decodeImageAttachments(from: metadata)
+        #expect(decoded == images)
+    }
+
+    @Test("extract reads the latest user message carrying file attachments")
+    func extractLatestUserFileAttachments() {
+        let conv = UUID()
+        let older = Message(
+            conversationID: conv, role: .user, content: "old",
+            metadata: [UserAttachmentMetadata.fileAttachmentsKey: "[]"]
+        )
+        let files = [UserFileAttachment(fileName: "x.txt", mimeType: "text/plain", textContent: "x")]
+        let recentMetadata = UserAttachmentMetadata.encodeFileAttachments(files)
+        let recent = Message(
+            conversationID: conv, role: .user, content: "new", metadata: recentMetadata
+        )
+        let assistant = Message(conversationID: conv, role: .assistant, content: "reply")
+
+        #expect(UserAttachmentMetadata.extractFileAttachments(from: [older, assistant, recent]) == files)
+        #expect(UserAttachmentMetadata.extractFileAttachments(from: [assistant]).isEmpty)
+        // older message carries the key but decodes to an empty list.
+        #expect(UserAttachmentMetadata.extractFileAttachments(from: [older]).isEmpty)
+    }
 }
