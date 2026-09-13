@@ -1,4 +1,5 @@
 import Foundation
+import KitLLM
 
 /// 选中对话变化观察者的注册令牌。
 ///
@@ -137,6 +138,12 @@ public protocol ConversationManaging: AnyObject {
 
     // MARK: - Provider/Model
 
+    /// 获取对话绑定的全局唯一模型 ID。
+    func modelID(for conversationID: UUID?) -> String?
+
+    /// 为指定对话设置全局唯一模型 ID。
+    func selectModel(id: String, for conversationID: UUID?)
+
     /// 获取指定对话绑定的供应商 ID
     func providerID(for conversationID: UUID?) -> String?
 
@@ -213,6 +220,45 @@ public protocol ConversationManaging: AnyObject {
 
     /// 设置指定对话的回复语言
     func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?)
+}
+
+public extension ConversationManaging {
+    func modelID(for conversationID: UUID?) -> String? {
+        guard let providerID = providerID(for: conversationID),
+              let modelName = modelName(for: conversationID) else { return nil }
+        return LLMModelID(providerID: providerID, modelID: modelName)?.rawValue
+    }
+
+    func selectModel(id: String, for conversationID: UUID?) {
+        guard let modelID = LLMModelID(rawValue: id) else { return }
+        selectProvider(id: modelID.providerID, model: modelID.modelID, for: conversationID)
+    }
+
+    func createConversation(title: String?, projectPath: String?, modelID: String?) throws -> UUID {
+        let parsed = modelID.flatMap(LLMModelID.init(rawValue:))
+        return try createConversation(
+            title: title,
+            projectPath: projectPath,
+            providerID: parsed?.providerID,
+            modelName: parsed?.modelID
+        )
+    }
+
+    func createConversation(
+        title: String?,
+        projectPath: String?,
+        modelID: String?,
+        parentConversationID: UUID?
+    ) throws -> UUID {
+        let parsed = modelID.flatMap(LLMModelID.init(rawValue:))
+        return try createConversation(
+            title: title,
+            projectPath: projectPath,
+            providerID: parsed?.providerID,
+            modelName: parsed?.modelID,
+            parentConversationID: parentConversationID
+        )
+    }
 }
 
 /// Lightweight compatibility defaults for providers and test doubles that do
