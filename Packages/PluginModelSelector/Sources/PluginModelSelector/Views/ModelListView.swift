@@ -136,7 +136,7 @@ struct ModelListView: View {
                         ForEach(visibleModels, id: \.self) { model in
                             let modelInfo = modelInfos[model]
                             let displayName = modelInfo?.displayName ?? model
-                            let isSelected = model == viewModel.selectedModel
+                            let isSelected = viewModel.isSelected(providerID: providerID, model: model)
 
                             ModelListItem(
                                 displayName: displayName,
