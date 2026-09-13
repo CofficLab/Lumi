@@ -505,25 +505,19 @@ extension AgentLoopManager {
         }
         let reasoningEffort = conversations.reasoningEffortOptional(for: conversationID)
             .flatMap { $0.rawValue }
-        let conversationProviderID = resolvedProviderID(for: conversationID)
-        let routingProviderID = conversationProviderID
-            ?? llmManager.selectedProviderID
-            ?? llmManager.allProviders().first?.providerInfo.id
-        let routingProvider = routingProviderID.flatMap { llmManager.provider(id: $0) }
-        let requestedModel = conversations.modelName(for: conversationID)
-        let modelName = routingProvider?.providerInfo.models.contains(where: { $0.id == requestedModel }) == true
-            ? requestedModel
-            : conversationProviderID == nil
-                ? llmManager.selectedModel
-                    ?? routingProvider?.providerInfo.defaultModel
-                    ?? requestedModel
-                : routingProvider?.providerInfo.defaultModel
-                    ?? requestedModel
-        let modelInfo = routingProvider?.providerInfo.models.first { $0.id == modelName }
-            ?? routingProvider?.providerInfo.models.first { $0.id == routingProvider?.providerInfo.defaultModel }
+        var runtime = runtimes[conversationID] ?? TurnRuntime()
+        if runtime.modelRoute == nil {
+            runtime.modelRoute = resolveModelRoute(for: conversationID)
+            runtimes[conversationID] = runtime
+        }
+        let modelRoute = runtime.modelRoute
+        let routingProviderID = modelRoute?.providerID
+        let modelName = modelRoute?.modelName
+        let modelInfo = modelRoute?.modelInfo
         let toolSchemaTokens = estimateToolSchemaTokens(schemas)
         let contextRequest = LLMContextPreparationRequest(
             conversationID: conversationID,
+            modelID: modelRoute?.modelID,
             providerID: routingProviderID,
             model: modelName,
             budget: .conservative(
@@ -573,6 +567,7 @@ extension AgentLoopManager {
         let request = LLMRequest(
             conversationID: conversationID,
             providerID: routingProviderID,
+            modelID: modelRoute?.modelID,
             messages: preparedMessages,
             model: modelName,
             tools: schemas.isEmpty ? nil : schemas,

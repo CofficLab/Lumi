@@ -299,6 +299,7 @@ func testAgentLoopUsesConversationProviderAndModel() async throws {
     #expect(outcome == .completed)
     let request = try #require(llmManager.requests.first)
     #expect(request.providerID == "conversation-provider")
+    #expect(request.modelID == LLMModelID(providerID: "conversation-provider", modelID: "conversation-model"))
     #expect(request.model == "conversation-model")
 }
 
