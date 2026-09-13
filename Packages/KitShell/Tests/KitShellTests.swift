@@ -665,3 +665,50 @@ struct ShellErrorTests {
         #expect(error.errorDescription?.contains("decode") == true)
     }
 }
+
+@Suite("BoundedOutputBuffer")
+struct BoundedOutputBufferTests {
+    @Test("empty append is a no-op")
+    func emptyAppendNoOp() {
+        let buf = BoundedOutputBuffer(maxBytes: 100)
+        buf.append(Data())
+        #expect(buf.getString() == "")
+        #expect(!buf.isTruncated)
+    }
+
+    @Test("chunks under the cap are retained verbatim")
+    func retainsUpToCap() {
+        let buf = BoundedOutputBuffer(maxBytes: 10)
+        buf.append(Data("abc".utf8))
+        buf.append(Data("def".utf8))
+        #expect(buf.getString() == "abcdef")
+        #expect(!buf.isTruncated)
+    }
+
+    @Test("chunk exceeding the cap keeps only the remainder and marks truncated")
+    func overflowTruncates() {
+        let buf = BoundedOutputBuffer(maxBytes: 5)
+        buf.append(Data("abc".utf8))          // 3 bytes
+        buf.append(Data("defgh".utf8))        // only "de" fits (remaining 2)
+        #expect(buf.getString() == "abcde")
+        #expect(buf.isTruncated)
+    }
+
+    @Test("further appends once full are dropped")
+    func furtherAppendsDropped() {
+        let buf = BoundedOutputBuffer(maxBytes: 3)
+        buf.append(Data("abc".utf8))
+        #expect(!buf.isTruncated)
+        buf.append(Data("xyz".utf8))
+        #expect(buf.isTruncated)
+        #expect(buf.getString() == "abc")
+    }
+
+    @Test("maxBytes of zero truncates immediately")
+    func zeroCapTruncates() {
+        let buf = BoundedOutputBuffer(maxBytes: 0)
+        buf.append(Data("abc".utf8))
+        #expect(buf.getString() == "")
+        #expect(buf.isTruncated)
+    }
+}
