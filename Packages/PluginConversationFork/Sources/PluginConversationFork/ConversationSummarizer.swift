@@ -54,7 +54,7 @@ public struct ConversationSummarizer: @unchecked Sendable {
 
     @MainActor
     public func summarize(conversationID: UUID) async -> Outcome {
-        let history = filteredMessages(await messages.messagesSnapshot(in: conversationID))
+        let history = Self.filteredMessages(await messages.messagesSnapshot(in: conversationID))
         guard !history.isEmpty else {
             return Outcome(summary: fallbackSummary(from: history), usedFallback: true)
         }
@@ -85,7 +85,7 @@ public struct ConversationSummarizer: @unchecked Sendable {
 
     // MARK: - Private
 
-    private func filteredMessages(_ history: [Message]) -> [Message] {
+    static func filteredMessages(_ history: [Message]) -> [Message] {
         let visible = history
             .filter { $0.role == .user || $0.role == .assistant }
             .filter { !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }

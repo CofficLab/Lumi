@@ -61,6 +61,44 @@ struct ConversationForkPluginTests {
         #expect(rendered.contains("Assistant: hello"))
     }
 
+    @Test("filteredMessages 只保留 user/assistant 且非空消息")
+    func filteredMessagesDropsIrrelevantRolesAndEmpty() {
+        let id = UUID()
+        let history = [
+            Message(conversationID: id, role: .system, content: "system prompt"),
+            Message(conversationID: id, role: .user, content: "   "),
+            Message(conversationID: id, role: .user, content: "real question"),
+            Message(conversationID: id, role: .assistant, content: "answer"),
+        ]
+        let result = ConversationSummarizer.filteredMessages(history)
+        #expect(result.map(\.content) == ["real question", "answer"])
+    }
+
+    @Test("filteredMessages 仅保留最近 maxMessages 条")
+    func filteredMessagesKeepsRecentOnly() {
+        let id = UUID()
+        var history: [Message] = []
+        for i in 0..<(ConversationSummarizer.maxMessages + 5) {
+            history.append(Message(conversationID: id, role: .user, content: "m\(i)"))
+        }
+        let result = ConversationSummarizer.filteredMessages(history)
+        #expect(result.count == ConversationSummarizer.maxMessages)
+        #expect(result.first?.content == "m5")
+        #expect(result.last?.content == "m\(ConversationSummarizer.maxMessages + 4)")
+    }
+
+    @Test("filteredMessages 截断超长单条消息")
+    func filteredMessagesTruncatesLongContent() {
+        let id = UUID()
+        let long = String(repeating: "x", count: ConversationSummarizer.maxCharsPerMessage + 100)
+        let result = ConversationSummarizer.filteredMessages([
+            Message(conversationID: id, role: .user, content: long),
+        ])
+        #expect(result.count == 1)
+        #expect(result[0].content.hasSuffix("…[truncated]"))
+        #expect(result[0].content.count == ConversationSummarizer.maxCharsPerMessage + "…[truncated]".count)
+    }
+
     @Test("Fork 按钮通过 sender 发送摘要到新对话")
     func forkSendsSummary() async throws {
         let conversations = DefaultConversationManager()
