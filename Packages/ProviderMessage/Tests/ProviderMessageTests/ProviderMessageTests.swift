@@ -257,4 +257,75 @@ struct ProviderMessageTests {
         // older message carries the key but decodes to an empty list.
         #expect(UserAttachmentMetadata.extractFileAttachments(from: [older]).isEmpty)
     }
+
+    @Test("isContextCompaction matches renderKind or metadata marker")
+    func isContextCompactionDetection() {
+        let conv = UUID()
+        let byRenderKind = Message(
+            conversationID: conv, role: .system, content: "", renderKind: "context-compaction"
+        )
+        let byMetadata = Message(
+            conversationID: conv, role: .system, content: "",
+            metadata: ["lumi.timelineEvent": "context-compaction"]
+        )
+        let plain = Message(conversationID: conv, role: .user, content: "hi")
+
+        #expect(MessageTimelineEvent.isContextCompaction(byRenderKind))
+        #expect(MessageTimelineEvent.isContextCompaction(byMetadata))
+        #expect(!MessageTimelineEvent.isContextCompaction(plain))
+    }
+
+    @Test("isActualContextCompaction requires the actual marker")
+    func actualCompactionRequiresMarker() {
+        let conv = UUID()
+        let legacyMarker = Message(
+            conversationID: conv, role: .system, content: "",
+            metadata: ["lumi.timelineEvent": "context-compaction"]
+        )
+        let actual = Message(
+            conversationID: conv, role: .system, content: "",
+            metadata: [
+                "lumi.timelineEvent": "context-compaction",
+                "contextCompactionActual": "true",
+            ]
+        )
+
+        #expect(!MessageTimelineEvent.isActualContextCompaction(legacyMarker))
+        #expect(MessageTimelineEvent.isActualContextCompaction(actual))
+    }
+
+    @Test("compactionReason maps known values and falls back to legacy")
+    func compactionReasonMapping() {
+        let conv = UUID()
+        func msg(_ raw: String?) -> Message {
+            Message(
+                conversationID: conv, role: .system, content: "",
+                metadata: raw.map { ["contextCompactionReason": $0] } ?? [:]
+            )
+        }
+
+        #expect(MessageTimelineEvent.compactionReason(for: msg("hard-threshold")) == .hardThreshold)
+        #expect(MessageTimelineEvent.compactionReason(for: msg("emergency")) == .emergency)
+        #expect(MessageTimelineEvent.compactionReason(for: msg("context-limit-retry")) == .contextLimitRetry)
+        #expect(MessageTimelineEvent.compactionReason(for: msg("unknown")) == .legacy)
+        #expect(MessageTimelineEvent.compactionReason(for: msg(nil)) == .legacy)
+    }
+
+    @Test("integerMetadata parses int strings and tolerates missing or non-numeric")
+    func integerMetadataParsing() {
+        let conv = UUID()
+        let numeric = Message(
+            conversationID: conv, role: .system, content: "",
+            metadata: ["k": "123"]
+        )
+        let nonNumeric = Message(
+            conversationID: conv, role: .system, content: "",
+            metadata: ["k": "abc"]
+        )
+        let missing = Message(conversationID: conv, role: .system, content: "")
+
+        #expect(MessageTimelineEvent.integerMetadata("k", from: numeric) == 123)
+        #expect(MessageTimelineEvent.integerMetadata("k", from: nonNumeric) == nil)
+        #expect(MessageTimelineEvent.integerMetadata("k", from: missing) == nil)
+    }
 }
