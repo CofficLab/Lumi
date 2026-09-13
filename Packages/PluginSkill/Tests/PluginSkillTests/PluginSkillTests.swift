@@ -1,11 +1,8 @@
-import Combine
 import Foundation
 import Testing
 import KernelCore
 import ProviderChatSection
 import ProviderLifecycleHooks
-import ProviderAgentLoop
-import ProviderMessage
 import ProviderProject
 import ProviderSkill
 
@@ -14,26 +11,6 @@ import ProviderSkill
 @Suite("SkillPlugin")
 @MainActor
 struct SkillPluginTests {
-    /// 内存 ProjectProviding stub。
-    @MainActor
-    private final class StubProject: ProjectProviding {
-        var currentProject: ProjectInfo?
-        var projects: [ProjectInfo] = []
-        var openFileURLs: [URL] = []
-        var currentFileURL: URL?
-        @Published var tick = false
-        init(path: String?) {
-            currentProject = path.map { ProjectInfo(name: "test", path: $0) }
-        }
-        func openProject(at path: String, reason: ProjectChangeReason) async throws {}
-        func closeProject(reason: ProjectChangeReason) async {}
-        func refreshProjects() async throws {}
-        func updateCurrentFile(_ fileURL: URL?) {}
-        func updateOpenFiles(_ fileURLs: [URL]) {}
-        func closeFile(_ fileURL: URL) {}
-        func synchronizeProjects(_ projects: [ProjectInfo]) {}
-    }
-
     /// Mock scanner：返回固定技能列表。
     private struct MockScanner: SkillScanning {
         let skills: [SkillMetadata]
@@ -120,20 +97,88 @@ struct SkillPluginTests {
     }
 
     @Test("插件 onBoot 注册工具栏且不抛错")
-    func pluginLifecycle() throws {
+    func pluginLifecycle() async throws {
         let kernel = KernelCoreContainer()
-        let project = StubProject(path: "/tmp/proj")
+        let project = DefaultProjectProvider()
+        try await project.openProject(at: "/tmp/proj")
         let chat = DefaultChatSectionProviding()
-        let messages = DefaultMessageManager()
-        let loop = StubAgentLoop(messages: messages)
+        let skillProvider = DefaultSkillProvider()
+        let hooks = DefaultLifecycleHooksProvider()
         try kernel.registerProvider((any ProjectProviding).self, project)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
-        try kernel.registerProvider((any AgentLoopProviding).self, loop)
+        try kernel.registerProvider((any SkillProviding).self, skillProvider)
+        try kernel.registerProvider((any LifecycleHooksProviding).self, hooks)
 
         let plugin = SkillPlugin()
         try plugin.onBoot(kernel: kernel)
         #expect(kernel.resolveProvider((any ProjectProviding).self) != nil)
+        #expect(chat.barItems.map(\.id) == ["com.coffic.lumi.plugin.skill.toolbar"])
+        #expect(skillProvider.isProviderRegistered(providerID: SkillPlugin.builtinContributorID))
+        #expect(hooks.revision == 1)
+
         try plugin.onShutdown(kernel: kernel)
+        #expect(chat.barItems.isEmpty)
+        #expect(!skillProvider.isProviderRegistered(providerID: SkillPlugin.builtinContributorID))
+        #expect(hooks.revision == 2)
+    }
+
+    @Test("当前项目和技能贡献变化会更新工具栏 ViewModel")
+    func toolbarObserverUpdatesViewModel() async throws {
+        let project = DefaultProjectProvider()
+        let skills = DefaultSkillProvider()
+        let baseSkill = SkillMetadata(name: "shared", title: "Shared", description: "")
+        skills.addProvider(StaticSkillContributor(providerID: "tests.base", skills: [baseSkill]))
+
+        let service = SkillService(
+            scanner: ProjectPathScanner(),
+            builtinProvider: EmptyBuiltin()
+        )
+        let viewModel = SkillChatToolbarViewModel(service: service)
+        let observer = SkillChatToolbarObserver(
+            projectProvider: project,
+            skillProvider: skills,
+            viewModel: viewModel
+        )
+
+        #expect(viewModel.currentProjectPath == nil)
+        #expect(viewModel.skills.map(\.name) == ["shared"])
+
+        try await project.openProject(at: "/tmp/skill-project-one")
+        await waitUntil { viewModel.skills.contains { $0.name == "skill-project-one" } }
+        #expect(viewModel.currentProjectPath == "/tmp/skill-project-one")
+        #expect(viewModel.skills.map(\.name).contains("shared"))
+
+        try await project.openProject(at: "/tmp/skill-project-two")
+        #expect(viewModel.currentProjectPath == "/tmp/skill-project-two")
+        #expect(viewModel.skills.map(\.name) == ["shared"])
+        await waitUntil { viewModel.skills.contains { $0.name == "skill-project-two" } }
+        #expect(!viewModel.skills.contains { $0.name == "skill-project-one" })
+
+        let contributedSkill = SkillMetadata(name: "extra", title: "Extra", description: "")
+        skills.addProvider(StaticSkillContributor(providerID: "tests.extra", skills: [contributedSkill]))
+        await waitUntil {
+            viewModel.skills.contains { $0.name == "extra" }
+                && viewModel.skills.contains { $0.name == "skill-project-two" }
+        }
+
+        await project.closeProject()
+        #expect(viewModel.currentProjectPath == nil)
+        #expect(Set(viewModel.skills.map(\.name)) == ["extra", "shared"])
+
+        observer.cancel()
+        try await project.openProject(at: "/tmp/skill-project-ignored")
+        #expect(viewModel.currentProjectPath == nil)
+        viewModel.cancel()
+    }
+
+    private func waitUntil(
+        iterations: Int = 100,
+        condition: @MainActor () -> Bool
+    ) async {
+        for _ in 0..<iterations {
+            if condition() { return }
+            try? await Task.sleep(for: .milliseconds(5))
+        }
     }
 }
 
@@ -142,27 +187,9 @@ private struct EmptyBuiltin: BuiltinSkillProviding {
     func builtinSkills() -> [SkillMetadata] { [] }
 }
 
-/// 测试用 AgentLoop 桩：保留 responder 语义，落库 assistant 消息。
-@MainActor
-private final class StubAgentLoop: AgentLoopProviding {
-    private let messages: any MessageManaging
-    init(messages: any MessageManaging) {
-        self.messages = messages
+private struct ProjectPathScanner: SkillScanning {
+    func scanSkills(projectPath: String) -> [SkillMetadata] {
+        let name = URL(fileURLWithPath: projectPath).lastPathComponent
+        return [SkillMetadata(name: name, title: name, description: "")]
     }
-
-    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
-        .completed
-    }
-
-    func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
-        throw AgentLoopError.invalidResumeRequest
-    }
-
-    func cancelTurn(in conversationID: UUID) {}
-    func state(for conversationID: UUID) -> AgentLoopState { .idle }
-    func suspension(for conversationID: UUID) -> AgentLoopSuspension? { nil }
-    func isRunning(for conversationID: UUID) -> Bool { false }
-    func currentTurnID(for conversationID: UUID) -> UUID? { nil }
-    func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
-
 }
