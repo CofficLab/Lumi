@@ -8,6 +8,13 @@ import Testing
 @Suite(.serialized)
 struct DefaultLLMProviderManagerProvidingTests {
 
+    init() {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: "com.coffic.lumi.llmProviderManager.selectedModelID")
+        defaults.removeObject(forKey: "com.coffic.lumi.llmProviderManager.selectedProviderID")
+        defaults.removeObject(forKey: "com.coffic.lumi.llmProviderManager.selectedModel")
+    }
+
     private func makeMessage(_ content: String) -> LLMMessage {
         LLMMessage(role: .user, content: content)
     }
@@ -83,6 +90,66 @@ struct DefaultLLMProviderManagerProvidingTests {
         // 不存在的供应商被静默忽略。
         manager.select(providerID: "missing", model: "x")
         #expect(manager.selectedProviderID == "b")
+    }
+
+    @Test("重复的供应商模型名通过全局模型 ID 唯一路由")
+    func globalModelIDDisambiguatesDuplicateProviderModelNames() async throws {
+        let manager = DefaultLLMProviderManagerProviding()
+        let first = MockManagedProvider(id: "first-gateway", models: ["gpt-5.5"], defaultModel: "gpt-5.5", prefix: "first")
+        let second = MockManagedProvider(id: "second/gateway", models: ["gpt-5.5"], defaultModel: "gpt-5.5", prefix: "second")
+        try manager.register(first)
+        try manager.register(second)
+
+        let modelID = try #require(manager.modelID(providerID: "second/gateway", model: "gpt-5.5"))
+        #expect(manager.modelRoute(for: modelID)?.providerID == "second/gateway")
+        #expect(manager.provider(for: modelID)?.providerInfo.id == "second/gateway")
+        manager.select(modelID: modelID)
+
+        let response = try await manager.complete(LLMRequest(
+            conversationID: UUID(),
+            modelID: modelID,
+            messages: [makeMessage("ping")],
+            model: "other-model"
+        ))
+
+        #expect(response.content == "second:ping")
+        #expect(second.receivedModels == ["gpt-5.5"])
+        #expect(first.receivedModels.isEmpty)
+        #expect(manager.selectedModelID == modelID)
+        #expect(manager.selectedProviderID == "second/gateway")
+    }
+
+    @Test("旧版全局供应商和模型设置等所属 Provider 注册后再迁移")
+    func legacyGlobalSelectionWaitsForItsProvider() throws {
+        let defaults = UserDefaults.standard
+        let modelIDKey = "com.coffic.lumi.llmProviderManager.selectedModelID"
+        let providerKey = "com.coffic.lumi.llmProviderManager.selectedProviderID"
+        let modelKey = "com.coffic.lumi.llmProviderManager.selectedModel"
+        defaults.removeObject(forKey: modelIDKey)
+        defaults.set("later-provider", forKey: providerKey)
+        defaults.set("later-model", forKey: modelKey)
+        defer {
+            defaults.removeObject(forKey: modelIDKey)
+            defaults.removeObject(forKey: providerKey)
+            defaults.removeObject(forKey: modelKey)
+        }
+
+        let manager = DefaultLLMProviderManagerProviding()
+        try manager.register(MockManagedProvider(id: "first-provider"))
+        #expect(manager.selectedModelID == nil)
+        #expect(defaults.string(forKey: providerKey) == "later-provider")
+
+        try manager.register(MockManagedProvider(
+            id: "later-provider",
+            models: ["later-model"],
+            defaultModel: "later-model"
+        ))
+
+        let expected = try #require(LLMModelID(providerID: "later-provider", modelID: "later-model"))
+        #expect(manager.selectedModelID == expected)
+        #expect(defaults.string(forKey: modelIDKey) == expected.rawValue)
+        #expect(defaults.string(forKey: providerKey) == nil)
+        #expect(defaults.string(forKey: modelKey) == nil)
     }
 
     @Test("选中模型不属于当前供应商时，发送回退默认模型")

@@ -31,8 +31,14 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
 
     // MARK: - Selection
 
-    public private(set) var selectedProviderID: String?
-    public private(set) var selectedModel: String?
+    public private(set) var selectedModelID: LLMModelID?
+
+    public var selectedProviderID: String? { selectedModelID?.providerID }
+    public var selectedModel: String? { selectedModelID?.modelID }
+
+    /// 首次注册供应商时用于升级旧版 providerID + modelName 全局选中值。
+    private var legacySelectedProviderID: String?
+    private var legacySelectedModel: String?
 
     // MARK: - Observation
 
@@ -58,16 +64,20 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
     // MARK: - UserDefaults Keys
 
     private enum UserDefaultsKeys {
+        static let selectedModelID = "com.coffic.lumi.llmProviderManager.selectedModelID"
+        // 旧版双字段 key，仅用于一次性迁移。
         static let selectedProviderID = "com.coffic.lumi.llmProviderManager.selectedProviderID"
         static let selectedModel = "com.coffic.lumi.llmProviderManager.selectedModel"
     }
 
     public init() {
         // 启动时恢复持久化的选中；实际生效校验在首次注册后经 ensureValidSelection 完成。
-        selectedProviderID = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedProviderID)
-        selectedModel = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModel)
+        selectedModelID = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModelID)
+            .flatMap(LLMModelID.init(rawValue:))
+        legacySelectedProviderID = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedProviderID)
+        legacySelectedModel = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedModel)
         if Self.verbose {
-            Self.logger.info("\(Self.t)initialized, restored selection: provider=\(self.selectedProviderID ?? "nil", privacy: .public), model=\(self.selectedModel ?? "nil", privacy: .public)")
+            Self.logger.info("\(Self.t)initialized, restored model ID: \(self.selectedModelID?.rawValue ?? "nil", privacy: .public)")
         }
     }
 
@@ -108,12 +118,13 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
             }
             return
         }
+        let removedSelection = selectedModelID?.providerID == id || legacySelectedProviderID == id
         providerOrder.removeAll { $0 == id }
         if Self.verbose {
             Self.logger.info("\(Self.t)unregistered provider: \(id, privacy: .public), total=\(self.providers.count)")
         }
         notify(.providersChanged(providerID: id, reason: .removed))
-        ensureValidSelection()
+        ensureValidSelection(fallbackForMissingProvider: removedSelection)
     }
 
     // MARK: - Selection
@@ -122,34 +133,65 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
         providers[providerID]?.providerInfo.modelIDs ?? []
     }
 
+    public func modelID(providerID: String, model: String? = nil) -> LLMModelID? {
+        guard let provider = providers[providerID] else { return nil }
+        let info = provider.providerInfo
+        let selected = model ?? (info.defaultModel.isEmpty ? info.modelIDs.first : info.defaultModel)
+        guard let selected,
+              info.contains(model: selected) || selected == info.defaultModel else { return nil }
+        return LLMModelID(providerID: providerID, modelID: selected)
+    }
+
+    public func modelRoute(for modelID: LLMModelID) -> LLMModelRoute? {
+        guard let provider = providers[modelID.providerID] else { return nil }
+        let info = provider.providerInfo
+        guard info.contains(model: modelID.modelID) || info.defaultModel == modelID.modelID else { return nil }
+        let modelInfo = info.models.first(where: { $0.id == modelID.modelID }) ?? LLMModelInfo(id: modelID.modelID)
+        return LLMModelRoute(
+            modelID: modelID,
+            providerID: info.id,
+            modelName: modelID.modelID,
+            providerInfo: info,
+            modelInfo: modelInfo
+        )
+    }
+
+    public func select(modelID: LLMModelID) {
+        guard modelRoute(for: modelID) != nil else { return }
+        guard selectedModelID != modelID else { return }
+        selectedModelID = modelID
+        persistSelectedModelID()
+        notify(.selectionChanged(providerID: modelID.providerID, model: modelID.modelID))
+    }
+
     public func select(providerID: String, model: String?) {
-        guard providers[providerID] != nil else {
+        guard let modelID = modelID(providerID: providerID, model: model) else {
             if Self.verbose {
-                Self.logger.warning("\(Self.t)select ignored: \(providerID, privacy: .public)\(self.r("not registered"))")
+                Self.logger.warning("\(Self.t)select ignored: provider/model not registered provider=\(providerID, privacy: .public), model=\(model ?? "default", privacy: .public)")
             }
             return
         }
-        var didChange = false
-        if selectedProviderID != providerID {
-            selectedProviderID = providerID
-            UserDefaults.standard.set(providerID, forKey: UserDefaultsKeys.selectedProviderID)
-            didChange = true
-        }
-        if selectedModel != model {
-            selectedModel = model
-            if let model {
-                UserDefaults.standard.set(model, forKey: UserDefaultsKeys.selectedModel)
-            } else {
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedModel)
-            }
-            didChange = true
-        }
+        let didChange = selectedModelID != modelID
+        selectedModelID = modelID
+        persistSelectedModelID()
         if Self.verbose {
-            Self.logger.info("\(Self.t)selected: provider=\(providerID, privacy: .public), model=\(model ?? "nil", privacy: .public)")
+            Self.logger.info("\(Self.t)selected: modelID=\(modelID.rawValue, privacy: .public)")
         }
         if didChange {
-            notify(.selectionChanged(providerID: providerID, model: model))
+            notify(.selectionChanged(providerID: modelID.providerID, model: modelID.modelID))
         }
+    }
+
+    private func persistSelectedModelID() {
+        if let selectedModelID {
+            UserDefaults.standard.set(selectedModelID.rawValue, forKey: UserDefaultsKeys.selectedModelID)
+        } else {
+            UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedModelID)
+        }
+        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedProviderID)
+        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedModel)
+        legacySelectedProviderID = nil
+        legacySelectedModel = nil
     }
 
     // MARK: - Send（LLMProviding）
@@ -161,8 +203,10 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
     /// 模型名）时回退到解析模型，避免把不认识的模型透传给供应商。
     /// 没有任何已注册供应商时抛 `noProviderConfigured`。
     public func complete(_ request: LLMRequest) async throws -> LLMResponse {
-        let resolved = try resolveSelected(providerID: request.providerID)
-        let model = routedModel(requested: request.model, resolvedProvider: resolved.provider, resolvedModel: resolved.model)
+        let resolved = try resolveSelected(providerID: request.providerID, modelID: request.modelID)
+        let model = request.modelID == nil
+            ? routedModel(requested: request.model, resolvedProvider: resolved.provider, resolvedModel: resolved.model)
+            : resolved.model
         let routedRequest = LLMRequest(
             conversationID: request.conversationID,
             providerID: resolved.provider.providerInfo.id,
@@ -185,8 +229,10 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
         _ request: LLMRequest,
         onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
     ) async throws -> LLMResponse {
-        let resolved = try resolveSelected(providerID: request.providerID)
-        let model = routedModel(requested: request.model, resolvedProvider: resolved.provider, resolvedModel: resolved.model)
+        let resolved = try resolveSelected(providerID: request.providerID, modelID: request.modelID)
+        let model = request.modelID == nil
+            ? routedModel(requested: request.model, resolvedProvider: resolved.provider, resolvedModel: resolved.model)
+            : resolved.model
         let routedRequest = LLMRequest(
             conversationID: request.conversationID,
             providerID: resolved.provider.providerInfo.id,
@@ -231,9 +277,19 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
     /// 供应商：选中项 > 第一个注册项；模型：选中模型（属于该供应商）>
     /// 默认模型 > 第一个模型。与旧版 `ensureValidSelection` 的语义一致，
     /// 且不会改变持久化状态（纯读取）。
-    private func resolveSelected(providerID requestedProviderID: String? = nil) throws -> (provider: any SuperLLMProvider, model: String?) {
+    private func resolveSelected(
+        providerID requestedProviderID: String? = nil,
+        modelID requestedModelID: LLMModelID? = nil
+    ) throws -> (provider: any SuperLLMProvider, model: String?) {
         let provider: any SuperLLMProvider
-        if let requestedProviderID {
+        if let requestedModelID {
+            guard let route = modelRoute(for: requestedModelID),
+                  let found = providers[route.providerID] else {
+                throw LLMProviderManagerError.modelNotFound(requestedModelID.rawValue)
+            }
+            provider = found
+            return (provider, route.modelName)
+        } else if let requestedProviderID {
             guard let found = providers[requestedProviderID] else {
                 Self.logger.error("\(Self.t)requested provider not found: \(requestedProviderID, privacy: .public)")
                 throw LLMProviderManagerError.providerNotFound(requestedProviderID)
@@ -253,7 +309,10 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
 
         let info = provider.providerInfo
         let model: String?
-        if requestedProviderID == nil, let selectedModel, info.contains(model: selectedModel) {
+        if requestedProviderID == nil,
+           selectedProviderID == info.id,
+           let selectedModel,
+           info.contains(model: selectedModel) {
             model = selectedModel
         } else if !info.defaultModel.isEmpty {
             model = info.defaultModel
@@ -268,44 +327,40 @@ public final class DefaultLLMManager: LLMManaging, @preconcurrency SuperLLMProvi
 
     /// 注册表变化后保证选中态一致：失效的持久化选中回退到第一个供应商；
     /// 模型回退到默认模型。仅在确实变化时写 UserDefaults 并广播。
-    private func ensureValidSelection() {
-        let resolved = try? resolveSelected()
-        guard let resolved else {
-            // 没有任何供应商：清空选中态。
-            if selectedProviderID != nil || selectedModel != nil {
-                selectedProviderID = nil
-                selectedModel = nil
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedProviderID)
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedModel)
-                notify(.selectionChanged(providerID: nil, model: nil))
-                if Self.verbose {
-                    Self.logger.warning("\(Self.t)no providers left, cleared selection")
-                }
+    private func ensureValidSelection(fallbackForMissingProvider: Bool = false) {
+        let previous = selectedModelID
+        var next: LLMModelID?
+
+        if let selectedModelID {
+            if modelRoute(for: selectedModelID) != nil {
+                next = selectedModelID
+            } else if providers[selectedModelID.providerID] != nil {
+                next = modelID(providerID: selectedModelID.providerID, model: nil)
+            } else if !fallbackForMissingProvider {
+                // Provider plugins may register asynchronously. Keep the chosen
+                // ID until its owner appears instead of replacing it early.
+                return
             }
-            return
-        }
-
-        let providerID = resolved.provider.providerInfo.id
-        let model = resolved.model
-        var didChange = false
-
-        if selectedProviderID != providerID {
-            selectedProviderID = providerID
-            UserDefaults.standard.set(providerID, forKey: UserDefaultsKeys.selectedProviderID)
-            didChange = true
-        }
-        if selectedModel != model {
-            selectedModel = model
-            if let model {
-                UserDefaults.standard.set(model, forKey: UserDefaultsKeys.selectedModel)
+        } else if let legacySelectedProviderID {
+            if providers[legacySelectedProviderID] == nil {
+                // Keep the legacy pair until its owning Provider registers.
+                if !fallbackForMissingProvider { return }
             } else {
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedModel)
+                next = legacySelectedModel.flatMap { modelID(providerID: legacySelectedProviderID, model: $0) }
+                    ?? modelID(providerID: legacySelectedProviderID, model: nil)
             }
-            didChange = true
         }
-        // 注册表变化引起的选中回退：仅在真实变化时投递。
-        if didChange {
-            notify(.selectionChanged(providerID: selectedProviderID, model: selectedModel))
+
+        if next == nil, let firstID = providerOrder.first {
+            next = modelID(providerID: firstID, model: nil)
+        }
+
+        selectedModelID = next
+        persistSelectedModelID()
+        guard previous != next else { return }
+        notify(.selectionChanged(providerID: next?.providerID, model: next?.modelID))
+        if next == nil, Self.verbose {
+            Self.logger.warning("\(Self.t)no model routes available, cleared selection")
         }
     }
 }
