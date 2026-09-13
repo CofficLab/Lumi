@@ -22,6 +22,11 @@ final class ModelSelectorViewModel: ObservableObject {
     @Published var selectedScope = ProviderScope.cloud
     @Published var selectedCategory = ModelCategory.all
 
+    /// 展示模型搜索框的模型数量下限。
+    ///
+    /// 模型不超过该数量时，列表一屏即可看全，搜索框只占空间不创造价值。
+    static let modelSearchThreshold = 8
+
     private let box: LLMProviderManagerBox
     private let usageStore: ProviderUsageStore
     private let toast: (any ToastProviding)?
@@ -73,6 +78,23 @@ final class ModelSelectorViewModel: ObservableObject {
 
     func models(for providerID: String) -> [String] {
         modelIDs[providerID] ?? []
+    }
+
+    /// 给定模型数量是否值得展示搜索框。
+    func shouldShowSearchBar(modelCount: Int) -> Bool {
+        modelCount > Self.modelSearchThreshold
+    }
+
+    /// 当前选中供应商的模型是否多到值得展示搜索框。
+    var showsModelSearchBar: Bool {
+        guard let selectedProviderID else { return false }
+        return shouldShowSearchBar(modelCount: models(for: selectedProviderID).count)
+    }
+
+    /// 实际参与过滤的搜索文本；搜索框不可见时一律视为未搜索，
+    /// 避免残留文本把模型从列表里悄悄筛掉。
+    var activeModelSearchText: String {
+        showsModelSearchBar ? searchText : ""
     }
 
     func modelID(providerID: String, model: String) -> String? {
