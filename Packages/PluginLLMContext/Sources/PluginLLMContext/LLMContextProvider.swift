@@ -185,10 +185,23 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     ) {
         guard inputTokenCount > 0, estimatedInputTokens > 0 else { return }
         let key = calibrationKey(for: request)
-        let observedFactor = Double(inputTokenCount) / Double(estimatedInputTokens)
         let existing = calibrationFactors[key] ?? 1
-        // 只向上校准，避免一次异常的低估计让后续请求变得不安全。
-        calibrationFactors[key] = min(max(existing, observedFactor), 4)
+        let baseEstimate = Double(estimatedInputTokens) / existing
+        guard baseEstimate > 0 else { return }
+
+        // 服务端 usage 包含工具 schema，消息估算不包含；先扣除 schema 预算，
+        // 避免短上下文把工具开销错误学成消息估算倍率。
+        let observedMessageTokens = max(inputTokenCount - request.budget.toolSchemaTokens, 0)
+        let observedFactor = Double(observedMessageTokens) / baseEstimate
+        let target = min(max(observedFactor, 1), 4)
+
+        // 向上快速校准以保留超限保护；向下缓慢恢复，避免一次偏低 usage
+        // 长期压低估算倍率。
+        if target >= existing {
+            calibrationFactors[key] = target
+        } else {
+            calibrationFactors[key] = max(1, existing * 0.75 + target * 0.25)
+        }
     }
 
     func reportContextLimitExceeded(for request: LLMContextPreparationRequest) {

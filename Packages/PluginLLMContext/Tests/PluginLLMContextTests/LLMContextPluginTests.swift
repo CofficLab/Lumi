@@ -298,6 +298,98 @@ struct LLMContextPluginTests {
         })
     }
 
+    @Test("工具 schema usage 不会放大后续消息上下文估算")
+    func toolSchemaUsageDoesNotInflateMessageCalibration() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        let toolSchemaTokens = 100_000
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: "calibration-provider",
+            model: "calibration-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 1_000_000,
+                reservedOutputTokens: 8_000,
+                toolSchemaTokens: toolSchemaTokens,
+                safetyMarginTokens: 2_000
+            )
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .user,
+                content: String(repeating: "x", count: 30_000)
+            ),
+            to: conversationID
+        )
+
+        let first = await provider.prepareContext(for: request)
+        provider.reportInputUsage(
+            first.estimatedInputTokens + toolSchemaTokens,
+            for: request,
+            estimatedInputTokens: first.estimatedInputTokens
+        )
+        let next = await provider.prepareContext(for: request)
+
+        #expect(next.estimatedInputTokens == first.estimatedInputTokens)
+    }
+
+    @Test("成功请求会逐步修正过高的历史校准倍率")
+    func successfulUsageReducesInflatedCalibration() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: "calibration-provider",
+            model: "calibration-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 1_000_000,
+                reservedOutputTokens: 8_000,
+                safetyMarginTokens: 2_000
+            )
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .user,
+                content: String(repeating: "x", count: 30_000)
+            ),
+            to: conversationID
+        )
+
+        let baseline = await provider.prepareContext(for: request)
+        provider.reportInputUsage(
+            baseline.estimatedInputTokens * 4,
+            for: request,
+            estimatedInputTokens: baseline.estimatedInputTokens
+        )
+        let inflated = await provider.prepareContext(for: request)
+        provider.reportInputUsage(
+            baseline.estimatedInputTokens,
+            for: request,
+            estimatedInputTokens: inflated.estimatedInputTokens
+        )
+        let recovered = await provider.prepareContext(for: request)
+
+        #expect(inflated.estimatedInputTokens == baseline.estimatedInputTokens * 4)
+        #expect(recovered.estimatedInputTokens < inflated.estimatedInputTokens)
+        #expect(recovered.estimatedInputTokens > baseline.estimatedInputTokens)
+    }
+
     @Test("超过原先消息上限后仍能滚动生成摘要")
     func rollingSummaryContinuesPastLegacyMessageLimit() async throws {
         let messages = DefaultMessageManager()
