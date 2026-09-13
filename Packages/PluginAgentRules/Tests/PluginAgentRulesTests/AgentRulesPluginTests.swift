@@ -99,3 +99,18 @@ import Foundation
     #expect(rule.title == "Review Rules")
     #expect(rule.content == content)
 }
+
+@MainActor
+    @Test func normalizedLimitCoercesAndClamps() throws {
+    #expect(ListAgentRulesTool.normalizedLimit(nil) == nil)
+    #expect(ListAgentRulesTool.normalizedLimit(5) == 5)
+    #expect(ListAgentRulesTool.normalizedLimit(0) == 0)
+    #expect(ListAgentRulesTool.normalizedLimit(-10) == 0)
+    #expect(ListAgentRulesTool.normalizedLimit(500) == 100)
+    #expect(ListAgentRulesTool.normalizedLimit(3.9) == 3)
+    #expect(ListAgentRulesTool.normalizedLimit(-5.0) == 0)
+    #expect(ListAgentRulesTool.normalizedLimit("42") == 42)
+    #expect(ListAgentRulesTool.normalizedLimit("abc") == nil)
+    #expect(ListAgentRulesTool.normalizedLimit("") == nil)
+    #expect(ListAgentRulesTool.normalizedLimit("  ") == nil)
+}
