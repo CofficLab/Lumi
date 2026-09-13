@@ -1,19 +1,16 @@
 import ProviderConversation
-import ProviderToast
 import SwiftUI
 
 /// 自动化级别 chip：显示当前会话的 automationLevel，点击弹出三档选择。
 struct AutomationLevelToolbarView: View {
     private let conversationObservation: ConversationManagerObservationBox
-    let toast: (any ToastProviding)?
 
     @State private var isPopoverPresented = false
     @State private var observationRevision = 0
     @State private var observerHandle: (any ConversationManagerObservationBox.ObserverHandle)?
 
-    init(observation: ConversationManagerObservationBox, toast: (any ToastProviding)? = nil) {
+    init(observation: ConversationManagerObservationBox) {
         self.conversationObservation = observation
-        self.toast = toast
     }
 
     private var conversations: any ConversationManaging {
@@ -68,11 +65,6 @@ struct AutomationLevelToolbarView: View {
             conversations.setAutomationLevel(level, for: conversationID)
         }
         conversations.setGlobalAutomationLevel(level)
-        ConversationModeToast.show(
-            toast,
-            title: LumiPluginLocalization.string("Automation Level", bundle: .module),
-            detail: level.levelCode,
-        )
     }
 
     private var foregroundColor: Color {
