@@ -70,16 +70,31 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
         toolbarObserver = ContextCompactionToolbarObserver(
             conversations: conversations,
             messages: messages,
+            llmManager: llmProvider,
             onConversationChange: { [weak toolbarState] id in
                 toolbarState?.setSelectedConversationID(id)
             },
             onMessageInsert: { [weak toolbarState] conversationID in
                 guard conversationID == toolbarState?.selectedConversationID else { return }
                 toolbarState?.markMessagesChanged(conversationID: conversationID)
+            },
+            onLLMChange: { [weak toolbarState] in
+                toolbarState?.markLLMChanged()
             }
         )
 
         chat.addBarItems([
+            ChatSectionBarItem(
+                id: "\(id).context-window-toolbar-button",
+                order: 85,
+                placement: .toolbarLeading
+            ) {
+                ContextWindowToolbarView(
+                    provider: provider,
+                    messages: messages,
+                    state: self.toolbarState
+                )
+            },
             ChatSectionBarItem(
                 id: "\(id).toolbar-button",
                 order: 87,
@@ -106,6 +121,8 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         toolbarObserver?.cancel()
         toolbarObserver = nil
+        kernel.resolveProvider((any ChatSectionProviding).self)?
+            .removeBarItem(id: "\(id).context-window-toolbar-button")
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar-button")
         turnFinishedHook = nil

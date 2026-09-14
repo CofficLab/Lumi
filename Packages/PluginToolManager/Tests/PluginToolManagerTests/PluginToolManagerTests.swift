@@ -158,6 +158,30 @@ private struct DelayedTool: SuperAgentTool, @unchecked Sendable {
 }
 
 @MainActor
+@Test func shellToolUsesTheOwningConversationProjectWhenProvided() async throws {
+    let projectURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("lumi-shell-project-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: projectURL, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: projectURL) }
+
+    let tool = ShellTool(workspaceRootProvider: { "/tmp" })
+    let context = ToolExecutionContext(
+        jobID: "conversation-shell-project",
+        conversationID: UUID(),
+        conversationProjectPathProvider: { projectURL.path }
+    )
+    let result = try await tool.executeResult(
+        context: context,
+        arguments: ["command": ToolArgument("pwd")]
+    )
+
+    #expect(
+        URL(fileURLWithPath: result.content).standardizedFileURL.path
+            == projectURL.standardizedFileURL.path
+    )
+}
+
+@MainActor
 @Test func shellToolStreamsOutputBeforeCommandCompletes() async throws {
     let tool = ShellTool(workspaceRootProvider: { "/tmp" })
     let (stream, continuation) = AsyncStream<ShellOutputEvent>.makeStream()

@@ -37,7 +37,8 @@ let package = Package(
                 "ProviderStorage",
                 "LumiUI",
             ],
-            path: "Sources/PluginLLMContext"
+            path: "Sources/PluginLLMContext",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "PluginLLMContextTests",

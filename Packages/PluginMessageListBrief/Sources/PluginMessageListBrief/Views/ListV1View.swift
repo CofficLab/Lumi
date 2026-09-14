@@ -114,7 +114,11 @@ struct ListV1View: View {
                 )
             )
             .onChange(of: visibleRowIDs) { _, _ in
-                if atBottomBox.value {
+                // 发送后定位期间不跟随滚到底：此时 atBottomBox 是被"滚到占位
+                // 底部"作伪成 true 的，跟随滚动会把最新内容贴到视口底部，抵消
+                // 刚完成的"新回合停在视口上方"定位。定位结束后由
+                // handleTurnLifecycleChange 恢复常规跟随。
+                if atBottomBox.value, !usesPostSendPositioning {
                     scrollTick &+= 1
                 }
                 if !isInitialPositionReady, !messageListVM.isLoading {
@@ -128,7 +132,9 @@ struct ListV1View: View {
                 handleTurnLifecycleChange(items)
             }
             .onChange(of: stateVM.activity) { _, _ in
-                guard isInitialPositionReady, atBottomBox.value else { return }
+                guard isInitialPositionReady,
+                      atBottomBox.value,
+                      !usesPostSendPositioning else { return }
                 scrollTick &+= 1
             }
             .onChange(of: selectedConversationID) { _, _ in
@@ -206,7 +212,9 @@ struct ListV1View: View {
                     isDeveloperModeEnabled: messageListVM.isDeveloperModeEnabled,
                     turnVM: messageListVM.agentTurnVM(for: item),
                     onDynamicContentChange: {
-                        guard isInitialPositionReady, atBottomBox.value else { return }
+                        guard isInitialPositionReady,
+                              atBottomBox.value,
+                              !usesPostSendPositioning else { return }
                         scrollTick &+= 1
                     }
                 )
@@ -310,9 +318,10 @@ struct ListV1View: View {
               !items.contains(where: \.acceptsLiveActivity) else { return }
 
         usesPostSendPositioning = false
-        if atBottomBox.value {
-            scrollTick &+= 1
-        }
+        // 定位态结束：撤掉尾部留白并把视图对齐到真实内容底部。这里不再依赖
+        // atBottomBox —— 定位期间用户停在"占位底部"，流式增长会让它翻成 false，
+        // 若继续用该判定则回复结束后不会回到底部，用户会停在中间看不到收尾。
+        scrollTick &+= 1
     }
 
     private func updateViewportHeight(_ height: CGFloat) {

@@ -7,6 +7,14 @@ import ProviderLLMContext
 import ProviderLLMManager
 import ProviderMessage
 
+struct ContextWindowUsageSnapshot: Sendable, Equatable {
+    let contextWindowTokens: Int?
+    let effectiveContextWindowTokens: Int
+    let inputTokenLimit: Int
+    let estimatedInputTokens: Int?
+    let usesFallbackWindow: Bool
+}
+
 /// 根据模型上下文预算准备 LLM 请求上下文，并在后台维护滚动摘要。
 @MainActor
 final class LLMContextProvider: LLMContextProviding, SuperLog {
@@ -55,6 +63,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     private var summaries: [UUID: SummarySnapshot] = [:]
     private var loadedSummaryIDs: Set<UUID> = []
     private var summaryTasks: [UUID: Task<Void, Never>] = [:]
+    private var lastPreparationRequests: [UUID: LLMContextPreparationRequest] = [:]
     private var calibrationFactors: [String: Double] = [:]
     private var forcedCompactionIDs: Set<UUID> = []
     private var isActive = true
@@ -80,6 +89,9 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     func prepareContext(
         for request: LLMContextPreparationRequest
     ) async -> LLMContextPreparationResult {
+        if request.mode != .prewarm {
+            lastPreparationRequests[request.conversationID] = request
+        }
         let history = await llmHistory(for: request.conversationID)
         let key = calibrationKey(for: request)
         let estimate = calibratedEstimate(of: history, key: key)
@@ -170,6 +182,66 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         )
     }
 
+    func contextWindowUsage(for conversationID: UUID?) async -> ContextWindowUsageSnapshot? {
+        let fallbackRequest = defaultRequest(
+            for: conversationID ?? UUID(),
+            mode: .beforeSend
+        )
+        let request: LLMContextPreparationRequest
+        if let conversationID,
+           let lastRequest = lastPreparationRequests[conversationID],
+           lastRequest.providerID == fallbackRequest.providerID,
+           lastRequest.model == fallbackRequest.model {
+            request = lastRequest
+        } else {
+            request = fallbackRequest
+        }
+
+        guard request.providerID != nil || request.model != nil else { return nil }
+
+        let estimatedInputTokens: Int?
+        if let conversationID {
+            let history = await llmHistory(for: conversationID)
+            let key = calibrationKey(for: request)
+            let fullHistoryEstimate = calibratedEstimate(of: history, key: key)
+            let limit = request.budget.inputTokenLimit
+            let softLimit = max(Int(Double(limit) * Self.softThresholdRatio), 1_024)
+            let hardLimit = max(Int(Double(limit) * Self.hardThresholdRatio), softLimit + 1)
+            var currentEstimate = fullHistoryEstimate
+            if fullHistoryEstimate >= hardLimit {
+                await loadPersistedSummaryIfNeeded(for: conversationID)
+                if let snapshot = summaries[conversationID],
+                   let compacted = compactedHistory(history, snapshot: snapshot, request: request) {
+                    let compactedEstimate = calibratedEstimate(of: compacted, key: key)
+                    if compactedEstimate <= limit, compactedEstimate < fullHistoryEstimate {
+                        currentEstimate = compactedEstimate
+                    } else {
+                        currentEstimate = calibratedEstimate(
+                            of: deterministicFallback(history, budget: request.budget),
+                            key: key
+                        )
+                    }
+                } else {
+                    currentEstimate = calibratedEstimate(
+                        of: deterministicFallback(history, budget: request.budget),
+                        key: key
+                    )
+                }
+            }
+            estimatedInputTokens = currentEstimate
+        } else {
+            estimatedInputTokens = nil
+        }
+
+        return ContextWindowUsageSnapshot(
+            contextWindowTokens: request.budget.contextWindowTokens,
+            effectiveContextWindowTokens: request.budget.effectiveContextWindowTokens,
+            inputTokenLimit: request.budget.inputTokenLimit,
+            estimatedInputTokens: estimatedInputTokens,
+            usesFallbackWindow: request.budget.usesFallbackWindow
+        )
+    }
+
     /// 回合结束时的后台预热入口。
     func scheduleBackgroundCompaction(for conversationID: UUID) {
         scheduleBackgroundCompaction(
@@ -185,10 +257,23 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     ) {
         guard inputTokenCount > 0, estimatedInputTokens > 0 else { return }
         let key = calibrationKey(for: request)
-        let observedFactor = Double(inputTokenCount) / Double(estimatedInputTokens)
         let existing = calibrationFactors[key] ?? 1
-        // 只向上校准，避免一次异常的低估计让后续请求变得不安全。
-        calibrationFactors[key] = min(max(existing, observedFactor), 4)
+        let baseEstimate = Double(estimatedInputTokens) / existing
+        guard baseEstimate > 0 else { return }
+
+        // 服务端 usage 包含工具 schema，消息估算不包含；先扣除 schema 预算，
+        // 避免短上下文把工具开销错误学成消息估算倍率。
+        let observedMessageTokens = max(inputTokenCount - request.budget.toolSchemaTokens, 0)
+        let observedFactor = Double(observedMessageTokens) / baseEstimate
+        let target = min(max(observedFactor, 1), 4)
+
+        // 向上快速校准以保留超限保护；向下缓慢恢复，避免一次偏低 usage
+        // 长期压低估算倍率。
+        if target >= existing {
+            calibrationFactors[key] = target
+        } else {
+            calibrationFactors[key] = max(1, existing * 0.75 + target * 0.25)
+        }
     }
 
     func reportContextLimitExceeded(for request: LLMContextPreparationRequest) {
@@ -214,6 +299,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         summaryTasks.removeAll()
         summaries.removeAll()
         loadedSummaryIDs.removeAll()
+        lastPreparationRequests.removeAll()
         forcedCompactionIDs.removeAll()
     }
 

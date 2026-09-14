@@ -118,12 +118,14 @@ struct ModelListView: View {
 
             AppDivider()
 
-            // Search
-            AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search models", bundle: .module)))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
+            // Search（模型较少时列表可一览无余，搜索框不再占位）
+            if viewModel.showsModelSearchBar {
+                AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search models", bundle: .module)))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
 
-            AppDivider()
+                AppDivider()
+            }
 
             // Model items
             if let providerID = viewModel.selectedProviderID {
@@ -170,7 +172,8 @@ struct ModelListView: View {
         to models: [String],
         modelInfos: [String: LLMModelInfo]
     ) -> [String] {
-        models
+        let query = viewModel.activeModelSearchText
+        return models
             .filter { model in
                 viewModel.selectedCategory.includes(model: model, modelInfo: modelInfos[model])
             }
@@ -180,9 +183,9 @@ struct ModelListView: View {
                 return lhsName.localizedCaseInsensitiveCompare(rhsName) == .orderedAscending
             }
             .filter { model in
-                viewModel.searchText.isEmpty
-                    || model.localizedCaseInsensitiveContains(viewModel.searchText)
-                    || (modelInfos[model]?.displayName ?? model).localizedCaseInsensitiveContains(viewModel.searchText)
+                query.isEmpty
+                    || model.localizedCaseInsensitiveContains(query)
+                    || (modelInfos[model]?.displayName ?? model).localizedCaseInsensitiveContains(query)
             }
     }
 }

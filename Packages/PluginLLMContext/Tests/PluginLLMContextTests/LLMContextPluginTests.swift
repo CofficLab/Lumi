@@ -33,6 +33,52 @@ struct LLMContextPluginTests {
         #expect(result[0].content == "你好")
     }
 
+    @Test("工具栏统计复用 LLMContext 请求的估算和预算")
+    func contextWindowUsageMatchesPreparedRequest() async throws {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider(contextWindowTokens: 24_000)
+        try llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 24_000,
+                reservedOutputTokens: 2_000,
+                toolSchemaTokens: 400,
+                safetyMarginTokens: 1_000
+            )
+        )
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .user, content: "第一条消息"),
+            to: conversationID
+        )
+
+        let prepared = await provider.prepareContext(for: request)
+        let initialUsage = await provider.contextWindowUsage(for: conversationID)
+
+        #expect(initialUsage?.contextWindowTokens == 24_000)
+        #expect(initialUsage?.inputTokenLimit == prepared.inputTokenLimit)
+        #expect(initialUsage?.estimatedInputTokens == prepared.estimatedInputTokens)
+
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .user, content: "第二条消息"),
+            to: conversationID
+        )
+        let updatedUsage = await provider.contextWindowUsage(for: conversationID)
+        #expect((updatedUsage?.estimatedInputTokens ?? 0) > (initialUsage?.estimatedInputTokens ?? 0))
+    }
+
     @Test("摘要生成失败时不阻塞，继续返回完整历史")
     func summaryFailureFallsBackToFullHistory() async {
         let messages = DefaultMessageManager()
@@ -298,6 +344,98 @@ struct LLMContextPluginTests {
         })
     }
 
+    @Test("工具 schema usage 不会放大后续消息上下文估算")
+    func toolSchemaUsageDoesNotInflateMessageCalibration() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        let toolSchemaTokens = 100_000
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: "calibration-provider",
+            model: "calibration-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 1_000_000,
+                reservedOutputTokens: 8_000,
+                toolSchemaTokens: toolSchemaTokens,
+                safetyMarginTokens: 2_000
+            )
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .user,
+                content: String(repeating: "x", count: 30_000)
+            ),
+            to: conversationID
+        )
+
+        let first = await provider.prepareContext(for: request)
+        provider.reportInputUsage(
+            first.estimatedInputTokens + toolSchemaTokens,
+            for: request,
+            estimatedInputTokens: first.estimatedInputTokens
+        )
+        let next = await provider.prepareContext(for: request)
+
+        #expect(next.estimatedInputTokens == first.estimatedInputTokens)
+    }
+
+    @Test("成功请求会逐步修正过高的历史校准倍率")
+    func successfulUsageReducesInflatedCalibration() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: "calibration-provider",
+            model: "calibration-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 1_000_000,
+                reservedOutputTokens: 8_000,
+                safetyMarginTokens: 2_000
+            )
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .user,
+                content: String(repeating: "x", count: 30_000)
+            ),
+            to: conversationID
+        )
+
+        let baseline = await provider.prepareContext(for: request)
+        provider.reportInputUsage(
+            baseline.estimatedInputTokens * 4,
+            for: request,
+            estimatedInputTokens: baseline.estimatedInputTokens
+        )
+        let inflated = await provider.prepareContext(for: request)
+        provider.reportInputUsage(
+            baseline.estimatedInputTokens,
+            for: request,
+            estimatedInputTokens: inflated.estimatedInputTokens
+        )
+        let recovered = await provider.prepareContext(for: request)
+
+        #expect(inflated.estimatedInputTokens == baseline.estimatedInputTokens * 4)
+        #expect(recovered.estimatedInputTokens < inflated.estimatedInputTokens)
+        #expect(recovered.estimatedInputTokens > baseline.estimatedInputTokens)
+    }
+
     @Test("超过原先消息上限后仍能滚动生成摘要")
     func rollingSummaryContinuesPastLegacyMessageLimit() async throws {
         let messages = DefaultMessageManager()
@@ -412,12 +550,12 @@ struct LLMContextPluginTests {
 private final class SummaryLLMProvider: SuperLLMProvider {
     let providerInfo: LLMProviderInfo
 
-    init(id: String = "summary-test-provider") {
+    init(id: String = "summary-test-provider", contextWindowTokens: Int? = nil) {
         providerInfo = LLMProviderInfo(
             id: id,
             displayName: "Summary Test Provider",
             defaultModel: "summary-model",
-            models: [LLMModelInfo(id: "summary-model")]
+            models: [LLMModelInfo(id: "summary-model", contextWindowSize: contextWindowTokens)]
         )
     }
     private(set) var completeCalls = 0

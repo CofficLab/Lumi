@@ -8,7 +8,7 @@ Model Selector 插件（KernelCore 体系），由旧版 `Plugins/ModelSelectorP
 - **Composer toolbar button** — Action Bar leading 位置的模型选择按钮，实时显示
   「供应商 · 模型」（模型未显式选中时回退供应商默认模型）
 - **Model browser** — popover 内左右分栏：左侧供应商列表（常用/云端/本地 + 搜索），
-  右侧模型列表（搜索）
+  右侧模型列表（搜索；模型数量不超过 8 个时隐藏搜索框，列表本身已可一览无余）
 - **Persistence** — 选中完全直连内核 `LLMManaging` 读写
   （`selectedProviderID` / `selectedModel` / `select(providerID:model:)`），
   由 `DefaultLLMManager` 持久化（UserDefaults，key 与旧版一致），发送链路即时生效；
