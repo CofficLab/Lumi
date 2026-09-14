@@ -16,9 +16,34 @@ struct ConversationProjectSyncObserverTests {
         var openFileURLs: [URL] = []
         var currentFileURL: URL?
         var openedPaths: [String] = []
+        private var pausedPath: String?
+        private var pausedOpenStarted: CheckedContinuation<Void, Never>?
+        private var resumePausedOpen: CheckedContinuation<Void, Never>?
+
+        func pauseOpen(at path: String) {
+            pausedPath = path
+        }
+
+        func waitForPausedOpen() async {
+            await withCheckedContinuation { continuation in
+                pausedOpenStarted = continuation
+            }
+        }
+
+        func continuePausedOpen() {
+            resumePausedOpen?.resume()
+            resumePausedOpen = nil
+        }
 
         func openProject(at path: String, reason: ProjectChangeReason) async throws {
             openedPaths.append(path)
+            if path == pausedPath {
+                await withCheckedContinuation { continuation in
+                    resumePausedOpen = continuation
+                    pausedOpenStarted?.resume()
+                    pausedOpenStarted = nil
+                }
+            }
             currentProject = ProjectInfo(name: (path as NSString).lastPathComponent, path: path)
         }
 
@@ -158,6 +183,39 @@ struct ConversationProjectSyncObserverTests {
 
         #expect(project.openedPaths == ["/tmp/project-b"])
         #expect(project.currentProject?.path == "/tmp/project-b")
+    }
+
+    @Test("项目切换尚未完成时快速选择另一对话，最终项目跟随最新选择")
+    func rapidSelectionChangesSynchronizeLatestProject() async throws {
+        let conversations = DefaultConversationManager()
+        let firstID = try conversations.createConversation(
+            title: "First",
+            projectPath: "/tmp/project-first",
+            providerID: nil,
+            modelName: nil
+        )
+        let secondID = try conversations.createConversation(
+            title: "Second",
+            projectPath: "/tmp/project-second",
+            providerID: nil,
+            modelName: nil
+        )
+        let project = RecordingProjectProvider()
+        project.pauseOpen(at: "/tmp/project-first")
+        let observer = makeObserver(conversations: conversations, project: project)
+        defer { observer.cancel() }
+
+        conversations.selectConversation(id: firstID)
+        await project.waitForPausedOpen()
+        conversations.selectConversation(id: secondID)
+        project.continuePausedOpen()
+
+        for _ in 0..<50 where project.currentProject?.path != "/tmp/project-second" {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        #expect(project.openedPaths == ["/tmp/project-first", "/tmp/project-second"])
+        #expect(project.currentProject?.path == "/tmp/project-second")
     }
 
     @Test("cancel 后不再响应选中变化")

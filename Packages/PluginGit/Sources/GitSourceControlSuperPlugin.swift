@@ -56,7 +56,7 @@ public final class GitSourceControlSuperPlugin: SuperPlugin, SuperLog {
             return
         }
         for tool in tools {
-            toolManager.add(tool, pluginID: id)
+            toolManager.add(ConversationScopedGitTool(tool), pluginID: id)
         }
         
         // 注册 git_log 工具结果的专用行渲染器：

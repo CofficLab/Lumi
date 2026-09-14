@@ -25,6 +25,7 @@ final class ToolExecutionManager {
     private struct PendingExecution {
         let tool: any SuperAgentTool
         let arguments: [String: ToolArgument]
+        let conversationProjectPathProvider: @MainActor @Sendable () async -> String?
     }
 
     private let runtime = ToolExecutionRuntime()
@@ -68,7 +69,8 @@ final class ToolExecutionManager {
         policy: ToolExecutionPolicy,
         conversationID: UUID,
         turnID: UUID?,
-        toolResolver: @escaping (String) -> (any SuperAgentTool)?
+        toolResolver: @escaping (String) -> (any SuperAgentTool)?,
+        conversationProjectPathProvider: @escaping @MainActor @Sendable () async -> String? = { nil }
     ) -> [ToolJob] {
         guard policy == .autoExecute else { return [] }
 
@@ -126,7 +128,11 @@ final class ToolExecutionManager {
                 scope: ExecutionScope(conversationID: conversationID, turnID: turnID),
                 capability: tool.executionCapability
             )
-            pendingExecutions[job.id] = PendingExecution(tool: tool, arguments: arguments)
+            pendingExecutions[job.id] = PendingExecution(
+                tool: tool,
+                arguments: arguments,
+                conversationProjectPathProvider: conversationProjectPathProvider
+            )
             persist(job)
             emit(.created(job))
             schedule()
@@ -217,7 +223,8 @@ final class ToolExecutionManager {
     private func start(
         job: ToolJob,
         tool: any SuperAgentTool,
-        arguments: [String: ToolArgument]
+        arguments: [String: ToolArgument],
+        conversationProjectPathProvider: @escaping @MainActor @Sendable () async -> String?
     ) {
         pendingExecutions.removeValue(forKey: job.id)
         runningJobIDs.insert(job.id)
@@ -241,7 +248,8 @@ final class ToolExecutionManager {
             },
             reportProgress: { progress in
                 await bridge.reportProgress(jobID: job.id, progress: progress)
-            }
+            },
+            conversationProjectPathProvider: conversationProjectPathProvider
         )
 
         Task { [weak self] in
@@ -337,7 +345,12 @@ final class ToolExecutionManager {
                       canStart(jobID: jobID, metadata: metadata)
                 else { continue }
 
-                start(job: job, tool: pending.tool, arguments: pending.arguments)
+                start(
+                    job: job,
+                    tool: pending.tool,
+                    arguments: pending.arguments,
+                    conversationProjectPathProvider: pending.conversationProjectPathProvider
+                )
                 madeProgress = true
             }
         }
