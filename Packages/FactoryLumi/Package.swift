@@ -95,6 +95,7 @@ let package = Package(
         .package(path: "../PluginPluginManager"),
         .package(path: "../PluginAgentLoop"),
         .package(path: "../PluginToolManager"),
+        .package(path: "../PluginToolbar"),
         .package(path: "../PluginFileLog"),
         .package(path: "../PluginShowImage"),
         .package(name: "PluginImageToPDF", path: "../PluginImageToPDF"),
@@ -283,6 +284,7 @@ let package = Package(
                 .product(name: "PluginPluginManager", package: "PluginPluginManager"),
                 .product(name: "PluginAgentLoop", package: "PluginAgentLoop"),
                 .product(name: "PluginToolManager", package: "PluginToolManager"),
+                .product(name: "PluginToolbar", package: "PluginToolbar"),
                 .product(name: "PluginFileLog", package: "PluginFileLog"),
                 .product(name: "PluginShowImage", package: "PluginShowImage"),
                 .product(name: "PluginImageToPDF", package: "PluginImageToPDF"),
@@ -416,6 +418,7 @@ let package = Package(
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "PluginConversationManager", package: "PluginConversationManager"),
+                .product(name: "PluginToolbar", package: "PluginToolbar"),
             ]
         )
     ]

@@ -19,6 +19,7 @@ import ProviderToolbar
 import ProviderToolManager
 import ProviderLLMManager
 import PluginProjectFiles
+import PluginToolbar
 import KitLLM
 import ProviderMessage
 import PluginConversationManager
@@ -212,13 +213,15 @@ struct FactoryLumiTests {
         #expect(resolved != nil)
     }
 
-    @Test("makeKernel 创建内核并注册默认 ToolbarProviding")
+    @Test("makeKernel 创建内核并由 PluginToolbar 注册 ToolbarProviding")
     func makeKernelRegistersDefaultToolbarProviding() throws {
         let kernel = try KernelFactory.makeKernel()
 
+        #expect(kernel.isPluginRegistered(id: "com.coffic.lumi.plugin.toolbar"))
+
         let resolved: (any ToolbarProviding)? = kernel.resolveProvider((any ToolbarProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultToolbarProviding)
+        #expect(resolved is ToolbarProvider)
     }
 
     @Test("makeKernel 创建内核并注册默认 RootViewProviding")
