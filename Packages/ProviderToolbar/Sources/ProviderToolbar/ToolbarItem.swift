@@ -48,6 +48,12 @@ public struct ToolbarItem: Identifiable {
     ///
     /// 默认使用 `.global`，确保未迁移的旧插件行为保持不变。
     public let category: ToolbarItemCategory
+    /// 该项所属插件的 id（可选）。
+    ///
+    /// 由 `ToolbarProviding` 在注册时自动打标（依据调用方的插件上下文），
+    /// 供实现判断归属：插件被禁用时自动隐藏其贡献，重新启用时恢复。
+    /// 为 nil 时表示不受插件生命周期管理（如宿主或延迟闭包中的贡献）。
+    public var ownerPluginID: String?
     public var order: Int
     public let makeView: @MainActor () -> AnyView
 
@@ -56,6 +62,7 @@ public struct ToolbarItem: Identifiable {
         title: String,
         placement: ToolbarPlacement = .trailing,
         category: ToolbarItemCategory = .global,
+        ownerPluginID: String? = nil,
         order: Int = 200,
         @ViewBuilder content: @escaping @MainActor () -> Content
     ) {
@@ -63,6 +70,7 @@ public struct ToolbarItem: Identifiable {
         self.title = title
         self.placement = placement
         self.category = category
+        self.ownerPluginID = ownerPluginID
         self.order = order
         self.makeView = { AnyView(content()) }
     }
