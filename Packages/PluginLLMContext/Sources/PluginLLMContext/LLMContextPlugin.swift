@@ -91,6 +91,7 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
             ) {
                 ContextWindowToolbarView(
                     provider: provider,
+                    messages: messages,
                     state: self.toolbarState
                 )
             },
