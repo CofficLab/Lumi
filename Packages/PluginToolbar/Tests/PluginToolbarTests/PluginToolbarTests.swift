@@ -1,4 +1,6 @@
 import KernelCore
+import ProviderPluginControl
+import ProviderPluginManaging
 import ProviderToolbar
 import SwiftUI
 import Testing
@@ -151,6 +153,114 @@ struct PluginToolbarTests {
         #expect(provider.visibleCategories == [.global, .chat])
     }
 
+    // MARK: - Plugin Lifecycle
+
+    @Test("插件被禁用后其工具栏项不再显示，重新启用后恢复")
+    func disabledPluginItemsAreHiddenAndRestored() {
+        let provider = ToolbarProvider()
+        provider.registerToolbarItems([
+            ToolbarItem(id: "plugin.empty-state.toolbar", title: "Empty") { Text("Empty") },
+        ])
+        provider.setPluginState(
+            knownPluginIDs: ["plugin.empty-state"],
+            disabledPluginIDs: []
+        )
+
+        #expect(provider.displayableToolbarItems.map(\.id) == ["plugin.empty-state.toolbar"])
+
+        provider.setPluginState(
+            knownPluginIDs: ["plugin.empty-state"],
+            disabledPluginIDs: ["plugin.empty-state"]
+        )
+        // 项仍在注册表中，只是不再对视图可见。
+        #expect(provider.toolbarItems.map(\.id) == ["plugin.empty-state.toolbar"])
+        #expect(provider.displayableToolbarItems.isEmpty)
+
+        provider.setPluginState(knownPluginIDs: ["plugin.empty-state"], disabledPluginIDs: [])
+        #expect(provider.displayableToolbarItems.map(\.id) == ["plugin.empty-state.toolbar"])
+    }
+
+    @Test("按 id 前缀推断归属，取最长前缀命中")
+    func ownerIsInferredFromLongestIDPrefix() {
+        let provider = ToolbarProvider()
+        provider.registerToolbarItems([
+            ToolbarItem(id: "com.a.title", title: "A") { Text("A") },
+            ToolbarItem(id: "com.ab.title", title: "AB") { Text("AB") },
+        ])
+        // com.a 不应误配 com.ab.title：最长前缀命中 com.ab。
+        provider.setPluginState(knownPluginIDs: ["com.a", "com.ab"], disabledPluginIDs: ["com.ab"])
+
+        #expect(provider.displayableToolbarItems.map(\.id) == ["com.a.title"])
+    }
+
+    @Test("无归属的工具栏项不受插件禁用影响")
+    func itemsWithoutOwnerAreUnaffected() {
+        let provider = ToolbarProvider()
+        provider.registerToolbarItems([
+            ToolbarItem(id: "host", title: "Host") { Text("Host") },
+        ])
+
+        provider.setPluginState(knownPluginIDs: ["some.plugin"], disabledPluginIDs: ["some.plugin"])
+
+        #expect(provider.displayableToolbarItems.map(\.id) == ["host"])
+    }
+
+    @Test("显式 ownerPluginID 优先于 id 前缀推断")
+    func explicitOwnerWinsOverPrefixInference() {
+        let provider = ToolbarProvider()
+        provider.registerToolbarItems([
+            ToolbarItem(
+                id: "plugin.byid.title",
+                title: "Shared",
+                ownerPluginID: "plugin.explicit"
+            ) { Text("Shared") },
+        ])
+        provider.setPluginState(
+            knownPluginIDs: ["plugin.byid", "plugin.explicit"],
+            disabledPluginIDs: ["plugin.byid"]
+        )
+
+        // 按 id 前缀应归属 plugin.byid（已禁用），但显式归属 plugin.explicit 优先。
+        #expect(provider.displayableToolbarItems.map(\.id) == ["plugin.byid.title"])
+    }
+
+    @Test("禁用状态变化会通知观察者以刷新视图")
+    func disabledStateChangeNotifiesObservers() {
+        let provider = ToolbarProvider()
+        var itemsChangedCount = 0
+        let handle = provider.addToolbarObserver { event in
+            if case .toolbarItemsChanged = event { itemsChangedCount += 1 }
+        }
+
+        provider.setPluginState(knownPluginIDs: ["plugin.a"], disabledPluginIDs: ["plugin.a"])
+        #expect(itemsChangedCount == 1)
+
+        // 相同集合不重复通知。
+        provider.setPluginState(knownPluginIDs: ["plugin.a"], disabledPluginIDs: ["plugin.a"])
+        #expect(itemsChangedCount == 1)
+
+        provider.setPluginState(knownPluginIDs: ["plugin.a"], disabledPluginIDs: [])
+        #expect(itemsChangedCount == 2)
+
+        handle.cancel()
+    }
+
+    @Test("预填的旧实现数据同样受归属过滤")
+    func preloadedItemsAreFilteredByOwner() {
+        let provider = ToolbarProvider(
+            preloadedItems: [
+                ToolbarItem(id: "plugin.on.title", title: "Kept") { Text("Kept") },
+                ToolbarItem(id: "plugin.off.title", title: "Hidden") { Text("Hidden") },
+            ]
+        )
+        provider.setPluginState(
+            knownPluginIDs: ["plugin.on", "plugin.off"],
+            disabledPluginIDs: ["plugin.off"]
+        )
+
+        #expect(provider.displayableToolbarItems.map(\.id) == ["plugin.on.title"])
+    }
+
     // MARK: - PluginToolbar
 
     @Test("PluginToolbar.onBoot 替换默认 ToolbarProviding")
@@ -230,5 +340,71 @@ struct PluginToolbarTests {
             ToolbarItem(id: "settings", title: "Settings") { Text("Settings") },
         ])
         #expect(restarted.toolbarItems.map(\.id) == ["settings"])
+    }
+
+    // MARK: - 与 PluginManaging 的集成
+
+    @Test("禁用插件后其工具栏项自动隐藏，重新启用后恢复")
+    func disablingPluginHidesItsToolbarItems() async throws {
+        let kernel = KernelCoreContainer()
+
+        // 镜像生产装配：PluginManaging 是 Provider，在 start 之前注册；
+        // PluginToolbar 与其贡献者作为插件目录一起启动。
+        let manager = DefaultPluginManager(
+            kernel: kernel,
+            controlling: DefaultPluginControlling(kernel: kernel)
+        )
+        try kernel.registerProvider((any PluginManaging).self, manager)
+
+        let disposable = DisposableToolbarPlugin()
+        try kernel.start(plugins: [PluginToolbar(), disposable])
+
+        let provider = try #require(kernel.resolveProvider((any ToolbarProviding).self) as? ToolbarProvider)
+        #expect(provider.displayableToolbarItems.map(\.id) == ["\(disposable.id).title"])
+
+        let disabled = await manager.disablePlugin(id: disposable.id)
+        #expect(disabled)
+        #expect(provider.displayableToolbarItems.isEmpty)
+
+        let enabled = await manager.enablePlugin(id: disposable.id)
+        #expect(enabled)
+        #expect(provider.displayableToolbarItems.map(\.id) == ["\(disposable.id).title"])
+    }
+
+    @Test("PluginToolbar 缺少 PluginManaging 时安全降级")
+    func pluginToleratesMissingPluginManager() throws {
+        let kernel = KernelCoreContainer()
+        let plugin = PluginToolbar()
+        try kernel.registerPlugin(plugin)
+        try plugin.onBoot(kernel: kernel)
+
+        // 不注册 PluginManaging：onReady 应降级而非抛错。
+        try plugin.onReady(kernel: kernel)
+
+        let provider = try #require(kernel.resolveProvider((any ToolbarProviding).self) as? ToolbarProvider)
+        provider.registerToolbarItems([
+            ToolbarItem(id: "plugin.a.title", title: "A") { Text("A") },
+        ])
+        #expect(provider.displayableToolbarItems.map(\.id) == ["plugin.a.title"])
+    }
+}
+
+/// 可被运行时禁用的最小插件：在 `onBoot` 中贡献一个带归属的工具栏项。
+@MainActor
+private final class DisposableToolbarPlugin: SuperPlugin {
+    let id = "test.disposable-toolbar"
+    let metadata = PluginMetadata(
+        id: "test.disposable-toolbar",
+        name: "Disposable",
+        description: "",
+        category: .general,
+        stage: .stable,
+        policy: .enabledByDefault
+    )
+
+    func onBoot(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any ToolbarProviding).self)?.addToolbarItems([
+            ToolbarItem(id: "\(id).title", title: "Disposable") { Text("Disposable") },
+        ])
     }
 }

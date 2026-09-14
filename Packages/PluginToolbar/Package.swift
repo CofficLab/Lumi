@@ -17,6 +17,8 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../KitSuperLog"),
+        .package(path: "../ProviderPluginControl"),
+        .package(path: "../ProviderPluginManaging"),
         .package(path: "../ProviderToolbar"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
     ],
@@ -26,6 +28,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "LumiUI", package: "LumiUI"),
             ]
@@ -35,6 +38,8 @@ let package = Package(
             dependencies: [
                 "PluginToolbar",
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderPluginControl", package: "ProviderPluginControl"),
+                .product(name: "ProviderPluginManaging", package: "ProviderPluginManaging"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
             ]
         ),

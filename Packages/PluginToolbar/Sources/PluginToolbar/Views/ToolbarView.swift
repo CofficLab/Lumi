@@ -11,6 +11,8 @@ import SwiftUI
 /// - center 项绝对居中（`maxWidth 420` + 水平 padding 88），
 ///   不被 leading / trailing 内容位置影响；
 /// - 背景 `AppToolbarContainer(style: .toolbar)`、前景 `theme.textPrimary`。
+///
+/// 渲染来源为 `displayableToolbarItems`：已分类过滤，并排除已禁用插件的贡献。
 internal struct ToolbarView: View {
     @LumiTheme private var theme
 
@@ -26,7 +28,9 @@ internal struct ToolbarView: View {
     }
 
     var body: some View {
-        let items = provider.visibleToolbarItems
+        // 用 displayableToolbarItems 而非 visibleToolbarItems：在分类过滤之外，
+        // 还要排除已禁用插件的贡献，避免其视图残留在工具栏上。
+        let items = provider.displayableToolbarItems
         let leading = items.filter { $0.placement == .leading }
         let center = items.filter { $0.placement == .center }
         let trailing = items.filter { $0.placement == .trailing }
