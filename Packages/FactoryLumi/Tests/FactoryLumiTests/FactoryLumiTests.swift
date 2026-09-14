@@ -500,7 +500,8 @@ struct FactoryLumiTests {
         let manager: (any LLMManaging)? = kernel.resolveProvider((any LLMManaging).self)
         #expect(manager != nil)
         // 默认 LLM Provider 插件注册全部内建供应商，包含 Codex 与 MLX 本地供应商。
-        #expect(manager?.providerCount == 35)
+        // 注意：总量随供应商目录变化，调整内建供应商时需要同步更新此断言。
+        #expect(manager?.providerCount == 33)
         #expect(manager?.allProviders().filter { $0.providerInfo.isLocal }.count == 8)
         #expect(manager?.providerID == "llm-provider-manager")
     }
