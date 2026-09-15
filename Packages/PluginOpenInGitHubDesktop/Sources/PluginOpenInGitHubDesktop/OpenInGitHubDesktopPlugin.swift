@@ -21,7 +21,7 @@ public final class OpenInGitHubDesktopPlugin: SuperPlugin, SuperLog {
         description: OpenInGitHubDesktopLocalization.string("Allow LLM to open projects in GitHub Desktop."),
         category: .integration,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public init() {}
