@@ -14,6 +14,10 @@ import KitSuperLog
 
 extension Message {
     var llmMessage: LLMMessage {
+        llmMessage(toolImages: [])
+    }
+
+    func llmMessage(toolImages: [KitLLM.MessageImage]) -> LLMMessage {
         let userImages: [KitLLM.MessageImage] = UserAttachmentMetadata
             .decodeImageAttachments(from: metadata)
             .compactMap { attachment -> KitLLM.MessageImage? in
@@ -27,13 +31,6 @@ extension Message {
             userFiles,
             to: content
         )
-        let toolImages: [KitLLM.MessageImage] = (toolCalls ?? [])
-            .compactMap { $0.result }
-            .flatMap { $0.imageAttachments }
-            .compactMap { attachment -> KitLLM.MessageImage? in
-                guard let data = Data(base64Encoded: attachment.data) else { return nil }
-                return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
-            }
 
         return LLMMessage(
             role: KitLLM.MessageRole(rawValue: role.rawValue) ?? .unknown,
@@ -41,9 +38,42 @@ extension Message {
             toolCalls: toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
             toolCallID: toolCallID,
             reasoningContent: reasoningContent,
-            images: userImages + toolImages
+            // 工具结果图片必须挂在独立的 tool 消息上，不能成为 assistant content。
+            images: role == .user ? userImages : (role == .tool ? toolImages : [])
         )
     }
+}
+
+/// 将持久化消息转换为 LLM 消息，并把 assistant 工具调用结果中的图片
+/// 关联到对应的 tool 消息。图片仍只保存在 assistant 的嵌套结果中，避免
+/// 为传输格式额外复制一份大体积 base64 数据。
+func llmMessages(from messages: [Message]) -> [LLMMessage] {
+    var pendingImagesByToolCallID: [String: [[KitLLM.MessageImage]]] = [:]
+    for message in messages where message.role == .assistant {
+        for toolCall in message.toolCalls ?? [] {
+            let images = toolCall.result?.imageAttachments.compactMap { attachment -> KitLLM.MessageImage? in
+                guard let data = Data(base64Encoded: attachment.data) else { return nil }
+                return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
+            } ?? []
+            guard !images.isEmpty else { continue }
+            pendingImagesByToolCallID[toolCall.id, default: []].append(images)
+        }
+    }
+
+    var result: [LLMMessage] = []
+    result.reserveCapacity(messages.count)
+    for message in messages {
+        var toolImages: [KitLLM.MessageImage] = []
+        if message.role == .tool,
+           let toolCallID = message.toolCallID,
+           var pendingImages = pendingImagesByToolCallID[toolCallID],
+           !pendingImages.isEmpty {
+            toolImages = pendingImages.removeFirst()
+            pendingImagesByToolCallID[toolCallID] = pendingImages
+        }
+        result.append(message.llmMessage(toolImages: toolImages))
+    }
+    return result
 }
 
 /// 将生命周期钩子返回的 LLM 消息恢复为 AgentLoop 的消息模型。

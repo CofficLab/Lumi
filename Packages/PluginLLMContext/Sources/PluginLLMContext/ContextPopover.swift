@@ -19,13 +19,6 @@ struct ContextPopover: View {
             }
         }
         .background(theme.background)
-        .frame(width: 380, height: popoverHeight)
-    }
-
-    /// 弹出层高度：主体高度固定，压缩记录按条数增长。
-    private var popoverHeight: CGFloat {
-        let base: CGFloat = usage?.usesFallbackWindow == true ? 356 : 330
-        return base + CGFloat(events.count) * 18
     }
 
     // MARK: - Window Section

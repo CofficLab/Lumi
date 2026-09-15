@@ -531,7 +531,7 @@ extension AgentLoopManager {
         // AgentLoop 不读取全量历史，也不感知具体压缩策略。
         let contextResult = await contextProvider.prepareContext(for: contextRequest)
         let history = contextResult.messages
-        let llmHistory = history.map(\.llmMessage)
+        let llmHistory = llmMessages(from: history)
         var preparedMessages = llmHistory
         if let lifecycleHooks {
             let context = WillSendToLLMContext(
