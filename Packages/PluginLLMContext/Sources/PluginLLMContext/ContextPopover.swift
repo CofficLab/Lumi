@@ -19,39 +19,20 @@ struct ContextPopover: View {
             }
         }
         .background(theme.background)
-        .frame(width: 380, height: max(280, 280 + CGFloat(events.count) * 18))
+        .frame(width: 380, height: popoverHeight)
+    }
+
+    /// 弹出层高度：主体高度固定，压缩记录按条数增长。
+    private var popoverHeight: CGFloat {
+        let base: CGFloat = usage?.usesFallbackWindow == true ? 356 : 330
+        return base + CGFloat(events.count) * 18
     }
 
     // MARK: - Window Section
 
     private var windowSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
-                Image(systemName: "text.viewfinder")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(theme.textSecondary)
-                Text(String(localized: "Context Window", defaultValue: "上下文窗口", bundle: .module))
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                Spacer(minLength: 0)
-                if !events.isEmpty {
-                    Text(
-                        String(format: String(localized: "%lld compactions", defaultValue: "%lld 次压缩"), events.count)
-                    )
-                    .font(.appCaption)
-                    .foregroundStyle(theme.warning)
-                }
-            }
-
-            windowSize
-
-            if let usage, let estimated = usage.estimatedInputTokens, estimated > 0 {
-                currentUsage(usage: usage, estimated: estimated)
-            } else {
-                Text(String(localized: "No token usage data yet", defaultValue: "暂无令牌使用数据", bundle: .module))
-                    .font(.caption)
-                    .foregroundStyle(theme.textSecondary)
-            }
+            usageRow
 
             if usage?.usesFallbackWindow == true, let usage {
                 Text(String(
@@ -84,6 +65,10 @@ struct ContextPopover: View {
                     .foregroundStyle(theme.warning)
                 Text(String(localized: "Context compaction", defaultValue: "上下文压缩"))
                     .font(.headline)
+                Spacer(minLength: 0)
+                Text(String(format: String(localized: "%lld compactions", defaultValue: "%lld 次压缩"), events.count))
+                    .font(.appCaption)
+                    .foregroundStyle(theme.warning)
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 4)
@@ -103,75 +88,70 @@ struct ContextPopover: View {
         }
     }
 
-    // MARK: - Window Size
+    // MARK: - Usage Row
 
-    private var windowSize: some View {
-        Group {
-            if let contextWindowSize {
-                Text(contextWindowSize.formattedContextSize + (usage?.usesFallbackWindow == true ? "*" : ""))
-                    .font(.system(size: 34, weight: .bold))
-                    .monospacedDigit()
-            } else {
-                Text(String(localized: "Unknown", defaultValue: "未知", bundle: .module))
-                    .font(.system(size: 28, weight: .bold))
+    /// 第一行：左侧是输入估算与输入预算，右侧是上下文窗口圆环。
+    private var usageRow: some View {
+        HStack(alignment: .center, spacing: DesignTokens.Spacing.md) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs + 2) {
+                if let usage, let estimated = usage.estimatedInputTokens, estimated > 0 {
+                    usageLine(
+                        label: String(localized: "Estimated input", defaultValue: "估算输入", bundle: .module),
+                        value: estimated.formattedTokensShort
+                    )
+                    usageLine(
+                        label: String(
+                            localized: "LLMContext input budget",
+                            defaultValue: "LLMContext 输入预算",
+                            bundle: .module
+                        ),
+                        value: usage.inputTokenLimit.formattedTokensShort
+                    )
+                } else {
+                    Text(String(localized: "No token usage data yet", defaultValue: "暂无令牌使用数据", bundle: .module))
+                        .font(.caption)
+                        .foregroundStyle(theme.textSecondary)
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            VStack(spacing: DesignTokens.Spacing.xs) {
+                ContextUsageRing(
+                    usedTokens: usage?.estimatedInputTokens,
+                    limitTokens: usage?.inputTokenLimit ?? 0,
+                    centerText: ringCenterText
+                )
+                Text(String(localized: "Context Window", defaultValue: "上下文窗口", bundle: .module))
+                    .font(.appMicro)
+                    .foregroundStyle(theme.textSecondary)
             }
         }
+    }
+
+    private func usageLine(label: String, value: String) -> some View {
+        HStack(spacing: DesignTokens.Spacing.xs) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(theme.textSecondary)
+            Text(value)
+                .font(.appMonoCaption)
+                .foregroundStyle(theme.textPrimary)
+        }
+    }
+
+    /// 圆环中心显示的当前模型上下文窗口大小。
+    private var ringCenterText: String {
+        guard let contextWindowSize else {
+            return String(localized: "Unknown", defaultValue: "未知", bundle: .module)
+        }
+        return contextWindowSize.formattedContextSize + (usage?.usesFallbackWindow == true ? "*" : "")
     }
 
     private var contextWindowSize: Int? {
         guard let usage else { return nil }
         return usage.contextWindowTokens
             ?? (usage.usesFallbackWindow ? usage.effectiveContextWindowTokens : nil)
-    }
-
-    // MARK: - Usage
-
-    private func currentUsage(usage: ContextWindowUsageSnapshot, estimated: Int) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(String(
-                format: String(
-                    localized: "Estimated input: %@ tokens",
-                    defaultValue: "估算输入：%@ tokens",
-                    bundle: .module
-                ),
-                estimated.formattedTokensShort
-            ))
-            .font(.caption)
-            .foregroundStyle(theme.textSecondary)
-
-            Text(String(
-                format: String(
-                    localized: "LLMContext input budget: %@ tokens",
-                    defaultValue: "LLMContext 输入预算：%@ tokens",
-                    bundle: .module
-                ),
-                usage.inputTokenLimit.formattedTokensShort
-            ))
-            .font(.caption)
-            .foregroundStyle(theme.textSecondary)
-
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(theme.divider)
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(colorForUsage(estimated: estimated, limit: usage.inputTokenLimit))
-                        .frame(width: geo.size.width * min(
-                            Double(estimated) / Double(max(usage.inputTokenLimit, 1)),
-                            1.0
-                        ))
-                }
-            }
-            .frame(height: 6)
-        }
-    }
-
-    private func colorForUsage(estimated: Int, limit: Int) -> Color {
-        guard limit > 0 else { return theme.textSecondary }
-        let ratio = Double(estimated) / Double(limit)
-        if ratio >= 0.9 { return .red }
-        if ratio >= 0.75 { return theme.warning }
-        return theme.textSecondary
     }
 }
 
@@ -328,3 +308,49 @@ private struct CompactionTimelineRow: View {
         return "\(tokens)"
     }
 }
+
+// MARK: - Preview
+
+#if DEBUG && os(macOS)
+#Preview("Context Popover - Usage And History") {
+    ContextPopover(
+        usage: ContextWindowUsageSnapshot(
+            contextWindowTokens: 128_000,
+            effectiveContextWindowTokens: 128_000,
+            inputTokenLimit: 112_000,
+            estimatedInputTokens: 41_500,
+            usesFallbackWindow: false
+        ),
+        history: .preview,
+        events: []
+    )
+}
+
+#Preview("Context Popover - With Compactions") {
+    ContextPopover(
+        usage: ContextWindowUsageSnapshot(
+            contextWindowTokens: 128_000,
+            effectiveContextWindowTokens: 128_000,
+            inputTokenLimit: 112_000,
+            estimatedInputTokens: 104_000,
+            usesFallbackWindow: false
+        ),
+        history: .preview,
+        events: [.previewContextCompaction(), .previewContextCompaction()]
+    )
+}
+
+#Preview("Context Popover - Fallback Window") {
+    ContextPopover(
+        usage: ContextWindowUsageSnapshot(
+            contextWindowTokens: nil,
+            effectiveContextWindowTokens: 32_000,
+            inputTokenLimit: 22_000,
+            estimatedInputTokens: nil,
+            usesFallbackWindow: true
+        ),
+        history: .empty,
+        events: []
+    )
+}
+#endif
