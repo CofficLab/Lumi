@@ -3,7 +3,7 @@ import SwiftUI
 
 /// 上下文使用趋势：历史曲线 + 压缩标记 + 统计。
 ///
-/// 作为 `ContextWindowPopover` 的一段，展示当前会话每次请求的输入规模变化。
+/// 作为 `ContextPopover` 的一段，展示当前会话每次请求的输入规模变化。
 struct ContextUsageTrendView: View {
     @LumiTheme private var theme
 

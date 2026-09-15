@@ -30,8 +30,8 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
     )
 
     private var provider: LLMContextProvider?
-    private let toolbarState = ContextCompactionToolbarState()
-    private var toolbarObserver: ContextCompactionToolbarObserver?
+    private let toolbarState = ContextToolbarState()
+    private var toolbarObserver: ContextToolbarObserver?
     /// `turnFinished` 钩子（见 `Hooks/LLMContextTurnFinishedHook.swift`）。
     private var turnFinishedHook: LLMContextTurnFinishedHook?
 
@@ -67,7 +67,7 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
         self.provider = provider
 
         toolbarObserver?.cancel()
-        toolbarObserver = ContextCompactionToolbarObserver(
+        toolbarObserver = ContextToolbarObserver(
             conversations: conversations,
             messages: messages,
             llmManager: llmProvider,
@@ -85,22 +85,12 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
 
         chat.addBarItems([
             ChatSectionBarItem(
-                id: "\(id).context-window-toolbar-button",
+                id: "\(id).context-toolbar-button",
                 order: 85,
                 placement: .toolbarLeading
             ) {
-                ContextWindowToolbarView(
+                ContextToolbarView(
                     provider: provider,
-                    messages: messages,
-                    state: self.toolbarState
-                )
-            },
-            ChatSectionBarItem(
-                id: "\(id).toolbar-button",
-                order: 87,
-                placement: .toolbarLeading
-            ) {
-                ContextCompactionToolbarView(
                     messages: messages,
                     state: self.toolbarState
                 )
@@ -122,9 +112,7 @@ public final class LLMContextPlugin: SuperPlugin, SuperLog {
         toolbarObserver?.cancel()
         toolbarObserver = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
-            .removeBarItem(id: "\(id).context-window-toolbar-button")
-        kernel.resolveProvider((any ChatSectionProviding).self)?
-            .removeBarItem(id: "\(id).toolbar-button")
+            .removeBarItem(id: "\(id).context-toolbar-button")
         turnFinishedHook = nil
         provider?.shutdown()
         provider = nil
