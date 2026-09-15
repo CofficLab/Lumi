@@ -2,6 +2,7 @@ import Foundation
 import GitPlugin
 import KernelCore
 import KitLocalization
+import LumiUI
 import ProviderMessage
 import ProviderActivityHeatmap
 import ProviderGitRepositoryWatch
@@ -355,8 +356,8 @@ public struct ActivityHeatmapSettingsView: View {
                     }
                     .labelsHidden()
                     .frame(width: 130)
-                    Button { Task { await model.reload() } } label: {
-                        Image(systemName: "arrow.clockwise")
+                    AppIconButton(systemImage: "arrow.clockwise") {
+                        Task { await model.reload() }
                     }
                     .help(L("Refresh activity"))
                 }
