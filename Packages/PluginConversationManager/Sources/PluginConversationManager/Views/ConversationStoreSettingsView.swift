@@ -5,7 +5,7 @@ import SwiftUI
 
 /// 会话存储设置视图（v2 复刻版）
 ///
-/// 展示对话列表、日活统计、消息预览与数据目录入口。View 只依赖
+/// 展示对话列表、日活统计与消息预览。View 只依赖
 /// `ConversationStoreSettingsViewModel`，会话/消息/迁移状态由 Observer 与
 /// ViewModel 维护，不再直接访问 ConversationManager 或 MessageManaging。
 @MainActor
@@ -37,11 +37,6 @@ public struct ConversationStoreSettingsView: View {
                         ProgressView()
                             .controlSize(.small)
                     }
-#if DEBUG
-                    AppButton(L("Open Data Directory"), systemImage: "folder", size: .small) {
-                        viewModel.openDataDirectory()
-                    }
-#endif
                 }
 
                 conversationActivity

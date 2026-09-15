@@ -1,4 +1,3 @@
-import AppKit
 import Combine
 import Foundation
 import ProviderConversation
@@ -76,12 +75,6 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
     func selectConversation(id: UUID) {
         selectedConversationID = id
         didSeedSelection = true
-    }
-
-    func openDataDirectory() {
-        let url = capability.dataDirectory
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        _ = NSWorkspace.shared.open(url)
     }
 
     // MARK: - 数据加载
