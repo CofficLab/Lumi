@@ -26,6 +26,10 @@ public final class ConversationManager: ConversationManaging, SuperLog {
     public internal(set) var selectedConversationID: UUID? {
         didSet {
             guard selectedConversationID != oldValue else { return }
+            // Publish selection only after the cached title reflects the new
+            // conversation. Observers commonly read `currentTitle` from the
+            // `.selected` callback to refresh their UI.
+            updateCurrentTitle()
             notifySelectedConversationObservers()
             notifyConversationObservers(.selected(selectedConversationID))
         }
