@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import ProviderConversation
 import ProviderToolManager
 import Testing
 @testable import PluginToolManager
@@ -60,6 +61,55 @@ private struct DefaultCapabilityTool: SuperAgentTool, @unchecked Sendable {
         await probe.finished()
         return name
     }
+}
+
+private struct ConversationProjectPathTool: SuperAgentTool {
+    let name = "conversation_project_path"
+
+    func description(for language: LanguagePreference) -> String { name }
+    func inputSchema(for language: LanguagePreference) -> [String: Any] { [:] }
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .safe }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { name }
+    func execute(arguments: [String: ToolArgument]) async throws -> String { "legacy path" }
+
+    func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        ToolCallResult(content: await context.conversationProjectPath() ?? "no project")
+    }
+}
+
+@MainActor
+@Test("工具上下文使用发起对话绑定的项目，不受当前选中对话影响")
+func toolContextResolvesProjectForOwningConversation() async throws {
+    let conversations = DefaultConversationManager()
+    let firstConversationID = try conversations.createConversation(
+        title: "Project A",
+        projectPath: "/tmp/project-a",
+        providerID: nil,
+        modelName: nil
+    )
+    let secondConversationID = try conversations.createConversation(
+        title: "Project B",
+        projectPath: "/tmp/project-b",
+        providerID: nil,
+        modelName: nil
+    )
+    #expect(conversations.selectedConversationID == secondConversationID)
+
+    let manager = ToolManager()
+    manager.conversationManager = conversations
+    manager.add(ConversationProjectPathTool(), pluginID: "test")
+    let job = try #require(manager.submit(
+        [ToolCall(id: "project-path", name: "conversation_project_path", arguments: "{}")],
+        policy: .autoExecute,
+        conversationID: firstConversationID,
+        turnID: UUID()
+    ).first)
+
+    let result = await manager.waitForJobResult(jobID: job.id)
+    #expect(result?.content == "/tmp/project-a")
 }
 
 @MainActor

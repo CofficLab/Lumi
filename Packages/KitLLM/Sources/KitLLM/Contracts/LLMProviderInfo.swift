@@ -1,5 +1,67 @@
 import Foundation
 
+/// Lumi 内全局唯一的模型标识。
+///
+/// 供应商 API 使用的模型名可能在多个 Provider 中重复；持久化和选中态使用
+/// provider + API model 的可逆编码，发送时再解析回供应商和原始模型名。
+public struct LLMModelID: RawRepresentable, Codable, Hashable, Sendable, CustomStringConvertible {
+    private static let prefix = "lumi-model-v1:"
+    private static let componentCharacters = CharacterSet(
+        charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~"
+    )
+
+    public let providerID: String
+    public let modelID: String
+
+    public var rawValue: String {
+        "\(Self.prefix)\(Self.encode(providerID)):\(Self.encode(modelID))"
+    }
+
+    public var description: String { rawValue }
+
+    public init?(providerID: String, modelID: String) {
+        guard !providerID.isEmpty, !modelID.isEmpty else { return nil }
+        self.providerID = providerID
+        self.modelID = modelID
+    }
+
+    public init?(rawValue: String) {
+        guard rawValue.hasPrefix(Self.prefix) else { return nil }
+        let components = rawValue.dropFirst(Self.prefix.count).split(separator: ":", omittingEmptySubsequences: false)
+        guard components.count == 2,
+              let providerID = Self.decode(String(components[0])),
+              let modelID = Self.decode(String(components[1])),
+              !providerID.isEmpty,
+              !modelID.isEmpty else {
+            return nil
+        }
+        self.providerID = providerID
+        self.modelID = modelID
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        guard let parsed = Self(rawValue: rawValue) else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid Lumi model ID")
+        }
+        self = parsed
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    private static func encode(_ value: String) -> String {
+        value.addingPercentEncoding(withAllowedCharacters: componentCharacters) ?? value
+    }
+
+    private static func decode(_ value: String) -> String? {
+        value.removingPercentEncoding
+    }
+}
+
 /// 供应商使用的 API 协议格式（决定请求/响应如何构建与解析）。
 /// 含 `CaseIterable`，供筛选菜单枚举。
 public enum LLMProviderAPIFormat: String, Sendable, Equatable, CaseIterable {
@@ -39,7 +101,7 @@ public enum LLMProviderType: String, Sendable, Equatable, CaseIterable {
 /// 由各 LLM Provider 插件在注册时随 `LLMProviderInfo`
 /// 一起贡献，供 ModelSelector 等 UI 展示与选中校验使用。
 public struct LLMModelInfo: Sendable, Equatable {
-    /// 模型唯一标识（作为选中值持久化，如 `gpt-4o`、`deepseek-chat`）。
+    /// 供应商 API 模型名，如 `gpt-4o`、`deepseek-chat`；选中态使用全局 `LLMModelID`。
     public let id: String
 
     /// 面向用户的展示名；缺省回退为 `id`。

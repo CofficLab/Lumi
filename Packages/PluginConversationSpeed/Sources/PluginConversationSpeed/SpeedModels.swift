@@ -49,6 +49,7 @@ struct SpeedSample: Identifiable, Equatable {
 
     static func samples(from messages: [Message]) -> [SpeedSample] {
         messages
+            .filter { $0.role == .assistant }
             .sorted { $0.createdAt < $1.createdAt }
             .compactMap { message -> (Date, Double, Message)? in
                 guard let tps = message.speedTokensPerSecond else { return nil }

@@ -146,7 +146,11 @@ public struct EditorDocumentSnapshot: Equatable, Sendable {
         for (index, lineStart) in offsets.enumerated() where lineStart <= offset {
             line = index
         }
-        return EditorPosition(line: line, character: offset - offsets[line])
+        let position = EditorPosition(line: line, character: offset - offsets[line])
+        // A CRLF separator has an interior UTF-16 offset that is not a valid
+        // line/column position. Keep offset/position conversion reversible.
+        guard self.offset(of: position) == offset else { return nil }
+        return position
     }
 }
 

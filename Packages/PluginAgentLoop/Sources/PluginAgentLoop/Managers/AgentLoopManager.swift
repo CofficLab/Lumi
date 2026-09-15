@@ -144,7 +144,18 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
     }
 
     func resolvedProviderID(for conversationID: UUID) -> String? {
-        conversations.providerID(for: conversationID)
+        runtimes[conversationID]?.modelRoute?.providerID
+            ?? resolveModelRoute(for: conversationID)?.providerID
+    }
+
+    func resolveModelRoute(for conversationID: UUID) -> LLMModelRoute? {
+        let conversationModelID = conversations.modelID(for: conversationID)
+            .flatMap(LLMModelID.init(rawValue:))
+        if let conversationModelID,
+           let route = llmManager.modelRoute(for: conversationModelID) {
+            return route
+        }
+        return llmManager.selectedModelID.flatMap(llmManager.modelRoute(for:))
     }
 
     /// Provider 可能不响应 Swift Task 的取消；所有会产生消息或推进状态的

@@ -84,4 +84,53 @@ struct DefaultLifecycleHooksProviderTests {
 
         #expect(callCount == 1)
     }
+
+    @MainActor
+    @Test("注册与取消钩子都会推进 revision")
+    func revisionIncrementsOnAddAndCancel() async {
+        let provider = DefaultLifecycleHooksProvider()
+        let before = provider.revision
+
+        let handle = provider.addWillSendToLLMHook { $0 }
+        #expect(provider.revision == before + 1)
+
+        handle.cancel()
+        #expect(provider.revision == before + 2)
+
+        handle.cancel()  // idempotent: no further bump
+        #expect(provider.revision == before + 2)
+    }
+
+    @MainActor
+    @Test("notifyTurnStarted 触发所有注册钩子")
+    func notifyTurnStartedBroadcasts() async {
+        let provider = DefaultLifecycleHooksProvider()
+        var callCount = 0
+        provider.addTurnStartedHook { _ in callCount += 1 }
+        provider.addTurnStartedHook { _ in callCount += 1 }
+
+        let ctx = TurnLifecycleContext(conversationID: UUID(), turnID: UUID())
+        await provider.notifyTurnStarted(ctx)
+        #expect(callCount == 2)
+    }
+
+    @MainActor
+    @Test("willExecuteTool 与 didExecuteTool 均广播给所有钩子")
+    func toolHooksBroadcast() async {
+        let provider = DefaultLifecycleHooksProvider()
+        var willCount = 0
+        var didCount = 0
+        provider.addWillExecuteToolHook { _ in willCount += 1 }
+        provider.addDidExecuteToolHook { _ in didCount += 1 }
+
+        let ctx = ToolExecutionContext(
+            conversationID: UUID(), turnID: UUID(),
+            toolCallID: "c1", toolName: "shell", arguments: "{}"
+        )
+        await provider.notifyWillExecuteTool(ctx)
+        await provider.notifyDidExecuteTool(ctx)
+
+        #expect(willCount == 1)
+        #expect(didCount == 1)
+    }
 }

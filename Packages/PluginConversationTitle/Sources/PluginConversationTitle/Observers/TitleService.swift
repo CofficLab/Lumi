@@ -135,11 +135,12 @@ final class TitleService: SuperLog {
     private func generateTitle(for userMessage: String, conversationID: UUID) async throws -> String {
         let request = LLMRequest(
             conversationID: conversationID,
+            modelID: conversations.modelID(for: conversationID).flatMap(LLMModelID.init(rawValue:)),
             messages: [
                 LLMMessage(role: .system, content: Self.titlePrompt),
                 LLMMessage(role: .user, content: Self.fencedUserMessage(userMessage)),
             ],
-            model: conversations.modelName(for: conversationID)
+            model: nil
         )
         let response = try await llmProvider.complete(request)
         return Self.normalizeTitle(response.content)

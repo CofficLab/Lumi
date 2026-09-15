@@ -1,4 +1,5 @@
 import Foundation
+import KitLLM
 import ProviderConversation
 import SwiftData
 
@@ -38,10 +39,11 @@ final public class ConversationModel: @unchecked Sendable {
     /// Automation level
     public var automationLevelRaw: String?
 
-    /// Provider ID (e.g., "openai")
-    public var providerId: String?
+    /// Lumi 全局唯一模型 ID。新的会话只写入此字段。
+    public var modelID: String?
 
-    /// Model name (e.g., "gpt-4")
+    /// Legacy columns retained for lightweight SwiftData migration; new writes clear them.
+    public var providerId: String?
     public var modelName: String?
 
     /// Associated project path
@@ -61,6 +63,7 @@ final public class ConversationModel: @unchecked Sendable {
         reasoningEffortRaw: String? = nil,
         languageRaw: String? = nil,
         automationLevelRaw: String? = nil,
+        modelID: String? = nil,
         providerId: String? = nil,
         modelName: String? = nil,
         projectPath: String? = nil,
@@ -76,8 +79,11 @@ final public class ConversationModel: @unchecked Sendable {
         self.reasoningEffortRaw = reasoningEffortRaw
         self.languageRaw = languageRaw
         self.automationLevelRaw = automationLevelRaw
-        self.providerId = providerId
-        self.modelName = modelName
+        self.modelID = modelID.flatMap { LLMModelID(rawValue: $0)?.rawValue } ?? providerId.flatMap { provider in
+            modelName.flatMap { LLMModelID(providerID: provider, modelID: $0)?.rawValue }
+        }
+        self.providerId = nil
+        self.modelName = nil
         self.projectPath = projectPath
         self.parentConversationID = parentConversationID
     }
@@ -100,8 +106,7 @@ public extension ConversationModel {
             reasoningEffortRaw: summary.reasoningEffort?.rawValue,
             languageRaw: summary.language?.rawValue,
             automationLevelRaw: summary.automationLevel?.rawValue,
-            providerId: summary.providerID,
-            modelName: summary.modelName,
+            modelID: summary.modelID,
             projectPath: summary.projectPath,
             parentConversationID: summary.parentConversationID?.uuidString
         )
@@ -135,10 +140,14 @@ public extension ConversationModel {
             reasoningEffort: reasoningEffort,
             language: language,
             automationLevel: automationLevel,
-            providerID: providerId,
-            modelName: modelName,
+            modelID: modelID ?? legacyModelID,
             projectPath: projectPath,
             parentConversationID: parentConversationID.flatMap(UUID.init(uuidString:))
         )
+    }
+
+    private var legacyModelID: String? {
+        guard let providerId, let modelName else { return nil }
+        return LLMModelID(providerID: providerId, modelID: modelName)?.rawValue
     }
 }

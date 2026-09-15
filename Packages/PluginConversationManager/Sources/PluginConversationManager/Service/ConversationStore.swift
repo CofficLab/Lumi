@@ -1,4 +1,5 @@
 import Foundation
+import KitLLM
 import os
 import ProviderConversation
 import KitSuperLog
@@ -101,6 +102,36 @@ public actor ConversationStore: SuperLog {
     /// Create a new conversation with specific ID
     @discardableResult
     func createConversation(id: UUID, title: String?, preview: String = "", createdAt: Date = Date(), verbosity: ResponseVerbosity? = nil, providerID: String? = nil, modelName: String? = nil, projectPath: String? = nil, parentConversationID: UUID? = nil, reasoningEffort: ReasoningEffort? = nil, automationLevel: AutomationLevel? = nil) throws -> ConversationModel {
+        let modelID = providerID.flatMap { provider in
+            modelName.flatMap { LLMModelID(providerID: provider, modelID: $0)?.rawValue }
+        }
+        return try createConversation(
+            id: id,
+            title: title,
+            preview: preview,
+            createdAt: createdAt,
+            verbosity: verbosity,
+            modelID: modelID.flatMap { LLMModelID(rawValue: $0)?.rawValue },
+            projectPath: projectPath,
+            parentConversationID: parentConversationID,
+            reasoningEffort: reasoningEffort,
+            automationLevel: automationLevel
+        )
+    }
+
+    @discardableResult
+    func createConversation(
+        id: UUID,
+        title: String?,
+        preview: String = "",
+        createdAt: Date = Date(),
+        verbosity: ResponseVerbosity? = nil,
+        modelID: String?,
+        projectPath: String? = nil,
+        parentConversationID: UUID? = nil,
+        reasoningEffort: ReasoningEffort? = nil,
+        automationLevel: AutomationLevel? = nil
+    ) throws -> ConversationModel {
         let context = ModelContext(container)
         let now = createdAt.timeIntervalSince1970
         let model = ConversationModel(
@@ -112,8 +143,7 @@ public actor ConversationStore: SuperLog {
             verbosityRaw: verbosity?.rawValue,
             reasoningEffortRaw: reasoningEffort?.rawValue,
             automationLevelRaw: automationLevel?.rawValue,
-            providerId: providerID,
-            modelName: modelName,
+            modelID: modelID,
             projectPath: projectPath,
             parentConversationID: parentConversationID?.uuidString
         )
@@ -121,10 +151,34 @@ public actor ConversationStore: SuperLog {
         try context.save()
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)创建对话：\(title ?? "nil"), 供应商：\(providerID ?? "nil"), 模型：\(modelName ?? "nil"), 项目：\(projectPath ?? "nil")")
+            Self.logger.info("\(Self.t)创建对话：\(title ?? "nil"), 模型 ID：\(modelID ?? "nil"), 项目：\(projectPath ?? "nil")")
         }
 
         return model
+    }
+
+    /// 将旧 SwiftData providerId + modelName 行一次性折叠为单一 modelID。
+    @discardableResult
+    func migrateLegacyModelSelections() -> Int {
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<ConversationModel>(
+            predicate: #Predicate<ConversationModel> { $0.providerId != nil || $0.modelName != nil }
+        )
+        guard let models = try? context.fetch(descriptor), !models.isEmpty else { return 0 }
+        var migrated = 0
+        for model in models {
+            if model.modelID == nil,
+               let providerID = model.providerId,
+               let modelName = model.modelName,
+               let selectionID = LLMModelID(providerID: providerID, modelID: modelName) {
+                model.modelID = selectionID.rawValue
+                migrated += 1
+            }
+            model.providerId = nil
+            model.modelName = nil
+        }
+        guard save(context, operation: "迁移对话模型 ID") else { return 0 }
+        return migrated
     }
 
     // MARK: - Migration Import
@@ -471,8 +525,13 @@ public actor ConversationStore: SuperLog {
         return save(context, operation: "更新最后消息时间")
     }
 
-    /// Update conversation provider and model
+    /// Legacy update entry point; new callers should persist modelID directly.
     func updateConversationProvider(id: UUID, providerID: String, modelName: String?) -> Bool {
+        let modelID = modelName.flatMap { LLMModelID(providerID: providerID, modelID: $0)?.rawValue }
+        return updateConversationModelID(modelID, for: id)
+    }
+
+    func updateConversationModelID(_ modelID: String?, for id: UUID) -> Bool {
         let context = ModelContext(container)
         let idString = id.uuidString
 
@@ -484,10 +543,11 @@ public actor ConversationStore: SuperLog {
             return false
         }
 
-        model.providerId = providerID
-        model.modelName = modelName
+        model.modelID = modelID.flatMap { LLMModelID(rawValue: $0)?.rawValue }
+        model.providerId = nil
+        model.modelName = nil
         model.updatedAt = Date().timeIntervalSince1970
-        return save(context, operation: "更新供应商")
+        return save(context, operation: "更新模型 ID")
     }
 
     /// Update conversation response preferences

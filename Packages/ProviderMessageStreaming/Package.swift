@@ -16,5 +16,12 @@ let package = Package(
             dependencies: [.product(name: "ProviderMessage", package: "ProviderMessage")],
             path: "Sources/ProviderMessageStreaming"
         ),
+        .testTarget(
+            name: "ProviderMessageStreamingTests",
+            dependencies: [
+                "ProviderMessageStreaming",
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
+            ]
+        ),
     ]
 )

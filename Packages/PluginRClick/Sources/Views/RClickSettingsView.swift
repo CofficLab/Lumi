@@ -5,11 +5,11 @@ import LumiUI
 public struct RClickSettingsView: View {
     @LumiUI.LumiTheme private var theme: any LumiUITheme
 
-    @ObservedObject private var configManager: RClickConfigManager
+    @ObservedObject private var viewModel: RClickSettingsViewModel
     @State private var showingAddTemplateSheet = false
 
-    init(configManager: RClickConfigManager) {
-        self.configManager = configManager
+    init(viewModel: RClickSettingsViewModel) {
+        self.viewModel = viewModel
     }
 
     public var body: some View {
@@ -22,7 +22,7 @@ public struct RClickSettingsView: View {
             HStack {
                 Spacer()
                 AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
-                    openDataDirectory()
+                    viewModel.openDataDirectory()
                 }
             }
 #endif
@@ -33,8 +33,7 @@ public struct RClickSettingsView: View {
         }
         .sheet(isPresented: $showingAddTemplateSheet) {
             AddTemplateView(isPresented: $showingAddTemplateSheet) { name, ext, content in
-                let template = NewFileTemplate(name: name, extensionName: ext, content: content)
-                configManager.addTemplate(template)
+                viewModel.addTemplate(name: name, extensionName: ext, content: content)
             }
         }
     }
@@ -65,7 +64,7 @@ public struct RClickSettingsView: View {
                 )
 
                 HStack(spacing: 8) {
-                    AppButton(LumiPluginLocalization.string("Open System Settings", bundle: .module), style: .primary, fillsWidth: true, action: { openFinderExtensionSettings() })
+                    AppButton(LumiPluginLocalization.string("Open System Settings", bundle: .module), style: .primary, fillsWidth: true, action: { viewModel.openFinderExtensionSettings() })
                         .frame(width: 180)
 
                     Spacer()
@@ -83,14 +82,14 @@ public struct RClickSettingsView: View {
     private var generalActionsCard: some View {
         AppCard {
             AppSettingsSection(title: LumiPluginLocalization.string("General Actions", bundle: .module)) {
-                ForEach(configManager.config.items) { item in
+                ForEach(viewModel.config.items) { item in
                     if item.type != .newFile {
                         AppSettingsToggleRow(
                             item.title,
                             systemImage: item.type.iconName,
                             isOn: Binding(
                                 get: { item.isEnabled },
-                                set: { _ in configManager.toggleItem(item) }
+                                set: { _ in viewModel.toggleItem(item) }
                             )
                         )
                     }
@@ -113,19 +112,19 @@ public struct RClickSettingsView: View {
                         .frame(width: 120)
                 }
 
-                if let newFileItem = configManager.config.items.first(where: { $0.type == .newFile }) {
+                if let newFileItem = viewModel.newFileItem {
                     AppSettingsToggleRow(
                         LumiPluginLocalization.string("Enable 'New File' Submenu", bundle: .module),
                         systemImage: newFileItem.type.iconName,
                         isOn: Binding(
                             get: { newFileItem.isEnabled },
-                            set: { _ in configManager.toggleItem(newFileItem) }
+                            set: { _ in viewModel.toggleItem(newFileItem) }
                         )
                     )
                 }
 
-                if configManager.config.items.first(where: { $0.type == .newFile })?.isEnabled == true {
-                    ForEach(configManager.config.fileTemplates) { template in
+                if viewModel.newFileItem?.isEnabled == true {
+                    ForEach(viewModel.config.fileTemplates) { template in
                         AppSettingsRow {
                             HStack(spacing: 12) {
                                 Image(systemName: "doc.badge.plus")
@@ -146,7 +145,7 @@ public struct RClickSettingsView: View {
 
                                 Toggle("", isOn: Binding(
                                     get: { template.isEnabled },
-                                    set: { _ in configManager.toggleTemplate(template) }
+                                    set: { _ in viewModel.toggleTemplate(template) }
                                 ))
                                 .labelsHidden()
                                 .toggleStyle(.switch)
@@ -155,7 +154,7 @@ public struct RClickSettingsView: View {
                                 AppIconButton(
                                     systemImage: "trash",
                                     tint: theme.error,
-                                    action: { configManager.deleteTemplate(template) }
+                                    action: { viewModel.deleteTemplate(template) }
                                 )
                                 .help(LumiPluginLocalization.string("Delete Template", bundle: .module))
                             }
@@ -176,40 +175,13 @@ public struct RClickSettingsView: View {
                         .font(.appBodyEmphasized)
                         .foregroundColor(theme.error)
                     Spacer()
-                    AppButton(LumiPluginLocalization.string("Reset", bundle: .module), style: .destructive, fillsWidth: true, action: { configManager.resetToDefaults() })
+                    AppButton(LumiPluginLocalization.string("Reset", bundle: .module), style: .destructive, fillsWidth: true, action: { viewModel.resetToDefaults() })
                         .frame(width: 100)
                 }
             }
         }
     }
 
-    // MARK: - Private
-
-    private func openFinderExtensionSettings() {
-        let urlString: String
-        if Self.isMacOS15OrLater {
-            // macOS 15+: 通用 → 登录项与扩展 → 扩展 → 文件提供程序
-            urlString = "x-apple.systempreferences:com.apple.Extensions-List"
-        } else {
-            // macOS 13–14: 通用 → 登录项与扩展 → Finder 扩展
-            urlString = "x-apple.systempreferences:com.apple.Extensions-List"
-        }
-        if let url = URL(string: urlString) {
-            NSWorkspace.shared.open(url)
-        }
-    }
-
-    // MARK: - Debug Helpers
-
-    #if DEBUG
-    private func openDataDirectory() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
-        guard let url = appSupport else { return }
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(url)
-    }
-    #endif
 }
 
 // MARK: - Preview

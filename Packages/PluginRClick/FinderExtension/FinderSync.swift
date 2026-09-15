@@ -304,6 +304,7 @@ class FinderSync: FIFinderSync, SuperLog {
         }
     }
 
+    @MainActor
     func createNewFile(extension ext: String, content: String, namePrefix: String, targetURL: URL? = nil) {
         guard let target = targetURL ?? cachedNewFileTargetURL ?? getCurrentDirectoryURL() else {
             if Self.verbose {
@@ -350,6 +351,7 @@ class FinderSync: FIFinderSync, SuperLog {
     }
 
     /// 新建文件失败时提示用户，避免静默失败
+    @MainActor
     private func showCreateFileError(fileURL: URL, error: Error) {
         let alert = NSAlert()
         alert.messageText = "无法新建文件"

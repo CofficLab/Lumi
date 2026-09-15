@@ -165,35 +165,21 @@ struct CacheHitRateStats: Equatable {
 
     /// 从一批消息聚合缓存命中统计。
     ///
-    /// 新消息使用 ProviderMessage 的强类型 token 字段；旧消息仍可从
-    /// metadata 读取，避免迁移前已保存的消息完全丢失统计。
+    /// 单次请求的解析规则与历史曲线共用 `CacheHitRateRequestMetrics`，
+    /// 保证「当前值」与「趋势」口径一致。
     static func compute(messages: [Message]) -> CacheHitRateStats {
         var sampleCount = 0
         var rateSum = 0.0
         var totalCached = 0
         var totalInput = 0
 
-        for message in messages where message.role == .assistant {
-            guard let cached = metricValue(
-                message.cachedInputTokenCount,
-                metadata: message.metadata,
-                key: "cachedInputTokens"
-            ),
-            let total = metricValue(
-                message.cacheTotalInputTokenCount ?? message.inputTokenCount,
-                metadata: message.metadata,
-                key: "cacheTotalInputTokens"
-            ),
-            cached >= 0,
-            total > 0 else {
-                continue
-            }
+        for message in messages {
+            guard let metrics = CacheHitRateRequestMetrics.parse(message) else { continue }
 
-            let boundedCached = min(cached, total)
             sampleCount += 1
-            rateSum += Double(boundedCached) / Double(total)
-            totalCached += boundedCached
-            totalInput += total
+            rateSum += metrics.hitRate
+            totalCached += metrics.cachedTokens
+            totalInput += metrics.totalTokens
         }
 
         return CacheHitRateStats(
@@ -202,14 +188,6 @@ struct CacheHitRateStats: Equatable {
             totalCachedTokens: totalCached,
             totalInputTokens: totalInput
         )
-    }
-
-    private static func metricValue(
-        _ value: Int?,
-        metadata: [String: String],
-        key: String
-    ) -> Int? {
-        value ?? metadata[key].flatMap(Int.init)
     }
 }
 

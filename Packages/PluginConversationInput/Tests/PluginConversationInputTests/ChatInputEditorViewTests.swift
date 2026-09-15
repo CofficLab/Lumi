@@ -118,6 +118,42 @@ struct ChatInputEditorViewTests {
         #expect(!textView.isIMEComposing)
     }
 
+    @Test("editor cursor binding stays current after a committed character")
+    func viewModelKeepsCursorBindingInSync() {
+        let input = DefaultConversationInputProvider()
+        let capability = ConversationInputCapabilityAdapter(
+            input: input,
+            sender: nil,
+            conversations: nil,
+            conversationState: nil,
+            metrics: nil
+        )
+        let viewModel = ConversationInputViewModel(capability: capability)
+
+        viewModel.setCursorPosition(1)
+
+        #expect(viewModel.inputCursorPosition == 1)
+        #expect(input.inputCursorPosition == 1)
+    }
+
+    @Test("provisional zero-width layout does not publish an editor height")
+    func zeroWidthLayoutDoesNotProduceHeight() {
+        #expect(
+            ChatInputEditorView.measuredHeight(
+                usedRectHeight: 152,
+                insetHeight: 8,
+                availableWidth: 0
+            ) == nil
+        )
+        #expect(
+            ChatInputEditorView.measuredHeight(
+                usedRectHeight: 152,
+                insetHeight: 8,
+                availableWidth: 640
+            ) == 160
+        )
+    }
+
     @Test("dismantling the editor cancels deferred bindings")
     func dismantlingEditorCancelsDeferredBinding() async {
         var draft = ""
@@ -224,10 +260,17 @@ struct ChatInputEditorViewTests {
             agentLoop: InputTestAgentLoop()
         )
         let input = DefaultConversationInputProvider()
-        let observer = ActionBarConversationObserver(
-            conversations: conversations,
+        let capability = ConversationInputCapabilityAdapter(
             input: input,
-            sender: sender
+            sender: sender,
+            conversations: conversations,
+            conversationState: nil,
+            metrics: nil
+        )
+        let viewModel = ConversationInputViewModel(capability: capability)
+        let observer = ActionBarConversationObserver(
+            capability: capability,
+            viewModel: viewModel
         )
 
         input.text = "draft"
@@ -249,16 +292,23 @@ struct ChatInputEditorViewTests {
     @Test("输入错误状态通过 typed observer 同步并支持取消")
     func inputObserverTracksErrorState() {
         let input = DefaultConversationInputProvider()
-        let state = ConversationInputViewState()
-        let observer = ConversationInputObserver(input: input, sender: nil, state: state)
+        let capability = ConversationInputCapabilityAdapter(
+            input: input,
+            sender: nil,
+            conversations: nil,
+            conversationState: nil,
+            metrics: nil
+        )
+        let viewModel = ConversationInputViewModel(capability: capability)
+        let observer = ConversationInputObserver(capability: capability, viewModel: viewModel)
 
-        #expect(state.errorMessage == nil)
+        #expect(viewModel.errorMessage == nil)
         input.errorMessage = "send failed"
-        #expect(state.errorMessage == "send failed")
+        #expect(viewModel.errorMessage == "send failed")
 
         observer.cancel()
         input.errorMessage = nil
-        #expect(state.errorMessage == "send failed")
+        #expect(viewModel.errorMessage == "send failed")
     }
 }
 

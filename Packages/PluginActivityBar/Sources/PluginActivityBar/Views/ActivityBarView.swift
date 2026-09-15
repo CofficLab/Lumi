@@ -1,6 +1,7 @@
 import SwiftUI
 import LumiUI
 import ProviderActivityBar
+import os
 
 /// 打开设置窗口的通知名（与 KernelLumi 的 `lumi.openSettings` 同字符串，通知可互通）。
 private extension Notification.Name {
@@ -17,19 +18,23 @@ private extension Notification.Name {
 /// - 内容溢出时滚动，配合上下 8pt 渐隐遮罩提示可滚动；
 /// - 右键菜单提供「打开设置」入口（与旧版一致，通过 `lumi.openSettings` 通知）。
 internal struct ActivityBarView: View {
-    let provider: ActivityBarProvider
-    @State private var observationRevision = 0
-    @State private var observerHandle: (any ActivityBarObserverHandle)?
+    private static let logger = Logger(subsystem: "com.coffic.lumi.plugin.activity-bar", category: "View")
+
+    @ObservedObject private var viewModel: ActivityBarViewModel
+
+    init(viewModel: ActivityBarViewModel) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         Group {
-            if provider.shouldDisplayActivityBar {
+            if viewModel.shouldDisplayActivityBar {
                 VStack(spacing: 6) {
                     ActivityBarScrollableItemList(
-                        items: provider.items,
-                        activeItemID: provider.activeItemID
+                        items: viewModel.items,
+                        activeItemID: viewModel.activeItemID
                     ) { item in
-                        provider.activateItem(id: item.id)
+                        viewModel.activateItem(id: item.id)
                     }
 
                     Spacer(minLength: 0)
@@ -48,16 +53,8 @@ internal struct ActivityBarView: View {
                 }
             }
         }
-        .id(observationRevision)
         .onAppear {
-            guard observerHandle == nil else { return }
-            observerHandle = provider.addActivityBarObserver { _ in
-                observationRevision += 1
-            }
-        }
-        .onDisappear {
-            observerHandle?.cancel()
-            observerHandle = nil
+            Self.logger.info("ActivityBarView onAppear: items=\(viewModel.items.count, privacy: .public), shouldDisplay=\(viewModel.shouldDisplayActivityBar, privacy: .public)")
         }
     }
 }

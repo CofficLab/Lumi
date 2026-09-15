@@ -44,6 +44,9 @@ public final class LLMProviderManagerBox {
     /// 当前选中的模型 id 快照。
     public private(set) var selectedModel: String?
 
+    /// 当前选中的全局唯一模型 ID 快照。
+    public private(set) var selectedModelID: String?
+
     /// 全部已注册供应商的元数据快照，按注册顺序排列。
     public private(set) var providerInfos: [LLMProviderInfo] = []
 
@@ -104,14 +107,28 @@ public final class LLMProviderManagerBox {
         modelIDs[providerID] ?? []
     }
 
+    public func modelID(providerID: String, model: String) -> String? {
+        manager.modelID(providerID: providerID, model: model)?.rawValue
+    }
+
+    public func modelRoute(for modelID: String) -> LLMModelRoute? {
+        guard let id = LLMModelID(rawValue: modelID) else { return nil }
+        return manager.modelRoute(for: id)
+    }
+
     /// 在当前上下文中选择供应商与模型。
     public func select(providerID: String, model: String?) {
         selection.select(providerID: providerID, model: model)
     }
 
+    public func select(modelID: String) {
+        selection.select(modelID: modelID)
+    }
+
     private func refresh() {
         selectedProviderID = selection.selectedProviderID
         selectedModel = selection.selectedModel
+        selectedModelID = selection.selectedModelID
         providerInfos = manager.allProviders().map { $0.providerInfo }
         modelIDs = Dictionary(
             uniqueKeysWithValues: manager.allProviders().map {

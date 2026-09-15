@@ -6,6 +6,7 @@ final class ConversationObserverHandleImpl: ConversationObserverHandle {
     private weak var owner: ConversationManager?
     let callback: (ConversationEvent) -> Void
     private var isCancelled = false
+    private var forwardedHandle: (any ConversationObserverHandle)?
 
     init(owner: ConversationManager, callback: @escaping (ConversationEvent) -> Void) {
         self.owner = owner
@@ -16,6 +17,13 @@ final class ConversationObserverHandleImpl: ConversationObserverHandle {
         guard !isCancelled else { return }
         isCancelled = true
         owner?.removeConversationObserver(self)
+        forwardedHandle?.cancel()
+        forwardedHandle = nil
+    }
+
+    func transfer(to replacement: any ConversationManaging) {
+        forwardedHandle?.cancel()
+        forwardedHandle = replacement.addConversationObserver(callback)
     }
 
     func invoke(_ event: ConversationEvent) {

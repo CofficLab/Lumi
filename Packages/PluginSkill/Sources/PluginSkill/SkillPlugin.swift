@@ -40,10 +40,20 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
 
     /// `willSendToLLM` 技能注入钩子（见 `Hooks/SkillInjectionHook.swift`）。
     private var skillInjectionHook: SkillInjectionHook?
+    private var toolbarViewModel: SkillChatToolbarViewModel?
+    private var toolbarObserver: SkillChatToolbarObserver?
 
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        toolbarObserver?.cancel()
+        toolbarObserver = nil
+        toolbarViewModel?.cancel()
+        toolbarViewModel = nil
+        for handle in lifecycleHandles { handle.cancel() }
+        lifecycleHandles.removeAll()
+        skillInjectionHook = nil
+
         guard let project = kernel.resolveProvider((any ProjectProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve ProjectProviding from kernel")
             return
@@ -63,11 +73,6 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
                 skillProvider.addProvider(builtinContributor)
             }
 
-            // 缓存失效：插件贡献变化时刷新 SkillService 缓存。
-            let handle = skillProvider.addObserver { [weak skillService] _ in
-                Task { await skillService?.invalidateAllCache() }
-            }
-            observerHandles.append(handle)
         } else {
             Self.logger.warning("\(Self.t)SkillProviding not registered; degraded to project-level skills only")
         }
@@ -90,19 +95,33 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
 
         // 3. Chat 工具栏技能入口。
         if let chat = kernel.resolveProvider((any ChatSectionProviding).self) {
+            let toolbarViewModel = SkillChatToolbarViewModel(service: skillService)
+            let toolbarObserver = SkillChatToolbarObserver(
+                projectProvider: project,
+                skillProvider: skillProvider,
+                viewModel: toolbarViewModel
+            )
+            self.toolbarViewModel = toolbarViewModel
+            self.toolbarObserver = toolbarObserver
+
             chat.addBarItems([
                 ChatSectionBarItem(
                     id: "\(id).toolbar",
                     order: 51,
                     placement: .toolbarTrailing
                 ) {
-                    SkillChatToolbarView(project: project, skillService: skillService, skillProvider: skillProvider)
+                    SkillChatToolbarView(viewModel: toolbarViewModel)
                 },
             ])
         }
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        toolbarObserver?.cancel()
+        toolbarObserver = nil
+        toolbarViewModel?.cancel()
+        toolbarViewModel = nil
+
         // 撤回 SkillProviding 中的内置 contributor。
         if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
             skillProvider.removeProvider(providerID: Self.builtinContributorID)
@@ -110,8 +129,6 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
 
         for handle in lifecycleHandles { handle.cancel() }
         lifecycleHandles.removeAll()
-        for handle in observerHandles { handle.cancel() }
-        observerHandles.removeAll()
         skillInjectionHook = nil
 
         kernel.resolveProvider((any ChatSectionProviding).self)?
@@ -119,21 +136,15 @@ public final class SkillPlugin: SuperPlugin, SuperLog {
     }
 
     private var lifecycleHandles: [any LifecycleHookHandle] = []
-    private var observerHandles: [any SkillProvidingObserverHandle] = []
 }
 
 /// Chat 工具栏技能入口：显示可用技能数量（插件贡献 + 内置 + 项目），点击弹出列表。
 ///
 /// 样式与 ``SpeedToolbarView`` 保持一致。
 struct SkillChatToolbarView: View {
-    @LumiTheme private var theme: any LumiUITheme
-
-    let project: any ProjectProviding
-    let skillService: SkillService
-    let skillProvider: (any SkillProviding)?
+    @ObservedObject var viewModel: SkillChatToolbarViewModel
 
     @State private var isPopoverPresented = false
-    @State private var skills: [SkillMetadata] = []
 
     var body: some View {
         Button {
@@ -143,8 +154,8 @@ struct SkillChatToolbarView: View {
                 Image(systemName: "sparkles")
                     .font(.system(size: 10, weight: .medium))
 
-                if !skills.isEmpty {
-                    Text("\(skills.count)")
+                if !viewModel.skills.isEmpty {
+                    Text("\(viewModel.skills.count)")
                         .font(.system(size: 10, weight: .medium))
                         .contentTransition(.numericText())
                 } else {
@@ -161,25 +172,11 @@ struct SkillChatToolbarView: View {
             )
         }
         .buttonStyle(.plain)
-        .help(Text(skills.isEmpty ? "无可用技能" : "\(skills.count) 个可用技能"))
+        .help(Text(viewModel.skills.isEmpty ? "无可用技能" : "\(viewModel.skills.count) 个可用技能"))
         .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
-            SkillListView(skills: skills)
+            SkillListView(skills: viewModel.skills)
                 .frame(width: 320)
                 .frame(minHeight: 220, maxHeight: 420)
         }
-        .task {
-            await refresh()
-        }
-        .onChange(of: project.currentProject?.path) { _, _ in
-            Task { @MainActor in
-                await refresh()
-            }
-        }
-    }
-
-    private func refresh() async {
-        let path = project.currentProject?.path ?? ""
-        let baseSkills = skillProvider?.allSkills() ?? []
-        skills = await skillService.listSkills(projectPath: path, baseSkills: baseSkills)
     }
 }

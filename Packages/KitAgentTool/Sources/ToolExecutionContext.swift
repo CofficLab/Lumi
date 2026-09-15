@@ -34,6 +34,7 @@ public struct ToolExecutionContext: Sendable {
     public let isCancelled: @Sendable () -> Bool
     public let reportOutput: @Sendable (ToolExecutionOutputStream, String) async -> Void
     public let reportProgress: @Sendable (ToolExecutionProgress) async -> Void
+    private let conversationProjectPathProvider: @MainActor @Sendable () async -> String?
 
     public init(
         jobID: String,
@@ -41,7 +42,8 @@ public struct ToolExecutionContext: Sendable {
         turnID: UUID? = nil,
         isCancelled: @escaping @Sendable () -> Bool = { false },
         reportOutput: @escaping @Sendable (ToolExecutionOutputStream, String) async -> Void = { _, _ in },
-        reportProgress: @escaping @Sendable (ToolExecutionProgress) async -> Void = { _ in }
+        reportProgress: @escaping @Sendable (ToolExecutionProgress) async -> Void = { _ in },
+        conversationProjectPathProvider: @escaping @MainActor @Sendable () async -> String? = { nil }
     ) {
         self.jobID = jobID
         self.conversationID = conversationID
@@ -49,5 +51,17 @@ public struct ToolExecutionContext: Sendable {
         self.isCancelled = isCancelled
         self.reportOutput = reportOutput
         self.reportProgress = reportProgress
+        self.conversationProjectPathProvider = conversationProjectPathProvider
+    }
+
+    /// Resolves the project bound to this tool call's conversation, independent
+    /// of whichever conversation is currently selected in the UI.
+    public func conversationProjectPath() async -> String? {
+        guard let path = await conversationProjectPathProvider()?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty else {
+            return nil
+        }
+        return path
     }
 }

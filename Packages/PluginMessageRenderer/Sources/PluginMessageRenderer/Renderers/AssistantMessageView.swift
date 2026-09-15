@@ -1,23 +1,27 @@
-import KernelCore
+import Foundation
 import KitAgentTool
 import KitLocalization
 import KitMarkdown
 import LumiUI
 import ProviderConversation
 import ProviderMessage
-import ProviderMessageRendering
-import ProviderMessageSender
-import ProviderToolManager
 import SwiftUI
 
 struct AssistantMessageView: View {
-    let kernel: KernelCoreContainer
+    let capability: any MessageRendererCapability
+    @ObservedObject var stateViewModel: MessageRendererStateViewModel
     let message: Message
     let verbosity: ResponseVerbosity
 
     var body: some View {
         MessageViewChrome(message: message, showsHeader: verbosity != .brief, verbosity: verbosity) {
-            AssistantMessageBody(kernel: kernel, message: message, shouldHideAssistantBody: message.isToolExecutionOnly, verbosity: verbosity)
+            AssistantMessageBody(
+                capability: capability,
+                stateViewModel: stateViewModel,
+                message: message,
+                shouldHideAssistantBody: message.isToolExecutionOnly,
+                verbosity: verbosity
+            )
         }
     }
 }
@@ -26,7 +30,8 @@ private struct AssistantMessageBody: View {
     @LumiTheme private var theme
     @State private var isReasoningExpanded = false
 
-    let kernel: KernelCoreContainer
+    let capability: any MessageRendererCapability
+    @ObservedObject var stateViewModel: MessageRendererStateViewModel
     let message: Message
     let shouldHideAssistantBody: Bool
     let verbosity: ResponseVerbosity
@@ -65,7 +70,12 @@ private struct AssistantMessageBody: View {
 
             if let toolCalls = message.toolCalls,
                !toolCalls.isEmpty {
-                ToolCallRowsView(kernel: kernel, message: message, verbosity: verbosity)
+                ToolCallRowsView(
+                    capability: capability,
+                    stateViewModel: stateViewModel,
+                    message: message,
+                    verbosity: verbosity
+                )
                     .padding(.top, shouldHideAssistantBody ? 0 : 4)
             }
         }

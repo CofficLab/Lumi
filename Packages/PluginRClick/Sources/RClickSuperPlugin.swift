@@ -69,7 +69,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "eye",
                 order: order
             ) {
-                RClickRailView(configManager: self.configManager)
+                RClickRailView(viewModel: RClickSettingsViewModel(configManager: self.configManager))
             },
         ])
 
@@ -90,7 +90,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                         recommended: RailViewWidth(minWidth: 240, idealWidth: 280, maxWidth: 400),
                         store: railWidthStore
                     )
-                    content?.setContentView(AnyView(RClickSettingsView(configManager: self.configManager)))
+                    content?.setContentView(AnyView(RClickSettingsView(viewModel: RClickSettingsViewModel(configManager: self.configManager))))
                     chat?.setVisible(false)
                     rootView?.setContentHeaderViewHidden(true)
                 } else {

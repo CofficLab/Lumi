@@ -1,10 +1,8 @@
 import os
 import KitAgentTool
-import KernelCore
 import LumiUI
 import ProviderConversation
 import ProviderMessage
-import ProviderToolManager
 import SwiftUI
 
 /// V1 (brief) 模式下的默认工具调用行列表。
@@ -13,10 +11,13 @@ import SwiftUI
 ///
 /// 与 V2/V3 使用相同的 `ToolCallRowView` 渲染（含耗时、参数/结果按钮、卡片样式），
 /// 唯一区别是 V1 不走自定义 ToolCall renderer，统一走默认卡片路径。
+/// View 只依赖 `MessageRendererCapability` 与 `MessageRendererStateViewModel`，
+/// 不直接解析 Kernel。
 struct CollapsibleToolStepGroup: View {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.message-renderer", category: "CollapsibleToolStepGroup")
 
-    let kernel: KernelCoreContainer
+    let capability: any MessageRendererCapability
+    @ObservedObject var stateViewModel: MessageRendererStateViewModel
 
     let message: Message
     let toolCalls: [MessageToolCall]
@@ -27,12 +28,14 @@ struct CollapsibleToolStepGroup: View {
     @State private var resolvedToolCalls: [MessageToolCall]?
 
     init(
-        kernel: KernelCoreContainer,
+        capability: any MessageRendererCapability,
+        stateViewModel: MessageRendererStateViewModel,
         message: Message,
         toolCalls: [MessageToolCall],
         verbosity: ResponseVerbosity
     ) {
-        self.kernel = kernel
+        self.capability = capability
+        self.stateViewModel = stateViewModel
         self.message = message
         self.toolCalls = toolCalls
         self.verbosity = verbosity
@@ -61,12 +64,9 @@ struct CollapsibleToolStepGroup: View {
 
     @MainActor
     private func resolveResults() async {
-        guard resolvedToolCalls == nil, let manager = kernel.resolveProvider((any ToolManagerProviding).self) else {
-            Self.logger.error("Failed to resolve ToolManagerProviding from kernel")
-            return
-        }
+        guard resolvedToolCalls == nil else { return }
 
-        // 命中"完全解析"缓存时跳过逐个 kernel 查询与 loading 态闪烁
+        // 命中"完全解析"缓存时跳过逐个查询与 loading 态闪烁
         if let cached = ToolCallResolutionCache.shared.resolvedCalls(
             messageID: message.id,
             toolCalls: toolCalls
@@ -78,7 +78,7 @@ struct CollapsibleToolStepGroup: View {
         var resolved = toolCalls
         var didResolveAnyResult = false
         for index in resolved.indices where resolved[index].result == nil {
-            if let raw = await manager.toolCallResult(
+            if let raw = await capability.toolCallResult(
                 for: resolved[index].id,
                 conversationID: message.conversationID,
                 turnID: message.turnID
@@ -101,7 +101,8 @@ struct CollapsibleToolStepGroup: View {
 
     private func toolCallRow(for toolCall: MessageToolCall) -> some View {
         ToolCallRowView(
-            kernel: kernel,
+            capability: capability,
+            stateViewModel: stateViewModel,
             message: message,
             toolCall: toolCall,
             verbosity: verbosity,

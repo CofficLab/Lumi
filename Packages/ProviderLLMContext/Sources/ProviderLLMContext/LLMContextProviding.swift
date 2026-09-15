@@ -1,4 +1,5 @@
 import Foundation
+import KitLLM
 import ProviderMessage
 
 public enum LLMContextPreparationMode: String, Sendable {
@@ -63,21 +64,30 @@ public struct LLMContextBudget: Sendable, Equatable {
 
 public struct LLMContextPreparationRequest: Sendable, Equatable {
     public let conversationID: UUID
-    public let providerID: String?
-    public let model: String?
+    /// Canonical model route. Context budgeting and summary requests use the
+    /// provider metadata resolved from this ID when available.
+    public let modelID: LLMModelID?
+    private let fallbackProviderID: String?
+    private let fallbackModel: String?
+    public var providerID: String? { modelID?.providerID ?? fallbackProviderID }
+    public var model: String? { modelID?.modelID ?? fallbackModel }
     public let budget: LLMContextBudget
     public let mode: LLMContextPreparationMode
 
     public init(
         conversationID: UUID,
+        modelID: LLMModelID? = nil,
         providerID: String? = nil,
         model: String? = nil,
         budget: LLMContextBudget,
         mode: LLMContextPreparationMode = .beforeSend
     ) {
         self.conversationID = conversationID
-        self.providerID = providerID
-        self.model = model
+        self.modelID = modelID ?? providerID.flatMap { providerID in
+            model.flatMap { LLMModelID(providerID: providerID, modelID: $0) }
+        }
+        self.fallbackProviderID = providerID
+        self.fallbackModel = model
         self.budget = budget
         self.mode = mode
     }

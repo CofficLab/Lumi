@@ -1,42 +1,45 @@
 import Foundation
+import KitLLM
 import ProviderConversation
 
 extension ConversationManager {
     // MARK: - Provider/Model Selection
 
     public func providerID(for conversationID: UUID?) -> String? {
-        guard let conversationID else {
-            return nil
-        }
-        return conversations.first { $0.id == conversationID }?.providerID
+        guard let modelID = modelID(for: conversationID) else { return nil }
+        return LLMModelID(rawValue: modelID)?.providerID
     }
 
     public func modelName(for conversationID: UUID?) -> String? {
-        guard let conversationID else {
-            return nil
-        }
-        return conversations.first { $0.id == conversationID }?.modelName
+        guard let modelID = modelID(for: conversationID) else { return nil }
+        return LLMModelID(rawValue: modelID)?.modelID
     }
 
-    public func selectProvider(id: String, model: String?, for conversationID: UUID?) {
-        guard let conversationID else {
-            return
-        }
-        guard let index = conversations.firstIndex(where: { $0.id == conversationID }) else {
-            return
-        }
-        conversations[index].providerID = id
-        conversations[index].modelName = model
+    public func modelID(for conversationID: UUID?) -> String? {
+        guard let conversationID else { return nil }
+        return conversations.first { $0.id == conversationID }?.modelID
+    }
+
+    public func selectModel(id: String, for conversationID: UUID?) {
+        guard let conversationID,
+              let index = conversations.firstIndex(where: { $0.id == conversationID }),
+              LLMModelID(rawValue: id) != nil else { return }
+        conversations[index].modelID = id
         notifyConversationObservers(.providerChanged(conversationID))
 
-        // Persist to database async
         Task {
-            await store?.updateConversationProvider(id: conversationID, providerID: id, modelName: model)
+            await store?.updateConversationModelID(id, for: conversationID)
         }
 
         if Self.verbose {
-            Self.logger.info("\(Self.t)selectProvider: conversation=\(conversationID.uuidString.prefix(8)), provider=\(id), model=\(model ?? "nil")")
+            Self.logger.info("\(Self.t)selectModel: conversation=\(conversationID.uuidString.prefix(8)), modelID=\(id)")
         }
+    }
+
+    public func selectProvider(id: String, model: String?, for conversationID: UUID?) {
+        guard let resolved = llmProviderManager?.modelID(providerID: id, model: model)
+            ?? model.flatMap({ LLMModelID(providerID: id, modelID: $0) }) else { return }
+        selectModel(id: resolved.rawValue, for: conversationID)
     }
 
     // MARK: - Verbosity
@@ -182,7 +185,6 @@ extension ConversationManager {
         }
         conversations[index].automationLevel = automationLevel
         notifyConversationObservers(.automationChanged(conversationID))
-        notifyConversationsChanged()
 
         Task {
             await store?.updateConversationPreferences(id: conversationID, automationLevel: automationLevel)

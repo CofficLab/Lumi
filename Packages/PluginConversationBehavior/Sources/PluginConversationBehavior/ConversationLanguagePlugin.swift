@@ -34,6 +34,7 @@ public final class ConversationLanguagePlugin: SuperPlugin, SuperLog {
 
     /// `willSendToLLM` 语言注入钩子（见 `Hooks/ConversationLanguageHook.swift`）。
     private var conversationLanguageHook: ConversationLanguageHook?
+    private var conversationLanguageHookHandle: (any LifecycleHookHandle)?
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let chat = kernel.resolveProvider((any ChatSectionProviding).self),
@@ -42,11 +43,15 @@ public final class ConversationLanguagePlugin: SuperPlugin, SuperLog {
             return
         }
 
+        conversationLanguageHookHandle?.cancel()
+        conversationLanguageHookHandle = nil
+        conversationLanguageHook = nil
+
         if let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self),
            let conversations = kernel.resolveProvider((any ConversationManaging).self) {
             let hook = ConversationLanguageHook(conversations: conversations)
             conversationLanguageHook = hook
-            hooks.addWillSendToLLMHook { [weak hook] context in
+            conversationLanguageHookHandle = hooks.addWillSendToLLMHook { [weak hook] context in
                 guard let hook else { return context }
                 return hook.apply(to: context)
             }
@@ -67,6 +72,8 @@ public final class ConversationLanguagePlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        conversationLanguageHookHandle?.cancel()
+        conversationLanguageHookHandle = nil
         conversationLanguageHook = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeBarItem(id: "\(id).toolbar-button")
@@ -114,15 +121,7 @@ struct LanguageToolbarView: View {
                     .font(.system(size: 12, weight: .semibold))
                 ForEach(ConversationLanguage.allCases) { language in
                     Button {
-                        if let conversationID = conversations.selectedConversationID {
-                            conversations.setLanguage(language, for: conversationID)
-                        }
-                        conversations.setGlobalLanguage(language)
-                        ConversationBehaviorToast.show(
-                            toast,
-                            title: LumiPluginLocalization.string("Response Language", bundle: .module),
-                            detail: language.shortCode,
-                        )
+                        select(language)
                         isPopoverPresented = false
                     } label: {
                         HStack(spacing: 10) {
@@ -149,5 +148,17 @@ struct LanguageToolbarView: View {
             .padding(10)
             .frame(width: 200)
         }
+    }
+
+    func select(_ language: ConversationLanguage) {
+        if let conversationID = conversations.selectedConversationID {
+            conversations.setLanguage(language, for: conversationID)
+        }
+        conversations.setGlobalLanguage(language)
+        ConversationBehaviorToast.show(
+            toast,
+            title: LumiPluginLocalization.string("Response Language", bundle: .module),
+            detail: language.shortCode,
+        )
     }
 }

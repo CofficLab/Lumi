@@ -47,8 +47,10 @@ let package = Package(
         ], resources: [.process("../../Resources/Localizable.xcstrings")]),
         .testTarget(name: "PluginMessageListDetailedTests", dependencies: [
             "PluginMessageListDetailed",
+            .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
             .product(name: "ProviderMessage", package: "ProviderMessage"),
             .product(name: "ProviderConversation", package: "ProviderConversation"),
+            .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             .product(name: "ProviderChatSection", package: "ProviderChatSection"),
             .product(name: "ProviderPromptSuggestion", package: "ProviderPromptSuggestion"),
             .product(name: "ProviderProject", package: "ProviderProject"),

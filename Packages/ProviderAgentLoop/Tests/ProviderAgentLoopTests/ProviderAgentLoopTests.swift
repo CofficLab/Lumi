@@ -37,6 +37,39 @@ struct ProviderAgentLoopTests {
         #expect(llmMessage.content.contains("else { logger.error(\"failed\") }"))
     }
 
+    @Test("工具结果图片关联到 tool 消息而不是 assistant")
+    func toolResultImageIsAttachedToToolMessage() {
+        let conversationID = UUID()
+        let imageData = Data([0x89, 0x50, 0x4E, 0x47])
+        let assistant = Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            toolCalls: [
+                MessageToolCall(
+                    id: "read-image",
+                    name: "read_image",
+                    arguments: "{}",
+                    result: MessageToolResult(
+                        content: "已读取图片",
+                        imageAttachments: [MessageImageAttachment(data: imageData.base64EncodedString(), mimeType: "image/png")]
+                    )
+                )
+            ]
+        )
+        let tool = Message(
+            conversationID: conversationID,
+            role: .tool,
+            content: "已读取图片",
+            toolCallID: "read-image"
+        )
+
+        let messages = llmMessages(from: [assistant, tool])
+
+        #expect(messages[0].images.isEmpty)
+        #expect(messages[1].images == [MessageImage(data: imageData, mimeType: "image/png")])
+    }
+
     @MainActor
     private final class TestLLMProvider: SuperLLMProvider {
         nonisolated let providerID = "test"
@@ -71,20 +104,20 @@ struct ProviderAgentLoopTests {
         var selectedProviderID: String? { "test-manager" }
         var selectedModel: String? { nil }
         func models(for providerID: String) -> [String] { [] }
-        func select(providerID: String, model: String?) {}
+        func select(providerID: String, model: String?, reason: ModelSelectionReason) {}
     }
 
     /// 内存会话管理器（最小实现，默认 build 自动化级别）。
     @MainActor
     private final class TestConversationManager: ConversationManaging {
         var dataDirectory: URL { URL(fileURLWithPath: "/tmp") }
-        var conversations: [LumiConversationSummary] = []
+        var conversations: [ConversationSummary] = []
         var selectedConversationID: UUID?
         var currentTitle: String = "No conversation"
-        var globalVerbosity: LumiResponseVerbosity = .standard
-        var globalReasoningEffort: LumiReasoningEffort?
-        var globalAutomationLevel: LumiAutomationLevel = .build
-        var globalLanguage: LumiConversationLanguage = .chinese
+        var globalVerbosity: ResponseVerbosity = .standard
+        var globalReasoningEffort: ReasoningEffort?
+        var globalAutomationLevel: AutomationLevel = .build
+        var globalLanguage: ConversationLanguage = .chinese
 
         @Published var tick = false
 
@@ -100,20 +133,20 @@ struct ProviderAgentLoopTests {
             NoopSelectedConversationObserverHandle()
         }
         func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
-        func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity) { globalVerbosity = verbosity }
-        func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
-        func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { globalVerbosity }
-        func setGlobalReasoningEffort(_ reasoningEffort: LumiReasoningEffort?) { globalReasoningEffort = reasoningEffort }
-        func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { globalReasoningEffort ?? .defaultEffort }
-        func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? { globalReasoningEffort }
-        func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {}
+        func setGlobalVerbosity(_ verbosity: ResponseVerbosity) { globalVerbosity = verbosity }
+        func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {}
+        func verbosity(for conversationID: UUID?) -> ResponseVerbosity { globalVerbosity }
+        func setGlobalReasoningEffort(_ reasoningEffort: ReasoningEffort?) { globalReasoningEffort = reasoningEffort }
+        func reasoningEffort(for conversationID: UUID?) -> ReasoningEffort { globalReasoningEffort ?? .defaultEffort }
+        func reasoningEffortOptional(for conversationID: UUID?) -> ReasoningEffort? { globalReasoningEffort }
+        func setReasoningEffort(_ reasoningEffort: ReasoningEffort, for conversationID: UUID?) {}
         func clearReasoningEffort(for conversationID: UUID?) {}
-        func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel) { globalAutomationLevel = automationLevel }
-        func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel { globalAutomationLevel }
-        func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
-        func setGlobalLanguage(_ language: LumiConversationLanguage) { globalLanguage = language }
-        func language(for conversationID: UUID?) -> LumiConversationLanguage { globalLanguage }
-        func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}
+        func setGlobalAutomationLevel(_ automationLevel: AutomationLevel) { globalAutomationLevel = automationLevel }
+        func automationLevel(for conversationID: UUID?) -> AutomationLevel { globalAutomationLevel }
+        func setAutomationLevel(_ automationLevel: AutomationLevel, for conversationID: UUID?) {}
+        func setGlobalLanguage(_ language: ConversationLanguage) { globalLanguage = language }
+        func language(for conversationID: UUID?) -> ConversationLanguage { globalLanguage }
+        func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?) {}
         func providerID(for conversationID: UUID?) -> String? { nil }
         func modelName(for conversationID: UUID?) -> String? { nil }
     }

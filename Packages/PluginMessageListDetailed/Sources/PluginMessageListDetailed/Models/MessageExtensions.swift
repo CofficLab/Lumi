@@ -8,10 +8,10 @@ extension Message {
     /// 数据层用它把连续多条此类消息合并成一条 tool-step-group / turn-activity。
     var isToolExecutionOnly: Bool {
         guard role == .assistant else { return false }
-        guard !content.isEmpty else { return false }
         let hasToolCall = toolCalls?.isEmpty == false
+        guard hasToolCall else { return false }
         let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
-        return hasToolCall && (trimmedContent.isEmpty || trimmedContent == "...")
+        return trimmedContent.isEmpty || trimmedContent == "..."
     }
 
     /// 是否为「空响应」：无可见文本、无工具调用、非错误消息。

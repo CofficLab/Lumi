@@ -17,5 +17,9 @@ let package = Package(
                 .product(name: "LumiUI", package: "LumiUI"),
             ]
         ),
+        .testTarget(
+            name: "EditorContractsTests",
+            dependencies: ["EditorContracts"]
+        ),
     ]
 )

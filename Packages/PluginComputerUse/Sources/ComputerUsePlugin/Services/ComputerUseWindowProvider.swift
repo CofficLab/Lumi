@@ -53,8 +53,8 @@ enum ComputerUseWindowProvider {
         windowTitle: String?,
         frontmostBundleIdentifier: String?
     ) -> ComputerUseWindow? {
-        let appQuery = application?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let titleQuery = windowTitle?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let appQuery = normalizedQuery(application)
+        let titleQuery = normalizedQuery(windowTitle)
         let matches = windows.filter { window in
             let matchesApplication = appQuery.map { query in
                 window.bundleIdentifier.lowercased() == query
@@ -70,5 +70,11 @@ enum ComputerUseWindowProvider {
             return frontmost
         }
         return matches.first
+    }
+
+    private static func normalizedQuery(_ value: String?) -> String? {
+        guard let query = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !query.isEmpty else { return nil }
+        return query.lowercased()
     }
 }

@@ -50,7 +50,7 @@ let package = Package(
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ],
-            resources: [.process("../../Resources/Localizable.xcstrings")],
+            resources: [.process("Resources/Localizable.xcstrings")],
             linkerSettings: [.linkedFramework("Security")]
         ),
         .testTarget(

@@ -223,7 +223,7 @@ struct StoryOutlineView: View {
                 do {
                     let content = try String(contentsOf: url, encoding: .utf8)
                     let title = url.deletingPathExtension().lastPathComponent
-                    await viewModel.importMarkdownAsChapter(title: title, content: content)
+                    _ = await viewModel.importMarkdownAsChapter(title: title, content: content)
                 } catch {
                     print("Failed to import Markdown: \(error)")
                 }

@@ -1,57 +1,21 @@
 import Foundation
 import LumiUI
-import ProviderLLMManager
 import KitLLM
 import SwiftUI
 
 /// 本地和云端供应商页面共用的主从布局内容。
+///
+/// View 只依赖 `ProviderSettingsPageViewModel`，供应商列表、搜索、
+/// 选中态与自定义供应商变化都由 ViewModel 提供。
 @MainActor
 struct ProviderSettingsPageContent: View {
     @LumiTheme private var theme
 
-    private let manager: any LLMManaging
-    private let isLocal: Bool
-    @ObservedObject private var customProviderStore: UserDefinedCloudProviderStore
-    private let downloadViewModel: (String) -> ProviderModelDownloadViewModel?
+    @ObservedObject private var viewModel: ProviderSettingsPageViewModel
     @State private var isCustomProviderEditorPresented = false
 
-    @State private var selectedProviderID: String?
-    @State private var searchText: String = ""
-
-    init(
-        manager: any LLMManaging,
-        isLocal: Bool,
-        customProviderStore: UserDefinedCloudProviderStore,
-        downloadViewModel: @escaping (String) -> ProviderModelDownloadViewModel?
-    ) {
-        self.manager = manager
-        self.isLocal = isLocal
-        self._customProviderStore = ObservedObject(wrappedValue: customProviderStore)
-        self.downloadViewModel = downloadViewModel
-    }
-
-    private var allProviders: [any SuperLLMProvider] {
-        manager.allProviders()
-    }
-
-    private var filteredProviders: [any SuperLLMProvider] {
-        let scope = allProviders.filter { $0.providerInfo.isLocal == isLocal }
-        let keyword = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !keyword.isEmpty else { return scope }
-        return scope.filter {
-            $0.providerInfo.displayName.localizedCaseInsensitiveContains(keyword)
-                || $0.providerInfo.description.localizedCaseInsensitiveContains(keyword)
-                || $0.providerInfo.id.localizedCaseInsensitiveContains(keyword)
-        }
-    }
-
-    private var selectedProvider: (any SuperLLMProvider)? {
-        guard let selectedProviderID else { return nil }
-        return filteredProviders.first { $0.providerInfo.id == selectedProviderID }
-    }
-
-    private var selectedModelCount: Int {
-        selectedProvider?.providerInfo.models.count ?? 0
+    init(viewModel: ProviderSettingsPageViewModel) {
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -75,27 +39,28 @@ struct ProviderSettingsPageContent: View {
         .padding(18)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .sheet(isPresented: $isCustomProviderEditorPresented) {
-            CustomCloudProviderEditor(store: customProviderStore)
-                .frame(width: 560, height: 620)
-        }
-        .onChange(of: filteredProviders.map(\.providerInfo.id)) { _, ids in
-            if let selectedProviderID, !ids.contains(selectedProviderID) {
-                self.selectedProviderID = ids.first
-            } else if selectedProviderID == nil {
-                selectedProviderID = ids.first
+            if let editor = viewModel.makeNewCustomProviderEditor() {
+                editor
+                    .frame(width: 560, height: 620)
             }
+        }
+        .onAppear {
+            viewModel.synchronizeSelection()
+        }
+        .onChange(of: viewModel.customProviderRevision) { _, _ in
+            viewModel.synchronizeSelection()
         }
     }
 
     private var header: some View {
         HStack(spacing: 10) {
             Label(
-                isLocal ? "\(filteredProviders.count) 个本地供应商" : "\(filteredProviders.count) 个云端供应商",
-                systemImage: isLocal ? "cpu" : "cloud"
+                viewModel.providerCountLabel,
+                systemImage: viewModel.headerSystemImage
             )
-            Text("\(selectedModelCount) 个模型")
+            Text("\(viewModel.selectedModelCount) 个模型")
             Spacer()
-            if !isLocal {
+            if !viewModel.isLocal {
                 AppButton("添加供应商", systemImage: "plus", style: .primary, size: .small) {
                     isCustomProviderEditorPresented = true
                 }
@@ -107,17 +72,17 @@ struct ProviderSettingsPageContent: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            AppSearchBar(text: $searchText, placeholder: "搜索供应商")
+            AppSearchBar(text: $viewModel.searchText, placeholder: "搜索供应商")
                 .padding(12)
 
             AppDivider()
 
             ScrollView {
                 LazyVStack(spacing: 4) {
-                    ForEach(filteredProviders, id: \.providerInfo.id) { provider in
+                    ForEach(viewModel.filteredProviders, id: \.providerInfo.id) { provider in
                         providerRow(provider)
                     }
-                    if filteredProviders.isEmpty {
+                    if viewModel.filteredProviders.isEmpty {
                         AppEmptyState(icon: "magnifyingglass", title: "未找到供应商")
                             .padding(.vertical, 32)
                     }
@@ -131,14 +96,14 @@ struct ProviderSettingsPageContent: View {
 
     private func providerRow(_ provider: any SuperLLMProvider) -> some View {
         let info = provider.providerInfo
-        let isSelected = selectedProviderID == info.id
+        let isSelected = viewModel.selectedProviderID == info.id
         return AppListRow(isSelected: isSelected, action: {
             withAnimation(.easeInOut(duration: 0.2)) {
-                selectedProviderID = info.id
+                viewModel.selectProvider(id: info.id)
             }
         }) {
             HStack(alignment: .top, spacing: 10) {
-                Image(systemName: isLocal ? "cpu" : "cloud")
+                Image(systemName: viewModel.headerSystemImage)
                     .font(.appBody)
                     .foregroundStyle(isSelected ? theme.primary : theme.textSecondary)
                     .frame(width: 22, height: 22)
@@ -160,21 +125,16 @@ struct ProviderSettingsPageContent: View {
 
     @ViewBuilder
     private var detailPane: some View {
-        if let selectedProvider {
+        if let selectedProviderID = viewModel.selectedProviderID {
             ScrollView {
-                ProviderDetailView(
-                    manager: manager,
-                    provider: selectedProvider,
-                    customProviderStore: customProviderStore,
-                    downloadViewModel: downloadViewModel(selectedProvider.providerInfo.id)
-                )
+                ProviderDetailView(viewModel: viewModel.detailViewModel(for: selectedProviderID))
                     .padding(22)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .appSurface(style: .panel, cornerRadius: 0)
         } else {
-            AppEmptyState(icon: isLocal ? "cpu" : "cloud", title: "选择一个供应商")
+            AppEmptyState(icon: viewModel.headerSystemImage, title: "选择一个供应商")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .appSurface(style: .panel, cornerRadius: 0)
         }

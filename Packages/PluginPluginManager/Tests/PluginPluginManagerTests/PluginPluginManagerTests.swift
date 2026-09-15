@@ -10,6 +10,21 @@ import Testing
 @MainActor
 struct PluginPluginManagerTests {
 
+    @Test("插件列表刷新时包含稍后注册的插件")
+    func viewModelRefreshesPluginsRegisteredAfterInitialSnapshot() {
+        let firstPlugin = TestPlugin(id: "first", policy: .enabledByDefault)
+        let latePlugin = TestPlugin(id: "late", policy: .disabledByDefault)
+        let capability = TestPluginManagementCapability(plugins: [firstPlugin])
+        let viewModel = PluginManagementViewModel(capability: capability, docsProvider: nil)
+
+        viewModel.refresh()
+        #expect(viewModel.plugins.map(\.id) == ["first"])
+
+        capability.plugins.append(latePlugin)
+        viewModel.refresh()
+        #expect(viewModel.plugins.map(\.id) == ["first", "late"])
+    }
+
     /// 插件 id 与旧版 PluginManagerPlugin 完全一致（保证状态存储兼容），
     /// 顺序与策略对齐旧版（order 90 / alwaysOn → required）。
     @Test
@@ -81,4 +96,49 @@ struct PluginPluginManagerTests {
         try plugin.onBoot(kernel: kernel) // 不应抛错
         #expect(kernel.resolveProvider((any SettingViewProviding).self) == nil)
     }
+}
+
+@MainActor
+private final class TestPlugin: SuperPlugin {
+    let id: String
+    let metadata: PluginMetadata
+
+    init(id: String, policy: PluginEnablePolicy) {
+        self.id = id
+        metadata = PluginMetadata(
+            id: id,
+            name: id,
+            policy: policy
+        )
+    }
+}
+
+@MainActor
+private final class TestPluginManagementCapability: PluginManagementCapability {
+    var plugins: [any SuperPlugin]
+
+    init(plugins: [any SuperPlugin]) {
+        self.plugins = plugins
+    }
+
+    var allPlugins: [any SuperPlugin] { plugins }
+
+    func isEnabled(id: String) -> Bool {
+        plugins.contains { $0.id == id }
+    }
+
+    func enablePlugin(id: String) async -> Bool { true }
+
+    func disablePlugin(id: String) async -> Bool { true }
+
+    func addObserver(
+        _ callback: @escaping (PluginManagingEvent) -> Void
+    ) -> any PluginManagingObserverHandle {
+        TestPluginManagementObserverHandle()
+    }
+}
+
+@MainActor
+private final class TestPluginManagementObserverHandle: PluginManagingObserverHandle {
+    func cancel() {}
 }

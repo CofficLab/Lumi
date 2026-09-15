@@ -24,6 +24,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
     public let order = 79
     private var projectObserver: IconDesignerProjectObserver?
     private let documentStore = IconDocumentStore.shared
+    private lazy var viewModel = AppIconDesignerViewModel(store: documentStore)
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.app-icon-designer",
         name: AppIconDesignerLocalization.string("App Icon Designer"),
@@ -77,9 +78,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
         IconDesignerRuntime.configure(kernel: kernel, pluginID: id)
         projectObserver?.cancel()
         projectObserver = kernel.resolveProvider((any ProjectProviding).self).map { project in
-            IconDesignerProjectObserver(project: project) { path in
-                IconDesignerRuntime.updateProjectStorageDirectory(projectPath: path)
-            }
+            IconDesignerProjectObserver(project: project, viewModel: viewModel)
         }
 
         // 注册 Agent 工具到 ToolManagerProviding
@@ -130,7 +129,7 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                     systemImage: "doc.text",
                     order: order
                 ) {
-                    AppIconDesignerRailView(documentStore: self.documentStore)
+                    AppIconDesignerRailView(viewModel: self.viewModel)
                 },
             ])
         } else {
@@ -166,8 +165,8 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                             recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
                             store: railWidthStore
                         )
-                        self.documentStore.reload()
-                        contentView?.setContentView(AnyView(DesignerView(documentStore: self.documentStore)))
+                        self.viewModel.reload()
+                        contentView?.setContentView(AnyView(DesignerView(viewModel: self.viewModel)))
                         chat?.setVisible(true)
                         chat?.setContextActive(true)
                         chat?.setActiveContext(chatContext)
@@ -186,8 +185,8 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
                 },
             ])
         } else {
-            documentStore.reload()
-            contentView?.setContentView(AnyView(DesignerView(documentStore: documentStore)))
+            viewModel.reload()
+            contentView?.setContentView(AnyView(DesignerView(viewModel: viewModel)))
             chat?.setVisible(true)
             chat?.setContextActive(true)
             chat?.setActiveContext(chatContext)

@@ -13,6 +13,7 @@ struct ListV2View: View, SuperLog {
     nonisolated static let verbose = false
 
     let services: MessageListServices
+    @ObservedObject private var developerModeState: DeveloperModeStateViewModel
     @ObservedObject private var viewModel: ListV2ViewModel
 
     @LumiTheme private var theme
@@ -30,9 +31,11 @@ struct ListV2View: View, SuperLog {
 
     init(
         services: MessageListServices,
+        developerModeState: DeveloperModeStateViewModel,
         viewModel: ListV2ViewModel
     ) {
         self.services = services
+        _developerModeState = ObservedObject(wrappedValue: developerModeState)
         _viewModel = ObservedObject(wrappedValue: viewModel)
         if Self.verbose {
             Self.logger.info("\(Self.t)ListV2View initialized: selectedConversation=\(services.selectedConversationID?.uuidString ?? "nil")")
@@ -228,6 +231,7 @@ struct ListV2View: View, SuperLog {
         ForEach(viewModel.historyRows) { message in
             MessageRowView(
                 services: services,
+                developerModeState: developerModeState,
                 message: message,
                 verbosity: viewModel.verbosity
             )
@@ -245,6 +249,7 @@ struct ListV2View: View, SuperLog {
         if let streaming = viewModel.streamingRow {
             MessageRowView(
                 services: services,
+                developerModeState: developerModeState,
                 message: streaming,
                 verbosity: viewModel.verbosity
             )
@@ -256,7 +261,7 @@ struct ListV2View: View, SuperLog {
     @ViewBuilder
     private var activityRowView: some View {
         if let activity = viewModel.activityMessage, viewModel.streamingRow == nil {
-            MessageRowView(services: services, message: activity, verbosity: viewModel.verbosity)
+            MessageRowView(services: services, developerModeState: developerModeState, message: activity, verbosity: viewModel.verbosity)
                 .id("conversation-activity")
                 .plainMessageListRow()
         }
