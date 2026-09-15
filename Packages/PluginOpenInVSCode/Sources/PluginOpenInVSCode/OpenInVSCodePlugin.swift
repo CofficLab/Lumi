@@ -21,7 +21,7 @@ public final class OpenInVSCodePlugin: SuperPlugin, SuperLog {
         description: OpenInVSCodeLocalization.string("Allow LLM to open projects in Visual Studio Code."),
         category: .integration,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public init() {}
