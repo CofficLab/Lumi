@@ -6,6 +6,7 @@ import OpenInKit
 import ProviderProject
 import ProviderDocsView
 import ProviderToolManager
+import ProviderToolbar
 
 /// 在 Finder 中打开文件或文件夹的插件。
 @MainActor
@@ -37,18 +38,35 @@ public final class OpenInFinderPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        let project = kernel.resolveProvider((any ProjectProviding).self)
+        let tool = OpenInTool(config: OpenInTool.finder, project: project)
+
+        if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
+            toolbar.addToolbarItems([
+                ToolbarItem(
+                    id: "\(id).toolbar",
+                    title: OpenInFinderLocalization.string("Open In Finder"),
+                    placement: .leading,
+                    category: .global,
+                    order: order
+                ) {
+                    OpenInFinderToolbarView(tool: tool, project: project)
+                },
+            ])
+        }
+
         guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding from kernel")
             return
         }
-        let project = kernel.resolveProvider((any ProjectProviding).self)
 
-        let tool = OpenInTool(config: OpenInTool.finder, project: project)
         toolManager.add(tool, pluginID: id)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+        kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).toolbar"])
+
         guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding from kernel")
             return
