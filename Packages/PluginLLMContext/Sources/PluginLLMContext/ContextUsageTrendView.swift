@@ -130,7 +130,7 @@ extension ContextUsageTrendView {
 
 // MARK: - Preview
 
-#if os(macOS)
+#if DEBUG && os(macOS)
 #Preview("Context Usage Trend - Large") {
     ContextUsageTrendView(history: .preview)
         .padding()
