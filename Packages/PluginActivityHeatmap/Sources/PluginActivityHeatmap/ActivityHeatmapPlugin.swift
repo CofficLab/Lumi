@@ -614,15 +614,10 @@ private struct IdleTimeSummaryCard: View {
                     metric(L("Active days"), value: "\(snapshot.observedDayCount)")
                 }
                 if !snapshot.bucketScores.isEmpty {
-                    HStack(alignment: .bottom, spacing: 2) {
-                        let maximum = max(snapshot.bucketScores.max() ?? 0, 1)
-                        ForEach(Array(snapshot.bucketScores.enumerated()), id: \.offset) { _, score in
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(Color.accentColor.opacity(0.2 + 0.8 * (score / maximum)))
-                                .frame(maxWidth: .infinity, minHeight: 4, maxHeight: 56 * CGFloat(score / maximum) + 4)
-                        }
-                    }
-                    .frame(height: 62, alignment: .bottom)
+                    IdleActivityTimeline(
+                        scores: snapshot.bucketScores,
+                        restWindow: snapshot.restWindow
+                    )
                 }
             } else {
                 ProgressView().controlSize(.small)
@@ -645,6 +640,165 @@ private struct IdleTimeSummaryCard: View {
         guard let window = snapshot.restWindow else { return L("Learning") }
         func time(_ minute: Int) -> String { String(format: "%02d:%02d", minute / 60, minute % 60) }
         return "\(time(window.startMinuteOfDay)) – \(time(window.endMinuteOfDay))"
+    }
+}
+
+/// Explains the 48 half-hour activity buckets used by idle-time inference.
+private struct IdleActivityTimeline: View {
+    let scores: [Double]
+    let restWindow: RestWindow?
+
+    private static let chartHeight: CGFloat = 92
+    private static let yAxisWidth: CGFloat = 38
+    private static let bucketCount = RestWindowInferencer.bucketsPerDay
+    private static let bucketMinutes = RestWindowInferencer.bucketMinutes
+    private static let timeLabels = [0, 6, 12, 18, 24]
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(L("24-hour activity"))
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                Text(L("Each bar = 30 minutes"))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(L("Relative activity strength"))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            HStack(alignment: .top, spacing: 8) {
+                yAxis
+                VStack(alignment: .leading, spacing: 4) {
+                    GeometryReader { proxy in
+                        plot(in: proxy.size)
+                    }
+                    .frame(height: Self.chartHeight)
+                    timeAxis
+                }
+            }
+
+            HStack(spacing: 12) {
+                legendSwatch(color: Color.accentColor.opacity(0.72), text: L("Activity"))
+                legendSwatch(color: Color.accentColor.opacity(0.10), text: L("Shaded area = rest window"))
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private var yAxis: some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            Text("100%")
+            Spacer()
+            Text("50%")
+            Spacer()
+            Text("0%")
+        }
+        .font(.caption2.monospacedDigit())
+        .foregroundStyle(.secondary)
+        .frame(width: Self.yAxisWidth, height: Self.chartHeight)
+    }
+
+    private var timeAxis: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(Self.timeLabels.enumerated()), id: \.offset) { index, hour in
+                Text(String(format: "%02d:00", hour))
+                    .frame(maxWidth: .infinity, alignment: axisAlignment(for: index))
+            }
+        }
+        .font(.caption2.monospacedDigit())
+        .foregroundStyle(.secondary)
+    }
+
+    private func axisAlignment(for index: Int) -> Alignment {
+        switch index {
+        case 0: return .leading
+        case Self.timeLabels.count - 1: return .trailing
+        default: return .center
+        }
+    }
+
+    private func plot(in size: CGSize) -> some View {
+        let maximum = max(scores.max() ?? 0, 1)
+
+        return ZStack(alignment: .bottomLeading) {
+            ForEach([0.0, 0.5, 1.0], id: \.self) { level in
+                Rectangle()
+                    .fill(Color.secondary.opacity(level == 0 ? 0.34 : 0.16))
+                    .frame(height: 1)
+                    .offset(y: -size.height * CGFloat(level))
+            }
+
+            ForEach(Array(restSegments.enumerated()), id: \.offset) { _, segment in
+                Rectangle()
+                    .fill(Color.accentColor.opacity(0.08))
+                    .frame(
+                        width: size.width * CGFloat(segment.end - segment.start) / 1440,
+                        height: size.height
+                    )
+                    .offset(x: size.width * CGFloat(segment.start) / 1440)
+            }
+
+            HStack(alignment: .bottom, spacing: 2) {
+                ForEach(0..<Self.bucketCount, id: \.self) { index in
+                    let normalized = normalizedScore(at: index, maximum: maximum)
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(Color.accentColor.opacity(0.20 + 0.80 * normalized))
+                        .frame(
+                            maxWidth: .infinity,
+                            minHeight: normalized > 0 ? 4 : 2,
+                            maxHeight: max(2, size.height * CGFloat(normalized))
+                        )
+                        .help(bucketDescription(at: index, normalized: normalized))
+                        .accessibilityLabel(bucketDescription(at: index, normalized: normalized))
+                }
+            }
+            .padding(.horizontal, 1)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        }
+        .clipped()
+    }
+
+    private var restSegments: [(start: Int, end: Int)] {
+        guard let restWindow else { return [] }
+        let start = max(0, min(1440, restWindow.startMinuteOfDay))
+        let end = max(0, min(1440, restWindow.endMinuteOfDay))
+        if start < end { return [(start, end)] }
+        if start > end { return [(start, 1440), (0, end)] }
+        return []
+    }
+
+    private func normalizedScore(at index: Int, maximum: Double) -> Double {
+        guard scores.indices.contains(index), maximum > 0 else { return 0 }
+        return min(1, max(0, scores[index] / maximum))
+    }
+
+    private func bucketDescription(at index: Int, normalized: Double) -> String {
+        let start = index * Self.bucketMinutes
+        let end = start + Self.bucketMinutes
+        let percent = Int((normalized * 100).rounded())
+        return "\(formatMinute(start))–\(formatMinute(end)) · \(L("Relative activity strength")): \(percent)%"
+    }
+
+    private func formatMinute(_ minute: Int) -> String {
+        let normalizedMinute = minute % 1440
+        return String(format: "%02d:%02d", normalizedMinute / 60, normalizedMinute % 60)
+    }
+
+    private func legendSwatch(color: Color, text: String) -> some View {
+        HStack(spacing: 4) {
+            RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                .fill(color)
+                .frame(width: 10, height: 10)
+            Text(text)
+        }
     }
 }
 

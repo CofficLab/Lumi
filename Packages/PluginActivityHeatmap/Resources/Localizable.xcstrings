@@ -1,48 +1,176 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%lld commits · %lld active days" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld commits · %2$lld active days" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld 次提交 · %2$lld 个活跃日" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld 次提交 · %2$lld 個活躍日" } }
+  "24-hour activity" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "24-hour activity"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "全天活动"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "全天活動"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "全天活動"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "全天活動"
+        }
       }
-    },
-    "Commit Activity" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Commit Activity" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "提交活动" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "提交活動" } }
+    }
+  },
+  "Activity" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Activity"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "活动"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "活動"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "活動"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "活動"
+        }
       }
-    },
-    "Commits in the last year" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Commits in the last year" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "过去一年的提交" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "過去一年的提交" } }
+    }
+  },
+  "Each bar = 30 minutes" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Each bar = 30 minutes"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "每柱代表 30 分钟"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "每柱代表 30 分鐘"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "每柱代表 30 分鐘"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "每柱代表 30 分鐘"
+        }
       }
-    },
-    "Loading commit activity…" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Loading commit activity…" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在加载提交活动…" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "正在載入提交活動…" } }
+    }
+  },
+  "Relative activity strength" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Relative activity strength"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "相对活动强度"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "相對活動強度"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "相對活動強度"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "相對活動強度"
+        }
       }
-    },
-    "No Git commit activity available" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "No Git commit activity available" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "暂无 Git 提交活动" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "暫無 Git 提交活動" } }
+    }
+  },
+  "Shaded area = rest window" : {
+    "localizations" : {
+      "en" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "Shaded area = rest window"
+        }
+      },
+      "zh-Hans" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "阴影区域 = 休息窗口"
+        }
+      },
+      "zh-Hant" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "陰影區域 = 休息視窗"
+        }
+      },
+      "zh-HK" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "陰影區域 = 休息視窗"
+        }
+      },
+      "zh-TW" : {
+        "stringUnit" : {
+          "state" : "translated",
+          "value" : "陰影區域 = 休息視窗"
+        }
       }
-    },
-    "Make sure this project is a Git repository." : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Make sure this project is a Git repository." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请确认此项目是 Git 仓库。" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "請確認此專案是 Git 儲存庫。" } }
-      }
-    },
+    }
+  },
     "%@: %lld %@" : {
       "localizations" : {
         "en" : {
@@ -52,6 +180,37 @@
           }
         }
       }
+    },
+    "%lld commits · %lld active days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld commits · %2$lld active days"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld 次提交 · %2$lld 个活跃日"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld 次提交 · %2$lld 個活躍日"
+          }
+        }
+      }
+    },
+    "0%" : {
+
+    },
+    "50%" : {
+
+    },
+    "100%" : {
+
     },
     "Active days" : {
       "localizations" : {
@@ -257,6 +416,50 @@
         }
       }
     },
+    "Commit Activity" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commit Activity"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交活动"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交活動"
+          }
+        }
+      }
+    },
+    "Commits in the last year" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commits in the last year"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "过去一年的提交"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "過去一年的提交"
+          }
+        }
+      }
+    },
     "Confidence" : {
       "localizations" : {
         "en" : {
@@ -292,6 +495,7 @@
       }
     },
     "Conversation activity and token consumption over time." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -631,6 +835,50 @@
         }
       }
     },
+    "Loading commit activity…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading commit activity…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在加载提交活动…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在載入提交活動…"
+          }
+        }
+      }
+    },
+    "Make sure this project is a Git repository." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make sure this project is a Git repository."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请确认此项目是 Git 仓库。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請確認此專案是 Git 儲存庫。"
+          }
+        }
+      }
+    },
     "Messages" : {
       "localizations" : {
         "en" : {
@@ -699,7 +947,30 @@
         }
       }
     },
+    "No Git commit activity available" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Git commit activity available"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无 Git 提交活动"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無 Git 提交活動"
+          }
+        }
+      }
+    },
     "Period" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
