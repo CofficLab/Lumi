@@ -4,8 +4,8 @@ import Foundation
 
 /// 右键菜单设置/预览共享的唯一数据来源。
 ///
-/// 负责配置读写、模板增删、开关与重置等业务状态；外部操作（打开系统设置、
-/// 打开数据目录）也收敛在本 ViewModel，View 只读取本 ViewModel。
+/// 负责配置读写、模板增删、开关与重置等业务状态；外部操作（打开系统设置）
+/// 也收敛在本 ViewModel，View 只读取本 ViewModel。
 @MainActor
 final class RClickSettingsViewModel: ObservableObject {
     private let configManager: RClickConfigManager
@@ -69,13 +69,5 @@ final class RClickSettingsViewModel: ObservableObject {
         if let url = URL(string: urlString) {
             NSWorkspace.shared.open(url)
         }
-    }
-
-    func openDataDirectory() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
-        guard let url = appSupport else { return }
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(url)
     }
 }
