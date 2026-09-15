@@ -214,6 +214,9 @@ public final class ActivityHeatmapViewModel {
         didSet { UserDefaults.standard.set(period.rawValue, forKey: Self.periodKey) }
     }
     public private(set) var days: [ActivityDay] = []
+    /// The heatmap keeps a full year's daily history so its layout can decide
+    /// how much to show from the available space independently of `period`.
+    public private(set) var heatmapDays: [ActivityDay] = []
     public private(set) var isLoading = false
 
     public init(messages: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil) {
@@ -252,7 +255,11 @@ public final class ActivityHeatmapViewModel {
     private func reloadNow() async {
         reloadGeneration += 1
         let generation = reloadGeneration
-        guard let messages else { days = []; return }
+        guard let messages else {
+            days = []
+            heatmapDays = []
+            return
+        }
         isLoading = true
         defer {
             if generation == reloadGeneration {
@@ -261,11 +268,12 @@ public final class ActivityHeatmapViewModel {
         }
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        guard let start = calendar.date(byAdding: .day, value: -(period.rawValue - 1), to: today) else {
+        let heatmapDayCount = ActivityHeatmapPeriod.year.rawValue
+        guard let start = calendar.date(byAdding: .day, value: -(heatmapDayCount - 1), to: today) else {
             isLoading = false
             return
         }
-        let historicalDates = (0..<(period.rawValue - 1)).compactMap {
+        let historicalDates = (0..<(heatmapDayCount - 1)).compactMap {
             calendar.date(byAdding: .day, value: $0, to: start)
         }
         let cached = await cache?.counts(for: historicalDates) ?? [:]
@@ -294,7 +302,7 @@ public final class ActivityHeatmapViewModel {
         guard !Task.isCancelled, generation == reloadGeneration else { return }
         let todayTokens = await messages.dailyTokenCountsAsync(since: today)
         guard !Task.isCancelled, generation == reloadGeneration else { return }
-        days = (0..<period.rawValue).compactMap { offset in
+        let loadedDays: [ActivityDay] = (0..<heatmapDayCount).compactMap { offset in
             guard let date = calendar.date(byAdding: .day, value: offset, to: start) else { return nil }
             let isToday = date == today
             let cachedDay = cached[date]
@@ -304,6 +312,8 @@ public final class ActivityHeatmapViewModel {
                 tokens: isToday ? todayTokens[date, default: 0] : cachedDay?.tokens ?? historical[date]?.tokens ?? 0
             )
         }
+        heatmapDays = loadedDays
+        days = Array(loadedDays.suffix(period.rawValue))
     }
 }
 
@@ -315,6 +325,12 @@ public struct ActivityHeatmapSettingsView: View {
     @State private var model: ActivityHeatmapViewModel
     private let idleTime: (any IdleTimeProviding)?
     private let idleTimeState: ActivityHeatmapIdleTimeState
+
+    private static let activityCellMinimumSize: CGFloat = 10
+    private static let activityCellMaximumSize: CGFloat = 14
+    private static let activityCellSpacing: CGFloat = 4
+    private static let activityRowCount = 7
+    private static let activityMaximumColumnCount = 53
 
     private func L(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: .module)
@@ -344,18 +360,7 @@ public struct ActivityHeatmapSettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(L("Activity Heatmap")).font(.title2.weight(.semibold))
-                        Text(L("Conversation activity and token consumption over time.")).foregroundStyle(.secondary)
-                    }
                     Spacer()
-                    Picker(L("Period"), selection: $model.period) {
-                        ForEach(ActivityHeatmapPeriod.allCases) { period in
-                            Text(period.title).tag(period)
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(width: 130)
                     AppIconButton(systemImage: "arrow.clockwise") {
                         Task { await model.reload() }
                     }
@@ -371,14 +376,13 @@ public struct ActivityHeatmapSettingsView: View {
             }
             .padding(24)
         }
-        .onChange(of: model.period) { _, _ in Task { await model.reload() } }
         .task { await model.reload() }
     }
 
     private var summary: some View {
-        let totalMessages = model.days.reduce(0) { $0 + $1.messages }
-        let totalTokens = model.days.reduce(0) { $0 + $1.tokens }
-        let activeDays = model.days.filter { $0.messages > 0 }.count
+        let totalMessages = model.heatmapDays.reduce(0) { $0 + $1.messages }
+        let totalTokens = model.heatmapDays.reduce(0) { $0 + $1.tokens }
+        let activeDays = model.heatmapDays.filter { $0.messages > 0 }.count
         return HStack(spacing: 12) {
             metric(L("Messages"), value: "\(totalMessages)", symbol: "bubble.left.and.bubble.right")
             metric(L("Active days"), value: "\(activeDays)", symbol: "calendar")
@@ -399,15 +403,34 @@ public struct ActivityHeatmapSettingsView: View {
     private var heatmap: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L("Daily activity")).font(.headline)
-            let maximum = max(model.days.map(\.messages).max() ?? 0, 1)
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(14), spacing: 4), count: 14), spacing: 4) {
-                ForEach(model.days) { day in
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(levelColor(day.messages, maximum: maximum))
-                        .frame(width: 14, height: 14)
-                        .help("\(Self.dayFormatter.string(from: day.date)): \(day.messages) \(L("Messages").lowercased())")
+            GeometryReader { proxy in
+                let layout = activityGridLayout(
+                    for: proxy.size.width,
+                    availableDayCount: model.heatmapDays.count
+                )
+                let visibleDays = columnMajorDays(
+                    Array(model.heatmapDays.suffix(layout.visibleDayCount)),
+                    columnCount: layout.columnCount
+                )
+                let maximum = max(visibleDays.map(\.messages).max() ?? 0, 1)
+                LazyVGrid(
+                    columns: Array(
+                        repeating: GridItem(.fixed(layout.cellSize), spacing: Self.activityCellSpacing),
+                        count: layout.columnCount
+                    ),
+                    spacing: Self.activityCellSpacing
+                ) {
+                    ForEach(visibleDays) { day in
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .fill(levelColor(day.messages, maximum: maximum))
+                            .frame(width: layout.cellSize, height: layout.cellSize)
+                            .help("\(Self.dayFormatter.string(from: day.date)): \(day.messages) \(L("Messages").lowercased())")
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(height: Self.activityCellMaximumSize * CGFloat(Self.activityRowCount)
+                + Self.activityCellSpacing * CGFloat(Self.activityRowCount - 1))
             HStack(spacing: 6) {
                 Text(L("Less")).font(.caption2).foregroundStyle(.secondary)
                 ForEach(0...4, id: \.self) { level in
@@ -420,16 +443,77 @@ public struct ActivityHeatmapSettingsView: View {
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
+    private func activityGridLayout(
+        for width: CGFloat,
+        availableDayCount: Int
+    ) -> ActivityGridLayout {
+        let availableWidth = max(width, Self.activityCellMinimumSize)
+        let possibleColumns = max(
+            1,
+            Int(floor(
+                (availableWidth + Self.activityCellSpacing)
+                    / (Self.activityCellMinimumSize + Self.activityCellSpacing)
+            ))
+        )
+        let columnCount = max(
+            1,
+            min(
+                possibleColumns,
+                Self.activityMaximumColumnCount,
+                max(availableDayCount, 1)
+            )
+        )
+        let visibleDayCount = min(
+            max(availableDayCount, 0),
+            columnCount * Self.activityRowCount
+        )
+        let cellSize = min(
+            Self.activityCellMaximumSize,
+            max(
+                Self.activityCellMinimumSize,
+                (availableWidth - CGFloat(columnCount - 1) * Self.activityCellSpacing)
+                    / CGFloat(columnCount)
+            )
+        )
+        return ActivityGridLayout(
+            visibleDayCount: visibleDayCount,
+            columnCount: columnCount,
+            cellSize: cellSize
+        )
+    }
+
+    private func columnMajorDays(
+        _ days: [ActivityDay],
+        columnCount: Int
+    ) -> [ActivityDay] {
+        guard !days.isEmpty else { return [] }
+        let rowCount = min(Self.activityRowCount, days.count)
+        return (0..<rowCount).flatMap { row in
+            (0..<columnCount).compactMap { column in
+                let index = column * Self.activityRowCount + row
+                return index < days.count ? days[index] : nil
+            }
+        }
+    }
+
+    private struct ActivityGridLayout {
+        let visibleDayCount: Int
+        let columnCount: Int
+        let cellSize: CGFloat
+    }
+
     private var tokenTrend: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L("Token trend")).font(.headline)
             GeometryReader { proxy in
-                let maxTokens = max(model.days.map(\.tokens).max() ?? 0, 1)
+                let maxTokens = max(model.heatmapDays.map(\.tokens).max() ?? 0, 1)
                 let width = max(proxy.size.width, 1)
                 let height = max(proxy.size.height, 1)
                 Path { path in
-                    for (index, day) in model.days.enumerated() {
-                        let x = model.days.count < 2 ? width / 2 : width * CGFloat(index) / CGFloat(model.days.count - 1)
+                    for (index, day) in model.heatmapDays.enumerated() {
+                        let x = model.heatmapDays.count < 2
+                            ? width / 2
+                            : width * CGFloat(index) / CGFloat(model.heatmapDays.count - 1)
                         let y = height - height * CGFloat(day.tokens) / CGFloat(maxTokens)
                         index == 0 ? path.move(to: CGPoint(x: x, y: y)) : path.addLine(to: CGPoint(x: x, y: y))
                     }
@@ -437,7 +521,7 @@ public struct ActivityHeatmapSettingsView: View {
                 .stroke(.orange, style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
             }
             .frame(height: 120)
-            Text(String(format: L("Total: %@ tokens"), TokenCountFormat.compact(model.days.reduce(0) { $0 + $1.tokens })))
+            Text(String(format: L("Total: %@ tokens"), TokenCountFormat.compact(model.heatmapDays.reduce(0) { $0 + $1.tokens })))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
