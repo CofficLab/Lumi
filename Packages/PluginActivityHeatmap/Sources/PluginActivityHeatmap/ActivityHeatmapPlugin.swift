@@ -10,11 +10,8 @@ import ProviderIdleTime
 import ProviderDocsView
 import ProviderStorage
 import SwiftUI
-#if canImport(AppKit)
-import AppKit
 import KitSuperLog
 import os
-#endif
 
 /// V2 activity dashboard. It preserves the legacy heatmap's three time ranges,
 /// daily message intensity, token trend, and persisted range preference while
@@ -38,7 +35,6 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
     )
 
     private var cache: ActivityHeatmapCache?
-    private var cacheDirectory: URL?
     private var gitActivityProvider: LocalGitActivityHeatmapProvider?
     private var gitWatchHandle: (any GitRepositoryWatchingObserverHandle)?
     private var projectSectionObservers: [String: GitActivityHeatmapProjectObserver] = [:]
@@ -107,7 +103,6 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
         let directory = kernel.resolveProvider((any StorageProviding).self)?
             .pluginDataDirectory(for: "ActivityHeatmap")
         ActivityHeatmapViewModel.restoreLegacyPeriodIfNeeded(from: directory)
-        cacheDirectory = directory
         cache = ActivityHeatmapCache(directory: directory)
         let viewModel = ActivityHeatmapViewModel(messages: messages, cache: cache)
         self.viewModel = viewModel
@@ -138,8 +133,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
                 ActivityHeatmapSettingsView(
                     model: viewModel,
                     idleTime: idleTime,
-                    idleTimeState: self.idleTimeState,
-                    cacheDirectory: directory
+                    idleTimeState: self.idleTimeState
                 )
             },
         ])
@@ -176,7 +170,6 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
         idleTimeState = nil
         viewModel = nil
         cache = nil
-        cacheDirectory = nil
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
@@ -322,8 +315,6 @@ public struct ActivityHeatmapSettingsView: View {
     private let idleTime: (any IdleTimeProviding)?
     private let idleTimeState: ActivityHeatmapIdleTimeState
 
-    private let cacheDirectory: URL?
-
     private func L(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: .module)
     }
@@ -331,25 +322,21 @@ public struct ActivityHeatmapSettingsView: View {
     public init(
         model: ActivityHeatmapViewModel,
         idleTime: (any IdleTimeProviding)? = nil,
-        idleTimeState: ActivityHeatmapIdleTimeState? = nil,
-        cacheDirectory: URL? = nil
+        idleTimeState: ActivityHeatmapIdleTimeState? = nil
     ) {
         _model = State(initialValue: model)
         self.idleTime = idleTime
         self.idleTimeState = idleTimeState ?? ActivityHeatmapIdleTimeState(provider: idleTime)
-        self.cacheDirectory = cacheDirectory
     }
 
     public init(
         messages: (any MessageManaging)?,
         idleTime: (any IdleTimeProviding)? = nil,
-        cache: ActivityHeatmapCache? = nil,
-        cacheDirectory: URL? = nil
+        cache: ActivityHeatmapCache? = nil
     ) {
         _model = State(initialValue: ActivityHeatmapViewModel(messages: messages, cache: cache))
         self.idleTime = idleTime
         self.idleTimeState = ActivityHeatmapIdleTimeState(provider: idleTime)
-        self.cacheDirectory = cacheDirectory
     }
 
     public var body: some View {
@@ -377,7 +364,6 @@ public struct ActivityHeatmapSettingsView: View {
                 summary
                 heatmap
                 tokenTrend
-                if let cacheDirectory { dataDirectoryButton(cacheDirectory) }
                 if idleTime != nil {
                     IdleTimeSummaryCard(state: idleTimeState)
                 }
@@ -466,17 +452,6 @@ public struct ActivityHeatmapSettingsView: View {
 
     private func formatted(_ value: Int) -> String {
         value >= 1_000_000 ? String(format: "%.1fM", Double(value) / 1_000_000) : value >= 1_000 ? "\(value / 1_000)K" : "\(value)"
-    }
-
-    @ViewBuilder
-    private func dataDirectoryButton(_ directory: URL) -> some View {
-        #if canImport(AppKit)
-        Button(L("Open Data Directory"), systemImage: "folder") {
-            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            NSWorkspace.shared.open(directory)
-        }
-        .buttonStyle(.bordered)
-        #endif
     }
 
     private static let dayFormatter: DateFormatter = {
