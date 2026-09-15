@@ -60,6 +60,8 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     }
 
     private var isProcessMonitoringActive = false
+    private let processMonitoringStarter: @MainActor () -> Void
+    private let processMonitoringStopper: @MainActor () -> Void
 
     public init(
         autoStartMonitoring: Bool = false,
@@ -70,6 +72,8 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
         processMonitoringStopper: @escaping @MainActor () -> Void = { ProcessMonitorService.shared.stopMonitoring() }
     ) {
         self.publicIPProvider = publicIPProvider
+        self.processMonitoringStarter = processMonitoringStarter
+        self.processMonitoringStopper = processMonitoringStopper
 
         if Self.verbose {
             if NetworkManagerPlugin.verbose {
@@ -81,13 +85,13 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     public func startProcessMonitoring() {
         guard !isProcessMonitoringActive else { return }
         isProcessMonitoringActive = true
-        ProcessMonitorService.shared.startMonitoring()
+        processMonitoringStarter()
     }
     
     public func stopProcessMonitoring() {
         guard isProcessMonitoringActive else { return }
         isProcessMonitoringActive = false
-        ProcessMonitorService.shared.stopMonitoring()
+        processMonitoringStopper()
     }
 
     public func updateProcesses(_ processes: [NetworkProcess]) {
