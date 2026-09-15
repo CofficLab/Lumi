@@ -3,15 +3,15 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.25.0</title>
-            <pubDate>Sun, 13 Sep 2026 06:22:07 +0000</pubDate>
-            <sparkle:version>20260913052929</sparkle:version>
-            <sparkle:shortVersionString>5.25.0</sparkle:shortVersionString>
+            <title>5.25.1</title>
+            <pubDate>Tue, 15 Sep 2026 11:16:24 +0000</pubDate>
+            <sparkle:version>20260915102150</sparkle:version>
+            <sparkle:shortVersionString>5.25.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Preview p5.25.0(20260913052929)</h2>
+            <description><![CDATA[<h2>Preview p5.25.1(20260915102150)</h2>
 <p>This preview build was published from the pre branch and may contain unfinished changes.</p>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/p5.25.0(20260913052929)</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://s.kuaiyizhi.cn/lumi/pre/Lumi_5.25.0_x86_64.dmg" length="39973483" type="application/octet-stream" sparkle:edSignature="ZsCSHE3z1abudqWVl9h5AZRr8NEO2Tcvi7RyHq1e3rhlck0uIaLhxTAYvw3XOstP29umFPG8Da/Edm245DleCg=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/p5.25.1(20260915102150)</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://s.kuaiyizhi.cn/lumi/pre/Lumi_5.25.1_x86_64.dmg" length="40001905" type="application/octet-stream" sparkle:edSignature="J8/l6TusN0e/BLroBBLiXtGzjy0A39ruSI8rwBhhrgKb4LgRA1eI0ZQto6GK/BN9YS5Mhz8k89aY97jqHJG0Aw=="/>
         </item>
     </channel>
 </rss>
