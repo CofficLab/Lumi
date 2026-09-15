@@ -6,7 +6,7 @@ import SwiftUI
 
 /// Projects 设置视图。
 ///
-/// - 顶部右上角按钮可打开数据库目录（`store.settingsDirectory`）。
+/// - 顶部右上角可添加项目。
 /// - 下方左侧为项目列表，点击某个项目在右侧展示其详情信息。
 @MainActor
 public struct SettingsView: View {
@@ -84,11 +84,6 @@ public struct SettingsView: View {
             AppButton(LumiPluginLocalization.string("Add Project", bundle: .module), systemImage: "plus", style: .secondary, size: .small) {
                 addProject()
             }
-#if DEBUG
-            AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
-                openDataDirectory()
-            }
-#endif
         }
         .font(.appCaption)
         .foregroundStyle(theme.textSecondary)
@@ -363,13 +358,5 @@ public struct SettingsView: View {
 
     private func formattedDate(_ date: Date) -> String {
         date.formatted(date: .abbreviated, time: .shortened)
-    }
-
-    // MARK: - Actions
-
-    private func openDataDirectory() {
-        let url = viewModel.store.settingsDirectory
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        _ = NSWorkspace.shared.open(url)
     }
 }
