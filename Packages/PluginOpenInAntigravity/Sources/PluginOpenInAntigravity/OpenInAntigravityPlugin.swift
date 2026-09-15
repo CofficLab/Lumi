@@ -21,7 +21,7 @@ public final class OpenInAntigravityPlugin: SuperPlugin, SuperLog {
         description: OpenInAntigravityLocalization.string("Allow LLM to open projects in Antigravity."),
         category: .integration,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public init() {}
