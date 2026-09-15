@@ -7,7 +7,7 @@ struct TempFileInfo: Sendable {
     let modifiedAt: Date
 }
 
-enum TempFileStorageError: LocalizedError {
+enum TempFileStorageError: LocalizedError, Equatable {
     case invalidFilename
     case pathTraversal
     case fileNotFound(String)
@@ -32,23 +32,31 @@ actor TempFileStorageService {
     static let shared = TempFileStorageService()
 
     private let fileManager = FileManager.default
-    private let store = AgentTempStoragePluginLocalStore.shared
     private let filesDirectory: URL
+    private let retentionDays: () -> Int
 
     private init() {
         let pluginDir = AgentTempStoragePluginRuntimeBridge.pluginDirectory
             ?? AgentTempStoragePluginRuntimeBridge.fallbackRootDirectory.appendingPathComponent(AgentTempStoragePluginRuntimeBridge.pluginName, isDirectory: true)
         filesDirectory = pluginDir.appendingPathComponent("files", isDirectory: true)
         try? FileManager.default.createDirectory(at: filesDirectory, withIntermediateDirectories: true)
+        self.retentionDays = { AgentTempStoragePluginLocalStore.shared.retentionDays }
+    }
+
+    /// Test-only initializer: point the service at an isolated directory with a fixed retention window.
+    init(directory: URL, retentionDays: Int) {
+        filesDirectory = directory
+        self.retentionDays = { retentionDays }
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
     var storageDirectoryPath: String {
         filesDirectory.path
     }
 
-    func purgeExpiredFiles() {
-        let retentionDays = store.retentionDays
-        guard let cutoff = Calendar.current.date(byAdding: .day, value: -retentionDays, to: Date()) else {
+    func purgeExpiredFiles(now: Date = Date()) {
+        let retentionDays = self.retentionDays()
+        guard let cutoff = Calendar.current.date(byAdding: .day, value: -retentionDays, to: now) else {
             return
         }
 
@@ -106,10 +114,11 @@ actor TempFileStorageService {
         return entries.compactMap { url in
             let values = try? url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey, .isDirectoryKey])
             guard values?.isDirectory != true else { return nil }
-            let relativePath = url.path.replacingOccurrences(
-                of: filesDirectory.path + "/",
-                with: ""
-            )
+            let rootPath = filesDirectory.resolvingSymlinksInPath().standardizedFileURL.path
+            let resolvedURL = url.resolvingSymlinksInPath().standardizedFileURL
+            let relativePath = resolvedURL.path.hasPrefix(rootPath + "/")
+                ? String(resolvedURL.path.dropFirst(rootPath.count + 1))
+                : url.lastPathComponent
             return TempFileInfo(
                 name: relativePath,
                 path: url.path,

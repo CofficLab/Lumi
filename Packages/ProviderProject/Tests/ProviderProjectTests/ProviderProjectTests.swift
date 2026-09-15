@@ -181,4 +181,27 @@ struct ProviderProjectTests {
         provider.updateCurrentFile(fileURL)
         #expect(events.count == 7)
     }
+
+    @Test("workspaceRoot trims whitespace and rejects empty paths")
+    func workspaceRootTrimsWhitespace() async throws {
+        let provider = MockProjectProvider()
+
+        provider.currentProject = ProjectInfo(name: "W", path: "   ")
+        #expect(provider.workspaceRoot == nil)
+
+        provider.currentProject = ProjectInfo(name: "W", path: "  /Users/me/Lumi  ")
+        #expect(provider.workspaceRoot == "/Users/me/Lumi")
+    }
+
+    @Test("pinFile does not duplicate an already-open file")
+    func pinFileDeduplicates() {
+        let provider = MockProjectProvider()
+        let file = URL(fileURLWithPath: "/tmp/a.swift")
+
+        provider.updateOpenFiles([file])
+        provider.pinFile(file)
+
+        #expect(provider.openFileURLs == [file])
+        #expect(provider.currentFileURL == file)
+    }
 }

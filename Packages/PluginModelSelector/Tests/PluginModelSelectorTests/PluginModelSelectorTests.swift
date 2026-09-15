@@ -105,6 +105,64 @@ struct ProviderUsageStoreTests {
     }
 }
 
+@Suite("Model search bar visibility")
+@MainActor
+struct ModelSearchBarVisibilityTests {
+    @Test("Hides search bar while the selected provider has few models")
+    func hidesSearchBarForFewModels() throws {
+        let manager = DefaultLLMManager()
+        try manager.register(TestProvider(
+            id: "small-provider",
+            models: (1...ModelSelectorViewModel.modelSearchThreshold).map { "model-\($0)" }
+        ))
+        let viewModel = makeViewModel(manager: manager)
+
+        viewModel.selectedProviderID = "small-provider"
+        viewModel.prepareInitialScope()
+        viewModel.searchText = "model-3"
+
+        #expect(!viewModel.showsModelSearchBar)
+        // 搜索框不可见时残留文本不得继续过滤列表。
+        #expect(viewModel.activeModelSearchText.isEmpty)
+    }
+
+    @Test("Shows search bar once models exceed the threshold")
+    func showsSearchBarForManyModels() throws {
+        let manager = DefaultLLMManager()
+        try manager.register(TestProvider(
+            id: "large-provider",
+            models: (1...(ModelSelectorViewModel.modelSearchThreshold + 1)).map { "model-\($0)" }
+        ))
+        let viewModel = makeViewModel(manager: manager)
+
+        viewModel.selectedProviderID = "large-provider"
+        viewModel.prepareInitialScope()
+        viewModel.searchText = "model-3"
+
+        #expect(viewModel.showsModelSearchBar)
+        #expect(viewModel.activeModelSearchText == "model-3")
+    }
+
+    @Test("No provider selected means no search bar")
+    func noProviderHidesSearchBar() {
+        let viewModel = makeViewModel(manager: DefaultLLMManager())
+
+        viewModel.selectedProviderID = nil
+
+        #expect(!viewModel.showsModelSearchBar)
+        #expect(viewModel.activeModelSearchText.isEmpty)
+    }
+
+    private func makeViewModel(manager: any LLMManaging) -> ModelSelectorViewModel {
+        let box = LLMProviderManagerBox(manager: manager)
+        return ModelSelectorViewModel(
+            box: box,
+            usageStore: ProviderUsageStore(directory: nil),
+            toast: nil
+        )
+    }
+}
+
 @Suite("ModelSelectorPlugin metadata")
 @MainActor
 struct ModelSelectorPluginMetadataTests {
@@ -131,7 +189,8 @@ struct ModelSelectionCapabilityTests {
         ))
         manager.select(
             providerID: "model-selection-conversation-provider",
-            model: "global-model"
+            model: "global-model",
+            reason: .userSelected
         )
 
         let conversations = DefaultConversationManager()
@@ -166,7 +225,8 @@ struct ModelSelectionCapabilityTests {
         ))
         manager.select(
             providerID: "model-selection-global-provider",
-            model: "global-model"
+            model: "global-model",
+            reason: .userSelected
         )
 
         let conversations = DefaultConversationManager()

@@ -191,6 +191,41 @@ func testMessageToLLMMessagePreservesUserImage() {
     #expect(llmMessage.images == [MessageImage(data: imageData, mimeType: "image/png")])
 }
 
+@Test("工具结果图片关联到 tool 消息而不是 assistant")
+func testToolResultImageIsAttachedToToolMessage() {
+    let conversationID = UUID()
+    let imageData = Data([0x89, 0x50, 0x4E, 0x47])
+    let assistant = Message(
+        conversationID: conversationID,
+        role: .assistant,
+        content: "",
+        toolCalls: [
+            MessageToolCall(
+                id: "read-image",
+                name: "read_image",
+                arguments: "{}",
+                result: MessageToolResult(
+                    content: "已读取图片",
+                    imageAttachments: [MessageImageAttachment(data: imageData.base64EncodedString(), mimeType: "image/png")]
+                )
+            )
+        ]
+    )
+    let tool = Message(
+        conversationID: conversationID,
+        role: .tool,
+        content: "已读取图片",
+        toolCallID: "read-image"
+    )
+
+    let messages = llmMessages(from: [assistant, tool])
+
+    #expect(messages[0].role == .assistant)
+    #expect(messages[0].images.isEmpty)
+    #expect(messages[1].role == .tool)
+    #expect(messages[1].images == [MessageImage(data: imageData, mimeType: "image/png")])
+}
+
 @Test("用户文本文件附件会转换为 LLM 用户正文")
 func testMessageToLLMMessagePreservesUserFile() {
     let message = Message(
@@ -299,7 +334,50 @@ func testAgentLoopUsesConversationProviderAndModel() async throws {
     #expect(outcome == .completed)
     let request = try #require(llmManager.requests.first)
     #expect(request.providerID == "conversation-provider")
+    #expect(request.modelID == LLMModelID(providerID: "conversation-provider", modelID: "conversation-model"))
     #expect(request.model == "conversation-model")
+}
+
+@MainActor
+@Test("流式 LLM chunk 同时保留 reasoning 和普通内容")
+func testAgentLoopStreamsReasoningAndContentFromSameChunk() async throws {
+    let messages = DefaultMessageManager()
+    let conversations = DefaultConversationManager()
+    let streaming = DefaultMessageStreamingProviding()
+    let llmManager = RoutingRecordingLLMManager()
+    llmManager.streamedChunks = [
+        LLMStreamChunk(reasoningContent: "think "),
+        LLMStreamChunk(content: "hello", reasoningContent: "reason"),
+    ]
+    let conversationID = try conversations.createConversation(
+        title: nil,
+        projectPath: nil,
+        providerID: "conversation-provider",
+        modelName: "conversation-model"
+    )
+    var snapshots: [(stage: MessageStreamingStage, content: String?, reasoning: String?)] = []
+    let observer = streaming.addMessageStreamingObserver { _ in
+        let row = streaming.streamingMessage(for: conversationID)
+        snapshots.append((streaming.stage(for: conversationID), row?.content, row?.reasoningContent))
+    }
+    defer { observer.cancel() }
+
+    let loop = AgentLoopManager(
+        messages: messages,
+        llmManager: llmManager,
+        toolManager: DefaultToolManagerProviding(),
+        streaming: streaming,
+        conversations: conversations,
+        contextProvider: PassthroughLLMContextProvider(messages: messages)
+    )
+
+    let outcome = try await loop.runTurn(in: conversationID)
+
+    #expect(outcome == .completed)
+    #expect(snapshots.contains { $0.stage == .thinking && $0.reasoning == "think " })
+    #expect(snapshots.contains {
+        $0.stage == .generating && $0.content == "hello" && $0.reasoning == "think reason"
+    })
 }
 
 @MainActor
@@ -475,6 +553,7 @@ private final class RoutingRecordingLLMManager: LLMManaging, LLMStreamingProvidi
         "conversation-provider": RoutingRecordingProvider(id: "conversation-provider", model: "conversation-model"),
     ]
     private(set) var requests: [LLMRequest] = []
+    var streamedChunks: [LLMStreamChunk] = []
 
     var providerID: String { Self.managerProviderID }
     var providerInfo: LLMProviderInfo {
@@ -490,7 +569,11 @@ private final class RoutingRecordingLLMManager: LLMManaging, LLMStreamingProvidi
         _ request: LLMRequest,
         onChunk: @escaping @Sendable (LLMStreamChunk) async -> Void
     ) async throws -> LLMResponse {
-        try await complete(request)
+        requests.append(request)
+        for chunk in streamedChunks {
+            await onChunk(chunk)
+        }
+        return LLMResponse(content: "ok", model: request.model)
     }
 
     func allProviders() -> [any SuperLLMProvider] { Array(providersByID.values) }
@@ -501,7 +584,7 @@ private final class RoutingRecordingLLMManager: LLMManaging, LLMStreamingProvidi
     var selectedProviderID: String? { "global-provider" }
     var selectedModel: String? { "global-model" }
     func models(for providerID: String) -> [String] { providersByID[providerID]?.providerInfo.modelIDs ?? [] }
-    func select(providerID: String, model: String?) {}
+    func select(providerID: String, model: String?, reason: ModelSelectionReason) {}
 }
 
 @MainActor

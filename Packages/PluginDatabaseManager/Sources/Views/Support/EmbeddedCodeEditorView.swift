@@ -2,30 +2,24 @@ import AppKit
 import EditorContracts
 import SwiftUI
 
-/// 内核引用持有者（§17.2）。
-///
-/// 宿主在启动时注入编辑器能力；旧、新内核均可提供同一契约。
-@MainActor
-enum EmbeddedEditorServiceLocator {
-    static var provider: (any EditorEmbeddedEditorProviding)?
-}
-
-/// 嵌入式代码/SQL 编辑器（§17.2）。
+/// 嵌入式代码/SQL 编辑器。
 ///
 /// 优先使用 Host 提供的 `EditorEmbeddedEditorProviding`（真实语法高亮编辑器）；
 /// Host 不可用时退回纯 SwiftUI `TextEditor`（等宽字体，只读时禁用），
-/// 保证插件可独立运作。
+/// 保证插件可独立运作。Provider 由 ViewModel 提供，View 不自行解析。
 struct EmbeddedCodeEditorView: View {
     @Binding var text: String
     var options: EditorEmbeddedEditorOptions
+    var provider: (any EditorEmbeddedEditorProviding)?
 
-    init(text: Binding<String>, options: EditorEmbeddedEditorOptions) {
+    init(text: Binding<String>, options: EditorEmbeddedEditorOptions, provider: (any EditorEmbeddedEditorProviding)? = nil) {
         self._text = text
         self.options = options
+        self.provider = provider
     }
 
     var body: some View {
-        if let provider = EmbeddedEditorServiceLocator.provider {
+        if let provider {
             provider.makeEmbeddedEditorView(text: $text, options: options)
         } else {
             fallbackEditor

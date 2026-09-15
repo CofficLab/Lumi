@@ -31,8 +31,21 @@ public struct EditorDocumentEdit: Equatable, Sendable {
     public var hasOverlappingEdits: Bool {
         let ranges = edits.map(\.range).map(\.normalized)
         for i in 0..<ranges.count {
-            for j in (i + 1)..<ranges.count where ranges[i].overlaps(ranges[j]) {
-                return true
+            for j in (i + 1)..<ranges.count {
+                let lhs = ranges[i]
+                let rhs = ranges[j]
+                if lhs.isEmpty, rhs.isEmpty, lhs.start == rhs.start {
+                    return true
+                }
+                if lhs.isEmpty, rhs.start < lhs.start, lhs.start < rhs.end {
+                    return true
+                }
+                if rhs.isEmpty, lhs.start < rhs.start, rhs.start < lhs.end {
+                    return true
+                }
+                if !lhs.isEmpty, !rhs.isEmpty, lhs.overlaps(rhs) {
+                    return true
+                }
             }
         }
         return false

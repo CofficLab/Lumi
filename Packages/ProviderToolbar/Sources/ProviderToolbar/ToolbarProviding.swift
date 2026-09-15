@@ -44,11 +44,14 @@ public protocol ToolbarProviding: AnyObject {
     /// 注入工具栏项（替换当前全部项）。
     ///
     /// 实现应保存 items，并在 `makeToolbarView()` 中按 `placement` 渲染。
+    /// 实现应把调用方解析为 `ToolbarItem.ownerPluginID`（若调用方未显式指定）。
     func registerToolbarItems(_ items: [ToolbarItem])
 
     /// 追加工具栏项（保留已有项）。
     ///
     /// 供多个插件各自贡献工具栏项时使用，互不覆盖。
+    /// 实现应把调用方解析为 `ToolbarItem.ownerPluginID`（若调用方未显式指定），
+    /// 以便插件被禁用时自动隐藏其贡献。
     func addToolbarItems(_ items: [ToolbarItem])
 
     /// 按 id 撤回插件贡献的工具栏项。

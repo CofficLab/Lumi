@@ -31,8 +31,18 @@ public final class WebFetchCache: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
 
-        for (cacheKey, cached) in store where now.timeIntervalSince(cached.fetchedAt) > ttl {
+        let expiredKeys = store.compactMap { cacheKey, cached in
+            now.timeIntervalSince(cached.fetchedAt) > ttl ? cacheKey : nil
+        }
+        for cacheKey in expiredKeys {
             store.removeValue(forKey: cacheKey)
+        }
+
+        guard maxEntries > 0 else { return }
+
+        if store[key] != nil {
+            store[key] = value
+            return
         }
 
         if store.count >= maxEntries {

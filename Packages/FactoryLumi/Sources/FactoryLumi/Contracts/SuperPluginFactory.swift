@@ -40,6 +40,7 @@ import PluginLLMProviderMegaLLM
 import PluginLLMProviderMiniMax
 import PluginLLMProviderOpenAI
 import PluginLLMProviderOpenCode
+import PluginLLMProviderCommandCode
 import PluginLLMProviderOpenRouter
 import PluginLLMProviderSettings
 import PluginLLMProviderStepFun

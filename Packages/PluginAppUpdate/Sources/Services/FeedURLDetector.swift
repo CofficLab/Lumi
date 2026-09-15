@@ -30,6 +30,7 @@ public actor FeedURLDetector {
 
     private var primaryURL: URL
     private var fallbackURL: URL
+    private var detectionGeneration = 0
 
     /// Injected reachability checker.
     private let reachabilityChecker: FeedURLReachabilityChecker
@@ -72,6 +73,8 @@ public actor FeedURLDetector {
         }
 
         lastDetectionTime = clock()
+        detectionGeneration &+= 1
+        let generation = detectionGeneration
 
         let detectedURL = await Self.detectFeedURL(
             primary: primaryURL,
@@ -79,6 +82,7 @@ public actor FeedURLDetector {
             reachabilityChecker: reachabilityChecker
         )
 
+        guard generation == detectionGeneration else { return }
         resolvedFeedURL = detectedURL
     }
 
@@ -91,6 +95,7 @@ public actor FeedURLDetector {
 
     /// Change the channel without replacing the injected reachability checker.
     public func updateFeedURLs(primary: URL, fallback: URL) {
+        detectionGeneration &+= 1
         primaryURL = primary
         fallbackURL = fallback
         resolvedFeedURL = primary

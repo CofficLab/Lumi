@@ -10,8 +10,15 @@ import Foundation
 /// 沙盒检查（破坏性工具才需授权，本工具只读）。
 public struct DocxReadTool: SuperAgentTool {
     public let name = "read_docx"
+    private let extractText: @Sendable (URL) throws -> String
 
-    public init() {}
+    public init() {
+        extractText = { try Self.extractText(from: $0) }
+    }
+
+    init(extractText: @escaping @Sendable (URL) throws -> String) {
+        self.extractText = extractText
+    }
 
     public func description(for language: LanguagePreference) -> String {
         LumiPluginLocalization.string(
@@ -56,7 +63,7 @@ public struct DocxReadTool: SuperAgentTool {
             return "Error: File not found at path: \(sourceURL.path)"
         }
 
-        let text = try Self.extractText(from: sourceURL)
+        let text = try extractText(sourceURL)
 
         return text.isEmpty ? "(empty DOCX)" : text
     }
@@ -87,11 +94,11 @@ public struct DocxReadTool: SuperAgentTool {
         process.standardError = pipe
 
         try process.run()
+        let errorData = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
 
         guard process.terminationStatus == 0,
               FileManager.default.fileExists(atPath: tempFile.path) else {
-            let errorData = pipe.fileHandleForReading.readDataToEndOfFile()
             let errorDesc = String(data: errorData, encoding: .utf8) ?? "Unknown error"
             throw NSError(
                 domain: "com.coffic.lumi.plugin.docx-read.textutil",

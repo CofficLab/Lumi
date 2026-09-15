@@ -40,6 +40,7 @@ playground.xcworkspace
 !Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 .build/
+Packages/*/Package.resolved
 
 # CocoaPods
 #

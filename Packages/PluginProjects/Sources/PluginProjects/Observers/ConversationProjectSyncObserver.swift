@@ -27,6 +27,9 @@ final class ConversationProjectSyncObserver: SuperLog {
     private let conversations: any ConversationManaging
     private let project: any ProjectProviding
     private var observer: (any SelectedConversationObserverHandle)?
+    private var pendingConversationID: UUID?
+    private var hasPendingProjectSync = false
+    private var projectSyncTask: Task<Void, Never>?
 
     init(conversations: any ConversationManaging, project: any ProjectProviding) {
         self.conversations = conversations
@@ -45,29 +48,48 @@ final class ConversationProjectSyncObserver: SuperLog {
     func cancel() {
         observer?.cancel()
         observer = nil
+        projectSyncTask?.cancel()
+        projectSyncTask = nil
+        hasPendingProjectSync = false
     }
 
     private func handleSelectedConversationChanged(_ conversationID: UUID?) {
-        guard let conversationID else { return }
+        pendingConversationID = conversationID
+        hasPendingProjectSync = true
+        guard projectSyncTask == nil else { return }
 
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            guard let summary = await self.conversations.fetchConversation(id: conversationID),
+        projectSyncTask = Task { @MainActor [weak self] in
+            await self?.drainProjectSyncRequests()
+        }
+    }
+
+    private func drainProjectSyncRequests() async {
+        while !Task.isCancelled, hasPendingProjectSync {
+            let conversationID = pendingConversationID
+            hasPendingProjectSync = false
+            guard let conversationID,
+                  conversationID == conversations.selectedConversationID,
+                  let summary = await conversations.fetchConversation(id: conversationID),
+                  !Task.isCancelled,
+                  !hasPendingProjectSync,
+                  conversationID == conversations.selectedConversationID,
                   let projectPath = summary.projectPath?
                       .trimmingCharacters(in: .whitespacesAndNewlines),
                   !projectPath.isEmpty else {
-                return
+                continue
             }
-            guard self.project.currentProject?.path != projectPath else { return }
+            guard project.currentProject?.path != projectPath else { continue }
 
             if Self.verbose {
                 Self.logger.info("\(Self.t)当前对话绑定项目，切换项目到 \(projectPath, privacy: .public)")
             }
             do {
-                try await self.project.openProject(at: projectPath, reason: .conversationSwitch)
+                try await project.openProject(at: projectPath, reason: .conversationSwitch)
             } catch {
                 Self.logger.error("\(Self.t)切换项目失败：\(error.localizedDescription, privacy: .public)")
             }
         }
+
+        projectSyncTask = nil
     }
 }

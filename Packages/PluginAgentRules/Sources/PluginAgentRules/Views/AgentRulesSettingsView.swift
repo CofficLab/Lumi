@@ -9,30 +9,20 @@ import SwiftUI
 ///
 /// - 左侧为项目列表。
 /// - 右侧为所选项目 `.agent/rules` 目录中的规则列表。
+///
+/// 只依赖 `AgentRulesViewModel`；项目变化由 `AgentRulesProjectObserver`
+/// 直接写入 ViewModel，View 不再持有 Observer 或业务状态。
 @MainActor
-public struct AgentRulesSettingsView: View {
+struct AgentRulesSettingsView: View {
     @LumiTheme private var theme
 
-    @ObservedObject private var projectObserver: AgentRulesProjectObserver
-    @State private var selectedProjectPath: String?
-    @State private var rules: [AgentRuleMetadata] = []
-    @State private var isLoading = false
-    @State private var errorMessage: String?
+    @ObservedObject private var viewModel: AgentRulesViewModel
 
-    public init(projectObserver: AgentRulesProjectObserver) {
-        _projectObserver = ObservedObject(wrappedValue: projectObserver)
+    init(viewModel: AgentRulesViewModel) {
+        self.viewModel = viewModel
     }
 
-    private var projects: [ProjectInfo] {
-        projectObserver.projects.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
-
-    private var selectedProject: ProjectInfo? {
-        guard let selectedProjectPath else { return nil }
-        return projects.first { $0.path == selectedProjectPath }
-    }
-
-    public var body: some View {
+    var body: some View {
         PluginSettingsScaffold(
             title: LumiPluginLocalization.string("Agent Rules", bundle: .module),
             subtitle: LumiPluginLocalization.string(
@@ -64,29 +54,23 @@ public struct AgentRulesSettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .task { await reload() }
-        .onAppear { seedSelectionIfNeeded() }
-        .onChange(of: projects.map(\.path)) { _, _ in
-            syncSelectionAfterProjectChange()
-        }
-        .onChange(of: selectedProjectPath) { _, _ in
-            Task { await reload() }
-        }
+        .task { await viewModel.reload() }
+        .onAppear { viewModel.seedSelectionIfNeeded() }
     }
 
     // MARK: - Header
 
     private var header: some View {
         HStack(spacing: 10) {
-            if let selectedProject {
+            if let selectedProject = viewModel.selectedProject {
                 Label(selectedProject.name, systemImage: "folder")
             }
             Spacer()
             AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), systemImage: "arrow.clockwise", size: .small) {
-                Task { await reload() }
+                viewModel.refresh()
             }
             AppButton(LumiPluginLocalization.string("Open Rules Directory", bundle: .module), systemImage: "folder", size: .small) {
-                openRulesDirectory()
+                viewModel.openRulesDirectory()
             }
         }
         .font(.appCaption)
@@ -97,7 +81,7 @@ public struct AgentRulesSettingsView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            if projects.isEmpty {
+            if viewModel.projectsSorted.isEmpty {
                 AppEmptyState(
                     icon: "folder",
                     title: LumiPluginLocalization.string("No projects yet", bundle: .module)
@@ -106,7 +90,7 @@ public struct AgentRulesSettingsView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 4) {
-                        ForEach(projects, id: \.path) { project in
+                        ForEach(viewModel.projectsSorted, id: \.path) { project in
                             projectRow(project)
                         }
                     }
@@ -119,10 +103,10 @@ public struct AgentRulesSettingsView: View {
     }
 
     private func projectRow(_ project: ProjectInfo) -> some View {
-        let isSelected = selectedProjectPath == project.path
+        let isSelected = viewModel.selectedProjectPath == project.path
 
         return AppListRow(isSelected: isSelected, action: {
-            selectedProjectPath = project.path
+            viewModel.selectProject(path: project.path)
         }) {
             HStack(spacing: 10) {
                 Image(systemName: "folder")
@@ -155,7 +139,7 @@ public struct AgentRulesSettingsView: View {
     private var detailPane: some View {
         VStack(spacing: 0) {
             HStack {
-                Label("\(rules.count) rules", systemImage: "doc.text")
+                Label("\(viewModel.rules.count) rules", systemImage: "doc.text")
                 Spacer()
             }
             .font(.appCaption)
@@ -164,23 +148,23 @@ public struct AgentRulesSettingsView: View {
             .padding(.vertical, 8)
             .background(theme.background)
 
-            if isLoading {
+            if viewModel.isLoading {
                 ProgressView()
                     .controlSize(.small)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = errorMessage {
+            } else if let error = viewModel.errorMessage {
                 AppEmptyState(icon: "exclamationmark.triangle", title: error)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if selectedProject == nil {
+            } else if viewModel.selectedProject == nil {
                 AppEmptyState(icon: "folder", title: LumiPluginLocalization.string("Select a project", bundle: .module))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if rules.isEmpty {
+            } else if viewModel.rules.isEmpty {
                 AppEmptyState(icon: "doc.text", title: LumiPluginLocalization.string("No rules yet", bundle: .module))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 4) {
-                        ForEach(rules) { rule in
+                        ForEach(viewModel.rules) { rule in
                             ruleRow(rule)
                         }
                     }
@@ -218,63 +202,5 @@ public struct AgentRulesSettingsView: View {
                 Spacer(minLength: 0)
             }
         }
-    }
-
-    // MARK: - Data
-
-    private func reload() async {
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-
-        guard let projectPath = selectedProjectPath else {
-            rules = []
-            return
-        }
-        let rulesDirectory = getRulesDirectory(for: projectPath)
-
-        // Ensure directory exists
-        if !FileManager.default.fileExists(atPath: rulesDirectory.path()) {
-            rules = []
-            return
-        }
-
-        do {
-            rules = try await AgentRulesService.shared.listRules(projectPath: projectPath)
-        } catch {
-            errorMessage = error.localizedDescription
-            rules = []
-        }
-    }
-
-    private func seedSelectionIfNeeded() {
-        guard selectedProjectPath == nil else { return }
-        selectedProjectPath = projectObserver.projects.first?.path
-    }
-
-    private func syncSelectionAfterProjectChange() {
-        if let selectedProjectPath, projects.contains(where: { $0.path == selectedProjectPath }) {
-            return
-        }
-        selectedProjectPath = projects.first?.path
-    }
-
-    private func getRulesDirectory(for projectPath: String) -> URL {
-        if projectPath.isEmpty {
-            // Global rules directory
-            let home = FileManager.default.homeDirectoryForCurrentUser
-            return home.appendingPathComponent(".agent/rules")
-        }
-        let projectURL = URL(fileURLWithPath: projectPath)
-        return projectURL.appendingPathComponent(".agent/rules")
-    }
-
-    // MARK: - Actions
-
-    private func openRulesDirectory() {
-        guard let projectPath = selectedProjectPath else { return }
-        let url = getRulesDirectory(for: projectPath)
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        _ = NSWorkspace.shared.open(url)
     }
 }

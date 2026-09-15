@@ -10,6 +10,43 @@ import Testing
 @MainActor
 struct PluginPluginManagerTests {
 
+    @Test("插件列表刷新时包含稍后注册的插件")
+    func viewModelRefreshesPluginsRegisteredAfterInitialSnapshot() {
+        let firstPlugin = TestPlugin(id: "first", policy: .enabledByDefault)
+        let latePlugin = TestPlugin(id: "late", policy: .disabledByDefault)
+        let capability = TestPluginManagementCapability(plugins: [firstPlugin])
+        let viewModel = PluginManagementViewModel(capability: capability, docsProvider: nil)
+
+        viewModel.refresh()
+        #expect(viewModel.plugins.map(\.id) == ["first"])
+
+        capability.plugins.append(latePlugin)
+        viewModel.refresh()
+        #expect(viewModel.plugins.map(\.id) == ["first", "late"])
+    }
+
+    /// 启用状态筛选只保留匹配的插件，且与分类 / 关键字筛选叠加。
+    @Test("启用状态筛选按启用与否收窄列表")
+    func statusFilterNarrowsPlugins() {
+        let enabled = TestPlugin(id: "enabled", policy: .enabledByDefault)
+        let disabled = TestPlugin(id: "disabled", policy: .disabledByDefault)
+        let capability = TestPluginManagementCapability(plugins: [enabled, disabled])
+        capability.enabledIDs = ["enabled"]
+        let viewModel = PluginManagementViewModel(capability: capability, docsProvider: nil)
+
+        viewModel.refresh()
+        #expect(viewModel.filteredPlugins.map(\.id) == ["enabled", "disabled"])
+
+        viewModel.statusFilter = .enabled
+        #expect(viewModel.filteredPlugins.map(\.id) == ["enabled"])
+
+        viewModel.statusFilter = .disabled
+        #expect(viewModel.filteredPlugins.map(\.id) == ["disabled"])
+
+        viewModel.searchText = "enabled"
+        #expect(viewModel.filteredPlugins.isEmpty)
+    }
+
     /// 插件 id 与旧版 PluginManagerPlugin 完全一致（保证状态存储兼容），
     /// 顺序与策略对齐旧版（order 90 / alwaysOn → required）。
     @Test
@@ -81,4 +118,50 @@ struct PluginPluginManagerTests {
         try plugin.onBoot(kernel: kernel) // 不应抛错
         #expect(kernel.resolveProvider((any SettingViewProviding).self) == nil)
     }
+}
+
+@MainActor
+private final class TestPlugin: SuperPlugin {
+    let id: String
+    let metadata: PluginMetadata
+
+    init(id: String, policy: PluginEnablePolicy) {
+        self.id = id
+        metadata = PluginMetadata(
+            id: id,
+            name: id,
+            policy: policy
+        )
+    }
+}
+
+@MainActor
+private final class TestPluginManagementCapability: PluginManagementCapability {
+    var plugins: [any SuperPlugin]
+    var enabledIDs: Set<String> = []
+
+    init(plugins: [any SuperPlugin]) {
+        self.plugins = plugins
+    }
+
+    var allPlugins: [any SuperPlugin] { plugins }
+
+    func isEnabled(id: String) -> Bool {
+        enabledIDs.contains(id)
+    }
+
+    func enablePlugin(id: String) async -> Bool { true }
+
+    func disablePlugin(id: String) async -> Bool { true }
+
+    func addObserver(
+        _ callback: @escaping (PluginManagingEvent) -> Void
+    ) -> any PluginManagingObserverHandle {
+        TestPluginManagementObserverHandle()
+    }
+}
+
+@MainActor
+private final class TestPluginManagementObserverHandle: PluginManagingObserverHandle {
+    func cancel() {}
 }

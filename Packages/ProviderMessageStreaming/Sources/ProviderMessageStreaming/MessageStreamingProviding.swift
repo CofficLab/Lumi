@@ -62,7 +62,13 @@ public final class DefaultMessageStreamingProviding: MessageStreamingProviding {
     public func stage(for conversationID: UUID) -> MessageStreamingStage { stages[conversationID] ?? .idle }
     public func start(conversationID: UUID) { rows[conversationID] = Message(conversationID: conversationID, role: .assistant, content: ""); stages[conversationID] = .sending; notify(.updated(conversationID)) }
     public func appendContent(_ content: String, conversationID: UUID) { guard var row = rows[conversationID] else { return }; row.content += content; rows[conversationID] = row; stages[conversationID] = .generating; notify(.updated(conversationID)) }
-    public func appendThinking(_ content: String, conversationID: UUID) { stages[conversationID] = .thinking; notify(.updated(conversationID)) }
+    public func appendThinking(_ content: String, conversationID: UUID) {
+        guard var row = rows[conversationID] else { return }
+        row.reasoningContent = (row.reasoningContent ?? "") + content
+        rows[conversationID] = row
+        stages[conversationID] = .thinking
+        notify(.updated(conversationID))
+    }
     public func end(conversationID: UUID) { rows[conversationID] = nil; stages[conversationID] = .idle; notify(.updated(conversationID)) }
 
     private func notify(_ change: MessageStreamingChange) {

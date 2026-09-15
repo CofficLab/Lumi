@@ -1,6 +1,7 @@
 import SwiftUI
 import LumiUI
 import ProviderActivityBar
+import os
 
 /// 打开设置窗口的通知名（与 KernelLumi 的 `lumi.openSettings` 同字符串，通知可互通）。
 private extension Notification.Name {
@@ -11,25 +12,31 @@ private extension Notification.Name {
 ///
 /// 视觉与旧版 `FactoryCore.ActivityBar` 保持一致（即与 `DefaultActivityBarProviding`
 /// 相同的渲染），但在此**完全自实现**，不依赖 `DefaultActivityBarProviding`：
-/// - 48pt 宽的 `.panel` 表面 + 右侧 `theme.divider` 分隔线（`borderTrailing()`）；
+/// - 48pt 宽的 `.panel` 表面 + 右侧 1pt `theme.divider` 分隔线（overlay 自绘，
+///   颜色经 `@LumiTheme` 跟随主题明暗自动变化）；
 /// - 每个入口复用 `AppActivityIconButton`（18pt 图标、左侧 2.5pt 主题色指示条、
 ///   hover 高亮与 LumiMotion 动画），激活态由 `activeItemID` 判定；
 /// - 内容溢出时滚动，配合上下 8pt 渐隐遮罩提示可滚动；
 /// - 右键菜单提供「打开设置」入口（与旧版一致，通过 `lumi.openSettings` 通知）。
 internal struct ActivityBarView: View {
-    let provider: ActivityBarProvider
-    @State private var observationRevision = 0
-    @State private var observerHandle: (any ActivityBarObserverHandle)?
+    private static let logger = Logger(subsystem: "com.coffic.lumi.plugin.activity-bar", category: "View")
+
+    @ObservedObject private var viewModel: ActivityBarViewModel
+    @LumiTheme private var theme
+
+    init(viewModel: ActivityBarViewModel) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         Group {
-            if provider.shouldDisplayActivityBar {
+            if viewModel.shouldDisplayActivityBar {
                 VStack(spacing: 6) {
                     ActivityBarScrollableItemList(
-                        items: provider.items,
-                        activeItemID: provider.activeItemID
+                        items: viewModel.items,
+                        activeItemID: viewModel.activeItemID
                     ) { item in
-                        provider.activateItem(id: item.id)
+                        viewModel.activateItem(id: item.id)
                     }
 
                     Spacer(minLength: 0)
@@ -38,7 +45,11 @@ internal struct ActivityBarView: View {
                 .frame(width: 48)
                 .frame(maxHeight: .infinity)
                 .appSurface(style: .panel, cornerRadius: 0)
-                .borderTrailing()
+                .overlay(alignment: .trailing) {
+                    Rectangle()
+                        .fill(theme.divider)
+                        .frame(width: 1)
+                }
                 .contextMenu {
                     Button {
                         NotificationCenter.default.post(name: .lumiOpenSettings, object: nil)
@@ -48,16 +59,8 @@ internal struct ActivityBarView: View {
                 }
             }
         }
-        .id(observationRevision)
         .onAppear {
-            guard observerHandle == nil else { return }
-            observerHandle = provider.addActivityBarObserver { _ in
-                observationRevision += 1
-            }
-        }
-        .onDisappear {
-            observerHandle?.cancel()
-            observerHandle = nil
+            Self.logger.info("ActivityBarView onAppear: items=\(viewModel.items.count, privacy: .public), shouldDisplay=\(viewModel.shouldDisplayActivityBar, privacy: .public)")
         }
     }
 }

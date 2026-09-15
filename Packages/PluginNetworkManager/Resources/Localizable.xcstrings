@@ -706,40 +706,6 @@
         }
       }
     },
-    "HTTP request sent by the client" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP request sent by the client"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "客户端发送的 HTTP 请求"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "客戶端發送的 HTTP 請求"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "客户端發送的 HTTP 請求"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "客戶端傳送的 HTTP 請求"
-          }
-        }
-      }
-    },
     "HTTP response received from the server" : {
       "localizations" : {
         "en" : {

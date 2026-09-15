@@ -78,6 +78,33 @@ final class ProviderConversationTests: XCTestCase {
         XCTAssertFalse(manager.updateConversationTitle("x", for: UUID()))
     }
 
+    func testConversationModelSelectionUsesSingleStableID() throws {
+        let summary = ConversationSummary(
+            title: "Model selection",
+            providerID: "gateway/alpha",
+            modelName: "model:latest/v2"
+        )
+
+        XCTAssertNotNil(summary.modelID)
+        XCTAssertEqual(summary.providerID, "gateway/alpha")
+        XCTAssertEqual(summary.modelName, "model:latest/v2")
+
+        let encoded = try JSONEncoder().encode(summary)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertNotNil(object["modelID"])
+        XCTAssertNil(object["providerID"])
+        XCTAssertNil(object["modelName"])
+    }
+
+    func testConversationSummaryDecodesLegacyProviderAndModelPair() throws {
+        let json = #"{"id":"00000000-0000-0000-0000-000000000001","title":"Legacy","preview":"","createdAt":0,"updatedAt":0,"lastMessageAt":0,"providerID":"openai","modelName":"gpt-5.5"}"#.data(using: .utf8)!
+        let summary = try JSONDecoder().decode(ConversationSummary.self, from: json)
+
+        XCTAssertEqual(summary.providerID, "openai")
+        XCTAssertEqual(summary.modelName, "gpt-5.5")
+        XCTAssertNotNil(summary.modelID)
+    }
+
     func testPerConversationPreferences() throws {
         let manager = DefaultConversationManager()
         let id = try manager.createConversation(title: nil, projectPath: nil, providerID: nil, modelName: nil)

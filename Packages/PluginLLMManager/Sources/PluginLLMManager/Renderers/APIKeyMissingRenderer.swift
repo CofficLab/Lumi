@@ -7,7 +7,7 @@ import SwiftUI
 /// 渲染可内联输入 Key 的 `ProviderAPIKeyMissingView`。
 enum APIKeyMissingRenderer {
     @MainActor
-    static func item(manager: any LLMManaging) -> MessageRendererItem {
+    static func item(capability: any LLMManagerCapability) -> MessageRendererItem {
         MessageRendererItem(
             id: LLMProviderAPIKeyMessage.missingRenderKind,
             order: 350,
@@ -15,7 +15,11 @@ enum APIKeyMissingRenderer {
                 LLMProviderAPIKeyMessage.isMissingAPIKeyMessage(message)
             },
             render: { message, _ in
-                AnyView(ProviderAPIKeyMissingView(message: message, manager: manager))
+                let viewModel = ProviderAPIKeyViewModel(
+                    capability: capability,
+                    message: message
+                )
+                return AnyView(ProviderAPIKeyMissingView(message: message, viewModel: viewModel))
             }
         )
     }

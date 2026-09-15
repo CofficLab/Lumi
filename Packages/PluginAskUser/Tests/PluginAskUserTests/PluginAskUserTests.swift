@@ -38,7 +38,7 @@ private final class ScriptedLLMManager: LLMManaging {
     var selectedProviderID: String? { "scripted-manager" }
     var selectedModel: String? { nil }
     func models(for providerID: String) -> [String] { [] }
-    func select(providerID: String, model: String?) {}
+    func select(providerID: String, model: String?, reason: ModelSelectionReason) {}
 }
 
 @MainActor

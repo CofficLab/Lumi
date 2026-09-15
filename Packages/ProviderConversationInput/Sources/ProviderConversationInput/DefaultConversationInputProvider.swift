@@ -100,6 +100,10 @@ public final class DefaultConversationInputProvider: ConversationInputProviding,
 
     public func addToConversation(fileURLs: [URL]) {
         let paths = fileURLs.map(\.path).joined(separator: "\n")
+        guard !paths.isEmpty else { return }
+        if !text.isEmpty, !text.hasSuffix("\n") {
+            text.append("\n")
+        }
         text += paths
     }
 

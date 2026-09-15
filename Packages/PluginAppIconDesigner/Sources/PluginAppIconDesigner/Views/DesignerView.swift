@@ -5,12 +5,14 @@ private typealias L = AppIconDesignerLocalization
 
 /// Main canvas for the icon designer. Editing is intentionally agent-driven;
 /// this view only previews the selected source document and exposes exports.
+///
+/// 只依赖 `AppIconDesignerViewModel`；文档、选中与导出状态全部由 ViewModel 提供。
 public struct DesignerView: View {
-    @ObservedObject private var documentStore: IconDocumentStore
+    @ObservedObject private var viewModel: AppIconDesignerViewModel
     @State private var isExporting = false
 
-    init(documentStore: IconDocumentStore) {
-        self.documentStore = documentStore
+    init(viewModel: AppIconDesignerViewModel) {
+        self.viewModel = viewModel
     }
 
     public var body: some View {
@@ -18,7 +20,7 @@ public struct DesignerView: View {
             toolbar
             Divider()
 
-            if let document = documentStore.selectedDocument {
+            if let document = viewModel.selectedDocument {
                 preview(document: document)
             } else {
                 emptyState
@@ -37,19 +39,19 @@ public struct DesignerView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(L.string("App Icon Designer"))
                     .font(.headline)
-                if let document = documentStore.selectedDocument {
+                if let document = viewModel.selectedDocument {
                     Text(document.title)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
 
-            IconDesignerScopeBadge(scope: documentStore.selectedScope)
+            IconDesignerScopeBadge(scope: viewModel.selectedScope)
                 .help(L.string("Current storage scope"))
 
             Spacer()
 
-            if let document = documentStore.selectedDocument {
+            if let document = viewModel.selectedDocument {
                 Button {
                     Task { await exportSVG(document) }
                 } label: {
@@ -92,7 +94,7 @@ public struct DesignerView: View {
                     .foregroundStyle(.secondary)
             }
 
-            if let url = documentStore.lastExportURL {
+            if let url = viewModel.lastExportURL {
                 Label(url.path, systemImage: "checkmark.circle")
                     .font(.caption)
                     .foregroundStyle(.green)
@@ -101,7 +103,7 @@ public struct DesignerView: View {
                     .padding(.horizontal, 24)
             }
 
-            if let error = documentStore.lastError {
+            if let error = viewModel.lastError {
                 Label(error, systemImage: "exclamationmark.triangle")
                     .font(.caption)
                     .foregroundStyle(.orange)
@@ -137,9 +139,9 @@ public struct DesignerView: View {
         do {
             let url = directoryURL.appendingPathComponent("\(document.fileSafeName).svg")
             try IconSVGRenderer().render(document: document).write(to: url, atomically: true, encoding: .utf8)
-            documentStore.setExportURL(url)
+            viewModel.setExportURL(url)
         } catch {
-            documentStore.setError(error.localizedDescription)
+            viewModel.setError(error.localizedDescription)
         }
     }
 
@@ -154,9 +156,9 @@ public struct DesignerView: View {
                 document: document,
                 outputDirectory: directoryURL
             )
-            documentStore.setExportURL(result.iconURL)
+            viewModel.setExportURL(result.iconURL)
         } catch {
-            documentStore.setError(error.localizedDescription)
+            viewModel.setError(error.localizedDescription)
         }
     }
 

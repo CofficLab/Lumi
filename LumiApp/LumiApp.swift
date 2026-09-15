@@ -56,7 +56,10 @@ struct LumiApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Lumi", id: "lumi.main") {
+        // Lumi is a single-workspace app. `WindowGroup` would allow users to
+        // create additional main windows through Dock reactivation, the New
+        // Window command, or repeated scene activation.
+        Window("Lumi", id: "lumi.main") {
             // App 只做一件事：让 Factory 给一个视图。
             // 主窗口 / 设置窗口 / 菜单栏共享同一内核（kernel），
             // 主题切换后各窗口即时同步。
@@ -87,9 +90,9 @@ struct LumiApp: App {
             }
             .onAppear {
                 menuBarController.install(kernel: kernel)
-                // Launch Services may deliver a file before WindowGroup has
-                // installed its Combine subscription. Consume the retained
-                // delegate value once the V2 window is actually ready.
+                // Launch Services may deliver a file before the main window
+                // has installed its Combine subscription. Consume the
+                // retained delegate value once the V2 window is ready.
                 if let path = appDelegate.pendingOpenPath {
                     consumePendingOpenPath(path, kernel: kernel)
                 }
@@ -113,14 +116,14 @@ struct LumiApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         // Preserve the legacy `AppBootstrap.defaultSettingsWindowSize`.
-        .defaultSize(width: 1000, height: 600)
+        .defaultSize(width: 800, height: 500)
     }
 
     /// 与旧版 `MenuBarManagerPlugin.showMainWindow()` 保持相同行为：从状态栏
     /// 弹窗唤回应用，并把可成为 key 的主窗口置前。
     private func showMainWindow() {
         NSApp.activate(ignoringOtherApps: true)
-        if let window = NSApp.mainWindow ?? NSApp.windows.first(where: { $0.canBecomeKey }) {
+        if let window = NSApp.windows.first(where: { $0.identifier == LumiWindowIdentity.main }) {
             window.makeKeyAndOrderFront(nil)
         }
     }

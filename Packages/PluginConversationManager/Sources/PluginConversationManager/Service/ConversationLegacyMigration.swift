@@ -86,6 +86,7 @@ public struct ConversationLegacyMigration: SuperLog {
             }
             return
         }
+        defer { reader.releaseLegacySnapshot() }
 
         let startTime = Date()
         await progress.start()
@@ -94,7 +95,7 @@ public struct ConversationLegacyMigration: SuperLog {
         }
 
         do {
-            let summaries = reader.fetchLegacyConversations()
+            let summaries = try reader.fetchLegacyConversations()
             await progress.setReadCount(summaries.count)
 
             guard !summaries.isEmpty else {

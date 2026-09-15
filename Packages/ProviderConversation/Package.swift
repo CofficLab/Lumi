@@ -15,6 +15,7 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "../KitLLM"),
         .package(path: "../KitSuperLog"),
     ],
     targets: [
@@ -22,6 +23,7 @@ let package = Package(
             name: "ProviderConversation",
             dependencies: [
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "KitLLM", package: "KitLLM"),
             ],
             path: "Sources/ProviderConversation"
         ),

@@ -1,74 +1,45 @@
+import LumiUI
 import SwiftUI
 
-/// 对话列表顶部标题栏：根据 scopeToCurrentProject 与当前项目动态显示。
+/// 对话列表顶部标题栏：根据 scope 与当前项目动态显示。
+///
+/// 视觉规格来自 LumiUI 的 `AppPanelBar`——与聊天工具栏（`ChatToolbarRow`）
+/// 共用同一份「面板栏」定义，因此高度、内边距、背景与底部边框保持一致。
+///
+/// View 只依赖 `ConversationListViewModel`，不创建外部 Observer。
 struct HeaderBarView: View {
-    /// 是否仅展示当前项目下的会话。
-    let scopeToCurrentProject: Bool
-    /// 用于解析当前项目名称（当 `scopeToCurrentProject == true` 时使用）。
-    private let context: ConversationListContext
-    @State private var contextRevision = 0
-    @State private var contextObserverHandle: (any ConversationListContext.ObserverHandle)?
+    @ObservedObject private var viewModel: ConversationListViewModel
 
-    init(scopeToCurrentProject: Bool, context: ConversationListContext) {
-        self.scopeToCurrentProject = scopeToCurrentProject
-        self.context = context
+    init(viewModel: ConversationListViewModel) {
+        self.viewModel = viewModel
     }
-
-    /// 全库对话是否来自多个项目。
-    /// 默认隐藏，避免数据加载期间短暂显示单项目场景下无意义的提示。
-    @State private var hasMultipleProjects = false
 
     var body: some View {
         Group {
-            if scopeToCurrentProject || hasMultipleProjects {
-                HStack(spacing: 6) {
-                    Image(systemName: scopeToCurrentProject ? "folder.fill" : "tray.full.fill")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                    Text(title)
-                        .font(.appCaption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .frame(maxWidth: .infinity)
-                .background(Color.secondary.opacity(0.06))
-            }
-        }
-        .task {
-            await refreshProjectVisibility()
-        }
-        .onChange(of: contextRevision) { _, _ in
-            Task { await refreshProjectVisibility() }
-        }
-        .onAppear {
-            guard contextObserverHandle == nil else { return }
-            contextObserverHandle = context.addObserver { event in
-                if case .conversationsChanged = event {
-                    contextRevision &+= 1
+            if viewModel.headerVisible {
+                AppPanelBar {
+                    HStack(spacing: AppPanelChromeMetrics.breadcrumbItemSpacing) {
+                        Image(systemName: headerIcon)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                        Text(viewModel.headerTitle)
+                            .font(.appCaption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer(minLength: 0)
+                    }
                 }
             }
         }
-        .onDisappear {
-            contextObserverHandle?.cancel()
-            contextObserverHandle = nil
-        }
     }
 
-    private var title: String {
-        if scopeToCurrentProject {
-            let projectName = context.currentProjectName ?? "—"
-            return String(format: "项目对话 (%@)", projectName)
+    private var headerIcon: String {
+        switch viewModel.scope {
+        case .currentProject:
+            return "folder.fill"
+        case .all:
+            return "tray.full.fill"
         }
-        return "所有项目的对话"
-    }
-
-    /// 只有全库对话来自多个项目时，才需要提示当前列表是跨项目的。
-    private func refreshProjectVisibility() async {
-        guard !scopeToCurrentProject else { return }
-        hasMultipleProjects = await context.conversations.conversationProjectCount() > 1
     }
 }

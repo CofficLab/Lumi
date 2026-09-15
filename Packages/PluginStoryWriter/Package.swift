@@ -55,8 +55,10 @@ let package = Package(
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderContentView", package: "ProviderContentView"),
+                .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
             ],
             path: "Tests"
         )

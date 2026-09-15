@@ -130,4 +130,38 @@ struct KernelCoreRegistryTests {
 
         #expect(core.resolveProvider(GreetingProviding.self)?.greet() == "hello")
     }
+
+    // MARK: - Host provider
+
+    @Test("host provider registers, resolves, and rejects duplicates")
+    func hostProviderSemantics() throws {
+        let core = KernelCoreContainer()
+        let greeting = MockGreeting()
+
+        try core.registerHostProvider(GreetingProviding.self, greeting)
+        #expect(core.resolveProvider(GreetingProviding.self) as? MockGreeting === greeting)
+        #expect(core.isProviderRegistered(GreetingProviding.self))
+
+        #expect(throws: KernelCoreError.self) {
+            try core.registerHostProvider(GreetingProviding.self, MockGreeting())
+        }
+
+        core.unregisterProvider(GreetingProviding.self)
+        #expect(core.resolveProvider(GreetingProviding.self) == nil)
+    }
+
+    @Test("regular registration records owner; host provider has none")
+    func ownerAttribution() throws {
+        let core = KernelCoreContainer()
+
+        // Booting under a plugin id records the owner.
+        core.activePluginID = "com.test.plugin"
+        try core.registerProvider(GreetingProviding.self, MockGreeting())
+        #expect(core.isProvider(GreetingProviding.self, ownedByPlugin: "com.test.plugin"))
+        #expect(!core.isProvider(GreetingProviding.self, ownedByPlugin: "other"))
+
+        // A host provider is not owned by the active plugin.
+        try core.registerHostProvider(CountingProviding.self, MockCounter())
+        #expect(!core.isProvider(CountingProviding.self, ownedByPlugin: "com.test.plugin"))
+    }
 }

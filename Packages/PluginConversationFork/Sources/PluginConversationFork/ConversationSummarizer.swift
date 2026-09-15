@@ -54,7 +54,7 @@ public struct ConversationSummarizer: @unchecked Sendable {
 
     @MainActor
     public func summarize(conversationID: UUID) async -> Outcome {
-        let history = filteredMessages(await messages.messagesSnapshot(in: conversationID))
+        let history = Self.filteredMessages(await messages.messagesSnapshot(in: conversationID))
         guard !history.isEmpty else {
             return Outcome(summary: fallbackSummary(from: history), usedFallback: true)
         }
@@ -62,6 +62,7 @@ public struct ConversationSummarizer: @unchecked Sendable {
         do {
             let request = LLMRequest(
                 conversationID: conversationID,
+                modelID: conversations.modelID(for: conversationID).flatMap(LLMModelID.init(rawValue:)),
                 messages: [
                     LLMMessage(role: .system, content: Self.summarySystemPrompt),
                     LLMMessage(
@@ -69,7 +70,7 @@ public struct ConversationSummarizer: @unchecked Sendable {
                         content: "Conversation to summarize:\n\n\(Self.renderHistory(history))"
                     ),
                 ],
-                model: conversations.modelName(for: conversationID)
+                model: nil
             )
             let response = try await llmProvider.complete(request)
             let trimmed = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -84,7 +85,7 @@ public struct ConversationSummarizer: @unchecked Sendable {
 
     // MARK: - Private
 
-    private func filteredMessages(_ history: [Message]) -> [Message] {
+    static func filteredMessages(_ history: [Message]) -> [Message] {
         let visible = history
             .filter { $0.role == .user || $0.role == .assistant }
             .filter { !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }

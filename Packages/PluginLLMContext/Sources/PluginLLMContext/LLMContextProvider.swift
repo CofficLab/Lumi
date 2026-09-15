@@ -7,6 +7,14 @@ import ProviderLLMContext
 import ProviderLLMManager
 import ProviderMessage
 
+struct ContextWindowUsageSnapshot: Sendable, Equatable {
+    let contextWindowTokens: Int?
+    let effectiveContextWindowTokens: Int
+    let inputTokenLimit: Int
+    let estimatedInputTokens: Int?
+    let usesFallbackWindow: Bool
+}
+
 /// 根据模型上下文预算准备 LLM 请求上下文，并在后台维护滚动摘要。
 @MainActor
 final class LLMContextProvider: LLMContextProviding, SuperLog {
@@ -55,6 +63,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     private var summaries: [UUID: SummarySnapshot] = [:]
     private var loadedSummaryIDs: Set<UUID> = []
     private var summaryTasks: [UUID: Task<Void, Never>] = [:]
+    private var lastPreparationRequests: [UUID: LLMContextPreparationRequest] = [:]
     private var calibrationFactors: [String: Double] = [:]
     private var forcedCompactionIDs: Set<UUID> = []
     private var isActive = true
@@ -80,14 +89,17 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     func prepareContext(
         for request: LLMContextPreparationRequest
     ) async -> LLMContextPreparationResult {
+        if request.mode != .prewarm {
+            lastPreparationRequests[request.conversationID] = request
+        }
         let history = await llmHistory(for: request.conversationID)
         let key = calibrationKey(for: request)
         let estimate = calibratedEstimate(of: history, key: key)
         let limit = request.budget.inputTokenLimit
         let softLimit = max(Int(Double(limit) * Self.softThresholdRatio), 1_024)
         let hardLimit = max(Int(Double(limit) * Self.hardThresholdRatio), softLimit + 1)
-        let isEmergency = request.mode == .emergency
-            || forcedCompactionIDs.remove(request.conversationID) != nil
+        let wasForced = forcedCompactionIDs.remove(request.conversationID) != nil
+        let isEmergency = request.mode == .emergency || wasForced
         let unknownWindowPrewarm = request.budget.usesFallbackWindow
             && history.count > Self.compactionMessageThreshold
 
@@ -101,7 +113,18 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
         await loadPersistedSummaryIfNeeded(for: request.conversationID)
 
-        let shouldUseCompactedContext = isEmergency || estimate >= softLimit
+        // The soft threshold only starts background prewarming. Switching to a
+        // compacted context below the hard threshold makes a short conversation
+        // appear to have been compacted merely because a summary finished early.
+        let shouldUseCompactedContext = isEmergency || estimate >= hardLimit
+        let compactionReason: MessageTimelineEvent.ContextCompactionReason
+        if wasForced {
+            compactionReason = .contextLimitRetry
+        } else if request.mode == .emergency {
+            compactionReason = .emergency
+        } else {
+            compactionReason = .hardThreshold
+        }
         if shouldUseCompactedContext,
            let snapshot = summaries[request.conversationID],
            let compacted = compactedHistory(history, snapshot: snapshot, request: request) {
@@ -112,7 +135,8 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                     for: request,
                     snapshot: snapshot,
                     originalEstimate: estimate,
-                    compactedEstimate: compactedEstimate
+                    compactedEstimate: compactedEstimate,
+                    reason: compactionReason
                 )
                 return result(
                     messages: compacted,
@@ -137,7 +161,8 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                     for: request,
                     snapshot: snapshot,
                     originalEstimate: estimate,
-                    compactedEstimate: compactedEstimate
+                    compactedEstimate: compactedEstimate,
+                    reason: compactionReason
                 )
                 return result(
                     messages: compacted,
@@ -157,6 +182,66 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         )
     }
 
+    func contextWindowUsage(for conversationID: UUID?) async -> ContextWindowUsageSnapshot? {
+        let fallbackRequest = defaultRequest(
+            for: conversationID ?? UUID(),
+            mode: .beforeSend
+        )
+        let request: LLMContextPreparationRequest
+        if let conversationID,
+           let lastRequest = lastPreparationRequests[conversationID],
+           lastRequest.providerID == fallbackRequest.providerID,
+           lastRequest.model == fallbackRequest.model {
+            request = lastRequest
+        } else {
+            request = fallbackRequest
+        }
+
+        guard request.providerID != nil || request.model != nil else { return nil }
+
+        let estimatedInputTokens: Int?
+        if let conversationID {
+            let history = await llmHistory(for: conversationID)
+            let key = calibrationKey(for: request)
+            let fullHistoryEstimate = calibratedEstimate(of: history, key: key)
+            let limit = request.budget.inputTokenLimit
+            let softLimit = max(Int(Double(limit) * Self.softThresholdRatio), 1_024)
+            let hardLimit = max(Int(Double(limit) * Self.hardThresholdRatio), softLimit + 1)
+            var currentEstimate = fullHistoryEstimate
+            if fullHistoryEstimate >= hardLimit {
+                await loadPersistedSummaryIfNeeded(for: conversationID)
+                if let snapshot = summaries[conversationID],
+                   let compacted = compactedHistory(history, snapshot: snapshot, request: request) {
+                    let compactedEstimate = calibratedEstimate(of: compacted, key: key)
+                    if compactedEstimate <= limit, compactedEstimate < fullHistoryEstimate {
+                        currentEstimate = compactedEstimate
+                    } else {
+                        currentEstimate = calibratedEstimate(
+                            of: deterministicFallback(history, budget: request.budget),
+                            key: key
+                        )
+                    }
+                } else {
+                    currentEstimate = calibratedEstimate(
+                        of: deterministicFallback(history, budget: request.budget),
+                        key: key
+                    )
+                }
+            }
+            estimatedInputTokens = currentEstimate
+        } else {
+            estimatedInputTokens = nil
+        }
+
+        return ContextWindowUsageSnapshot(
+            contextWindowTokens: request.budget.contextWindowTokens,
+            effectiveContextWindowTokens: request.budget.effectiveContextWindowTokens,
+            inputTokenLimit: request.budget.inputTokenLimit,
+            estimatedInputTokens: estimatedInputTokens,
+            usesFallbackWindow: request.budget.usesFallbackWindow
+        )
+    }
+
     /// 回合结束时的后台预热入口。
     func scheduleBackgroundCompaction(for conversationID: UUID) {
         scheduleBackgroundCompaction(
@@ -172,10 +257,23 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
     ) {
         guard inputTokenCount > 0, estimatedInputTokens > 0 else { return }
         let key = calibrationKey(for: request)
-        let observedFactor = Double(inputTokenCount) / Double(estimatedInputTokens)
         let existing = calibrationFactors[key] ?? 1
-        // 只向上校准，避免一次异常的低估计让后续请求变得不安全。
-        calibrationFactors[key] = min(max(existing, observedFactor), 4)
+        let baseEstimate = Double(estimatedInputTokens) / existing
+        guard baseEstimate > 0 else { return }
+
+        // 服务端 usage 包含工具 schema，消息估算不包含；先扣除 schema 预算，
+        // 避免短上下文把工具开销错误学成消息估算倍率。
+        let observedMessageTokens = max(inputTokenCount - request.budget.toolSchemaTokens, 0)
+        let observedFactor = Double(observedMessageTokens) / baseEstimate
+        let target = min(max(observedFactor, 1), 4)
+
+        // 向上快速校准以保留超限保护；向下缓慢恢复，避免一次偏低 usage
+        // 长期压低估算倍率。
+        if target >= existing {
+            calibrationFactors[key] = target
+        } else {
+            calibrationFactors[key] = max(1, existing * 0.75 + target * 0.25)
+        }
     }
 
     func reportContextLimitExceeded(for request: LLMContextPreparationRequest) {
@@ -185,6 +283,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         scheduleBackgroundCompaction(
             for: LLMContextPreparationRequest(
                 conversationID: request.conversationID,
+                modelID: request.modelID,
                 providerID: request.providerID,
                 model: request.model,
                 budget: request.budget,
@@ -200,6 +299,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         summaryTasks.removeAll()
         summaries.removeAll()
         loadedSummaryIDs.removeAll()
+        lastPreparationRequests.removeAll()
         forcedCompactionIDs.removeAll()
     }
 
@@ -239,17 +339,40 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         for request: LLMContextPreparationRequest,
         snapshot: SummarySnapshot,
         originalEstimate: Int,
-        compactedEstimate: Int
+        compactedEstimate: Int,
+        reason: MessageTimelineEvent.ContextCompactionReason
     ) {
         // 预热只准备摘要，不代表某个用户请求实际发送了压缩上下文。
         guard request.mode != .prewarm else { return }
 
         let alreadyRecorded = messages.messages(for: request.conversationID).contains {
             MessageTimelineEvent.isActualContextCompaction($0)
-                && $0.metadata["contextCompactionSourceLastMessageID"]
+                && $0.metadata[MessageTimelineEvent.contextCompactionSourceLastMessageIDKey]
                     == snapshot.sourceLastMessageID.uuidString
         }
         guard !alreadyRecorded else { return }
+
+        var metadata: [String: String] = [
+            MessageTimelineEvent.metadataKey: MessageTimelineEvent.contextCompaction,
+            MessageTimelineEvent.actualContextCompactionKey:
+                MessageTimelineEvent.actualContextCompactionValue,
+            MessageTimelineEvent.contextCompactionSchemaVersionKey: "1",
+            MessageTimelineEvent.contextCompactionReasonKey: reason.rawValue,
+            MessageTimelineEvent.contextCompactionEffectiveWindowTokensKey:
+                "\(request.budget.effectiveContextWindowTokens)",
+            MessageTimelineEvent.contextCompactionInputTokenLimitKey:
+                "\(request.budget.inputTokenLimit)",
+            MessageTimelineEvent.contextCompactionEstimateSourceKey:
+                request.budget.usesFallbackWindow ? "fallback" : "estimated",
+            MessageTimelineEvent.contextCompactionOriginalEstimateKey: "\(originalEstimate)",
+            MessageTimelineEvent.contextCompactionCompactedEstimateKey: "\(compactedEstimate)",
+            MessageTimelineEvent.contextCompactionSourceLastMessageIDKey:
+                snapshot.sourceLastMessageID.uuidString,
+        ]
+        if let contextWindowTokens = request.budget.contextWindowTokens {
+            metadata[MessageTimelineEvent.contextCompactionContextWindowTokensKey] =
+                "\(contextWindowTokens)"
+        }
 
         messages.insertMessage(
             Message(
@@ -257,14 +380,9 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
                 role: .system,
                 content: String(localized: "Conversation compacted", defaultValue: "对话已压缩"),
                 createdAt: Date(),
-                metadata: [
-                    MessageTimelineEvent.metadataKey: MessageTimelineEvent.contextCompaction,
-                    MessageTimelineEvent.actualContextCompactionKey:
-                        MessageTimelineEvent.actualContextCompactionValue,
-                    "contextCompactionOriginalEstimate": "\(originalEstimate)",
-                    "contextCompactionCompactedEstimate": "\(compactedEstimate)",
-                    "contextCompactionSourceLastMessageID": snapshot.sourceLastMessageID.uuidString,
-                ],
+                metadata: metadata,
+                providerID: request.providerID,
+                modelName: request.model,
                 renderKind: MessageTimelineEvent.contextCompactionRenderKind,
                 preferredRendererID: "core-context-compaction"
             ),
@@ -278,8 +396,23 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         guard isActive else { return }
 
         let history = await llmHistory(for: request.conversationID)
-        let providerID = request.providerID ?? activeProviderID
-        let modelName = request.model ?? conversations.modelName(for: request.conversationID)
+        let conversationModelID = conversations.modelID(for: request.conversationID)
+            .flatMap(LLMModelID.init(rawValue:))
+        let requestedModelID = request.modelID
+            ?? conversationModelID
+            ?? request.providerID.flatMap { providerID in
+                request.model.flatMap { llmProvider.modelID(providerID: providerID, model: $0) }
+            }
+        if let requestModelID = request.modelID,
+           llmProvider.modelRoute(for: requestModelID) == nil {
+            return
+        }
+        let route = requestedModelID.flatMap(llmProvider.modelRoute(for:))
+        let providerID = route?.providerID ?? request.providerID ?? activeProviderID
+        let modelName = route?.modelName ?? request.model ?? conversations.modelName(for: request.conversationID)
+        let modelID = route?.modelID ?? requestedModelID ?? providerID.flatMap { providerID in
+            modelName.flatMap { llmProvider.modelID(providerID: providerID, model: $0) }
+        }
         let existingSnapshot = summaries[request.conversationID]
         let compatibleSnapshot = existingSnapshot?.providerID == providerID
             && existingSnapshot?.modelName == modelName
@@ -301,12 +434,14 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
         // 摘要请求必须使用与当前请求相同的路由上下文；如果路由已切换，
         // 放弃本次预热，下一次请求会用新的 provider/model 重新调度。
-        if let providerID, providerID != activeProviderID {
+        if requestedModelID == nil, let providerID, providerID != activeProviderID {
             return
         }
 
         let summaryRequest = LLMRequest(
             conversationID: request.conversationID,
+            providerID: route?.providerID ?? providerID,
+            modelID: modelID,
             messages: [
                 LLMMessage(role: .system, content: Self.summarySystemPrompt),
                 LLMMessage(role: .user, content: Self.renderSummaryInput(source.messages)),
@@ -602,18 +737,23 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
         for conversationID: UUID,
         mode: LLMContextPreparationMode
     ) -> LLMContextPreparationRequest {
-        let providerID = activeProviderID
+        let conversationModelID = conversations.modelID(for: conversationID)
+            .flatMap(LLMModelID.init(rawValue:))
+        let selectedModelID = conversationModelID ?? llmProvider.selectedModelID
+        let route = selectedModelID.flatMap(llmProvider.modelRoute(for:))
+        let providerID = route?.providerID ?? activeProviderID
         let provider = providerID.flatMap { llmProvider.provider(id: $0) }
-        let requestedModel = conversations.modelName(for: conversationID)
-        let model = provider?.providerInfo.models.contains(where: { $0.id == requestedModel }) == true
+        let requestedModel = route?.modelName ?? conversations.modelName(for: conversationID)
+        let model = route?.modelName ?? (provider?.providerInfo.models.contains(where: { $0.id == requestedModel }) == true
             ? requestedModel
             : llmProvider.selectedModel
                 ?? provider?.providerInfo.defaultModel
-                ?? requestedModel
-        let modelInfo = provider?.providerInfo.models.first { $0.id == model }
+                ?? requestedModel)
+        let modelInfo = route?.modelInfo ?? provider?.providerInfo.models.first { $0.id == model }
             ?? provider?.providerInfo.models.first { $0.id == provider?.providerInfo.defaultModel }
         return LLMContextPreparationRequest(
             conversationID: conversationID,
+            modelID: route?.modelID,
             providerID: providerID,
             model: model,
             budget: .conservative(

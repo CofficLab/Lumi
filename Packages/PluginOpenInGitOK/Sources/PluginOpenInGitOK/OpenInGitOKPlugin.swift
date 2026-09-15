@@ -6,6 +6,7 @@ import OpenInKit
 import ProviderProject
 import ProviderDocsView
 import ProviderToolManager
+import ProviderToolbar
 
 /// 在 GitOK 中打开项目的插件。
 @MainActor
@@ -20,7 +21,7 @@ public final class OpenInGitOKPlugin: SuperPlugin, SuperLog {
         description: OpenInGitOKLocalization.string("Allow LLM to open projects in GitOK."),
         category: .integration,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public init() {}
@@ -37,18 +38,35 @@ public final class OpenInGitOKPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        let project = kernel.resolveProvider((any ProjectProviding).self)
+        let tool = OpenInTool(config: OpenInTool.gitOK, project: project)
+
+        if let toolbar = kernel.resolveProvider((any ToolbarProviding).self) {
+            toolbar.addToolbarItems([
+                ToolbarItem(
+                    id: "\(id).toolbar",
+                    title: OpenInGitOKLocalization.string("Open In GitOK"),
+                    placement: .leading,
+                    category: .global,
+                    order: order
+                ) {
+                    OpenInGitOKToolbarView(tool: tool, project: project)
+                },
+            ])
+        }
+
         guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding from kernel")
             return
         }
-        let project = kernel.resolveProvider((any ProjectProviding).self)
 
-        let tool = OpenInTool(config: OpenInTool.gitOK, project: project)
         toolManager.add(tool, pluginID: id)
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+        kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).toolbar"])
+
         guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve ToolManagerProviding from kernel")
             return

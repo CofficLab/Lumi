@@ -10,6 +10,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
+        .package(path: "../KitLLM"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderProject"),
@@ -27,6 +28,7 @@ let package = Package(
             name: "PluginConversationManager",
             dependencies: [
                 "KernelCore",
+                .product(name: "KitLLM", package: "KitLLM"),
                 "ProviderConversation",
                 "ProviderStorage",
                 "ProviderProject",

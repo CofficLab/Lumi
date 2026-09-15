@@ -259,6 +259,37 @@ struct ProviderChatSectionTests {
         #expect(provider.chatSectionWidth.idealWidth == 380)
     }
 
+    @Test("clamp pins width to min/max and rejects non-finite")
+    @MainActor
+    func widthClampBranches() {
+        let width = ChatSectionWidth(minWidth: 280, idealWidth: 320, maxWidth: 440)
+
+        #expect(width.clamped(100) == 280)      // below min
+        #expect(width.clamped(500) == 440)      // above max
+        #expect(width.clamped(320) == 320)      // within range
+        #expect(width.clamped(.nan) == 280)     // non-finite -> min
+        #expect(width.clamped(.infinity) == 280) // non-finite -> min
+    }
+
+    @Test("standard width allows arbitrary large values")
+    @MainActor
+    func standardWidthUpperUnbounded() {
+        #expect(ChatSectionWidth.standard.clamped(10_000) == 10_000)
+        #expect(ChatSectionWidth.standard.clamped(-5) == 280)
+    }
+
+    @Test("init normalizes invalid bounds")
+    @MainActor
+    func initNormalizesBounds() {
+        let w = ChatSectionWidth(minWidth: .nan, idealWidth: 100, maxWidth: .infinity)
+        #expect(w.minWidth == 0)
+        #expect(w.maxWidth == .infinity)
+        #expect(w.idealWidth >= 0)
+
+        // max below min is raised to min.
+        let w2 = ChatSectionWidth(minWidth: 400, idealWidth: 100, maxWidth: 300)
+        #expect(w2.maxWidth == 400)
+    }
 }
 
 /// 最小 `ConversationManaging` 实现：仅测试需要的选中状态，其余返回默认值。

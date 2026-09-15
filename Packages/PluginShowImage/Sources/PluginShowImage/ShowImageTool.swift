@@ -177,7 +177,15 @@ struct ShowImageTool: SuperAgentTool, SuperLog {
         if let int = value as? Int {
             rawMaxWidth = int
         } else if let double = value as? Double {
-            rawMaxWidth = Int(double)
+            if double.isNaN {
+                rawMaxWidth = nil
+            } else if double < Double(minMaxWidth) {
+                rawMaxWidth = minMaxWidth
+            } else if double > Double(maxMaxWidth) {
+                rawMaxWidth = maxMaxWidth
+            } else {
+                rawMaxWidth = Int(double)
+            }
         } else if let string = value as? String, let int = Int(string) {
             rawMaxWidth = int
         } else {

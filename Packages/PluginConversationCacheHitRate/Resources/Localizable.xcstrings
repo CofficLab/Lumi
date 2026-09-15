@@ -1,6 +1,34 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%lld requests" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld requests"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 次请求"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 次請求"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 筆請求"
+          }
+        }
+      }
+    },
     "%lld requests in this conversation" : {
       "localizations" : {
         "en" : {
@@ -13,6 +41,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "本对话共 %lld 条请求"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本對話共 %lld 條請求"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本對話共 %lld 筆請求"
+          }
+        }
+      }
+    },
+    "Avg" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avg"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均"
           }
         }
       }
@@ -30,6 +98,46 @@
             "state" : "translated",
             "value" : "缓存命中率"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快取命中率"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快取命中率"
+          }
+        }
+      }
+    },
+    "Cache hit rate trend" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cache hit rate trend"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缓存命中率趋势"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快取命中率趨勢"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快取命中率趨勢"
+          }
         }
       }
     },
@@ -45,6 +153,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "缓存命中率暂不可用"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快取命中率暫不可用"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快取命中率暫不可用"
           }
         }
       }
@@ -62,6 +182,18 @@
             "state" : "translated",
             "value" : "缓存命中率暂不可用：点击查看详情"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快取命中率暫不可用：點擊查看詳情"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快取命中率暫不可用：點擊查看詳情"
+          }
         }
       }
     },
@@ -77,6 +209,130 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已缓存令牌"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已快取權杖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已快取權杖"
+          }
+        }
+      }
+    },
+    "Cumulative" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cumulative"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "累计"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "累計"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "累計"
+          }
+        }
+      }
+    },
+    "Max" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大"
+          }
+        }
+      }
+    },
+    "Min" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Min"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最小"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最小"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最小"
+          }
+        }
+      }
+    },
+    "No cache usage history yet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No cache usage history yet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无缓存用量历史"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無快取用量歷史"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無快取用量歷史"
           }
         }
       }
@@ -94,6 +350,18 @@
             "state" : "translated",
             "value" : "未选择对话。选择一个对话以查看缓存命中率。"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇對話。選擇一個對話以查看快取命中率。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未選擇對話。選擇一個對話以查看快取命中率。"
+          }
         }
       }
     },
@@ -109,6 +377,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "单次请求平均"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "單次請求平均"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "單次請求平均"
           }
         }
       }
@@ -126,6 +406,46 @@
             "state" : "translated",
             "value" : "服务提供商未报告本次对话的缓存令牌用量。该模型或端点可能不支持缓存，稳定前缀可能过短，或缓存尚未创建。"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服務提供者未回報本次對話的快取權杖用量。該模型或端點可能不支援快取，穩定前綴可能過短，或快取尚未建立。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服務提供者未回報本次對話的快取權杖用量。該模型或端點可能不支援快取，穩定前綴可能過短，或快取尚未建立。"
+          }
+        }
+      }
+    },
+    "This request" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This request"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本次请求"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本次請求"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本次請求"
+          }
         }
       }
     },
@@ -141,6 +461,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "按令牌加权的缓存命中率：%1$@（%2$lld 条请求）"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按權杖加權的快取命中率：%1$@（%2$lld 條請求）"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按權杖加權的快取命中率：%1$@（%2$lld 筆請求）"
           }
         }
       }
@@ -158,6 +490,18 @@
             "state" : "translated",
             "value" : "按令牌加权命中率"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按權杖加權命中率"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按權杖加權命中率"
+          }
         }
       }
     },
@@ -173,6 +517,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "输入令牌总数"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入權杖總數"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入權杖總數"
           }
         }
       }
@@ -190,6 +546,18 @@
             "state" : "translated",
             "value" : "等待第一条包含缓存用量数据的助手回复。"
           }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待第一條包含快取用量資料的助手回覆。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待第一筆包含快取用量資料的助手回覆。"
+          }
         }
       }
     },
@@ -205,6 +573,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "命中率 = 缓存读取 tokens ÷ 总输入 tokens。该数值按 token 加权，缓存命中越高，重复上下文计费越低、响应越快。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "命中率 = 快取讀取 tokens ÷ 總輸入 tokens。該數值按 token 加權，快取命中越高，重複上下文計費越低、回應越快。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "命中率 = 快取讀取 tokens ÷ 總輸入 tokens。該數值按 token 加權，快取命中越高，重複上下文計費越低、回應越快。"
           }
         }
       }

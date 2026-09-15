@@ -7,6 +7,8 @@ public enum LLMProviderManagerError: Error, LocalizedError, Sendable, Equatable 
     case emptyProviderID
     /// 指定 id 的供应商不存在。
     case providerNotFound(String)
+    /// 指定的 Lumi 全局模型 ID 没有对应的已注册模型。
+    case modelNotFound(String)
     /// 没有任何已注册供应商（发送链路未配置）。
     case noProviderConfigured
 
@@ -16,6 +18,8 @@ public enum LLMProviderManagerError: Error, LocalizedError, Sendable, Equatable 
             return "LLM provider 声明的 id 为空"
         case let .providerNotFound(id):
             return "LLM provider 未注册: \(id)"
+        case let .modelNotFound(id):
+            return "LLM model ID 未注册: \(id)"
         case .noProviderConfigured:
             return "没有已注册的 LLM provider"
         }

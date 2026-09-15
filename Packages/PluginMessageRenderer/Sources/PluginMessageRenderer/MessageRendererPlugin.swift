@@ -48,6 +48,9 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
     ]
 
     private var riskApprovalChatViewModel: RiskApprovalChatViewModel?
+    private var capability: MessageRendererCapabilityAdapter?
+    private var stateViewModel: MessageRendererStateViewModel?
+    private var stateObserver: MessageRendererStateObserver?
 
     public init() {}
 
@@ -59,6 +62,17 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
         ToolApprovalBridge.shared.start(kernel: kernel)
         kernel.resolveProvider((any ToolCallRenderingProviding).self)?
             .register(ToolApprovalRowRenderer())
+
+        // 组装层创建能力、共享状态与外部状态观察者（开发者模式等）。
+        let capability = MessageRendererCapabilityAdapter(kernel: kernel)
+        let stateViewModel = MessageRendererStateViewModel()
+        let stateObserver = MessageRendererStateObserver(
+            capability: capability,
+            viewModel: stateViewModel
+        )
+        self.capability = capability
+        self.stateViewModel = stateViewModel
+        self.stateObserver = stateObserver
 
         if let conversations = kernel.resolveProvider((any ConversationManaging).self),
            let toolManager = kernel.resolveProvider((any ToolManagerProviding).self),
@@ -148,8 +162,13 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 message.role == .user
             },
-            render: { message, verbosity in
-                AnyView(UserMessageView(kernel: kernel, message: message, verbosity: verbosity))
+            render: { [capability, stateViewModel] message, verbosity in
+                AnyView(UserMessageView(
+                    capability: capability,
+                    stateViewModel: stateViewModel,
+                    message: message,
+                    verbosity: verbosity
+                ))
             }
         ))
 
@@ -161,8 +180,13 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 message.renderKind == "tool-step-group" || message.renderKind == "turn-activity"
             },
-            render: { message, verbosity in
-                AnyView(ToolStepGroupMessageView(kernel: kernel, message: message, verbosity: verbosity))
+            render: { [capability, stateViewModel] message, verbosity in
+                AnyView(ToolStepGroupMessageView(
+                    capability: capability,
+                    stateViewModel: stateViewModel,
+                    message: message,
+                    verbosity: verbosity
+                ))
             }
         ))
 
@@ -173,8 +197,13 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             canRender: { message in
                 message.role == .assistant
             },
-            render: { message, verbosity in
-                AnyView(AssistantMessageView(kernel: kernel, message: message, verbosity: verbosity))
+            render: { [capability, stateViewModel] message, verbosity in
+                AnyView(AssistantMessageView(
+                    capability: capability,
+                    stateViewModel: stateViewModel,
+                    message: message,
+                    verbosity: verbosity
+                ))
             }
         ))
 
@@ -206,6 +235,10 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             .removeItem(id: "CoreMessageRenderer.pending-risk-approval")
         riskApprovalChatViewModel?.cancel()
         riskApprovalChatViewModel = nil
+        stateObserver?.cancel()
+        stateObserver = nil
+        stateViewModel = nil
+        capability = nil
         kernel.resolveProvider((any ToolCallRenderingProviding).self)?
             .unregister(id: ToolApprovalRowRenderer.id)
         ToolApprovalBridge.shared.stop()

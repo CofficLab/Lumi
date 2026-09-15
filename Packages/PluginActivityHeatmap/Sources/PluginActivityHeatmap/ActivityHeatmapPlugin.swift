@@ -10,11 +10,8 @@ import ProviderIdleTime
 import ProviderDocsView
 import ProviderStorage
 import SwiftUI
-#if canImport(AppKit)
-import AppKit
 import KitSuperLog
 import os
-#endif
 
 /// V2 activity dashboard. It preserves the legacy heatmap's three time ranges,
 /// daily message intensity, token trend, and persisted range preference while
@@ -38,9 +35,9 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
     )
 
     private var cache: ActivityHeatmapCache?
-    private var cacheDirectory: URL?
     private var gitActivityProvider: LocalGitActivityHeatmapProvider?
     private var gitWatchHandle: (any GitRepositoryWatchingObserverHandle)?
+    private var projectSectionObservers: [String: GitActivityHeatmapProjectObserver] = [:]
     private var viewModel: ActivityHeatmapViewModel?
     private var insertionObserver: MessageObserver?
     private var idleTimeState: ActivityHeatmapIdleTimeState?
@@ -70,9 +67,19 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
                         id: "\(id).project-activity",
                         order: 180
                     ) { path in
-                        GitActivityHeatmapProjectSection(
+                        let capability = GitActivityHeatmapProjectCapability(provider: provider)
+                        let viewModel = GitActivityHeatmapProjectViewModel(
                             projectPath: path,
-                            provider: provider
+                            capability: capability
+                        )
+                        let observer = GitActivityHeatmapProjectObserver(
+                            capability: capability,
+                            viewModel: viewModel
+                        )
+                        self.projectSectionObservers[path] = observer
+                        return GitActivityHeatmapProjectSection(
+                            projectPath: path,
+                            viewModel: viewModel
                         )
                     }
                 ])
@@ -96,7 +103,6 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
         let directory = kernel.resolveProvider((any StorageProviding).self)?
             .pluginDataDirectory(for: "ActivityHeatmap")
         ActivityHeatmapViewModel.restoreLegacyPeriodIfNeeded(from: directory)
-        cacheDirectory = directory
         cache = ActivityHeatmapCache(directory: directory)
         let viewModel = ActivityHeatmapViewModel(messages: messages, cache: cache)
         self.viewModel = viewModel
@@ -127,8 +133,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
                 ActivityHeatmapSettingsView(
                     model: viewModel,
                     idleTime: idleTime,
-                    idleTimeState: self.idleTimeState,
-                    cacheDirectory: directory
+                    idleTimeState: self.idleTimeState
                 )
             },
         ])
@@ -153,6 +158,10 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
         kernel.resolveProvider((any SettingViewProviding).self)?.removeProjectDetailSections(
             ids: ["\(id).project-activity"]
         )
+        for observer in projectSectionObservers.values {
+            observer.cancel()
+        }
+        projectSectionObservers.removeAll()
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(ids: [id])
         insertionObserver?.cancel()
         insertionObserver = nil
@@ -161,7 +170,6 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
         idleTimeState = nil
         viewModel = nil
         cache = nil
-        cacheDirectory = nil
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
@@ -307,8 +315,6 @@ public struct ActivityHeatmapSettingsView: View {
     private let idleTime: (any IdleTimeProviding)?
     private let idleTimeState: ActivityHeatmapIdleTimeState
 
-    private let cacheDirectory: URL?
-
     private func L(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: .module)
     }
@@ -316,25 +322,21 @@ public struct ActivityHeatmapSettingsView: View {
     public init(
         model: ActivityHeatmapViewModel,
         idleTime: (any IdleTimeProviding)? = nil,
-        idleTimeState: ActivityHeatmapIdleTimeState? = nil,
-        cacheDirectory: URL? = nil
+        idleTimeState: ActivityHeatmapIdleTimeState? = nil
     ) {
         _model = State(initialValue: model)
         self.idleTime = idleTime
         self.idleTimeState = idleTimeState ?? ActivityHeatmapIdleTimeState(provider: idleTime)
-        self.cacheDirectory = cacheDirectory
     }
 
     public init(
         messages: (any MessageManaging)?,
         idleTime: (any IdleTimeProviding)? = nil,
-        cache: ActivityHeatmapCache? = nil,
-        cacheDirectory: URL? = nil
+        cache: ActivityHeatmapCache? = nil
     ) {
         _model = State(initialValue: ActivityHeatmapViewModel(messages: messages, cache: cache))
         self.idleTime = idleTime
         self.idleTimeState = ActivityHeatmapIdleTimeState(provider: idleTime)
-        self.cacheDirectory = cacheDirectory
     }
 
     public var body: some View {
@@ -362,7 +364,6 @@ public struct ActivityHeatmapSettingsView: View {
                 summary
                 heatmap
                 tokenTrend
-                if let cacheDirectory { dataDirectoryButton(cacheDirectory) }
                 if idleTime != nil {
                     IdleTimeSummaryCard(state: idleTimeState)
                 }
@@ -380,7 +381,7 @@ public struct ActivityHeatmapSettingsView: View {
         return HStack(spacing: 12) {
             metric(L("Messages"), value: "\(totalMessages)", symbol: "bubble.left.and.bubble.right")
             metric(L("Active days"), value: "\(activeDays)", symbol: "calendar")
-            metric(L("Tokens"), value: formatted(totalTokens), symbol: "number")
+            metric(L("Tokens"), value: TokenCountFormat.compact(totalTokens), symbol: "number")
         }
     }
 
@@ -435,7 +436,7 @@ public struct ActivityHeatmapSettingsView: View {
                 .stroke(.orange, style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
             }
             .frame(height: 120)
-            Text(String(format: L("Total: %lld tokens"), model.days.reduce(0) { $0 + $1.tokens }))
+            Text(String(format: L("Total: %@ tokens"), TokenCountFormat.compact(model.days.reduce(0) { $0 + $1.tokens })))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -447,21 +448,6 @@ public struct ActivityHeatmapSettingsView: View {
         guard value > 0 else { return Color.secondary.opacity(0.12) }
         let level = min(4, max(1, Int((Double(value) / Double(maximum) * 4).rounded(.up))))
         return Color.green.opacity(0.18 + Double(level) * 0.18)
-    }
-
-    private func formatted(_ value: Int) -> String {
-        value >= 1_000_000 ? String(format: "%.1fM", Double(value) / 1_000_000) : value >= 1_000 ? "\(value / 1_000)K" : "\(value)"
-    }
-
-    @ViewBuilder
-    private func dataDirectoryButton(_ directory: URL) -> some View {
-        #if canImport(AppKit)
-        Button(L("Open Data Directory"), systemImage: "folder") {
-            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            NSWorkspace.shared.open(directory)
-        }
-        .buttonStyle(.bordered)
-        #endif
     }
 
     private static let dayFormatter: DateFormatter = {

@@ -11,6 +11,7 @@ extension AgentLoopManager {
         let turnID = UUID()
         let (updated, immediateOutcome) = TurnReducer.reduce(runtime, event: .startTurn(turnID: turnID))
         runtime = updated
+        runtime.modelRoute = resolveModelRoute(for: conversationID)
         runtimes[conversationID] = runtime
         if let immediateOutcome { return immediateOutcome }
         await lifecycleHooks?.notifyTurnStarted(TurnLifecycleContext(conversationID: conversationID, turnID: turnID))

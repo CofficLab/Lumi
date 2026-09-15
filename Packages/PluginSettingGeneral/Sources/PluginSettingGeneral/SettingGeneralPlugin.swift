@@ -37,6 +37,7 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
     /// 版本字符串提供器；默认读取 App bundle 版本，可注入以便测试。
     private let versionProvider: @MainActor () -> String?
     private let uninstallProvider: any UninstallProviding
+    private var generalObserver: GeneralSettingsObserver?
 
     public init(
         versionProvider: @escaping @MainActor () -> String? = { AppVersion.current },
@@ -88,17 +89,25 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
             systemImage: "gearshape",
             order: 1
         ) { [versionProvider, docsProvider, diagnosticsProvider, onboardingProvider, uninstallProvider, prepareForUninstall, kernel] in
-            GeneralSettingsDetailView(
-                version: versionProvider(),
+            // AppUpdateBootstrap is host-owned and may register after
+            // plugin boot. Resolve it when the entry is materialized so
+            // settings sees the provider in both Debug and Release.
+            let capability = GeneralSettingsCapabilityAdapter(
                 docsProvider: docsProvider,
                 diagnosticsProvider: diagnosticsProvider,
-                // AppUpdateBootstrap is host-owned and may register after
-                // plugin boot. Resolve it when the entry is materialized so
-                // settings sees the provider in both Debug and Release.
                 updateProvider: kernel.resolveProvider((any AppUpdateChannelProviding).self),
                 onboardingProvider: onboardingProvider,
                 uninstallProvider: uninstallProvider,
                 prepareForUninstall: prepareForUninstall
+            )
+            let viewModel = GeneralSettingsViewModel(capability: capability)
+            let observer = GeneralSettingsObserver(capability: capability, viewModel: viewModel)
+            self.generalObserver?.cancel()
+            self.generalObserver = observer
+
+            return GeneralSettingsDetailView(
+                version: versionProvider(),
+                viewModel: viewModel
             )
         }
 
@@ -106,6 +115,8 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        generalObserver?.cancel()
+        generalObserver = nil
         kernel.resolveProvider((any CommandProviding).self)?
             .unregisterCommandGroup(id: "\(id).commands")
         kernel.resolveProvider((any SettingViewProviding).self)?

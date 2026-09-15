@@ -43,6 +43,7 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
     private var usageStore: ProviderUsageStore?
     private var selectionCapability: ModelSelectionCapabilityAdapter?
     private var selectionBox: LLMProviderManagerBox?
+    private var viewModel: ModelSelectorViewModel?
 
     public init() {}
 
@@ -82,6 +83,12 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
         )
         self.selectionBox = box
         let toast = kernel.resolveProvider((any ToastProviding).self)
+        let viewModel = ModelSelectorViewModel(
+            box: box,
+            usageStore: usageStore,
+            toast: toast
+        )
+        self.viewModel = viewModel
 
         // Action Bar 模型选择按钮（沿用旧版 chatSectionActionBarItems .leading）。
         chat.addBarItems([
@@ -89,12 +96,14 @@ public final class ModelSelectorPlugin: SuperPlugin, SuperLog {
                 id: "\(id).action-bar-button",
                 placement: .actionLeading
             ) {
-                ActionBarButton(box: box, usageStore: usageStore, toast: toast)
+                ActionBarButton(viewModel: viewModel)
             },
         ])
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        viewModel?.cancel()
+        viewModel = nil
         selectionBox = nil
         selectionCapability = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?

@@ -1,3 +1,4 @@
+import EditorContracts
 import Foundation
 import KitSuperLog
 import Combine
@@ -71,6 +72,9 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
     }
 
     private let manager = DatabaseManagerCore.shared
+
+    /// 宿主注入的嵌入式编辑器能力（语法高亮）；nil 时 View 退回 TextEditor。
+    @Published public var embeddedEditorProvider: (any EditorEmbeddedEditorProviding)?
     nonisolated(unsafe) private var connectedConfigId: UUID?
     /// 是否已尝试过自动重连（每次启动只自动连一次）。
     private var didAutoConnect = false
@@ -168,6 +172,12 @@ public class DatabaseViewModel: ObservableObject, SuperLog {
         Task { await connect(config: config) }
     }
     
+    /// 测试连接（供连接表单使用），复用内置驱动注册逻辑。
+    public func testConnection(config: DatabaseConfig) async throws {
+        await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
+        try await manager.probe(config: config)
+    }
+
     public func connect(config: DatabaseConfig) async {
         await DatabaseDriverBootstrap.registerBuiltinsIfNeeded(on: manager)
         await DatabaseAgentConnectionRegistry.shared.upsert(config)

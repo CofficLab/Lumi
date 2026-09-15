@@ -67,12 +67,22 @@ public final class ToolManager: ToolManagerProviding, SuperLog {
         conversationID: UUID,
         turnID: UUID?
     ) -> [ToolJob] {
-        toolExecutionManager.submit(
+        let conversationProjectPathProvider: @MainActor @Sendable () async -> String? = { [weak self] in
+            guard let self,
+                  let summary = await self.conversationManager?.fetchConversation(id: conversationID),
+                  let path = summary.projectPath?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !path.isEmpty else {
+                return nil
+            }
+            return path
+        }
+        return toolExecutionManager.submit(
             toolCalls,
             policy: policy,
             conversationID: conversationID,
             turnID: turnID,
-            toolResolver: { [weak self] name in self?.registeredTools[name] }
+            toolResolver: { [weak self] name in self?.registeredTools[name] },
+            conversationProjectPathProvider: conversationProjectPathProvider
         )
     }
 

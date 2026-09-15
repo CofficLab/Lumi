@@ -19,17 +19,16 @@ final class ActionBarInputObserver: SuperLog {
     private var senderObserver: (any MessageSenderObserverHandle)?
 
     init(
-        input: any ConversationInputProviding,
-        sender: any MessageSendingProviding,
+        capability: any ConversationInputCapability,
         viewModel: SendActionBarViewModel
     ) {
         self.viewModel = viewModel
-        viewModel.updateInputText(input.text)
-        self.observer = input.addTextObserver { [weak viewModel] text in
+        viewModel.updateInputText(capability.text)
+        self.observer = capability.addTextObserver { [weak viewModel] text in
             viewModel?.updateInputText(text)
         }
         viewModel.updateAttachments()
-        self.senderObserver = sender.addMessageSenderObserver { [weak viewModel] event in
+        self.senderObserver = capability.addMessageSenderObserver { [weak viewModel] event in
             guard case .attachmentsChanged = event else { return }
             viewModel?.updateAttachments()
         }
