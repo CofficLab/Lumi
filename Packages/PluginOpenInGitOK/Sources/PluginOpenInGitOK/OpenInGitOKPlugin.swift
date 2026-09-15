@@ -21,7 +21,7 @@ public final class OpenInGitOKPlugin: SuperPlugin, SuperLog {
         description: OpenInGitOKLocalization.string("Allow LLM to open projects in GitOK."),
         category: .integration,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public init() {}

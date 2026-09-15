@@ -19,7 +19,7 @@ func pluginRegistersAndRemovesToolDocumentationAndToolbarItem() throws {
     let plugin = OpenInGitOKPlugin()
 
     #expect(plugin.id == "com.coffic.lumi.plugin.open-in-gitok")
-    #expect(plugin.metadata.policy == .enabledByDefault)
+    #expect(plugin.metadata.policy == .disabledByDefault)
     try plugin.onRegister(kernel: kernel)
     #expect(docs.aboutEntries.map(\.id) == [plugin.id])
     #expect(docs.manualEntries.map(\.id) == [plugin.id])
