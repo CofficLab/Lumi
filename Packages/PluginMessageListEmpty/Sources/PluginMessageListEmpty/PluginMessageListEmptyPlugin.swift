@@ -43,6 +43,7 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
     private var projectObserver: (any ProjectProvidingObserverHandle)?
     private var chatObserver: (any ChatSectionProvidingObserverHandle)?
     private var promptSuggestionsObserver: (any PromptSuggestionProvidingObserverHandle)?
+    private var registrationEvaluationTask: Task<Void, Never>?
     private var isRegistered = false
 
     public init() {}
@@ -82,7 +83,7 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
 
         selectedConversationObserver = conversations?.addSelectedConversationObserver { [weak self] conversationID in
             self?.updateSelection(conversationID)
-            self?.reevaluateRegistration()
+            self?.scheduleRegistrationEvaluation()
         }
         messageChangeObserver = messages?.addMessageChangeObserver { [weak self] change in
             self?.handleMessageChange(change)
@@ -99,10 +100,12 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
         }
 
         updateSelection(conversations?.selectedConversationID)
-        reevaluateRegistration()
+        scheduleRegistrationEvaluation()
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        registrationEvaluationTask?.cancel()
+        registrationEvaluationTask = nil
         selectedConversationObserver?.cancel()
         selectedConversationObserver = nil
         messageChangeObserver?.cancel()
@@ -132,7 +135,7 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
 
     private func handleMessageChange(_ change: MessageChange) {
         guard let selectedID = conversations?.selectedConversationID else {
-            reevaluateRegistration()
+            scheduleRegistrationEvaluation()
             return
         }
         let changedID: UUID?
@@ -143,29 +146,49 @@ public final class PluginMessageListEmptyPlugin: SuperPlugin, SuperLog {
             changedID = conversationID
         }
         guard changedID == selectedID else { return }
-        reevaluateRegistration()
+        scheduleRegistrationEvaluation()
     }
 
-    private func hasMessages(in conversationID: UUID) -> Bool {
-        guard let messages else { return false }
-        return !messages.messagePage(
-            for: conversationID,
-            limit: 1,
-            beforeMessageID: nil,
-            includesToolMessages: false
-        ).isEmpty
-    }
-
-    private func reevaluateRegistration() {
-        guard let chat else { return }
+    /// Schedule the database-backed empty-state check off the MainActor.
+    ///
+    /// Selection and message observers can fire in bursts while a conversation
+    /// is loading or a turn is streaming. Canceling the previous task keeps
+    /// only the latest state check and avoids synchronously entering SwiftData
+    /// from the UI thread.
+    private func scheduleRegistrationEvaluation() {
+        registrationEvaluationTask?.cancel()
         let selectedID = conversations?.selectedConversationID
         updateSelection(selectedID)
-        let shouldShow: Bool
-        if let selectedID {
-            shouldShow = !hasMessages(in: selectedID)
-        } else {
-            shouldShow = true
+
+        guard let selectedID else {
+            applyRegistration(shouldShow: true)
+            return
         }
+
+        guard let messages else {
+            applyRegistration(shouldShow: true)
+            return
+        }
+
+        registrationEvaluationTask = Task { @MainActor [weak self, messages] in
+            guard let self else { return }
+
+            let shouldShow = await messages.messagePageAsync(
+                for: selectedID,
+                limit: 1,
+                beforeMessageID: nil,
+                includesToolMessages: false
+            ).isEmpty
+
+            guard !Task.isCancelled,
+                  self.conversations?.selectedConversationID == selectedID else { return }
+            self.applyRegistration(shouldShow: shouldShow)
+            self.registrationEvaluationTask = nil
+        }
+    }
+
+    private func applyRegistration(shouldShow: Bool) {
+        guard let chat else { return }
 
         if shouldShow, !isRegistered {
             let services = services
