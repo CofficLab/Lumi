@@ -16,6 +16,7 @@ let package = Package(
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../ProviderToolbar"),
     ],
     targets: [
         .target(
@@ -28,6 +29,7 @@ let package = Package(
                 "ProviderDocsView",
                 "ProviderProject",
                 "ProviderToolManager",
+                "ProviderToolbar",
             ],
             path: "Sources/PluginOpenInGitOK",
             resources: [.process("../../Resources/Localizable.xcstrings")]
@@ -40,6 +42,7 @@ let package = Package(
                 .product(name: "OpenInKit", package: "OpenInKit"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderToolbar", package: "ProviderToolbar"),
             ]
         ),
     ]
