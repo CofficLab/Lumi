@@ -21,7 +21,7 @@ public final class OpenInCursorPlugin: SuperPlugin, SuperLog {
         description: OpenInCursorLocalization.string("Allow LLM to open projects in Cursor."),
         category: .integration,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public init() {}
