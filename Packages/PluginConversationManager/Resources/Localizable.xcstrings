@@ -341,40 +341,6 @@
         }
       }
     },
-    "Conversation preferences and context binding": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conversation preferences and context binding"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "会话偏好与上下文绑定"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "對話偏好與上下文綁定"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "對話偏好與上下文綁定"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "對話偏好與上下文綁定"
-          }
-        }
-      }
-    },
     "Conversations": {
       "localizations": {
         "en": {
@@ -473,40 +439,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "複製"
-          }
-        }
-      }
-    },
-    "Core fields stored for this conversation": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Core fields stored for this conversation"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "为此会话存储的核心字段"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為此對話儲存的核心欄位"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為此對話儲存的核心欄位"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為此對話儲存的核心欄位"
           }
         }
       }
