@@ -7,7 +7,7 @@ import SQLite3
 @MainActor
 @Test func publicIPRefreshUsesCache() async throws {
     let fetcher = PublicIPFetcherStub(values: ["203.0.113.10"])
-    let viewModel = NetworkManagerViewModel(autoStartMonitoring: false) {
+    let viewModel = NetworkManagerViewModel {
         await fetcher.fetch()
     }
 
@@ -21,7 +21,7 @@ import SQLite3
 @MainActor
 @Test func publicIPRefreshCanBeForced() async throws {
     let fetcher = PublicIPFetcherStub(values: ["203.0.113.1", "203.0.113.2"])
-    let viewModel = NetworkManagerViewModel(autoStartMonitoring: false) {
+    let viewModel = NetworkManagerViewModel {
         await fetcher.fetch()
     }
 
@@ -36,7 +36,6 @@ import SQLite3
 @Test func processMonitorToggleIgnoresRepeatedAssignments() {
     let counter = ProcessMonitorCounter()
     let viewModel = NetworkManagerViewModel(
-        autoStartMonitoring: false,
         processMonitoringStarter: { counter.starts += 1 },
         processMonitoringStopper: { counter.stops += 1 }
     )
@@ -52,7 +51,7 @@ import SQLite3
 
 @MainActor
 @Test func networkUsageUpdatePublishesOnce() {
-    let viewModel = NetworkManagerViewModel(autoStartMonitoring: false)
+    let viewModel = NetworkManagerViewModel()
     var publishCount = 0
     var cancellables = Set<AnyCancellable>()
 

@@ -38,7 +38,7 @@ public final class GoatPlanProvider: VendorLLMProvider {
                     LLMModelInfo(id: "deepseek/deepseek-v4-flash", displayName: "DeepSeek V4 Flash", contextWindowSize: 1_000_000),
                     LLMModelInfo(id: "deepseek/deepseek-v4-flash-vision-exp", displayName: "DeepSeek V4 Flash Vision", contextWindowSize: 1_000_000),
                     LLMModelInfo(id: "deepseek/deepseek-v4-flash-fast", displayName: "DeepSeek V4 Flash Fast", contextWindowSize: 1_000_000),
-                    LLMModelInfo(id: "deepseek/deepseek-v4.1-flash", displayName: "DeepSeek V4.1 Flash", contextWindowSize: 1_000_000),
+                    LLMModelInfo(id: "deepseek/deepseek-v4.1-flash", displayName: "DeepSeek V4.1 Flash", contextWindowSize: 1_000_000, supportsVision: true),
                     // Kimi
                     LLMModelInfo(id: "moonshotai/Kimi-K3", displayName: "Kimi K3", contextWindowSize: 1_000_000),
                     LLMModelInfo(id: "moonshotai/Kimi-K2.7-Code", displayName: "Kimi K2.7 Code", contextWindowSize: 256_000),

@@ -49,11 +49,6 @@ struct ContextUsageHistory: Equatable {
 
     var minimumTokens: Int? { samples.map(\.tokens).min() }
 
-    var averageTokens: Int? {
-        guard !samples.isEmpty else { return nil }
-        return samples.reduce(0) { $0 + $1.tokens } / samples.count
-    }
-
     var hasEstimatedSamples: Bool { samples.contains { $0.isEstimated } }
 
     /// 从会话消息构建历史曲线。
@@ -149,6 +144,33 @@ extension ContextUsageHistory {
             ),
         ]
         return ContextUsageHistory(samples: samples, compactionMarkers: markers)
+    }
+}
+
+extension Message {
+    /// 预览用的压缩时间线事件。
+    static func previewContextCompaction(
+        reason: MessageTimelineEvent.ContextCompactionReason = .hardThreshold,
+        createdAt: Date = Date()
+    ) -> Message {
+        Message(
+            conversationID: UUID(),
+            role: .status,
+            content: String(localized: "Conversation compacted", defaultValue: "会话已压缩", bundle: .module),
+            createdAt: createdAt,
+            metadata: [
+                MessageTimelineEvent.metadataKey: MessageTimelineEvent.contextCompaction,
+                MessageTimelineEvent.actualContextCompactionKey: MessageTimelineEvent.actualContextCompactionValue,
+                MessageTimelineEvent.contextCompactionReasonKey: reason.rawValue,
+                MessageTimelineEvent.contextCompactionContextWindowTokensKey: "128000",
+                MessageTimelineEvent.contextCompactionInputTokenLimitKey: "112000",
+                MessageTimelineEvent.contextCompactionOriginalEstimateKey: "104000",
+                MessageTimelineEvent.contextCompactionCompactedEstimateKey: "21000",
+            ],
+            providerID: "openai",
+            modelName: "gpt-4o",
+            renderKind: MessageTimelineEvent.contextCompactionRenderKind
+        )
     }
 }
 #endif

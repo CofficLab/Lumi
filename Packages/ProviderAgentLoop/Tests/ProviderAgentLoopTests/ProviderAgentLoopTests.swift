@@ -37,6 +37,39 @@ struct ProviderAgentLoopTests {
         #expect(llmMessage.content.contains("else { logger.error(\"failed\") }"))
     }
 
+    @Test("工具结果图片关联到 tool 消息而不是 assistant")
+    func toolResultImageIsAttachedToToolMessage() {
+        let conversationID = UUID()
+        let imageData = Data([0x89, 0x50, 0x4E, 0x47])
+        let assistant = Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            toolCalls: [
+                MessageToolCall(
+                    id: "read-image",
+                    name: "read_image",
+                    arguments: "{}",
+                    result: MessageToolResult(
+                        content: "已读取图片",
+                        imageAttachments: [MessageImageAttachment(data: imageData.base64EncodedString(), mimeType: "image/png")]
+                    )
+                )
+            ]
+        )
+        let tool = Message(
+            conversationID: conversationID,
+            role: .tool,
+            content: "已读取图片",
+            toolCallID: "read-image"
+        )
+
+        let messages = llmMessages(from: [assistant, tool])
+
+        #expect(messages[0].images.isEmpty)
+        #expect(messages[1].images == [MessageImage(data: imageData, mimeType: "image/png")])
+    }
+
     @MainActor
     private final class TestLLMProvider: SuperLLMProvider {
         nonisolated let providerID = "test"

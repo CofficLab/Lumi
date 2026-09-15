@@ -5,7 +5,7 @@ import ProviderMessage
 import Testing
 @testable import PluginMessageListEmpty
 
-@Test @MainActor func pluginShowsEmptyStateOnlyForSelectedConversationWithoutVisibleMessages() throws {
+@Test @MainActor func pluginShowsEmptyStateOnlyForSelectedConversationWithoutVisibleMessages() async throws {
     let kernel = KernelCoreContainer()
     let conversations = DefaultConversationManager()
     let messages = DefaultMessageManager()
@@ -27,22 +27,28 @@ import Testing
         Message(id: firstMessageID, conversationID: firstID, role: .user, content: "Non-selected"),
         to: firstID
     )
+    await settleRegistrationEvaluation()
     #expect(chat.items.map(\.id) == [plugin.id])
 
     messages.insertMessage(Message(conversationID: selectedID, role: .tool, content: "Tool output"), to: selectedID)
+    await settleRegistrationEvaluation()
     #expect(chat.items.map(\.id) == [plugin.id])
 
     let visibleMessageID = UUID()
     messages.insertMessage(Message(id: visibleMessageID, conversationID: selectedID, role: .user, content: "Hello"), to: selectedID)
+    await settleRegistrationEvaluation()
     #expect(chat.items.isEmpty)
 
     messages.clearMessages(in: selectedID)
+    await settleRegistrationEvaluation()
     #expect(chat.items.map(\.id) == [plugin.id])
 
     conversations.selectConversation(id: firstID)
+    await settleRegistrationEvaluation()
     #expect(chat.items.isEmpty)
 
     messages.deleteMessage(id: firstMessageID, in: firstID)
+    await settleRegistrationEvaluation()
     #expect(chat.items.map(\.id) == [plugin.id])
 
     conversations.deselectConversation()
@@ -53,7 +59,16 @@ import Testing
 
     messages.clearMessages(in: selectedID)
     conversations.selectConversation(id: selectedID)
+    await settleRegistrationEvaluation()
     #expect(chat.items.isEmpty)
+}
+
+@MainActor
+private func settleRegistrationEvaluation() async {
+    // The plugin evaluates persisted state in a child task. Yield twice so
+    // this test observes the completed state without using a wall-clock sleep.
+    await Task.yield()
+    await Task.yield()
 }
 
 @Test @MainActor func pluginCanProvideNoSelectionEmptyStateWithoutOptionalProviders() throws {

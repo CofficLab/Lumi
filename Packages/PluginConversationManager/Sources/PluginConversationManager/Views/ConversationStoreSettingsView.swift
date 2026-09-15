@@ -5,7 +5,7 @@ import SwiftUI
 
 /// 会话存储设置视图（v2 复刻版）
 ///
-/// 展示对话列表、日活统计、消息预览与数据目录入口。View 只依赖
+/// 展示对话列表、日活统计与消息预览。View 只依赖
 /// `ConversationStoreSettingsViewModel`，会话/消息/迁移状态由 Observer 与
 /// ViewModel 维护，不再直接访问 ConversationManager 或 MessageManaging。
 @MainActor
@@ -37,11 +37,6 @@ public struct ConversationStoreSettingsView: View {
                         ProgressView()
                             .controlSize(.small)
                     }
-#if DEBUG
-                    AppButton(L("Open Data Directory"), systemImage: "folder", size: .small) {
-                        viewModel.openDataDirectory()
-                    }
-#endif
                 }
 
                 conversationActivity
@@ -182,57 +177,15 @@ public struct ConversationStoreSettingsView: View {
         if let conversation = viewModel.selectedConversation {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    AppSettingsSection(title: L("Overview"), subtitle: L("Read-only summary of the selected conversation")) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(displayTitle(for: conversation))
-                                .font(.title3.weight(.semibold))
-                                .foregroundStyle(theme.textPrimary)
-                                .lineLimit(2)
+                    overviewSection(for: conversation)
 
-                            if !conversation.preview.isEmpty {
-                                Text(conversation.preview)
-                                    .font(.callout)
-                                    .foregroundStyle(theme.textSecondary)
-                                    .lineLimit(4)
-                            } else {
-                                Text(L("No preview available"))
-                                    .font(.callout)
-                                    .foregroundStyle(theme.textSecondary)
-                            }
-                        }
-                    }
+                    basicInfoSection(for: conversation)
 
-                    AppSettingsSection(title: L("Basic Info"), subtitle: L("Core fields stored for this conversation")) {
-                        VStack(spacing: 0) {
-                            detailRow(title: L("Conversation ID"), icon: "number", value: conversation.id.uuidString, monospace: true)
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Title"), icon: "text.cursor", value: displayTitle(for: conversation))
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Created At"), icon: "calendar.badge.plus", value: formattedDate(conversation.createdAt))
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Updated At"), icon: "calendar.badge.clock", value: formattedDate(conversation.updatedAt))
-                        }
-                    }
-
-                    AppSettingsSection(title: L("Routing"), subtitle: L("Conversation preferences and context binding")) {
-                        VStack(spacing: 0) {
-                            detailRow(title: L("Verbosity"), icon: "text.quote", value: conversation.verbosity?.displayName ?? L("Default"))
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Language"), icon: "character.book.closed", value: conversation.language?.displayName ?? L("Default"))
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Automation Level"), icon: conversation.automationLevel?.iconName ?? "gearshape.2", value: conversation.automationLevel?.displayName ?? L("Default"))
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Provider"), icon: "cloud", value: conversation.providerID?.isEmpty == false ? conversation.providerID! : L("Unassigned"), monospace: true)
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Model"), icon: "cpu", value: conversation.modelName?.isEmpty == false ? conversation.modelName! : L("Unassigned"), monospace: true)
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Project Path"), icon: "folder", value: conversation.projectPath?.isEmpty == false ? conversation.projectPath! : L("Unassigned"), monospace: true)
-                        }
-                    }
+                    routingSection(for: conversation)
 
                     messagesSection
                 }
-                .padding(22)
+                .padding(20)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -251,15 +204,168 @@ public struct ConversationStoreSettingsView: View {
         }
     }
 
-    private func detailRow(title: String, icon: String, value: String, monospace: Bool = false) -> some View {
-        AppSettingRow(title: title, icon: icon) {
-            Text(value)
-                .font(monospace ? .system(.callout, design: .monospaced) : .callout)
-                .foregroundStyle(theme.textSecondary)
-                .multilineTextAlignment(.trailing)
-                .lineLimit(3)
-                .textSelection(.enabled)
+    // MARK: - Detail Sections
+
+    /// 概览卡片：与 HTTP 日志详情页一致，标题下先给出说明文案，再放只读摘要。
+    private func overviewSection(for conversation: ConversationSummary) -> some View {
+        AppSettingSection(title: L("Overview"), titleAlignment: .leading) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L("Read-only summary of the selected conversation"))
+                    .font(.appCaption)
+                    .foregroundStyle(theme.textSecondary)
+                    .padding(.leading, 4)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(displayTitle(for: conversation))
+                        .font(.appBodyEmphasized)
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(2)
+                        .textSelection(.enabled)
+
+                    Text(conversation.preview.isEmpty ? L("No preview available") : conversation.preview)
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                        .lineLimit(4)
+                        .textSelection(.enabled)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(theme.surface.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            }
         }
+    }
+
+    /// 基本信息：`AppSettingRow` 行式布局，标签在左、取值作为描述在下方，
+    /// 右侧只保留复制这类操作按钮。
+    private func basicInfoSection(for conversation: ConversationSummary) -> some View {
+        AppSettingSection(title: L("Basic Info"), titleAlignment: .leading) {
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: L("Conversation ID"),
+                    description: conversation.id.uuidString,
+                    icon: "number"
+                ) {
+                    copyAction(for: conversation.id.uuidString)
+                }
+
+                detailDivider
+
+                AppSettingRow(
+                    title: L("Title"),
+                    description: displayTitle(for: conversation),
+                    icon: "text.cursor"
+                ) {
+                    EmptyView()
+                }
+
+                detailDivider
+
+                AppSettingRow(
+                    title: L("Created At"),
+                    description: formattedDate(conversation.createdAt),
+                    icon: "calendar.badge.plus"
+                ) {
+                    EmptyView()
+                }
+
+                detailDivider
+
+                AppSettingRow(
+                    title: L("Updated At"),
+                    description: formattedDate(conversation.updatedAt),
+                    icon: "calendar.badge.clock"
+                ) {
+                    EmptyView()
+                }
+            }
+        }
+    }
+
+    /// 路由：会话偏好与上下文绑定，取值缺省时回退到占位文案。
+    private func routingSection(for conversation: ConversationSummary) -> some View {
+        AppSettingSection(title: L("Routing"), titleAlignment: .leading) {
+            VStack(spacing: 0) {
+                AppSettingRow(
+                    title: L("Verbosity"),
+                    description: conversation.verbosity?.displayName ?? L("Default"),
+                    icon: "text.quote"
+                ) {
+                    EmptyView()
+                }
+
+                detailDivider
+
+                AppSettingRow(
+                    title: L("Language"),
+                    description: conversation.language?.displayName ?? L("Default"),
+                    icon: "character.book.closed"
+                ) {
+                    EmptyView()
+                }
+
+                detailDivider
+
+                AppSettingRow(
+                    title: L("Automation Level"),
+                    description: conversation.automationLevel?.displayName ?? L("Default"),
+                    icon: conversation.automationLevel?.iconName ?? "gearshape.2"
+                ) {
+                    EmptyView()
+                }
+
+                detailDivider
+
+                AppSettingRow(
+                    title: L("Provider"),
+                    description: rowValue(conversation.providerID),
+                    icon: "cloud"
+                ) {
+                    copyAction(for: conversation.providerID)
+                }
+
+                detailDivider
+
+                AppSettingRow(
+                    title: L("Model"),
+                    description: rowValue(conversation.modelName),
+                    icon: "cpu"
+                ) {
+                    copyAction(for: conversation.modelName)
+                }
+
+                detailDivider
+
+                AppSettingRow(
+                    title: L("Project Path"),
+                    description: rowValue(conversation.projectPath),
+                    icon: "folder"
+                ) {
+                    copyAction(for: conversation.projectPath)
+                }
+            }
+        }
+    }
+
+    /// 行内分隔：与 HTTP 日志详情页的 `Divider().padding(.vertical, 8)` 保持一致。
+    private var detailDivider: some View {
+        Divider().padding(.vertical, 8)
+    }
+
+    /// 仅对真实存在的取值展示复制按钮，占位文案不可复制。
+    @ViewBuilder
+    private func copyAction(for value: String?) -> some View {
+        if let value, !value.isEmpty {
+            AppIconButton(systemImage: "doc.on.doc", size: .compact) {
+                LumiPasteboard.copyString(value)
+            }
+            .help(L("Copy"))
+        }
+    }
+
+    /// 空字符串与 `nil` 一并视为未设置。
+    private func rowValue(_ value: String?) -> String {
+        guard let value, !value.isEmpty else { return L("Unassigned") }
+        return value
     }
 
     // MARK: - Messages
@@ -267,15 +373,22 @@ public struct ConversationStoreSettingsView: View {
     @ViewBuilder
     private var messagesSection: some View {
         let messages = viewModel.messagesForSelected
-        AppSettingsSection(title: L("Messages"), subtitle: String(format: L("Showing %lld of the most recent messages (read-only)"), messages.count)) {
-            if messages.isEmpty {
-                Text(L("No messages in this conversation"))
-                    .font(.callout)
+        AppSettingSection(title: L("Messages"), titleAlignment: .leading) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(String(format: L("Showing %lld of the most recent messages (read-only)"), messages.count))
+                    .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
-            } else {
-                LazyVStack(spacing: 10) {
-                    ForEach(messages) { message in
-                        messageRow(message)
+                    .padding(.leading, 4)
+
+                if messages.isEmpty {
+                    Text(L("No messages in this conversation"))
+                        .font(.appCallout)
+                        .foregroundStyle(theme.textSecondary)
+                } else {
+                    LazyVStack(spacing: 10) {
+                        ForEach(messages) { message in
+                            messageRow(message)
+                        }
                     }
                 }
             }
@@ -293,14 +406,13 @@ public struct ConversationStoreSettingsView: View {
             }
 
             Text(message.content.isEmpty ? L("(empty)") : message.content)
-                .font(.callout)
-                .foregroundStyle(message.isError ? Color.red : theme.textSecondary)
+                .font(.appCallout)
+                .foregroundStyle(message.isError ? theme.error : theme.textSecondary)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(10)
-        .background(theme.divider.opacity(0.15))
-        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .background(theme.surface.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
     private func roleBadge(_ role: MessageRole) -> some View {

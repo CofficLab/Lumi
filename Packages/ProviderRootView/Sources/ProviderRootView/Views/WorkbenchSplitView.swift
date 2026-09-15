@@ -23,6 +23,9 @@ struct WorkbenchSplitView: View {
                         .appSplitDivider(
                             .trailing,
                             initialPosition: provider.railWidth.idealWidth,
+                            // Rail 右侧平时不留阴影，避免与 Rail 内面板栏自带的
+                            // 底部边框/阴影叠成两层视觉边；hover 时才浮现。
+                            restingShadow: false,
                             onResize: provider.saveRailViewWidth
                         )
                     provider.hasActiveContent ? AnyView(mainContent) : AnyView(RootWelcomeView())

@@ -20,6 +20,7 @@ let package = Package(
         .package(path: "../ProviderIdleTime"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderStorage"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
     ],
     targets: [
         .target(
@@ -36,6 +37,7 @@ let package = Package(
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
+                .product(name: "LumiUI", package: "LumiUI"),
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),

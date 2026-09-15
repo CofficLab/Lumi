@@ -55,7 +55,8 @@ final class LumiAppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     private func activateMainWindow() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             NSApp.activate(ignoringOtherApps: true)
-            NSApp.windows.first(where: { $0.canBecomeKey })?.makeKeyAndOrderFront(nil)
+            NSApp.windows.first(where: { $0.identifier == LumiWindowIdentity.main })?
+                .makeKeyAndOrderFront(nil)
         }
     }
 

@@ -1,11 +1,16 @@
 import AppKit
 import SwiftUI
 
+enum LumiWindowIdentity {
+    static let main = NSUserInterfaceItemIdentifier("lumi.main")
+}
+
 /// 配置窗口 chrome：与旧版 Lumi（`WindowMain.configureForLumiMainChrome`）一致，
 /// 内容延伸到标题栏区域（fullSizeContentView），红绿灯悬浮在工具栏上，
 /// 保证顶部工具栏从窗口最顶部开始渲染、尺寸与旧版完全一致。
 extension NSWindow {
     func configureForLumiMinimalChrome() {
+        identifier = LumiWindowIdentity.main
         titleVisibility = .hidden
         titlebarAppearsTransparent = true
         toolbar = nil

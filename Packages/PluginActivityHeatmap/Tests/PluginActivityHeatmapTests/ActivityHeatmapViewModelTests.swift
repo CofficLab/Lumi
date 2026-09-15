@@ -21,6 +21,7 @@ struct ActivityHeatmapViewModelTests {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let firstDay = calendar.date(byAdding: .day, value: -29, to: today)!
+        let heatmapFirstDay = calendar.date(byAdding: .day, value: -364, to: today)!
         let activeDay = calendar.date(byAdding: .day, value: -2, to: today)!
         let previousActiveDay = calendar.date(byAdding: .day, value: -1, to: today)!
         let manager = HeatmapMessageManager(
@@ -37,19 +38,23 @@ struct ActivityHeatmapViewModelTests {
         #expect(viewModel.days.count == 30)
         #expect(viewModel.days.first?.date == firstDay)
         #expect(viewModel.days.last?.date == today)
+        #expect(viewModel.heatmapDays.count == 365)
+        #expect(viewModel.heatmapDays.first?.date == heatmapFirstDay)
+        #expect(viewModel.heatmapDays.last?.date == today)
         #expect(viewModel.days.first(where: { calendar.isDate($0.date, inSameDayAs: activeDay) })?.messages == 4)
         #expect(viewModel.days.first(where: { calendar.isDate($0.date, inSameDayAs: activeDay) })?.tokens == 400)
         #expect(viewModel.days.first(where: { calendar.isDate($0.date, inSameDayAs: previousActiveDay) })?.messages == 2)
         #expect(viewModel.days.first(where: { calendar.isDate($0.date, inSameDayAs: today) })?.messages == 7)
         #expect(viewModel.days.first(where: { calendar.isDate($0.date, inSameDayAs: today) })?.tokens == 700)
-        #expect(manager.messageQueryDates == [firstDay, today])
-        #expect(manager.tokenQueryDates == [firstDay, today])
+        #expect(manager.messageQueryDates == [heatmapFirstDay, today])
+        #expect(manager.tokenQueryDates == [heatmapFirstDay, today])
 
         await viewModel.reload()
 
-        #expect(manager.messageQueryDates == [firstDay, today, today])
-        #expect(manager.tokenQueryDates == [firstDay, today, today])
+        #expect(manager.messageQueryDates == [heatmapFirstDay, today, today])
+        #expect(manager.tokenQueryDates == [heatmapFirstDay, today, today])
         #expect(viewModel.days.count == 30)
+        #expect(viewModel.heatmapDays.count == 365)
     }
 }
 

@@ -1,4 +1,3 @@
-import AppKit
 import Foundation
 import KitAgentTool
 import ProviderToolManager
@@ -93,15 +92,6 @@ final class ToolManagerViewModel: ObservableObject {
 
     func reloadStatsRequested() {
         Task { await reloadStats() }
-    }
-
-    func openDataDirectory() {
-        let url = capability.storeDirectory
-            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
-                .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
-        guard let url else { return }
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(url)
     }
 
     // MARK: - Data

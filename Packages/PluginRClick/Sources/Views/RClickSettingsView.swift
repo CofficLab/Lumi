@@ -18,14 +18,6 @@ public struct RClickSettingsView: View {
             subtitle: LumiPluginLocalization.string("Customize Finder right-click menu actions", bundle: .module),
             showHeader: false
         ) {
-#if DEBUG
-            HStack {
-                Spacer()
-                AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
-                    viewModel.openDataDirectory()
-                }
-            }
-#endif
             finderExtensionCard
             generalActionsCard
             newFileMenuCard

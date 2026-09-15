@@ -20,4 +20,12 @@ struct DeepSeekProviderPluginTests {
         #expect(manager.provider(id: "deepseek")?.providerInfo.id == "deepseek")
         #expect(manager.provider(id: "deepseek-anthropic")?.providerInfo.id == "deepseek-anthropic")
     }
+
+    @Test("V4.1 Flash 声明视觉能力")
+    func flashModelSupportsVision() throws {
+        let provider = DeepSeekProvider()
+        let model = provider.providerInfo.models.first { $0.id == "deepseek-flash" }
+
+        #expect(model?.supportsVision == true)
+    }
 }

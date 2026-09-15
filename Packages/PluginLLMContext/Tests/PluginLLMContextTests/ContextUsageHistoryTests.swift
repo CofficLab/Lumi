@@ -30,7 +30,7 @@ struct ContextUsageHistoryTests {
         #expect(history.samples.isEmpty)
         #expect(history.latestTokens == nil)
         #expect(history.peakTokens == nil)
-        #expect(history.averageTokens == nil)
+        #expect(history.minimumTokens == nil)
         #expect(history.hasEstimatedSamples == false)
     }
 
@@ -51,7 +51,6 @@ struct ContextUsageHistoryTests {
         #expect(history.latestTokens == 3_400)
         #expect(history.peakTokens == 3_400)
         #expect(history.minimumTokens == 1_200)
-        #expect(history.averageTokens == 2_300)
         #expect(history.hasEstimatedSamples == false)
     }
 

@@ -3,7 +3,7 @@ import SwiftUI
 
 /// 上下文使用趋势：历史曲线 + 压缩标记 + 统计。
 ///
-/// 作为 `ContextWindowPopover` 的一段，展示当前会话每次请求的输入规模变化。
+/// 作为 `ContextPopover` 的一段，展示当前会话每次请求的输入规模变化。
 struct ContextUsageTrendView: View {
     @LumiTheme private var theme
 
@@ -54,19 +54,8 @@ struct ContextUsageTrendView: View {
 
 extension ContextUsageTrendView {
     private var header: some View {
-        HStack {
-            Text(String(localized: "Context usage trend", defaultValue: "上下文使用趋势", bundle: .module))
-                .font(.subheadline.weight(.semibold))
-            Spacer()
-            Text(
-                String(
-                    format: String(localized: "%lld requests", defaultValue: "%lld 次请求", bundle: .module),
-                    history.samples.count
-                )
-            )
-            .font(.caption)
-            .foregroundStyle(theme.textSecondary)
-        }
+        Text(String(localized: "Context usage trend", defaultValue: "上下文使用趋势", bundle: .module))
+            .font(.subheadline.weight(.semibold))
     }
 
     private var emptyState: some View {
@@ -83,13 +72,6 @@ extension ContextUsageTrendView {
                 statItem(
                     label: String(localized: "Min", defaultValue: "最小", bundle: .module),
                     value: minimum
-                )
-            }
-            Spacer()
-            if let average = history.averageTokens {
-                statItem(
-                    label: String(localized: "Avg", defaultValue: "平均", bundle: .module),
-                    value: average
                 )
             }
             Spacer()

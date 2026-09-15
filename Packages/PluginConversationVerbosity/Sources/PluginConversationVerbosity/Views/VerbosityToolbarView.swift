@@ -81,6 +81,9 @@ private struct VerbosityRow: View {
                         .font(.system(size: 12, weight: .semibold))
                     Text(level.displayName)
                         .font(.system(size: 11))
+                    if level == .brief {
+                        BetaBadgeView()
+                    }
                 }
                 .foregroundColor(.primary)
 

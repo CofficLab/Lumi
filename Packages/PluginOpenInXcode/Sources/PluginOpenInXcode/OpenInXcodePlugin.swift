@@ -22,7 +22,7 @@ public final class OpenInXcodePlugin: SuperPlugin, SuperLog {
         description: OpenInXcodeLocalization.string("Allow LLM to open projects in Xcode."),
         category: .integration,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public init() {}

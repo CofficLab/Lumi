@@ -5,7 +5,7 @@ import SwiftUI
 /// 工具管理器设置视图。
 ///
 /// 顶部 Tab：Tools（可用工具列表）/ Execution Log（执行日志）/
-/// Usage Statistics（调用统计）；右上角可打开数据目录。
+/// Usage Statistics（调用统计）。
 /// 只依赖 `ToolManagerViewModel`；工具分组、执行日志与统计状态
 /// 全部由 ViewModel 提供。
 struct ToolManagerSettingsView: View {
@@ -47,16 +47,6 @@ struct ToolManagerSettingsView: View {
                 tabButton(.toolStats)
             }
             Spacer()
-#if DEBUG
-            AppButton(
-                L("Open Data Directory"),
-                systemImage: "folder",
-                style: .warning,
-                size: .small
-            ) {
-                viewModel.openDataDirectory()
-            }
-#endif
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .zIndex(1)
