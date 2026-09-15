@@ -359,14 +359,6 @@ public struct ActivityHeatmapSettingsView: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                HStack {
-                    Spacer()
-                    AppIconButton(systemImage: "arrow.clockwise") {
-                        Task { await model.reload() }
-                    }
-                    .help(L("Refresh activity"))
-                }
-
                 summary
                 heatmap
                 tokenTrend
