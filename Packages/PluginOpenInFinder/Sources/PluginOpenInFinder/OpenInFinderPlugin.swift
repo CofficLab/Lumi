@@ -21,7 +21,7 @@ public final class OpenInFinderPlugin: SuperPlugin, SuperLog {
         description: OpenInFinderLocalization.string("Allow LLM to open files or folders in Finder."),
         category: .integration,
         stage: .stable,
-        policy: .enabledByDefault
+        policy: .disabledByDefault
     )
 
     public init() {}
