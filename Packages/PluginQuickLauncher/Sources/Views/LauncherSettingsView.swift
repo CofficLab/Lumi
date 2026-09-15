@@ -17,14 +17,6 @@ public struct LauncherSettingsView: View {
     public var body: some View {
         AppSettingsContentScaffold(maxContentWidth: nil) {
             VStack(alignment: .leading, spacing: 24) {
-#if DEBUG
-                HStack {
-                    Spacer()
-                    AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
-                        viewModel.openDataDirectory()
-                    }
-                }
-#endif
                 hotkeySection
                 sourcesSection
                 usageSection
