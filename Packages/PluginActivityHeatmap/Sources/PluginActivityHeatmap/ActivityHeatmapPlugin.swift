@@ -381,7 +381,7 @@ public struct ActivityHeatmapSettingsView: View {
         return HStack(spacing: 12) {
             metric(L("Messages"), value: "\(totalMessages)", symbol: "bubble.left.and.bubble.right")
             metric(L("Active days"), value: "\(activeDays)", symbol: "calendar")
-            metric(L("Tokens"), value: formatted(totalTokens), symbol: "number")
+            metric(L("Tokens"), value: TokenCountFormat.compact(totalTokens), symbol: "number")
         }
     }
 
@@ -436,7 +436,7 @@ public struct ActivityHeatmapSettingsView: View {
                 .stroke(.orange, style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
             }
             .frame(height: 120)
-            Text(String(format: L("Total: %lld tokens"), model.days.reduce(0) { $0 + $1.tokens }))
+            Text(String(format: L("Total: %@ tokens"), TokenCountFormat.compact(model.days.reduce(0) { $0 + $1.tokens })))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -448,10 +448,6 @@ public struct ActivityHeatmapSettingsView: View {
         guard value > 0 else { return Color.secondary.opacity(0.12) }
         let level = min(4, max(1, Int((Double(value) / Double(maximum) * 4).rounded(.up))))
         return Color.green.opacity(0.18 + Double(level) * 0.18)
-    }
-
-    private func formatted(_ value: Int) -> String {
-        value >= 1_000_000 ? String(format: "%.1fM", Double(value) / 1_000_000) : value >= 1_000 ? "\(value / 1_000)K" : "\(value)"
     }
 
     private static let dayFormatter: DateFormatter = {

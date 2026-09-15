@@ -971,36 +971,36 @@
         }
       }
     },
-    "Total: %lld tokens" : {
+    "Total: %@ tokens" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Total: %lld tokens"
+            "value" : "Total: %@ tokens"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "总计：%lld 个 Token"
+            "value" : "总计：%@ 个 Token"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "總計：%lld 個 Token"
+            "value" : "總計：%@ 個 Token"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "總計：%lld 個 Token"
+            "value" : "總計：%@ 個 Token"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "總計：%lld 個 Token"
+            "value" : "總計：%@ 個 Token"
           }
         }
       }
