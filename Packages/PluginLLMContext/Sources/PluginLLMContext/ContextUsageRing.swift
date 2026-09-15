@@ -32,6 +32,7 @@ extension ContextUsageRing {
                 .stroke(tint, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .animation(.easeInOut(duration: 0.3), value: ratio)
+                .animation(.easeInOut(duration: 0.3), value: tint)
 
             Text(centerText)
                 .font(.system(size: 15, weight: .bold))
