@@ -49,11 +49,6 @@ struct ContextUsageHistory: Equatable {
 
     var minimumTokens: Int? { samples.map(\.tokens).min() }
 
-    var averageTokens: Int? {
-        guard !samples.isEmpty else { return nil }
-        return samples.reduce(0) { $0 + $1.tokens } / samples.count
-    }
-
     var hasEstimatedSamples: Bool { samples.contains { $0.isEstimated } }
 
     /// 从会话消息构建历史曲线。

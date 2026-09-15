@@ -86,13 +86,6 @@ extension ContextUsageTrendView {
                 )
             }
             Spacer()
-            if let average = history.averageTokens {
-                statItem(
-                    label: String(localized: "Avg", defaultValue: "平均", bundle: .module),
-                    value: average
-                )
-            }
-            Spacer()
             if let peak = history.peakTokens {
                 statItem(
                     label: String(localized: "Max", defaultValue: "最大", bundle: .module),
