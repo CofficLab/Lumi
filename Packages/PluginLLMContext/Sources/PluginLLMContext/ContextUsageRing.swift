@@ -31,6 +31,7 @@ extension ContextUsageRing {
                 .trim(from: 0, to: ratio)
                 .stroke(tint, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
+                .animation(.easeInOut(duration: 0.3), value: ratio)
 
             Text(centerText)
                 .font(.system(size: 15, weight: .bold))
@@ -39,6 +40,7 @@ extension ContextUsageRing {
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
                 .padding(.horizontal, lineWidth + 2)
+                .contentTransition(.numericText())
         }
         .frame(width: diameter, height: diameter)
         .accessibilityElement(children: .ignore)
