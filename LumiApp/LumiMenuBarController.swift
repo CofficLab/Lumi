@@ -71,7 +71,7 @@ final class LumiMenuBarController: NSObject, ObservableObject {
 
     private func showMainWindow() {
         NSApp.activate(ignoringOtherApps: true)
-        (NSApp.mainWindow ?? NSApp.windows.first(where: { $0.canBecomeKey }))?
+        NSApp.windows.first(where: { $0.identifier == LumiWindowIdentity.main })?
             .makeKeyAndOrderFront(nil)
     }
 }
