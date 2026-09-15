@@ -64,7 +64,6 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     private let processMonitoringStopper: @MainActor () -> Void
 
     public init(
-        autoStartMonitoring: Bool = false,
         publicIPProvider: @escaping @Sendable () async -> String? = {
             await NetworkService.shared.getPublicIP()
         },
@@ -98,18 +97,6 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
         self.processes = processes
     }
 
-    public func startMonitoring() {
-        if Self.verbose {
-            if NetworkManagerPlugin.verbose {
-                            NetworkManagerPlugin.logger.info("\(self.t)Starting network monitoring")
-            }
-        }
-
-    }
-
-    public func stopMonitoring() {
-    }
-    
     // Removed updateStats() as it is replaced by Combine subscription
 
     func applyNetworkUsage(
