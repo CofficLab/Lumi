@@ -198,30 +198,50 @@ public struct ConversationStoreSettingsView: View {
                     }
 
                     AppSettingsSection(title: L("Basic Info"), subtitle: L("Core fields stored for this conversation")) {
-                        VStack(spacing: 0) {
-                            detailRow(title: L("Conversation ID"), icon: "number", value: conversation.id.uuidString, monospace: true)
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Title"), icon: "text.cursor", value: displayTitle(for: conversation))
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Created At"), icon: "calendar.badge.plus", value: formattedDate(conversation.createdAt))
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Updated At"), icon: "calendar.badge.clock", value: formattedDate(conversation.updatedAt))
+                        AppMetadataCard {
+                            AppMetadataRow(title: L("Conversation ID"), systemImage: "number") {
+                                metadataValue(conversation.id.uuidString, monospace: true, copyable: true)
+                            }
+                            AppSettingsDivider()
+                            AppMetadataRow(title: L("Title"), systemImage: "text.cursor") {
+                                metadataValue(displayTitle(for: conversation))
+                            }
+                            AppSettingsDivider()
+                            AppMetadataRow(title: L("Created At"), systemImage: "calendar.badge.plus") {
+                                metadataValue(formattedDate(conversation.createdAt))
+                            }
+                            AppSettingsDivider()
+                            AppMetadataRow(title: L("Updated At"), systemImage: "calendar.badge.clock") {
+                                metadataValue(formattedDate(conversation.updatedAt))
+                            }
                         }
                     }
 
                     AppSettingsSection(title: L("Routing"), subtitle: L("Conversation preferences and context binding")) {
-                        VStack(spacing: 0) {
-                            detailRow(title: L("Verbosity"), icon: "text.quote", value: conversation.verbosity?.displayName ?? L("Default"))
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Language"), icon: "character.book.closed", value: conversation.language?.displayName ?? L("Default"))
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Automation Level"), icon: conversation.automationLevel?.iconName ?? "gearshape.2", value: conversation.automationLevel?.displayName ?? L("Default"))
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Provider"), icon: "cloud", value: conversation.providerID?.isEmpty == false ? conversation.providerID! : L("Unassigned"), monospace: true)
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Model"), icon: "cpu", value: conversation.modelName?.isEmpty == false ? conversation.modelName! : L("Unassigned"), monospace: true)
-                            Divider().padding(.vertical, 8)
-                            detailRow(title: L("Project Path"), icon: "folder", value: conversation.projectPath?.isEmpty == false ? conversation.projectPath! : L("Unassigned"), monospace: true)
+                        AppMetadataCard {
+                            AppMetadataRow(title: L("Verbosity"), systemImage: "text.quote") {
+                                metadataValue(conversation.verbosity?.displayName ?? L("Default"))
+                            }
+                            AppSettingsDivider()
+                            AppMetadataRow(title: L("Language"), systemImage: "character.book.closed") {
+                                metadataValue(conversation.language?.displayName ?? L("Default"))
+                            }
+                            AppSettingsDivider()
+                            AppMetadataRow(title: L("Automation Level"), systemImage: conversation.automationLevel?.iconName ?? "gearshape.2") {
+                                metadataValue(conversation.automationLevel?.displayName ?? L("Default"))
+                            }
+                            AppSettingsDivider()
+                            AppMetadataRow(title: L("Provider"), systemImage: "cloud") {
+                                metadataValue(conversation.providerID, monospace: true, copyable: true)
+                            }
+                            AppSettingsDivider()
+                            AppMetadataRow(title: L("Model"), systemImage: "cpu") {
+                                metadataValue(conversation.modelName, monospace: true, copyable: true)
+                            }
+                            AppSettingsDivider()
+                            AppMetadataRow(title: L("Project Path"), systemImage: "folder") {
+                                metadataValue(conversation.projectPath, monospace: true, copyable: true)
+                            }
                         }
                     }
 
@@ -246,15 +266,35 @@ public struct ConversationStoreSettingsView: View {
         }
     }
 
-    private func detailRow(title: String, icon: String, value: String, monospace: Bool = false) -> some View {
-        AppSettingRow(title: title, icon: icon) {
+    /// 元数据行取值：等宽 + 可复制，空值回退到占位文案。
+    ///
+    /// `lineLimit` 是上限而非固定高度，短值仍占一行；设为 3 是为容纳
+    /// 会话标题与长路径这类可能换行的取值。
+    private func metadataValue(_ value: String, monospace: Bool = false, copyable: Bool = false) -> some View {
+        HStack(alignment: .top, spacing: 6) {
             Text(value)
-                .font(monospace ? .system(.callout, design: .monospaced) : .callout)
-                .foregroundStyle(theme.textSecondary)
-                .multilineTextAlignment(.trailing)
-                .lineLimit(3)
+                .font(monospace ? .appMonoCaption : .appBody)
+                .foregroundStyle(theme.textPrimary)
                 .textSelection(.enabled)
+                .lineLimit(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if copyable {
+                AppIconButton(systemImage: "doc.on.doc", size: .compact) {
+                    LumiPasteboard.copyString(value)
+                }
+                .help(L("Copy"))
+            }
         }
+    }
+
+    /// 空字符串与 `nil` 一并视为未设置。
+    private func metadataValue(_ value: String?, monospace: Bool = false, copyable: Bool = false) -> some View {
+        metadataValue(
+            value?.isEmpty == false ? value! : L("Unassigned"),
+            monospace: monospace,
+            copyable: copyable
+        )
     }
 
     // MARK: - Messages
