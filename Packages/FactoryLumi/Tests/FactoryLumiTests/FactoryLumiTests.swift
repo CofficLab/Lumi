@@ -38,7 +38,7 @@ struct FactoryLumiTests {
             .appendingPathComponent("FactoryLumiTests-\(UUID().uuidString)", isDirectory: true)
         let storage = DefaultStorageProvider(dataRootDirectory: root)
         let stateStore = PluginEnabledStateStore(
-            pluginDirectory: storage.pluginDataDirectory(for: "PluginManager")
+            pluginDirectory: storage.pluginDataDirectory(for: "com.coffic.lumi.plugin.plugin-manager")
         )
         let enabledPluginIDs = [
             "com.coffic.lumi.plugin.device-info",

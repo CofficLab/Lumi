@@ -56,6 +56,8 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     /// IdleTime 插件的持久化目录名必须与插件自身 ID 一致。
     private static let idleTimePluginID = "com.coffic.lumi.plugin.idle-time"
+    private static let pluginManagerID = "com.coffic.lumi.plugin.plugin-manager"
+    private static let toolManagerID = "com.coffic.lumi.plugin.tool-manager"
 
     /// 产出 `StorageProviding` 实现（默认 Application Support 磁盘存储）。
     public func makeStorageProvider() -> any StorageProviding {
@@ -269,8 +271,13 @@ public struct DefaultProviderFactory: ProviderFactory {
 
         // 必须在启动插件之前注入，使 registerPlugin 能读取用户的禁用状态。
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            try PluginDataMigrationCoordinator.migrateProviderData(
+                storage: storage,
+                pluginID: Self.pluginManagerID,
+                legacyDirectoryNames: ["PluginManager"]
+            )
             kernel.stateStore = PluginEnabledStateStore(
-                pluginDirectory: storage.pluginDataDirectory(for: "PluginManager")
+                pluginDirectory: storage.pluginDataDirectory(for: Self.pluginManagerID)
             )
             kernel.legacyPluginIDAliases = Self.pluginIDAliases
         }
@@ -327,8 +334,13 @@ public struct DefaultProviderFactory: ProviderFactory {
         let toolManager = makeToolManagerProvider()
         if let storage = kernel.resolveProvider((any StorageProviding).self),
            let defaultToolManager = toolManager as? DefaultToolManagerProviding {
+            try PluginDataMigrationCoordinator.migrateProviderData(
+                storage: storage,
+                pluginID: Self.toolManagerID,
+                legacyDirectoryNames: ["ToolManager"]
+            )
             defaultToolManager.recordStore = ToolCallRecordStore(
-                databaseRootURL: storage.pluginDataDirectory(for: "ToolManager")
+                databaseRootURL: storage.pluginDataDirectory(for: Self.toolManagerID)
             )
         }
         try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
