@@ -64,7 +64,7 @@ public struct RClickRailView: View {
 // MARK: - Preview
 
 #Preview("Rail") {
-    RClickRailView(viewModel: RClickSettingsViewModel(configManager: RClickConfigManager.shared))
+    RClickRailView(viewModel: RClickSettingsViewModel(configManager: RClickConfigManager()))
         .frame(width: 240, height: 500)
         .inRootView()
 }

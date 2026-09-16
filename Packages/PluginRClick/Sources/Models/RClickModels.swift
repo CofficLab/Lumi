@@ -1,25 +1,5 @@
 import Foundation
 
-enum RClickPluginRuntimeBridge {
-    nonisolated(unsafe) static var dataRootDirectory: URL?
-    nonisolated(unsafe) static var pluginDirectory: URL?
-    static var fallbackRootDirectory: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
-    }
-
-    static var fallbackPluginDirectory: URL {
-        #if DEBUG
-        let versionedRoot = "db_debug_v6"
-        #else
-        let versionedRoot = "db_production_v6"
-        #endif
-        return fallbackRootDirectory
-            .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
-            .appendingPathComponent(versionedRoot, isDirectory: true)
-            .appendingPathComponent("com.coffic.lumi.plugin.rclick", isDirectory: true)
-    }
-}
-
 public enum RClickActionType: String, Codable, CaseIterable, Identifiable, Sendable {
     case newFile = "newFile" // Acts as a submenu or category
     case copyPath = "copyPath"

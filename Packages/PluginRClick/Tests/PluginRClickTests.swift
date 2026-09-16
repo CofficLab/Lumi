@@ -5,6 +5,7 @@ import ProviderActivityBar
 import ProviderChatSection
 import ProviderRailView
 import ProviderRootView
+import ProviderStorage
 @testable import RClickPlugin
 
 @MainActor
@@ -43,6 +44,29 @@ import ProviderRootView
     #expect(chat.isVisible)
     #expect(rail.visibleCategories == Set(RailViewCategory.allCases))
     #expect(rootView.isContentHeaderViewHidden == false)
+}
+
+@MainActor
+@Test func pluginUsesInjectedStorageDirectoryBeforeCreatingItsManager() throws {
+    let parent = FileManager.default.temporaryDirectory
+        .appendingPathComponent("RClickStorage-\(UUID().uuidString)", isDirectory: true)
+    let currentRoot = parent.appendingPathComponent("db_production_v5", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: parent) }
+
+    let kernel = KernelCoreContainer()
+    try kernel.registerProvider(
+        (any StorageProviding).self,
+        DefaultStorageProvider(dataRootDirectory: currentRoot)
+    )
+
+    let plugin = RClickSuperPlugin()
+    try plugin.onBoot(kernel: kernel)
+
+    let pluginDirectory = currentRoot.appendingPathComponent(plugin.id, isDirectory: true)
+    #expect(FileManager.default.fileExists(atPath: pluginDirectory.path))
+    #expect(!FileManager.default.fileExists(
+        atPath: parent.appendingPathComponent("db_production_v6", isDirectory: true).path
+    ))
 }
 
 @Test func actionTypePersistenceKeepsLegacyHiddenMenuID() throws {
