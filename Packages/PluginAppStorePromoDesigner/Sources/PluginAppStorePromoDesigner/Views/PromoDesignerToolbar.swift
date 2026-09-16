@@ -1,4 +1,5 @@
 import KitAppStorePromo
+import LumiUI
 import SwiftUI
 
 /// 设计师面板顶部工具栏：任务标题、Display 选择、模式切换、刷新与导出。
@@ -31,28 +32,43 @@ struct PromoDesignerToolbar: View {
     // MARK: - Body
 
     var body: some View {
-        HStack(spacing: 10) {
-            languagePicker
-            displayPicker
-            modePicker
+        AppToolbarContainer(
+            height: 40,
+            backgroundStyle: .toolbar,
+            padding: EdgeInsets(
+                top: DesignTokens.Spacing.sm,
+                leading: DesignTokens.Spacing.md,
+                bottom: DesignTokens.Spacing.sm,
+                trailing: DesignTokens.Spacing.md
+            )
+        ) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                languagePicker
+                displayPicker
+                modePicker
 
-            Button {
-                onRefresh()
-            } label: {
-                Label(PromoLocalization.string("Refresh"), systemImage: "arrow.clockwise")
-            }
-            Button {
-                onExport()
-            } label: {
-                Label(PromoLocalization.string("Export"), systemImage: "square.and.arrow.down")
-            }
-            .disabled(workspace.selectedImage == nil || isExporting)
-            if isExporting {
-                ProgressView().controlSize(.small)
+                Spacer(minLength: 0)
+
+                AppIconButton(
+                    systemImage: "arrow.clockwise",
+                    action: onRefresh
+                )
+                .accessibilityLabel(PromoLocalization.string("Refresh"))
+                .help(PromoLocalization.string("Refresh"))
+                AppButton(
+                    PromoLocalization.string("Export"),
+                    systemImage: "square.and.arrow.down",
+                    style: .primary,
+                    size: .small,
+                    action: onExport
+                )
+                .disabled(workspace.selectedImage == nil || isExporting)
+                if isExporting {
+                    ProgressView().controlSize(.small)
+                }
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
+        .borderBottom()
     }
 
     // MARK: - 子视图
@@ -110,12 +126,22 @@ struct PromoDesignerToolbar: View {
 
     @ViewBuilder
     private var modePicker: some View {
-        Picker(PromoLocalization.string("Mode"), selection: mode) {
-            Text(PromoLocalization.string("Preview")).tag(PromoDesignerView.Mode.preview)
-            Text(PromoLocalization.string("HTML Source")).tag(PromoDesignerView.Mode.source)
-        }
-        .pickerStyle(.segmented)
-        .frame(width: 190)
+        AppSegmentedControl(
+            [
+                PromoLocalization.string("Preview"),
+                PromoLocalization.string("HTML Source")
+            ],
+            selection: modeIndex,
+            maxWidth: 190
+        )
+        .accessibilityLabel(PromoLocalization.string("Mode"))
+    }
+
+    private var modeIndex: Binding<Int> {
+        Binding(
+            get: { mode.wrappedValue == .preview ? 0 : 1 },
+            set: { mode.wrappedValue = $0 == 0 ? .preview : .source }
+        )
     }
 }
 

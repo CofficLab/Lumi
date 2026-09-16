@@ -27,7 +27,6 @@ public struct PromoDesignerView: View {
             } else {
                 emptyToolbar
             }
-            Divider()
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -68,22 +67,36 @@ public struct PromoDesignerView: View {
                 .background(Color(nsColor: .textBackgroundColor))
             }
         } else {
-            PromoDesignerEmptyState(
-                message: PromoLocalization.string("Ask the Agent to create a promotional artwork task.")
+            AppEmptyState(
+                icon: "rectangle.stack.badge.plus",
+                title: PromoLocalization.string("Ask the Agent to create a promotional artwork task.")
             )
         }
     }
 
     @ViewBuilder
     private var emptyToolbar: some View {
-        HStack {
-            Spacer()
-            Button { workspace.reload() } label: {
-                Label(PromoLocalization.string("Refresh"), systemImage: "arrow.clockwise")
+        AppToolbarContainer(
+            height: 40,
+            backgroundStyle: .toolbar,
+            padding: EdgeInsets(
+                top: DesignTokens.Spacing.sm,
+                leading: DesignTokens.Spacing.md,
+                bottom: DesignTokens.Spacing.sm,
+                trailing: DesignTokens.Spacing.md
+            )
+        ) {
+            HStack {
+                Spacer(minLength: 0)
+                AppIconButton(
+                    systemImage: "arrow.clockwise",
+                    action: workspace.reload
+                )
+                .accessibilityLabel(PromoLocalization.string("Refresh"))
+                .help(PromoLocalization.string("Refresh"))
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
+        .borderBottom()
     }
 
     private func toolbar(for task: AppStorePromoTask) -> some View {
