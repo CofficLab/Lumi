@@ -11,9 +11,10 @@ import ProviderRootView
 import ProviderStorage
 import SwiftUI
 
-@MainActor public final class ImageToPDFSuperPlugin: SuperPlugin, SuperLog {
+@MainActor public final class ImageToPDFSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.image-to-pdf", category: "ImageToPDF")
     public let id = "com.coffic.lumi.plugin.image-to-pdf"; public let order = 875
+    public let legacyDataDirectoryNames = ["ImageToPDF"]
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.image-to-pdf",
         name: ImageToPDFLocalization.string("Image to PDF"),
@@ -33,7 +34,7 @@ import SwiftUI
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        ImageToPDFRuntimeBridge.directoryURL = kernel.resolveProvider((any StorageProviding).self)?.pluginDataDirectory(for: "ImageToPDF")
+        ImageToPDFRuntimeBridge.directoryURL = kernel.resolveProvider((any StorageProviding).self)?.pluginDataDirectory(for: id)
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let railView = kernel.resolveProvider((any RailViewProviding).self)
