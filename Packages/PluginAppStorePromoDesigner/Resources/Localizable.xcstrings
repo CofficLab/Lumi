@@ -1,41 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Prompt.Suggestion.Create" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create an App Store promo image for me"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "帮我创建一张 App Store 宣传图"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "幫我建立一張 App Store 宣傳圖"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "幫我製作一張 App Store 宣傳圖"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "幫我建立一張 App Store 宣傳圖"
-          }
-        }
-      }
-    },
     "%@ · %lld×%lld" : {
       "localizations" : {
         "en" : {
@@ -144,6 +109,9 @@
         }
       }
     },
+    "APP STORE" : {
+
+    },
     "App Store Promo Designer" : {
       "localizations" : {
         "en" : {
@@ -184,16 +152,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "请让 Agent 创建一个宣传图任务。"
-          }
-        }
-      }
-    },
-    "Select a task from the left, or ask the Agent to create a promotional artwork task." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请从左侧选择一个任务，或让 Agent 创建一个宣传图任务。"
           }
         }
       }
@@ -1210,6 +1168,7 @@
       }
     },
     "Open a project to enable project-local storage." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1415,6 +1374,9 @@
         }
       }
     },
+    "PROMO" : {
+
+    },
     "Promo Artwork" : {
       "localizations" : {
         "en" : {
@@ -1489,6 +1451,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "宣传图"
+          }
+        }
+      }
+    },
+    "Prompt.Suggestion.Create" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create an App Store promo image for me"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帮我创建一张 App Store 宣传图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我建立一張 App Store 宣傳圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我製作一張 App Store 宣傳圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我建立一張 App Store 宣傳圖"
           }
         }
       }
@@ -1601,6 +1598,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在工具列選擇裝置尺寸。"
+          }
+        }
+      }
+    },
+    "Select a task from the left, or ask the Agent to create a promotional artwork task." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请从左侧选择一个任务，或让 Agent 创建一个宣传图任务。"
           }
         }
       }
