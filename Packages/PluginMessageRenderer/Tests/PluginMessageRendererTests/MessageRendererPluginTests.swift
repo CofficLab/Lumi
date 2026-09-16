@@ -14,6 +14,13 @@ import Testing
 @Suite("MessageRendererPlugin")
 @MainActor
 struct MessageRendererPluginTests {
+    @Test("V1 assistant 内容使用 V2 布局，仅隐藏 Header")
+    func assistantContentVerbosity() {
+        #expect(AssistantMessageView.contentVerbosity(for: .brief) == .standard)
+        #expect(AssistantMessageView.contentVerbosity(for: .standard) == .standard)
+        #expect(AssistantMessageView.contentVerbosity(for: .detailed) == .detailed)
+    }
+
     @Test("工具调用参数保留真实 JSON 与历史异常内容")
     func formatsToolCallArguments() {
         #expect(MessageViewHelpers.formatToolCallArguments("  {}  ") == nil)

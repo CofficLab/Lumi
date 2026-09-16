@@ -13,14 +13,24 @@ struct AssistantMessageView: View {
     let message: Message
     let verbosity: ResponseVerbosity
 
+    /// V1 assistant 消息沿用 V2 的内容布局；V1 与 V2 唯一的视觉差异是 Header。
+    static func contentVerbosity(for verbosity: ResponseVerbosity) -> ResponseVerbosity {
+        verbosity == .brief ? .standard : verbosity
+    }
+
     var body: some View {
-        MessageViewChrome(message: message, showsHeader: verbosity != .brief, verbosity: verbosity) {
+        let contentVerbosity = Self.contentVerbosity(for: verbosity)
+        return MessageViewChrome(
+            message: message,
+            showsHeader: verbosity != .brief,
+            verbosity: contentVerbosity
+        ) {
             AssistantMessageBody(
                 capability: capability,
                 stateViewModel: stateViewModel,
                 message: message,
                 shouldHideAssistantBody: message.isToolExecutionOnly,
-                verbosity: verbosity
+                contentVerbosity: contentVerbosity
             )
         }
     }
@@ -34,7 +44,7 @@ private struct AssistantMessageBody: View {
     @ObservedObject var stateViewModel: MessageRendererStateViewModel
     let message: Message
     let shouldHideAssistantBody: Bool
-    let verbosity: ResponseVerbosity
+    let contentVerbosity: ResponseVerbosity
 
     private var reasoningContent: String? {
         guard let reasoning = message.reasoningContent,
@@ -54,7 +64,7 @@ private struct AssistantMessageBody: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if let reasoningContent, self.verbosity == .detailed {
+            if let reasoningContent, contentVerbosity == .detailed {
                 reasoningBlock(reasoningContent)
             }
 
@@ -74,13 +84,13 @@ private struct AssistantMessageBody: View {
                     capability: capability,
                     stateViewModel: stateViewModel,
                     message: message,
-                    verbosity: verbosity
+                    verbosity: contentVerbosity
                 )
                     .padding(.top, shouldHideAssistantBody ? 0 : 4)
             }
         }
-        .padding(.horizontal, verbosity == .brief ? 0 : 12)
-        .padding(.top, verbosity == .brief ? 0 : 2)
+        .padding(.horizontal, contentVerbosity == .brief ? 0 : 12)
+        .padding(.top, contentVerbosity == .brief ? 0 : 2)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
