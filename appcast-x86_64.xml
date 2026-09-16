@@ -3,19 +3,32 @@
     <channel>
         <title>Lumi</title>
         <item>
-            <title>5.24.2</title>
-            <pubDate>Thu, 10 Sep 2026 10:10:23 +0000</pubDate>
-            <sparkle:version>632</sparkle:version>
-            <sparkle:shortVersionString>5.24.2</sparkle:shortVersionString>
+            <title>5.24.3</title>
+            <pubDate>Thu, 10 Sep 2026 23:57:58 +0000</pubDate>
+            <sparkle:version>281</sparkle:version>
+            <sparkle:shortVersionString>5.24.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Release v5.24.2</h2>
-<h3>Changes since v5.24.1</h3>
+            <description><![CDATA[<h2>Release v5.24.3</h2>
+<h3>Changes since v5.24.2</h3>
 <ul>
-<li>fix(KitLLM): retain usage in DeepSeek final stream chunk</li>
-<li>fix(PluginAgentLoop): avoid duplicate tool results after approval</li>
+<li>feat(PluginActivityHeatmap): add project commit heatmap</li>
+<li>feat(PluginMessageListBrief): add activateCurrentConversation to avoid stale selection</li>
+<li>feat(PluginMessageListDetailed): add activateCurrentConversation to avoid stale selection</li>
+<li>feat(PluginMessageListStandard): add activateCurrentConversation to avoid stale selection</li>
+<li>feat(updates): add stable and preview channels</li>
+<li>fix(ci): separate stable and preview appcast commits</li>
+<li>fix(KitLLM): normalize tool result order for OpenAI compatible adapter</li>
+<li>fix(PluginAgentLoop): restore ask_user tool result on resume</li>
+<li>fix(provider-rail-view): avoid rebuilding rail on tab switch</li>
+<li>fix(provider-rail-view): restore tab switching updates</li>
+<li>fix(settings): preserve sidebar scroll position</li>
+<li>refactor: unify Web Server settings page style with General settings</li>
+<li>refactor(PluginQuickFileSearch): align settings layout</li>
+<li>refactor(PluginQuickLauncher): align settings layout</li>
+<li>refactor(PluginToolManager): align settings and log details</li>
 </ul>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.24.2</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://s.kuaiyizhi.cn/lumi/Lumi_5.24.2_x86_64.dmg" length="48457943" type="application/octet-stream" sparkle:edSignature="1TTT7rd4CEFk9ak1qNcDAc3XpZGDDK8hyWl1L/I1i9LljFbnrGTfYM//K1Mh8OfRu4oGN9ViuTMA2kjqVY6RAA=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/v5.24.3</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://s.kuaiyizhi.cn/lumi/Lumi_5.24.3_x86_64.dmg" length="39841835" type="application/octet-stream" sparkle:edSignature="s8ppHKm3VPL5PSknm6OoxDEqZwuOZsR2fnrwwEKKAlTUF8JdJOnRM0Zfy/YchITp0gsm/VXbkzK3GxjuksyXAg=="/>
         </item>
     </channel>
 </rss>
