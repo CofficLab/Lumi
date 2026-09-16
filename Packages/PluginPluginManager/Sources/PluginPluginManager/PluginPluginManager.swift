@@ -137,9 +137,13 @@ public final class PluginPluginManager: SuperPlugin, SuperLog {
             .removeEntries(ids: [Self.settingsEntryID])
 
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
-            for pluginID in generatedAboutPluginIDs {
-                docs.removeEntries(id: pluginID)
-            }
+            // DocsViewProviding predates Kernel contribution ownership, so
+            // most plugins add their entries directly and do not have a
+            // token for KernelCore to revoke. At this point the kernel is
+            // stopping all plugins; clear the complete plugin-owned snapshot
+            // so a stopped kernel cannot expose stale About/Manual entries.
+            docs.replaceAboutEntries([])
+            docs.replaceManualEntries([])
         }
         generatedAboutPluginIDs.removeAll()
     }
