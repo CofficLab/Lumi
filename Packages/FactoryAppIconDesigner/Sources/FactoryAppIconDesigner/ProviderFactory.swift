@@ -73,8 +73,13 @@ public struct DefaultProviderFactory: ProviderFactory {
     public func registerProviders(into kernel: KernelCoreContainer) throws {
         let storage = makeStorageProvider()
         try kernel.registerProvider((any StorageProviding).self, storage)
+        try StorageDataMigration.migrate(
+            storage: storage,
+            pluginID: "com.coffic.lumi.plugin.plugin-manager",
+            legacyDirectoryNames: ["PluginManager"]
+        )
         kernel.stateStore = PluginEnabledStateStore(
-            pluginDirectory: storage.pluginDataDirectory(for: "PluginManager")
+            pluginDirectory: storage.pluginDataDirectory(for: "com.coffic.lumi.plugin.plugin-manager")
         )
 
         let theme = makeThemeProvider()
@@ -105,8 +110,13 @@ public struct DefaultProviderFactory: ProviderFactory {
 
         let toolManager = makeToolManagerProvider()
         if let defaultToolManager = toolManager as? DefaultToolManagerProviding {
+            try StorageDataMigration.migrate(
+                storage: storage,
+                pluginID: "com.coffic.lumi.plugin.tool-manager",
+                legacyDirectoryNames: ["ToolManager"]
+            )
             defaultToolManager.recordStore = ToolCallRecordStore(
-                databaseRootURL: storage.pluginDataDirectory(for: "ToolManager")
+                databaseRootURL: storage.pluginDataDirectory(for: "com.coffic.lumi.plugin.tool-manager")
             )
         }
         try kernel.registerProvider((any ToolManagerProviding).self, toolManager)
