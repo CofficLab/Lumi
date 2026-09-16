@@ -69,40 +69,6 @@
       }
     }
   },
-  "Each bar = 30 minutes" : {
-    "localizations" : {
-      "en" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "Each bar = 30 minutes"
-        }
-      },
-      "zh-Hans" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "每柱代表 30 分钟"
-        }
-      },
-      "zh-Hant" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "每柱代表 30 分鐘"
-        }
-      },
-      "zh-HK" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "每柱代表 30 分鐘"
-        }
-      },
-      "zh-TW" : {
-        "stringUnit" : {
-          "state" : "translated",
-          "value" : "每柱代表 30 分鐘"
-        }
-      }
-    }
-  },
   "Relative activity strength" : {
     "localizations" : {
       "en" : {
@@ -314,40 +280,6 @@
         }
       }
     },
-    "Activity patterns and rest windows" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activity patterns and rest windows"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "活动模式与休息窗口"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "活動模式與休息視窗"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "活動模式與休息視窗"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "活動模式與休息視窗"
-          }
-        }
-      }
-    },
     "All statistics are calculated from your local message database." : {
       "localizations" : {
         "en" : {
@@ -460,40 +392,6 @@
         }
       }
     },
-    "Confidence" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Confidence"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "置信度"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "信賴度"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "信賴度"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "信賴度"
-          }
-        }
-      }
-    },
     "Conversation activity and token consumption over time." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -559,40 +457,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "每日活動"
-          }
-        }
-      }
-    },
-    "Events" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Events"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "事件"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "事件"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "事件"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "事件"
           }
         }
       }
@@ -965,6 +829,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "暫無 Git 提交活動"
+          }
+        }
+      }
+    },
+    "Peak day: %@ · %@ tokens" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peak day: %@ · %@ tokens"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "峰值日：%@ · %@ 个 Token"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "峰值日：%@ · %@ 個 Token"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "峰值日：%@ · %@ 個 Token"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "峰值日：%@ · %@ 個 Token"
           }
         }
       }

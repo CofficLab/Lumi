@@ -56,6 +56,34 @@ struct ActivityHeatmapViewModelTests {
         #expect(viewModel.days.count == 30)
         #expect(viewModel.heatmapDays.count == 365)
     }
+
+    @Test("peak token day picks the busiest day and is nil when nothing is consumed")
+    func reportsPeakTokenDay() async {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let busiestDay = calendar.date(byAdding: .day, value: -3, to: today)!
+        let busyDay = calendar.date(byAdding: .day, value: -5, to: today)!
+
+        let manager = HeatmapMessageManager(
+            messageCounts: [busiestDay: 3, busyDay: 2, today: 1],
+            tokenCounts: [busiestDay: 5_000, busyDay: 900, today: 100]
+        )
+        let viewModel = ActivityHeatmapViewModel(messages: manager, cache: ActivityHeatmapCache(directory: nil))
+
+        await viewModel.reload()
+
+        #expect(viewModel.peakTokenDay?.date == busiestDay)
+        #expect(viewModel.peakTokenDay?.tokens == 5_000)
+
+        let idleViewModel = ActivityHeatmapViewModel(
+            messages: HeatmapMessageManager(messageCounts: [:], tokenCounts: [:]),
+            cache: ActivityHeatmapCache(directory: nil)
+        )
+
+        await idleViewModel.reload()
+
+        #expect(idleViewModel.peakTokenDay == nil)
+    }
 }
 
 @MainActor

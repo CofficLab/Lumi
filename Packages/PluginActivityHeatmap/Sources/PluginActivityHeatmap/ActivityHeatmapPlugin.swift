@@ -218,6 +218,11 @@ public final class ActivityHeatmapViewModel {
     /// how much to show from the available space independently of `period`.
     public private(set) var heatmapDays: [ActivityDay] = []
     public private(set) var isLoading = false
+    /// The day with the highest token consumption, shown next to the trend
+    /// total. Nil when no tokens were consumed in the tracked year.
+    public var peakTokenDay: ActivityDay? {
+        heatmapDays.max { $0.tokens < $1.tokens }.flatMap { $0.tokens > 0 ? $0 : nil }
+    }
 
     public init(messages: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil) {
         self.messages = messages
@@ -513,9 +518,19 @@ public struct ActivityHeatmapSettingsView: View {
                 .stroke(.orange, style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
             }
             .frame(height: 120)
-            Text(String(format: L("Total: %@ tokens"), TokenCountFormat.compact(model.heatmapDays.reduce(0) { $0 + $1.tokens })))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline) {
+                Text(String(format: L("Total: %@ tokens"), TokenCountFormat.compact(model.heatmapDays.reduce(0) { $0 + $1.tokens })))
+                Spacer()
+                if let peak = model.peakTokenDay {
+                    Text(String(
+                        format: L("Peak day: %@ · %@ tokens"),
+                        Self.dayFormatter.string(from: peak.date),
+                        TokenCountFormat.compact(peak.tokens)
+                    ))
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .padding(16)
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -593,17 +608,12 @@ private struct IdleTimeSummaryCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label(L("Idle time"), systemImage: "moon.zzz").font(.headline)
-                Spacer()
-                Text(L("Activity patterns and rest windows")).font(.caption).foregroundStyle(.secondary)
-            }
+            Label(L("Idle time"), systemImage: "moon.zzz").font(.headline)
             if let snapshot = state.snapshot {
-                HStack(spacing: 12) {
-                    metric(L("Rest window"), value: restWindow(snapshot))
-                    metric(L("Confidence"), value: snapshot.restWindow.map { "\(Int(($0.confidence * 100).rounded()))%" } ?? L("Learning"))
-                    metric(L("Events"), value: "\(snapshot.eventCount)")
-                    metric(L("Active days"), value: "\(snapshot.observedDayCount)")
+                HStack(spacing: 8) {
+                    Text(L("Rest window")).font(.caption).foregroundStyle(.secondary)
+                    Text(restWindow(snapshot)).font(.subheadline.weight(.medium)).monospacedDigit()
+                    Spacer()
                 }
                 if !snapshot.bucketScores.isEmpty {
                     IdleActivityTimeline(
@@ -618,14 +628,6 @@ private struct IdleTimeSummaryCard: View {
         .padding(16)
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .task { state.refresh() }
-    }
-
-    private func metric(_ title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.subheadline.weight(.medium)).monospacedDigit()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func restWindow(_ snapshot: IdleInferenceSnapshot) -> String {
@@ -652,14 +654,8 @@ private struct IdleActivityTimeline: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(L("24-hour activity"))
-                    .font(.subheadline.weight(.medium))
-                Spacer()
-                Text(L("Each bar = 30 minutes"))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
+            Text(L("24-hour activity"))
+                .font(.subheadline.weight(.medium))
 
             Text(L("Relative activity strength"))
                 .font(.caption2)
