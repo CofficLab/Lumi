@@ -497,7 +497,7 @@ final class LLMContextProvider: LLMContextProviding, SuperLog {
 
     private func llmHistory(for conversationID: UUID) async -> [Message] {
         await messages.messagesForLLM(in: conversationID)
-            .filter { !MessageTimelineEvent.isContextCompaction($0) }
+            .filter { !MessageTimelineEvent.isTimelineEvent($0) }
     }
 
     private func summarySource(
