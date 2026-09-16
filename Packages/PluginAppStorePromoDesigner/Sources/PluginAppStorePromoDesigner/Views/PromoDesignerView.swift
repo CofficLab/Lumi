@@ -23,11 +23,13 @@ public struct PromoDesignerView: View {
     public var body: some View {
         VStack(spacing: 0) {
             if let resolved = workspace.selectedImage {
-                toolbar(for: resolved.task)
+                topToolbar(for: resolved.task)
+                content
+                bottomToolbar
             } else {
                 emptyToolbar
+                content
             }
-            content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .alert(
@@ -99,13 +101,18 @@ public struct PromoDesignerView: View {
         .borderBottom()
     }
 
-    private func toolbar(for task: AppStorePromoTask) -> some View {
-        PromoDesignerToolbar(
+    private func topToolbar(for task: AppStorePromoTask) -> some View {
+        PromoDesignerTopToolbar(
             workspace: workspace,
             task: task,
+            onRefresh: { workspace.reload() }
+        )
+    }
+
+    private var bottomToolbar: some View {
+        PromoDesignerBottomToolbar(
             mode: $mode,
             isExporting: isExporting,
-            onRefresh: { workspace.reload() },
             onExport: {
                 Task { await exportSelectedTask() }
             }

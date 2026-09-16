@@ -2,31 +2,22 @@ import KitAppStorePromo
 import LumiUI
 import SwiftUI
 
-/// 设计师面板顶部工具栏：任务标题、Display 选择、模式切换、刷新与导出。
-struct PromoDesignerToolbar: View {
+/// 设计师面板顶部工具栏：语言、Display 选择与刷新。
+struct PromoDesignerTopToolbar: View {
     @ObservedObject var workspace: WorkspaceStore
     let task: AppStorePromoTask
-    let mode: Binding<PromoDesignerView.Mode>
-    let isExporting: Bool
     let onRefresh: () -> Void
-    let onExport: () -> Void
 
     // MARK: - 初始化
 
     init(
         workspace: WorkspaceStore,
         task: AppStorePromoTask,
-        mode: Binding<PromoDesignerView.Mode>,
-        isExporting: Bool,
-        onRefresh: @escaping () -> Void,
-        onExport: @escaping () -> Void
+        onRefresh: @escaping () -> Void
     ) {
         self.workspace = workspace
         self.task = task
-        self.mode = mode
-        self.isExporting = isExporting
         self.onRefresh = onRefresh
-        self.onExport = onExport
     }
 
     // MARK: - Body
@@ -45,8 +36,6 @@ struct PromoDesignerToolbar: View {
             HStack(spacing: DesignTokens.Spacing.sm) {
                 languagePicker
                 displayPicker
-                modePicker
-
                 Spacer(minLength: 0)
 
                 AppIconButton(
@@ -55,17 +44,6 @@ struct PromoDesignerToolbar: View {
                 )
                 .accessibilityLabel(PromoLocalization.string("Refresh"))
                 .help(PromoLocalization.string("Refresh"))
-                AppButton(
-                    PromoLocalization.string("Export"),
-                    systemImage: "square.and.arrow.down",
-                    style: .primary,
-                    size: .small,
-                    action: onExport
-                )
-                .disabled(workspace.selectedImage == nil || isExporting)
-                if isExporting {
-                    ProgressView().controlSize(.small)
-                }
             }
         }
         .borderBottom()
@@ -124,7 +102,44 @@ struct PromoDesignerToolbar: View {
         .frame(maxWidth: 260)
     }
 
-    @ViewBuilder
+}
+
+/// 设计师面板底部工具栏：预览 / HTML 源码切换与导出。
+struct PromoDesignerBottomToolbar: View {
+    let mode: Binding<PromoDesignerView.Mode>
+    let isExporting: Bool
+    let onExport: () -> Void
+
+    var body: some View {
+        AppToolbarContainer(
+            height: 40,
+            backgroundStyle: .toolbar,
+            padding: EdgeInsets(
+                top: DesignTokens.Spacing.sm,
+                leading: DesignTokens.Spacing.md,
+                bottom: DesignTokens.Spacing.sm,
+                trailing: DesignTokens.Spacing.md
+            )
+        ) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                modePicker
+                Spacer(minLength: 0)
+                AppButton(
+                    PromoLocalization.string("Export"),
+                    systemImage: "square.and.arrow.down",
+                    style: .primary,
+                    size: .small,
+                    action: onExport
+                )
+                .disabled(isExporting)
+                if isExporting {
+                    ProgressView().controlSize(.small)
+                }
+            }
+        }
+        .borderTop()
+    }
+
     private var modePicker: some View {
         AppSegmentedControl(
             [
@@ -148,37 +163,17 @@ struct PromoDesignerToolbar: View {
 // MARK: - 预览
 
 #Preview {
-    StatefulPreviewWrapper(PromoDesignerView.Mode.preview) { modeBinding in
-        PromoDesignerToolbar(
-            workspace: WorkspaceStore.shared,
-            task: AppStorePromoTask(
-                id: "preview",
-                title: PromoLocalization.string("Launch Campaign"),
-                appName: "Demo",
-                deviceFamily: .iphone,
-                images: []
-            ),
-            mode: modeBinding,
-            isExporting: false,
-            onRefresh: {},
-            onExport: {}
-        )
-    }
+    PromoDesignerTopToolbar(
+        workspace: WorkspaceStore.shared,
+        task: AppStorePromoTask(
+            id: "preview",
+            title: PromoLocalization.string("Launch Campaign"),
+            appName: "Demo",
+            deviceFamily: .iphone,
+            images: []
+        ),
+        onRefresh: {}
+    )
     .padding()
     .frame(width: 800)
-}
-
-/// 仅用于预览：为绑定提供可写状态。
-private struct StatefulPreviewWrapper<Value, Content: View>: View {
-    @State private var value: Value
-    let content: (Binding<Value>) -> Content
-
-    init(_ initialValue: Value, @ViewBuilder content: @escaping (Binding<Value>) -> Content) {
-        self._value = State(initialValue: initialValue)
-        self.content = content
-    }
-
-    var body: some View {
-        content($value)
-    }
 }
