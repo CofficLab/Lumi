@@ -25,8 +25,18 @@ public protocol AgentLoopProviding: AnyObject {
     func state(for conversationID: UUID) -> AgentLoopState
     /// 当前（或最近一次）暂停的详情；无暂停时返回 `nil`。
     func suspension(for conversationID: UUID) -> AgentLoopSuspension?
+    /// 当前（或最近一次）失败的结构化详情；没有结构化失败信息时返回 `nil`。
+    func lastFailure(for conversationID: UUID) -> AgentLoopFailure?
     func isRunning(for conversationID: UUID) -> Bool
     func currentTurnID(for conversationID: UUID) -> UUID?
+
+    /// 在指定失败回合仍然有效时重新启动该回合。
+    ///
+    /// `failedTurnID` 用于防止延迟重试覆盖用户随后发起的新回合。
+    func retryTurn(
+        in conversationID: UUID,
+        after failedTurnID: UUID
+    ) async throws -> AgentLoopOutcome
 
     /// 注入生命周期钩子管理器，回合循环在各关键节点触发对应钩子。
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?)

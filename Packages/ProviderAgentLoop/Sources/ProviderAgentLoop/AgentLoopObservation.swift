@@ -34,6 +34,20 @@ public extension AgentLoopProviding {
     ) -> any AgentLoopObserverHandle {
         NoopAgentLoopObserverHandle()
     }
+
+    func lastFailure(for conversationID: UUID) -> AgentLoopFailure? {
+        nil
+    }
+
+    func retryTurn(
+        in conversationID: UUID,
+        after failedTurnID: UUID
+    ) async throws -> AgentLoopOutcome {
+        guard state(for: conversationID) == .failed else {
+            throw AgentLoopError.invalidRetryRequest
+        }
+        return try await runTurn(in: conversationID)
+    }
 }
 
 @MainActor
