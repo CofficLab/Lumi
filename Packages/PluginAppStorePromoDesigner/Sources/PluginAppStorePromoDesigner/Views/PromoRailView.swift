@@ -7,7 +7,6 @@ public struct PromoRailView: View {
     @ObservedObject private var workspace: WorkspaceStore
     @LumiTheme private var theme
     @State private var expandedTaskIDs: Set<String> = []
-    @State private var isProjectExpanded = true
 
     // MARK: - 初始化
 
@@ -39,7 +38,22 @@ public struct PromoRailView: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                        projectSection
+                        if workspace.projectTasks.isEmpty {
+                            Text(PromoLocalization.string("Ask the Agent to create a promotional artwork task."))
+                                .font(.caption)
+                                .foregroundStyle(theme.textTertiary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, DesignTokens.Spacing.sm)
+                                .padding(.vertical, DesignTokens.Spacing.md)
+                        } else {
+                            ForEach(workspace.projectTasks) { task in
+                                PromoTaskTreeView(
+                                    workspace: workspace,
+                                    isExpanded: expansionBinding(for: task.id),
+                                    task: task
+                                )
+                            }
+                        }
                     }
                     .padding(.horizontal, DesignTokens.Spacing.sm)
                     .padding(.vertical, DesignTokens.Spacing.xs)
@@ -54,40 +68,6 @@ public struct PromoRailView: View {
         }
         .onChange(of: workspace.selectedTaskID) { _, taskID in
             if let taskID { expandedTaskIDs.insert(taskID) }
-        }
-    }
-
-    // MARK: - 子视图
-
-    @ViewBuilder
-    private var projectSection: some View {
-        let tasks = workspace.projectTasks
-        let isUnavailable = workspace.currentProjectPath == nil
-        let subtitle = workspace.currentProjectPath.map { "· \(URL(fileURLWithPath: $0).lastPathComponent)" } ?? ""
-        PromoScopeSectionView(
-            isExpanded: $isProjectExpanded,
-            icon: "folder",
-            iconColor: theme.primary,
-            title: PromoLocalization.string("In Project"),
-            subtitle: subtitle,
-            count: tasks.count,
-            isUnavailable: isUnavailable,
-            unavailableMessage: PromoLocalization.string("Open a project to enable project-local storage."),
-            emptyMessage: PromoLocalization.string("Ask the Agent to create a promotional artwork task.")
-        ) {
-            if tasks.isEmpty {
-                PromoScopeEmptyView(
-                    message: PromoLocalization.string("Ask the Agent to create a promotional artwork task.")
-                )
-            } else {
-                ForEach(tasks) { task in
-                    PromoTaskTreeView(
-                        workspace: workspace,
-                        isExpanded: expansionBinding(for: task.id),
-                        task: task
-                    )
-                }
-            }
         }
     }
 
