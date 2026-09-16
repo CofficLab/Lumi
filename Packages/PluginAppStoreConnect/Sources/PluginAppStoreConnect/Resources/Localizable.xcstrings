@@ -1793,6 +1793,36 @@
         }
       }
     },
+    "Refreshing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在刷新"
+          }
+        }
+      }
+    },
+    "Refreshed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已刷新"
+          }
+        }
+      }
+    },
+    "Refresh failed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新失败"
+          }
+        }
+      }
+    },
     "Refresh build runs or start a build for this workflow." : {
       "localizations" : {
         "zh-Hans" : {

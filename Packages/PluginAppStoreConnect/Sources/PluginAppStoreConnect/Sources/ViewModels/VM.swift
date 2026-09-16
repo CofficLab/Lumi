@@ -14,6 +14,7 @@ import ProviderNetwork
 import ProviderRailView
 import ProviderRootView
 import ProviderStorage
+import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
 import os
@@ -119,6 +120,7 @@ final class VM: ObservableObject, SuperLog {
     let credentialStore: CredentialStore
     private(set) var client: ConnectClient
     let localStore: AppStoreConnectPluginLocalStore
+    private(set) var toast: (any ToastProviding)?
 
     init(
         credentialStore: CredentialStore = .shared,
@@ -144,6 +146,10 @@ final class VM: ObservableObject, SuperLog {
 
     func configure(network: any NetworkProviding) {
         client = ConnectClient(credentialsProvider: { [credentialStore] in credentialStore.load() }, network: network)
+    }
+
+    func configure(toast: (any ToastProviding)?) {
+        self.toast = toast
     }
 
     var filteredApps: [AppStoreApp] {

@@ -10,14 +10,6 @@ struct AppListSection: View {
             // 标题栏
             HStack {
                 AppSectionLabel(AppStoreConnectLocalization.string("Apps"))
-
-                Spacer()
-
-                AppIconButton(systemImage: "arrow.clockwise") {
-                    Task { await viewModel.loadApps() }
-                }
-                .disabled(viewModel.isBusy || !viewModel.credentials.isComplete)
-                .help(AppStoreConnectLocalization.string("Refresh"))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)

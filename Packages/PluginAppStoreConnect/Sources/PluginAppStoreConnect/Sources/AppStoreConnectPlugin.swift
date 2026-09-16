@@ -12,6 +12,7 @@ import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
+import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
@@ -32,6 +33,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
     public let order = 65
     public static let railTabID = "app-store-connect.sidebar"
     public static let settingsEntryID = "com.coffic.lumi.plugin.app-store-connect.settings"
+    private static let refreshToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.refresh"
 
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.app-store-connect",
@@ -83,6 +85,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
 
         let network = kernel.resolveProvider((any NetworkProviding).self)
         AppStoreConnectToolSupport.configure(network: network)
+        VM.shared.configure(toast: kernel.resolveProvider((any ToastProviding).self))
         if let network {
             VM.shared.configure(network: network)
             Task { await ScreenshotImageCache.shared.configure(network: network) }
@@ -146,6 +149,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
 
         let entryID = "\(id).entry"
         let pluginID = id
+        let refreshToolbarOrder = order
         kernel.resolveProvider((any ActivityBarProviding).self)?.addItems([
             ActivityBarItem(
                 id: entryID,
@@ -156,6 +160,18 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
             ) { state in
                 if state == .activated {
                     toolbar?.setVisibleCategories([.global, .general])
+                    toolbar?.addToolbarItems([
+                        ToolbarItem(
+                            id: Self.refreshToolbarItemID,
+                            title: AppStoreConnectLocalization.string("Refresh"),
+                            placement: .trailing,
+                            category: .general,
+                            ownerPluginID: pluginID,
+                            order: refreshToolbarOrder
+                        ) {
+                            AppStoreConnectRefreshToolbarButton(viewModel: VM.shared)
+                        },
+                    ])
                     rootView?.setContentHeaderViewHidden(true)
                     rail?.setVisibleTabID(Self.railTabID)
                     rail?.activateWidthProfile(
@@ -178,6 +194,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
                     chat?.setActiveContext(nil)
                     chat?.deactivateWidthProfile(ownerID: pluginID)
                     rail?.deactivateWidthProfile(ownerID: pluginID)
+                    toolbar?.removeToolbarItems(ids: [Self.refreshToolbarItemID])
                 }
             },
         ])
@@ -185,6 +202,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
 
     public func onReady(kernel: KernelCoreContainer) throws {
         // The network can be registered after the plugin boot phase by some hosts.
+        VM.shared.configure(toast: kernel.resolveProvider((any ToastProviding).self))
         if let network = kernel.resolveProvider((any NetworkProviding).self) {
             AppStoreConnectToolSupport.configure(network: network)
             VM.shared.configure(network: network)
@@ -215,6 +233,10 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
         AppStoreConnectToolSupport.configure(network: nil)
+        VM.shared.configure(toast: nil)
+        kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(
+            ids: [Self.refreshToolbarItemID]
+        )
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

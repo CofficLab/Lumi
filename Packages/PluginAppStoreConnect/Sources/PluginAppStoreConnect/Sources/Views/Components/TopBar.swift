@@ -33,11 +33,6 @@ struct TopBar: View {
                         .foregroundStyle(.orange)
                 }
 
-                AppButton(AppStoreConnectLocalization.string("Refresh"), systemImage: "arrow.clockwise", size: .small) {
-                    Task { await viewModel.refreshCurrentPage() }
-                }
-                .disabled(!viewModel.credentials.isComplete || viewModel.isBusy)
-
                 if viewModel.page == .distribution,
                    viewModel.selectedVersion != nil,
                    !viewModel.isReadOnlyVersion {
