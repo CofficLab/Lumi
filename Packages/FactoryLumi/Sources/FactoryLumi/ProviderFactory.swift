@@ -17,7 +17,6 @@ import ProviderRootView
 import ProviderSettingView
 import ProviderSkill
 import ProviderStorage
-import ProviderTheme
 import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
@@ -62,11 +61,6 @@ public struct DefaultProviderFactory: ProviderFactory {
     /// 产出 `StorageProviding` 实现（默认 Application Support 磁盘存储）。
     public func makeStorageProvider() -> any StorageProviding {
         DefaultStorageProvider(dataRootDirectory: dataRootDirectory)
-    }
-
-    /// 产出 `ThemeProviding` 实现（默认内置主题注册表 + 选中持久化）。
-    public func makeThemeProvider() -> any ThemeProviding {
-        DefaultThemeProviding()
     }
 
     /// 产出 `ContentViewProviding` 实现（默认持有当前内容视图）。
@@ -281,15 +275,6 @@ public struct DefaultProviderFactory: ProviderFactory {
             )
             kernel.legacyPluginIDAliases = Self.pluginIDAliases
         }
-
-        // 主题 Provider：选中主题持久化遵循 Storage 约定
-        // （<数据根目录>/ThemeManager/theme-selection.plist）。
-        let themeProvider = makeThemeProvider()
-        if let storage = kernel.resolveProvider((any StorageProviding).self),
-           let defaultTheme = themeProvider as? DefaultThemeProviding {
-            defaultTheme.setStorageDirectory(storage.pluginDataDirectory(for: "ThemeManager"))
-        }
-        try kernel.registerProvider((any ThemeProviding).self, themeProvider)
 
         try kernel.registerProvider((any ContentViewProviding).self, makeContentViewProvider())
         try kernel.registerProvider((any ChatSectionProviding).self, makeChatSectionProvider())

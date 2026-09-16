@@ -9,6 +9,7 @@ import PluginLogoManager
 import PluginSettingView
 import PluginStorage
 import PluginThemePack
+import PluginThemeManager
 #endif
 
 /// BookletMaker 的专用插件目录。
@@ -31,6 +32,7 @@ public struct DefaultPluginFactory: PluginFactory {
             PluginLogoManager(),
             PluginActivityBar(),
             LogoCofficPlugin(),
+            ThemeManagerPlugin(),
             ThemePackPlugin(),
             // BookletMaker 是此宿主的核心能力，不能被用户关闭。
             BookletMakerPlugin(policy: .required),

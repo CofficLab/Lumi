@@ -132,6 +132,7 @@ import PluginSkill
 import PluginOnboarding
 import PluginWelcome
 import PluginThemePack
+import PluginThemeManager
 import PluginToolManager
 import PluginToolbar
 import PluginToolbarSettings
@@ -195,6 +196,7 @@ public struct DefaultPluginFactory: PluginFactory {
             LogoCofficPlugin(),
             LogoSmartLightPlugin(),
             SettingsToolbarPlugin(),
+            ThemeManagerPlugin(),
             ThemePackPlugin(),
             VideoConverterPlugin(),
             WhiteNoisePlugin(),

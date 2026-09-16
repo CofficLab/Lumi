@@ -18,7 +18,6 @@ import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
-import ProviderTheme
 import ProviderToolManager
 import ProviderToolbar
 
@@ -28,7 +27,6 @@ public struct DefaultProviderFactory: ProviderFactory {
     public init() {}
 
     public func makeStorageProvider() -> any StorageProviding { DefaultStorageProvider() }
-    public func makeThemeProvider() -> any ThemeProviding { DefaultThemeProviding() }
     public func makeContentViewProvider() -> any ContentViewProviding { DefaultContentViewProviding() }
     public func makeConversationProvider() -> any ConversationManaging { DefaultConversationManager() }
     public func makeMessageProvider() -> any MessageManaging { DefaultMessageManager() }
@@ -81,14 +79,6 @@ public struct DefaultProviderFactory: ProviderFactory {
         kernel.stateStore = PluginEnabledStateStore(
             pluginDirectory: storage.pluginDataDirectory(for: "com.coffic.lumi.plugin.plugin-manager")
         )
-
-        let theme = makeThemeProvider()
-        if let defaultTheme = theme as? DefaultThemeProviding {
-            defaultTheme.setStorageDirectory(
-                storage.pluginDataDirectory(for: "ThemeManager")
-            )
-        }
-        try kernel.registerProvider((any ThemeProviding).self, theme)
 
         try kernel.registerProvider((any ContentViewProviding).self, makeContentViewProvider())
         try kernel.registerProvider((any DocsViewProviding).self, makeDocsViewProvider())
