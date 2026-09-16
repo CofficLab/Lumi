@@ -37,6 +37,7 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
     private let rendererIDs: [String] = [
         "core-turn-completed",
         "core-context-compaction",
+        "core-agent-loop-retry",
         "core-status-message",
         "core-error-message",
         "core-tool-message",
@@ -115,6 +116,17 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             },
             render: { message, _ in
                 AnyView(ContextCompactionMessageView(message: message))
+            }
+        ))
+
+        manager.register(MessageRendererItem(
+            id: "core-agent-loop-retry",
+            order: base + 314,
+            canRender: { message in
+                MessageTimelineEvent.isAgentLoopRetry(message)
+            },
+            render: { message, _ in
+                AnyView(AgentLoopRetryMessageView(message: message))
             }
         ))
 
