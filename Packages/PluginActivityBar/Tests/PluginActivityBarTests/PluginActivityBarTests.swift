@@ -245,7 +245,7 @@ struct PluginActivityBarTests {
             .appendingPathComponent("PluginActivityBarTests-\(UUID().uuidString)")
         let storage = TestStorageProvider(dataRootDirectory: directory)
         let stateStore = ActivityBarStateStore(
-            directory: storage.pluginDataDirectory(for: "ActivityBar")
+            directory: storage.pluginDataDirectory(for: PluginActivityBar().id)
         )
         stateStore.saveActiveItemID("preferred")
         defer { try? FileManager.default.removeItem(at: directory) }
