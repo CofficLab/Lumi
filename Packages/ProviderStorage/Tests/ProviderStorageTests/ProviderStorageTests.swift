@@ -78,6 +78,28 @@ struct ProviderStorageTests {
         #expect(size >= Int64(payload.count))
     }
 
+    @Test("磁盘占用统计包含同一空间下的全部版本根目录")
+    func dataRootDirectorySizeIncludesAllVersions() async throws {
+        let parent = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProviderStorageVersions-\(UUID().uuidString)", isDirectory: true)
+        let currentRoot = parent.appendingPathComponent("db_production_v6", isDirectory: true)
+        let previousRoot = parent.appendingPathComponent("db_production_v5", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: parent) }
+
+        let provider = DefaultStorageProvider(dataRootDirectory: currentRoot)
+        try FileManager.default.createDirectory(at: previousRoot, withIntermediateDirectories: true)
+        try Data(repeating: 0x01, count: 1024)
+            .write(to: currentRoot.appendingPathComponent("current.db"))
+        try Data(repeating: 0x02, count: 2048)
+            .write(to: previousRoot.appendingPathComponent("previous.db"))
+
+        #expect(provider.allVersionDataRootDirectories.map(\.lastPathComponent) == [
+            "db_production_v5",
+            "db_production_v6",
+        ])
+        #expect(await provider.dataRootDirectorySizeInBytes() >= 3072)
+    }
+
     // MARK: - 旧版命名规则
 
     @Test("数据根目录名遵循 db_<debug|production>_v<major> 规则")
@@ -87,12 +109,12 @@ struct ProviderStorageTests {
         #expect(DefaultStorageProvider.dataRootDirectoryName(debug: false, majorVersion: 4) == "db_production_v4")
     }
 
-    @Test("主版本号解析：取版本号第一段，无法解析回退 4")
+    @Test("主版本号解析：取版本号第一段，无法解析回退 6")
     func majorVersionParsing() {
         #expect(DefaultStorageProvider.majorVersion(from: "5.3.1") == 5)
         #expect(DefaultStorageProvider.majorVersion(from: "6") == 6)
-        #expect(DefaultStorageProvider.majorVersion(from: "abc") == 4)
-        #expect(DefaultStorageProvider.majorVersion(from: "") == 4)
+        #expect(DefaultStorageProvider.majorVersion(from: "abc") == 6)
+        #expect(DefaultStorageProvider.majorVersion(from: "") == 6)
     }
 
     // MARK: - PluginEnabledStateStore（原目录持久化）
