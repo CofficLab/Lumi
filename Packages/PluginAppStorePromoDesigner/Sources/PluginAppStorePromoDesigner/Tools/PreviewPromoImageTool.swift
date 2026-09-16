@@ -31,8 +31,7 @@ public struct PreviewPromoImageTool: SuperAgentTool {
         let language = PromoToolSupport.language
 
         do {
-            let scope = try await PromoToolSupport.resolveScope(arguments)
-            let storagePath = try await PromoToolSupport.storagePath(for: scope)
+            let storagePath = try await PromoToolSupport.storagePath()
             let image = try PromoToolSupport.store.readImage(
                 storagePath: storagePath,
                 taskSlug: try PromoToolSupport.required("taskId", arguments),
@@ -53,7 +52,7 @@ public struct PreviewPromoImageTool: SuperAgentTool {
             guard report.isValid else { throw AppStorePromoStoreError.invalidHTML(report.errors) }
             let data = try await AppStorePromoHTMLExporter.exportPNG(html: image.html, fileURL: image.htmlURL, preset: preset)
 
-            let content = "Rendered promotional image at \(preset.width)x\(preset.height) for \(type) (scope=\(scope.rawValue), locale=\(image.localeIdentifier)). The PNG is attached for visual inspection."
+            let content = "Rendered promotional image at \(preset.width)x\(preset.height) for \(type) (locale=\(image.localeIdentifier)). The PNG is attached for visual inspection."
             return ToolCallResult(
                 content: content,
                 images: [

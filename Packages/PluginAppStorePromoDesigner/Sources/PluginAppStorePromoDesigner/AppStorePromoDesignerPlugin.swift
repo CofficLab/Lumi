@@ -74,7 +74,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        PromoDesignerRuntime.configure(kernel: kernel, pluginID: id)
+        PromoDesignerRuntime.configure(kernel: kernel)
         projectObserver?.cancel()
         projectObserver = kernel.resolveProvider((any ProjectProviding).self).map { project in
             PromoDesignerProjectObserver(project: project) { path in
@@ -153,7 +153,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
-                        toolbar?.setVisibleCategories([.global, .chat, .design])
+                        toolbar?.setVisibleCategories([.global, .project, .chat, .design])
                         rootView?.setContentHeaderViewHidden(true)
                         railView?.setVisibleTabID(Self.railTabID)
                         railView?.activateWidthProfile(

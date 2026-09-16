@@ -2,12 +2,12 @@ import KitAppStorePromo
 import LumiUI
 import SwiftUI
 
-/// Promo 任务 Rail 容器：列出 project / app 两个 scope 下的任务与图像。
+/// Promo 任务 Rail 容器：列出当前项目下的任务与图像。
 public struct PromoRailView: View {
     @ObservedObject private var workspace: WorkspaceStore
     @LumiTheme private var theme
     @State private var expandedTaskIDs: Set<String> = []
-    @State private var expandedScopes: Set<Scope> = [.project, .app]
+    @State private var isProjectExpanded = true
 
     // MARK: - 初始化
 
@@ -34,13 +34,12 @@ public struct PromoRailView: View {
             .padding(.vertical, DesignTokens.Spacing.sm)
             Divider()
 
-            if workspace.appStorageDirectory == nil {
+            if workspace.projectStorageDirectory == nil {
                 PromoRailEmptyView(message: PromoLocalization.string("Plugin storage is unavailable."))
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                        scopeSection(.project)
-                        scopeSection(.app)
+                        projectSection
                     }
                     .padding(.horizontal, DesignTokens.Spacing.sm)
                     .padding(.vertical, DesignTokens.Spacing.xs)
@@ -61,24 +60,15 @@ public struct PromoRailView: View {
     // MARK: - 子视图
 
     @ViewBuilder
-    private func scopeSection(_ scope: Scope) -> some View {
-        let tasks = workspace.tasks(for: scope)
-        let isUnavailable = (scope == .project && workspace.currentProjectPath == nil)
-        let title = scope == .project
-            ? PromoLocalization.string("In Project")
-            : PromoLocalization.string("In App")
-        let subtitle: String = {
-            if scope == .project, let path = workspace.currentProjectPath {
-                let name = URL(fileURLWithPath: path).lastPathComponent
-                return "· \(name)"
-            }
-            return ""
-        }()
+    private var projectSection: some View {
+        let tasks = workspace.projectTasks
+        let isUnavailable = workspace.currentProjectPath == nil
+        let subtitle = workspace.currentProjectPath.map { "· \(URL(fileURLWithPath: $0).lastPathComponent)" } ?? ""
         PromoScopeSectionView(
-            isExpanded: scopeBinding(scope),
-            icon: scope == .project ? "folder" : "app.badge",
-            iconColor: scope == .project ? theme.primary : theme.textTertiary,
-            title: title,
+            isExpanded: $isProjectExpanded,
+            icon: "folder",
+            iconColor: theme.primary,
+            title: PromoLocalization.string("In Project"),
             subtitle: subtitle,
             count: tasks.count,
             isUnavailable: isUnavailable,
@@ -94,7 +84,6 @@ public struct PromoRailView: View {
                     PromoTaskTreeView(
                         workspace: workspace,
                         isExpanded: expansionBinding(for: task.id),
-                        scope: scope,
                         task: task
                     )
                 }
@@ -105,19 +94,7 @@ public struct PromoRailView: View {
     // MARK: - 计算属性
 
     private var totalTaskCount: Int {
-        workspace.projectTasks.count + workspace.appTasks.count
-    }
-
-    // MARK: - 私有方法
-
-    private func scopeBinding(_ scope: Scope) -> Binding<Bool> {
-        Binding(
-            get: { expandedScopes.contains(scope) },
-            set: { isExpanded in
-                if isExpanded { expandedScopes.insert(scope) }
-                else { expandedScopes.remove(scope) }
-            }
-        )
+        workspace.projectTasks.count
     }
 
     private func expansionBinding(for taskID: String) -> Binding<Bool> {

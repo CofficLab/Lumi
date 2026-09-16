@@ -125,13 +125,12 @@ public struct PromoDesignerView: View {
         isExporting = true
         defer { isExporting = false }
         do {
-            let storagePath = workspace.storagePath(for: workspace.selectedScope)
+            let storagePath = workspace.projectStoragePath
             let task = try workspace.documentStore.readTask(
                 storagePath: storagePath,
                 taskSlug: selected.task.id
             )
-            let scopeSubdir = workspace.selectedScope == .project ? "project" : "app"
-            let targetDirectory = directory.appendingPathComponent(scopeSubdir, isDirectory: true)
+            let targetDirectory = directory
             try FileManager.default.createDirectory(
                 at: targetDirectory,
                 withIntermediateDirectories: true

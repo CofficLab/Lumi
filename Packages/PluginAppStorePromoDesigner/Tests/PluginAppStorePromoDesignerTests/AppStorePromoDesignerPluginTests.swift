@@ -6,6 +6,7 @@ import ProviderChatSection
 import ProviderContentView
 import ProviderRailView
 import ProviderRootView
+import ProviderToolbar
 import Testing
 @testable import PluginAppStorePromoDesigner
 
@@ -17,7 +18,6 @@ struct AppStorePromoDesignerPluginTests {
         WorkspaceStore.shared.reload()
 
         #expect(WorkspaceStore.shared.projectTasks.isEmpty)
-        #expect(WorkspaceStore.shared.appTasks.isEmpty)
         #expect(WorkspaceStore.shared.lastError == nil)
     }
 
@@ -56,12 +56,14 @@ struct AppStorePromoDesignerPluginTests {
         let rail = DefaultRailViewProviding()
         let chat = DefaultChatSectionProviding()
         let rootView = DefaultRootViewProvider()
+        let toolbar = DefaultToolbarProviding()
 
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any ContentViewProviding).self, DefaultContentViewProviding())
         try kernel.registerProvider((any RailViewProviding).self, rail)
         try kernel.registerProvider((any RootViewProviding).self, rootView)
+        try kernel.registerProvider((any ToolbarProviding).self, toolbar)
 
         try kernel.start(plugins: [AppStorePromoDesignerPlugin()])
         try await kernel.enablePlugin(id: AppStorePromoDesignerPlugin().id)
@@ -71,6 +73,7 @@ struct AppStorePromoDesignerPluginTests {
         #expect(chat.isVisible)
         #expect(chat.isContextActive)
         #expect(rootView.isContentHeaderViewHidden)
+        #expect(toolbar.visibleCategories == [.global, .project, .chat, .design])
 
         try kernel.stop()
 
@@ -83,14 +86,13 @@ struct AppStorePromoDesignerPluginTests {
         #expect(tool.permissionRiskLevel(arguments: ["overwrite": ToolArgument(true)]) == .high)
     }
 
-    @Test func agentToolsCreateTaskWithMultipleImagesAndPersistInAppStorage() async throws {
+    @Test func agentToolsCreateTaskWithMultipleImagesAndPersistInProjectStorage() async throws {
         PromoDesignerRuntime.reset()
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        PromoDesignerRuntime.configure(appStorageDirectory: root)
+        PromoDesignerRuntime.setProjectStorage(projectPath: root.path, projectStorageDirectory: root)
 
-        // 没有打开项目时,默认走 app scope。
         let createTask = try await CreatePromoTaskTool().execute(
             arguments: [
                 "slug": ToolArgument("launch-set"),
@@ -100,7 +102,6 @@ struct AppStorePromoDesignerPluginTests {
                 "localeIdentifier": ToolArgument("en-US"),
             ]
         )
-        #expect(createTask.contains("scope=app"))
         #expect(createTask.contains("Created App Store promotional artwork task"))
 
         let createImage = try await CreatePromoImageTool().execute(
@@ -110,7 +111,6 @@ struct AppStorePromoDesignerPluginTests {
                 "title": ToolArgument("Agent Workflows"),
             ]
         )
-        #expect(createImage.contains("scope=app"))
         #expect(createImage.contains("Created promotional HTML image"))
 
         let addLanguage = try await AddPromoImageLocalizationTool().execute(
@@ -166,105 +166,51 @@ struct AppStorePromoDesignerPluginTests {
         #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("tasks/launch-set/images/private-data/index.html").path))
     }
 
-    @Test func explicitScopeRoutesWriteAndReadOperations() async throws {
+    @Test func agentToolsUseOnlyProjectStorage() async throws {
         PromoDesignerRuntime.reset()
-        let appRoot = FileManager.default.temporaryDirectory.appendingPathComponent("app-\(UUID().uuidString)", isDirectory: true)
         let projectRoot = FileManager.default.temporaryDirectory.appendingPathComponent("project-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: appRoot, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
         defer {
-            try? FileManager.default.removeItem(at: appRoot)
             try? FileManager.default.removeItem(at: projectRoot)
         }
-        PromoDesignerRuntime.configure(appStorageDirectory: appRoot)
         PromoDesignerRuntime.setProjectStorage(projectPath: projectRoot.path, projectStorageDirectory: projectRoot)
 
-        // 显式 app scope。
-        let appCreate = try await CreatePromoTaskTool().execute(
-            arguments: [
-                "slug": ToolArgument("app-only-set"),
-                "title": ToolArgument("App Only Set"),
-                "appName": ToolArgument("Lumi"),
-                "deviceFamily": ToolArgument("iphone"),
-                "scope": ToolArgument("app"),
-            ]
-        )
-        #expect(appCreate.contains("scope=app"))
-
-        // 显式 project scope。
         let projectCreate = try await CreatePromoTaskTool().execute(
             arguments: [
                 "slug": ToolArgument("project-only-set"),
                 "title": ToolArgument("Project Only Set"),
                 "appName": ToolArgument("Lumi"),
                 "deviceFamily": ToolArgument("mac"),
-                "scope": ToolArgument("project"),
             ]
         )
-        #expect(projectCreate.contains("scope=project"))
+        #expect(projectCreate.contains("project-only-set"))
 
-        // 文件系统隔离:每个 scope 各自存储。
-        #expect(FileManager.default.fileExists(atPath: appRoot.appendingPathComponent("tasks/app-only-set/manifest.json").path))
         #expect(FileManager.default.fileExists(atPath: projectRoot.appendingPathComponent("tasks/project-only-set/manifest.json").path))
-        #expect(FileManager.default.fileExists(atPath: appRoot.appendingPathComponent("tasks/project-only-set/manifest.json").path) == false)
-        #expect(FileManager.default.fileExists(atPath: projectRoot.appendingPathComponent("tasks/app-only-set/manifest.json").path) == false)
 
-        // list_tasks 默认返回两个 scope 并打标。
-        let listAll = try await ListPromoTasksTool().execute(arguments: [:])
-        #expect(listAll.contains("scope=app"))
-        #expect(listAll.contains("scope=project"))
-
-        // list_tasks scope=project 只返回项目内的任务。
-        let listProject = try await ListPromoTasksTool().execute(arguments: ["scope": ToolArgument("project")])
-        #expect(listProject.contains("scope=project"))
+        let listProject = try await ListPromoTasksTool().execute(arguments: [:])
         #expect(listProject.contains("project-only-set"))
-        #expect(!listProject.contains("app-only-set"))
 
-        // list_tasks scope=app 只返回 app 内的任务。
-        let listApp = try await ListPromoTasksTool().execute(arguments: ["scope": ToolArgument("app")])
-        #expect(listApp.contains("scope=app"))
-        #expect(listApp.contains("app-only-set"))
-        #expect(!listApp.contains("project-only-set"))
-
-        // read_task 显式 scope=project 只在项目内查找。
         let readProject = try await ReadPromoTaskTool().execute(
-            arguments: ["taskId": ToolArgument("project-only-set"), "scope": ToolArgument("project")]
-        )
-        #expect(readProject.contains("scope=project"))
-        #expect(readProject.contains("project-only-set"))
-
-        // read_task 显式 scope=app 找 app 内 task。
-        let readApp = try await ReadPromoTaskTool().execute(
-            arguments: ["taskId": ToolArgument("app-only-set"), "scope": ToolArgument("app")]
-        )
-        #expect(readApp.contains("scope=app"))
-        #expect(readApp.contains("app-only-set"))
-
-        // 无 scope 时,read_task 默认 scope=project(优先在项目内找)。
-        let readDefault = try await ReadPromoTaskTool().execute(
             arguments: ["taskId": ToolArgument("project-only-set")]
         )
-        #expect(readDefault.contains("scope=project"))
+        #expect(readProject.contains("project-only-set"))
     }
 
-    @Test func scopeFallsBackToAppWhenProjectMissing() async throws {
+    @Test func toolsRequireAnOpenProject() async throws {
         PromoDesignerRuntime.reset()
-        let appRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: appRoot, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: appRoot) }
-        PromoDesignerRuntime.configure(appStorageDirectory: appRoot)
-        // 不调用 setProjectStorage,模拟无打开项目。
-
-        let create = try await CreatePromoTaskTool().execute(
-            arguments: [
-                "slug": ToolArgument("default-fallback"),
-                "title": ToolArgument("Default Fallback"),
-                "appName": ToolArgument("Lumi"),
-                "deviceFamily": ToolArgument("ipad"),
-            ]
-        )
-        // 无项目时,默认 scope 应回退到 app。
-        #expect(create.contains("scope=app"))
-        #expect(FileManager.default.fileExists(atPath: appRoot.appendingPathComponent("tasks/default-fallback/manifest.json").path))
+        var didThrow = false
+        do {
+            _ = try await CreatePromoTaskTool().execute(
+                arguments: [
+                    "slug": ToolArgument("requires-project"),
+                    "title": ToolArgument("Requires Project"),
+                    "appName": ToolArgument("Lumi"),
+                    "deviceFamily": ToolArgument("ipad"),
+                ]
+            )
+        } catch {
+            didThrow = true
+        }
+        #expect(didThrow)
     }
 }

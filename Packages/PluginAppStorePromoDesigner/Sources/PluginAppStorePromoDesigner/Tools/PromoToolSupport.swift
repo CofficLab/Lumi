@@ -7,7 +7,7 @@ import Foundation
 /// 由旧版 `Plugins/AppStorePromoDesignerPlugin/Sources/Tools/PromoToolSupport.swift`
 /// 迁移而来，差异：
 /// - 参数类型 `[String: LumiJSONValue]` → `[String: ToolArgument]`
-/// - 移除 `kernel: KernelLumi` 上下文，scope / 项目路径直接读 `PromoDesignerRuntime`
+/// - 移除 `kernel: KernelLumi` 上下文，项目路径直接读 `PromoDesignerRuntime`
 /// - 语言从 `kernel.language` → `LanguagePreference.current`（跟随系统/宿主注入）
 enum PromoToolSupport {
     /// 当前语言偏好（跟随系统 locale）。
@@ -15,7 +15,7 @@ enum PromoToolSupport {
 
     static let store = AppStorePromoDocumentStore()
 
-    // MARK: - Scope & storage resolution
+    // MARK: - Project storage resolution
 
     /// 当前已打开项目的路径（来自 Runtime 缓存）。
     static func currentProjectPath() async -> String? {
@@ -26,27 +26,10 @@ enum PromoToolSupport {
         }
     }
 
-    /// 解析工具入参中的 scope：未指定时按是否有打开项目自动选择 project / app。
-    static func resolveScope(_ arguments: [String: ToolArgument]) async throws -> PromoScope {
-        if let raw = string(arguments, "scope")?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
-           !raw.isEmpty {
-            guard let scope = PromoScope(rawValue: raw) else {
-                throw ToolArgumentError.invalid("scope")
-            }
-            return scope
-        }
-        let hasProject = await (currentProjectPath() != nil)
-        return await MainActor.run { PromoDesignerRuntime.defaultScope(hasOpenProject: hasProject) }
-    }
-
-    /// 当前 scope 的存储路径。无路径时抛 invalidStoragePath。
-    static func storagePath(for scope: PromoScope) async throws -> String {
+    /// 当前项目的存储路径。无打开项目时抛 invalidStoragePath。
+    static func storagePath() async throws -> String {
         try await MainActor.run {
-            let path: String
-            switch scope {
-            case .project: path = WorkspaceStore.shared.projectStoragePath
-            case .app: path = WorkspaceStore.shared.appStoragePath
-            }
+            let path = WorkspaceStore.shared.projectStoragePath
             guard !path.isEmpty else { throw AppStorePromoStoreError.invalidStoragePath }
             return path
         }
@@ -59,27 +42,20 @@ enum PromoToolSupport {
         return value
     }
 
-    static func notify(scope: PromoScope, taskID: String? = nil, imageID: String? = nil) async {
-        await MainActor.run { WorkspaceStore.shared.reload(scope: scope, selectTask: taskID, image: imageID) }
+    static func notify(taskID: String? = nil, imageID: String? = nil) async {
+        await MainActor.run { WorkspaceStore.shared.reload(selectTask: taskID, image: imageID) }
     }
 
-    static func taskSummary(_ task: AppStorePromoTask, scope: PromoScope) -> String {
+    static func taskSummary(_ task: AppStorePromoTask) -> String {
         let displays = AppStorePromoDisplaySpec.presets(for: task.deviceFamily)
             .map { "\($0.displayType)=\($0.width)x\($0.height)" }.joined(separator: ", ")
         let images = task.images.sorted(by: { $0.order < $1.order })
             .map { "\($0.order + 1):\($0.id)" }.joined(separator: ", ")
-        return "scope=\(scope.rawValue) taskId=\(task.id) title=\(task.title) appName=\(task.appName) family=\(task.deviceFamily.rawValue) locale=\(task.localeIdentifier) displayTypes=[\(displays)] images=[\(images)]"
+        return "taskId=\(task.id) title=\(task.title) appName=\(task.appName) family=\(task.deviceFamily.rawValue) locale=\(task.localeIdentifier) displayTypes=[\(displays)] images=[\(images)]"
     }
 
-    static func baseProperties(includeImage: Bool = false, includeScope: Bool = true) -> [String: Any] {
+    static func baseProperties(includeImage: Bool = false) -> [String: Any] {
         var result: [String: Any] = [:]
-        if includeScope {
-            result["scope"] = [
-                "type": "string",
-                "enum": PromoScope.allCases.map(\.rawValue),
-                "description": "Storage scope: 'project' (current project .lumi folder) or 'app' (application data directory). Defaults to 'project' when a project is open, else 'app'.",
-            ]
-        }
         result["taskId"] = ["type": "string", "description": "Promotional artwork task slug."]
         if includeImage {
             result["imageId"] = ["type": "string", "description": "Promotional image slug within the task."]
