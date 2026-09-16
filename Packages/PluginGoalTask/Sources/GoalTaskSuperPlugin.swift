@@ -15,9 +15,10 @@ import os
 /// It keeps the legacy SQLite layout inside the plugin-owned storage directory
 /// so the database schema and file naming remain unchanged.
 @MainActor
-public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
+public final class GoalTaskSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.goal-task", category: "GoalTask")
     public let id = "com.coffic.lumi.plugin.goal-task"
+    public let legacyDataDirectoryNames = ["GoalTaskPlugin"]
     public let order = 91
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.goal-task",
@@ -35,6 +36,36 @@ public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
     private var turnFinishedHook: GoalTaskTurnFinishedHook?
 
     public init() {}
+
+    public func migrateData(context: PluginDataMigrationContext) throws {
+        // A v5 install that already used the plugin ID keeps the historical
+        // inner `GoalTaskPlugin` database directory; the generic migration
+        // preserves that layout. Older installs used `GoalTaskPlugin` as the
+        // version-root child, so that source must be copied into the same
+        // inner directory rather than flattened into the plugin ID root.
+        try PluginDataMigrationUtility.copyLegacyDirectories(
+            legacyDirectoryNames: [],
+            context: context
+        )
+
+        let destination = context.currentPluginDataDirectory
+            .appendingPathComponent("GoalTaskPlugin", isDirectory: true)
+        let fileManager = FileManager.default
+        for version in context.legacyDataRootDirectories.keys.sorted(by: >) {
+            guard let source = context.legacyPluginDataDirectory(
+                named: "GoalTaskPlugin",
+                in: version
+            ), fileManager.fileExists(atPath: source.path) else {
+                continue
+            }
+            try fileManager.createDirectory(at: destination, withIntermediateDirectories: true)
+            try PluginDataMigrationUtility.mergeDirectoryContents(
+                from: source,
+                to: destination,
+                fileManager: fileManager
+            )
+        }
+    }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
