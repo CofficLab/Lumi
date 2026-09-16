@@ -22,7 +22,7 @@ import ProviderToolManager
 final class ConnectAPICache: @unchecked Sendable {
     static let shared: ConnectAPICache = {
         let pluginRoot = AppStoreConnectPluginRuntimeBridge.pluginSubdirectory
-            ?? AppStoreConnectPluginRuntimeBridge.fallbackRootDirectory.appendingPathComponent(ConnectAPICacheConfiguration.pluginName, isDirectory: true)
+            ?? AppStoreConnectPluginRuntimeBridge.fallbackPluginDirectory
         let root = pluginRoot
             .appendingPathComponent(ConnectAPICacheConfiguration.cacheDirectoryName, isDirectory: true)
         return ConnectAPICache(rootDirectory: root)

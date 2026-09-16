@@ -1,3 +1,4 @@
+import Foundation
 import KernelCore
 import KitAgentTool
 import KitSuperLog
@@ -19,13 +20,14 @@ import SwiftUI
 /// 该插件保留历史版本的账号、版本、本地化、截图、发布和 Xcode Cloud
 /// 能力，但使用当前 KernelCore Provider 注册表作为唯一集成边界。
 @MainActor
-public final class AppStoreConnectPlugin: SuperPlugin, SuperLog {
+public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi.plugin.app-store-connect",
         category: "AppStoreConnectPlugin"
     )
 
     public let id = "com.coffic.lumi.plugin.app-store-connect"
+    public let legacyDataDirectoryNames = ["AppStoreConnectPlugin"]
     public let order = 65
     public static let railTabID = "app-store-connect.sidebar"
 
@@ -43,6 +45,27 @@ public final class AppStoreConnectPlugin: SuperPlugin, SuperLog {
     }
 
     public init() {}
+
+    public func migrateData(context: PluginDataMigrationContext) throws {
+        try PluginDataMigrationUtility.copyLegacyDirectories(
+            legacyDirectoryNames: legacyDataDirectoryNames,
+            context: context
+        )
+
+        // 早期版本的回退实现把缓存直接写到 bundle 根目录下的
+        // AppStoreConnectPlugin，升级时也要并入 ID 目录。
+        let legacyDirectory = AppStoreConnectPluginRuntimeBridge.fallbackRootDirectory
+            .appendingPathComponent("AppStoreConnectPlugin", isDirectory: true)
+        guard FileManager.default.fileExists(atPath: legacyDirectory.path) else { return }
+        try FileManager.default.createDirectory(
+            at: context.currentPluginDataDirectory,
+            withIntermediateDirectories: true
+        )
+        try PluginDataMigrationUtility.mergeDirectoryContents(
+            from: legacyDirectory,
+            to: context.currentPluginDataDirectory
+        )
+    }
 
     public func onRegister(kernel: KernelCoreContainer) throws {
         guard let docs = kernel.resolveProvider((any DocsViewProviding).self) else {
