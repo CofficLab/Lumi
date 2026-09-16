@@ -3,7 +3,12 @@ import ProviderAppUpdate
 import ProviderDiagnostics
 import ProviderDocsView
 import ProviderOnboarding
+import ProviderStorage
 import ProviderUninstall
+
+#if canImport(AppKit)
+import AppKit
+#endif
 
 /// 通用设置页需要的最小外部操作集合。
 ///
@@ -38,6 +43,12 @@ protocol GeneralSettingsCapability {
     func prepareForUninstall() async
     func uninstall(options: UninstallOptions) async throws -> UninstallResult
 
+    // MARK: 存储
+
+    var isStorageAvailable: Bool { get }
+    func storageSizeInBytes() async -> Int64?
+    func openStorageDirectory()
+
     // MARK: 外部事件
 
     @discardableResult
@@ -53,6 +64,7 @@ final class GeneralSettingsCapabilityAdapter: GeneralSettingsCapability {
     private let diagnosticsProvider: (any DiagnosticsProviding)?
     private let updateProvider: (any AppUpdateChannelProviding)?
     private let onboardingProvider: (any OnboardingProviding)?
+    private let storageProvider: (any StorageProviding)?
     private let uninstallProvider: (any UninstallProviding)?
     private let prepareForUninstall: (@MainActor () async -> Void)?
 
@@ -61,6 +73,7 @@ final class GeneralSettingsCapabilityAdapter: GeneralSettingsCapability {
         diagnosticsProvider: (any DiagnosticsProviding)?,
         updateProvider: (any AppUpdateChannelProviding)?,
         onboardingProvider: (any OnboardingProviding)?,
+        storageProvider: (any StorageProviding)?,
         uninstallProvider: (any UninstallProviding)?,
         prepareForUninstall: (@MainActor () async -> Void)?
     ) {
@@ -68,6 +81,7 @@ final class GeneralSettingsCapabilityAdapter: GeneralSettingsCapability {
         self.diagnosticsProvider = diagnosticsProvider
         self.updateProvider = updateProvider
         self.onboardingProvider = onboardingProvider
+        self.storageProvider = storageProvider
         self.uninstallProvider = uninstallProvider
         self.prepareForUninstall = prepareForUninstall
     }
@@ -124,6 +138,23 @@ final class GeneralSettingsCapabilityAdapter: GeneralSettingsCapability {
             throw GeneralSettingsCapabilityError.unavailable("卸载服务暂不可用。")
         }
         return try await uninstallProvider.uninstall(options: options)
+    }
+
+    var isStorageAvailable: Bool {
+        storageProvider != nil
+    }
+
+    func storageSizeInBytes() async -> Int64? {
+        guard let storageProvider else { return nil }
+        return await storageProvider.dataRootDirectorySizeInBytes()
+    }
+
+    func openStorageDirectory() {
+        guard let storageURL = storageProvider?.dataRootDirectory else { return }
+
+        #if canImport(AppKit)
+        NSWorkspace.shared.open(storageURL)
+        #endif
     }
 
     @discardableResult

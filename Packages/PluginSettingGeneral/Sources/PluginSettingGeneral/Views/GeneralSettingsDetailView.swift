@@ -132,6 +132,23 @@ struct GeneralSettingsDetailView: View {
                 ) {
                     EmptyView()
                 }
+                Divider()
+                    .padding(.vertical, 8)
+                AppSettingRow(
+                    title: "占用空间",
+                    description: viewModel.storageSizeDescription,
+                    icon: "internaldrive"
+                ) {
+                    AppButton(
+                        "打开数据库目录",
+                        systemImage: "folder",
+                        style: .secondary,
+                        size: .small
+                    ) {
+                        viewModel.openStorageDirectory()
+                    }
+                    .disabled(!viewModel.isStorageAvailable)
+                }
             }
         }
     }

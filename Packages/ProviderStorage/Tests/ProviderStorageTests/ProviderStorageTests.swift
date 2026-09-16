@@ -65,6 +65,19 @@ struct ProviderStorageTests {
         #expect(FileManager.default.fileExists(atPath: dir.path))
     }
 
+    @Test("异步计算数据根目录的磁盘占用")
+    func dataRootDirectorySize() async throws {
+        let provider = makeProvider()
+        let fileURL = provider.dataRootDirectory.appendingPathComponent("database.sqlite")
+        let payload = Data(repeating: 0x5A, count: 4096)
+        try payload.write(to: fileURL)
+
+        let size = await provider.dataRootDirectorySizeInBytes()
+
+        // ProviderStorage 返回文件实际占用的空间，通常会大于等于逻辑文件大小。
+        #expect(size >= Int64(payload.count))
+    }
+
     // MARK: - 旧版命名规则
 
     @Test("数据根目录名遵循 db_<debug|production>_v<major> 规则")

@@ -5,6 +5,7 @@ import ProviderAppUpdate
 import ProviderDiagnostics
 import ProviderDocsView
 import ProviderOnboarding
+import ProviderStorage
 import ProviderUninstall
 import ProviderSettingView
 import SwiftUI
@@ -78,6 +79,7 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
         let docsProvider = kernel.resolveProvider((any DocsViewProviding).self)
         let diagnosticsProvider = kernel.resolveProvider((any DiagnosticsProviding).self)
         let onboardingProvider = kernel.resolveProvider((any OnboardingProviding).self)
+        let storageProvider = kernel.resolveProvider((any StorageProviding).self)
         let uninstallProvider = self.uninstallProvider
         let prepareForUninstall: @MainActor () async -> Void = {
             try? await kernel.stopAsync()
@@ -88,7 +90,7 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
             title: "通用",
             systemImage: "gearshape",
             order: 1
-        ) { [versionProvider, docsProvider, diagnosticsProvider, onboardingProvider, uninstallProvider, prepareForUninstall, kernel] in
+        ) { [versionProvider, docsProvider, diagnosticsProvider, onboardingProvider, storageProvider, uninstallProvider, prepareForUninstall, kernel] in
             // AppUpdateBootstrap is host-owned and may register after
             // plugin boot. Resolve it when the entry is materialized so
             // settings sees the provider in both Debug and Release.
@@ -97,6 +99,7 @@ public final class SettingGeneralPlugin: SuperPlugin, SuperLog {
                 diagnosticsProvider: diagnosticsProvider,
                 updateProvider: kernel.resolveProvider((any AppUpdateChannelProviding).self),
                 onboardingProvider: onboardingProvider,
+                storageProvider: storageProvider,
                 uninstallProvider: uninstallProvider,
                 prepareForUninstall: prepareForUninstall
             )
