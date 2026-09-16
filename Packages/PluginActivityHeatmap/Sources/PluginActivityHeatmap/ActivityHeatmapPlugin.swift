@@ -218,10 +218,16 @@ public final class ActivityHeatmapViewModel {
     /// how much to show from the available space independently of `period`.
     public private(set) var heatmapDays: [ActivityDay] = []
     public private(set) var isLoading = false
-    /// The day with the highest token consumption, shown next to the trend
-    /// total. Nil when no tokens were consumed in the tracked year.
+    /// Days drawn by the token trend chart. Fixed to 30 days so the line chart
+    /// matches the HTTP log and conversation dashboards, and so a restored
+    /// legacy "last year" preference cannot pack 365 points into one width.
+    public var trendDays: [ActivityDay] {
+        Array(heatmapDays.suffix(ActivityHeatmapPeriod.days30.rawValue))
+    }
+    /// The day with the highest token consumption inside ``trendDays``, shown
+    /// under the trend chart. Nil when no tokens were consumed in that window.
     public var peakTokenDay: ActivityDay? {
-        heatmapDays.max { $0.tokens < $1.tokens }.flatMap { $0.tokens > 0 ? $0 : nil }
+        trendDays.max { $0.tokens < $1.tokens }.flatMap { $0.tokens > 0 ? $0 : nil }
     }
 
     public init(messages: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil) {
@@ -328,6 +334,7 @@ private struct LegacyPeriodPreference: Decodable {
 
 public struct ActivityHeatmapSettingsView: View {
     @State private var model: ActivityHeatmapViewModel
+    @LumiTheme private var theme
     private let idleTime: (any IdleTimeProviding)?
     private let idleTimeState: ActivityHeatmapIdleTimeState
 
@@ -500,40 +507,39 @@ public struct ActivityHeatmapSettingsView: View {
     }
 
     private var tokenTrend: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(L("Token trend")).font(.headline)
-            GeometryReader { proxy in
-                let maxTokens = max(model.heatmapDays.map(\.tokens).max() ?? 0, 1)
-                let width = max(proxy.size.width, 1)
-                let height = max(proxy.size.height, 1)
-                Path { path in
-                    for (index, day) in model.heatmapDays.enumerated() {
-                        let x = model.heatmapDays.count < 2
-                            ? width / 2
-                            : width * CGFloat(index) / CGFloat(model.heatmapDays.count - 1)
-                        let y = height - height * CGFloat(day.tokens) / CGFloat(maxTokens)
-                        index == 0 ? path.move(to: CGPoint(x: x, y: y)) : path.addLine(to: CGPoint(x: x, y: y))
-                    }
-                }
-                .stroke(.orange, style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
-            }
-            .frame(height: 120)
+        let days = model.trendDays
+        let totalTokens = days.reduce(0) { $0 + $1.tokens }
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
-                Text(String(format: L("Total: %@ tokens"), TokenCountFormat.compact(model.heatmapDays.reduce(0) { $0 + $1.tokens })))
-                Spacer()
-                if let peak = model.peakTokenDay {
-                    Text(String(
-                        format: L("Peak day: %@ · %@ tokens"),
-                        Self.dayFormatter.string(from: peak.date),
-                        TokenCountFormat.compact(peak.tokens)
-                    ))
-                }
+                Label(L("Token trend"), systemImage: "chart.xyaxis.line")
+                    .font(.appCaptionEmphasized)
+                    .foregroundStyle(theme.textPrimary)
+                Spacer(minLength: 0)
+                Text(String(format: L("Total (last 30 days): %@ tokens"), TokenCountFormat.compact(totalTokens)))
+                    .font(.appMicro)
+                    .monospacedDigit()
+                    .foregroundStyle(theme.textSecondary)
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            ActivityTokenTrendChart(days: days)
+                .frame(height: 132)
+            if let peak = model.peakTokenDay {
+                Text(String(
+                    format: L("Peak day: %@ · %@ tokens"),
+                    Self.dayFormatter.string(from: peak.date),
+                    TokenCountFormat.compact(peak.tokens)
+                ))
+                .font(.appMicro)
+                .monospacedDigit()
+                .foregroundStyle(theme.textSecondary)
+            }
         }
-        .padding(16)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(theme.divider, lineWidth: 0.5)
+        }
     }
 
     private func levelColor(_ value: Int, maximum: Int) -> Color {

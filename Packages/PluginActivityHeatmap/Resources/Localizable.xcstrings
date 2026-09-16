@@ -427,6 +427,40 @@
         }
       }
     },
+    "Daily token consumption chart" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily token consumption chart"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每日 Token 消耗图表"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每日 Token 消耗圖表"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每日 Token 消耗圖表"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每日 Token 消耗圖表"
+          }
+        }
+      }
+    },
     "Idle time" : {
       "localizations" : {
         "en" : {
@@ -1106,36 +1140,36 @@
         }
       }
     },
-    "Total: %@ tokens" : {
+    "Total (last 30 days): %@ tokens" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Total: %@ tokens"
+            "value" : "Total (last 30 days): %@ tokens"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "总计：%@ 个 Token"
+            "value" : "总计（最近 30 天）：%@ 个 Token"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "總計：%@ 個 Token"
+            "value" : "總計（最近 30 天）：%@ 個 Token"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "總計：%@ 個 Token"
+            "value" : "總計（最近 30 天）：%@ 個 Token"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "總計：%@ 個 Token"
+            "value" : "總計（最近 30 天）：%@ 個 Token"
           }
         }
       }

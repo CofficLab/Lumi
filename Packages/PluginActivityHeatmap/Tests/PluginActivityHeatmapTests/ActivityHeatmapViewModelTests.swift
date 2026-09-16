@@ -57,8 +57,18 @@ struct ActivityHeatmapViewModelTests {
         #expect(viewModel.heatmapDays.count == 365)
     }
 
-    @Test("peak token day picks the busiest day and is nil when nothing is consumed")
+    @Test("peak token day picks the busiest day inside the trend window")
     func reportsPeakTokenDay() async {
+        let defaults = UserDefaults.standard
+        let previousPeriod = defaults.object(forKey: ActivityHeatmapViewModel.periodKey)
+        defer {
+            if let previousPeriod {
+                defaults.set(previousPeriod, forKey: ActivityHeatmapViewModel.periodKey)
+            } else {
+                defaults.removeObject(forKey: ActivityHeatmapViewModel.periodKey)
+            }
+        }
+
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let busiestDay = calendar.date(byAdding: .day, value: -3, to: today)!
@@ -69,9 +79,12 @@ struct ActivityHeatmapViewModelTests {
             tokenCounts: [busiestDay: 5_000, busyDay: 900, today: 100]
         )
         let viewModel = ActivityHeatmapViewModel(messages: manager, cache: ActivityHeatmapCache(directory: nil))
+        viewModel.period = .days30
 
         await viewModel.reload()
 
+        #expect(viewModel.trendDays.count == ActivityHeatmapPeriod.days30.rawValue)
+        #expect(viewModel.trendDays.last?.date == today)
         #expect(viewModel.peakTokenDay?.date == busiestDay)
         #expect(viewModel.peakTokenDay?.tokens == 5_000)
 
@@ -83,6 +96,37 @@ struct ActivityHeatmapViewModelTests {
         await idleViewModel.reload()
 
         #expect(idleViewModel.peakTokenDay == nil)
+    }
+
+    @Test("peak token day ignores consumption outside the trend window")
+    func ignoresConsumptionOutsideTrendWindow() async {
+        let defaults = UserDefaults.standard
+        let previousPeriod = defaults.object(forKey: ActivityHeatmapViewModel.periodKey)
+        defer {
+            if let previousPeriod {
+                defaults.set(previousPeriod, forKey: ActivityHeatmapViewModel.periodKey)
+            } else {
+                defaults.removeObject(forKey: ActivityHeatmapViewModel.periodKey)
+            }
+        }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let staleHeavyDay = calendar.date(byAdding: .day, value: -100, to: today)!
+        let recentDay = calendar.date(byAdding: .day, value: -2, to: today)!
+
+        let manager = HeatmapMessageManager(
+            messageCounts: [staleHeavyDay: 20, recentDay: 1],
+            tokenCounts: [staleHeavyDay: 900_000, recentDay: 120]
+        )
+        let viewModel = ActivityHeatmapViewModel(messages: manager, cache: ActivityHeatmapCache(directory: nil))
+        viewModel.period = .days30
+
+        await viewModel.reload()
+
+        #expect(viewModel.heatmapDays.contains { calendar.isDate($0.date, inSameDayAs: staleHeavyDay) })
+        #expect(viewModel.trendDays.contains { calendar.isDate($0.date, inSameDayAs: staleHeavyDay) } == false)
+        #expect(viewModel.peakTokenDay?.date == recentDay)
     }
 }
 
