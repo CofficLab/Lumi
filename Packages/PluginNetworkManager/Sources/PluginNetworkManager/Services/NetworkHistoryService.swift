@@ -38,7 +38,9 @@ public enum TimeRange: String, CaseIterable, Identifiable {
 
 @MainActor
 public class NetworkHistoryService: ObservableObject, SuperLog {
-    public static let shared = NetworkHistoryService()
+    /// 不在静态初始化阶段创建旧版 Application Support 目录；插件启动时会注入
+    /// 当前版本的插件 ID 目录。
+    public static let shared = NetworkHistoryService(storageURL: nil, autoStartRecording: false)
     public nonisolated static let emoji = "📊"
     public nonisolated static let verbose: Bool = false
     
@@ -56,25 +58,7 @@ public class NetworkHistoryService: ObservableObject, SuperLog {
     private let maxLongTermPoints = 43200 // 30 days at 1m interval
     
     // Persistence
-    private let storageURL: URL?
-
-    private static func defaultStorageURL() -> URL? {
-        guard let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
-        let dir = url.appendingPathComponent("Lumi/NetworkManager")
-        do {
-            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        } catch {
-            if NetworkManagerPlugin.verbose {
-                NetworkManagerPlugin.logger.error("\(NetworkHistoryService.t)Failed to create network history directory: \(error.localizedDescription)")
-            }
-            return nil
-        }
-        return dir.appendingPathComponent("history.json")
-    }
-
-    private convenience init() {
-        self.init(storageURL: Self.defaultStorageURL(), autoStartRecording: true)
-    }
+    private var storageURL: URL?
 
     init(storageURL: URL?, autoStartRecording: Bool) {
         self.storageURL = storageURL
@@ -90,6 +74,29 @@ public class NetworkHistoryService: ObservableObject, SuperLog {
         }
         // NetworkMetricsObserver owns the source subscription and recording
         // lifecycle for the plugin.
+    }
+
+    /// 配置当前版本的插件数据目录。重新配置时清空内存快照，避免宿主重启
+    /// 或测试切换目录后把两个目录的数据混在一起。
+    func configure(storageDirectory: URL?) {
+        storageURL = storageDirectory?.appendingPathComponent("history.json", isDirectory: false)
+        recentHistory = []
+        longTermHistory = []
+        lastMinuteSampleTime = 0
+        minuteAccumulator = (0, 0, 0)
+
+        guard let storageURL else { return }
+        do {
+            try FileManager.default.createDirectory(
+                at: storageURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            loadHistory()
+        } catch {
+            NetworkManagerPlugin.logger.error(
+                "\(NetworkHistoryService.t)Failed to configure network history directory: \(error.localizedDescription)"
+            )
+        }
     }
     
     public func startRecording() {
