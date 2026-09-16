@@ -48,9 +48,12 @@ struct AppStorePromoDesignerPluginTests {
     func promptSuggestionLocalizationResolves() {
         let key = "Prompt.Suggestion.Create"
         #expect(PromoLocalization.string(key) != key)
+        let noSelectionKey = "Select a task from the left, or ask the Agent to create a promotional artwork task."
+        #expect(PromoLocalization.string(noSelectionKey) != noSelectionKey)
     }
 
     @Test func activatingPluginEntryShowsChatAndActivatesRail() async throws {
+        PromoDesignerRuntime.reset()
         let kernel = KernelCoreContainer()
         let activity = DefaultActivityBarProviding()
         let rail = DefaultRailViewProviding()
@@ -73,11 +76,13 @@ struct AppStorePromoDesignerPluginTests {
         #expect(chat.isVisible)
         #expect(chat.isContextActive)
         #expect(rootView.isContentHeaderViewHidden)
+        #expect(!rootView.isRailViewVisible)
         #expect(toolbar.visibleCategories == [.global, .project, .chat, .design])
 
         try kernel.stop()
 
         #expect(rootView.isContentHeaderViewHidden == false)
+        #expect(rootView.isRailViewVisible == rail.hasVisibleTabs)
     }
 
     @Test func overwriteExportIsHighRisk() {

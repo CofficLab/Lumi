@@ -11,18 +11,26 @@ public struct PromoDesignerView: View {
     @ObservedObject private var workspace: WorkspaceStore
     @State private var mode: Mode = .preview
     @State private var isExporting = false
+    private let onTaskAvailabilityChanged: ((Bool) -> Void)?
 
     // MARK: - 初始化
 
-    init(workspace: WorkspaceStore) {
+    init(
+        workspace: WorkspaceStore,
+        onTaskAvailabilityChanged: ((Bool) -> Void)? = nil
+    ) {
         self.workspace = workspace
+        self.onTaskAvailabilityChanged = onTaskAvailabilityChanged
     }
 
     // MARK: - Body
 
     public var body: some View {
         VStack(spacing: 0) {
-            if let resolved = workspace.selectedImage {
+            if workspace.projectTasks.isEmpty {
+                emptyToolbar
+                PromoOnboardingView(isProjectOpen: workspace.projectStorageDirectory != nil)
+            } else if let resolved = workspace.selectedImage {
                 topToolbar(for: resolved.task)
                 content
                 bottomToolbar
@@ -32,6 +40,12 @@ public struct PromoDesignerView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            notifyTaskAvailability()
+        }
+        .onChange(of: workspace.projectTasks.count) { _, _ in
+            notifyTaskAvailability()
+        }
         .alert(
             PromoLocalization.string("Export Failed"),
             isPresented: errorBinding
@@ -70,8 +84,10 @@ public struct PromoDesignerView: View {
             }
         } else {
             AppEmptyState(
-                icon: "rectangle.stack.badge.plus",
-                title: PromoLocalization.string("Ask the Agent to create a promotional artwork task.")
+                icon: "sidebar.left",
+                title: PromoLocalization.string(
+                    "Select a task from the left, or ask the Agent to create a promotional artwork task."
+                )
             )
         }
     }
@@ -117,6 +133,10 @@ public struct PromoDesignerView: View {
                 Task { await exportSelectedTask() }
             }
         )
+    }
+
+    private func notifyTaskAvailability() {
+        onTaskAvailabilityChanged?(!workspace.projectTasks.isEmpty)
     }
 
     // MARK: - 计算属性

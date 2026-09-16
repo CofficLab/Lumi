@@ -188,6 +188,16 @@
         }
       }
     },
+    "Select a task from the left, or ask the Agent to create a promotional artwork task." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请从左侧选择一个任务，或让 Agent 创建一个宣传图任务。"
+          }
+        }
+      }
+    },
     "Ask the AI to review the image and apply its suggestions before exporting." : {
       "localizations" : {
         "en" : {
