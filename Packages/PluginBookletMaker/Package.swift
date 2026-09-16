@@ -14,6 +14,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(path: "../KitAgentTool"),
         .package(path: "../KitLocalization"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderChatSection"),
@@ -21,8 +22,10 @@ let package = Package(
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderRootView"),
+        .package(path: "../ProviderSkill"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolbar"),
+        .package(path: "../ProviderToolManager"),
         .package(path: "../KitSuperLog")
     ],
     targets: [
@@ -31,6 +34,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "LumiUI", package: "LumiUI"),
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
@@ -38,13 +42,17 @@ let package = Package(
                 .product(name: "ProviderDocsView", package: "ProviderDocsView"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "ProviderSkill", package: "ProviderSkill"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "KitSuperLog", package: "KitSuperLog")
             ],
             path: "Sources",
             resources: [
-                .process("../Resources/Localizable.xcstrings")
+                .process("../Resources/Localizable.xcstrings"),
+                // 保留 Skills 目录结构（.copy），否则 Bundle.module 遍历会失败。
+                .copy("../Resources/Skills")
             ]
         ),
         .testTarget(
@@ -52,10 +60,13 @@ let package = Package(
             dependencies: [
                 .target(name: "BookletMakerPlugin"),
                 .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderRailView", package: "ProviderRailView"),
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
+                .product(name: "ProviderSkill", package: "ProviderSkill"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ],
             path: "Tests"
         )

@@ -1,5 +1,6 @@
 import Foundation
 import KernelCore
+import KitAgentTool
 import LumiUI
 import os
 import ProviderActivityBar
@@ -8,8 +9,10 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import ProviderRootView
+import ProviderSkill
 import ProviderStorage
 import ProviderToolbar
+import ProviderToolManager
 import KitSuperLog
 import SwiftUI
 
@@ -78,6 +81,12 @@ public final class BookletMakerPlugin: SuperPlugin, PluginDataMigrating, SuperLo
         BookletMakerRuntimeBridge.directoryURL = kernel
             .resolveProvider((any ProviderStorage.StorageProviding).self)?
             .pluginDataDirectory(for: id)
+
+        // 向 Agent 贡献 PDF 工具与技能。宿主未装配对应 Provider 时（如
+        // iOS 专用宿主、独立测试）降级为仅启动 UI，不阻塞插件生效。
+        registerAgentTools(kernel: kernel)
+        registerSkill(kernel: kernel)
+
         if Self.verbose {
             Self.logger.info(
                 "📖 BookletMakerPlugin booted, stagingDir = \(BookletMakerRuntimeBridge.directoryURL?.path ?? "<unavailable>")"
@@ -208,6 +217,9 @@ public final class BookletMakerPlugin: SuperPlugin, PluginDataMigrating, SuperLo
     }
 
     public func onShutdown(kernel: KernelCoreContainer) throws {
+        unregisterAgentTools(kernel: kernel)
+        unregisterSkill(kernel: kernel)
+
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"
         kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
@@ -225,5 +237,60 @@ public final class BookletMakerPlugin: SuperPlugin, PluginDataMigrating, SuperLo
 
     public func onUnregister(kernel: KernelCoreContainer) throws {
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
+    }
+
+    // MARK: - Agent Contribution
+
+    /// 本插件贡献的 Agent 工具。
+    ///
+    /// 与 App Store Promo Designer 的同名属性对应，供宿主与测试枚举。
+    /// `nonisolated`：工具本身是 `Sendable` 值类型，无需主线程隔离。
+    public nonisolated static let agentTools: [any SuperAgentTool] = [
+        PDFInspectTool(),
+        BookletMakeTool(),
+        PDFSplitTool(),
+        BookletPreviewTool(),
+    ]
+
+    /// 注册工具到 `ToolManagerProviding`。未装配该 Provider 时静默跳过：
+    /// 工具能力属于增强项，不应让插件在精简宿主中启动失败。
+    private func registerAgentTools(kernel: KernelCoreContainer) {
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            Self.logger.warning("\(Self.t)ToolManagerProviding not registered; skip agent tools")
+            return
+        }
+        for tool in Self.agentTools {
+            toolManager.add(tool, pluginID: id)
+        }
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Contributed \(Self.agentTools.count) agent tool(s)")
+        }
+    }
+
+    /// 从 `ToolManagerProviding` 撤回本插件的工具。
+    private func unregisterAgentTools(kernel: KernelCoreContainer) {
+        guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else { return }
+        for tool in Self.agentTools {
+            toolManager.remove(id: tool.name)
+        }
+    }
+
+    /// 注册 Skill 贡献者。幂等：同一 providerID 不会重复注册。
+    private func registerSkill(kernel: KernelCoreContainer) {
+        guard let skillProvider = kernel.resolveProvider((any SkillProviding).self) else {
+            Self.logger.warning("\(Self.t)SkillProviding not registered; skip skill contribution")
+            return
+        }
+        guard !skillProvider.isProviderRegistered(providerID: id) else { return }
+        let contributor = BookletMakerSkillContributor(providerID: id)
+        skillProvider.addProvider(contributor)
+        if Self.verbose {
+            Self.logger.info("\(Self.t)Contributed \(contributor.allSkills.count) skill(s) via SkillProviding")
+        }
+    }
+
+    /// 撤回 Skill 贡献，避免插件卸载后残留技能。重复撤销无副作用。
+    private func unregisterSkill(kernel: KernelCoreContainer) {
+        kernel.resolveProvider((any SkillProviding).self)?.removeProvider(providerID: id)
     }
 }

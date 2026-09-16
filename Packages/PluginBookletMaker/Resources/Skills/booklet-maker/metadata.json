@@ -1,0 +1,7 @@
+{
+  "name": "booklet-maker",
+  "title": "Booklet Maker",
+  "description": "指导 AI 使用 Booklet Maker 的 Agent 工具把 PDF 拼版成可打印的小册子，以及按页范围拆分 PDF。",
+  "triggers": ["booklet", "小册子", "折页", "骑马钉", "imposition", "拼版", "split pdf", "拆分 pdf", "zine", "打印装订"],
+  "version": "1.0.0"
+}
