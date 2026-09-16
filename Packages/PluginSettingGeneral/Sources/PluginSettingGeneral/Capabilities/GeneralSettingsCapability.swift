@@ -151,9 +151,11 @@ final class GeneralSettingsCapabilityAdapter: GeneralSettingsCapability {
 
     func openStorageDirectory() {
         guard let storageURL = storageProvider?.dataRootDirectory else { return }
+        // 打开版本根目录的父目录，让用户可以看到 v4/v5/v6 的全部数据。
+        let storageParentURL = storageURL.deletingLastPathComponent()
 
         #if canImport(AppKit)
-        NSWorkspace.shared.open(storageURL)
+        NSWorkspace.shared.open(storageParentURL)
         #endif
     }
 
