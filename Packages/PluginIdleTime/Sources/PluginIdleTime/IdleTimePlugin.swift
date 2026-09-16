@@ -14,9 +14,10 @@ import os
 /// - 贡献关于文档；
 /// - onShutdown 全部撤回。
 @MainActor
-public final class IdleTimePlugin: SuperPlugin, SuperLog {
+public final class IdleTimePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.idle-time", category: "IdleTime")
     public let id = "com.coffic.lumi.plugin.idle-time"
+    public let legacyDataDirectoryNames = ["IdleTime"]
     public let order = 96
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.idle-time",
