@@ -7,8 +7,9 @@ import SwiftUI
 
 /// Registers the shared performance collector and exposes its local report in Settings.
 @MainActor
-public final class PerformanceMetricsPlugin: SuperPlugin {
+public final class PerformanceMetricsPlugin: SuperPlugin, PluginDataMigrating {
     public let id = "com.coffic.lumi.plugin.performance-metrics"
+    public let legacyDataDirectoryNames = ["PerformanceMetrics"]
     public let order = 5
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.performance-metrics",
@@ -25,7 +26,7 @@ public final class PerformanceMetricsPlugin: SuperPlugin {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let directory = kernel.resolveProvider((any StorageProviding).self)?
-            .pluginDataDirectory(for: "PerformanceMetrics")
+            .pluginDataDirectory(for: id)
         let provider = DefaultPerformanceMetricsProvider(directoryURL: directory)
         try kernel.registerProvider((any PerformanceMetricsProviding).self, provider)
         self.provider = provider
