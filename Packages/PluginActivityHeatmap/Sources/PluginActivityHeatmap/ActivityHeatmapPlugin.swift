@@ -1,10 +1,11 @@
 import Foundation
-import GitPlugin
 import KernelCore
 import KitLocalization
 import LumiUI
+import ProviderGit
 import ProviderMessage
 import ProviderActivityHeatmap
+import ProviderGit
 import ProviderGitRepositoryWatch
 import ProviderSettingView
 import ProviderIdleTime
@@ -50,7 +51,8 @@ public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, Supe
     public func onBoot(kernel: KernelCoreContainer) throws {
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let provider = LocalGitActivityHeatmapProvider(
-                directory: storage.pluginDataDirectory(for: id)
+                directory: storage.pluginDataDirectory(for: id),
+                git: kernel.resolveProvider((any GitRepositoryReading).self)
             )
             gitActivityProvider = provider
             try kernel.registerProvider((any ActivityHeatmapProviding).self, provider)

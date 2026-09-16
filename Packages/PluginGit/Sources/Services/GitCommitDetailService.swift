@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import KitShell
+import ProviderGit
 
 /// Git Commit Detail 服务
 ///
@@ -14,7 +15,7 @@ public enum GitCommitDetailService {
 
     /// 将日期字符串（多种 ISO 格式）统一格式化为 "yyyy-MM-dd HH:mm:ss"
     public static func formattedDate(_ dateString: String) -> String {
-        let formatters = DateParseHelper.formatHandlers
+        let formatters = GitDateFormatting.formatHandlers
 
         for formatter in formatters {
             if let date = formatter.date(from: dateString) {

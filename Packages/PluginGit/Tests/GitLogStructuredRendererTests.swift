@@ -1,6 +1,7 @@
 import Foundation
 import KitAgentTool
 import Testing
+import ProviderGit
 @testable import GitPlugin
 
 /// git_log 结构化输出与消息渲染器解析逻辑的测试。

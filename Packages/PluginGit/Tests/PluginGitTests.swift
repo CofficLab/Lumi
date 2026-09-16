@@ -4,6 +4,7 @@ import Testing
 import EditorContracts
 import KernelCore
 import KitAgentTool
+import ProviderGit
 import ProviderToolManager
 @testable import GitPlugin
 

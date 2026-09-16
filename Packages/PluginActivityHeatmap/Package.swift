@@ -12,9 +12,9 @@ let package = Package(
         .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
         .package(path: "../KitLocalization"),
-        .package(path: "../PluginGit"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderActivityHeatmap"),
+        .package(path: "../ProviderGit"),
         .package(path: "../ProviderGitRepositoryWatch"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderIdleTime"),
@@ -29,9 +29,9 @@ let package = Package(
                 "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
-                .product(name: "PluginGit", package: "PluginGit"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderActivityHeatmap", package: "ProviderActivityHeatmap"),
+                .product(name: "ProviderGit", package: "ProviderGit"),
                 .product(name: "ProviderGitRepositoryWatch", package: "ProviderGitRepositoryWatch"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderIdleTime", package: "ProviderIdleTime"),
@@ -43,7 +43,10 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginActivityHeatmapTests",
-            dependencies: ["PluginActivityHeatmap"]
+            dependencies: [
+                "PluginActivityHeatmap",
+                .product(name: "ProviderGit", package: "ProviderGit"),
+            ]
         ),
     ]
 )
