@@ -1,4 +1,5 @@
 import KernelCore
+import ProviderStorage
 import SwiftUI
 
 /// KernelFactory — 内核工厂。
@@ -55,7 +56,11 @@ public enum KernelFactory {
         )
         // 将完整插件目录交给 Kernel 注册；Kernel 会对禁用插件跳过 Boot/Ready，
         // 但仍执行 onRegister，以便贡献提示词等目录型能力。
-        try await kernel.startAsync(plugins: pluginFactory.makePlugins() + additionalPlugins)
+        let plugins = pluginFactory.makePlugins() + additionalPlugins
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            try PluginDataMigrationRunner(storage: storage).run(for: plugins)
+        }
+        try await kernel.startAsync(plugins: plugins)
         return kernel
     }
 
@@ -71,11 +76,16 @@ public enum KernelFactory {
         let kernel = KernelCoreContainer()
         try providerFactory.registerProviders(into: kernel)
 
+        let plugins = pluginFactory.makePlugins() + additionalPlugins
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            try PluginDataMigrationRunner(storage: storage).run(for: plugins)
+        }
+
         // 默认目录与宿主附加插件在同一个依赖图中统一校验、排序、原子启动。
         // 后续复刻插件只需由 App/专用 Factory 传入，不必继续修改内核工厂。
         // 将完整插件目录交给 Kernel 注册；Kernel 会对禁用插件跳过 Boot/Ready，
         // 但仍执行 onRegister，以便贡献提示词等目录型能力。
-        try kernel.start(plugins: pluginFactory.makePlugins() + additionalPlugins)
+        try kernel.start(plugins: plugins)
 
         return kernel
     }

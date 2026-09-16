@@ -53,8 +53,13 @@ public struct DefaultProviderFactory: ProviderFactory {
 
         // 插件启用状态仍由宿主统一持久化；BookletMaker 插件本身是 required，
         // 其他未来加入的插件则继续遵循 KernelCore 的普通策略。
+        try StorageDataMigration.migrate(
+            storage: storage,
+            pluginID: "com.coffic.lumi.plugin.plugin-manager",
+            legacyDirectoryNames: ["PluginManager"]
+        )
         kernel.stateStore = PluginEnabledStateStore(
-            pluginDirectory: storage.pluginDataDirectory(for: "PluginManager")
+            pluginDirectory: storage.pluginDataDirectory(for: "com.coffic.lumi.plugin.plugin-manager")
         )
 
         let theme = makeThemeProvider()
