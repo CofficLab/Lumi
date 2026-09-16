@@ -1,6 +1,4 @@
-# InputPlugin
-
-Manage input-related behaviors
+# PluginAgentLoopRetry
 
 > **重要规则：本插件包不能依赖其他插件包，也不能被其他插件包依赖。**
 >

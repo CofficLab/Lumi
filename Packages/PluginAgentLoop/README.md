@@ -2,6 +2,11 @@
 
 自定义 AgentLoop 插件,替换默认的 `DefaultAgentLoopProvider`。
 
+> **重要规则：本插件包不能依赖其他插件包，也不能被其他插件包依赖。**
+>
+> 插件之间只通过 Provider 契约通信：共享能力放入 `Provider*` / `Kit*` 包，
+> 由宿主（`Factory*`）统一装配；跨插件互相引用会破坏插件的独立装配与卸载。
+
 ## 功能
 
 这个插件允许你在不修改 `FactoryLumi` 的情况下自定义 AgentLoop 的行为。通过装饰器模式包装 `DefaultAgentLoopProvider`,你可以在以下场景添加自定义逻辑:
@@ -84,3 +89,4 @@ swift test
 ## 许可证
 
 与主项目保持一致。
+

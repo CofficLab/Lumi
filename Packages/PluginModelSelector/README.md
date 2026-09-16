@@ -3,6 +3,11 @@
 Model Selector 插件（KernelCore 体系），由旧版 `Plugins/ModelSelectorPlugin`
 （KernelLumi / LumiPlugin 架构）完美复刻而来。
 
+> **重要规则：本插件包不能依赖其他插件包，也不能被其他插件包依赖。**
+>
+> 插件之间只通过 Provider 契约通信：共享能力放入 `Provider*` / `Kit*` 包，
+> 由宿主（`Factory*`）统一装配；跨插件互相引用会破坏插件的独立装配与卸载。
+
 ## Features
 
 - **Composer toolbar button** — Action Bar leading 位置的模型选择按钮，实时显示
@@ -34,3 +39,4 @@ Model Selector 插件（KernelCore 体系），由旧版 `Plugins/ModelSelectorP
 | `ProviderLLMManager` | LLM 供应商注册表 / 选中 / 路由 |
 | `LumiUI` | 共享 UI 组件（AppListRow / AppSearchBar / AppTag …） |
 | `KitLocalization` | 运行时本地化 |
+
