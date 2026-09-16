@@ -654,9 +654,6 @@ private struct IdleActivityTimeline: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(L("24-hour activity"))
-                .font(.subheadline.weight(.medium))
-
             Text(L("Relative activity strength"))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
