@@ -41,15 +41,9 @@ final class ConversationStoreSettingsViewModel: ObservableObject {
         conversations.map(\.id)
     }
 
-    var conversationCountLabel: String {
-        if let totalConversationCount {
-            return String(format: L("%lld conversations"), totalConversationCount)
-        }
-        return L("Loading conversations…")
-    }
-
-    private func L(_ key: String) -> String {
-        LumiPluginLocalization.string(key, bundle: .module)
+    /// 右上角总数按钮的标题：无数据时退回占位符，避免出现空标题。
+    var conversationCountDisplay: String {
+        totalConversationCount.map(String.init) ?? "—"
     }
 
     // MARK: - Observer 入口
