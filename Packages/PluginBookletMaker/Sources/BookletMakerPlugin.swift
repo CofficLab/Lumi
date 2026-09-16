@@ -22,7 +22,7 @@ import SwiftUI
 /// on A4 paper, folded along the centre line, and stapled into a
 /// correctly paginated A5 booklet.
 @MainActor
-public final class BookletMakerPlugin: SuperPlugin, SuperLog {
+public final class BookletMakerPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     public nonisolated static let emoji = "📖"
     public nonisolated static let verbose: Bool = false
     public nonisolated static let logger = Logger(
@@ -33,6 +33,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
     // MARK: - Identity
 
     public nonisolated static let pluginID = "com.coffic.lumi.plugin.booklet-maker"
+    public let legacyDataDirectoryNames = ["BookletMaker"]
 
     public let id: String
 
@@ -76,7 +77,7 @@ public final class BookletMakerPlugin: SuperPlugin, SuperLog {
     public func onBoot(kernel: KernelCoreContainer) throws {
         BookletMakerRuntimeBridge.directoryURL = kernel
             .resolveProvider((any ProviderStorage.StorageProviding).self)?
-            .pluginDataDirectory(for: "BookletMaker")
+            .pluginDataDirectory(for: id)
         if Self.verbose {
             Self.logger.info(
                 "📖 BookletMakerPlugin booted, stagingDir = \(BookletMakerRuntimeBridge.directoryURL?.path ?? "<unavailable>")"
