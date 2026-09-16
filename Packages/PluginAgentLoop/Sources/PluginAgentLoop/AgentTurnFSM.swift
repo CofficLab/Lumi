@@ -106,6 +106,9 @@ public struct TurnRuntime {
     /// 当前回合已经消耗的 LLM 工具协议恢复次数。
     public var llmRecoveryAttempts: Int = 0
 
+    /// 最近一次终止本回合的结构化失败详情。
+    public var lastFailure: AgentLoopFailure?
+
     /// 下一次 LLM 请求使用的一次性恢复提示，不写入会话历史。
     public var llmRecoveryHint: String?
 
@@ -133,6 +136,7 @@ public struct TurnRuntime {
         cancelRequested = false
         completionDelivered = false
         llmRecoveryAttempts = 0
+        lastFailure = nil
         llmRecoveryHint = nil
         modelRoute = nil
     }

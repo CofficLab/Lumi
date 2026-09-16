@@ -130,6 +130,45 @@ func testRetryableLLMFailureRetriesCurrentTurn() {
     #expect(exhausted.0.phase == .failed(reason: "incomplete tool call"))
 }
 
+@MainActor
+@Test("重试入口只接受匹配的失败回合")
+func testRetryTurnRequiresMatchingFailedTurn() async throws {
+    let messages = DefaultMessageManager()
+    let conversations = DefaultConversationManager()
+    let llmManager = RoutingRecordingLLMManager()
+    let conversationID = UUID()
+    let failedTurnID = UUID()
+    let loop = AgentLoopManager(
+        messages: messages,
+        llmManager: llmManager,
+        toolManager: DefaultToolManagerProviding(),
+        streaming: DefaultMessageStreamingProviding(),
+        conversations: conversations,
+        contextProvider: PassthroughLLMContextProvider(messages: messages)
+    )
+    loop.runtimes[conversationID] = TurnRuntime(
+        phase: .failed(reason: "network down"),
+        lastTurnID: failedTurnID,
+        lastFailure: AgentLoopFailure(
+            kind: .network,
+            message: "network down",
+            providerID: "conversation-provider",
+            modelName: "conversation-model"
+        )
+    )
+
+    do {
+        _ = try await loop.retryTurn(in: conversationID, after: UUID())
+        Issue.record("旧失败回合不应触发重试")
+    } catch {
+        #expect(error is AgentLoopError)
+    }
+
+    let outcome = try await loop.retryTurn(in: conversationID, after: failedTurnID)
+    #expect(outcome == .completed)
+    #expect(loop.lastFailure(for: conversationID) == nil)
+}
+
 @Test("LLM 失败结果保留原始错误供专用渲染器使用")
 func testLLMFailureKeepsStructuredError() throws {
     let result = AgentLoopManager.LLMRequestResult.failure(
