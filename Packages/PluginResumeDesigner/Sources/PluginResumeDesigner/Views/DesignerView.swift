@@ -2,6 +2,7 @@ import AppKit
 import KitHTMLPreview
 import PDFKit
 import KitResume
+import LumiUI
 import SwiftUI
 
 private typealias L = ResumeDesignerLocalization
@@ -14,22 +15,41 @@ public struct DesignerView: View {
     @ObservedObject private var workspace: WorkspaceStore
     @State private var mode: Mode = .preview
     @State private var isExporting = false
+    private let onResumeAvailabilityChanged: ((Bool) -> Void)?
 
-    init(workspace: WorkspaceStore) {
+    init(
+        workspace: WorkspaceStore,
+        onResumeAvailabilityChanged: ((Bool) -> Void)? = nil
+    ) {
         self.workspace = workspace
+        self.onResumeAvailabilityChanged = onResumeAvailabilityChanged
     }
 
     public var body: some View {
         VStack(spacing: 0) {
-            if workspace.selectedResume != nil {
-                toolbar
-            } else {
+            if workspace.projectResumes.isEmpty {
                 emptyToolbar
+                ResumeOnboardingView(isProjectOpen: workspace.projectStorageDirectory != nil)
+            } else if let selected = workspace.selectedResume {
+                topToolbar(for: selected.document)
+                content(for: selected)
+                bottomToolbar(for: selected.document)
+            } else {
+                ResumeTaskSelectionView(
+                    message: L.string(
+                        "Select a resume from the left, or ask the Agent to create one."
+                    )
+                )
             }
-            Divider()
-            content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .onAppear {
+            notifyResumeAvailability()
+        }
+        .onChange(of: workspace.projectResumes.count) { _, _ in
+            notifyResumeAvailability()
+        }
         .alert(
             L.string("Export Failed"),
             isPresented: errorBinding
@@ -40,90 +60,115 @@ public struct DesignerView: View {
         }
     }
 
-    // MARK: - 子视图
+    private var emptyToolbar: some View {
+        AppToolbarContainer {
+            HStack {
+                Spacer(minLength: 0)
+                AppIconButton(systemImage: "arrow.clockwise", action: workspace.reload)
+                    .accessibilityLabel(L.string("Refresh"))
+                    .help(L.string("Refresh"))
+            }
+        }
+        .borderBottom()
+    }
+
+    private func topToolbar(for document: ResumeDocument) -> some View {
+        AppToolbarContainer {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                AppToolbarTitleLabel(icon: "doc.badge.gearshape", title: document.title)
+                AppTag(L.string("In Project"), systemImage: "folder", style: .subtle)
+
+                if let projectName = workspace.currentProjectPath?.split(separator: "/").last {
+                    Text(projectName)
+                        .font(.appCaption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+            }
+        }
+        .borderBottom()
+    }
+
+    private func bottomToolbar(for document: ResumeDocument) -> some View {
+        AppToolbarContainer {
+            HStack(spacing: DesignTokens.Spacing.xs) {
+                AppButton(
+                    L.string("Preview"),
+                    systemImage: "eye",
+                    style: mode == .preview ? .primary : .ghost,
+                    size: .small
+                ) { mode = .preview }
+
+                AppButton(
+                    L.string("Source"),
+                    systemImage: "chevron.left.forwardslash.chevron.right",
+                    style: mode == .source ? .primary : .ghost,
+                    size: .small
+                ) { mode = .source }
+
+                Spacer(minLength: 0)
+
+                AppButton(
+                    L.string("Print"),
+                    systemImage: "printer",
+                    style: .secondary,
+                    size: .small
+                ) {
+                    Task { await printSelectedResume() }
+                }
+
+                AppButton(
+                    L.string("Export PDF"),
+                    systemImage: "doc.richtext",
+                    style: .secondary,
+                    size: .small
+                ) { exportSelectedResume(pngOnly: false) }
+                    .disabled(isExporting)
+
+                AppButton(
+                    L.string("Export PNG"),
+                    systemImage: "photo",
+                    style: .secondary,
+                    size: .small
+                ) { exportSelectedResume(pngOnly: true) }
+                    .disabled(isExporting)
+
+                if isExporting {
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(.leading, DesignTokens.Spacing.xs)
+                }
+            }
+        }
+        .borderTop()
+    }
 
     @ViewBuilder
-    private var content: some View {
-        if let resolved = workspace.selectedResume {
-            let preset = ResumePaperSpec.preset(for: resolved.document.paper)
-            if mode == .preview {
-                HTMLPreviewView(
-                    htmlText: resolved.html,
-                    fileURL: resolved.htmlURL,
-                    contentSize: preset.cgSize,
-                    onBlockSelected: { selection in
-                        sendBlockToChat(selection, resolved: resolved)
-                    }
-                )
-                .id("\(resolved.document.updatedAt.timeIntervalSince1970)-\(preset.cssWidth)x\(preset.cssHeight)")
-            } else {
-                ScrollView([.horizontal, .vertical]) {
-                    Text(resolved.html)
-                        .font(.system(.caption, design: .monospaced))
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
-                        .padding(18)
+    private func content(for resolved: ResumeResolvedDocument) -> some View {
+        let preset = ResumePaperSpec.preset(for: resolved.document.paper)
+        if mode == .preview {
+            HTMLPreviewView(
+                htmlText: resolved.html,
+                fileURL: resolved.htmlURL,
+                contentSize: preset.cgSize,
+                onBlockSelected: { selection in
+                    sendBlockToChat(selection, resolved: resolved)
                 }
-                .background(Color(nsColor: .textBackgroundColor))
-            }
-        } else {
-            ResumeEmptyStateView(
-                message: L.string("Ask the Agent to create a resume.")
             )
+            .id("\(resolved.document.updatedAt.timeIntervalSince1970)-\(preset.cssWidth)x\(preset.cssHeight)")
+        } else {
+            ScrollView([.horizontal, .vertical]) {
+                Text(resolved.html)
+                    .font(.system(.caption, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .padding(18)
+            }
+            .background(Color(nsColor: .textBackgroundColor))
         }
     }
-
-    private var emptyToolbar: some View {
-        HStack {
-            Spacer()
-            Button { workspace.reload() } label: {
-                Label(L.string("Refresh"), systemImage: "arrow.clockwise")
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-    }
-
-    private var toolbar: some View {
-        HStack(spacing: 10) {
-            Picker("", selection: $mode) {
-                ForEach(Mode.allCases, id: \.self) { item in
-                    Text(item == .preview
-                         ? L.string("Preview")
-                         : L.string("Source"))
-                        .tag(item)
-                }
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 160)
-            Spacer()
-            if let paper = workspace.selectedResume?.document.paper {
-                Text(paper.displayName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Button {
-                Task { await printSelectedResume() }
-            } label: {
-                Label(L.string("Print"), systemImage: "printer")
-            }
-            Button { exportSelectedResume(pngOnly: false) } label: {
-                Label(L.string("Export PDF"), systemImage: "doc.richtext")
-            }
-            Button { exportSelectedResume(pngOnly: true) } label: {
-                Label(L.string("Export PNG"), systemImage: "photo")
-            }
-            .disabled(isExporting)
-            if isExporting {
-                ProgressView()
-                    .controlSize(.small)
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-    }
-
-    // MARK: - 计算属性
 
     private var errorBinding: Binding<Bool> {
         Binding(
@@ -132,7 +177,9 @@ public struct DesignerView: View {
         )
     }
 
-    // MARK: - 私有方法
+    private func notifyResumeAvailability() {
+        onResumeAvailabilityChanged?(!workspace.projectResumes.isEmpty)
+    }
 
     /// 导出当前简历：PNG-only 模式导出 300dpi 分页 PNG，
     /// 否则同时导出矢量 PDF 与 PNG。
@@ -147,7 +194,7 @@ public struct DesignerView: View {
         guard panel.runModal() == .OK, let directory = panel.url else { return }
 
         isExporting = true
-        let storagePath = workspace.appStoragePath
+        let storagePath = workspace.projectStoragePath
         Task { @MainActor in
             defer { isExporting = false }
             do {
@@ -197,8 +244,6 @@ public struct DesignerView: View {
             let pdfView = PDFView()
             pdfView.document = document
             let printInfo = NSPrintInfo.shared
-            // macOS PDFView 无 printOperation(for:)，直接经 print(with:) 弹出系统打印面板；
-            // 页面即纸张尺寸，pageScaleToFit 兜底适配打印机可打印区域。
             pdfView.print(with: printInfo, autoRotate: true, pageScaling: .pageScaleToFit)
         } catch {
             workspace.setError(error)
@@ -206,9 +251,6 @@ public struct DesignerView: View {
     }
 
     /// 把右键选中的区块连同上下文组装成草稿，写入聊天输入框等待发送。
-    ///
-    /// 遵循"填入输入框待发送"语义：不自动发送，只预填 + 聚焦，
-    /// 用户可补充说明后回车。LLM 经现有 `resume_patch_html` 工具即可定位修改。
     @MainActor
     private func sendBlockToChat(_ selection: PromoBlockSelection, resolved: ResumeResolvedDocument) {
         guard let input = ResumeDesignerRuntime.conversationInput else { return }
@@ -233,8 +275,6 @@ public struct DesignerView: View {
         input.isInputFocused = true
     }
 }
-
-// MARK: - 预览
 
 #Preview {
     DesignerView(workspace: WorkspaceStore.shared)

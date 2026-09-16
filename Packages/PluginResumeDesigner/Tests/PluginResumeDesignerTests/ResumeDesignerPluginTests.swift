@@ -43,7 +43,7 @@ struct ResumeDesignerSuite {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("ResumeToolsTests-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        WorkspaceStore.shared.setAppStorage(appStorageDirectory: url)
+        ResumeDesignerRuntime.setProjectStorage(projectPath: url.path, projectStorageDirectory: url)
         return url
     }
 

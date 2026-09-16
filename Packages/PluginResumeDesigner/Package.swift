@@ -28,6 +28,7 @@ let package = Package(
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
         .package(path: "../ProviderSkill"),
+        .package(path: "../ProviderProject"),
     ],
     targets: [
         .target(
@@ -51,6 +52,7 @@ let package = Package(
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
                 "ProviderSkill",
+                "ProviderProject",
                 .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
             ],
             resources: [
