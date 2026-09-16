@@ -19,7 +19,7 @@ import SwiftUI
 /// - 通过 `ProjectProviding` / `ConversationInputProviding` / `ToastProviding`
 ///   注入文件树所需的项目、发送到对话与提示能力。
 @MainActor
-public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
+public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.project-file-tree", category: "ProjectFileTree")
     public nonisolated static let emoji = "🌲"
     public nonisolated static let verbose = false
@@ -38,6 +38,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
     public nonisolated static let railTabID = "explorer"
 
     public let id = pluginID
+    public let legacyDataDirectoryNames = ["ProjectFileTree"]
     public let order = 30
     public let metadata = PluginMetadata(
         id: pluginID,
@@ -72,7 +73,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, SuperLog {
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             FileTreeSettings.shared.configure(
                 pluginDirectory: storage.pluginDataDirectory(
-                    for: ProjectFileTreePluginRuntimeBridge.pluginName
+                    for: id
                 )
             )
         } else {
