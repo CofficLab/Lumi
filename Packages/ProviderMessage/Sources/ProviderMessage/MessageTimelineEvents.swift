@@ -6,6 +6,15 @@ public enum MessageTimelineEvent {
     public static let metadataKey = "lumi.timelineEvent"
     public static let contextCompaction = "context-compaction"
     public static let contextCompactionRenderKind = "context-compaction"
+    public static let agentLoopRetry = "agent-loop-retry"
+    public static let agentLoopRetryRenderKind = "agent-loop-retry"
+    public static let agentLoopRetryAttemptKey = "agentLoopRetryAttempt"
+    public static let agentLoopRetryMaxAttemptsKey = "agentLoopRetryMaxAttempts"
+    public static let agentLoopRetryReasonKey = "agentLoopRetryReason"
+    public static let agentLoopRetryKindKey = "agentLoopRetryKind"
+    public static let agentLoopRetryProviderIDKey = "agentLoopRetryProviderID"
+    public static let agentLoopRetryModelNameKey = "agentLoopRetryModelName"
+    public static let agentLoopRetryHTTPStatusCodeKey = "agentLoopRetryHTTPStatusCode"
     public static let actualContextCompactionKey = "contextCompactionActual"
     public static let actualContextCompactionValue = "true"
     public static let contextCompactionSchemaVersionKey = "contextCompactionSchemaVersion"
@@ -28,6 +37,16 @@ public enum MessageTimelineEvent {
     public static func isContextCompaction(_ message: Message) -> Bool {
         message.renderKind == contextCompactionRenderKind
             || message.metadata[metadataKey] == contextCompaction
+    }
+
+    public static func isAgentLoopRetry(_ message: Message) -> Bool {
+        message.renderKind == agentLoopRetryRenderKind
+            || message.metadata[metadataKey] == agentLoopRetry
+    }
+
+    /// 仅用于界面时间线的消息不应被重新发送给 LLM。
+    public static func isTimelineEvent(_ message: Message) -> Bool {
+        isContextCompaction(message) || isAgentLoopRetry(message)
     }
 
     /// 只有真正用于压缩上下文的事件才应显示在消息列表中。
