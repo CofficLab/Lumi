@@ -2553,6 +2553,124 @@
         }
       }
     },
+    "Select an icon document from the left, or ask the Agent to create one.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select an icon document from the left, or ask the Agent to create one."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请从左侧选择一个图标文档，或让 Agent 创建一个图标文档。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請從左側選擇一個圖示文件，或讓 Agent 建立一個圖示文件。"
+          }
+        }
+      }
+    },
+    "Layered vectors": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Layered vectors"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图层矢量"
+          }
+        }
+      }
+    },
+    "Creating an Icon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creating an Icon"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建图标"
+          }
+        }
+      }
+    },
+    "Icon documents are stored with the current project.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icon documents are stored with the current project."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图标文档存储在当前项目中。"
+          }
+        }
+      }
+    },
+    "Review and iterate on the generated icon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review and iterate on the generated icon."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查并迭代生成的图标。"
+          }
+        }
+      }
+    },
+    "Refine colors, shapes, layers, and composition in the conversation.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refine colors, shapes, layers, and composition in the conversation."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在对话中调整颜色、形状、图层和构图。"
+          }
+        }
+      }
+    },
+    "Export the finished asset.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export the finished asset."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出完成的资源。"
+          }
+        }
+      }
+    },
     "When the preview is correct, click Export SVG or Export Xcode Icon and choose where to save.": {
       "localizations": {
         "en": {

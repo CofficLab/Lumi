@@ -24,9 +24,10 @@ struct DesignerManualView: View {
 
             ManualSectionHeader(number: 2, title: L("Interface"))
             ManualBulletList(items: [
-                .init(L("Sidebar: the icon document list, grouped into project documents and shared documents.")),
+                .init(L("Sidebar: the icon document list for the current project.")),
                 .init(L("Preview: shows the current icon with its size and layer count.")),
-                .init(L("Toolbar: provides the Export SVG and Export Xcode Icon buttons.")),
+                .init(L("Top toolbar: shows the document and current project.")),
+                .init(L("Bottom toolbar: provides the Export SVG and Export Xcode Icon buttons.")),
             ])
             interfaceFigure
 
@@ -51,7 +52,7 @@ struct DesignerManualView: View {
             ManualSectionHeader(number: 5, title: L("Storage"))
             ManualBulletList(items: [
                 .init(L("Project documents: stored with the current project and available only to it.")),
-                .init(L("Shared documents: stored in the app and available in every project.")),
+                .init(L("There is no app-wide document library.")),
             ])
             storageFigure
 
@@ -76,7 +77,6 @@ struct DesignerManualView: View {
                         groupLabel(L("Project"))
                         docRowMock()
                         docRowMock()
-                        groupLabel(L("Shared"))
                         docRowMock()
                         Spacer(minLength: 0)
                     }
@@ -147,14 +147,11 @@ struct DesignerManualView: View {
         }
     }
 
-    // MARK: - 图 3 文档分组
+    // MARK: - 图 3 项目内文档
 
     private var storageFigure: some View {
-        ManualFigure(caption: L("Figure 3: Document grouping")) {
-            HStack(spacing: 14) {
-                storageCard(L("Project"), icon: "folder", thumbCount: 2)
-                storageCard(L("Shared"), icon: "app.badge", thumbCount: 3)
-            }
+        ManualFigure(caption: L("Figure 3: Project-local documents")) {
+            storageCard(L("Project"), icon: "folder", thumbCount: 3)
         }
     }
 

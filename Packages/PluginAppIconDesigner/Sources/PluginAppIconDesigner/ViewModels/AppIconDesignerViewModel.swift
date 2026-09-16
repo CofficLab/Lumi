@@ -14,14 +14,12 @@ final class AppIconDesignerViewModel: ObservableObject {
     // MARK: - Published State (供 View 展示)
 
     @Published private(set) var projectDocuments: [IconDocument] = []
-    @Published private(set) var appDocuments: [IconDocument] = []
-    @Published private(set) var selectedScope: IconScope = .app
+    @Published private(set) var selectedScope: IconScope = .project
     @Published private(set) var selectedDocumentId: String?
     @Published private(set) var lastExportURL: URL?
     @Published private(set) var lastError: String?
     @Published private(set) var canUndo = false
     @Published private(set) var canRedo = false
-    @Published private(set) var appStoragePath = ""
     @Published private(set) var projectStoragePath = ""
     @Published private(set) var currentProjectPath: String?
 
@@ -57,7 +55,7 @@ final class AppIconDesignerViewModel: ObservableObject {
     }
 
     var totalCount: Int {
-        projectDocuments.count + appDocuments.count
+        projectDocuments.count
     }
 
     // MARK: - Observer 写入
@@ -119,14 +117,12 @@ final class AppIconDesignerViewModel: ObservableObject {
 
     private func syncFromStore() {
         projectDocuments = store.projectDocuments
-        appDocuments = store.appDocuments
         selectedScope = store.selectedScope
         selectedDocumentId = store.selectedDocumentId
         lastExportURL = store.lastExportURL
         lastError = store.lastError
         canUndo = store.canUndo
         canRedo = store.canRedo
-        appStoragePath = store.appStoragePath
         projectStoragePath = store.projectStoragePath
         currentProjectPath = store.currentProjectPath
     }
