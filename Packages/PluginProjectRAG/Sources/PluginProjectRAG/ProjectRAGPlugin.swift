@@ -17,9 +17,10 @@ import os
 /// KernelLumi 耦合的 RAG 引擎，并保留数据库目录 (`RAG`)、SQLite schema
 /// 与 vec0 扩展，因此升级不会丢失既有索引。
 @MainActor
-public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
+public final class ProjectRAGSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.project.rag", category: "ProjectRAG")
     public let id = "com.coffic.lumi.plugin.project.rag"
+    public let legacyDataDirectoryNames = ["RAG"]
     public let order = 70
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.project.rag",
@@ -42,8 +43,8 @@ public final class ProjectRAGSuperPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let directory = kernel.resolveProvider((any StorageProviding).self)?
-            .pluginDataDirectory(for: "RAG")
-            ?? FileManager.default.temporaryDirectory.appendingPathComponent("RAG", isDirectory: true)
+            .pluginDataDirectory(for: id)
+            ?? FileManager.default.temporaryDirectory.appendingPathComponent(id, isDirectory: true)
         let service = RAGService(databaseDirectoryProvider: { directory })
         self.service = service
 
