@@ -74,6 +74,7 @@ struct FactoryLumiTests {
         let preview = try #require(plugins[EditorPreviewSuperPlugin.pluginID])
         let projectFiles = try #require(plugins[ProjectFilesSuperPlugin.pluginID])
         let bookletMaker = try #require(plugins["com.coffic.lumi.plugin.booklet-maker"])
+        let retry = try #require(plugins["com.coffic.lumi.plugin.agent-loop-retry"])
 
         #expect(host.metadata.policy == .alwaysOn)
         #expect(languages.metadata.policy == .required)
@@ -81,6 +82,7 @@ struct FactoryLumiTests {
         #expect(preview.metadata.policy == .enabledByDefault)
         #expect(projectFiles.metadata.policy == .required)
         #expect(bookletMaker.metadata.policy == .disabledByDefault)
+        #expect(retry.metadata.policy == .alwaysOn)
         #expect(projectFiles.dependencies == [
             "com.coffic.lumi.plugin.projects",
         ])

@@ -104,6 +104,7 @@ import PluginMessageManager
 import PluginMessageRenderer
 import PluginMessageSender
 import PluginAgentLoop
+import PluginAgentLoopRetry
 import PluginLLMContext
 import PluginMindMapDesigner
 import PluginModelSelector
@@ -275,6 +276,7 @@ public struct DefaultPluginFactory: PluginFactory {
             MessageManagerPlugin(),
             LLMContextPlugin(),
             PluginAgentLoop(),
+            AgentLoopRetryPlugin(),
             MessageSenderPlugin(),
             PluginPluginManager(),
             // 设置视图管理器：替换 ProviderFactory 预注册的默认 SettingViewProviding 实现，
