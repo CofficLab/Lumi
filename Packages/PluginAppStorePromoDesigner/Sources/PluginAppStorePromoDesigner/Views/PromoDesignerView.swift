@@ -82,9 +82,8 @@ public struct PromoDesignerView: View {
                 .background(Color(nsColor: .textBackgroundColor))
             }
         } else {
-            AppEmptyState(
-                icon: "sidebar.left",
-                title: PromoLocalization.string(
+            PromoTaskSelectionView(
+                message: PromoLocalization.string(
                     "Select a task from the left, or ask the Agent to create a promotional artwork task."
                 )
             )
