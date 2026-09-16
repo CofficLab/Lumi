@@ -15,6 +15,9 @@ enum PluginPluginManagerText {
     static let pluginsCount = "%lld 个插件"
     static let enabledCount = "%lld 已启用"
     static let allCategories = "全部"
+    static let filterAll = "全部"
+    static let filterEnabled = "已启用"
+    static let filterDisabled = "未启用"
     static let alwaysOn = "始终启用"
     static let disabled = "已禁用"
     static let disabledPermanently = "已停用"
@@ -22,6 +25,8 @@ enum PluginPluginManagerText {
     static let noDetailsProvided = "无详细信息"
     static let noDetailsHint = "插件作者未提供详情视图。"
     static let enable = "启用"
+    static let disableAll = "停用所有"
+    static let disablingAll = "停用中…"
 
     // 详情面板信息区
     static let categoryLabel = "分类"

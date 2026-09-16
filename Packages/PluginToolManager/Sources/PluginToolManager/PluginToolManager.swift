@@ -13,12 +13,13 @@ import SwiftUI
 
 /// 工具管理插件。
 @MainActor
-public final class PluginToolManager: SuperPlugin, SuperLog {
+public final class PluginToolManager: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.tool-manager", category: "Plugin")
     public nonisolated static let emoji = "🔧"
     nonisolated static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.tool-manager"
+    public let legacyDataDirectoryNames = ["ToolManager"]
     public let order = 6
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.tool-manager",
@@ -44,7 +45,7 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
 
         // 1. 初始化插件自己的调用记录存储。
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
-            let databaseRootURL = storage.pluginDataDirectory(for: "ToolManager")
+            let databaseRootURL = storage.pluginDataDirectory(for: id)
             let store = ProviderToolManager.ToolCallRecordStore(databaseRootURL: databaseRootURL)
             service.recordStore = store
             if Self.verbose {
@@ -79,10 +80,12 @@ public final class PluginToolManager: SuperPlugin, SuperLog {
                     order: 6
                 ) { [weak service] in
                     if let service {
-                        ToolManagerSettingsView(
+                        let capability = ToolManagerCapabilityAdapter(
                             manager: service,
                             store: service.recordStore
                         )
+                        let viewModel = ToolManagerViewModel(capability: capability)
+                        ToolManagerSettingsView(viewModel: viewModel)
                     } else {
                         EmptyView()
                     }

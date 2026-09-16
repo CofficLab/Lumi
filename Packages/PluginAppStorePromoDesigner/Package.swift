@@ -73,6 +73,7 @@ let package = Package(
                 "ProviderContentView",
                 "ProviderRailView",
                 "ProviderRootView",
+                "ProviderToolbar",
             ]
         ),
     ]

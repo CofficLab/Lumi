@@ -23,12 +23,13 @@ import KitSuperLog
 ///
 /// 容错：数据库初始化失败时不替换默认实现（保留内存版），仅记日志，不阻塞内核启动。
 @MainActor
-public final class MessageManagerPlugin: SuperPlugin, SuperLog {
+public final class MessageManagerPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.message-manager")
     public nonisolated static let emoji = "💬"
     public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.message-store"
+    public let legacyDataDirectoryNames = ["MessageManagerPlugin"]
     public let order = 8
 
     public let metadata = PluginMetadata(
@@ -45,7 +46,7 @@ public final class MessageManagerPlugin: SuperPlugin, SuperLog {
     public func onBoot(kernel: KernelCoreContainer) throws {
         // 1. 计算数据库目录（遵循 Storage 约定：<数据根目录>/MessageManagerPlugin）。
         let storage = kernel.resolveProvider((any StorageProviding).self)
-        let databaseRootURL = storage?.pluginDataDirectory(for: "MessageManagerPlugin")
+        let databaseRootURL = storage?.pluginDataDirectory(for: id)
             ?? MessageStore.defaultDatabaseRootURL
 
         // 2. 创建 SwiftData store；失败时保留默认内存实现，不阻塞内核启动。

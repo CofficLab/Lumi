@@ -3,7 +3,6 @@ import KernelCore
 import os
 import ProviderChatSection
 import ProviderConversation
-import ProviderToast
 import KitSuperLog
 import SwiftUI
 
@@ -55,10 +54,7 @@ public final class ConversationModePlugin: SuperPlugin, SuperLog {
                 order: 84,
                 placement: .toolbarTrailing
             ) {
-                AutomationLevelToolbarView(
-                    observation: observation,
-                    toast: kernel.resolveProvider((any ToastProviding).self)
-                )
+                AutomationLevelToolbarView(observation: observation)
             },
         ])
     }

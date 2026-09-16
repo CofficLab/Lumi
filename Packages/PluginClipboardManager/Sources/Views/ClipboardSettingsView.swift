@@ -1,4 +1,3 @@
-import AppKit
 import LumiUI
 import SwiftUI
 
@@ -18,14 +17,6 @@ public struct ClipboardSettingsView: View {
             subtitle: LumiPluginLocalization.string("Monitor clipboard history locally on this device.", bundle: .module),
             showHeader: false
         ) {
-#if DEBUG
-            HStack {
-                Spacer()
-                AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", style: .warning, size: .small) {
-                    openDataDirectory()
-                }
-            }
-#endif
             generalSection
             dataSection
         }
@@ -93,16 +84,4 @@ public struct ClipboardSettingsView: View {
             }
         }
     }
-
-    // MARK: - Debug Helpers
-
-    #if DEBUG
-    private func openDataDirectory() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
-        guard let url = appSupport else { return }
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(url)
-    }
-    #endif
 }

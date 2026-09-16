@@ -17,7 +17,7 @@ let package = Package(
     dependencies: [
         .package(path: "../KernelCore"),
         .package(path: "../KitSuperLog"),
-        .package(path: "../PluginGit"),
+        .package(path: "../ProviderGit"),
         .package(path: "../ProviderGitRepositoryWatch"),
         .package(path: "../ProviderActivityBar"),
         .package(path: "../ProviderChatSection"),
@@ -33,7 +33,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
-                .product(name: "PluginGit", package: "PluginGit"),
+                .product(name: "ProviderGit", package: "ProviderGit"),
                 .product(name: "ProviderGitRepositoryWatch", package: "ProviderGitRepositoryWatch"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
@@ -48,7 +48,17 @@ let package = Package(
         ),
         .testTarget(
             name: "PluginGitWorkspaceTests",
-            dependencies: ["PluginGitWorkspace", "KernelCore", "ProviderActivityBar", "ProviderContentView", "ProviderProject", "ProviderRootView", "ProviderToolbar"]
+            dependencies: [
+                "PluginGitWorkspace",
+                "KernelCore",
+                "ProviderActivityBar",
+                "ProviderChatSection",
+                "ProviderContentView",
+                "ProviderProject",
+                "ProviderRailView",
+                "ProviderRootView",
+                "ProviderToolbar",
+            ]
         ),
     ]
 )

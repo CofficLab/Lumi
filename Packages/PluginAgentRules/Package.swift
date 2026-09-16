@@ -17,6 +17,7 @@ let package = Package(
         .package(path: "../ProviderProject"),
         .package(path: "../ProviderSettingView"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../ProviderChatSection"),
     ],
     targets: [
         .target(
@@ -29,6 +30,7 @@ let package = Package(
                 "ProviderProject",
                 "ProviderSettingView",
                 "ProviderToolManager",
+                "ProviderChatSection",
             ],
             resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
@@ -37,6 +39,9 @@ let package = Package(
             dependencies: [
                 "PluginAgentRules",
                 "KitAgentTool",
+                .product(name: "KernelCore", package: "KernelCore"),
+                .product(name: "ProviderChatSection", package: "ProviderChatSection"),
+                .product(name: "ProviderProject", package: "ProviderProject"),
             ]
         ),
     ]

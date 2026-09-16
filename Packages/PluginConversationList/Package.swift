@@ -17,7 +17,7 @@ let package = Package(
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversationState"),
         .package(path: "../KitAgentTool"),
-        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
+        .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.3.0"),
         .package(path: "../KitLocalization"),
     ],
     targets: [.target(name: "PluginConversationList", dependencies: [
@@ -36,5 +36,11 @@ let package = Package(
         .product(name: "LumiUI", package: "LumiUI"),
     ],
         resources: [.process("../../Resources/Localizable.xcstrings")]
+    ), .testTarget(
+        name: "PluginConversationListTests",
+        dependencies: [
+            "PluginConversationList",
+            .product(name: "KitAgentTool", package: "KitAgentTool"),
+        ]
     )]
 )

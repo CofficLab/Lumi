@@ -5,95 +5,104 @@ struct VersionStatusBanner: View {
     let version: AppStoreVersion
     @ObservedObject var viewModel: VM
     let localePickerSourceView: String
+    var embedded = false
     @State private var showsReleaseConfirmation = false
     @State private var showsSubmitConfirmation = false
     @State private var showsWithdrawConfirmation = false
 
     private let toolbarPadding = EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
 
-    var body: some View {
-        AppToolbarContainer(padding: toolbarPadding) {
-            HStack(spacing: 16) {
+    private var content: some View {
+        HStack(spacing: 16) {
+            HStack(spacing: 8) {
+                Text(version.localizedAppStoreStateLabel)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+
+            if !viewModel.localizations.isEmpty {
                 HStack(spacing: 8) {
-                    Text(AppStoreConnectLocalization.string("Version %@", version.versionString))
-                        .font(.callout.weight(.semibold))
-                    Text(version.localizedAppStoreStateLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                    AppSectionLabel(AppStoreConnectLocalization.string("Locale"))
 
-                if !viewModel.localizations.isEmpty {
-                    HStack(spacing: 8) {
-                        AppSectionLabel(AppStoreConnectLocalization.string("Locale"))
-
-                        Picker("", selection: Binding(
-                            get: { viewModel.selectedLocalizationID ?? "" },
-                            set: { viewModel.selectLocalization(id: $0) }
-                        )) {
-                            ForEach(viewModel.localizations) { localization in
-                                Text(localization.locale).tag(localization.id)
-                            }
+                    Picker("", selection: Binding(
+                        get: { viewModel.selectedLocalizationID ?? "" },
+                        set: { viewModel.selectLocalization(id: $0) }
+                    )) {
+                        ForEach(viewModel.localizations) { localization in
+                            Text(localization.locale).tag(localization.id)
                         }
-                        .labelsHidden()
-                        .frame(width: 160)
                     }
-                    .appStoreConnectAddToChatMenu(
-                        entityType: "localization",
-                        entityID: viewModel.selectedLocalizationID ?? "none",
-                        title: viewModel.selectedLocalization?.locale ?? "None",
-                        sourceView: localePickerSourceView,
-                        fields: [
-                            "availableCount": String(viewModel.localizations.count),
-                            "selectedLocale": viewModel.selectedLocalization?.locale ?? "-"
-                        ]
-                    )
+                    .labelsHidden()
+                    .frame(width: 160)
                 }
+                .appStoreConnectAddToChatMenu(
+                    entityType: "localization",
+                    entityID: viewModel.selectedLocalizationID ?? "none",
+                    title: viewModel.selectedLocalization?.locale ?? "None",
+                    sourceView: localePickerSourceView,
+                    fields: [
+                        "availableCount": String(viewModel.localizations.count),
+                        "selectedLocale": viewModel.selectedLocalization?.locale ?? "-"
+                    ]
+                )
+            }
 
-                Spacer()
+            Spacer()
 
-                if version.isSubmittable {
-                    AppButton(
-                        AppStoreConnectLocalization.string("Submit for Review"),
-                        systemImage: "paperplane.fill",
-                        style: .primary,
-                        size: .small
-                    ) {
-                        showsSubmitConfirmation = true
-                    }
-                    .disabled(viewModel.isBusy || viewModel.assignedBuildID == nil)
-                    .help(viewModel.assignedBuildID == nil
-                        ? AppStoreConnectLocalization.string("Assign a build before submitting for review.")
-                        : AppStoreConnectLocalization.string("Submit this version to App Review."))
+            if version.isSubmittable {
+                AppButton(
+                    AppStoreConnectLocalization.string("Submit for Review"),
+                    systemImage: "paperplane.fill",
+                    style: .primary,
+                    size: .small
+                ) {
+                    showsSubmitConfirmation = true
                 }
+                .disabled(viewModel.isBusy || viewModel.assignedBuildID == nil)
+                .help(viewModel.assignedBuildID == nil
+                    ? AppStoreConnectLocalization.string("Assign a build before submitting for review.")
+                    : AppStoreConnectLocalization.string("Submit this version to App Review."))
+            }
 
-                if viewModel.submissionID != nil {
-                    AppButton(
-                        AppStoreConnectLocalization.string("Withdraw Submission"),
-                        systemImage: "arrow.uturn.backward.circle",
-                        style: .secondary,
-                        size: .small
-                    ) {
-                        showsWithdrawConfirmation = true
-                    }
-                    .disabled(viewModel.isBusy)
+            if viewModel.submissionID != nil {
+                AppButton(
+                    AppStoreConnectLocalization.string("Withdraw Submission"),
+                    systemImage: "arrow.uturn.backward.circle",
+                    style: .secondary,
+                    size: .small
+                ) {
+                    showsWithdrawConfirmation = true
                 }
+                .disabled(viewModel.isBusy)
+            }
 
-                if version.isPendingDeveloperRelease {
-                    AppButton(
-                        AppStoreConnectLocalization.string("Release to App Store"),
-                        systemImage: "arrow.up.circle.fill",
-                        style: .primary,
-                        size: .small
-                    ) {
-                        showsReleaseConfirmation = true
-                    }
-                    .disabled(viewModel.isBusy)
+            if version.isPendingDeveloperRelease {
+                AppButton(
+                    AppStoreConnectLocalization.string("Release to App Store"),
+                    systemImage: "arrow.up.circle.fill",
+                    style: .primary,
+                    size: .small
+                ) {
+                    showsReleaseConfirmation = true
                 }
+                .disabled(viewModel.isBusy)
+            }
 
-                if let createdDate = version.createdDate {
-                    Text(ViewFormatting.formatDateTime(createdDate))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            if let createdDate = version.createdDate {
+                Text(ViewFormatting.formatDateTime(createdDate))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    var body: some View {
+        Group {
+            if embedded {
+                content
+            } else {
+                AppToolbarContainer(padding: toolbarPadding) {
+                    content
                 }
             }
         }

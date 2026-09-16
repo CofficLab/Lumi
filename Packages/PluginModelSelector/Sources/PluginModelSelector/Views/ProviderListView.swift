@@ -1,6 +1,5 @@
 import Foundation
 import LumiUI
-import ProviderLLMManager
 import KitLLM
 import SwiftUI
 
@@ -25,15 +24,16 @@ enum ProviderScope: String, CaseIterable {
 /// 供应商列表视图（由旧版 ModelSelectorPlugin 复刻）。
 ///
 /// 显示所有可用的 LLM 供应商，支持搜索与云端/本地切换。
+/// View 只依赖 `ModelSelectorViewModel`。
 struct ProviderListView: View {
     @LumiTheme private var theme
-    let box: LLMProviderManagerBox
-    @ObservedObject var usageStore: ProviderUsageStore
-    @Binding var selectedProviderID: String?
+    @ObservedObject private var viewModel: ModelSelectorViewModel
     var onClose: (() -> Void)? = nil
 
-    @State private var searchText = ""
-    @State private var selectedScope = ProviderScope.cloud
+    init(viewModel: ModelSelectorViewModel, onClose: (() -> Void)? = nil) {
+        self.viewModel = viewModel
+        self.onClose = onClose
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -61,7 +61,7 @@ struct ProviderListView: View {
 
             // 常用/云端/本地筛选
             HStack(spacing: 8) {
-                Picker("", selection: $selectedScope) {
+                Picker("", selection: $viewModel.selectedScope) {
                     Text(LumiPluginLocalization.string("Frequent", bundle: .module))
                         .tag(ProviderScope.frequent)
                     Text(LumiPluginLocalization.string("Cloud", bundle: .module))
@@ -81,16 +81,16 @@ struct ProviderListView: View {
             AppDivider()
 
             // Search
-            AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search providers", bundle: .module)))
+            AppSearchBar(text: $viewModel.searchText, placeholder: LocalizedStringKey(LumiPluginLocalization.string("Search providers", bundle: .module)))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
 
             AppDivider()
 
             // Provider items
-            if !box.providerInfos.isEmpty {
-                let providers = filteredProviders(box.providerInfos)
-                if providers.isEmpty && selectedScope == .frequent && searchText.isEmpty {
+            if !viewModel.providerInfos.isEmpty {
+                let providers = filteredProviders(viewModel.providerInfos)
+                if providers.isEmpty && viewModel.selectedScope == .frequent && viewModel.searchText.isEmpty {
                     AppEmptyState(
                         icon: "star",
                         title: LumiPluginLocalization.string("No frequent providers yet", bundle: .module),
@@ -102,29 +102,28 @@ struct ProviderListView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 4) {
-                            if selectedScope == .cloud {
+                            if viewModel.selectedScope == .cloud {
                                 let cloudProviders = providers.filter { $0.providerType == .cloudService }
                                 let relayProviders = providers.filter { $0.providerType == .relay }
 
                                 ForEach(cloudProviders, id: \.id) { info in
                                     ProviderListItem(
                                         info: info,
-                                        isSelected: info.id == selectedProviderID,
+                                        isSelected: info.id == viewModel.selectedProviderID,
                                         onSelect: {
-                                            selectedProviderID = info.id
+                                            viewModel.selectedProviderID = info.id
                                         }
                                     )
                                 }
 
                                 if !relayProviders.isEmpty {
                                     relaySectionDivider
-
                                     ForEach(relayProviders, id: \.id) { info in
                                         ProviderListItem(
                                             info: info,
-                                            isSelected: info.id == selectedProviderID,
+                                            isSelected: info.id == viewModel.selectedProviderID,
                                             onSelect: {
-                                                selectedProviderID = info.id
+                                                viewModel.selectedProviderID = info.id
                                             }
                                         )
                                     }
@@ -133,9 +132,9 @@ struct ProviderListView: View {
                                 ForEach(providers, id: \.id) { info in
                                     ProviderListItem(
                                         info: info,
-                                        isSelected: info.id == selectedProviderID,
+                                        isSelected: info.id == viewModel.selectedProviderID,
                                         onSelect: {
-                                            selectedProviderID = info.id
+                                            viewModel.selectedProviderID = info.id
                                         }
                                     )
                                 }
@@ -154,14 +153,14 @@ struct ProviderListView: View {
         }
         .background(theme.background)
         .onAppear {
-            prepareInitialScope()
-            selectProviderInCurrentScopeIfNeeded()
+            viewModel.prepareInitialScope()
+            viewModel.selectProviderInCurrentScopeIfNeeded()
         }
-        .onChange(of: selectedProviderID) { _, _ in
-            synchronizeScopeWithSelection()
+        .onChange(of: viewModel.selectedProviderID) { _, _ in
+            viewModel.synchronizeScopeWithSelection()
         }
-        .onChange(of: selectedScope) { _, _ in
-            selectProviderInCurrentScopeIfNeeded()
+        .onChange(of: viewModel.selectedScope) { _, _ in
+            viewModel.selectProviderInCurrentScopeIfNeeded()
         }
     }
 
@@ -184,69 +183,27 @@ struct ProviderListView: View {
         .accessibilityLabel("中转站")
     }
 
+    // MARK: - Filtering
+
+    /// 应用筛选范围与搜索文本，返回过滤后的供应商元数据。
     private func filteredProviders(_ providers: [LLMProviderInfo]) -> [LLMProviderInfo] {
-        let filtered = providers.filter(matchesActiveFilters)
+        let filtered = providers.filter(viewModel.matchesActiveFilters)
         let sorted: [LLMProviderInfo]
-        if selectedScope == .frequent {
+        if viewModel.selectedScope == .frequent {
             sorted = filtered.sorted {
-                usageStore.isMoreFrequentlyUsed($0.id, than: $1.id)
+                viewModel.isMoreFrequentlyUsed($0.id, than: $1.id)
             }
         } else {
             sorted = filtered.sorted {
                 $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
             }
         }
-        if searchText.isEmpty {
+        if viewModel.searchText.isEmpty {
             return sorted
         }
         return sorted.filter {
-            $0.displayName.localizedCaseInsensitiveContains(searchText)
-                || $0.id.localizedCaseInsensitiveContains(searchText)
-        }
-    }
-
-    /// 常用/云端/本地筛选条件
-    private func matchesActiveFilters(_ provider: LLMProviderInfo) -> Bool {
-        selectedScope.includes(
-            provider,
-            usageCount: usageStore.usageCount(for: provider.id)
-        )
-    }
-
-    private func synchronizeScopeWithSelection() {
-        guard selectedScope != .frequent else { return }
-        guard
-            let selectedProviderID,
-            let selectedProvider = box.providerInfos.first(where: { $0.id == selectedProviderID })
-        else { return }
-
-        // 仅在值变化时写入，避免触发多余的 onChange 链
-        let scope: ProviderScope = selectedProvider.isLocal ? .local : .cloud
-        if selectedScope != scope {
-            selectedScope = scope
-        }
-    }
-
-    private func prepareInitialScope() {
-        let hasAvailableUsage = box.providerInfos.contains {
-            usageStore.usageCount(for: $0.id) > 0
-        }
-        if hasAvailableUsage {
-            selectedScope = .frequent
-        } else {
-            synchronizeScopeWithSelection()
-        }
-    }
-
-    private func selectProviderInCurrentScopeIfNeeded() {
-        let scopedProviders = box.providerInfos.filter(matchesActiveFilters)
-        if scopedProviders.contains(where: { $0.id == selectedProviderID }) {
-            return
-        }
-        // 仅在值变化时写入，避免触发多余的 onChange 链
-        let next = scopedProviders.first?.id
-        if selectedProviderID != next {
-            selectedProviderID = next
+            $0.displayName.localizedCaseInsensitiveContains(viewModel.searchText)
+                || $0.id.localizedCaseInsensitiveContains(viewModel.searchText)
         }
     }
 }

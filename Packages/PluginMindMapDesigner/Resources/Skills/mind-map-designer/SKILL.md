@@ -7,7 +7,7 @@
 ### 文档管理
 | 工具 | 用途 |
 |------|------|
-| `list_mind_maps` | 列出所有思维导图（跨 project / app 作用域） |
+| `list_mind_maps` | 列出当前项目内的所有思维导图 |
 | `create_mind_map` | 创建新思维导图（含根节点、标题、布局方向） |
 | `load_mind_map` | 从 JSON 文件导入思维导图 |
 | `save_mind_map` | 保存思维导图为 JSON 文件 |
@@ -123,11 +123,10 @@ add_child_node(parentId="<root-id>", texts: ["CTO", "CFO", "COO"])
 add_child_node(parentId="<CTO-id>", texts: ["iOS 团队", "后端团队", "基础架构"])
 ```
 
-## 作用域
+## 存储
 
-- `project` — 存储在打开项目的 `.agent/mind-maps/` 目录
-- `app` — 存储在应用数据目录
-- 有打开项目时默认 `project`，无项目时默认 `app`
+- 所有思维导图都存储在当前项目的 `.lumi/mind-map/` 目录。
+- 未打开项目时，创建、编辑和导出思维导图会提示先打开项目。
 
 ## 注意事项
 

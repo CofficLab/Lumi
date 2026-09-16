@@ -74,7 +74,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        PromoDesignerRuntime.configure(kernel: kernel, pluginID: id)
+        PromoDesignerRuntime.configure(kernel: kernel)
         projectObserver?.cancel()
         projectObserver = kernel.resolveProvider((any ProjectProviding).self).map { project in
             PromoDesignerProjectObserver(project: project) { path in
@@ -109,6 +109,16 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let makeDesignerView: () -> AnyView = { [weak rootView] in
+            AnyView(
+                PromoDesignerView(
+                    workspace: self.workspace,
+                    onTaskAvailabilityChanged: { [weak rootView] hasTasks in
+                        rootView?.setRailViewVisible(hasTasks)
+                    }
+                )
+            )
+        }
         let chatWidthStore = kernel
             .resolveProvider((any StorageProviding).self)
             .map { storage in
@@ -153,7 +163,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
-                        toolbar?.setVisibleCategories([.global, .chat, .design])
+                        toolbar?.setVisibleCategories([.global, .project, .chat, .design])
                         rootView?.setContentHeaderViewHidden(true)
                         railView?.setVisibleTabID(Self.railTabID)
                         railView?.activateWidthProfile(
@@ -162,7 +172,8 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                             store: railWidthStore
                         )
                         self.workspace.reload()
-                        contentView?.setContentView(AnyView(PromoDesignerView(workspace: self.workspace)))
+                        rootView?.setRailViewVisible(!self.workspace.projectTasks.isEmpty)
+                        contentView?.setContentView(makeDesignerView())
                         chat?.setVisible(true)
                         chat?.setContextActive(true)
                         chat?.setActiveContext(chatContext)
@@ -177,12 +188,15 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                         chat?.setActiveContext(nil)
                         chat?.deactivateWidthProfile(ownerID: pluginID)
                         railView?.deactivateWidthProfile(ownerID: pluginID)
+                        railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     }
                 },
             ])
         } else {
             workspace.reload()
-            contentView?.setContentView(AnyView(PromoDesignerView(workspace: workspace)))
+            rootView?.setRailViewVisible(!workspace.projectTasks.isEmpty)
+            contentView?.setContentView(makeDesignerView())
             chat?.setVisible(true)
             chat?.setContextActive(true)
             chat?.setActiveContext(chatContext)
@@ -242,6 +256,9 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(
+                kernel.resolveProvider((any RailViewProviding).self)?.hasVisibleTabs ?? false
+            )
         }
         if activityBar == nil || activityBar?.activeItemID == nil {
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)

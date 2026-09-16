@@ -20,7 +20,7 @@ public enum UpdateFeedURLProvider {
 
         let path = channel == .stable
             ? "appcast-\(architecture).xml"
-            : "pre/appcast-\(architecture).xml"
+            : "pre/appcast-pre-\(architecture).xml"
         return URL(string: "https://s.kuaiyizhi.cn/lumi/\(path)")!
     }
 

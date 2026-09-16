@@ -24,11 +24,14 @@ import SwiftUI
 ///
 /// 相比旧版移除：`viewContainers` 主界面（旧版已注释停用）。
 @MainActor
-public final class CaffeinatePlugin: SuperPlugin, SuperLog {
-    public let id = "Caffeinate"
+public final class CaffeinatePlugin: SuperPlugin, PluginDataMigrating, SuperLog {
+    public static let pluginID = "com.coffic.lumi.plugin.caffeinate"
+    public let legacyDataDirectoryNames = ["Caffeinate"]
+
+    public let id = CaffeinatePlugin.pluginID
     public let order = 1
     public let metadata = PluginMetadata(
-        id: "Caffeinate",
+        id: CaffeinatePlugin.pluginID,
         name: "Caffeinate",
         description: "",
         category: .integration,

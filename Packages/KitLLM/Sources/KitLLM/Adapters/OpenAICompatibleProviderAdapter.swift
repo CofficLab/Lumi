@@ -147,11 +147,16 @@ public struct OpenAICompatibleProviderAdapter: Sendable {
             ]
         }
 
+        // OpenAI-compatible endpoints expect vision input on user messages.
+        // In particular, a tool result screenshot must be normalized by
+        // transformMessages into a synthetic user message; never emit an
+        // image content array for assistant history.
+        let images = message.role == .user ? message.images : []
         var dict: [String: Any] = [
             "role": message.role.rawValue,
             "content": VisionMessageContentBuilder.openAIContent(
                 text: message.content,
-                images: message.images
+                images: images
             ),
         ]
 

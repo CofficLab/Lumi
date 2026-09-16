@@ -47,17 +47,16 @@ public struct PatchPromoHTMLTool: SuperAgentTool {
                   !oldText.isEmpty else { throw PromoToolSupport.ToolArgumentError.invalid("operations") }
             return .init(oldText: oldText, newText: newText)
         }
-        let scope = try await PromoToolSupport.resolveScope(arguments)
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let imageID = try PromoToolSupport.required("imageId", arguments)
         _ = try PromoToolSupport.store.patchHTML(
             operations: operations,
-            storagePath: try await PromoToolSupport.storagePath(for: scope),
+            storagePath: try await PromoToolSupport.storagePath(),
             taskSlug: taskID,
             imageSlug: imageID,
             localeIdentifier: PromoToolSupport.string(arguments, "localeIdentifier")
         )
-        await PromoToolSupport.notify(scope: scope, taskID: taskID, imageID: imageID)
-        return "Applied \(operations.count) HTML patches atomically (scope=\(scope.rawValue), locale=\(PromoToolSupport.string(arguments, "localeIdentifier") ?? "primary")).\nCall app_store_promo_preview_image to inspect the rendered result."
+        await PromoToolSupport.notify(taskID: taskID, imageID: imageID)
+        return "Applied \(operations.count) HTML patches atomically (locale=\(PromoToolSupport.string(arguments, "localeIdentifier") ?? "primary")).\nCall app_store_promo_preview_image to inspect the rendered result."
     }
 }

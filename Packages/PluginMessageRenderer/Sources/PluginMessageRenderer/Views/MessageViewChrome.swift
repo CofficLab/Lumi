@@ -1,15 +1,13 @@
 import AppKit
-import KernelCore
 import LumiUI
 import ProviderConversation
 import ProviderMessage
-import ProviderMessageSender
 import SwiftUI
 
 struct MessageViewChrome<Content: View>: View {
     @LumiTheme private var theme
 
-    var kernel: KernelCoreContainer? = nil
+    var capability: (any MessageRendererCapability)? = nil
     let message: Message
     var showsResendButton = false
     var showsHeader = true
@@ -81,8 +79,8 @@ struct MessageViewChrome<Content: View>: View {
                             )
                         }
 
-                        if showsActions, showsResendButton, let kernel, !message.content.isEmpty {
-                            ResendMessageButton(kernel: kernel, message: message)
+                        if showsActions, showsResendButton, capability != nil, !message.content.isEmpty {
+                            ResendMessageButton(capability: capability, message: message)
                         }
 
                         if showsActions, thinking != nil, verbosity != .detailed {
@@ -147,11 +145,13 @@ struct MessageViewChrome<Content: View>: View {
             Label("复制消息", systemImage: "doc.on.doc")
         }
 
-        if showsResendButton, let kernel, !message.content.isEmpty {
+        if showsResendButton, capability != nil, !message.content.isEmpty {
             Button {
                 Task {
-                    try? await kernel.resolveProvider((any MessageSendingProviding).self)?
-                        .sendMessage(message.content, conversationID: message.conversationID)
+                    await capability?.resendMessage(
+                        content: message.content,
+                        conversationID: message.conversationID
+                    )
                 }
             } label: {
                 Label("重新发送", systemImage: "arrow.clockwise")

@@ -16,6 +16,126 @@ struct ProviderAgentLoopTests {
     // 消除 KitLLMVendors.ToolCall 与 KitAgentTool.ToolCall 的歧义
     private typealias ToolCall = KitAgentTool.ToolCall
 
+    @Test("结构化失败将网络错误标记为可重试")
+    func networkFailureIsRetryable() {
+        let failure = AgentLoopFailure.from(
+            error: VendorAPIError.requestFailed("connection reset")
+        )
+
+        #expect(failure.kind == .network)
+        #expect(failure.isRetryable)
+        #expect(failure.httpStatusCode == nil)
+    }
+
+    @Test("系统 TLS 错误会归类为可重试网络失败")
+    func systemTLSFailureIsRetryable() {
+        let error = NSError(
+            domain: NSURLErrorDomain,
+            code: NSURLErrorSecureConnectionFailed,
+            userInfo: [NSLocalizedDescriptionKey: "TLS错误导致安全连接失败"]
+        )
+        let failure = AgentLoopFailure.from(error: error, providerID: "goatplan")
+
+        #expect(failure.kind == .network)
+        #expect(failure.isRetryable)
+        #expect(failure.providerID == "goatplan")
+    }
+
+    @Test("结构化失败区分限流、服务端和鉴权错误")
+    func classifiesHTTPFailures() {
+        let rateLimited = AgentLoopFailure.from(
+            error: VendorAPIError.httpStatus(429, "rate limited")
+        )
+        let server = AgentLoopFailure.from(
+            error: VendorAPIError.httpStatus(503, "temporarily unavailable")
+        )
+        let unauthorized = AgentLoopFailure.from(
+            error: VendorAPIError.httpStatus(401, "unauthorized")
+        )
+
+        #expect(rateLimited.kind == .rateLimited)
+        #expect(rateLimited.isRetryable)
+        #expect(rateLimited.httpStatusCode == 429)
+        #expect(server.kind == .server)
+        #expect(server.isRetryable)
+        #expect(unauthorized.kind == .authentication)
+        #expect(!unauthorized.isRetryable)
+    }
+
+    @Test("鉴权、配置和上下文错误默认不可自动重试")
+    func nonRetryableFailuresRemainNonRetryable() {
+        let missingKey = AgentLoopFailure.from(
+            error: VendorAPIError.missingAPIKey("Test")
+        )
+        let invalidURL = AgentLoopFailure.from(
+            error: VendorAPIError.invalidBaseURL("not a URL")
+        )
+        let contextLimit = AgentLoopFailure.from(
+            error: VendorAPIError.httpStatus(400, "prompt is too long for context window")
+        )
+
+        #expect(missingKey.kind == .authentication)
+        #expect(!missingKey.isRetryable)
+        #expect(invalidURL.kind == .configuration)
+        #expect(!invalidURL.isRetryable)
+        #expect(contextLimit.kind == .contextLimit)
+        #expect(!contextLimit.isRetryable)
+    }
+
+    @Test("用户文本文件附件会转换为 LLM 用户正文")
+    func messageToLLMMessagePreservesUserFile() {
+        let message = Message(
+            conversationID: UUID(),
+            role: .user,
+            content: "第64行，else区块内加上 error 日志",
+            metadata: UserAttachmentMetadata.encodeFileAttachments([
+                UserFileAttachment(
+                    fileName: "ControlButtonsViewModel.swift",
+                    mimeType: "text/x-swift",
+                    textContent: "else { logger.error(\"failed\") }"
+                ),
+            ])
+        )
+
+        let llmMessage = message.llmMessage
+
+        #expect(llmMessage.content.contains("ControlButtonsViewModel.swift"))
+        #expect(llmMessage.content.contains("else { logger.error(\"failed\") }"))
+    }
+
+    @Test("工具结果图片关联到 tool 消息而不是 assistant")
+    func toolResultImageIsAttachedToToolMessage() {
+        let conversationID = UUID()
+        let imageData = Data([0x89, 0x50, 0x4E, 0x47])
+        let assistant = Message(
+            conversationID: conversationID,
+            role: .assistant,
+            content: "",
+            toolCalls: [
+                MessageToolCall(
+                    id: "read-image",
+                    name: "read_image",
+                    arguments: "{}",
+                    result: MessageToolResult(
+                        content: "已读取图片",
+                        imageAttachments: [MessageImageAttachment(data: imageData.base64EncodedString(), mimeType: "image/png")]
+                    )
+                )
+            ]
+        )
+        let tool = Message(
+            conversationID: conversationID,
+            role: .tool,
+            content: "已读取图片",
+            toolCallID: "read-image"
+        )
+
+        let messages = llmMessages(from: [assistant, tool])
+
+        #expect(messages[0].images.isEmpty)
+        #expect(messages[1].images == [MessageImage(data: imageData, mimeType: "image/png")])
+    }
+
     @MainActor
     private final class TestLLMProvider: SuperLLMProvider {
         nonisolated let providerID = "test"
@@ -50,20 +170,20 @@ struct ProviderAgentLoopTests {
         var selectedProviderID: String? { "test-manager" }
         var selectedModel: String? { nil }
         func models(for providerID: String) -> [String] { [] }
-        func select(providerID: String, model: String?) {}
+        func select(providerID: String, model: String?, reason: ModelSelectionReason) {}
     }
 
     /// 内存会话管理器（最小实现，默认 build 自动化级别）。
     @MainActor
     private final class TestConversationManager: ConversationManaging {
         var dataDirectory: URL { URL(fileURLWithPath: "/tmp") }
-        var conversations: [LumiConversationSummary] = []
+        var conversations: [ConversationSummary] = []
         var selectedConversationID: UUID?
         var currentTitle: String = "No conversation"
-        var globalVerbosity: LumiResponseVerbosity = .standard
-        var globalReasoningEffort: LumiReasoningEffort?
-        var globalAutomationLevel: LumiAutomationLevel = .build
-        var globalLanguage: LumiConversationLanguage = .chinese
+        var globalVerbosity: ResponseVerbosity = .standard
+        var globalReasoningEffort: ReasoningEffort?
+        var globalAutomationLevel: AutomationLevel = .build
+        var globalLanguage: ConversationLanguage = .chinese
 
         @Published var tick = false
 
@@ -79,20 +199,20 @@ struct ProviderAgentLoopTests {
             NoopSelectedConversationObserverHandle()
         }
         func selectProvider(id: String, model: String?, for conversationID: UUID?) {}
-        func setGlobalVerbosity(_ verbosity: LumiResponseVerbosity) { globalVerbosity = verbosity }
-        func setVerbosity(_ verbosity: LumiResponseVerbosity, for conversationID: UUID?) {}
-        func verbosity(for conversationID: UUID?) -> LumiResponseVerbosity { globalVerbosity }
-        func setGlobalReasoningEffort(_ reasoningEffort: LumiReasoningEffort?) { globalReasoningEffort = reasoningEffort }
-        func reasoningEffort(for conversationID: UUID?) -> LumiReasoningEffort { globalReasoningEffort ?? .defaultEffort }
-        func reasoningEffortOptional(for conversationID: UUID?) -> LumiReasoningEffort? { globalReasoningEffort }
-        func setReasoningEffort(_ reasoningEffort: LumiReasoningEffort, for conversationID: UUID?) {}
+        func setGlobalVerbosity(_ verbosity: ResponseVerbosity) { globalVerbosity = verbosity }
+        func setVerbosity(_ verbosity: ResponseVerbosity, for conversationID: UUID?) {}
+        func verbosity(for conversationID: UUID?) -> ResponseVerbosity { globalVerbosity }
+        func setGlobalReasoningEffort(_ reasoningEffort: ReasoningEffort?) { globalReasoningEffort = reasoningEffort }
+        func reasoningEffort(for conversationID: UUID?) -> ReasoningEffort { globalReasoningEffort ?? .defaultEffort }
+        func reasoningEffortOptional(for conversationID: UUID?) -> ReasoningEffort? { globalReasoningEffort }
+        func setReasoningEffort(_ reasoningEffort: ReasoningEffort, for conversationID: UUID?) {}
         func clearReasoningEffort(for conversationID: UUID?) {}
-        func setGlobalAutomationLevel(_ automationLevel: LumiAutomationLevel) { globalAutomationLevel = automationLevel }
-        func automationLevel(for conversationID: UUID?) -> LumiAutomationLevel { globalAutomationLevel }
-        func setAutomationLevel(_ automationLevel: LumiAutomationLevel, for conversationID: UUID?) {}
-        func setGlobalLanguage(_ language: LumiConversationLanguage) { globalLanguage = language }
-        func language(for conversationID: UUID?) -> LumiConversationLanguage { globalLanguage }
-        func setLanguage(_ language: LumiConversationLanguage, for conversationID: UUID?) {}
+        func setGlobalAutomationLevel(_ automationLevel: AutomationLevel) { globalAutomationLevel = automationLevel }
+        func automationLevel(for conversationID: UUID?) -> AutomationLevel { globalAutomationLevel }
+        func setAutomationLevel(_ automationLevel: AutomationLevel, for conversationID: UUID?) {}
+        func setGlobalLanguage(_ language: ConversationLanguage) { globalLanguage = language }
+        func language(for conversationID: UUID?) -> ConversationLanguage { globalLanguage }
+        func setLanguage(_ language: ConversationLanguage, for conversationID: UUID?) {}
         func providerID(for conversationID: UUID?) -> String? { nil }
         func modelName(for conversationID: UUID?) -> String? { nil }
     }

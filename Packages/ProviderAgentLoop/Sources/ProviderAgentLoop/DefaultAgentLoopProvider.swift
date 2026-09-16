@@ -14,29 +14,65 @@ import ProviderToolManager
 
 extension Message {
     var llmMessage: LLMMessage {
+        llmMessage(toolImages: [])
+    }
+
+    func llmMessage(toolImages: [KitLLM.MessageImage]) -> LLMMessage {
         let userImages: [KitLLM.MessageImage] = UserAttachmentMetadata
             .decodeImageAttachments(from: metadata)
             .compactMap { attachment -> KitLLM.MessageImage? in
                 guard let data = Data(base64Encoded: attachment.base64Data) else { return nil }
                 return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
             }
-        let toolImages: [KitLLM.MessageImage] = (toolCalls ?? [])
-            .compactMap { $0.result }
-            .flatMap { $0.imageAttachments }
-            .compactMap { attachment -> KitLLM.MessageImage? in
-                guard let data = Data(base64Encoded: attachment.data) else { return nil }
-                return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
-            }
+        let userFiles = role == .user
+            ? UserAttachmentMetadata.decodeFileAttachments(from: metadata)
+            : []
+        let contentWithFileAttachments = UserAttachmentMetadata.appendingFileAttachments(
+            userFiles,
+            to: content
+        )
 
         return LLMMessage(
             role: KitLLM.MessageRole(rawValue: role.rawValue) ?? .unknown,
-            content: content,
+            content: contentWithFileAttachments,
             toolCalls: toolCalls?.map { LLMToolCall(id: $0.id, name: $0.name, arguments: $0.arguments) },
             toolCallID: toolCallID,
             reasoningContent: reasoningContent,
-            images: userImages + toolImages
+            images: role == .user ? userImages : (role == .tool ? toolImages : [])
         )
     }
+}
+
+/// 将持久化消息转换为 LLM 消息，并把 assistant 工具调用结果中的图片
+/// 关联到对应的 tool 消息。图片仍只保存在 assistant 的嵌套结果中，避免
+/// 为传输格式额外复制一份大体积 base64 数据。
+func llmMessages(from messages: [Message]) -> [LLMMessage] {
+    var pendingImagesByToolCallID: [String: [[KitLLM.MessageImage]]] = [:]
+    for message in messages where message.role == .assistant {
+        for toolCall in message.toolCalls ?? [] {
+            let images = toolCall.result?.imageAttachments.compactMap { attachment -> KitLLM.MessageImage? in
+                guard let data = Data(base64Encoded: attachment.data) else { return nil }
+                return KitLLM.MessageImage(data: data, mimeType: attachment.mimeType)
+            } ?? []
+            guard !images.isEmpty else { continue }
+            pendingImagesByToolCallID[toolCall.id, default: []].append(images)
+        }
+    }
+
+    var result: [LLMMessage] = []
+    result.reserveCapacity(messages.count)
+    for message in messages {
+        var toolImages: [KitLLM.MessageImage] = []
+        if message.role == .tool,
+           let toolCallID = message.toolCallID,
+           var pendingImages = pendingImagesByToolCallID[toolCallID],
+           !pendingImages.isEmpty {
+            toolImages = pendingImages.removeFirst()
+            pendingImagesByToolCallID[toolCallID] = pendingImages
+        }
+        result.append(message.llmMessage(toolImages: toolImages))
+    }
+    return result
 }
 
 // 消除 KitLLMVendors.ToolCall 与 KitAgentTool.ToolCall 的歧义
@@ -81,6 +117,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     private var cancelledConversations: Set<UUID> = []
     private var awaitingConversations: Set<UUID> = []
     private var failedConversations: Set<UUID> = []
+    private var modelRoutes: [UUID: LLMModelRoute] = [:]
     private var agentLoopObservers: [UUID: (AgentLoopEvent) -> Void] = [:]
     private var eventTasks: [UUID: Task<Void, Never>] = [:]
     private var completionWaiters: [UUID: [CheckedContinuation<AgentLoopOutcome, Never>]] = [:]
@@ -191,6 +228,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
 
         let turnID = UUID()
         turnIDs[conversationID] = turnID
+        modelRoutes[conversationID] = resolveModelRoute(for: conversationID)
         states[conversationID] = .running
         revision += 1
         if let lifecycleHooks {
@@ -307,6 +345,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             // 挂起回合需要在 resume 时沿用原 turnID。
         } else {
             turnIDs[conversationID] = nil
+            modelRoutes.removeValue(forKey: conversationID)
         }
         revision += 1
         switch outcome {
@@ -368,13 +407,14 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
         let schemas = (level.allowsTools ? toolManager.allTools() : []).compactMap { tool in
             LLMFunctionSchema(name: tool.name, description: tool.description(for: language), parameters: tool.inputSchema(for: language))
         }
-        let llmHistory = history.map(\.llmMessage)
+        let llmHistory = llmMessages(from: history)
         var preparedMessages = llmHistory
         if let lifecycleHooks {
             let result = await lifecycleHooks.runWillSendToLLM(WillSendToLLMContext(messages: llmHistory, conversationID: conversationID))
             preparedMessages = result.messages
         }
-        let request = LLMRequest(conversationID: conversationID, messages: preparedMessages, model: conversations.modelName(for: conversationID), tools: schemas.isEmpty ? nil : schemas, reasoningEffort: conversations.reasoningEffortOptional(for: conversationID).flatMap { $0.rawValue })
+        let route = modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID)
+        let request = LLMRequest(conversationID: conversationID, providerID: route?.providerID, modelID: route?.modelID, messages: preparedMessages, model: route?.modelName, tools: schemas.isEmpty ? nil : schemas, reasoningEffort: conversations.reasoningEffortOptional(for: conversationID).flatMap { $0.rawValue })
         streaming.start(conversationID: conversationID)
         let timingRecorder = LLMStreamTimingRecorder()
         let response: LLMResponse
@@ -390,8 +430,9 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                     guard let bridge else { return }
                     if let reasoning = chunk.reasoningContent, !reasoning.isEmpty {
                         await bridge.appendThinking(reasoning, conversationID: conversationID)
-                    } else {
-                        await bridge.appendContent(chunk.content ?? "", conversationID: conversationID)
+                    }
+                    if let content = chunk.content, !content.isEmpty {
+                        await bridge.appendContent(content, conversationID: conversationID)
                     }
                 }
             } else {
@@ -551,7 +592,7 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
             // LLM 请求前的消息准备钩子（对齐旧版 willSendToLLM）：
             // 详细度 / 语言 / 自动化级别等插件按注册顺序串行修改消息历史，
             // 注入 system 指令（不落库，仅本次请求生效）。
-            let llmHistory = history.map(\.llmMessage)
+        let llmHistory = llmMessages(from: history)
             var preparedMessages = llmHistory
             // 生命周期钩子 willSendToLLM：插件可在 LLM 请求前修改消息历史。
             if let lifecycleHooks {
@@ -565,8 +606,10 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
 
             let request = LLMRequest(
                 conversationID: conversationID,
+                providerID: (modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID))?.providerID,
+                modelID: (modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID))?.modelID,
                 messages: preparedMessages,
-                model: conversations.modelName(for: conversationID),
+                model: (modelRoutes[conversationID] ?? resolveModelRoute(for: conversationID))?.modelName,
                 tools: schemas.isEmpty ? nil : schemas,
                 reasoningEffort: reasoningEffort
             )
@@ -582,11 +625,11 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
                     let bridge = StreamingBridge(streaming: streaming)
                     response = try await streamingManager.streamComplete(request) { [weak bridge] chunk in
                         guard let bridge else { return }
-                        let piece = chunk.content ?? ""
-                        if let rc = chunk.reasoningContent, !rc.isEmpty {
-                            await bridge.appendThinking(piece, conversationID: conversationID)
-                        } else {
-                            await bridge.appendContent(piece, conversationID: conversationID)
+                        if let reasoning = chunk.reasoningContent, !reasoning.isEmpty {
+                            await bridge.appendThinking(reasoning, conversationID: conversationID)
+                        }
+                        if let content = chunk.content, !content.isEmpty {
+                            await bridge.appendContent(content, conversationID: conversationID)
                         }
                     }
                 } else {
@@ -930,7 +973,17 @@ public final class DefaultAgentLoopProvider: AgentLoopProviding, SuperLog {
     }
 
     private func resolvedProviderID(for conversationID: UUID) -> String? {
-        conversations.providerID(for: conversationID)
+        modelRoutes[conversationID]?.providerID ?? resolveModelRoute(for: conversationID)?.providerID
+    }
+
+    private func resolveModelRoute(for conversationID: UUID) -> LLMModelRoute? {
+        let conversationModelID = conversations.modelID(for: conversationID)
+            .flatMap(LLMModelID.init(rawValue:))
+        if let conversationModelID,
+           let route = llmManager.modelRoute(for: conversationModelID) {
+            return route
+        }
+        return llmManager.selectedModelID.flatMap(llmManager.modelRoute(for:))
     }
 
 }
@@ -944,11 +997,13 @@ public extension Array where Element == MessageToolCall {
 
 public enum AgentLoopError: Error, LocalizedError {
     case invalidResumeRequest
+    case invalidRetryRequest
     case unsupportedStreaming
 
     public var errorDescription: String? {
         switch self {
         case .invalidResumeRequest: return "The resume request does not match a suspended tool call."
+        case .invalidRetryRequest: return "The retry request does not match a failed turn."
         case .unsupportedStreaming: return "The selected LLM provider does not support streaming."
         }
     }

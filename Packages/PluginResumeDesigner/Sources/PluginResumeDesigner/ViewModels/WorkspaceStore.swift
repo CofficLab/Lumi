@@ -1,13 +1,13 @@
 import Foundation
 import KitResume
 
-/// 简历工作区：应用数据目录（app 存储）下的简历列表与选中状态。
+/// 简历工作区：当前项目目录下的简历列表与选中状态。
 @MainActor
 final class WorkspaceStore: ObservableObject {
     static let shared = WorkspaceStore()
 
-    /// APP 内（应用数据目录）简历列表。简历文档只存储在应用数据目录，不支持项目内存储。
-    @Published private(set) var appResumes: [ResumeDocument] = []
+    /// 当前项目 `.lumi/resume-designer` 下的简历列表。
+    @Published private(set) var projectResumes: [ResumeDocument] = []
 
     @Published private(set) var selectedResume: ResumeResolvedDocument?
     @Published var selectedResumeID: String?
@@ -16,22 +16,26 @@ final class WorkspaceStore: ObservableObject {
 
     let documentStore = ResumeDocumentStore()
 
-    /// APP 内存储根目录。
-    private(set) var appStorageDirectory: URL?
+    /// 当前项目内存储根目录。
+    private(set) var projectStorageDirectory: URL?
+    private(set) var currentProjectPath: String?
 
     private init() {}
 
     // MARK: - Paths
 
-    /// APP 内存储路径字符串。
-    var appStoragePath: String { appStorageDirectory?.path ?? "" }
+    /// 项目内存储路径字符串。
+    var projectStoragePath: String { projectStorageDirectory?.path ?? "" }
 
     // MARK: - Configuration
 
-    func setAppStorage(appStorageDirectory: URL?) {
-        let resolved = appStorageDirectory?.standardizedFileURL
-        guard self.appStorageDirectory != resolved else { return }
-        self.appStorageDirectory = resolved
+    func setProjectStorage(projectPath: String?, projectStorageDirectory: URL?) {
+        let normalizedPath = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let path = normalizedPath?.isEmpty == false ? normalizedPath : nil
+        let resolved = projectStorageDirectory?.standardizedFileURL
+        guard self.currentProjectPath != path || self.projectStorageDirectory != resolved else { return }
+        self.currentProjectPath = path
+        self.projectStorageDirectory = resolved
         if let resolved {
             try? FileManager.default.createDirectory(at: resolved, withIntermediateDirectories: true)
         }
@@ -43,14 +47,14 @@ final class WorkspaceStore: ObservableObject {
     /// 重新加载简历列表以及当前选中简历。
     func reload() {
         lastError = nil
-        reloadApp()
+        reloadProject()
         refreshSelectedResume()
     }
 
     /// 当数据发生变化时调用，按需刷新列表与选中。
     func reload(selectResume resumeID: String? = nil) {
         lastError = nil
-        reloadApp()
+        reloadProject()
         if let resumeID {
             selectedResumeID = resumeID
             refreshSelectedResume()
@@ -59,28 +63,28 @@ final class WorkspaceStore: ObservableObject {
         refreshSelectedResume()
     }
 
-    private func reloadApp() {
-        guard !appStoragePath.isEmpty else {
-            appResumes = []
+    private func reloadProject() {
+        guard !projectStoragePath.isEmpty else {
+            projectResumes = []
             return
         }
         do {
-            appResumes = try documentStore.listResumes(storagePath: appStoragePath)
+            projectResumes = try documentStore.listResumes(storagePath: projectStoragePath)
         } catch {
-            appResumes = []
+            projectResumes = []
             lastError = error.localizedDescription
         }
     }
 
     private func refreshSelectedResume() {
         guard let selectedResumeID,
-              let document = appResumes.first(where: { $0.id == selectedResumeID }) else {
+              let document = projectResumes.first(where: { $0.id == selectedResumeID }) else {
             selectedResume = nil
             return
         }
         do {
             selectedResume = try documentStore.readResume(
-                storagePath: appStoragePath,
+                storagePath: projectStoragePath,
                 slug: document.id
             )
         } catch {
@@ -91,7 +95,7 @@ final class WorkspaceStore: ObservableObject {
     // MARK: - Selection
 
     func select(resumeID: String) {
-        guard appResumes.contains(where: { $0.id == resumeID }) else {
+        guard projectResumes.contains(where: { $0.id == resumeID }) else {
             // 未找到：仅记录 ID。
             selectedResumeID = resumeID
             refreshSelectedResume()
@@ -105,7 +109,7 @@ final class WorkspaceStore: ObservableObject {
 
     func deleteResume(id: String) {
         do {
-            try documentStore.deleteResume(storagePath: appStoragePath, slug: id)
+            try documentStore.deleteResume(storagePath: projectStoragePath, slug: id)
             if selectedResumeID == id {
                 selectedResumeID = nil
                 selectedResume = nil

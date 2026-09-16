@@ -9,8 +9,15 @@ import Testing
 @testable import PluginLLMManager
 
 @MainActor
-@Suite("PluginLLMManager")
+@Suite("PluginLLMManager", .serialized)
 struct PluginLLMManagerTests {
+
+    init() {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: "com.coffic.lumi.llmProviderManager.selectedModelID")
+        defaults.removeObject(forKey: "com.coffic.lumi.llmProviderManager.selectedProviderID")
+        defaults.removeObject(forKey: "com.coffic.lumi.llmProviderManager.selectedModel")
+    }
 
     /// onBoot 应替换 ProviderFactory 预注册的默认管理器，并注册本插件的实现。
     @Test("onBoot 替换默认 LLMManaging 为 CustomLLMManager")
@@ -62,7 +69,7 @@ struct PluginLLMManagerTests {
         let manager = CustomLLMManager()
         let provider = EchoProvider()
         try manager.register(provider)
-        manager.select(providerID: provider.providerInfo.id, model: nil)
+        manager.select(providerID: provider.providerInfo.id, model: nil, reason: .userSelected)
 
         #expect(manager.providerCount == 1)
         #expect(manager.selectedProviderID == provider.providerInfo.id)
@@ -74,6 +81,27 @@ struct PluginLLMManagerTests {
         #expect(response.content == "echo:ping")
     }
 
+    @Test("CustomLLMManager 按全局模型 ID 解析重复模型名")
+    func customManagerRoutesByGlobalModelID() async throws {
+        let manager = CustomLLMManager()
+        let first = EchoProvider(id: "first-gateway", model: "gpt-5.5")
+        let second = EchoProvider(id: "second-gateway", model: "gpt-5.5")
+        try manager.register(first)
+        try manager.register(second)
+        let modelID = try #require(manager.modelID(providerID: "second-gateway", model: "gpt-5.5"))
+
+        let response = try await manager.complete(LLMRequest(
+            conversationID: UUID(),
+            modelID: modelID,
+            messages: [LLMMessage(role: .user, content: "ping")],
+            model: "first-model"
+        ))
+
+        #expect(response.content == "second-gateway:ping")
+        #expect(second.receivedModels == ["gpt-5.5"])
+        #expect(first.receivedModels.isEmpty)
+    }
+
     @Test("请求显式供应商时不会被 CustomLLMManager 的全局选择覆盖")
     func customManagerRoutesToExplicitProvider() async throws {
         let manager = CustomLLMManager()
@@ -81,7 +109,7 @@ struct PluginLLMManagerTests {
         let conversation = EchoProvider(id: "conversation", model: "conversation-model")
         try manager.register(global)
         try manager.register(conversation)
-        manager.select(providerID: "global", model: "global-model")
+        manager.select(providerID: "global", model: "global-model", reason: .userSelected)
 
         let response = try await manager.streamComplete(
             LLMRequest(
@@ -136,7 +164,7 @@ struct PluginLLMManagerTests {
         let manager = try #require(kernel.resolveProvider((any LLMManaging).self))
         try manager.register(EchoProvider(id: "global"))
         try manager.register(EchoProvider(id: "conversation"))
-        manager.select(providerID: "global", model: "echo-1")
+        manager.select(providerID: "global", model: "echo-1", reason: .userSelected)
 
         // 顶层对话创建后自动选中，但不能改写全局选择。
         let id = try conversations.createConversation(
@@ -150,15 +178,113 @@ struct PluginLLMManagerTests {
         #expect(manager.selectedModel == "echo-1")
     }
 
+    /// 对话模型 ID 是独立选择，不应改写全局模型 ID。
+    @Test("切换当前对话的模型不会同步到全局")
+    func selectedConversationModelDoesNotSyncGlobalSelection() throws {
+        let kernel = KernelCoreContainer()
+        let conversations = DefaultConversationManager()
+        try kernel.registerProvider((any ConversationManaging).self, conversations)
+
+        let plugin = PluginLLMManager()
+        try plugin.onBoot(kernel: kernel)
+        try plugin.onReady(kernel: kernel)
+
+        let manager = try #require(kernel.resolveProvider((any LLMManaging).self))
+        try manager.register(EchoProvider(id: "global"))
+        try manager.register(EchoProvider(id: "conversation", model: "conversation-model"))
+        manager.select(providerID: "global", model: "echo-1", reason: .userSelected)
+
+        // 顶层对话创建后自动选中，随后用户在该对话内切换供应商与模型。
+        let id = try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: "global",
+            modelName: "echo-1"
+        )
+        conversations.selectProvider(id: "conversation", model: "conversation-model", for: id)
+
+        #expect(manager.selectedProviderID == "global")
+        #expect(manager.selectedModel == "echo-1")
+    }
+
+    /// 对话中暂存的过期模型 ID 不应改写全局模型选择。
+    @Test("对话过期模型 ID 不会改写全局选择")
+    func staleConversationModelDoesNotSyncGlobalSelection() throws {
+        let kernel = KernelCoreContainer()
+        let conversations = DefaultConversationManager()
+        try kernel.registerProvider((any ConversationManaging).self, conversations)
+
+        let plugin = PluginLLMManager()
+        try plugin.onBoot(kernel: kernel)
+        try plugin.onReady(kernel: kernel)
+
+        let manager = try #require(kernel.resolveProvider((any LLMManaging).self))
+        try manager.register(EchoProvider(id: "conversation", model: "conversation-model"))
+        let initialGlobalModelID = manager.selectedModelID
+
+        let id = try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: "conversation",
+            modelName: "stale-model"
+        )
+        conversations.selectProvider(id: "conversation", model: "stale-model", for: id)
+
+        #expect(manager.selectedModelID == initialGlobalModelID)
+    }
+
+    /// 非当前选中对话的供应商/模型变更不应干扰全局选中。
+    @Test("非当前对话的变更不影响全局")
+    func nonSelectedConversationChangeDoesNotSyncGlobalSelection() throws {
+        let kernel = KernelCoreContainer()
+        let conversations = DefaultConversationManager()
+        try kernel.registerProvider((any ConversationManaging).self, conversations)
+
+        let plugin = PluginLLMManager()
+        try plugin.onBoot(kernel: kernel)
+        try plugin.onReady(kernel: kernel)
+
+        let manager = try #require(kernel.resolveProvider((any LLMManaging).self))
+        try manager.register(EchoProvider(id: "global"))
+        try manager.register(EchoProvider(id: "other", model: "other-model"))
+        manager.select(providerID: "global", model: "echo-1", reason: .userSelected)
+
+        let selected = try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: "global",
+            modelName: "echo-1"
+        )
+        let background = try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: "global",
+            modelName: "echo-1"
+        )
+        // 复选回第一个对话，让后台对话的变更不命中当前选中项。
+        conversations.selectConversation(id: selected)
+
+        conversations.selectProvider(id: "other", model: "other-model", for: background)
+
+        #expect(manager.selectedProviderID == "global")
+        #expect(manager.selectedModel == "echo-1")
+    }
+
     @Test("onboarding 供应商选择器仅包含云服务商")
-    func onboardingProviderSelectionFiltersRelaysAndLocalProviders() {
+    func onboardingProviderSelectionFiltersRelaysAndLocalProviders() throws {
         let cloud = EchoProvider(id: "cloud", model: "cloud-model", providerType: .cloudService)
         let relay = EchoProvider(id: "relay", model: "relay-model", providerType: .relay)
         let local = EchoProvider(id: "local", model: "local-model", providerType: .local, isLocal: true)
 
-        let providers = AISetupPage.cloudServiceProviders(from: [cloud, relay, local])
+        let manager = DefaultLLMManager()
+        try manager.register(cloud)
+        try manager.register(relay)
+        try manager.register(local)
+        let viewModel = AISetupViewModel(
+            capability: LLMManagerCapabilityAdapter(manager: manager)
+        )
 
-        #expect(providers.map(\.providerID) == ["cloud"])
+        #expect(viewModel.providers.map(\.providerID) == ["cloud"])
     }
 
     /// 测试用最小 LLM 供应商：回显最后一条用户消息。

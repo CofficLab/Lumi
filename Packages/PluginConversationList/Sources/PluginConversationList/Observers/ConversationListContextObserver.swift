@@ -23,6 +23,12 @@ final class ConversationListContextObserver {
                 // Verbosity is a chat preference and is not rendered in list rows.
                 // Avoid reloading the ScrollView so changing it preserves position.
                 break
+            case .automationChanged(let conversationID):
+                // Automation is visible on each row. Refresh just that row instead
+                // of fetching and replacing the whole conversation list.
+                if let conversationID {
+                    context?.markAutomationLevelChanged(for: conversationID)
+                }
             default:
                 context?.markConversationsChanged()
             }

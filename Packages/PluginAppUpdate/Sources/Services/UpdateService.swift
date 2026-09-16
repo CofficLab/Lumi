@@ -35,6 +35,9 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
     /// In-flight feed URL preparation shared by startup and manual checks.
     private var feedPreparationTask: Task<Void, Never>?
 
+    /// In-flight channel update that must complete before feed detection starts.
+    private var feedConfigurationTask: Task<Void, Never>?
+
     /// Update lifecycle state machine (tracks state + version only).
     private let stateMachine = UpdateServiceStateMachine()
 
@@ -70,6 +73,11 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
     // MARK: - Public API
 
     public func configure(network: any NetworkProviding) {
+        feedPreparationTask?.cancel()
+        feedPreparationTask = nil
+        feedConfigurationTask?.cancel()
+        feedConfigurationTask = nil
+        resolvedFeedURL = UpdateFeedURLProvider.primary(for: channel)
         feedURLDetector = FeedURLDetector(
             initialURL: UpdateFeedURLProvider.primary(for: channel),
             reachabilityChecker: ProviderNetworkReachabilityChecker(network: network),
@@ -86,12 +94,16 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
         resolvedFeedURL = UpdateFeedURLProvider.primary(for: channel)
         feedPreparationTask?.cancel()
         feedPreparationTask = nil
+        feedConfigurationTask?.cancel()
+        feedConfigurationTask = nil
 
         if let feedURLDetector {
-            Task {
+            let primaryURL = UpdateFeedURLProvider.primary(for: channel)
+            let fallbackURL = UpdateFeedURLProvider.fallback(for: channel)
+            feedConfigurationTask = Task { [feedURLDetector] in
                 await feedURLDetector.updateFeedURLs(
-                    primary: UpdateFeedURLProvider.primary(for: channel),
-                    fallback: UpdateFeedURLProvider.fallback(for: channel)
+                    primary: primaryURL,
+                    fallback: fallbackURL
                 )
             }
         }
@@ -142,7 +154,10 @@ public final class UpdateService: NSObject, SPUUpdaterDelegate, SuperLog, AppUpd
         }
 
         let channel = self.channel
-        let task = Task { @MainActor [weak self, feedURLDetector, channel] in
+        let configurationTask = feedConfigurationTask
+        let task = Task { @MainActor [weak self, feedURLDetector, channel, configurationTask] in
+            await configurationTask?.value
+            guard !Task.isCancelled else { return }
             await feedURLDetector.detectIfNeeded()
             guard let self, self.channel == channel else { return }
 

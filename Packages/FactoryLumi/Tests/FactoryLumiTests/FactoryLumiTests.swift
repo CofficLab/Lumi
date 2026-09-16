@@ -19,6 +19,7 @@ import ProviderToolbar
 import ProviderToolManager
 import ProviderLLMManager
 import PluginProjectFiles
+import PluginToolbar
 import KitLLM
 import ProviderMessage
 import PluginConversationManager
@@ -37,7 +38,7 @@ struct FactoryLumiTests {
             .appendingPathComponent("FactoryLumiTests-\(UUID().uuidString)", isDirectory: true)
         let storage = DefaultStorageProvider(dataRootDirectory: root)
         let stateStore = PluginEnabledStateStore(
-            pluginDirectory: storage.pluginDataDirectory(for: "PluginManager")
+            pluginDirectory: storage.pluginDataDirectory(for: "com.coffic.lumi.plugin.plugin-manager")
         )
         let enabledPluginIDs = [
             "com.coffic.lumi.plugin.device-info",
@@ -73,6 +74,7 @@ struct FactoryLumiTests {
         let preview = try #require(plugins[EditorPreviewSuperPlugin.pluginID])
         let projectFiles = try #require(plugins[ProjectFilesSuperPlugin.pluginID])
         let bookletMaker = try #require(plugins["com.coffic.lumi.plugin.booklet-maker"])
+        let retry = try #require(plugins["com.coffic.lumi.plugin.agent-loop-retry"])
 
         #expect(host.metadata.policy == .alwaysOn)
         #expect(languages.metadata.policy == .required)
@@ -80,6 +82,7 @@ struct FactoryLumiTests {
         #expect(preview.metadata.policy == .enabledByDefault)
         #expect(projectFiles.metadata.policy == .required)
         #expect(bookletMaker.metadata.policy == .disabledByDefault)
+        #expect(retry.metadata.policy == .alwaysOn)
         #expect(projectFiles.dependencies == [
             "com.coffic.lumi.plugin.projects",
         ])
@@ -212,13 +215,15 @@ struct FactoryLumiTests {
         #expect(resolved != nil)
     }
 
-    @Test("makeKernel 创建内核并注册默认 ToolbarProviding")
+    @Test("makeKernel 创建内核并由 PluginToolbar 注册 ToolbarProviding")
     func makeKernelRegistersDefaultToolbarProviding() throws {
         let kernel = try KernelFactory.makeKernel()
 
+        #expect(kernel.isPluginRegistered(id: "com.coffic.lumi.plugin.toolbar"))
+
         let resolved: (any ToolbarProviding)? = kernel.resolveProvider((any ToolbarProviding).self)
         #expect(resolved != nil)
-        #expect(resolved is DefaultToolbarProviding)
+        #expect(resolved is ToolbarProvider)
     }
 
     @Test("makeKernel 创建内核并注册默认 RootViewProviding")
@@ -497,7 +502,8 @@ struct FactoryLumiTests {
         let manager: (any LLMManaging)? = kernel.resolveProvider((any LLMManaging).self)
         #expect(manager != nil)
         // 默认 LLM Provider 插件注册全部内建供应商，包含 Codex 与 MLX 本地供应商。
-        #expect(manager?.providerCount == 35)
+        // 注意：总量随供应商目录变化，调整内建供应商时需要同步更新此断言。
+        #expect(manager?.providerCount == 33)
         #expect(manager?.allProviders().filter { $0.providerInfo.isLocal }.count == 8)
         #expect(manager?.providerID == "llm-provider-manager")
     }
@@ -519,7 +525,7 @@ struct FactoryLumiTests {
 
         try manager?.register(EchoManagedProvider(id: "echo"))
         // 启动时已选中内建列表首项 OpenAI；切到 echo 供应商再发送。
-        manager?.select(providerID: "echo", model: nil)
+        manager?.select(providerID: "echo", model: nil, reason: .userSelected)
         let response = try await manager?.complete(
             LLMRequest(
                 conversationID: UUID(),

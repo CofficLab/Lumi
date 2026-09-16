@@ -14,12 +14,13 @@ import SwiftUI
 
 /// Conversation Manager Plugin
 @MainActor
-public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
+public final class ConversationManagerPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.conversation-manager")
     public nonisolated static let emoji = "💬"
     public static let verbose = false
 
     public let id = "com.coffic.lumi.plugin.conversation-store"
+    public let legacyDataDirectoryNames = ["ConversationStore"]
     public let order = 7
 
     public let metadata = PluginMetadata(
@@ -32,13 +33,16 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
     )
 
     private var migrationProgress: ConversationMigrationProgressStore?
+    private var capability: ConversationStoreCapabilityAdapter?
+    private var viewModel: ConversationStoreSettingsViewModel?
+    private var observer: ConversationStoreObserver?
 
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        // 1. 计算数据库目录（遵循 Storage 约定：<数据根目录>/ConversationStore）。
+        // 1. 计算数据库目录（遵循 Storage 约定：<数据根目录>/<插件 ID>）。
         let storage = kernel.resolveProvider((any StorageProviding).self)
-        let databaseRootURL = storage?.pluginDataDirectory(for: "ConversationStore")
+        let databaseRootURL = storage?.pluginDataDirectory(for: id)
             ?? ConversationStore.defaultDatabaseRootURL
 
         // 2. 创建 SwiftData store；失败时保留默认内存实现，不阻塞内核启动。
@@ -68,17 +72,30 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
         }
 
         // 4. 注册「Conversations」设置入口。
+        //    组装层创建 Capability + ViewModel + Observer，注入设置页。
+        let messageManager = kernel.resolveProvider((any MessageManaging).self)
+        let settingsCapability = ConversationStoreCapabilityAdapter(
+            manager: manager,
+            messageManager: messageManager
+        )
+        let settingsViewModel = ConversationStoreSettingsViewModel(capability: settingsCapability)
+        let settingsObserver = ConversationStoreObserver(
+            capability: settingsCapability,
+            viewModel: settingsViewModel,
+            migrationProgress: ConversationMigrationProgressStore.shared
+        )
+        self.capability = settingsCapability
+        self.viewModel = settingsViewModel
+        self.observer = settingsObserver
+
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
                 id: "\(id).settings",
                 title: LumiPluginLocalization.string("Conversations", bundle: .module),
                 systemImage: "bubble.left.and.bubble.right",
                 order: 7
-            ) { [weak manager, weak self] in
-                ConversationStoreSettingsView(
-                    manager: manager,
-                    migrationProgress: self?.migrationProgress ?? ConversationMigrationProgressStore.shared
-                )
+            ) { [settingsViewModel] in
+                ConversationStoreSettingsView(viewModel: settingsViewModel)
             },
         ])
 
@@ -105,6 +122,10 @@ public final class ConversationManagerPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         // Provider（ConversationManaging）由内核按插件归属自动移除；
         // 这里只撤回设置入口。若宿主希望回退到内存实现，可在此重建注册。
+        observer?.cancel()
+        observer = nil
+        viewModel = nil
+        capability = nil
         kernel.resolveProvider((any SettingViewProviding).self)?.removeEntries(
             ids: ["\(id).settings"]
         )

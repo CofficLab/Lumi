@@ -12,9 +12,10 @@ import KitSuperLog
 import os
 
 @MainActor
-public final class RClickSuperPlugin: SuperPlugin, SuperLog {
+public final class RClickSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.rclick", category: "RClick")
     public let id = "com.coffic.lumi.plugin.rclick"
+    public let legacyDataDirectoryNames = ["RClickPlugin"]
     public let order = 50
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.rclick",
@@ -27,7 +28,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
 
     private let activityItemID = "com.coffic.lumi.plugin.rclick.entry"
     private let railTabID = "com.coffic.lumi.plugin.rclick.preview"
-    private let configManager = RClickConfigManager.shared
+    private var configManager: RClickConfigManager?
     private var configObserver: RClickConfigObserver?
 
     public init() {}
@@ -41,10 +42,11 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         configObserver?.cancel()
+        let storage = kernel.resolveProvider((any StorageProviding).self)
+        let localStore = storage.map { RClickPluginLocalStore(pluginDirectory: $0.pluginDataDirectory(for: id)) }
+        let configManager = RClickConfigManager(store: localStore)
+        self.configManager = configManager
         configObserver = RClickConfigObserver(configManager: configManager)
-        if let storage = kernel.resolveProvider((any StorageProviding).self) {
-            RClickPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
-        }
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
@@ -69,7 +71,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "eye",
                 order: order
             ) {
-                RClickRailView(configManager: self.configManager)
+                RClickRailView(viewModel: RClickSettingsViewModel(configManager: configManager))
             },
         ])
 
@@ -90,7 +92,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
                         recommended: RailViewWidth(minWidth: 240, idealWidth: 280, maxWidth: 400),
                         store: railWidthStore
                     )
-                    content?.setContentView(AnyView(RClickSettingsView(configManager: self.configManager)))
+                    content?.setContentView(AnyView(RClickSettingsView(viewModel: RClickSettingsViewModel(configManager: configManager))))
                     chat?.setVisible(false)
                     rootView?.setContentHeaderViewHidden(true)
                 } else {
@@ -115,9 +117,9 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
-        RClickPluginRuntimeBridge.dataRootDirectory = nil
         configObserver?.cancel()
         configObserver = nil
+        configManager = nil
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

@@ -39,6 +39,15 @@ struct KitTerminalCoreTests {
         }
     }
 
+    @Test("TerminalThemeAdapter unknown theme falls back to dark defaults")
+    func themeAdapterUnknownThemeFallsBack() {
+        let fallback = TerminalThemeAdapter.colors(for: "definitely-not-a-theme")
+        let darkDefault = TerminalThemeAdapter.defaultColors(isDark: true)
+
+        #expect(fallback.ansiColors.count == 16)
+        #expect(fallback.ansiColors == darkDefault.ansiColors)
+    }
+
     @MainActor
     @Test("TerminalTabsViewModel initialization")
     func tabsViewModelInit() {

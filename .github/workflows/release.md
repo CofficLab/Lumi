@@ -21,9 +21,9 @@
 - `稳定版`：读取 `https://s.kuaiyizhi.cn/lumi/appcast-*.xml`，对应 `main`。
 - `预览版`：读取 `https://s.kuaiyizhi.cn/lumi/pre/appcast-*.xml`，对应 `pre`，可能包含未修复的问题。
 
-两个通道分别存放 DMG 和 appcast。preview 不使用 GitHub Releases 的 `latest` fallback，因为 GitHub 的 `latest` 不包含 prerelease；preview 的 fallback 是 `pre` 分支中提交的架构 appcast。
+两个通道分别存放 DMG 和 appcast。稳定版客户端优先读取 R2，R2 不可访问时回退到 GitHub Release 的架构 appcast。预览版使用 `pre` 前缀的 R2 路径；预览版的备用地址由客户端通道配置决定。
 
-Sparkle 的构建号使用 GitHub Actions release workflow 的全局 `run_number`，保证 `pre` 和 `main` 不会生成相同的数字版本，避免切换通道时被 Sparkle 错误地判定为同一版本。
+Sparkle 的构建号使用 UTC 日期格式 `YYYYMMDDHHmmss`，例如 `20260101120000`。发布时先与仓库历史、线上 appcast 的最大构建号比较；如果发生时钟回退或同秒发布，则使用已知最大值加一。stable 和 preview 共用全局发布锁。版本配置和 appcast 只在 CI 工作目录中临时生成，不提交回代码仓库。
 
 ## 二、需要准备的东西
 
@@ -34,6 +34,7 @@ Sparkle 的构建号使用 GitHub Actions release workflow 的全局 `run_number
 | 证书私钥（p12） | CI 中使用 |
 | App Store Connect API Key | 用于 Notarization |
 | SPARKLE_PRIVATE_KEY | Sparkle使用，保存在 GitHub Actions 中 |
+| UTC 日期构建号 | 格式为 `YYYYMMDDHHmmss`，由 workflow 自动生成并校验单调递增 |
 
 为了实现自动检查更新，还需要确保`target - info`中有以下内容：
 

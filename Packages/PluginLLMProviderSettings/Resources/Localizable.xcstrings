@@ -32,6 +32,7 @@
 
     },
     "Delete API Key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -66,6 +67,7 @@
       }
     },
     "Save API Key" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -240,9 +242,6 @@
     "模型 ID（每行一个）" : {
 
     },
-    "正在下载" : {
-
-    },
     "添加云端供应商" : {
 
     },
@@ -324,6 +323,9 @@
           }
         }
       }
+    },
+    "输入 API Key" : {
+
     },
     "这会移除供应商配置和对应的 API Key。" : {
 

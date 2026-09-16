@@ -6,7 +6,7 @@ import SwiftUI
 /// API Key 读取失败（Keychain 访问异常）消息渲染器。
 enum APIKeyAccessFailedRenderer {
     @MainActor
-    static func item(manager: any LLMManaging) -> MessageRendererItem {
+    static func item(capability: any LLMManagerCapability) -> MessageRendererItem {
         MessageRendererItem(
             id: LLMProviderAPIKeyMessage.accessFailedRenderKind,
             order: 340,
@@ -14,7 +14,11 @@ enum APIKeyAccessFailedRenderer {
                 LLMProviderAPIKeyMessage.isAPIKeyAccessFailedMessage(message)
             },
             render: { message, _ in
-                AnyView(ProviderAPIKeyAccessFailedView(message: message, manager: manager))
+                let viewModel = ProviderAPIKeyViewModel(
+                    capability: capability,
+                    message: message
+                )
+                return AnyView(ProviderAPIKeyAccessFailedView(message: message, viewModel: viewModel))
             }
         )
     }

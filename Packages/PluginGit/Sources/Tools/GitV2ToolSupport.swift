@@ -54,6 +54,6 @@ enum GitV2ToolSupport {
     }
 
     static func pathProperty() -> [String: Any] {
-        ["type": "string", "description": "Git repository path, defaults to the current project directory."]
+        ["type": "string", "description": "Git repository path, defaults to the project bound to this conversation."]
     }
 }

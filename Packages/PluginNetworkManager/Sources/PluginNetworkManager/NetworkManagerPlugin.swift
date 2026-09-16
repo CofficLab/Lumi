@@ -25,11 +25,12 @@ import KitSuperLog
 /// - `pluginAboutView` → `DocsViewProviding.addAbout`；
 /// - `statusBarItems` → 暂不复刻（新版无 StatusBarProviding）。
 @MainActor
-public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
+public final class NetworkManagerPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     public nonisolated static let verbose = false
     public nonisolated static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.network-manager")
 
     public let id = "com.coffic.lumi.plugin.network-manager"
+    public let legacyDataDirectoryNames = ["NetworkManager"]
     public let order = 30
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.network-manager",
@@ -52,6 +53,28 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func migrateData(context: PluginDataMigrationContext) throws {
+        try PluginDataMigrationUtility.copyLegacyDirectories(
+            legacyDirectoryNames: legacyDataDirectoryNames,
+            context: context
+        )
+
+        // 旧版网络历史曾写入未版本化的 Lumi/NetworkManager 目录。
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        let legacyDirectory = appSupport?.appendingPathComponent("Lumi/NetworkManager", isDirectory: true)
+        guard let legacyDirectory,
+              FileManager.default.fileExists(atPath: legacyDirectory.path) else { return }
+
+        try FileManager.default.createDirectory(
+            at: context.currentPluginDataDirectory,
+            withIntermediateDirectories: true
+        )
+        try PluginDataMigrationUtility.mergeDirectoryContents(
+            from: legacyDirectory,
+            to: context.currentPluginDataDirectory
+        )
+    }
+
     public func onRegister(kernel: KernelCoreContainer) throws {
         if let docs = kernel.resolveProvider((any DocsViewProviding).self) {
             docs.addAbout(DocsEntry(id: id, name: name) { NetworkManagerAboutView() })
@@ -64,12 +87,10 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
     public func onBoot(kernel: KernelCoreContainer) throws {
         let viewModels = NetworkPluginViewModels()
         self.viewModels = viewModels
-        metricsObserver?.cancel()
-        metricsObserver = NetworkMetricsObserver(viewModels: viewModels)
         // 1. 初始化 HTTPExchangeStore
         let exchangeStore: HTTPExchangeStore?
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
-            let dir = storage.pluginDataDirectory(for: "NetworkManager")
+            let dir = storage.pluginDataDirectory(for: id)
             exchangeStore = HTTPExchangeStore(directory: dir)
         } else {
             exchangeStore = nil
@@ -84,7 +105,10 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
                 }
             }
         }
+        NetworkHistoryService.shared.configure(storageDirectory: exchangeStore?.directory)
         NetworkService.shared.configureHTTPExchangeStore(exchangeStore)
+        metricsObserver?.cancel()
+        metricsObserver = NetworkMetricsObserver(viewModels: viewModels)
 
         // 2. 注册 NetworkProviding 到内核（替换默认实现，附带 exchangeStore）
         // 先注销默认的 NetworkProviding，再注册自定义实现
@@ -170,6 +194,7 @@ public final class NetworkManagerPlugin: SuperPlugin, SuperLog {
         httpExchangeObserver = nil
         httpExchangeSettingsState = nil
         httpExchangeStore = nil
+        NetworkHistoryService.shared.stopRecording()
         NetworkService.shared.configureHTTPExchangeStore(nil)
     }
 

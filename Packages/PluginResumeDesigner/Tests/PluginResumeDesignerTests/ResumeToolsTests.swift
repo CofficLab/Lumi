@@ -25,7 +25,7 @@ extension ResumeDesignerSuite {
         #expect(result.contains("zhang-san"))
         #expect(result.contains("张三"))
         #expect(result.contains("794x1123 px"))
-        #expect(WorkspaceStore.shared.appResumes.contains { $0.id == "zhang-san" })
+        #expect(WorkspaceStore.shared.projectResumes.contains { $0.id == "zhang-san" })
         #expect(FileManager.default.fileExists(
             atPath: directory.appendingPathComponent("resumes/zhang-san/manifest.json").path
         ))
@@ -111,7 +111,7 @@ extension ResumeDesignerSuite {
 
         #expect(result.contains("Applied 1 HTML patches"))
         let resume = try ResumeToolSupport.store.readResume(
-            storagePath: WorkspaceStore.shared.appStoragePath,
+            storagePath: WorkspaceStore.shared.projectStoragePath,
             slug: "sun-qi"
         )
         #expect(resume.html.contains("Swift · SwiftUI"))
@@ -131,7 +131,7 @@ extension ResumeDesignerSuite {
                 "template": "classic",
             ]))
         }
-        #expect(WorkspaceStore.shared.appResumes.isEmpty)
+        #expect(WorkspaceStore.shared.projectResumes.isEmpty)
     }
 
     @Test("resume_create 缺少必填 slug 抛错")

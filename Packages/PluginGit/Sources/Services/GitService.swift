@@ -2,8 +2,8 @@ import Foundation
 import KitSuperLog
 import LibGit2Swift
 import os
+import ProviderGit
 import SwiftUI
-import os
 
 /// Git 服务
 ///
@@ -16,7 +16,7 @@ import os
 /// 导致的竞态崩溃（`EXC_BAD_ACCESS` / `SIGSEGV`）。
 /// 这是因为 libgit2 的 `git_repository` 对象不是线程安全的，
 /// 并发打开同一仓库或并发读取 index 可能导致 C 层内存错误。
-public final class GitService: @unchecked Sendable, SuperLog {
+public final class GitService: @unchecked Sendable, SuperLog, GitRepositoryReading {
     nonisolated private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.git")
     public nonisolated static let verbose: Bool = false
     public nonisolated static let emoji = "🌿"
@@ -142,6 +142,31 @@ public final class GitService: @unchecked Sendable, SuperLog {
                 )
             }
         }
+    }
+
+    // MARK: - GitRepositoryReading
+
+    /// 实现 ``GitRepositoryReading/status(atPath:)``。
+    ///
+    /// 契约方法名与既有 `getStatus(path:)` 不同（契约省略 `get` 前缀），这里
+    /// 直接转发，保持既有调用方不变。
+    public func status(atPath path: String?) async throws -> GitStatus {
+        try await getStatus(path: path)
+    }
+
+    /// 实现 ``GitRepositoryReading/log(atPath:count:branch:file:)``。
+    public func log(atPath path: String?,
+                    count: Int,
+                    branch: String?,
+                    file: String?) async throws -> [GitCommitLog] {
+        try await getLog(path: path, count: count, branch: branch, file: file)
+    }
+
+    /// 实现 ``GitRepositoryReading/log(atPath:count:skip:)``。
+    public func log(atPath path: String?,
+                    count: Int,
+                    skip: Int) async throws -> [GitCommitLog] {
+        try await getLogWithSkip(path: path, count: count, skip: skip)
     }
 
     // MARK: - Log With Skip (for pagination)

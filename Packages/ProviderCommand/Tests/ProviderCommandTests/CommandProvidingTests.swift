@@ -56,6 +56,40 @@ struct CommandProvidingTests {
         #expect(eventCount == 3)
     }
 
+    @Test("cancelling an observer twice is safe")
+    func doubleCancelIsIdempotent() {
+        let provider = DefaultCommandProviding()
+        var eventCount = 0
+        let handle = provider.addObserver { event in
+            if case .groupsChanged = event { eventCount += 1 }
+        }
+
+        handle.cancel()
+        handle.cancel()  // must not crash
+        provider.registerCommandGroup(group(id: "x", title: "X"))
+        #expect(eventCount == 0)
+    }
+
+    @Test("deallocated observers are pruned without affecting live ones")
+    func deallocatedObserverIsPruned() {
+        let provider = DefaultCommandProviding()
+        var liveCount = 0
+        let liveHandle = provider.addObserver { event in
+            if case .groupsChanged = event { liveCount += 1 }
+        }
+
+        // Dropped immediately; provider holds only a weak reference.
+        do {
+            let transient = provider.addObserver { _ in }
+            _ = transient
+        }
+
+        provider.registerCommandGroup(group(id: "a", title: "A"))
+        provider.registerCommandGroup(group(id: "b", title: "B"))
+
+        #expect(liveCount == 2)
+    }
+
     private func group(id: String, title: String) -> CommandMenuGroup {
         CommandMenuGroup(
             id: id,

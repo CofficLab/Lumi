@@ -387,31 +387,19 @@ private struct ChatHeaderRow: View {
     }
 }
 
-/// toolbar 栏：对应旧版 `ChatToolbarView`（`breadcrumbBarHeight` 高度、
-/// `.panel` 背景、breadcrumb 内边距、底部边框 + `shadowMd`）。
+/// toolbar 栏：对应旧版 `ChatToolbarView`。尺寸、内边距、底部边框与阴影
+/// 由 `AppPanelBar` 统一承载，与侧栏同高度信息栏保持一致的视觉规格。
 @MainActor
 private struct ChatToolbarRow: View {
     let items: [ChatSectionBarItem]
 
     var body: some View {
-        AppToolbarContainer(
-            height: AppPanelChromeMetrics.breadcrumbBarHeight,
-            backgroundStyle: .panel,
-            padding: EdgeInsets(
-                top: AppPanelChromeMetrics.breadcrumbVerticalPadding,
-                leading: AppPanelChromeMetrics.breadcrumbHorizontalPadding,
-                bottom: AppPanelChromeMetrics.breadcrumbVerticalPadding,
-                trailing: AppPanelChromeMetrics.breadcrumbHorizontalPadding
-            )
-        ) {
-            HStack(alignment: .center, spacing: 8) {
+        AppPanelBar {
+            HStack(alignment: .center, spacing: AppPanelChromeMetrics.breadcrumbItemSpacing) {
                 ForEach(items) { $0.makeView() }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: AppPanelChromeMetrics.breadcrumbContentHeight, alignment: .center)
         }
-        .borderBottom()
-        .shadowMd()
     }
 }
 

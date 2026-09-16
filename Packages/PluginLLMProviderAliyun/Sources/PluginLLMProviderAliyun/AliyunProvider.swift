@@ -12,7 +12,7 @@ public final class AliyunProvider: VendorLLMProvider {
                 id: "aliyun",
                 displayName: "阿里云 CodingPlan",
                 description: "阿里云 DashScope Coding Plan",
-                defaultModel: "qwen3.6-plus",
+                defaultModel: "qwen3.7-plus",
                 models: [
                     LLMModelInfo(id: "qwen3.7-plus", contextWindowSize: 1_000_000, supportsVision: true),
                     LLMModelInfo(id: "qwen3.6-plus", contextWindowSize: 1_000_000, supportsVision: true),

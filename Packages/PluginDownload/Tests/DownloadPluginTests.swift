@@ -7,12 +7,12 @@ final class DownloadPluginTests: XCTestCase {
     // MARK: - Plugin Info
 
     func testPluginInfo() {
-        XCTAssertEqual(DownloadPlugin().id, "com.coffic.lumi.plugin.download-agent")
-        XCTAssertFalse(DownloadPlugin().name.isEmpty)
-        XCTAssertEqual(DownloadPlugin().policy, .alwaysOn)
-        XCTAssertEqual(DownloadPlugin().stage, .beta)
-        XCTAssertEqual(DownloadPlugin().category, .agent)
-        XCTAssertEqual(DownloadPlugin.emoji, "📥")
+        let plugin = DownloadSuperPlugin()
+        XCTAssertEqual(plugin.id, "com.coffic.lumi.plugin.download-agent")
+        XCTAssertEqual(plugin.metadata.name, "Download Agent")
+        XCTAssertEqual(plugin.metadata.policy, .alwaysOn)
+        XCTAssertEqual(plugin.metadata.stage, .preview)
+        XCTAssertEqual(plugin.metadata.category, .project)
     }
 
     // MARK: - Download Directory
@@ -49,5 +49,29 @@ final class DownloadPluginTests: XCTestCase {
         let name = DownloadPlugin.extractFilename(from: url)
         XCTAssertFalse(name.isEmpty)
         XCTAssertTrue(name.hasPrefix("download_"), "Expected '\(name)' to have prefix 'download_'")
+    }
+
+    func testExtractFilenameFromQueryFilenameParam() {
+        // Query filename only applies when the URL has no meaningful path component.
+        let url = URL(string: "https://cdn.example.com/?filename=archive.zip")!
+        XCTAssertEqual(DownloadPlugin.extractFilename(from: url), "archive.zip")
+    }
+
+    func testExtractFilenameFromQueryFileParam() {
+        let url = URL(string: "https://cdn.example.com/?file=data.bin")!
+        XCTAssertEqual(DownloadPlugin.extractFilename(from: url), "data.bin")
+    }
+
+    func testExtractFilenameDecodesPercentEncodedQueryValue() {
+        let url = URL(string: "https://cdn.example.com/?filename=my%20report.pdf")!
+        XCTAssertEqual(DownloadPlugin.extractFilename(from: url), "my report.pdf")
+    }
+
+    func testExtractFilenameSkipsMalformedQueryPairs() {
+        // A pair without '=' and a key that is neither filename nor file are
+        // ignored, so the timestamp name is produced for a root URL.
+        let url = URL(string: "https://example.com/?tokenonly&other=value")!
+        let name = DownloadPlugin.extractFilename(from: url)
+        XCTAssertTrue(name.hasPrefix("download_"))
     }
 }

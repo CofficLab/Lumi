@@ -52,7 +52,7 @@ public final class QuickLauncherSuperPlugin: SuperPlugin, SuperLog {
                 systemImage: "bolt.fill",
                 order: order
             ) {
-                LauncherSettingsView(hotkeyManager: self.hotkeyManager)
+                LauncherSettingsView(viewModel: QuickLauncherSettingsViewModel(hotkeyManager: self.hotkeyManager))
             },
         ])
 

@@ -10,6 +10,38 @@ import Testing
 
 @MainActor
 struct LLMContextPluginTests {
+    @Test("时间线消息只展示给用户，不进入 LLM 历史")
+    func timelineMessagesAreExcludedFromLLMHistory() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        let retryTimeline = Message(
+            conversationID: conversationID,
+            role: .status,
+            content: "正在重试",
+            metadata: [MessageTimelineEvent.metadataKey: MessageTimelineEvent.agentLoopRetry],
+            renderKind: MessageTimelineEvent.agentLoopRetryRenderKind
+        )
+
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .user, content: "你好"),
+            to: conversationID
+        )
+        messages.insertMessage(retryTimeline, to: conversationID)
+
+        let result = await provider.messagesForLLM(in: conversationID)
+
+        #expect(result.count == 1)
+        #expect(result.first?.role == .user)
+        #expect(result.first?.content == "你好")
+    }
+
     @Test("短会话透传完整历史")
     func shortConversationUsesFullHistory() async {
         let messages = DefaultMessageManager()
@@ -31,6 +63,52 @@ struct LLMContextPluginTests {
 
         #expect(result.count == 1)
         #expect(result[0].content == "你好")
+    }
+
+    @Test("工具栏统计复用 LLMContext 请求的估算和预算")
+    func contextWindowUsageMatchesPreparedRequest() async throws {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider(contextWindowTokens: 24_000)
+        try llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 24_000,
+                reservedOutputTokens: 2_000,
+                toolSchemaTokens: 400,
+                safetyMarginTokens: 1_000
+            )
+        )
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .user, content: "第一条消息"),
+            to: conversationID
+        )
+
+        let prepared = await provider.prepareContext(for: request)
+        let initialUsage = await provider.contextWindowUsage(for: conversationID)
+
+        #expect(initialUsage?.contextWindowTokens == 24_000)
+        #expect(initialUsage?.inputTokenLimit == prepared.inputTokenLimit)
+        #expect(initialUsage?.estimatedInputTokens == prepared.estimatedInputTokens)
+
+        messages.insertMessage(
+            Message(conversationID: conversationID, role: .user, content: "第二条消息"),
+            to: conversationID
+        )
+        let updatedUsage = await provider.contextWindowUsage(for: conversationID)
+        #expect((updatedUsage?.estimatedInputTokens ?? 0) > (initialUsage?.estimatedInputTokens ?? 0))
     }
 
     @Test("摘要生成失败时不阻塞，继续返回完整历史")
@@ -70,7 +148,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let provider = LLMContextProvider(
             messages: messages,
@@ -116,6 +194,13 @@ struct LLMContextPluginTests {
                 #expect(messages.messages(for: conversationID).contains {
                     MessageTimelineEvent.isActualContextCompaction($0)
                 })
+                let event = messages.messages(for: conversationID).first {
+                    MessageTimelineEvent.isActualContextCompaction($0)
+                }
+                #expect(event?.providerID == summaryProvider.providerID)
+                #expect(event?.modelName == "summary-model")
+                #expect(event?.metadata[MessageTimelineEvent.contextCompactionReasonKey] == "hard-threshold")
+                #expect(event?.metadata[MessageTimelineEvent.contextCompactionContextWindowTokensKey] == "5000")
                 #expect(!messages.messages(for: conversationID).contains {
                     MessageTimelineEvent.isContextCompaction($0)
                         && !MessageTimelineEvent.isActualContextCompaction($0)
@@ -128,6 +213,54 @@ struct LLMContextPluginTests {
         #expect(Bool(false), "后台摘要未在测试窗口内生成")
     }
 
+    @Test("后台摘要沿用对话模型 ID，不会误路由到同名全局模型")
+    func backgroundSummaryUsesConversationModelID() async throws {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let globalProvider = SummaryLLMProvider(id: "global-summary-provider")
+        let conversationProvider = SummaryLLMProvider(id: "conversation-summary-provider")
+        try llm.register(globalProvider)
+        try llm.register(conversationProvider)
+        llm.select(providerID: globalProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let conversationID = try conversations.createConversation(
+            title: nil,
+            projectPath: nil,
+            providerID: nil,
+            modelName: nil
+        )
+        let conversationModelID = try #require(
+            llm.modelID(providerID: conversationProvider.providerID, model: "summary-model")
+        )
+        conversations.selectModel(id: conversationModelID.rawValue, for: conversationID)
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        for index in 0...LLMContextProvider.compactionMessageThreshold {
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "按对话模型生成摘要 ", count: 100) + "\(index)"
+                ),
+                to: conversationID
+            )
+        }
+
+        _ = await provider.messagesForLLM(in: conversationID)
+        for _ in 0..<12 {
+            if conversationProvider.completeCalls > 0 { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+
+        #expect(conversationProvider.completeCalls == 1)
+        #expect(globalProvider.completeCalls == 0)
+    }
+
     @Test("硬阈值请求会在发送前等待摘要")
     func hardBudgetWaitsForCompaction() async {
         let messages = DefaultMessageManager()
@@ -135,7 +268,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try? llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let provider = LLMContextProvider(
             messages: messages,
@@ -174,6 +307,165 @@ struct LLMContextPluginTests {
         #expect(messages.messages(for: conversationID).contains {
             MessageTimelineEvent.isActualContextCompaction($0)
         })
+        let event = messages.messages(for: conversationID).first {
+            MessageTimelineEvent.isActualContextCompaction($0)
+        }
+        #expect(event?.providerID == summaryProvider.providerID)
+        #expect(event?.modelName == "summary-model")
+        #expect(event?.metadata[MessageTimelineEvent.contextCompactionReasonKey] == "hard-threshold")
+        #expect(event?.metadata[MessageTimelineEvent.contextCompactionContextWindowTokensKey] == "20000")
+    }
+
+    @Test("软阈值只预热，不记录实际压缩")
+    func softThresholdOnlyPrewarms() async throws {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let summaryProvider = SummaryLLMProvider()
+        try llm.register(summaryProvider)
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
+
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        for index in 0..<17 {
+            messages.insertMessage(
+                Message(
+                    conversationID: conversationID,
+                    role: .user,
+                    content: String(repeating: "短内容 ", count: 150) + "\(index)"
+                ),
+                to: conversationID
+            )
+        }
+
+        let prewarmRequest = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 15_000,
+                reservedOutputTokens: 2_000,
+                safetyMarginTokens: 1_000
+            ),
+            mode: .prewarm
+        )
+        _ = await provider.prepareContext(for: prewarmRequest)
+
+        for _ in 0..<12 {
+            try await Task.sleep(nanoseconds: 100_000_000)
+            if summaryProvider.completeCalls == 1 { break }
+        }
+        #expect(summaryProvider.completeCalls == 1)
+
+        let beforeSendRequest = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: summaryProvider.providerID,
+            model: "summary-model",
+            budget: prewarmRequest.budget,
+            mode: .beforeSend
+        )
+        let result = await provider.prepareContext(for: beforeSendRequest)
+
+        #expect(!result.didCompact)
+        #expect(!messages.messages(for: conversationID).contains {
+            MessageTimelineEvent.isActualContextCompaction($0)
+        })
+    }
+
+    @Test("工具 schema usage 不会放大后续消息上下文估算")
+    func toolSchemaUsageDoesNotInflateMessageCalibration() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        let toolSchemaTokens = 100_000
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: "calibration-provider",
+            model: "calibration-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 1_000_000,
+                reservedOutputTokens: 8_000,
+                toolSchemaTokens: toolSchemaTokens,
+                safetyMarginTokens: 2_000
+            )
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .user,
+                content: String(repeating: "x", count: 30_000)
+            ),
+            to: conversationID
+        )
+
+        let first = await provider.prepareContext(for: request)
+        provider.reportInputUsage(
+            first.estimatedInputTokens + toolSchemaTokens,
+            for: request,
+            estimatedInputTokens: first.estimatedInputTokens
+        )
+        let next = await provider.prepareContext(for: request)
+
+        #expect(next.estimatedInputTokens == first.estimatedInputTokens)
+    }
+
+    @Test("成功请求会逐步修正过高的历史校准倍率")
+    func successfulUsageReducesInflatedCalibration() async {
+        let messages = DefaultMessageManager()
+        let conversations = DefaultConversationManager()
+        let llm = DefaultLLMManager()
+        let provider = LLMContextProvider(
+            messages: messages,
+            conversations: conversations,
+            llmProvider: llm
+        )
+        let conversationID = UUID()
+        let request = LLMContextPreparationRequest(
+            conversationID: conversationID,
+            providerID: "calibration-provider",
+            model: "calibration-model",
+            budget: LLMContextBudget(
+                contextWindowTokens: 1_000_000,
+                reservedOutputTokens: 8_000,
+                safetyMarginTokens: 2_000
+            )
+        )
+        messages.insertMessage(
+            Message(
+                conversationID: conversationID,
+                role: .user,
+                content: String(repeating: "x", count: 30_000)
+            ),
+            to: conversationID
+        )
+
+        let baseline = await provider.prepareContext(for: request)
+        provider.reportInputUsage(
+            baseline.estimatedInputTokens * 4,
+            for: request,
+            estimatedInputTokens: baseline.estimatedInputTokens
+        )
+        let inflated = await provider.prepareContext(for: request)
+        provider.reportInputUsage(
+            baseline.estimatedInputTokens,
+            for: request,
+            estimatedInputTokens: inflated.estimatedInputTokens
+        )
+        let recovered = await provider.prepareContext(for: request)
+
+        #expect(inflated.estimatedInputTokens == baseline.estimatedInputTokens * 4)
+        #expect(recovered.estimatedInputTokens < inflated.estimatedInputTokens)
+        #expect(recovered.estimatedInputTokens > baseline.estimatedInputTokens)
     }
 
     @Test("超过原先消息上限后仍能滚动生成摘要")
@@ -183,7 +475,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let provider = LLMContextProvider(
             messages: messages,
@@ -234,7 +526,7 @@ struct LLMContextPluginTests {
         let llm = DefaultLLMManager()
         let summaryProvider = SummaryLLMProvider()
         try llm.register(summaryProvider)
-        llm.select(providerID: summaryProvider.providerID, model: "summary-model")
+        llm.select(providerID: summaryProvider.providerID, model: "summary-model", reason: .userSelected)
 
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("LLMContextStoreTests-\(UUID().uuidString)", isDirectory: true)
@@ -288,12 +580,16 @@ struct LLMContextPluginTests {
 
 @MainActor
 private final class SummaryLLMProvider: SuperLLMProvider {
-    let providerInfo = LLMProviderInfo(
-        id: "summary-test-provider",
-        displayName: "Summary Test Provider",
-        defaultModel: "summary-model",
-        models: [LLMModelInfo(id: "summary-model")]
-    )
+    let providerInfo: LLMProviderInfo
+
+    init(id: String = "summary-test-provider", contextWindowTokens: Int? = nil) {
+        providerInfo = LLMProviderInfo(
+            id: id,
+            displayName: "Summary Test Provider",
+            defaultModel: "summary-model",
+            models: [LLMModelInfo(id: "summary-model", contextWindowSize: contextWindowTokens)]
+        )
+    }
     private(set) var completeCalls = 0
 
     var providerID: String { providerInfo.id }

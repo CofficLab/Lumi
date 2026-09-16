@@ -8,7 +8,7 @@
 
 // 产物
 PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.debug
-INFOPLIST_KEY_CFBundleDisplayName = "Lumi (Debug)"
+INFOPLIST_KEY_CFBundleDisplayName = Lumi-Debug
 INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.utilities
 INFOPLIST_KEY_NSHumanReadableCopyright = © 2026 Coffic
 INFOPLIST_FILE = LumiApp/Lumi-Info.plist
@@ -33,5 +33,5 @@ LUMI_KEYCHAIN_SERVICE_SUFFIX = .debug
 LUMI_URL_SCHEME = lumi-debug
 
 // 版本号（CI release.yml 改这里）
-MARKETING_VERSION = 5.24.2;
+MARKETING_VERSION = 6.0.0;
 CURRENT_PROJECT_VERSION = 632;

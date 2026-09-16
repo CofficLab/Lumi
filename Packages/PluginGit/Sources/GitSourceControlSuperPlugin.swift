@@ -3,6 +3,7 @@ import KernelCore
 import KitAgentTool
 import KitSuperLog
 import os
+import ProviderGit
 import ProviderMessageRendering
 import ProviderProject
 import ProviderSkill
@@ -40,6 +41,8 @@ public final class GitSourceControlSuperPlugin: SuperPlugin, SuperLog {
         }
         
         try kernel.registerProvider((any SourceControlProviding).self, GitSourceControlAdapter())
+        // 发布只读 Git 契约，供不依赖本插件的插件消费（见 ProviderGit）。
+        try kernel.registerProvider((any GitRepositoryReading).self, GitService.shared)
         let project = kernel.resolveProvider((any ProjectProviding).self)
         let projectCapability = project.map { GitProjectCapabilityAdapter(project: $0) }
         let tools: [any SuperAgentTool] = [
@@ -56,7 +59,7 @@ public final class GitSourceControlSuperPlugin: SuperPlugin, SuperLog {
             return
         }
         for tool in tools {
-            toolManager.add(tool, pluginID: id)
+            toolManager.add(ConversationScopedGitTool(tool), pluginID: id)
         }
         
         // 注册 git_log 工具结果的专用行渲染器：
@@ -83,6 +86,7 @@ public final class GitSourceControlSuperPlugin: SuperPlugin, SuperLog {
     public func onShutdown(kernel: KernelCoreContainer) throws {
         Self.logger.info("\(Self.t)Shutting down Git source-control plugin")
         kernel.unregisterProvider((any SourceControlProviding).self)
+        kernel.unregisterProvider((any GitRepositoryReading).self)
         kernel.resolveProvider((any ToolCallRenderingProviding).self)?
             .unregister(id: GitLogRowRenderer.id)
         for name in GitV2ToolNames.all {

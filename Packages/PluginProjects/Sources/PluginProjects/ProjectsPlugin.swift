@@ -24,10 +24,11 @@ import SwiftUI
 /// - 通过 `willSendToLLM` 钩子将当前对话绑定的项目路径注入 LLM 上下文;
 ///   「添加项目」动作胶囊。
 @MainActor
-public final class ProjectsPlugin: SuperPlugin, SuperLog {
+public final class ProjectsPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.projects", category: "Projects")
 
     public let id = "com.coffic.lumi.plugin.projects"
+    public let legacyDataDirectoryNames = ["Projects"]
     public let order = 5
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.projects",
@@ -42,6 +43,7 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     private var projectObserver: ProjectProvidingObserver?
     private var openedFilesPersistence: ProjectOpenedFilesPersistence?
     private var conversationProjectSyncObserver: ConversationProjectSyncObserver?
+    private var ragStatusObservers: [String: ProjectRAGStatusObserver] = [:]
     /// `willSendToLLM` 项目路径注入钩子（见 `Hooks/ProjectPathInjectionHook.swift`）。
     private var projectPathInjectionHook: ProjectPathInjectionHook?
     private var projectPathInjectionHookHandle: (any LifecycleHookHandle)?
@@ -59,16 +61,13 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
     }
     public func onRegister(kernel: KernelCoreContainer) throws { registerPromptSuggestion(kernel: kernel, requiresEnable: !kernel.isPluginEnabled(id: id)) }
 
-    /// 存储目录 key，用于 `storage.pluginDataDirectory(for:)`。
-    static let storageDirectoryKey = "Projects"
-
     public func onBoot(kernel: KernelCoreContainer) throws {
-        // 1. 装配存储（应用数据目录按 storage key "Projects" 隔离）
+        // 1. 装配存储（应用数据目录按插件 ID 隔离）
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
             Self.logger.error("\(Self.t)Failed to resolve StorageProviding from kernel")
             return
         }
-        let store = ProjectsStore(pluginDirectory: storage.pluginDataDirectory(for: Self.storageDirectoryKey))
+        let store = ProjectsStore(pluginDirectory: storage.pluginDataDirectory(for: id))
 
         // 2. v4 历史项目迁移（必须在 ViewModel 初始化之前;幂等、吞错）
         ProjectsLegacyMigration(
@@ -144,9 +143,22 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
                     id: "\(id).rag-status",
                     order: 150
                 ) { projectPath in
-                    ProjectRAGStatusSection(projectPath: projectPath) {
+                    let capability = ProjectRAGStatusCapability {
                         kernel.resolveProvider((any ProjectRAGProviding).self)
                     }
+                    let viewModel = ProjectRAGStatusViewModel(
+                        projectPath: projectPath,
+                        capability: capability
+                    )
+                    let observer = ProjectRAGStatusObserver(
+                        capability: capability,
+                        viewModel: viewModel
+                    )
+                    self.ragStatusObservers[projectPath] = observer
+                    return ProjectRAGStatusSection(
+                        projectPath: projectPath,
+                        viewModel: viewModel
+                    )
                 }
             ])
             settings.addEntries([
@@ -225,6 +237,10 @@ public final class ProjectsPlugin: SuperPlugin, SuperLog {
             .removeEntries(ids: ["\(id).settings"])
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeProjectDetailSections(ids: ["\(id).rag-status"])
+        for observer in ragStatusObservers.values {
+            observer.cancel()
+        }
+        ragStatusObservers.removeAll()
         ProjectsRuntime.reset()
     }
 

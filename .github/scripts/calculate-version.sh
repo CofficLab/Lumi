@@ -14,9 +14,6 @@ set -euo pipefail
 # Get the directory of the current script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Get the increment type (major, minor, or patch)
-INCREMENT_TYPE=$("${SCRIPT_DIR}/bump-version.sh")
-
 # Get the last tag starting with 'v'
 # Use sort -V to find the highest version number regardless of git history reachability
 LAST_TAG=$(git tag -l "v*" | sort -V | tail -n 1 2>/dev/null || echo "v0.0.0")
@@ -30,13 +27,27 @@ LAST_TAG="${LAST_TAG#v}"
 LUMI_XCCONFIG="LumiApp/Config/Lumi-Release.xcconfig"
 XCODE_VERSION=$(grep -m1 "^MARKETING_VERSION" "$LUMI_XCCONFIG" | sed 's/.*= *//; s/;.*//' | tr -d ' ' || echo "0.0.0")
 
-# Compare versions and use the higher one
-# sort -V does version-aware sorting (e.g., 1.10 > 1.9)
-BASE_VERSION=$(echo -e "${LAST_TAG}\n${XCODE_VERSION}" | sort -V | tail -n 1)
+# Compare versions and prefer an explicitly higher version from the repository.
+# sort -V does version-aware sorting (e.g., 1.10 > 1.9).
+BASE_VERSION=$(printf '%s\n' "${LAST_TAG}" "${XCODE_VERSION}" | sort -V | tail -n 1)
 
 echo "Git tag version: ${LAST_TAG}" >&2
 echo "Xcode version: ${XCODE_VERSION}" >&2
+
+# MARKETING_VERSION is an explicit version decision made in the repository.
+# When it is ahead of the latest release tag, preserve it as-is instead of
+# bumping it a second time. This keeps a manually configured major/minor
+# release from becoming an unexpected additional bump in CI.
+if [[ "${XCODE_VERSION}" != "${LAST_TAG}" && "${BASE_VERSION}" == "${XCODE_VERSION}" ]]; then
+  echo "Using repository version: ${XCODE_VERSION}" >&2
+  echo "${XCODE_VERSION}"
+  exit 0
+fi
+
 echo "Using base version: ${BASE_VERSION}" >&2
+
+# Get the increment type (major, minor, or patch)
+INCREMENT_TYPE=$("${SCRIPT_DIR}/bump-version.sh")
 
 # Use the base version for calculation
 LAST_TAG="${BASE_VERSION}"

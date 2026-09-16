@@ -1,36 +1,24 @@
 import KitLLM
 import LumiUI
-import PluginLLMProviderSettings
-import ProviderLLMManager
 import SwiftUI
 
 /// AI 模型配置引导页 —— 首次启动时引导用户选择 LLM 供应商并填写 API Key。
+///
+/// View 只依赖 `AISetupViewModel`，不直接持有 `LLMManaging`。自定义供应商
+/// 的配置入口只在设置里提供（见页面底部的提示文案）。
 struct AISetupPage: View {
-    let manager: (any LLMManaging)?
-    let customProviderStore: UserDefinedCloudProviderStore?
     @LumiTheme private var theme
-    @State private var selectedProviderID = ""
-    @State private var apiKey = ""
-    @State private var didSave = false
+    @ObservedObject private var viewModel: AISetupViewModel
+
     @State private var isProviderPickerPresented = false
-    @State private var isCustomProviderEditorPresented = false
-    @State private var customProviderCount = 0
 
-    private var providers: [any SuperLLMProvider] {
-        Self.cloudServiceProviders(from: manager?.allProviders() ?? [])
-    }
-
-    private var selectedProvider: (any SuperLLMProvider)? {
-        providers.first { $0.providerID == selectedProviderID }
-    }
-
-    static func cloudServiceProviders(from providers: [any SuperLLMProvider]) -> [any SuperLLMProvider] {
-        providers.filter { $0.providerInfo.providerType == .cloudService }
+    init(viewModel: AISetupViewModel) {
+        self.viewModel = viewModel
     }
 
     var body: some View {
         VStack(spacing: DesignTokens.Spacing.lg) {
-            if providers.isEmpty {
+            if viewModel.providers.isEmpty {
                 AppEmptyState(
                     icon: "network.slash",
                     title: LumiPluginLocalization.string("No providers available", bundle: .module),
@@ -39,7 +27,7 @@ struct AISetupPage: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 180)
             } else {
-                if let provider = selectedProvider {
+                if let provider = viewModel.selectedProvider {
                     providerDetailCard(provider)
                 }
             }
@@ -51,21 +39,7 @@ struct AISetupPage: View {
         }
         .frame(maxWidth: 460)
         .padding(.vertical, DesignTokens.Spacing.xxl - 4)
-        .onAppear { synchronizeSelection() }
-        .onChange(of: selectedProviderID) { _, _ in
-            apiKey = selectedProvider?.getApiKey() ?? ""
-            didSave = selectedProvider?.hasApiKey() ?? false
-        }
-        .onChange(of: customProviderStore?.configurations) { _, _ in
-            // 自定义供应商变化后刷新选中状态
-            synchronizeSelection()
-        }
-        .sheet(isPresented: $isCustomProviderEditorPresented) {
-            if let store = customProviderStore {
-                CustomCloudProviderEditor(store: store)
-                    .frame(width: 560, height: 620)
-            }
-        }
+        .onAppear { viewModel.synchronizeSelection() }
     }
 
     // MARK: - Sections
@@ -75,8 +49,8 @@ struct AISetupPage: View {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
                 HStack(alignment: .top) {
                     ProviderSelectView(
-                        providers: providers,
-                        selectedProviderID: $selectedProviderID,
+                        providers: viewModel.providers,
+                        selectedProviderID: $viewModel.selectedProviderID,
                         isPresented: $isProviderPickerPresented
                     )
 
@@ -101,7 +75,7 @@ struct AISetupPage: View {
                 } else {
                     AppInputField(
                         LocalizedStringKey(LumiPluginLocalization.string("API Key", bundle: .module)),
-                        text: $apiKey,
+                        text: $viewModel.apiKey,
                         fieldType: .secure
                     )
                 }
@@ -114,17 +88,14 @@ struct AISetupPage: View {
                         ),
                         style: .primary,
                         action: {
-                            provider.setApiKey(apiKey)
-                            manager?.select(providerID: provider.providerID, model: nil)
-                            apiKey = provider.getApiKey()
-                            didSave = true
+                            viewModel.saveAPIKey()
                         }
                     )
-                    .disabled(!provider.providerInfo.isLocal && apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(!provider.providerInfo.isLocal && viewModel.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                     Spacer()
 
-                    if didSave {
+                    if viewModel.didSave {
                         Label(LumiPluginLocalization.string("Saved", bundle: .module), systemImage: "checkmark.circle.fill")
                             .font(DesignTokens.Typography.caption1)
                             .foregroundStyle(theme.success)
@@ -132,29 +103,6 @@ struct AISetupPage: View {
                 }
             }
         }
-        .overlay(alignment: .topTrailing) {
-            if customProviderStore != nil {
-                AppButton(
-                    "添加供应商",
-                    systemImage: "plus",
-                    style: .tonal,
-                    size: .small
-                ) {
-                    isCustomProviderEditorPresented = true
-                }
-                .offset(x: 12, y: -12)
-            }
-        }
-    }
-
-    private func synchronizeSelection() {
-        guard selectedProviderID.isEmpty else { return }
-        let managerSelection = manager?.selectedProviderID
-        selectedProviderID = providers.first(where: { $0.providerID == managerSelection })?.providerID
-            ?? providers.first?.providerID
-            ?? ""
-        apiKey = selectedProvider?.getApiKey() ?? ""
-        didSave = selectedProvider?.hasApiKey() ?? false
     }
 }
 

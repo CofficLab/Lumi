@@ -11,7 +11,7 @@ struct PluginWebFetchTests {
         #expect(WebFetchPlugin().name.isEmpty == false)
         #expect(WebFetchPlugin().metadata.category == .integration)
         #expect(WebFetchPlugin().order == 100)
-        #expect(WebFetchPlugin().metadata.policy == .enabledByDefault)
+        #expect(WebFetchPlugin().metadata.policy == .required)
     }
 
     @Test("plugin registers one web fetch tool")

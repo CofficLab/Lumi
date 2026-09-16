@@ -13,11 +13,12 @@ import ProviderToolManager
 /// - 注册 4 个 Agent 工具：save_memory / recall_memory / list_memories / delete_memory；
 /// - 记忆文件为 Markdown（frontmatter 元数据 + 正文），按 global/projects 分目录。
 @MainActor
-public final class MemoryPlugin: SuperPlugin, SuperLog {
+public final class MemoryPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.memory", category: "Memory")
 
     /// 保持旧版插件 ID。
     public let id = "com.coffic.lumi.plugin.memory"
+    public let legacyDataDirectoryNames = ["Memory"]
     public let order = 89
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.memory",
@@ -39,7 +40,7 @@ public final class MemoryPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t)Failed to resolve StorageProviding, ToolManagerProviding from kernel")
             return
         }
-        let memoryRoot = storageProvider.pluginDataDirectory(for: "Memory")
+        let memoryRoot = storageProvider.pluginDataDirectory(for: id)
         let storage = MemoryFileStorage(rootURL: memoryRoot)
         self.storage = storage
 

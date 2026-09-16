@@ -12,7 +12,7 @@ final class ToolManagerObserver: SuperLog {
         category: "plugin.agent-loop.tool-manager-observer"
     )
     nonisolated static let emoji = "🔄"
-    nonisolated static let verbose = false
+    nonisolated static let verbose = true
 
     private weak var agentLoop: (any AgentLoopProviding)?
     private var toolManagerObserver: (any ToolManagerObserverHandle)?

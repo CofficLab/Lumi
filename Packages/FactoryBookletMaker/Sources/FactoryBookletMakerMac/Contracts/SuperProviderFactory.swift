@@ -5,7 +5,6 @@ import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
-import ProviderTheme
 import ProviderToolbar
 
 #if os(macOS)
@@ -21,7 +20,6 @@ import ProviderLogo
 @MainActor
 public protocol ProviderFactory {
     func makeStorageProvider() -> any StorageProviding
-    func makeThemeProvider() -> any ThemeProviding
     func makeContentViewProvider() -> any ContentViewProviding
     func makeDocsViewProvider() -> any DocsViewProviding
     func makeToolbarProvider() -> any ToolbarProviding

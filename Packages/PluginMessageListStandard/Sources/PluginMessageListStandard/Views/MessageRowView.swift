@@ -1,6 +1,5 @@
 import LumiUI
 import ProviderConversation
-import ProviderDeveloperMode
 import ProviderMessage
 import ProviderMessageRendering
 import SwiftUI
@@ -14,16 +13,23 @@ import SwiftUI
 /// 开启开发者模式后，在分发到具体 renderer 后会在消息行右上角叠加一个
 /// `renderer.id` 徽章，便于一眼分辨当前生效的具体渲染器（包括第三方插件贡献的），
 /// 并用同一 ID 的稳定颜色绘制细边框。
+///
+/// 开发者模式状态来自插件组装层创建的共享 `DeveloperModeStateViewModel`，
+/// 行 View 不再逐行创建外部 Observer。
 struct MessageRowView: View {
     let services: MessageListServices
+    @ObservedObject var developerModeState: DeveloperModeStateViewModel
     let message: Message
     let verbosity: ResponseVerbosity
 
-    @State private var isDeveloperModeEnabled = false
-    @State private var developerModeObserverHandle: (any DeveloperModeProvidingObserverHandle)?
-
-    init(services: MessageListServices, message: Message, verbosity: ResponseVerbosity) {
+    init(
+        services: MessageListServices,
+        developerModeState: DeveloperModeStateViewModel,
+        message: Message,
+        verbosity: ResponseVerbosity
+    ) {
         self.services = services
+        self.developerModeState = developerModeState
         self.message = message
         self.verbosity = verbosity
     }
@@ -36,25 +42,12 @@ struct MessageRowView: View {
         Group {
             if let renderer {
                 renderer.render(message, verbosity)
-                    .messageRendererIdBadge(renderer.id, isEnabled: isDeveloperModeEnabled)
+                    .messageRendererIdBadge(renderer.id, isEnabled: developerModeState.isDeveloperModeEnabled)
             } else {
                 Text("No renderer for message: \(message.id)")
                     .foregroundColor(.orange)
                     .padding(12)
             }
-        }
-        .onAppear {
-            guard developerModeObserverHandle == nil else { return }
-            guard let provider = services.developerMode else { return }
-            isDeveloperModeEnabled = provider.isEnabled
-            developerModeObserverHandle = provider.addObserver { event in
-                guard case let .enabledChanged(value) = event else { return }
-                isDeveloperModeEnabled = value
-            }
-        }
-        .onDisappear {
-            developerModeObserverHandle?.cancel()
-            developerModeObserverHandle = nil
         }
     }
 }

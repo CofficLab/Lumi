@@ -31,21 +31,20 @@ public struct CreatePromoTaskTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let scope = try await PromoToolSupport.resolveScope(arguments)
         let slug = try PromoToolSupport.required("slug", arguments)
         let familyRaw = try PromoToolSupport.required("deviceFamily", arguments)
         guard let family = AppStorePromoDeviceFamily(rawValue: familyRaw.lowercased()) else {
             throw PromoToolSupport.ToolArgumentError.invalid("deviceFamily")
         }
         let task = try PromoToolSupport.store.createTask(
-            storagePath: try await PromoToolSupport.storagePath(for: scope),
+            storagePath: try await PromoToolSupport.storagePath(),
             slug: slug,
             title: try PromoToolSupport.required("title", arguments),
             appName: try PromoToolSupport.required("appName", arguments),
             deviceFamily: family,
             localeIdentifier: PromoToolSupport.string(arguments, "localeIdentifier") ?? "en-US"
         )
-        await PromoToolSupport.notify(scope: scope, taskID: task.id)
-        return "Created App Store promotional artwork task (scope=\(scope.rawValue)).\n\(PromoToolSupport.taskSummary(task, scope: scope))\nNext: create one or more HTML images with app_store_promo_create_image."
+        await PromoToolSupport.notify(taskID: task.id)
+        return "Created App Store promotional artwork task.\n\(PromoToolSupport.taskSummary(task))\nNext: create one or more HTML images with app_store_promo_create_image."
     }
 }

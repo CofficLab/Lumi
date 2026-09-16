@@ -1,7 +1,7 @@
 import Foundation
 import KernelCore
 import os
-import PluginLLMProviderSettings
+import ProviderConversation
 import ProviderLLMManager
 import ProviderMessageRendering
 import ProviderOnboarding
@@ -40,10 +40,16 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
 
     /// onBoot 创建并注册的 LLMManaging 实现。
     private var manager: CustomLLMManager?
+    /// 本插件的最小供应商能力，供 ViewModel/渲染器使用。
+    private var capability: LLMManagerCapabilityAdapter?
+    /// 监听当前对话的供应商/模型变更，同步到全局选中。
+    private var conversationProviderObserver: ConversationProviderObserver?
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let manager = CustomLLMManager()
         self.manager = manager
+        let capability = LLMManagerCapabilityAdapter(manager: manager)
+        self.capability = capability
 
         // 1. 注销 ProviderFactory 预注册的默认实现（避免 providerAlreadyRegistered）。
         kernel.unregisterProvider((any LLMManaging).self)
@@ -53,8 +59,8 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
 
         // 3. 注册 API Key 相关消息渲染器（order 350/340，优先于 core-error-message 的 300）。
         if let rendering = kernel.resolveProvider((any MessageRenderingProviding).self) {
-            rendering.register(APIKeyMissingRenderer.item(manager: manager))
-            rendering.register(APIKeyAccessFailedRenderer.item(manager: manager))
+            rendering.register(APIKeyMissingRenderer.item(capability: capability))
+            rendering.register(APIKeyAccessFailedRenderer.item(capability: capability))
             if Self.verbose {
                 Self.logger.info("\(Self.t)registered API Key message renderers (missing / access-failed)")
             }
@@ -73,14 +79,14 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
 
     /// 对话绑定的供应商/模型通过 `LLMRequest.providerID` 显式传递，避免
     /// 切换对话时改写全局选中状态；未绑定对话才使用全局选中项。
-    ///
-    /// 自定义供应商 Store 由 `LLMProviderSettingsPlugin`（order=100）创建，
-    /// `onReady` 在所有 `onBoot` 完成后执行，此时 Store 已就绪。
     public func onReady(kernel: KernelCoreContainer) throws {
         guard let manager else { return }
 
+        // 必须在 onboarding guard 之前：用户主动切换对话的供应商/模型时同步到全局
+        // 选中，使下次新建对话继承用户最近一次的选择。
+        // TEMP-DISABLED observeConversationProviderChanges(kernel: kernel, manager: manager)
+
         let onboarding = kernel.resolveProvider((any OnboardingProviding).self)
-        let storeProvider = kernel.resolveProvider((any UserDefinedCloudProviderStoreProviding).self)
 
         // 如果 onboarding 不可用，无法注册页面
         guard let onboarding else {
@@ -90,21 +96,14 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
             return
         }
 
-        let customStore = storeProvider?.store
-
-        if customStore == nil, Self.verbose {
-            Self.logger.info("\(Self.t)UserDefinedCloudProviderStore not resolved, onboarding page registered without custom provider support")
-        }
+        let resolvedCapability = capability ?? LLMManagerCapabilityAdapter(manager: manager)
 
         onboarding.register(
             OnboardingPageItem(
                 id: Self.onboardingPageID,
                 title: LumiPluginLocalization.string("Set up your AI provider", bundle: .module)
-            ) {
-                AISetupPage(
-                    manager: manager,
-                    customProviderStore: customStore
-                )
+            ) { [resolvedCapability] in
+                AISetupPage(viewModel: AISetupViewModel(capability: resolvedCapability))
             }
         )
     }
@@ -113,7 +112,45 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         if let onboarding = kernel.resolveProvider((any OnboardingProviding).self) {
             onboarding.unregister(id: Self.onboardingPageID)
         }
+        conversationProviderObserver?.cancel()
+        conversationProviderObserver = nil
+        capability = nil
         manager = nil
         // 内核会按插件归属自动撤回 onBoot 注册的 Provider，无需手动处理。
+    }
+
+    // MARK: - Private
+
+    /// 订阅当前对话的供应商/模型变更，并同步到全局选中。
+    ///
+    /// 仅响应用户对**当前选中对话**的主动切换；后台修改其它对话不干扰全局。
+    /// 模型若不属于目标供应商则置空，交由管理器回退默认模型，避免把过期模型
+    /// 写入持久化的全局选中。
+    private func observeConversationProviderChanges(
+        kernel: KernelCoreContainer,
+        manager: CustomLLMManager
+    ) {
+        guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
+            if Self.verbose {
+                Self.logger.warning("\(Self.t)ConversationManaging not resolved, global selection sync skipped")
+            }
+            return
+        }
+
+        conversationProviderObserver = ConversationProviderObserver(
+            conversations: conversations
+        ) { [weak manager, weak conversations] conversationID in
+            guard let conversations,
+                  conversationID == conversations.selectedConversationID,
+                  let selectedModelID = conversations.modelID(for: conversationID)
+                    .flatMap(LLMModelID.init(rawValue:)),
+                  let route = manager?.modelRoute(for: selectedModelID) else { return }
+
+            manager?.select(modelID: route.modelID, reason: .conversationSwitch)
+
+            if Self.verbose {
+                Self.logger.info("\(Self.t)global selection synced from conversation: modelID=\(route.modelID.rawValue, privacy: .public)")
+            }
+        }
     }
 }

@@ -1,3 +1,4 @@
+import Foundation
 import KernelCore
 import KitLLM
 import ProviderLLMManager
@@ -7,11 +8,12 @@ import os
 
 /// MLX 本地模型供应商注册插件。
 @MainActor
-public final class MLXProviderPlugin: SuperPlugin, SuperLog {
+public final class MLXProviderPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.llm-provider.mlx", category: "MLXProvider")
     private static let legacyStorageKey = "LLMProviderMLX"
 
     public let id = "com.coffic.lumi.plugin.llm-provider.mlx"
+    public let legacyDataDirectoryNames = ["LLMProviderMLX"]
     public let order = 100
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.llm-provider.mlx",
@@ -24,9 +26,36 @@ public final class MLXProviderPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func migrateData(context: PluginDataMigrationContext) throws {
+        try PluginDataMigrationUtility.copyLegacyDirectories(
+            legacyDirectoryNames: legacyDataDirectoryNames,
+            context: context
+        )
+
+        // MLX 模型最初位于未版本化的 Application Support 目录；保留旧目录，
+        // 将其中尚未存在于新目录的模型文件合并过去。
+        guard let appSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first else { return }
+        let legacyDirectory = appSupport
+            .appendingPathComponent("com.coffic.lumi", isDirectory: true)
+            .appendingPathComponent(Self.legacyStorageKey, isDirectory: true)
+        guard FileManager.default.fileExists(atPath: legacyDirectory.path) else { return }
+
+        try FileManager.default.createDirectory(
+            at: context.currentPluginDataDirectory,
+            withIntermediateDirectories: true
+        )
+        try PluginDataMigrationUtility.mergeDirectoryContents(
+            from: legacyDirectory,
+            to: context.currentPluginDataDirectory
+        )
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
-            let rootDirectory = storage.pluginDataDirectory(for: Self.legacyStorageKey)
+            let rootDirectory = storage.pluginDataDirectory(for: id)
             MLXModelPaths.configure(rootDirectory: rootDirectory)
             MLXDownloadManager.shared.configure(rootDirectory: rootDirectory)
             MLXRuntime.shared.configure(rootDirectory: rootDirectory)

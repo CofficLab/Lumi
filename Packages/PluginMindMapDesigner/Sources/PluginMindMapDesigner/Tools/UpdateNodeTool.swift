@@ -60,9 +60,9 @@ public struct UpdateNodeTool: SuperAgentTool {
             await MindMapToolSupport.notify(scope: scope, mapId: map.id)
             switch language {
             case .chinese:
-                return "已更新节点 \(nodeId.prefix(8))。\n作用域: \(scope.rawValue)\n思维导图ID: \(updated.id)"
+                return "已更新节点 \(nodeId.prefix(8))。\n思维导图ID: \(updated.id)"
             case .english:
-                return "Updated node \(nodeId.prefix(8)).\nscope=\(scope.rawValue)\nmapId: \(updated.id)"
+                return "Updated node \(nodeId.prefix(8)).\nmapId: \(updated.id)"
             }
         } catch {
             await MainActor.run { MindMapStore.shared.setError(error.localizedDescription) }

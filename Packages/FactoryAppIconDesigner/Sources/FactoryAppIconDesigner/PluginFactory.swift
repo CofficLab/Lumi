@@ -8,6 +8,7 @@ import PluginSettingGeneral
 import PluginSettingView
 import PluginStorage
 import PluginThemePack
+import PluginThemeManager
 import PluginToolManager
 
 /// AppIconDesigner 的专用插件目录。
@@ -28,6 +29,7 @@ public struct DefaultPluginFactory: PluginFactory {
             PluginActivityBar(),
             SettingGeneralPlugin(),
             LogoCofficPlugin(),
+            ThemeManagerPlugin(),
             ThemePackPlugin(),
             AlwaysOnPlugin(AppIconDesignerPlugin()),
         ]

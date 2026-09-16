@@ -222,6 +222,46 @@ struct KitLLMTests {
         #expect(bodyMessages?[2]["content"] as? String == "edit result")
     }
 
+    @Test("OpenAI 兼容请求不会把工具图片放进 assistant 内容")
+    func openAIAdapterMovesToolImagesToSyntheticUserMessage() throws {
+        let adapter = OpenAICompatibleProviderAdapter(
+            configuration: OpenAICompatibleProviderConfiguration(baseURL: "https://api.deepseek.com/v1")
+        )
+        let image = MessageImage(data: Data([0x89, 0x50, 0x4E, 0x47]), mimeType: "image/png")
+        let messages = [
+            LLMMessage(
+                role: .assistant,
+                content: "",
+                toolCalls: [LLMToolCall(id: "read-image", name: "read_image", arguments: "{}")],
+                // 防御历史错误状态：assistant 即使带有图片，也不能原样发出。
+                images: [image]
+            ),
+            LLMMessage(
+                role: .tool,
+                content: "已读取图片",
+                toolCallID: "read-image",
+                images: [image]
+            ),
+        ]
+
+        let body = try adapter.buildRequestBody(
+            messages: messages,
+            model: "deepseek-v4-flash",
+            tools: nil,
+            systemPrompt: ""
+        )
+        let bodyMessages = body["messages"] as? [[String: Any]]
+
+        #expect(bodyMessages?.count == 3)
+        #expect(bodyMessages?[0]["role"] as? String == "assistant")
+        #expect(bodyMessages?[0]["content"] as? String == "")
+        #expect(bodyMessages?[1]["role"] as? String == "tool")
+        #expect(bodyMessages?[1]["content"] as? String == "已读取图片")
+        #expect(bodyMessages?[2]["role"] as? String == "user")
+        let visualContent = bodyMessages?[2]["content"] as? [[String: Any]]
+        #expect(visualContent?.contains { $0["type"] as? String == "image_url" } == true)
+    }
+
     @Test("OpenAI 兼容请求将迟到的交互工具结果移到 assistant 后")
     func openAIAdapterRepairsOutOfOrderToolResult() throws {
         let adapter = OpenAICompatibleProviderAdapter(
@@ -372,6 +412,13 @@ struct KitLLMTests {
             maxAttempts: 3
         )
         #expect(network.shouldRetry)
+
+        let tls = ProviderRetryPolicy.decision(
+            forNetworkError: NSError(domain: NSURLErrorDomain, code: NSURLErrorSecureConnectionFailed),
+            attempt: 1,
+            maxAttempts: 3
+        )
+        #expect(tls.shouldRetry)
 
         let unauthorized = ProviderRetryPolicy.decision(
             statusCode: 401,

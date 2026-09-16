@@ -1,5 +1,6 @@
 import KitAgentTool
 import Foundation
+import ProviderStorage
 import Testing
 @testable import PluginCaffeinate
 
@@ -10,7 +11,7 @@ struct PluginCaffeinateTests {
     func pluginMetadataIsStable() {
         let plugin = CaffeinatePlugin()
 
-        #expect(plugin.id == "Caffeinate")
+        #expect(plugin.id == "com.coffic.lumi.plugin.caffeinate")
         #expect(plugin.name.isEmpty == false)
         #expect(plugin.order == 1)
         #expect(plugin.metadata.policy == .enabledByDefault)
@@ -55,5 +56,42 @@ struct PluginCaffeinateTests {
         let bundle = Bundle.module
         #expect(bundle.url(forResource: "Localizable", withExtension: "xcstrings") != nil)
         #expect(LumiPluginLocalization.string("Caffeinate", bundle: .module).isEmpty == false)
+    }
+}
+
+@MainActor
+struct CaffeinateLocalStoreMigrationTests {
+    @Test
+    func migratesLegacyStorageToPluginIDDirectory() throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory
+            .appendingPathComponent("PluginCaffeinateMigration-\(UUID().uuidString)", isDirectory: true)
+        defer { try? fileManager.removeItem(at: root) }
+
+        let legacySettingsDirectory = root
+            .appendingPathComponent("Caffeinate", isDirectory: true)
+            .appendingPathComponent("settings", isDirectory: true)
+        try fileManager.createDirectory(at: legacySettingsDirectory, withIntermediateDirectories: true)
+
+        let legacySettings = try PropertyListSerialization.data(
+            fromPropertyList: ["defaultMode": "indefinite"],
+            format: .binary,
+            options: 0
+        )
+        try legacySettings.write(
+            to: legacySettingsDirectory.appendingPathComponent("settings.plist"),
+            options: .atomic
+        )
+
+        let storage = DefaultStorageProvider(dataRootDirectory: root)
+        let store = CaffeinateLocalStore()
+        store.configure(storage: storage)
+
+        let migratedSettings = storage
+            .pluginDataDirectory(for: CaffeinatePlugin.pluginID)
+            .appendingPathComponent("settings/settings.plist")
+        #expect(fileManager.fileExists(atPath: migratedSettings.path))
+        #expect(!fileManager.fileExists(atPath: root.appendingPathComponent("Caffeinate").path))
+        #expect(store.defaultModeRaw == "indefinite")
     }
 }

@@ -3,21 +3,24 @@ import ProviderConversation
 import ProviderConversationState
 
 /// Observes selected-conversation and conversation-state changes for the send bar.
+///
+/// Events directly refresh the view model; no onChange callback escapes the observer.
 @MainActor
 final class SendActionBarConversationObserver {
+    private weak var viewModel: SendActionBarViewModel?
     private var stateHandle: (any ConversationStateObserverHandle)?
     private var conversationHandle: (any SelectedConversationObserverHandle)?
 
     init(
-        conversations: any ConversationManaging,
-        conversationState: any ConversationStateProviding,
-        onChange: @escaping () -> Void
+        capability: any ConversationInputCapability,
+        viewModel: SendActionBarViewModel
     ) {
-        stateHandle = conversationState.addConversationStateObserver { _ in
-            onChange()
+        self.viewModel = viewModel
+        stateHandle = capability.addConversationStateObserver { [weak viewModel] _ in
+            viewModel?.refreshConversationState()
         }
-        conversationHandle = conversations.addSelectedConversationObserver { _ in
-            onChange()
+        conversationHandle = capability.addSelectedConversationObserver { [weak viewModel] _ in
+            viewModel?.refreshConversationState()
         }
     }
 
@@ -26,5 +29,6 @@ final class SendActionBarConversationObserver {
         stateHandle = nil
         conversationHandle?.cancel()
         conversationHandle = nil
+        viewModel = nil
     }
 }

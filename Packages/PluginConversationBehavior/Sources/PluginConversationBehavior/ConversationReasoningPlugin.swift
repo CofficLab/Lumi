@@ -120,7 +120,7 @@ struct ReasoningActionBarButton: View {
         }
     }
 
-    private func apply(_ option: ReasoningOption) {
+    func apply(_ option: ReasoningOption) {
         switch option {
         case .off:
             if let id = conversations.selectedConversationID {

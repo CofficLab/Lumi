@@ -8,7 +8,7 @@ public struct ListResumesTool: SuperAgentTool {
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
-        "List existing resume documents in the application data directory."
+        "List existing resume documents in the current project."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {

@@ -48,7 +48,6 @@ import PluginChatScreenshot
 import PluginConversationBehavior
 import PluginConversationVerbosity
 import PluginConversationCacheHitRate
-import PluginConversationContextSize
 import PluginConversationFork
 import PluginConversationInput
 import PluginConversationList
@@ -82,6 +81,7 @@ import PluginLLMProviderMegaLLM
 import PluginLLMProviderMiniMax
 import PluginLLMProviderOpenAI
 import PluginLLMProviderOpenCode
+import PluginLLMProviderCommandCode
 import PluginLLMProviderOpenRouter
 import PluginLLMProviderSettings
 import PluginLLMProviderStepFun
@@ -102,7 +102,9 @@ import PluginMessageListStandard
 import PluginMessageListDetailed
 import PluginMessageManager
 import PluginMessageRenderer
+import PluginMessageSender
 import PluginAgentLoop
+import PluginAgentLoopRetry
 import PluginLLMContext
 import PluginMindMapDesigner
 import PluginModelSelector
@@ -131,7 +133,9 @@ import PluginSkill
 import PluginOnboarding
 import PluginWelcome
 import PluginThemePack
+import PluginThemeManager
 import PluginToolManager
+import PluginToolbar
 import PluginToolbarSettings
 import PluginVideoConverter
 import PluginWebFetch
@@ -152,6 +156,11 @@ public struct DefaultPluginFactory: PluginFactory {
             // 核心基础插件（order 10-20）：必须最先启动
             try! StorageSuperPlugin(),
             CommandPlugin(),
+            // 工具栏自定义实现（order=0）：替换 ProviderFactory 预注册的
+            // DefaultToolbarProviding，必须早于所有解析 ToolbarProviding 的插件。
+            // 最严格的约束来自 PluginChatPanel / PluginDeveloperMode（均 order=1）：
+            // 它们把解析到的实例捕获进延迟闭包，晚替换会让其调用打在旧实例上。
+            PluginToolbar(),
             ToastSuperPlugin(),
             CaffeinatePlugin(),
             SettingGeneralPlugin(),
@@ -188,6 +197,7 @@ public struct DefaultPluginFactory: PluginFactory {
             LogoCofficPlugin(),
             LogoSmartLightPlugin(),
             SettingsToolbarPlugin(),
+            ThemeManagerPlugin(),
             ThemePackPlugin(),
             VideoConverterPlugin(),
             WhiteNoisePlugin(),
@@ -202,7 +212,6 @@ public struct DefaultPluginFactory: PluginFactory {
             ConversationReasoningPlugin(),
             // 会话统计：消息计数 / 上下文用量
             ConversationMessageCountPlugin(),
-            ConversationContextSizePlugin(),
             ConversationCacheHitRatePlugin(),
             ConversationSpeedPlugin(),
             ConversationAgentTurnCountPlugin(),
@@ -267,6 +276,8 @@ public struct DefaultPluginFactory: PluginFactory {
             MessageManagerPlugin(),
             LLMContextPlugin(),
             PluginAgentLoop(),
+            AgentLoopRetryPlugin(),
+            MessageSenderPlugin(),
             PluginPluginManager(),
             // 设置视图管理器：替换 ProviderFactory 预注册的默认 SettingViewProviding 实现，
             // 必须先于各设置入口贡献插件（如 SettingGeneralPlugin order=200）。
@@ -295,6 +306,7 @@ public struct DefaultPluginFactory: PluginFactory {
             MiniMaxProviderPlugin(),
             OpenAIProviderPlugin(),
             OpenCodeProviderPlugin(),
+            CommandCodeProviderPlugin(),
             OpenRouterProviderPlugin(),
             StepFunProviderPlugin(),
             SublyxProviderPlugin(),

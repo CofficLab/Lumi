@@ -8,8 +8,8 @@ import KitResume
 /// 迁移而来，差异：
 /// - 参数类型 `[String: LumiJSONValue]` → `[String: ToolArgument]`
 /// - 语言从 `kernel.language` → `LanguagePreference.current`（跟随系统/宿主注入）
-/// - 存储路径直接读 `WorkspaceStore.shared.appStoragePath`，不再依赖 `KernelLumi`
-/// - 简历文档仅存储在应用数据目录（app 作用域），不支持项目内存储
+/// - 存储路径直接读 `WorkspaceStore.shared.projectStoragePath`，不再依赖 `KernelLumi`
+/// - 简历文档仅存储在当前项目内
 enum ResumeToolSupport {
     /// 当前语言偏好（跟随系统 locale）。
     static var language: LanguagePreference { .current }
@@ -18,10 +18,10 @@ enum ResumeToolSupport {
 
     // MARK: - Storage & argument helpers
 
-    /// 当前 app 存储路径（应用数据目录）。无路径时抛 invalidStoragePath。
+    /// 当前项目存储路径。无路径时抛 invalidStoragePath。
     static func storagePath() async throws -> String {
         try await MainActor.run {
-            let path = WorkspaceStore.shared.appStoragePath
+            let path = WorkspaceStore.shared.projectStoragePath
             guard !path.isEmpty else { throw ResumeStoreError.invalidStoragePath }
             return path
         }

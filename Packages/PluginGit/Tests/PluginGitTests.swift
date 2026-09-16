@@ -4,8 +4,20 @@ import Testing
 import EditorContracts
 import KernelCore
 import KitAgentTool
+import ProviderGit
 import ProviderToolManager
 @testable import GitPlugin
+
+private struct GitPathEchoTool: SuperAgentTool {
+    let name = "git_path_echo"
+    func description(for language: LanguagePreference) -> String { name }
+    func inputSchema(for language: LanguagePreference) -> [String: Any] { [:] }
+    func permissionRiskLevel(arguments: [String: ToolArgument]) -> CommandRiskLevel { .safe }
+    func displayDescription(for arguments: [String: ToolArgument]) -> String { name }
+    func execute(arguments: [String: ToolArgument]) async throws -> String {
+        arguments["path"]?.value as? String ?? "missing path"
+    }
+}
 
 @MainActor
 @Test func sourceControlPluginRegistersEditorContract() throws {
@@ -61,6 +73,19 @@ import ProviderToolManager
     } else {
         Issue.record("count maximum missing")
     }
+}
+
+@Test func registeredGitToolsDefaultToTheCallingConversationsProject() async throws {
+    let tool = ConversationScopedGitTool(GitPathEchoTool())
+    let context = ToolExecutionContext(
+        jobID: "git-project-scope",
+        conversationID: UUID(),
+        conversationProjectPathProvider: { "/tmp/project-a" }
+    )
+
+    let result = try await tool.executeResult(context: context, arguments: [:])
+
+    #expect(result.content == "/tmp/project-a")
 }
 
 @MainActor

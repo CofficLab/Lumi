@@ -34,6 +34,7 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
     )
 
     private var viewModel: ListV3ViewModel?
+    private var developerModeObserver: DeveloperModeStateObserver?
     private var messageChangeObserver: (any MessageChangeObserverHandle)?
     private var conversationStateObserver: (any ConversationStateObserverHandle)?
     private var streamingObserver: (any MessageStreamingObserverHandle)?
@@ -51,6 +52,12 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
         let conversations = kernel.resolveProvider((any ConversationManaging).self)
         let conversationState = kernel.resolveProvider((any ConversationStateProviding).self)
         let developerMode = kernel.resolveProvider((any DeveloperModeProviding).self)
+        let developerModeState = DeveloperModeStateViewModel()
+        let developerModeObserver = DeveloperModeStateObserver(
+            provider: developerMode,
+            viewModel: developerModeState
+        )
+        self.developerModeObserver = developerModeObserver
         let messages = kernel.resolveProvider((any MessageManaging).self)
         let rendering = kernel.resolveProvider((any MessageRenderingProviding).self)
         let streaming = kernel.resolveProvider((any MessageStreamingProviding).self)
@@ -64,7 +71,7 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
         let services = MessageListServices(
             conversations: conversations.map(MessageListConversationCapabilityAdapter.init(conversations:)),
             conversationState: conversationState.map(MessageListConversationStateCapabilityAdapter.init(conversationState:)),
-            developerMode: developerMode,
+            developerModeState: developerModeState,
             messages: messages.map(MessageListMessageCapabilityAdapter.init(messages:)),
             rendering: rendering.map(MessageListRenderingCapabilityAdapter.init(rendering:)),
             streaming: streaming.map(MessageListStreamingCapabilityAdapter.init(streaming:)),
@@ -88,6 +95,7 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
                 guard let viewModel else { return AnyView(EmptyView()) }
                 return AnyView(ListV3View(
                     services: services,
+                    developerModeState: developerModeState,
                     viewModel: viewModel
                 ))
             }
@@ -132,6 +140,8 @@ public final class PluginMessageListDetailedPlugin: SuperPlugin, SuperLog {
         conversationObserver = nil
         verbosityObservation?.cancel()
         verbosityObservation = nil
+        developerModeObserver?.cancel()
+        developerModeObserver = nil
         viewModel = nil
         kernel.resolveProvider((any ChatSectionProviding).self)?
             .removeItem(id: id)

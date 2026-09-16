@@ -98,7 +98,7 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
         context: ToolExecutionContext,
         arguments: [String: ToolArgument]
     ) async throws -> ToolCallResult {
-        let (command, options) = try await executionRequest(arguments: arguments)
+        let (command, options) = try await executionRequest(arguments: arguments, context: context)
         let reporter = ShellOutputReporter(context: context)
 
         do {
@@ -122,7 +122,8 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
     }
 
     private func executionRequest(
-        arguments: [String: ToolArgument]
+        arguments: [String: ToolArgument],
+        context: ToolExecutionContext? = nil
     ) async throws -> (command: String, options: ShellOptions) {
         guard let command = arguments.stringValue("command"),
               !command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -132,8 +133,13 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
 
         let timeout = TimeInterval(arguments.intValue("timeout") ?? Int(commandTimeout))
 
-        let workspaceRoot = await workspaceRootProvider()?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let workspaceRoot: String?
+        if let contextualProjectPath = await context?.conversationProjectPath() {
+            workspaceRoot = contextualProjectPath
+        } else {
+            workspaceRoot = await workspaceRootProvider()?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
         let options = ShellOptions(
             workingDirectory: workspaceRoot?.isEmpty == false
                 ? workspaceRoot

@@ -104,6 +104,22 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
         runtimes[conversationID]?.activeSuspension
     }
 
+    public func lastFailure(for conversationID: UUID) -> AgentLoopFailure? {
+        runtimes[conversationID]?.lastFailure
+    }
+
+    public func retryTurn(
+        in conversationID: UUID,
+        after failedTurnID: UUID
+    ) async throws -> AgentLoopOutcome {
+        guard let runtime = runtimes[conversationID],
+              runtime.lastTurnID == failedTurnID,
+              case .failed = runtime.phase else {
+            throw AgentLoopError.invalidRetryRequest
+        }
+        return try await runTurn(in: conversationID)
+    }
+
     public func currentTurnID(for conversationID: UUID) -> UUID? {
         runtimes[conversationID]?.turnID
     }
@@ -144,7 +160,18 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
     }
 
     func resolvedProviderID(for conversationID: UUID) -> String? {
-        conversations.providerID(for: conversationID)
+        runtimes[conversationID]?.modelRoute?.providerID
+            ?? resolveModelRoute(for: conversationID)?.providerID
+    }
+
+    func resolveModelRoute(for conversationID: UUID) -> LLMModelRoute? {
+        let conversationModelID = conversations.modelID(for: conversationID)
+            .flatMap(LLMModelID.init(rawValue:))
+        if let conversationModelID,
+           let route = llmManager.modelRoute(for: conversationModelID) {
+            return route
+        }
+        return llmManager.selectedModelID.flatMap(llmManager.modelRoute(for:))
     }
 
     /// Provider 可能不响应 Swift Task 的取消；所有会产生消息或推进状态的

@@ -42,6 +42,7 @@ let package = Package(
             dependencies: [
                 "PluginCaffeinate",
                 "KitAgentTool",
+                "ProviderStorage",
             ]
         ),
     ]

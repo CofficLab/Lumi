@@ -44,7 +44,13 @@ final class AgentLoopStateObserver: SuperLog {
         case .llmResponseReceived(let id, let turn, _):
             provider.update(conversationID: id, turnID: turn, agentLoopState: .running, activity: .thinking)
         case .suspended(let id, let turn, _):
-            provider.update(conversationID: id, turnID: turn, agentLoopState: .suspended, toolState: .suspended)
+            provider.update(
+                conversationID: id,
+                turnID: turn,
+                agentLoopState: .suspended,
+                toolState: .suspended,
+                activity: .waitingForUser
+            )
         case .completed(let id, let turn):
             provider.update(
                 conversationID: id,

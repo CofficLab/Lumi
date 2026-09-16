@@ -13,15 +13,28 @@ import os
 
 enum InputPluginRuntimeBridge {
     nonisolated(unsafe) static var dataRootDirectory: URL?
+    nonisolated(unsafe) static var pluginDirectory: URL?
     static var fallbackRootDirectory: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
+    }
+    static var fallbackPluginDirectory: URL {
+        #if DEBUG
+        let versionedRoot = "db_debug_v6"
+        #else
+        let versionedRoot = "db_production_v6"
+        #endif
+        return fallbackRootDirectory
+            .appendingPathComponent("com.coffic.Lumi", isDirectory: true)
+            .appendingPathComponent(versionedRoot, isDirectory: true)
+            .appendingPathComponent("com.coffic.lumi.plugin.input-manager", isDirectory: true)
     }
 }
 
 @MainActor
-public final class InputSuperPlugin: SuperPlugin, SuperLog {
+public final class InputSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.input-manager", category: "Input")
     public let id = "com.coffic.lumi.plugin.input-manager"
+    public let legacyDataDirectoryNames = ["InputPlugin"]
     public let order = 70
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.input-manager",
@@ -62,6 +75,7 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
         )
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             InputPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
+            InputPluginRuntimeBridge.pluginDirectory = storage.pluginDataDirectory(for: id)
         }
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
@@ -114,6 +128,7 @@ public final class InputSuperPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
         }
         InputPluginRuntimeBridge.dataRootDirectory = nil
+        InputPluginRuntimeBridge.pluginDirectory = nil
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

@@ -68,14 +68,22 @@ import ProviderRootView
         .appendingPathComponent("InputPluginLocalStore-Root-\(UUID().uuidString)", isDirectory: true)
     defer {
         InputPluginRuntimeBridge.dataRootDirectory = nil
+        InputPluginRuntimeBridge.pluginDirectory = nil
         try? FileManager.default.removeItem(at: root)
     }
 
     InputPluginRuntimeBridge.dataRootDirectory = root
+    InputPluginRuntimeBridge.pluginDirectory = root.appendingPathComponent(
+        "com.coffic.lumi.plugin.input-manager",
+        isDirectory: true
+    )
     let store = InputPluginLocalStore()
     #expect(store.set(Data("rule-config".utf8), forKey: "InputPluginConfig") == true)
 
-    let pluginDirectory = root.appendingPathComponent("InputPlugin", isDirectory: true)
+    let pluginDirectory = root.appendingPathComponent(
+        "com.coffic.lumi.plugin.input-manager",
+        isDirectory: true
+    )
     #expect(FileManager.default.fileExists(atPath: pluginDirectory.appendingPathComponent("settings.plist").path))
     #expect(!FileManager.default.fileExists(atPath: pluginDirectory.appendingPathComponent("settings", isDirectory: true).path))
 }

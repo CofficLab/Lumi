@@ -11,8 +11,8 @@ public final class InputPluginLocalStore: SuperLog, @unchecked Sendable {
     private let corruptSettingsFileURL: URL
 
     public convenience init() {
-        self.init(pluginDirectory: (InputPluginRuntimeBridge.dataRootDirectory ?? InputPluginRuntimeBridge.fallbackRootDirectory)
-            .appendingPathComponent("InputPlugin", isDirectory: true))
+        self.init(pluginDirectory: InputPluginRuntimeBridge.pluginDirectory
+            ?? InputPluginRuntimeBridge.fallbackPluginDirectory)
     }
 
     init(pluginDirectory root: URL) {

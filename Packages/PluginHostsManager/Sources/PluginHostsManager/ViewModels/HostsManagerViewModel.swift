@@ -12,6 +12,21 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
     @Published var errorMessage: String?
     @Published var searchText = ""
     @Published var selectedGroup: String?
+
+    private let readHostsFile: () async throws -> String
+    private let writeHostsFile: (String) async throws -> Void
+
+    init(
+        readHostsFile: @escaping () async throws -> String = {
+            try await HostsFileService.shared.readHosts()
+        },
+        writeHostsFile: @escaping (String) async throws -> Void = { content in
+            try await HostsFileService.shared.saveHosts(content: content)
+        }
+    ) {
+        self.readHostsFile = readHostsFile
+        self.writeHostsFile = writeHostsFile
+    }
     
     // Group Management
     public var groups: [String] {
@@ -33,12 +48,25 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
     public var filteredEntries: [HostEntry] {
         var result: [HostEntry] = []
         var currentGroup: String? = nil
-        
+        var groupsWithSearchMatches: Set<String> = []
+
+        if !searchText.isEmpty {
+            var group: String?
+            for entry in entries {
+                if case .groupHeader(let name) = entry.type {
+                    group = name
+                } else if let group, matchesSearch(entry.type) {
+                    groupsWithSearchMatches.insert(group)
+                }
+            }
+        }
+
         for entry in entries {
             // Track Group
             if case .groupHeader(let name) = entry.type {
                 currentGroup = name
-                if selectedGroup == nil || selectedGroup == name {
+                if (selectedGroup == nil || selectedGroup == name),
+                   searchText.isEmpty || groupsWithSearchMatches.contains(name) {
                     result.append(entry)
                 }
                 continue
@@ -51,27 +79,26 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
             
             // Filter by Search Text
             if !searchText.isEmpty {
-                switch entry.type {
-                case .entry(let ip, let domains, _, let comment):
-                    let matchesIp = ip.contains(searchText)
-                    let matchesDomain = domains.contains { $0.localizedCaseInsensitiveContains(searchText) }
-                    let matchesComment = comment?.localizedCaseInsensitiveContains(searchText) ?? false
-                    if matchesIp || matchesDomain || matchesComment {
-                        result.append(entry)
-                    }
-                case .comment(let text):
-                     if text.localizedCaseInsensitiveContains(searchText) {
-                         result.append(entry)
-                     }
-                default:
-                    break
-                }
+                if matchesSearch(entry.type) { result.append(entry) }
             } else {
                 result.append(entry)
             }
         }
         
         return result
+    }
+
+    private func matchesSearch(_ type: HostEntryType) -> Bool {
+        switch type {
+        case .entry(let ip, let domains, _, let comment):
+            ip.contains(searchText) ||
+                domains.contains { $0.localizedCaseInsensitiveContains(searchText) } ||
+                (comment?.localizedCaseInsensitiveContains(searchText) ?? false)
+        case .comment(let text):
+            text.localizedCaseInsensitiveContains(searchText)
+        case .groupHeader, .empty:
+            false
+        }
     }
     
     public func loadHosts() async {
@@ -83,7 +110,7 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
         isLoading = true
         errorMessage = nil
         do {
-            let content = try await HostsFileService.shared.readHosts()
+            let content = try await readHostsFile()
             self.entries = HostsParser.parse(content: content)
             if Self.verbose {
                 if HostsManagerPlugin.verbose {
@@ -109,7 +136,7 @@ public class HostsManagerViewModel: ObservableObject, SuperLog {
         errorMessage = nil
         do {
             let content = HostsParser.serialize(entries: entries)
-            try await HostsFileService.shared.saveHosts(content: content)
+            try await writeHostsFile(content)
             if Self.verbose {
                 if HostsManagerPlugin.verbose {
                                     HostsManagerPlugin.logger.info("\(self.t)Hosts file saved successfully")

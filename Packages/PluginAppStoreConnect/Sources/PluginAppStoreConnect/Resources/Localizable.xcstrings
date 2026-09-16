@@ -1,0 +1,2709 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    " (assigned)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "（已分配）"
+          }
+        }
+      }
+    },
+    " (invalid)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "（无效）"
+          }
+        }
+      }
+    },
+    " (processing…)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "（处理中…）"
+          }
+        }
+      }
+    },
+    "—" : {
+
+    },
+    "%@ (%@)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@（%2$@）"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
+    "%lld x %lld · %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld × %2$lld · %3$@"
+          }
+        }
+      }
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "A private key is stored in Keychain. Saving replaces it." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "私钥已存储在钥匙串中。保存会替换现有私钥。"
+          }
+        }
+      }
+    },
+    "A version is already in progress for %@." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 已有正在进行中的版本。"
+          }
+        }
+      }
+    },
+    "Absolute path to the local screenshot image file." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地截图图片文件的绝对路径。"
+          }
+        }
+      }
+    },
+    "Account" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "账户"
+          }
+        }
+      }
+    },
+    "Account page: enter the Issuer ID, Key ID, and private key; provides Save, Test Connection, and Disconnect, plus a setup guide." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "账户页面：填写 Issuer ID、Key ID 和私钥；提供保存、测试连接、断开连接以及设置指南。"
+          }
+        }
+      }
+    },
+    "Add Dev Context and Analyze" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加开发上下文并分析"
+          }
+        }
+      }
+    },
+    "Add Dev Context to Chat" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将开发上下文添加到聊天"
+          }
+        }
+      }
+    },
+    "Add Screenshots" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加截图"
+          }
+        }
+      }
+    },
+    "Add to Chat" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加到聊天"
+          }
+        }
+      }
+    },
+    "Add to Chat and Analyze" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加到聊天并分析"
+          }
+        }
+      }
+    },
+    "After Approval" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "审核通过后"
+          }
+        }
+      }
+    },
+    "App Previews and Screenshots" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用预览与截图"
+          }
+        }
+      }
+    },
+    "App Store Connect API Key Setup" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect API 密钥设置"
+          }
+        }
+      }
+    },
+    "App Store Connect credentials are incomplete." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 凭据不完整。"
+          }
+        }
+      }
+    },
+    "App Store Connect credentials are incomplete. Configure issuer ID, key ID, and private key in the App Store Connect plugin settings first." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 凭据不完整。请先在 App Store Connect 插件设置中配置 Issuer ID、Key ID 和私钥。"
+          }
+        }
+      }
+    },
+    "App Store Connect did not return upload operations for the screenshot reservation." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 没有为截图预留返回上传操作。"
+          }
+        }
+      }
+    },
+    "App Store Connect request failed with HTTP %d." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 请求失败，HTTP 状态码：%d。"
+          }
+        }
+      }
+    },
+    "App Store Connect returned an invalid response." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 返回了无效响应。"
+          }
+        }
+      }
+    },
+    "App Versions" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用版本"
+          }
+        }
+      }
+    },
+    "Apps" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用"
+          }
+        }
+      }
+    },
+    "Apps page: search and load your apps." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用页面：搜索并加载你的应用。"
+          }
+        }
+      }
+    },
+    "AppStoreConnect" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect"
+          }
+        }
+      }
+    },
+    "Assign a build before submitting for review." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交审核前请先分配构建。"
+          }
+        }
+      }
+    },
+    "Assign a build to an App Store version. Required before submitting for review. Optionally declare export compliance (usesNonExemptEncryption) at the same time." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为 App Store 版本分配构建。提交审核前必须完成此操作，也可以同时声明出口合规（usesNonExemptEncryption）。"
+          }
+        }
+      }
+    },
+    "Assign a build to an App Store version. Required before submitting the version for review. Optionally declare export compliance (usesNonExemptEncryption) at the same time." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为 App Store 版本分配构建。提交版本审核前必须完成此操作，也可以同时声明出口合规（usesNonExemptEncryption）。"
+          }
+        }
+      }
+    },
+    "Assign Build" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分配构建"
+          }
+        }
+      }
+    },
+    "Assign Build to Version" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为版本分配构建"
+          }
+        }
+      }
+    },
+    "Assigned: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已分配：%@"
+          }
+        }
+      }
+    },
+    "Basic Operations" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "基本操作"
+          }
+        }
+      }
+    },
+    "Branch or Tag" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分支或标签"
+          }
+        }
+      }
+    },
+    "Browse and select an App Store Connect app" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浏览并选择 App Store Connect 应用"
+          }
+        }
+      }
+    },
+    "Build" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "构建"
+          }
+        }
+      }
+    },
+    "Build #%d" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "构建 #%d"
+          }
+        }
+      }
+    },
+    "Build Runs" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "构建运行"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        }
+      }
+    },
+    "Change" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更改"
+          }
+        }
+      }
+    },
+    "Choose a version from the selector above." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从上方的选择器中选择一个版本。"
+          }
+        }
+      }
+    },
+    "Choose a version to edit its distribution, or open the Xcode Cloud page to check its builds." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择版本以编辑发布信息，或打开 Xcode Cloud 页面查看其构建。"
+          }
+        }
+      }
+    },
+    "Choose a workflow to inspect details and recent build runs." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择一个工作流以查看详情和最近的构建运行。"
+          }
+        }
+      }
+    },
+    "Clean Build" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全量构建"
+          }
+        }
+      }
+    },
+    "Click Refresh if the sidebar or a page looks out of date." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果侧边栏或页面内容过期，请点击刷新。"
+          }
+        }
+      }
+    },
+    "Click Save Credentials, then Test Connection. Lumi stores the values in Keychain and uses them to generate short-lived JWT tokens." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击“保存凭据”，然后“测试连接”。Lumi 会将这些值存储在钥匙串中，并用它们生成短期 JWT 令牌。"
+          }
+        }
+      }
+    },
+    "Click Test Connection to verify the credentials, then Save." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击“测试连接”验证凭据，然后保存。"
+          }
+        }
+      }
+    },
+    "Configure API credentials on the Account page first." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先在账户页面配置 API 凭据。"
+          }
+        }
+      }
+    },
+    "Configure App Store Connect API credentials and connection status." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配置 App Store Connect API 凭据并查看连接状态。"
+          }
+        }
+      }
+    },
+    "Configure credentials first" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先配置凭据"
+          }
+        }
+      }
+    },
+    "Configure the credentials in the Account page and test the connection." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在账户页面配置凭据并测试连接。"
+          }
+        }
+      }
+    },
+    "Connected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已连接"
+          }
+        }
+      }
+    },
+    "Container" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "容器"
+          }
+        }
+      }
+    },
+    "Copy" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制"
+          }
+        }
+      }
+    },
+    "Copy Config" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制配置"
+          }
+        }
+      }
+    },
+    "Copy Issuer ID and Key ID" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制 Issuer ID 和 Key ID"
+          }
+        }
+      }
+    },
+    "Create" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建"
+          }
+        }
+      }
+    },
+    "Create a new App Store version for the selected app." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为所选应用创建新的 App Store 版本。"
+          }
+        }
+      }
+    },
+    "Create a screenshot set for the selected display type before uploading." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上传前，请为所选显示类型创建截图集。"
+          }
+        }
+      }
+    },
+    "Create a screenshot set for the selected display type, or switch to another device size." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为所选显示类型创建截图集，或切换到其他设备尺寸。"
+          }
+        }
+      }
+    },
+    "Create an API key" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建 API 密钥"
+          }
+        }
+      }
+    },
+    "Create an API key for App Store Connect and download the private key file." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为 App Store Connect 创建 API 密钥并下载私钥文件。"
+          }
+        }
+      }
+    },
+    "Create one user-level API key, then paste the values into the Account page." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建一个用户级 API 密钥，然后将相关值粘贴到账户页面。"
+          }
+        }
+      }
+    },
+    "Created" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建时间"
+          }
+        }
+      }
+    },
+    "Created %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建于 %@"
+          }
+        }
+      }
+    },
+    "Created %@ · Finished %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建于 %@ · 完成于 %@"
+          }
+        }
+      }
+    },
+    "Credentials configured" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "凭据已配置"
+          }
+        }
+      }
+    },
+    "Credentials incomplete" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "凭据不完整"
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
+        }
+      }
+    },
+    "Delete %@ from App Store Connect? This cannot be undone." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要从 App Store Connect 删除 %@ 吗？此操作无法撤销。"
+          }
+        }
+      }
+    },
+    "Delete a screenshot from an App Store screenshot set." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从 App Store 截图集中删除截图。"
+          }
+        }
+      }
+    },
+    "Delete Screenshot" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除截图"
+          }
+        }
+      }
+    },
+    "Description" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "描述"
+          }
+        }
+      }
+    },
+    "Developer Rejected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开发者已拒绝"
+          }
+        }
+      }
+    },
+    "Disable Workflow" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停用工作流"
+          }
+        }
+      }
+    },
+    "Disabled" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已停用"
+          }
+        }
+      }
+    },
+    "Disconnect" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "断开连接"
+          }
+        }
+      }
+    },
+    "Distribution" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发布管理"
+          }
+        }
+      }
+    },
+    "Distribution page: edit metadata, import screenshots, view builds, and submit a version for review." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发布管理页面：编辑元数据、导入截图、查看构建并提交版本审核。"
+          }
+        }
+      }
+    },
+    "Do not commit the .p8 key to source control or paste it into project files." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不要将 .p8 密钥提交到源代码管理，也不要粘贴到项目文件中。"
+          }
+        }
+      }
+    },
+    "Download Failed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载失败"
+          }
+        }
+      }
+    },
+    "Download the .p8 private key" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载 .p8 私钥"
+          }
+        }
+      }
+    },
+    "Download the private key immediately. Apple only lets you download it once. Open the .p8 file and paste the full contents into the Private Key field." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即下载私钥。Apple 只允许下载一次。打开 .p8 文件，将完整内容粘贴到“私钥”字段。"
+          }
+        }
+      }
+    },
+    "Enable Workflow" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用工作流"
+          }
+        }
+      }
+    },
+    "Enabled" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已启用"
+          }
+        }
+      }
+    },
+    "Ensure Screenshot Set" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备截图集"
+          }
+        }
+      }
+    },
+    "Export Compliance" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "出口合规"
+          }
+        }
+      }
+    },
+    "Failed to Load Screenshot Sets" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载截图集失败"
+          }
+        }
+      }
+    },
+    "Figure 1: Interface layout" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图 1：界面布局"
+          }
+        }
+      }
+    },
+    "Global API Key" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全局 API 密钥"
+          }
+        }
+      }
+    },
+    "Go to the Keys tab, create a new key, choose the minimum role needed for app metadata and screenshot management, then save it." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "进入“密钥”标签页，创建新密钥，选择管理应用元数据和截图所需的最低角色，然后保存。"
+          }
+        }
+      }
+    },
+    "If a key is exposed, revoke it in App Store Connect and create a replacement." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果密钥泄露，请在 App Store Connect 中撤销它并创建替代密钥。"
+          }
+        }
+      }
+    },
+    "Image has no pixel size" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图片没有像素尺寸"
+          }
+        }
+      }
+    },
+    "Image is too small" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图片尺寸过小"
+          }
+        }
+      }
+    },
+    "In Review" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "审核中"
+          }
+        }
+      }
+    },
+    "In the Account page, fill in the Issuer ID, Key ID, and private key." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在账户页面填写 Issuer ID、Key ID 和私钥。"
+          }
+        }
+      }
+    },
+    "Interface" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "界面"
+          }
+        }
+      }
+    },
+    "Invalid upload operation range for screenshot upload." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截图上传操作的范围无效。"
+          }
+        }
+      }
+    },
+    "Invalid version number format." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本号格式无效。"
+          }
+        }
+      }
+    },
+    "iOS" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS"
+          }
+        }
+      }
+    },
+    "Issuer ID" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发行者 ID"
+          }
+        }
+      }
+    },
+    "Issuer ID is shown on the Keys page. Key ID is shown next to the key you created. Paste both into Lumi." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Issuer ID 显示在“密钥”页面，Key ID 显示在所创建密钥旁边。将两者粘贴到 Lumi。"
+          }
+        }
+      }
+    },
+    "Keep the private key safe and do not share it." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请妥善保管私钥，不要分享。"
+          }
+        }
+      }
+    },
+    "Key ID" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "密钥 ID"
+          }
+        }
+      }
+    },
+    "Keywords" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关键词"
+          }
+        }
+      }
+    },
+    "List App Store apps" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列出 App Store 应用"
+          }
+        }
+      }
+    },
+    "List App Store Connect versions for a given app ID. Each line includes the appStoreVersion id, which is required by list-localizations, create-localization and read-version." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列出指定应用 ID 的 App Store Connect 版本。每行包含 appStoreVersion ID，供 list-localizations、create-localization 和 read-version 使用。"
+          }
+        }
+      }
+    },
+    "List App Store versions" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列出 App Store 版本"
+          }
+        }
+      }
+    },
+    "List apps from App Store Connect using the configured API key." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用已配置的 API 密钥列出 App Store Connect 应用。"
+          }
+        }
+      }
+    },
+    "List Builds" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列出构建"
+          }
+        }
+      }
+    },
+    "List builds uploaded to App Store Connect for an app, including processing state and export compliance declaration." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列出应用在 App Store Connect 中上传的构建，包括处理状态和出口合规声明。"
+          }
+        }
+      }
+    },
+    "Load Apps" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载应用"
+          }
+        }
+      }
+    },
+    "Load apps from App Store Connect or adjust your search." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从 App Store Connect 加载应用，或调整搜索条件。"
+          }
+        }
+      }
+    },
+    "Load localizations for this version to manage screenshots." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载此版本的本地化内容以管理截图。"
+          }
+        }
+      }
+    },
+    "Load Products" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载产品"
+          }
+        }
+      }
+    },
+    "Load products from App Store Connect to inspect workflows and start builds." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从 App Store Connect 加载产品，以查看工作流并开始构建。"
+          }
+        }
+      }
+    },
+    "Load screenshot sets from App Store Connect, or ensure a set exists for the selected display type." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从 App Store Connect 加载截图集，或为所选显示类型准备一个截图集。"
+          }
+        }
+      }
+    },
+    "Loading..." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载中…"
+          }
+        }
+      }
+    },
+    "Locale" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言"
+          }
+        }
+      }
+    },
+    "macOS" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS"
+          }
+        }
+      }
+    },
+    "Manage App Store Connect apps, versions, metadata, screenshots, releases and Xcode Cloud." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理 App Store Connect 应用、版本、元数据、截图、发布内容和 Xcode Cloud。"
+          }
+        }
+      }
+    },
+    "Manual Release" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手动发布"
+          }
+        }
+      }
+    },
+    "Marketing URL" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "营销 URL"
+          }
+        }
+      }
+    },
+    "Maximum number of apps to return (default 20, max 100)." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回的应用数量上限（默认 20，最多 100）。"
+          }
+        }
+      }
+    },
+    "Metadata" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "元数据"
+          }
+        }
+      }
+    },
+    "minOS %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最低系统版本 %@"
+          }
+        }
+      }
+    },
+    "Need an App Store Connect API key?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要 App Store Connect API 密钥？"
+          }
+        }
+      }
+    },
+    "Network service is unavailable." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "网络服务不可用。"
+          }
+        }
+      }
+    },
+    "New Version" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建版本"
+          }
+        }
+      }
+    },
+    "No" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "否"
+          }
+        }
+      }
+    },
+    "No App Selected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择应用"
+          }
+        }
+      }
+    },
+    "No Apps" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有应用"
+          }
+        }
+      }
+    },
+    "No Build Runs" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有构建运行"
+          }
+        }
+      }
+    },
+    "No Builds Available" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有可用构建"
+          }
+        }
+      }
+    },
+    "No Localization Selected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择本地化内容"
+          }
+        }
+      }
+    },
+    "No Localizations" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有本地化内容"
+          }
+        }
+      }
+    },
+    "No non-exempt encryption" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不使用非豁免加密"
+          }
+        }
+      }
+    },
+    "No Products" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有产品"
+          }
+        }
+      }
+    },
+    "No Screenshot Set for Display Type" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此显示类型没有截图集"
+          }
+        }
+      }
+    },
+    "No Screenshot Sets" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有截图集"
+          }
+        }
+      }
+    },
+    "No screenshot sets loaded" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未加载截图集"
+          }
+        }
+      }
+    },
+    "No Screenshots" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有截图"
+          }
+        }
+      }
+    },
+    "No Version Selected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择版本"
+          }
+        }
+      }
+    },
+    "No versions loaded" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未加载版本"
+          }
+        }
+      }
+    },
+    "No Workflow Selected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择工作流"
+          }
+        }
+      }
+    },
+    "No Xcode Cloud Products Loaded" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未加载 Xcode Cloud 产品"
+          }
+        }
+      }
+    },
+    "Not a readable image" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法读取图片"
+          }
+        }
+      }
+    },
+    "Not connected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未连接"
+          }
+        }
+      }
+    },
+    "Not declared" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未声明"
+          }
+        }
+      }
+    },
+    "Notes" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "注意事项"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好"
+          }
+        }
+      }
+    },
+    "On App Store Connect" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位于 App Store Connect"
+          }
+        }
+      }
+    },
+    "Open App Store Connect API Keys" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 App Store Connect API 密钥"
+          }
+        }
+      }
+    },
+    "Open the Apps page and click Load Apps." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开应用页面并点击“加载应用”。"
+          }
+        }
+      }
+    },
+    "Open the setup guide for where to find Issuer ID, Key ID, and the .p8 private key." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开设置指南，了解在哪里查找 Issuer ID、Key ID 和 .p8 私钥。"
+          }
+        }
+      }
+    },
+    "Open Users and Access" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开“用户与访问”"
+          }
+        }
+      }
+    },
+    "Optional case-insensitive search query to filter apps by name." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可选的大小写不敏感搜索条件，用于按名称筛选应用。"
+          }
+        }
+      }
+    },
+    "Overview" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概览"
+          }
+        }
+      }
+    },
+    "Page Content" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "页面内容"
+          }
+        }
+      }
+    },
+    "Pending Apple Release" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待 Apple 发布"
+          }
+        }
+      }
+    },
+    "Pending Developer Release" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待开发者发布"
+          }
+        }
+      }
+    },
+    "Platform" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平台"
+          }
+        }
+      }
+    },
+    "Preparation" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备工作"
+          }
+        }
+      }
+    },
+    "Prepare" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备"
+          }
+        }
+      }
+    },
+    "Prepare for Submission" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备提交"
+          }
+        }
+      }
+    },
+    "Private Key (.p8)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "私钥（.p8）"
+          }
+        }
+      }
+    },
+    "Processing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "处理中"
+          }
+        }
+      }
+    },
+    "Processing for Distribution" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在处理以供发布"
+          }
+        }
+      }
+    },
+    "Product" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "产品"
+          }
+        }
+      }
+    },
+    "Promotional Text" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "宣传文本"
+          }
+        }
+      }
+    },
+    "Read App Store version" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "读取 App Store 版本"
+          }
+        }
+      }
+    },
+    "Read detail of a single App Store version, including its appStoreVersion id required by list-localizations and create-localization." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "读取单个 App Store 版本的详细信息，包括 list-localizations 和 create-localization 所需的 appStoreVersion ID。"
+          }
+        }
+      }
+    },
+    "Ready" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "就绪"
+          }
+        }
+      }
+    },
+    "Ready for Sale" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已准备销售"
+          }
+        }
+      }
+    },
+    "Recent Build Runs" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近的构建运行"
+          }
+        }
+      }
+    },
+    "Refresh" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新"
+          }
+        }
+      }
+    },
+    "Refreshing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在刷新"
+          }
+        }
+      }
+    },
+    "Refreshed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已刷新"
+          }
+        }
+      }
+    },
+    "Refresh failed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新失败"
+          }
+        }
+      }
+    },
+    "Refresh build runs or start a build for this workflow." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新构建运行，或为此工作流开始构建。"
+          }
+        }
+      }
+    },
+    "Rejected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已拒绝"
+          }
+        }
+      }
+    },
+    "Release" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发布"
+          }
+        }
+      }
+    },
+    "Release %@ to the App Store? This action cannot be undone via the API." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要将 %@ 发布到 App Store 吗？此操作无法通过 API 撤销。"
+          }
+        }
+      }
+    },
+    "Release to App Store" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发布到 App Store"
+          }
+        }
+      }
+    },
+    "Release Type" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发布类型"
+          }
+        }
+      }
+    },
+    "Release Version" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发布版本"
+          }
+        }
+      }
+    },
+    "Reload" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新加载"
+          }
+        }
+      }
+    },
+    "Removed from Sale" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已下架"
+          }
+        }
+      }
+    },
+    "Replaced" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已替换"
+          }
+        }
+      }
+    },
+    "Save and test" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存并测试"
+          }
+        }
+      }
+    },
+    "Save Credentials" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存凭据"
+          }
+        }
+      }
+    },
+    "Save Metadata" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存元数据"
+          }
+        }
+      }
+    },
+    "Screenshot chunk upload failed with HTTP %d." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截图分块上传失败，HTTP 状态码：%d。"
+          }
+        }
+      }
+    },
+    "Search apps" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索应用"
+          }
+        }
+      }
+    },
+    "Search by name, bundle ID, or SKU" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按名称、Bundle ID 或 SKU 搜索"
+          }
+        }
+      }
+    },
+    "Security notes" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安全提示"
+          }
+        }
+      }
+    },
+    "Select a build" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择构建"
+          }
+        }
+      }
+    },
+    "Select a version" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择版本"
+          }
+        }
+      }
+    },
+    "Select a version and refresh to load localizations." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择一个版本并刷新，以加载本地化内容。"
+          }
+        }
+      }
+    },
+    "Select an app first" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先选择应用"
+          }
+        }
+      }
+    },
+    "Select an app from the sidebar." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请从侧边栏选择一个应用。"
+          }
+        }
+      }
+    },
+    "Select an app in the sidebar to view its versions." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在侧边栏选择应用以查看其版本。"
+          }
+        }
+      }
+    },
+    "Select App" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择应用"
+          }
+        }
+      }
+    },
+    "Setup Guide" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置指南"
+          }
+        }
+      }
+    },
+    "Sidebar" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "侧边栏"
+          }
+        }
+      }
+    },
+    "Sidebar: lists your apps and their versions, with New Version and Refresh buttons on top; each version shows its state, such as Ready or Prepare." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "侧边栏：列出应用及其版本，顶部提供新建版本和刷新按钮；每个版本会显示就绪或准备等状态。"
+          }
+        }
+      }
+    },
+    "Sign in to App Store Connect with an account that can manage API keys, then open Users and Access." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用有权管理 API 密钥的账户登录 App Store Connect，然后打开“用户与访问”。"
+          }
+        }
+      }
+    },
+    "Start Build" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始构建"
+          }
+        }
+      }
+    },
+    "Submit" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交"
+          }
+        }
+      }
+    },
+    "Submit an App Store version to App Review. The version must have an assigned build and complete metadata/screenshots." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将 App Store 版本提交到 App Review。版本必须已分配构建，并完成元数据和截图。"
+          }
+        }
+      }
+    },
+    "Submit for Review" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交审核"
+          }
+        }
+      }
+    },
+    "Submit this version to App Review." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将此版本提交到 App Review。"
+          }
+        }
+      }
+    },
+    "Submit version %@ to App Review? Make sure the build, metadata, and screenshots are complete." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要将版本 %@ 提交到 App Review 吗？请确认构建、元数据和截图均已完成。"
+          }
+        }
+      }
+    },
+    "Support URL" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "支持 URL"
+          }
+        }
+      }
+    },
+    "Switch to another device size." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换到其他设备尺寸。"
+          }
+        }
+      }
+    },
+    "Test Connection" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "测试连接"
+          }
+        }
+      }
+    },
+    "The App Store Connect app identifier (see id field from list-apps)." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 应用标识符（参见 list-apps 返回的 id 字段）。"
+          }
+        }
+      }
+    },
+    "The App Store Connect appStoreVersion id (see id field from list-versions)." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 的 appStoreVersion ID（参见 list-versions 返回的 id 字段）。"
+          }
+        }
+      }
+    },
+    "The App Store Connect appStoreVersion id to submit." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要提交的 App Store Connect appStoreVersion ID。"
+          }
+        }
+      }
+    },
+    "The App Store Connect appStoreVersion id whose submission should be withdrawn." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要撤回提交的 App Store Connect appStoreVersion ID。"
+          }
+        }
+      }
+    },
+    "The App Store Connect appStoreVersion id." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect appStoreVersion ID。"
+          }
+        }
+      }
+    },
+    "The App Store Connect URL is invalid." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect URL 无效。"
+          }
+        }
+      }
+    },
+    "The appScreenshot id to delete (see id field from list-screenshots)." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要删除的 appScreenshot ID（参见 list-screenshots 返回的 id 字段）。"
+          }
+        }
+      }
+    },
+    "The appScreenshotSet id (see id field from list-screenshot-sets)." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "appScreenshotSet ID（参见 list-screenshot-sets 返回的 id 字段）。"
+          }
+        }
+      }
+    },
+    "The build id to assign (see id field from list-builds)." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要分配的构建 ID（参见 list-builds 返回的 id 字段）。"
+          }
+        }
+      }
+    },
+    "The key must have sufficient permissions; contact your account admin if data fails to load." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "密钥必须拥有足够权限；如果数据加载失败，请联系账户管理员。"
+          }
+        }
+      }
+    },
+    "The new version will start in Prepare for Submission." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新版本将从“准备提交”状态开始。"
+          }
+        }
+      }
+    },
+    "The private key could not be parsed. Use the .p8 key downloaded from App Store Connect." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法解析私钥。请使用从 App Store Connect 下载的 .p8 密钥。"
+          }
+        }
+      }
+    },
+    "The screenshot image could not be downloaded." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法下载截图。"
+          }
+        }
+      }
+    },
+    "The screenshot image data is invalid." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截图图片数据无效。"
+          }
+        }
+      }
+    },
+    "This manual covers the interface and basic operations of App Store Connect: configuring credentials, browsing apps and versions, managing distribution, and viewing Xcode Cloud builds." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本手册介绍 App Store Connect 的界面和基本操作：配置凭据、浏览应用和版本、管理发布内容，以及查看 Xcode Cloud 构建。"
+          }
+        }
+      }
+    },
+    "This screenshot set is empty on App Store Connect." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 中的此截图集为空。"
+          }
+        }
+      }
+    },
+    "This screenshot set is empty on App Store Connect. Add screenshots here or upload them in App Store Connect." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Connect 中的此截图集为空。请在此添加截图，或在 App Store Connect 中上传。"
+          }
+        }
+      }
+    },
+    "tvOS" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tvOS"
+          }
+        }
+      }
+    },
+    "Unsaved changes" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有未保存的更改"
+          }
+        }
+      }
+    },
+    "Untitled" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未命名"
+          }
+        }
+      }
+    },
+    "Upload %d Pending" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上传 %d 张待处理截图"
+          }
+        }
+      }
+    },
+    "Upload a build with Xcode or Transporter first, then refresh. Builds still processing on Apple servers cannot be selected yet." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先使用 Xcode 或 Transporter 上传构建，然后刷新。仍在 Apple 服务器上处理的构建暂时无法选择。"
+          }
+        }
+      }
+    },
+    "Upload a local screenshot image file (PNG/JPEG) into an App Store screenshot set." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将本地截图图片文件（PNG/JPEG）上传到 App Store 截图集。"
+          }
+        }
+      }
+    },
+    "Upload Pending Screenshots" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上传待处理截图"
+          }
+        }
+      }
+    },
+    "Upload Screenshot" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上传截图"
+          }
+        }
+      }
+    },
+    "Uploaded" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已上传"
+          }
+        }
+      }
+    },
+    "Uploading" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上传中"
+          }
+        }
+      }
+    },
+    "Use the least privileged App Store Connect role that still allows the workflow you need." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用仍能满足工作流程需求的最低 App Store Connect 角色权限。"
+          }
+        }
+      }
+    },
+    "User Manual" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用手册"
+          }
+        }
+      }
+    },
+    "Uses non-exempt encryption" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用非豁免加密"
+          }
+        }
+      }
+    },
+    "Valid" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有效"
+          }
+        }
+      }
+    },
+    "Version" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本"
+          }
+        }
+      }
+    },
+    "Version %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本 %@"
+          }
+        }
+      }
+    },
+    "Version %@ already exists for %@." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本 %@ 已经存在于 %@。"
+          }
+        }
+      }
+    },
+    "Version Number" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本号"
+          }
+        }
+      }
+    },
+    "Version number is required." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "必须填写版本号。"
+          }
+        }
+      }
+    },
+    "visionOS" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "visionOS"
+          }
+        }
+      }
+    },
+    "Waiting for Export Compliance" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待出口合规信息"
+          }
+        }
+      }
+    },
+    "Waiting for Review" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待审核"
+          }
+        }
+      }
+    },
+    "Waiting for Reviewer Action" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待审核人员处理"
+          }
+        }
+      }
+    },
+    "What's New" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新内容"
+          }
+        }
+      }
+    },
+    "Withdraw" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撤回"
+          }
+        }
+      }
+    },
+    "Withdraw a pending App Review submission for an App Store version. Only possible while the version is waiting for review." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撤回 App Store 版本待处理的 App Review 提交。仅当版本正在等待审核时可执行。"
+          }
+        }
+      }
+    },
+    "Withdraw Submission" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撤回提交"
+          }
+        }
+      }
+    },
+    "Withdraw the review submission for version %@? You can submit again later." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要撤回版本 %@ 的审核提交吗？之后可以再次提交。"
+          }
+        }
+      }
+    },
+    "Workflow Config" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作流配置"
+          }
+        }
+      }
+    },
+    "Workflows" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作流"
+          }
+        }
+      }
+    },
+    "Workflows and build runs for %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 的工作流和构建运行"
+          }
+        }
+      }
+    },
+    "Xcode Cloud" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode Cloud"
+          }
+        }
+      }
+    },
+    "Xcode Cloud page: view products and build runs, and enable or disable workflows." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode Cloud 页面：查看产品和构建运行，并启用或停用工作流。"
+          }
+        }
+      }
+    },
+    "Yes" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "是"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

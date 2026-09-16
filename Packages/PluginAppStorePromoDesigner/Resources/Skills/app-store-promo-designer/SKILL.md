@@ -9,7 +9,7 @@
 ### 任务管理
 | 工具 | 用途 |
 |------|------|
-| `app_store_promo_list_tasks` | 列出所有促销图任务（跨 project / app 作用域） |
+| `app_store_promo_list_tasks` | 列出当前项目内的所有促销图任务 |
 | `app_store_promo_create_task` | 创建促销图任务（slug、标题、App 名、设备族） |
 | `app_store_promo_read_task` | 读取任务元数据、图片顺序和精确展示尺寸 |
 
@@ -75,10 +75,9 @@
 - `mac`：Mac App Store 展示尺寸
 - 每种设备族有多个 `displayType` 预设，`read_task` 会返回可用尺寸
 
-### 作用域（Scope）
-- `project`：当前项目的 `.lumi` 目录
-- `app`：应用数据目录
-- 有打开项目时默认 `project`
+### 存储
+- 所有任务、HTML 和素材都存储在当前项目的 `.lumi/app-store-promo` 目录。
+- 未打开项目时，工具不可用并会提示先打开项目。
 
 ## HTML 编写规范
 

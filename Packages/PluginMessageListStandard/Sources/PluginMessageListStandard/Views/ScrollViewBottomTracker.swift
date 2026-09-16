@@ -185,8 +185,8 @@ final class TrackerView: NSView {
     override func layout() {
         super.layout()
         // The tracker is installed as a SwiftUI background and may be laid out
-        // after it first enters the window. Retry here so the spatial lookup
-        // sees the final panel position without falling back to another pane.
+        // after it first enters the view hierarchy. Retry here until its own
+        // ancestor scroll view is available.
         attachIfNeeded()
     }
 
@@ -203,12 +203,13 @@ final class TrackerView: NSView {
     }
 
     private func attachIfNeeded() {
-        guard observation == nil else { return }
-        // 优先用 enclosingScrollView（tracker 在 ScrollView 内部时）。
-        // 兜底：从 window.contentView 递归查找 NSScrollView（tracker 挂在
-        // .background 上时落在容器层，不在 NSScrollView 内部）。
-        let scrollView = findScrollView()
-        guard let scrollView, scrollView !== observedScrollView else { return }
+        // Tracker 必须绑定到自己的消息 List。禁止从 window.contentView
+        // 全局扫描，否则同一个窗口里的 Rail NSScrollView 可能被误选中。
+        guard let scrollView = enclosingScrollView else {
+            stopObserving()
+            return
+        }
+        guard scrollView !== observedScrollView else { return }
 
         stopObserving()
         observedScrollView = scrollView
@@ -228,46 +229,6 @@ final class TrackerView: NSView {
         }
         // 附着后立刻评估一次，把初始状态同步给回调。
         reevaluate()
-    }
-
-    /// 从当前视图位置查找 NSScrollView。
-    private func findScrollView() -> NSScrollView? {
-        if let sv = enclosingScrollView {
-            return sv
-        }
-        guard let rootView = window?.contentView else { return nil }
-        // A background NSView is not always descended from the List's
-        // NSScrollView. Never choose a scroll view by document height: another
-        // pane (for example the conversation rail) can legitimately be larger.
-        // Instead, bind only to the scroll view whose viewport contains this
-        // tracker anchor point.
-        let anchorPoint = convert(NSPoint.zero, to: nil)
-        return Self.findScrollView(containing: anchorPoint, in: rootView)
-    }
-
-    /// 递归查找包含 tracker 锚点的 NSScrollView。
-    ///
-    /// `List` 和会话侧栏都是窗口级 NSScrollView；按 document 高度选择会
-    /// 把消息列表的 tracker 绑定到侧栏。空间命中保证 tracker 只控制自己
-    /// 所在的面板。
-    private static func findScrollView(containing point: NSPoint, in view: NSView) -> NSScrollView? {
-        var match: NSScrollView?
-
-        func visit(_ v: NSView) {
-            if let sv = v as? NSScrollView {
-                let viewport = sv.convert(sv.bounds, to: nil)
-                if viewport.contains(point) {
-                    match = sv
-                }
-                return // NSScrollView 的子视图不再深入（避免找到内部的 clipView 等）
-            }
-            for sub in v.subviews {
-                if match != nil { return }
-                visit(sub)
-            }
-        }
-        visit(view)
-        return match
     }
 
     fileprivate func stopObserving() {

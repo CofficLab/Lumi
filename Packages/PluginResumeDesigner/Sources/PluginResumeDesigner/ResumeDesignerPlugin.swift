@@ -11,6 +11,7 @@ import ProviderRootView
 import ProviderToolManager
 import ProviderPromptSuggestion
 import ProviderSkill
+import ProviderProject
 import SwiftUI
 import KitSuperLog
 import os
@@ -37,6 +38,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
     /// 本插件 rail 面板的稳定标识（注册为 `RailTabItem.id`）。
     public static let railTabID = "resume-designer.resumes"
     private let workspace = WorkspaceStore.shared
+    private var projectObserver: ResumeDesignerProjectObserver?
 
     public var name: String {
         ResumeDesignerLocalization.string("Resume Designer")
@@ -64,7 +66,13 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        ResumeDesignerRuntime.configure(kernel: kernel, pluginID: id)
+        ResumeDesignerRuntime.configure(kernel: kernel)
+        projectObserver?.cancel()
+        projectObserver = kernel.resolveProvider((any ProjectProviding).self).map { project in
+            ResumeDesignerProjectObserver(project: project) { path in
+                ResumeDesignerRuntime.updateProjectStorageDirectory(projectPath: path)
+            }
+        }
 
         // 注册 Agent 工具到 ToolManagerProviding
         if let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
@@ -93,6 +101,16 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
         )
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let makeDesignerView: () -> AnyView = { [weak rootView] in
+            AnyView(
+                DesignerView(
+                    workspace: self.workspace,
+                    onResumeAvailabilityChanged: { hasResumes in
+                        rootView?.setRailViewVisible(hasResumes)
+                    }
+                )
+            )
+        }
         let railWidthStore = kernel
             .resolveProvider((any StorageProviding).self)
             .map { storage in
@@ -137,7 +155,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
             if state == .activated {
-                        toolbar?.setVisibleCategories([.global, .chat, .design])
+                        toolbar?.setVisibleCategories([.global, .project, .chat, .design])
                         rootView?.setContentHeaderViewHidden(true)
                         railView?.setVisibleTabID(Self.railTabID)
                         railView?.activateWidthProfile(
@@ -151,13 +169,15 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                             store: chatWidthStore
                         )
                 chat?.setVisible(true)
-                chat?.setContextActive(true)
-                chat?.setActiveContext(chatContext)
+                        chat?.setContextActive(true)
+                        chat?.setActiveContext(chatContext)
                         self.workspace.reload()
-                        contentView?.setContentView(AnyView(DesignerView(workspace: self.workspace)))
+                        rootView?.setRailViewVisible(!self.workspace.projectResumes.isEmpty)
+                        contentView?.setContentView(makeDesignerView())
             } else {
                 toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                 rootView?.setContentHeaderViewHidden(false)
+                rootView?.setRailViewVisible(true)
                 chat?.setActiveContext(nil)
                 chat?.deactivateWidthProfile(ownerID: pluginID)
                 railView?.deactivateWidthProfile(ownerID: pluginID)
@@ -166,7 +186,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
             ])
         } else {
             workspace.reload()
-            contentView?.setContentView(AnyView(DesignerView(workspace: workspace)))
+            contentView?.setContentView(makeDesignerView())
             chat?.setVisible(true)
             chat?.setContextActive(true)
             chat?.setActiveContext(chatContext)
@@ -217,6 +237,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any ChatSectionProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(true)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         if activityBar == nil || activityBar?.activeItemID == nil {
@@ -224,6 +245,8 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
         }
 
         ResumeDesignerRuntime.reset()
+        projectObserver?.cancel()
+        projectObserver = nil
     }
 
     public func onDisable(kernel: KernelCoreContainer) async throws {

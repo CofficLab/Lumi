@@ -75,6 +75,8 @@ final class SpeedConversationObserver: SuperLog {
         }
 
         let snapshot = await messages.messagesSnapshot(in: conversationID)
+        guard !Task.isCancelled,
+              conversations.selectedConversationID == conversationID else { return }
         viewModel.selectConversation(conversationID, messages: snapshot)
     }
 }

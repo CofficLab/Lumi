@@ -23,8 +23,8 @@ import os
 @MainActor
 public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.mind-map", category: "MindMapDesigner")
-    /// Preserve the legacy plugin identity so enablement and app-scope data
-    /// continue to resolve under the same key after the KernelCore migration.
+    /// Preserve the legacy plugin identity so enablement continues to resolve
+    /// under the same key after the KernelCore migration.
     public let id = "com.coffic.lumi.plugin.mind-map"
     public let order = 81
     private var projectObserver: MindMapProjectObserver?
@@ -54,7 +54,7 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        MindMapDesignerRuntime.configure(kernel: kernel, pluginID: id)
+        MindMapDesignerRuntime.configure(kernel: kernel)
         projectObserver?.cancel()
         projectObserver = kernel.resolveProvider((any ProjectProviding).self).map { project in
             MindMapProjectObserver(project: project) { path in
@@ -83,6 +83,12 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
         let railView = kernel.resolveProvider((any RailViewProviding).self)
         let rootView = kernel.resolveProvider((any RootViewProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
+        let chatContext = ChatContext(
+            id: id,
+            title: name,
+            subtitle: metadata.description,
+            systemImage: "brain.head.profile"
+        )
         let pluginID = id
         let railWidthStore = kernel
             .resolveProvider((any StorageProviding).self)
@@ -118,9 +124,12 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
                     ownerPluginID: id
                 ) { state in
                     if state == .activated {
-                        toolbar?.setVisibleCategories([.global, .design])
+                        toolbar?.setVisibleCategories([.global, .project, .chat, .design])
                         rootView?.setContentHeaderViewHidden(true)
-                        chat?.setVisible(false)
+                        rootView?.setRailViewVisible(!self.store.projectMaps.isEmpty)
+                        chat?.setVisible(true)
+                        chat?.setContextActive(true)
+                        chat?.setActiveContext(chatContext)
                         railView?.setVisibleTabID(Self.railTabID)
                         railView?.activateWidthProfile(
                             ownerID: pluginID,
@@ -132,7 +141,9 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
                     } else {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         rootView?.setContentHeaderViewHidden(false)
+                        rootView?.setRailViewVisible(true)
                         chat?.setVisible(true)
+                        chat?.setActiveContext(nil)
                         railView?.deactivateWidthProfile(ownerID: pluginID)
                     }
                 },
@@ -140,6 +151,15 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
         } else {
             store.reload()
             contentView?.setContentView(AnyView(MindMapDesignerView(store: store)))
+            rootView?.setRailViewVisible(!store.projectMaps.isEmpty)
+            chat?.setVisible(true)
+            chat?.setContextActive(true)
+            chat?.setActiveContext(chatContext)
+            chat?.activateWidthProfile(
+                ownerID: id,
+                recommended: ChatSectionWidth(minWidth: 300, idealWidth: 360, maxWidth: 560),
+                store: nil
+            )
         }
     }
 
@@ -165,7 +185,9 @@ public final class MindMapDesignerPlugin: SuperPlugin, SuperLog {
         if wasActive {
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(true)
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
+            kernel.resolveProvider((any ChatSectionProviding).self)?.setActiveContext(nil)
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         if activityBar == nil || activityBar?.activeItemID == nil {

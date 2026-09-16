@@ -17,5 +17,9 @@ let package = Package(
                 .product(name: "KitSuperLog", package: "KitSuperLog"),
             ],
             path: "Sources/ProviderConversationInput"),
+        .testTarget(
+            name: "ProviderConversationInputTests",
+            dependencies: ["ProviderConversationInput"],
+            path: "Tests/ProviderConversationInputTests"),
     ]
 )

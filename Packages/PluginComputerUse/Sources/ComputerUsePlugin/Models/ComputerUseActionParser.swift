@@ -1,3 +1,4 @@
+import CoreFoundation
 import CoreGraphics
 import Foundation
 
@@ -66,8 +67,19 @@ enum ComputerUseActionParser {
             }
             return .keypress(keys)
         case "wait":
-            let milliseconds = Int(number(object["milliseconds"]) ?? 1_000)
-            return .wait(milliseconds: min(max(milliseconds, 0), 10_000))
+            let requestedMilliseconds = number(object["milliseconds"]) ?? 1_000
+            guard requestedMilliseconds.isFinite else {
+                throw ComputerUseError.invalidArguments("wait milliseconds must be finite")
+            }
+            let milliseconds: Int
+            if requestedMilliseconds <= 0 {
+                milliseconds = 0
+            } else if requestedMilliseconds >= 10_000 {
+                milliseconds = 10_000
+            } else {
+                milliseconds = Int(requestedMilliseconds)
+            }
+            return .wait(milliseconds: milliseconds)
         default:
             throw ComputerUseError.invalidArguments("unsupported action type: \(type)")
         }
@@ -83,9 +95,10 @@ enum ComputerUseActionParser {
     }
 
     private static func number(_ value: Any?) -> Double? {
-        if let value = value as? Double { return value }
-        if let value = value as? Int { return Double(value) }
-        if let value = value as? NSNumber { return value.doubleValue }
+        if let value = value as? NSNumber {
+            guard CFGetTypeID(value) != CFBooleanGetTypeID() else { return nil }
+            return value.doubleValue
+        }
         return nil
     }
 }

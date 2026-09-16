@@ -1,10 +1,10 @@
 import KernelCore
 import KitSuperLog
 import os
-import GitPlugin
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
+import ProviderGit
 import ProviderGitRepositoryWatch
 import ProviderProject
 import ProviderRailView
@@ -55,8 +55,9 @@ public final class GitWorkspacePlugin: SuperPlugin, SuperLog {
         let chat = kernel.resolveProvider((any ChatSectionProviding).self)
         let toolbar = kernel.resolveProvider((any ToolbarProviding).self)
         let gitWatch = kernel.resolveProvider((any GitRepositoryWatching).self)
+        let git = kernel.resolveProvider((any GitRepositoryReading).self)
         let entryID = "\(id).entry"
-        let view = AnyView(GitWorkspaceView(project: project, gitWatch: gitWatch))
+        let view = AnyView(GitWorkspaceView(project: project, gitWatch: gitWatch, git: git))
 
         activityBar?.addItems([
             ActivityBarItem(
@@ -80,6 +81,7 @@ public final class GitWorkspacePlugin: SuperPlugin, SuperLog {
                     root?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
                     root?.setContentHeaderViewHidden(false)
                     chat?.setVisible(true)
+                    content?.setContentView(nil)
                 }
             },
         ])

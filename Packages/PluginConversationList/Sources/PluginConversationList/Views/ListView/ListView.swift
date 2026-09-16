@@ -1,5 +1,4 @@
 import ProviderConversation
-import ProviderConversationState
 import SwiftUI
 
 /// 对话列表视图：
@@ -7,47 +6,14 @@ import SwiftUI
 /// - 粘性排序（ConversationSortStabilizer），防止高频消息导致列表跳动；
 /// - 乐观选中：点击时立刻高亮，再与管理器真实状态对齐；
 /// - 首次加载显示骨架屏，已有内容刷新时保持旧列表可见；
-/// - 对话变化（增删/标题/项目迁移）自动刷新。
+/// - 对话变化（增删/标题/项目迁移）由 ViewModel 内部观察并自动刷新。
+///
+/// View 只依赖 `ConversationListViewModel`，不持有任何 Provider / Observer。
 struct ListView: View {
-    private static let pageSize = 40
+    @ObservedObject private var viewModel: ConversationListViewModel
 
-    @State private var conversations: [ConversationSummary] = []
-    @State private var isLoading = true
-    @State private var isLoadingMore = false
-    @State private var isReloading = false
-    @State private var reloadPending = false
-    @State private var hasMore = true
-    @State private var paginationCursor: ConversationPageCursor?
-    /// 点击时立刻写入的乐观选中 ID：不等 selectConversation 的同步持久化/通知
-    /// 链路，让选中高亮即时跟上点击；随后由 onChange 与管理器真实状态对齐。
-    @State private var immediateSelectionID: UUID?
-    private let context: ConversationListContext
-    private let attentionStore: ConversationAttentionStore
-    private let sortStabilizer: ConversationSortStabilizer
-    @State private var contextRevision = 0
-    @State private var observedSelectedConversationID: UUID?
-    @State private var contextObserverHandle: (any ConversationListContext.ObserverHandle)?
-    @State private var attentionRevision = 0
-    @State private var attentionObserverHandle: (any ConversationAttentionStore.ObserverHandle)?
-
-    /// The project path to filter by, or nil if showing all conversations.
-    private let projectPath: String?
-
-    init(
-        context: ConversationListContext,
-        attentionStore: ConversationAttentionStore,
-        sortStabilizer: ConversationSortStabilizer,
-        projectPath: String? = nil
-    ) {
-        self.context = context
-        self.attentionStore = attentionStore
-        self.sortStabilizer = sortStabilizer
-        self.projectPath = projectPath
-    }
-
-    /// The project path to filter by, or nil if showing all conversations.
-    private var effectiveProjectPath: String? {
-        projectPath
+    init(viewModel: ConversationListViewModel) {
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -57,84 +23,50 @@ struct ListView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .task {
-            await reload()
+            await viewModel.loadInitialIfNeeded()
         }
-        .task(id: effectiveProjectPath) {
-            await reload()
+        .task(id: viewModel.resolvedProjectPath) {
+            await viewModel.loadInitialIfNeeded()
         }
-        .onChange(of: contextRevision) { _, _ in
+        // 项目切换或列表结构变化时刷新。
+        .onChange(of: viewModel.resolvedProjectPath) { _, _ in
             Task { @MainActor in
-                await reload()
+                await viewModel.reload()
             }
-        }
-        // 外部选中变化（删除自动选中、启动恢复、其他入口切换）时对齐乐观状态。
-        .onChange(of: observedSelectedConversationID) { _, newID in
-            immediateSelectionID = newID
-        }
-        .onAppear {
-            guard contextObserverHandle == nil else { return }
-            observedSelectedConversationID = context.selectedConversationID
-            contextObserverHandle = context.addObserver { event in
-                switch event {
-                case let .selectedConversationChanged(id):
-                    observedSelectedConversationID = id
-                case .conversationsChanged:
-                    contextRevision &+= 1
-                }
-            }
-        }
-        .onDisappear {
-            contextObserverHandle?.cancel()
-            contextObserverHandle = nil
-        }
-        .onAppear {
-            guard attentionObserverHandle == nil else { return }
-            attentionObserverHandle = attentionStore.addObserver { _ in
-                attentionRevision &+= 1
-            }
-        }
-        .onDisappear {
-            attentionObserverHandle?.cancel()
-            attentionObserverHandle = nil
         }
     }
 
     @ViewBuilder
     private var mainContent: some View {
-        if isLoading {
+        if viewModel.isLoading {
             ListLoadingView()
-        } else if conversations.isEmpty {
+        } else if viewModel.conversations.isEmpty {
             ListEmptyView()
         } else {
             ScrollView {
                 LazyVStack(spacing: 4) {
-                    ForEach(conversations, id: \.id) { conversation in
+                    ForEach(viewModel.conversations, id: \.id) { conversation in
                         ItemView(
                             conversation: conversation,
-                            conversationState: context.conversationState?.state(for: conversation.id),
-                            isSelected: (immediateSelectionID ?? context.selectedConversationID) == conversation.id,
-                            needsAttention: needsAttention(for: conversation.id),
+                            conversationState: viewModel.conversationState(for: conversation.id),
+                            isSelected: (viewModel.immediateSelectionID ?? viewModel.selectedConversationID) == conversation.id,
+                            needsAttention: viewModel.needsAttention(for: conversation.id),
                             onSelect: {
-                                // 先同步写入乐观选中，立刻高亮，不等管理器链路
-                                immediateSelectionID = conversation.id
-                                Task { @MainActor in
-                                    context.conversations.selectConversation(id: conversation.id)
-                                    attentionStore.markRead(conversationID: conversation.id)
-                                }
+                                viewModel.selectConversation(id: conversation.id)
                             },
                             onDelete: {
-                                context.conversations.deleteConversation(id: conversation.id)
+                                viewModel.deleteConversation(id: conversation.id)
                             }
                         )
                     }
 
-                    if hasMore {
+                    if viewModel.hasMore {
                         ProgressView()
                             .controlSize(.small)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
                             .onAppear {
-                                Task { await loadNextPage() }
+                                Task { await viewModel.loadNextPage() }
                             }
                     }
                 }
@@ -143,116 +75,5 @@ struct ListView: View {
             }
             .scrollContentBackground(.hidden)
         }
-    }
-
-    private func needsAttention(for conversationID: UUID) -> Bool {
-        _ = attentionRevision
-        return attentionStore.needsAttention(for: conversationID)
-    }
-
-    private func reload() async {
-        if isReloading {
-            reloadPending = true
-            return
-        }
-
-        isReloading = true
-        defer {
-            isReloading = false
-            if reloadPending {
-                reloadPending = false
-                Task { @MainActor in
-                    await reload()
-                }
-            }
-        }
-
-        // 首次加载时显示 loading；已有内容时保持旧列表可见。
-        let targetCount = max(conversations.count, Self.pageSize)
-        if conversations.isEmpty {
-            isLoading = true
-        }
-
-        var snapshot: [ConversationSummary] = []
-        var cursor: ConversationPageCursor?
-
-        // 获取至少当前已经展示的数量，避免刷新后丢掉用户已经加载的分页。
-        while snapshot.count < targetCount {
-            let page: [ConversationSummary]
-            if let projectPath = effectiveProjectPath {
-                page = await context.conversations.fetchConversationPage(
-                    limit: Self.pageSize,
-                    beforeUpdatedAt: cursor?.lastMessageAt,
-                    beforeID: cursor?.id,
-                    includingChildConversations: false,
-                    projectPath: projectPath
-                )
-            } else {
-                page = await context.conversations.fetchConversationPage(
-                    limit: Self.pageSize,
-                    beforeUpdatedAt: cursor?.lastMessageAt,
-                    beforeID: cursor?.id
-                )
-            }
-            guard !page.isEmpty else { break }
-
-            snapshot.append(contentsOf: page)
-            guard page.count == Self.pageSize else { break }
-            guard let last = page.last else { break }
-            cursor = ConversationPageCursor(lastMessageAt: last.lastMessageAt, id: last.id)
-        }
-
-        // 没有实际变化时不触发 SwiftUI 列表替换。
-        if snapshot != conversations {
-            // 粘性排序：用 stabilizer 重新计算排序时间，防止高频消息导致列表跳动
-            let stabilized = snapshot
-                .map { conv -> (ConversationSummary, Date) in
-                    (conv, sortStabilizer.effectiveSortTime(for: conv.id, lastMessageAt: conv.lastMessageAt))
-                }
-                .sorted { $0.1 > $1.1 }
-                .map { $0.0 }
-            conversations = stabilized
-            sortStabilizer.cleanup()
-            paginationCursor = snapshot.last.map {
-                ConversationPageCursor(lastMessageAt: $0.lastMessageAt, id: $0.id)
-            }
-            hasMore = snapshot.count >= targetCount && snapshot.count > 0
-                ? snapshot.count == targetCount
-                : snapshot.count == Self.pageSize
-        }
-
-        isLoading = false
-    }
-
-    private func loadNextPage() async {
-        guard !isLoadingMore, hasMore else { return }
-
-        isLoadingMore = true
-        let page: [ConversationSummary]
-        if let projectPath = effectiveProjectPath {
-            page = await context.conversations.fetchConversationPage(
-                limit: Self.pageSize,
-                beforeUpdatedAt: paginationCursor?.lastMessageAt,
-                beforeID: paginationCursor?.id,
-                includingChildConversations: false,
-                projectPath: projectPath
-            )
-        } else {
-            page = await context.conversations.fetchConversationPage(
-                limit: Self.pageSize,
-                beforeUpdatedAt: paginationCursor?.lastMessageAt,
-                beforeID: paginationCursor?.id
-            )
-        }
-
-        conversations.append(contentsOf: page)
-        if let last = page.last {
-            paginationCursor = ConversationPageCursor(
-                lastMessageAt: last.lastMessageAt,
-                id: last.id
-            )
-        }
-        hasMore = page.count == Self.pageSize
-        isLoadingMore = false
     }
 }

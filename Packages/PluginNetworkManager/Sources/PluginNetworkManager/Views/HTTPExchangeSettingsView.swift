@@ -102,11 +102,6 @@ public struct HTTPExchangeSettingsView: View {
                     AppButton(LumiPluginLocalization.string("Refresh", bundle: .module), systemImage: "arrow.clockwise", size: .small) {
                         Task { await reloadAsync() }
                     }
-#if DEBUG
-                    AppButton(LumiPluginLocalization.string("Open Data Directory", bundle: .module), systemImage: "folder", size: .small) {
-                        NSWorkspace.shared.open(store.directory)
-                    }
-#endif
                 }
 
                 requestActivity
@@ -366,23 +361,50 @@ public struct HTTPExchangeSettingsView: View {
 
     private func requestTab(for record: HTTPExchangeExportSnapshot) -> some View {
         detailScroll {
-            AppSettingsSection(title: LumiPluginLocalization.string("Request", bundle: .module), subtitle: LumiPluginLocalization.string("HTTP request sent by the client", bundle: .module)) {
-                AppMetadataCard {
-                    AppMetadataRow(title: LumiPluginLocalization.string("Method", bundle: .module), systemImage: "arrow.left.arrow.right") {
+            AppSettingSection(
+                title: LumiPluginLocalization.string("Request", bundle: .module),
+                titleAlignment: .leading
+            ) {
+                VStack(spacing: 0) {
+                    AppSettingRow(
+                        title: LumiPluginLocalization.string("Method", bundle: .module),
+                        icon: "arrow.left.arrow.right"
+                    ) {
                         AppTag(record.method, systemImage: "arrow.up.right", style: .accent)
                     }
-                    AppSettingsDivider()
-                    AppMetadataRow(title: LumiPluginLocalization.string("URL", bundle: .module), systemImage: "link") {
-                        metadataValue(record.url, monospace: true, copyable: true)
+
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    AppSettingRow(
+                        title: LumiPluginLocalization.string("URL", bundle: .module),
+                        description: record.url,
+                        icon: "link"
+                    ) {
+                        copyButton(record.url)
                     }
-                    AppSettingsDivider()
-                    AppMetadataRow(title: LumiPluginLocalization.string("Started At", bundle: .module), systemImage: "calendar") {
-                        metadataValue(formattedDate(record.startedAt))
+
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    AppSettingRow(
+                        title: LumiPluginLocalization.string("Started At", bundle: .module),
+                        description: formattedDate(record.startedAt),
+                        icon: "calendar"
+                    ) {
+                        EmptyView()
                     }
+
                     if let duration = record.duration {
-                        AppSettingsDivider()
-                        AppMetadataRow(title: LumiPluginLocalization.string("Duration", bundle: .module), systemImage: "clock") {
-                            metadataValue(String(format: "%.3f s", duration))
+                        Divider()
+                            .padding(.vertical, 8)
+
+                        AppSettingRow(
+                            title: LumiPluginLocalization.string("Duration", bundle: .module),
+                            description: String(format: "%.3f s", duration),
+                            icon: "clock"
+                        ) {
+                            EmptyView()
                         }
                     }
                 }
@@ -390,26 +412,66 @@ public struct HTTPExchangeSettingsView: View {
 
             payloadSection(
                 title: LumiPluginLocalization.string("Request Headers", bundle: .module),
-                subtitle: LumiPluginLocalization.string("Raw header fields sent with the request", bundle: .module),
-                data: record.requestHeadersJSON,
-                fallback: "{}"
-            )
+                caption: LumiPluginLocalization.string("Raw header fields sent with the request", bundle: .module)
+            ) {
+                HTTPExchangePayloadView(data: record.requestHeadersJSON, fallback: "{}")
+            }
+
             payloadSection(
                 title: LumiPluginLocalization.string("Request Body", bundle: .module),
-                subtitle: String(format: LumiPluginLocalization.string("Original request body bytes (%@)", bundle: .module), byteCount(record.requestBody)),
-                data: record.requestBody,
-                fallback: "<empty>",
-                bodyKind: .request,
-                recordID: record.id,
-                mimeType: nil
-            )
+                caption: String(format: LumiPluginLocalization.string("Original request body bytes (%@)", bundle: .module), byteCount(record.requestBody))
+            ) {
+                requestBodyContent(for: record)
+            }
+
             payloadSection(
                 title: LumiPluginLocalization.string("Request Options", bundle: .module),
-                subtitle: LumiPluginLocalization.string("URLRequest transport options captured at send time", bundle: .module),
-                data: record.requestDetailsJSON,
-                fallback: "{}"
-            )
+                caption: LumiPluginLocalization.string("URLRequest transport options captured at send time", bundle: .module)
+            ) {
+                HTTPExchangePayloadView(data: record.requestDetailsJSON, fallback: "{}")
+            }
         }
+    }
+
+    /// Request-tab section: `AppSettingSection` chrome with an optional caption
+    /// above the payload, matching the settings pages that use this card style.
+    @ViewBuilder
+    private func payloadSection<Content: View>(
+        title: String,
+        caption: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        AppSettingSection(title: title, titleAlignment: .leading) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(caption)
+                    .font(.appCaption)
+                    .foregroundStyle(theme.textSecondary)
+                    .padding(.leading, 4)
+
+                content()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func requestBodyContent(for record: HTTPExchangeExportSnapshot) -> some View {
+        if let body = record.requestBody, body.count > largePayloadByteThreshold {
+            HTTPExchangeLargePayloadView(
+                bodyKind: .request,
+                bodyData: body,
+                mimeType: nil,
+                recordID: record.id
+            )
+        } else {
+            HTTPExchangePayloadView(data: record.requestBody, fallback: "<empty>")
+        }
+    }
+
+    private func copyButton(_ value: String) -> some View {
+        AppIconButton(systemImage: "doc.on.doc", size: .compact) {
+            LumiPasteboard.copyString(value)
+        }
+        .help(LumiPluginLocalization.string("Copy", bundle: .module))
     }
 
     private func responseTab(for record: HTTPExchangeExportSnapshot) -> some View {

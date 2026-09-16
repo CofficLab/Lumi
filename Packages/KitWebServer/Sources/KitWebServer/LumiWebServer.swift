@@ -337,7 +337,7 @@ public final class LumiWebServer: WebServerProviding, @unchecked Sendable {
         }
     }
 
-    private static func parseQuery(_ query: String?) -> [String: String] {
+    static func parseQuery(_ query: String?) -> [String: String] {
         guard let query, !query.isEmpty else { return [:] }
         var result: [String: String] = [:]
         for pair in query.split(separator: "&") {

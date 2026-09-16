@@ -1,6 +1,7 @@
 import AppKit
 import KitAgentTool
 import LumiUI
+import ProviderGit
 import ProviderMessageRendering
 import SwiftUI
 

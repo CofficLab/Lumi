@@ -25,10 +25,12 @@ struct AppUpdatePluginTests {
 
     @Test("keeps preview feeds isolated from stable feeds")
     func keepsPreviewFeedsIsolated() {
-        let previewPrimary = UpdateFeedURLProvider.primary(for: .preview, architecture: "arm64")
+        let previewPrimaryArm64 = UpdateFeedURLProvider.primary(for: .preview, architecture: "arm64")
+        let previewPrimaryX86 = UpdateFeedURLProvider.primary(for: .preview, architecture: "x86_64")
         let previewFallback = UpdateFeedURLProvider.fallback(for: .preview, architecture: "x86_64")
 
-        #expect(previewPrimary.path == "/lumi/pre/appcast-arm64.xml")
+        #expect(previewPrimaryArm64.path == "/lumi/pre/appcast-pre-arm64.xml")
+        #expect(previewPrimaryX86.path == "/lumi/pre/appcast-pre-x86_64.xml")
         #expect(previewFallback.host == "raw.githubusercontent.com")
         #expect(previewFallback.path == "/CofficLab/Lumi/pre/appcast-pre-x86_64.xml")
     }

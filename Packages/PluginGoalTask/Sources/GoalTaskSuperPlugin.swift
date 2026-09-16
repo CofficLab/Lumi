@@ -12,12 +12,13 @@ import os
 
 /// KernelCore implementation of the goal and task workflow.
 ///
-/// It intentionally uses the legacy plugin's storage key and SQLite layout so
-/// existing goals remain visible after the host switches to LumiApp.
+/// It keeps the legacy SQLite layout inside the plugin-owned storage directory
+/// so the database schema and file naming remain unchanged.
 @MainActor
-public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
+public final class GoalTaskSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.goal-task", category: "GoalTask")
     public let id = "com.coffic.lumi.plugin.goal-task"
+    public let legacyDataDirectoryNames = ["GoalTaskPlugin"]
     public let order = 91
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.goal-task",
@@ -36,16 +37,47 @@ public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
 
     public init() {}
 
+    public func migrateData(context: PluginDataMigrationContext) throws {
+        // A v5 install that already used the plugin ID keeps the historical
+        // inner `GoalTaskPlugin` database directory; the generic migration
+        // preserves that layout. Older installs used `GoalTaskPlugin` as the
+        // version-root child, so that source must be copied into the same
+        // inner directory rather than flattened into the plugin ID root.
+        try PluginDataMigrationUtility.copyLegacyDirectories(
+            legacyDirectoryNames: [],
+            context: context
+        )
+
+        let destination = context.currentPluginDataDirectory
+            .appendingPathComponent("GoalTaskPlugin", isDirectory: true)
+        let fileManager = FileManager.default
+        for version in context.legacyDataRootDirectories.keys.sorted(by: >) {
+            guard let source = context.legacyPluginDataDirectory(
+                named: "GoalTaskPlugin",
+                in: version
+            ), fileManager.fileExists(atPath: source.path) else {
+                continue
+            }
+            try fileManager.createDirectory(at: destination, withIntermediateDirectories: true)
+            try PluginDataMigrationUtility.mergeDirectoryContents(
+                from: source,
+                to: destination,
+                fileManager: fileManager
+            )
+        }
+    }
+
     public func onBoot(kernel: KernelCoreContainer) throws {
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else {
             Plugin.logger.error("🎯 Storage service not available")
             return
         }
 
-        // Keep the exact old root key. GoalStateManager appends GoalTaskPlugin
-        // itself, matching the legacy goals.sqlite location byte-for-byte.
+        // Store GoalTask data under the plugin's own ID, consistent with the
+        // other plugins. GoalStateManager retains its inner database directory
+        // to keep the SQLite layout stable within this plugin-owned directory.
         Plugin._sharedManager = try GoalStateManager(
-            databaseRootURL: storage.pluginDataDirectory(for: "GoalTaskPlugin")
+            databaseRootURL: storage.pluginDataDirectory(for: id)
         )
 
         guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else {

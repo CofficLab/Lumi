@@ -61,6 +61,44 @@ struct ConversationForkPluginTests {
         #expect(rendered.contains("Assistant: hello"))
     }
 
+    @Test("filteredMessages 只保留 user/assistant 且非空消息")
+    func filteredMessagesDropsIrrelevantRolesAndEmpty() {
+        let id = UUID()
+        let history = [
+            Message(conversationID: id, role: .system, content: "system prompt"),
+            Message(conversationID: id, role: .user, content: "   "),
+            Message(conversationID: id, role: .user, content: "real question"),
+            Message(conversationID: id, role: .assistant, content: "answer"),
+        ]
+        let result = ConversationSummarizer.filteredMessages(history)
+        #expect(result.map(\.content) == ["real question", "answer"])
+    }
+
+    @Test("filteredMessages 仅保留最近 maxMessages 条")
+    func filteredMessagesKeepsRecentOnly() {
+        let id = UUID()
+        var history: [Message] = []
+        for i in 0..<(ConversationSummarizer.maxMessages + 5) {
+            history.append(Message(conversationID: id, role: .user, content: "m\(i)"))
+        }
+        let result = ConversationSummarizer.filteredMessages(history)
+        #expect(result.count == ConversationSummarizer.maxMessages)
+        #expect(result.first?.content == "m5")
+        #expect(result.last?.content == "m\(ConversationSummarizer.maxMessages + 4)")
+    }
+
+    @Test("filteredMessages 截断超长单条消息")
+    func filteredMessagesTruncatesLongContent() {
+        let id = UUID()
+        let long = String(repeating: "x", count: ConversationSummarizer.maxCharsPerMessage + 100)
+        let result = ConversationSummarizer.filteredMessages([
+            Message(conversationID: id, role: .user, content: long),
+        ])
+        #expect(result.count == 1)
+        #expect(result[0].content.hasSuffix("…[truncated]"))
+        #expect(result[0].content.count == ConversationSummarizer.maxCharsPerMessage + "…[truncated]".count)
+    }
+
     @Test("Fork 按钮通过 sender 发送摘要到新对话")
     func forkSendsSummary() async throws {
         let conversations = DefaultConversationManager()
@@ -86,12 +124,35 @@ struct ConversationForkPluginTests {
 @MainActor
 private final class StubAgentLoop: AgentLoopProviding {
     private let messages: any MessageManaging
+    private var observers: [UUID: (AgentLoopEvent) -> Void] = [:]
+    private var messageObserver: (any MessageInsertedObserverHandle)?
+
     init(messages: any MessageManaging) {
         self.messages = messages
+        messageObserver = messages.addMessageInsertedObserver { [weak self] message, conversationID in
+            guard message.role == .user else { return }
+            Task { @MainActor in
+                _ = try? await self?.runTurn(in: conversationID)
+            }
+        }
+    }
+
+    func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle {
+        let id = UUID()
+        observers[id] = callback
+        return StubAgentLoopObserverHandle { [weak self] in
+            self?.observers.removeValue(forKey: id)
+        }
     }
 
     func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
-        .completed
+        let event = AgentLoopEvent.completed(conversationID: conversationID, turnID: UUID())
+        for observer in observers.values {
+            observer(event)
+        }
+        return .completed
     }
 
     func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome {
@@ -105,4 +166,18 @@ private final class StubAgentLoop: AgentLoopProviding {
     func currentTurnID(for conversationID: UUID) -> UUID? { nil }
     func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {}
 
+}
+
+@MainActor
+private final class StubAgentLoopObserverHandle: AgentLoopObserverHandle {
+    private var cancelAction: (() -> Void)?
+
+    init(cancelAction: @escaping () -> Void) {
+        self.cancelAction = cancelAction
+    }
+
+    func cancel() {
+        cancelAction?()
+        cancelAction = nil
+    }
 }

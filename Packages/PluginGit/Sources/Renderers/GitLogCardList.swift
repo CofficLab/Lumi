@@ -1,6 +1,7 @@
 import AppKit
 import LumiUI
 import SwiftUI
+import ProviderGit
 
 /// git_log 结果的 commit 卡片列表视图，用于消息列表中的自定义渲染。
 struct GitLogCardList: View {

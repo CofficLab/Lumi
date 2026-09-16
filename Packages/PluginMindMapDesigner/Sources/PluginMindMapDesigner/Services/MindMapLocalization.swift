@@ -9,4 +9,8 @@ public enum MindMapLocalization {
     static func string(_ key: String) -> String {
         LumiLocalization.string(key, bundle: .module, table: "Localizable", locale: .current)
     }
+
+    static func format(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: string(key), arguments: arguments)
+    }
 }

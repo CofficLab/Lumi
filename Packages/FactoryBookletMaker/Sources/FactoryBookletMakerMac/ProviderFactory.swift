@@ -4,7 +4,6 @@ import ProviderDocsView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
-import ProviderTheme
 import ProviderToolbar
 
 #if os(macOS)
@@ -21,10 +20,6 @@ public struct DefaultProviderFactory: ProviderFactory {
 
     public func makeStorageProvider() -> any StorageProviding {
         DefaultStorageProvider()
-    }
-
-    public func makeThemeProvider() -> any ThemeProviding {
-        DefaultThemeProviding()
     }
 
     public func makeContentViewProvider() -> any ContentViewProviding {
@@ -53,17 +48,14 @@ public struct DefaultProviderFactory: ProviderFactory {
 
         // 插件启用状态仍由宿主统一持久化；BookletMaker 插件本身是 required，
         // 其他未来加入的插件则继续遵循 KernelCore 的普通策略。
-        kernel.stateStore = PluginEnabledStateStore(
-            pluginDirectory: storage.pluginDataDirectory(for: "PluginManager")
+        try StorageDataMigration.migrate(
+            storage: storage,
+            pluginID: "com.coffic.lumi.plugin.plugin-manager",
+            legacyDirectoryNames: ["PluginManager"]
         )
-
-        let theme = makeThemeProvider()
-        if let defaultTheme = theme as? DefaultThemeProviding {
-            defaultTheme.setStorageDirectory(
-                storage.pluginDataDirectory(for: "ThemeManager")
-            )
-        }
-        try kernel.registerProvider((any ThemeProviding).self, theme)
+        kernel.stateStore = PluginEnabledStateStore(
+            pluginDirectory: storage.pluginDataDirectory(for: "com.coffic.lumi.plugin.plugin-manager")
+        )
 
         try kernel.registerProvider((any ContentViewProviding).self, makeContentViewProvider())
         try kernel.registerProvider((any DocsViewProviding).self, makeDocsViewProvider())

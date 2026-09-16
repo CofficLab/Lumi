@@ -8,12 +8,14 @@ let package = Package(
         .library(name: "ProviderLLMContext", targets: ["ProviderLLMContext"]),
     ],
     dependencies: [
+        .package(path: "../KitLLM"),
         .package(path: "../ProviderMessage"),
     ],
     targets: [
         .target(
             name: "ProviderLLMContext",
             dependencies: [
+                .product(name: "KitLLM", package: "KitLLM"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
             ],
             path: "Sources/ProviderLLMContext"

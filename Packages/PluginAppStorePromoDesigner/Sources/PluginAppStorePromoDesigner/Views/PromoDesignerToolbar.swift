@@ -1,58 +1,52 @@
 import KitAppStorePromo
+import LumiUI
 import SwiftUI
 
-/// 设计师面板顶部工具栏：任务标题、Display 选择、模式切换、刷新与导出。
-struct PromoDesignerToolbar: View {
+/// 设计师面板顶部工具栏：语言、Display 选择与刷新。
+struct PromoDesignerTopToolbar: View {
     @ObservedObject var workspace: WorkspaceStore
     let task: AppStorePromoTask
-    let mode: Binding<PromoDesignerView.Mode>
-    let isExporting: Bool
     let onRefresh: () -> Void
-    let onExport: () -> Void
 
     // MARK: - 初始化
 
     init(
         workspace: WorkspaceStore,
         task: AppStorePromoTask,
-        mode: Binding<PromoDesignerView.Mode>,
-        isExporting: Bool,
-        onRefresh: @escaping () -> Void,
-        onExport: @escaping () -> Void
+        onRefresh: @escaping () -> Void
     ) {
         self.workspace = workspace
         self.task = task
-        self.mode = mode
-        self.isExporting = isExporting
         self.onRefresh = onRefresh
-        self.onExport = onExport
     }
 
     // MARK: - Body
 
     var body: some View {
-        HStack(spacing: 10) {
-            languagePicker
-            displayPicker
-            modePicker
+        AppToolbarContainer(
+            height: 40,
+            backgroundStyle: .toolbar,
+            padding: EdgeInsets(
+                top: DesignTokens.Spacing.sm,
+                leading: DesignTokens.Spacing.md,
+                bottom: DesignTokens.Spacing.sm,
+                trailing: DesignTokens.Spacing.md
+            )
+        ) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                languagePicker
+                displayPicker
+                Spacer(minLength: 0)
 
-            Button {
-                onRefresh()
-            } label: {
-                Label(PromoLocalization.string("Refresh"), systemImage: "arrow.clockwise")
-            }
-            Button {
-                onExport()
-            } label: {
-                Label(PromoLocalization.string("Export"), systemImage: "square.and.arrow.down")
-            }
-            .disabled(workspace.selectedImage == nil || isExporting)
-            if isExporting {
-                ProgressView().controlSize(.small)
+                AppIconButton(
+                    systemImage: "arrow.clockwise",
+                    action: onRefresh
+                )
+                .accessibilityLabel(PromoLocalization.string("Refresh"))
+                .help(PromoLocalization.string("Refresh"))
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
+        .borderBottom()
     }
 
     // MARK: - 子视图
@@ -108,51 +102,78 @@ struct PromoDesignerToolbar: View {
         .frame(maxWidth: 260)
     }
 
-    @ViewBuilder
-    private var modePicker: some View {
-        Picker(PromoLocalization.string("Mode"), selection: mode) {
-            Text(PromoLocalization.string("Preview")).tag(PromoDesignerView.Mode.preview)
-            Text(PromoLocalization.string("HTML Source")).tag(PromoDesignerView.Mode.source)
+}
+
+/// 设计师面板底部工具栏：预览 / HTML 源码切换与导出。
+struct PromoDesignerBottomToolbar: View {
+    let mode: Binding<PromoDesignerView.Mode>
+    let isExporting: Bool
+    let onExport: () -> Void
+
+    var body: some View {
+        AppToolbarContainer(
+            height: 40,
+            backgroundStyle: .toolbar,
+            padding: EdgeInsets(
+                top: DesignTokens.Spacing.sm,
+                leading: DesignTokens.Spacing.md,
+                bottom: DesignTokens.Spacing.sm,
+                trailing: DesignTokens.Spacing.md
+            )
+        ) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                modePicker
+                Spacer(minLength: 0)
+                AppButton(
+                    PromoLocalization.string("Export"),
+                    systemImage: "square.and.arrow.down",
+                    style: .primary,
+                    size: .small,
+                    action: onExport
+                )
+                .disabled(isExporting)
+                if isExporting {
+                    ProgressView().controlSize(.small)
+                }
+            }
         }
-        .pickerStyle(.segmented)
-        .frame(width: 190)
+        .borderTop()
+    }
+
+    private var modePicker: some View {
+        AppSegmentedControl(
+            [
+                PromoLocalization.string("Preview"),
+                PromoLocalization.string("HTML Source")
+            ],
+            selection: modeIndex,
+            maxWidth: 190
+        )
+        .accessibilityLabel(PromoLocalization.string("Mode"))
+    }
+
+    private var modeIndex: Binding<Int> {
+        Binding(
+            get: { mode.wrappedValue == .preview ? 0 : 1 },
+            set: { mode.wrappedValue = $0 == 0 ? .preview : .source }
+        )
     }
 }
 
 // MARK: - 预览
 
 #Preview {
-    StatefulPreviewWrapper(PromoDesignerView.Mode.preview) { modeBinding in
-        PromoDesignerToolbar(
-            workspace: WorkspaceStore.shared,
-            task: AppStorePromoTask(
-                id: "preview",
-                title: PromoLocalization.string("Launch Campaign"),
-                appName: "Demo",
-                deviceFamily: .iphone,
-                images: []
-            ),
-            mode: modeBinding,
-            isExporting: false,
-            onRefresh: {},
-            onExport: {}
-        )
-    }
+    PromoDesignerTopToolbar(
+        workspace: WorkspaceStore.shared,
+        task: AppStorePromoTask(
+            id: "preview",
+            title: PromoLocalization.string("Launch Campaign"),
+            appName: "Demo",
+            deviceFamily: .iphone,
+            images: []
+        ),
+        onRefresh: {}
+    )
     .padding()
     .frame(width: 800)
-}
-
-/// 仅用于预览：为绑定提供可写状态。
-private struct StatefulPreviewWrapper<Value, Content: View>: View {
-    @State private var value: Value
-    let content: (Binding<Value>) -> Content
-
-    init(_ initialValue: Value, @ViewBuilder content: @escaping (Binding<Value>) -> Content) {
-        self._value = State(initialValue: initialValue)
-        self.content = content
-    }
-
-    var body: some View {
-        content($value)
-    }
 }

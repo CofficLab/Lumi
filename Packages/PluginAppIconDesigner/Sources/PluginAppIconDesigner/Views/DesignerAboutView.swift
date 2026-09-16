@@ -123,8 +123,7 @@ struct DesignerAboutView: View {
         LandingSection(title: L("Storage"), icon: "externaldrive") {
             LandingInventory(tint: theme.primary, items: [
                 .init(icon: "folder", title: L("Project documents: stored with the current project and available only to it.")),
-                .init(icon: "app.badge", title: L("Shared documents: stored in the app and available in every project.")),
-                .init(icon: "scope", title: L("Current storage scope"))
+                .init(icon: "checkmark.circle", title: L("Only the current project can access these documents."))
             ])
         }
         .landingAppear(delay: 0.25)

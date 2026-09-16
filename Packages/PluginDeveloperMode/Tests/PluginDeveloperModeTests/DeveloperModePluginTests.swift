@@ -13,6 +13,8 @@ struct DeveloperModePluginTests {
         let kernel = KernelCoreContainer()
         let toolbar = DefaultToolbarProviding()
         try kernel.registerProvider((any ToolbarProviding).self, toolbar)
+        // 生产环境由 FactoryLumi 在插件启动前注册；测试镜像该组装方式。
+        try kernel.registerProvider((any DeveloperModeProviding).self, DefaultDeveloperModeProviding())
 
         let plugin = DeveloperModePlugin()
         try plugin.onBoot(kernel: kernel)
@@ -35,6 +37,7 @@ struct DeveloperModePluginTests {
         let kernel = KernelCoreContainer()
         let toolbar = DefaultToolbarProviding()
         try kernel.registerProvider((any ToolbarProviding).self, toolbar)
+        try kernel.registerProvider((any DeveloperModeProviding).self, DefaultDeveloperModeProviding())
 
         try DeveloperModePlugin().onBoot(kernel: kernel)
         let provider = try #require(kernel.resolveProvider((any DeveloperModeProviding).self))

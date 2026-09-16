@@ -27,17 +27,16 @@ public struct ReplacePromoHTMLTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let scope = try await PromoToolSupport.resolveScope(arguments)
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let imageID = try PromoToolSupport.required("imageId", arguments)
         let image = try PromoToolSupport.store.replaceHTML(
             try PromoToolSupport.required("html", arguments),
-            storagePath: try await PromoToolSupport.storagePath(for: scope),
+            storagePath: try await PromoToolSupport.storagePath(),
             taskSlug: taskID,
             imageSlug: imageID,
             localeIdentifier: PromoToolSupport.string(arguments, "localeIdentifier")
         )
-        await PromoToolSupport.notify(scope: scope, taskID: taskID, imageID: imageID)
-        return "Promotional HTML updated and validated (scope=\(scope.rawValue), locale=\(image.localeIdentifier)). bytes=\(image.html.utf8.count)\nCall app_store_promo_preview_image to inspect the rendered result."
+        await PromoToolSupport.notify(taskID: taskID, imageID: imageID)
+        return "Promotional HTML updated and validated (locale=\(image.localeIdentifier)). bytes=\(image.html.utf8.count)\nCall app_store_promo_preview_image to inspect the rendered result."
     }
 }
