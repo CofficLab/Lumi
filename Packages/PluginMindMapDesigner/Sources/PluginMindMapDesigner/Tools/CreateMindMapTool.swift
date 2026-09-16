@@ -36,6 +36,9 @@ public struct CreateMindMapTool: SuperAgentTool {
         guard let rootText = MindMapToolSupport.nonEmpty(MindMapToolSupport.string(arguments, "rootText")) else {
             return MindMapToolSupport.missingParameter("rootText", language: language)
         }
+        guard await MainActor.run(body: { !MindMapStore.shared.projectStoragePath.isEmpty }) else {
+            return MindMapToolSupport.error(MindMapStoreError.projectRequired, language: language)
+        }
 
         let scope = try await MindMapToolSupport.resolveScope(arguments)
         let title = MindMapToolSupport.string(arguments, "title")
@@ -55,7 +58,6 @@ public struct CreateMindMapTool: SuperAgentTool {
         case .chinese:
             return """
             已创建思维导图。
-            作用域: \(scope.rawValue)
             思维导图ID: \(map.id)
             标题: \(map.title)
             布局: \(map.layoutDirection.rawValue)
@@ -65,7 +67,6 @@ public struct CreateMindMapTool: SuperAgentTool {
         case .english:
             return """
             Created mind map.
-            scope=\(scope.rawValue)
             mapId: \(map.id)
             title: \(map.title)
             layout: \(map.layoutDirection.rawValue)

@@ -8,19 +8,15 @@ import Foundation
 public final class MindMapStore: ObservableObject {
     public static let shared = MindMapStore()
 
-    /// 项目内（当前打开项目 `.lumi/mind-map`）思维导图列表。
+    /// 当前项目内（`.lumi/mind-map`）思维导图列表。
     @Published public private(set) var projectMaps: [MindMap] = []
 
-    /// APP 内（应用数据目录）思维导图列表。
-    @Published public private(set) var appMaps: [MindMap] = []
-
-    /// 当前选中的作用域。
-    @Published public var selectedScope: MindMapScope = .app
+    /// 保留作用域字段以兼容画布和 Agent 工具，但唯一值始终为项目。
+    @Published public var selectedScope: MindMapScope = .project
 
     @Published public var selectedMapId: String?
     @Published public private(set) var lastError: String?
 
-    private(set) var appStorageDirectory: URL?
     private(set) var projectStorageDirectory: URL?
     private(set) var currentProjectPath: String?
     private let fileManager = FileManager.default
@@ -29,70 +25,47 @@ public final class MindMapStore: ObservableObject {
 
     // MARK: - Lists
 
-    /// 当前选中的作用域下的思维导图列表。
-    public var maps: [MindMap] { list(for: selectedScope) }
+    /// 当前项目中的全部思维导图。
+    public var maps: [MindMap] { projectMaps }
 
     public func maps(for scope: MindMapScope) -> [MindMap] { list(for: scope) }
 
     private func list(for scope: MindMapScope) -> [MindMap] {
-        switch scope {
-        case .project: projectMaps
-        case .app: appMaps
-        }
+        projectMaps
     }
 
     private func setList(_ list: [MindMap], for scope: MindMapScope) {
-        switch scope {
-        case .project: projectMaps = list
-        case .app: appMaps = list
-        }
+        projectMaps = list
     }
 
     public var selectedMap: MindMap? {
-        let list = self.list(for: selectedScope)
-        if let selectedMapId, let match = list.first(where: { $0.id == selectedMapId }) {
-            return match
-        }
-        return list.first
+        guard let selectedMapId else { return nil }
+        return projectMaps.first(where: { $0.id == selectedMapId })
     }
 
     // MARK: - Paths
 
-    public var appStoragePath: String { appStorageDirectory?.path ?? "" }
     public var projectStoragePath: String { projectStorageDirectory?.path ?? "" }
     public var storagePath: String { storagePath(for: selectedScope) }
 
     public func storagePath(for scope: MindMapScope) -> String {
-        switch scope {
-        case .project: projectStoragePath
-        case .app: appStoragePath
-        }
+        projectStoragePath
     }
 
     // MARK: - Configuration
 
-    public func setAppStorage(appStorageDirectory: URL?) {
-        let resolved = appStorageDirectory?.standardizedFileURL
-        guard self.appStorageDirectory != resolved else { return }
-        self.appStorageDirectory = resolved
-        if let resolved {
-            try? fileManager.createDirectory(at: resolved, withIntermediateDirectories: true)
-        }
-        reloadScope(.app)
-        refreshSelection()
-    }
-
     public func setProjectStorage(projectPath: String?, projectStorageDirectory: URL?) {
         let normalizedPath = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines)
         let pathToStore = (normalizedPath?.isEmpty == false) ? normalizedPath : nil
-        guard self.currentProjectPath != pathToStore else { return }
+        let resolvedDirectory = projectStorageDirectory?.standardizedFileURL
+        guard self.currentProjectPath != pathToStore || self.projectStorageDirectory != resolvedDirectory else { return }
         self.currentProjectPath = pathToStore
-        self.projectStorageDirectory = projectStorageDirectory?.standardizedFileURL
+        self.projectStorageDirectory = resolvedDirectory
         if let projectStorageDirectory {
             try? fileManager.createDirectory(at: projectStorageDirectory, withIntermediateDirectories: true)
         }
-        // 项目打开/关闭时，默认作用域跟随是否有项目。
-        selectedScope = (pathToStore != nil) ? .project : .app
+        // 只有当前项目作用域，项目关闭时列表为空。
+        selectedScope = .project
         reloadScope(.project)
         refreshSelection()
     }
@@ -100,7 +73,6 @@ public final class MindMapStore: ObservableObject {
     public func reload() {
         lastError = nil
         reloadScope(.project)
-        reloadScope(.app)
         refreshSelection()
     }
 
@@ -312,10 +284,6 @@ public final class MindMapStore: ObservableObject {
             try selectMindMap(id: id, scope: .project)
             return
         }
-        if appMaps.contains(where: { $0.id == id }) {
-            try selectMindMap(id: id, scope: .app)
-            return
-        }
         throw MindMapStoreError.mapNotFound(id)
     }
 
@@ -339,11 +307,9 @@ public final class MindMapStore: ObservableObject {
 
     public func resetForTests() {
         projectMaps.removeAll()
-        appMaps.removeAll()
-        selectedScope = .app
+        selectedScope = .project
         selectedMapId = nil
         lastError = nil
-        appStorageDirectory = nil
         projectStorageDirectory = nil
         currentProjectPath = nil
     }
@@ -389,6 +355,7 @@ public final class MindMapStore: ObservableObject {
 }
 
 public enum MindMapStoreError: LocalizedError, Equatable {
+    case projectRequired
     case noSelectedMap
     case mapNotFound(String)
     case nodeNotFound(String)
@@ -397,6 +364,8 @@ public enum MindMapStoreError: LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
+        case .projectRequired:
+            return "Open a project before creating or editing a mind map."
         case .noSelectedMap:
             return "No mind map is selected."
         case .mapNotFound(let id):

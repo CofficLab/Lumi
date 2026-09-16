@@ -26,10 +26,11 @@ public struct MindMapManualView: View {
 
             ManualSectionHeader(number: 2, title: L("Interface"))
             ManualBulletList(items: [
-                .init(L("Top bar: the scope picker (In Project / In App), the map picker, New, the delete button, and the zoom controls.")),
+                .init(L("Top bar: the project name, current mind map, and delete action.")),
                 .init(L("Canvas: shows the nodes of the current mind map; click a node to select it, and click it again to edit its text inline.")),
                 .init(L("Node action bar: appears at the bottom when a node is selected, with Child, Sibling, Expand / Collapse, and Delete.")),
-                .init(L("Rail Mind Maps: the scope picker, the document list (each row shows its node count), and the New button.")),
+                .init(L("Bottom bar: export the current mind map as Markdown or JSON.")),
+                .init(L("Rail Mind Maps: the current project's document list (each row shows its node count) and the New button.")),
             ])
             interfaceFigure
 
@@ -52,9 +53,9 @@ public struct MindMapManualView: View {
 
             ManualSectionHeader(number: 5, title: L("Notes"))
             ManualBulletList(items: [
-                .init(L("Documents are grouped by scope: In Project maps are stored with the current project, and In App maps are available in every project.")),
+                .init(L("Mind maps are stored in the current project's `.lumi/mind-map` folder.")),
                 .init(L("The root node cannot be deleted; delete the whole map from the top bar or the rail list instead.")),
-                .init(L("With no mind map, the canvas shows an empty state with a create button.")),
+                .init(L("With no project mind map, the main area shows an onboarding view and the Rail is hidden.")),
             ])
         }
         .frame(maxWidth: 620, alignment: .leading)
@@ -67,12 +68,9 @@ public struct MindMapManualView: View {
             VStack(spacing: 12) {
                 // ① 顶栏示意
                 HStack(spacing: 6) {
-                    segmentedMock()
                     mapPickerMock()
                     Spacer(minLength: 0)
-                    toolbarPill("plus")
                     toolbarPill("trash")
-                    toolbarPill("plus.magnifyingglass")
                 }
                 .padding(8)
                 .background(
@@ -141,19 +139,6 @@ public struct MindMapManualView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .strokeBorder(filled ? theme.primary.opacity(0.5) : theme.appDivider)
-        )
-    }
-
-    /// 作用域切换示意:两格相连的分段控件。
-    private func segmentedMock() -> some View {
-        HStack(spacing: 0) {
-            Rectangle().fill(Color.primary.opacity(0.12)).frame(width: 20, height: 14)
-            Rectangle().fill(Color.clear).frame(width: 20, height: 14)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 5, style: .continuous)
-                .strokeBorder(theme.appDivider)
         )
     }
 

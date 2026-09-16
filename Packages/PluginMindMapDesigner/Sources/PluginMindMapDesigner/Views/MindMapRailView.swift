@@ -1,8 +1,12 @@
+import LumiUI
 import SwiftUI
 
-/// 侧栏：按作用域列出思维导图，支持切换与删除。
+private typealias L = MindMapLocalization
+
+/// 项目内思维导图浏览器：直接展示当前项目的任务列表。
 public struct MindMapRailView: View {
     @ObservedObject private var store: MindMapStore
+    @LumiTheme private var theme
 
     init(store: MindMapStore) {
         self.store = store
@@ -10,65 +14,108 @@ public struct MindMapRailView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            Picker("", selection: $store.selectedScope) {
-                ForEach(MindMapScope.allCases, id: \.self) { scope in
-                    Text(scope.displayName()).tag(scope)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(10)
-
-            List(selection: Binding(
-                get: { store.selectedMapId ?? "" },
-                set: { newValue in
-                    if let id = newValue.isEmpty ? nil : newValue {
-                        try? store.selectMindMap(id: id, scope: store.selectedScope)
-                    }
-                }
-            )) {
-                ForEach(store.maps) { map in
-                    HStack {
-                        Image(systemName: "brain.head.profile")
-                            .foregroundStyle(.secondary)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(map.title).lineLimit(1)
-                            Text("\(map.nodes.count) nodes")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                        Spacer()
-                    }
-                    .tag(map.id)
-                    .contextMenu {
-                        Button(role: .destructive) {
-                            store.deleteMindMap(id: map.id, scope: store.selectedScope)
-                        } label: {
-                            Label(MindMapLocalization.string("Delete"), systemImage: "trash")
-                        }
-                    }
-                }
-            }
-            .listStyle(.sidebar)
-
-            Divider()
-            Button {
-                _ = store.createMindMap(
-                    title: MindMapLocalization.string("New Mind Map"),
-                    rootText: MindMapLocalization.string("Central Topic"),
-                    direction: .bilateral,
-                    scope: store.selectedScope
+            AppToolbarContainer(
+                height: 40,
+                backgroundStyle: .panel,
+                padding: EdgeInsets(
+                    top: DesignTokens.Spacing.sm,
+                    leading: DesignTokens.Spacing.md,
+                    bottom: DesignTokens.Spacing.sm,
+                    trailing: DesignTokens.Spacing.md
                 )
-            } label: {
-                Label(MindMapLocalization.string("New Mind Map"), systemImage: "plus")
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            ) {
+                HStack(spacing: DesignTokens.Spacing.sm) {
+                    AppToolbarTitleLabel(title: L.string("Mind Maps"))
+                    AppTag("\(store.projectMaps.count)", style: .subtle)
+                    Spacer(minLength: 0)
+                    AppIconButton(systemImage: "arrow.clockwise", action: store.reload)
+                        .accessibilityLabel(L.string("Refresh"))
+                        .help(L.string("Refresh"))
+                }
             }
-            .buttonStyle(.borderless)
-            .padding(10)
+            .borderBottom()
+
+            if store.projectStorageDirectory == nil {
+                AppEmptyState(
+                    icon: "folder",
+                    title: L.string("Open a project to enable project-local storage.")
+                )
+            } else if store.projectMaps.isEmpty {
+                AppEmptyState(
+                    icon: "brain.head.profile",
+                    title: L.string("Ask the Agent to create a mind map.")
+                )
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: DesignTokens.Spacing.xs) {
+                        ForEach(store.projectMaps) { map in
+                            mapRow(map)
+                        }
+                    }
+                    .padding(DesignTokens.Spacing.sm)
+                }
+            }
+
+            if store.projectStorageDirectory != nil {
+                Divider()
+                AppButton(
+                    L.string("New Mind Map"),
+                    systemImage: "plus",
+                    style: .ghost,
+                    size: .small
+                ) {
+                    _ = store.createMindMap(
+                        title: L.string("New Mind Map"),
+                        rootText: L.string("Central Topic"),
+                        direction: .bilateral,
+                        scope: .project
+                    )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(DesignTokens.Spacing.sm)
+            }
+        }
+        .appSurface(style: .panel, cornerRadius: 0)
+    }
+
+    private func mapRow(_ map: MindMap) -> some View {
+        AppListRow(
+            isSelected: store.selectedMapId == map.id,
+            action: { try? store.selectMindMap(id: map.id, scope: .project) }
+        ) {
+            HStack(spacing: DesignTokens.Spacing.sm) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(theme.primary.opacity(0.10))
+                    Image(systemName: "brain.head.profile")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(theme.primary)
+                }
+                .frame(width: 34, height: 40)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(map.title)
+                        .font(.appBodyEmphasized)
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(1)
+                    Text(L.format("%lld nodes", Int64(map.nodes.count)))
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+            }
+        }
+        .contextMenu {
+            Button(role: .destructive) {
+                store.deleteMindMap(id: map.id, scope: .project)
+            } label: {
+                Label(L.string("Delete"), systemImage: "trash")
+            }
         }
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     MindMapRailView(store: MindMapStore.shared)

@@ -58,7 +58,6 @@ public struct AddChildNodeTool: SuperAgentTool {
             case .chinese:
                 return """
                 已添加 \(created.count) 个子节点到父节点 \(parentId.prefix(8))。
-                作用域: \(scope.rawValue)
                 思维导图ID: \(map.id)
                 新节点:
                 \(created.map { MindMapToolSupport.nodeSummary($0, language: language) }.joined(separator: "\n"))
@@ -67,7 +66,6 @@ public struct AddChildNodeTool: SuperAgentTool {
             case .english:
                 return """
                 Added \(created.count) child node(s) under parent \(parentId.prefix(8)).
-                scope=\(scope.rawValue)
                 mapId: \(map.id)
                 new nodes:
                 \(created.map { MindMapToolSupport.nodeSummary($0, language: language) }.joined(separator: "\n"))

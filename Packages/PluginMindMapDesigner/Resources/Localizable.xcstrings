@@ -361,18 +361,18 @@
         }
       }
     },
-    "Documents are grouped by scope: In Project maps are stored with the current project, and In App maps are available in every project." : {
+    "Mind maps are organized by project." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Documents are grouped by scope: In Project maps are stored with the current project, and In App maps are available in every project."
+            "value" : "Mind maps are organized by project."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "文档按作用域分组：「项目内」导图随当前项目存储，「应用内」导图在所有项目中可用。"
+            "value" : "思维导图按项目组织。"
           }
         }
       }
@@ -393,18 +393,18 @@
         }
       }
     },
-    "Dual Scope Storage" : {
+    "Project-local Storage" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dual Scope Storage"
+            "value" : "Project-local Storage"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "双作用域存储"
+            "value" : "项目内存储"
           }
         }
       }
@@ -517,22 +517,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "导入大纲；导出 Markdown 或 JSON。"
-          }
-        }
-      }
-    },
-    "In App" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In App"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "应用内"
           }
         }
       }
@@ -887,34 +871,34 @@
         }
       }
     },
-    "Project (.lumi/mind-map) and app-wide scopes." : {
+    "Project storage location." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Project (.lumi/mind-map) and app-wide scopes."
+            "value" : "Project storage location."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "项目（.lumi/mind-map）与应用两个作用域。"
+            "value" : "项目内存储位置。"
           }
         }
       }
     },
-    "Rail Mind Maps: the scope picker, the document list (each row shows its node count), and the New button." : {
+    "Rail Mind Maps: the project document list (each row shows its node count) and the New button." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rail Mind Maps: the scope picker, the document list (each row shows its node count), and the New button."
+            "value" : "Rail Mind Maps: the project document list (each row shows its node count) and the New button."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "侧栏「思维导图」：作用域切换、文档列表(每行显示节点数量)与新建按钮。"
+            "value" : "侧栏「思维导图」：项目文档列表（每行显示节点数量）与新建按钮。"
           }
         }
       }
@@ -1079,18 +1063,18 @@
         }
       }
     },
-    "Top bar: the scope picker (In Project / In App), the map picker, New, the delete button, and the zoom controls." : {
+    "Top bar: the project name, current mind map, and delete action." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Top bar: the scope picker (In Project / In App), the map picker, New, the delete button, and the zoom controls."
+            "value" : "Top bar: the project name, current mind map, and delete action."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "顶栏：作用域切换(项目内 / 应用内)、导图选择器、「新建」、删除按钮以及缩放控制。"
+            "value" : "顶栏：项目名称、当前思维导图和删除操作。"
           }
         }
       }
@@ -1253,6 +1237,132 @@
             "value" : "缩小"
           }
         }
+      }
+    },
+    "Agent-driven maps" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Agent-driven maps" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Agent 驱动导图" } }
+      }
+    },
+    "Ask the Agent to create a mind map." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask the Agent to create a mind map." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "让 Agent 创建一个思维导图。" } }
+      }
+    },
+    "Bottom bar: export the current mind map as Markdown or JSON." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bottom bar: export the current mind map as Markdown or JSON." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "底部工具栏：将当前思维导图导出为 Markdown 或 JSON。" } }
+      }
+    },
+    "Canvas editing" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Canvas editing" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "画布编辑" } }
+      }
+    },
+    "Creating a Mind Map" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Creating a Mind Map" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "创建思维导图" } }
+      }
+    },
+    "Describe a topic, planning problem, or Markdown outline in the conversation." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Describe a topic, planning problem, or Markdown outline in the conversation." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "在对话中描述一个主题、规划问题或 Markdown 大纲。" } }
+      }
+    },
+    "Export JSON" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Export JSON" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "导出 JSON" } }
+      }
+    },
+    "Export Markdown" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Export Markdown" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "导出 Markdown" } }
+      }
+    },
+    "Markdown export" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Markdown export" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "导出 Markdown" } }
+      }
+    },
+    "Mind maps are stored in the current project." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mind maps are stored in the current project." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "思维导图保存在当前项目中。" } }
+      }
+    },
+    "Mind maps are stored in the current project's .lumi folder." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mind maps are stored in the current project's .lumi folder." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "思维导图保存在当前项目的 .lumi 文件夹中。" } }
+      }
+    },
+    "Mind maps are stored with the current project and available only to it." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mind maps are stored with the current project and available only to it." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "思维导图随当前项目保存，仅在该项目中可用。" } }
+      }
+    },
+    "New Branch" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "New Branch" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新分支" } }
+      }
+    },
+    "Open a project to enable project-local storage." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open a project to enable project-local storage." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开一个项目以启用项目内存储。" } }
+      }
+    },
+    "Project Storage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Project Storage" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "项目内存储" } }
+      }
+    },
+    "Review and grow the branches." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Review and grow the branches." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "检查并扩展分支。" } }
+      }
+    },
+    "Select a mind map from the left, or ask the Agent to create one." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select a mind map from the left, or ask the Agent to create one." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请从左侧选择一个思维导图，或让 Agent 创建一个。" } }
+      }
+    },
+    "Select a node to add a child or sibling, or edit its text inline." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select a node to add a child or sibling, or edit its text inline." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "选择节点来添加子节点或兄弟节点，也可以直接编辑文字。" } }
+      }
+    },
+    "Mind maps are stored in the current project at `.lumi/mind-map`." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mind maps are stored in the current project at `.lumi/mind-map`." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "思维导图保存在当前项目的 `.lumi/mind-map` 中。" } }
+      }
+    },
+    "Use the bottom toolbar to export Markdown or JSON." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Use the bottom toolbar to export Markdown or JSON." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "使用底部工具栏导出 Markdown 或 JSON。" } }
+      }
+    },
+    "storage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "storage" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "存储" } }
       }
     }
   },

@@ -43,9 +43,9 @@ public struct MoveNodeTool: SuperAgentTool {
             await MindMapToolSupport.notify(scope: scope, mapId: map.id)
             switch language {
             case .chinese:
-                return "已移动节点 \(nodeId.prefix(8)) 到父节点 \(toParentId.prefix(8)) 下。\n作用域: \(scope.rawValue)\n思维导图ID: \(updated.id)"
+                return "已移动节点 \(nodeId.prefix(8)) 到父节点 \(toParentId.prefix(8)) 下。\n思维导图ID: \(updated.id)"
             case .english:
-                return "Moved node \(nodeId.prefix(8)) under parent \(toParentId.prefix(8)).\nscope=\(scope.rawValue)\nmapId: \(updated.id)"
+                return "Moved node \(nodeId.prefix(8)) under parent \(toParentId.prefix(8)).\nmapId: \(updated.id)"
             }
         } catch {
             await MainActor.run { MindMapStore.shared.setError(error.localizedDescription) }
