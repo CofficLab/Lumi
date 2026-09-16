@@ -24,7 +24,6 @@ public struct MindMapDesignerView: View {
     public var body: some View {
         VStack(spacing: 0) {
             if store.projectStorageDirectory == nil || store.projectMaps.isEmpty {
-                emptyToolbar
                 MindMapOnboardingView(isProjectOpen: store.projectStorageDirectory != nil)
             } else if let map = store.selectedMap {
                 topToolbar(for: map)
@@ -80,19 +79,6 @@ public struct MindMapDesignerView: View {
 
     private var themeErrorBackground: Color {
         Color.red.opacity(0.85)
-    }
-
-    private var emptyToolbar: some View {
-        AppToolbarContainer {
-            HStack {
-                AppToolbarTitleLabel(icon: "brain.head.profile", title: L.string("Mind Maps"))
-                Spacer(minLength: 0)
-                AppIconButton(systemImage: "arrow.clockwise", action: store.reload)
-                    .accessibilityLabel(L.string("Refresh"))
-                    .help(L.string("Refresh"))
-            }
-        }
-        .borderBottom()
     }
 
     private func topToolbar(for map: MindMap) -> some View {

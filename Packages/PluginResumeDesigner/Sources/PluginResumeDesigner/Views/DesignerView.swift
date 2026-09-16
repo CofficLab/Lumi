@@ -28,7 +28,6 @@ public struct DesignerView: View {
     public var body: some View {
         VStack(spacing: 0) {
             if workspace.projectResumes.isEmpty {
-                emptyToolbar
                 ResumeOnboardingView(isProjectOpen: workspace.projectStorageDirectory != nil)
             } else if let selected = workspace.selectedResume {
                 topToolbar(for: selected.document)
@@ -58,18 +57,6 @@ public struct DesignerView: View {
         } message: {
             Text(workspace.lastError ?? "")
         }
-    }
-
-    private var emptyToolbar: some View {
-        AppToolbarContainer {
-            HStack {
-                Spacer(minLength: 0)
-                AppIconButton(systemImage: "arrow.clockwise", action: workspace.reload)
-                    .accessibilityLabel(L.string("Refresh"))
-                    .help(L.string("Refresh"))
-            }
-        }
-        .borderBottom()
     }
 
     private func topToolbar(for document: ResumeDocument) -> some View {
