@@ -150,10 +150,15 @@ struct AskUserPluginTests {
     @Test("choice 模式：返回传入的选项")
     func choiceMode() async throws {
         let tool = AskUserTool()
+        let options: [Any] = [
+            "Debug",
+            ["label": "Release", "description": "正式发布构建", "badge": "推荐"],
+            "Profile",
+        ]
         let result = try await tool.executeResult(arguments: [
             "question": ToolArgument("选哪个?"),
             "mode": ToolArgument("choice"),
-            "options": ToolArgument(["Debug", "Release", "Profile"]),
+            "options": ToolArgument(options),
         ])
         let response = try #require(try? JSONDecoder().decode(
             AskUserPendingResponse.self,
@@ -161,7 +166,34 @@ struct AskUserPluginTests {
         ))
         #expect(response.mode == "choice")
         #expect(response.options.map(\.label) == ["Debug", "Release", "Profile"])
+        #expect(response.options[0].badge == nil)
+        #expect(response.options[1].badge == "推荐")
         #expect(result.awaitingUserResponse)
+    }
+
+    @Test("选项 badge 可编码解码且兼容旧字符串格式")
+    func optionBadgeCoding() throws {
+        let legacy = try JSONEncoder().encode(AskUserOption(label: "Debug"))
+        #expect(String(data: legacy, encoding: .utf8) == "\"Debug\"")
+        #expect(try JSONDecoder().decode(AskUserOption.self, from: legacy) == AskUserOption(label: "Debug"))
+
+        let option = AskUserOption(label: "Release", description: "正式发布", badge: "  推荐\n ")
+        let encoded = try JSONEncoder().encode(option)
+        let decoded = try JSONDecoder().decode(AskUserOption.self, from: encoded)
+        #expect(decoded == AskUserOption(label: "Release", description: "正式发布", badge: "推荐"))
+        #expect(decoded.badge == "推荐")
+    }
+
+    @Test("AskUser Schema 声明可选 badge")
+    func badgeSchema() throws {
+        let schema = AskUserTool().inputSchema(for: .english)
+        let properties = try #require(schema["properties"] as? [String: Any])
+        let options = try #require(properties["options"] as? [String: Any])
+        let items = try #require(options["items"] as? [String: Any])
+        let itemProperties = try #require(items["properties"] as? [String: Any])
+        let badge = try #require(itemProperties["badge"] as? [String: Any])
+        #expect(badge["type"] as? String == "string")
+        #expect((items["required"] as? [String]) == ["label"])
     }
 
     @Test("free_text 模式：无选项，挂起等待回答")

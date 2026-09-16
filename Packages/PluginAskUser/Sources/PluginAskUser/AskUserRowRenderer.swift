@@ -77,7 +77,7 @@ struct AskUserPendingView: View {
                         Button {
                             submit(option.label)
                         } label: {
-                            HStack {
+                            HStack(alignment: .top, spacing: 8) {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(option.label)
                                         .foregroundColor(theme.textPrimary)
@@ -88,9 +88,16 @@ struct AskUserPendingView: View {
                                     }
                                 }
                                 Spacer()
-                                if answer == option.label {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(theme.success)
+                                VStack(alignment: .trailing, spacing: 4) {
+                                    if let badge = option.badge {
+                                        AppTag(badge, systemImage: nil, style: .subtle)
+                                            .fixedSize()
+                                    }
+
+                                    if answer == option.label {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(theme.success)
+                                    }
                                 }
                             }
                             .padding(.horizontal, 10)
@@ -99,6 +106,7 @@ struct AskUserPendingView: View {
                             .background(theme.elevatedSurface)
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                         }
+                        .accessibilityElement(children: .combine)
                         .buttonStyle(.plain)
                         .disabled(responded)
                     }
