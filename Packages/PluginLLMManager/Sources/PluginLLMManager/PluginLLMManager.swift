@@ -1,7 +1,6 @@
 import Foundation
 import KernelCore
 import os
-import PluginLLMProviderSettings
 import ProviderConversation
 import ProviderLLMManager
 import ProviderMessageRendering
@@ -80,9 +79,6 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
 
     /// 对话绑定的供应商/模型通过 `LLMRequest.providerID` 显式传递，避免
     /// 切换对话时改写全局选中状态；未绑定对话才使用全局选中项。
-    ///
-    /// 自定义供应商 Store 由 `LLMProviderSettingsPlugin`（order=100）创建，
-    /// `onReady` 在所有 `onBoot` 完成后执行，此时 Store 已就绪。
     public func onReady(kernel: KernelCoreContainer) throws {
         guard let manager else { return }
 
@@ -91,7 +87,6 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
         // TEMP-DISABLED observeConversationProviderChanges(kernel: kernel, manager: manager)
 
         let onboarding = kernel.resolveProvider((any OnboardingProviding).self)
-        let storeProvider = kernel.resolveProvider((any UserDefinedCloudProviderStoreProviding).self)
 
         // 如果 onboarding 不可用，无法注册页面
         guard let onboarding else {
@@ -101,23 +96,14 @@ public final class PluginLLMManager: SuperPlugin, SuperLog {
             return
         }
 
-        let customStore = storeProvider?.store
         let resolvedCapability = capability ?? LLMManagerCapabilityAdapter(manager: manager)
-
-        if customStore == nil, Self.verbose {
-            Self.logger.info("\(Self.t)UserDefinedCloudProviderStore not resolved, onboarding page registered without custom provider support")
-        }
 
         onboarding.register(
             OnboardingPageItem(
                 id: Self.onboardingPageID,
                 title: LumiPluginLocalization.string("Set up your AI provider", bundle: .module)
             ) { [resolvedCapability] in
-                let viewModel = AISetupViewModel(
-                    capability: resolvedCapability,
-                    customProviderStore: customStore
-                )
-                AISetupPage(viewModel: viewModel)
+                AISetupPage(viewModel: AISetupViewModel(capability: resolvedCapability))
             }
         )
     }
