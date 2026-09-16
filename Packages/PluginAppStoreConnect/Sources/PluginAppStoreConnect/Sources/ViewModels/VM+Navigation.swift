@@ -4,9 +4,6 @@ extension VM {
     func refreshCurrentPage() async {
         await runBusy(forceRefresh: true) {
             switch page {
-            case .account:
-                try await client.testConnection()
-                connectionStatus = AppStoreConnectLocalization.string("Connected")
             case .distribution:
                 try await reloadDistributionFromNetwork()
             case .xcodeCloud:
@@ -22,9 +19,6 @@ extension VM {
     }
 
     func navigate(to page: Page) {
-        if Self.generalPages.contains(page) {
-            selectedVersion = nil
-        }
         self.page = page
         Task { await preparePageIfNeeded(page) }
     }

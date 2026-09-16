@@ -5,7 +5,6 @@ import UniformTypeIdentifiers
 struct MainView: View {
     @StateObject private var viewModel: VM
     @State private var importingScreenshots = false
-    @State private var showingAccountGuide = false
 
     init(viewModel: VM = .shared) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -44,9 +43,6 @@ struct MainView: View {
                 viewModel.addScreenshotFiles(urls)
             }
         }
-        .sheet(isPresented: $showingAccountGuide) {
-            AccountGuideView()
-        }
         .task {
             if viewModel.credentials.isComplete && viewModel.apps.isEmpty {
                 await viewModel.loadApps(silent: true)
@@ -61,8 +57,6 @@ struct MainView: View {
     @ViewBuilder
     private var pageContent: some View {
         switch viewModel.page {
-        case .account:
-            AccountPage(viewModel: viewModel, showingAccountGuide: $showingAccountGuide)
         case .distribution:
             DistributionPage(viewModel: viewModel, importingScreenshots: $importingScreenshots)
         case .xcodeCloud:

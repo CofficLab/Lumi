@@ -27,7 +27,6 @@ final class VM: ObservableObject, SuperLog {
     static let shared = VM()
 
     enum Page: String, CaseIterable, Identifiable {
-        case account
         case distribution
         case xcodeCloud
 
@@ -35,7 +34,6 @@ final class VM: ObservableObject, SuperLog {
 
         var title: String {
             switch self {
-            case .account: return AppStoreConnectLocalization.string("Account")
             case .distribution: return AppStoreConnectLocalization.string("Distribution")
             case .xcodeCloud: return AppStoreConnectLocalization.string("Xcode Cloud")
             }
@@ -43,7 +41,6 @@ final class VM: ObservableObject, SuperLog {
 
         var systemImage: String {
             switch self {
-            case .account: return "key"
             case .distribution: return "shippingbox"
             case .xcodeCloud: return "cloud"
             }
@@ -51,15 +48,12 @@ final class VM: ObservableObject, SuperLog {
 
         var showsTopBar: Bool {
             switch self {
-            case .account: return false
             case .distribution, .xcodeCloud: return true
             }
         }
     }
 
-    static let generalPages: [Page] = [.account]
-
-    @Published var page: Page = .account
+    @Published var page: Page = .distribution
     @Published var credentials: AppStoreConnectCredentials
     @Published var hasStoredPrivateKey: Bool
     @Published var connectionStatus = AppStoreConnectLocalization.string("Not connected")

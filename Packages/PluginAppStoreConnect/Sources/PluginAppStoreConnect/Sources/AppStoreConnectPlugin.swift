@@ -10,6 +10,7 @@ import ProviderDocsView
 import ProviderNetwork
 import ProviderRailView
 import ProviderRootView
+import ProviderSettingView
 import ProviderStorage
 import ProviderToolbar
 import ProviderToolManager
@@ -30,6 +31,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
     public let legacyDataDirectoryNames = ["AppStoreConnectPlugin"]
     public let order = 65
     public static let railTabID = "app-store-connect.sidebar"
+    public static let settingsEntryID = "com.coffic.lumi.plugin.app-store-connect.settings"
 
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.app-store-connect",
@@ -93,6 +95,17 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
         } else {
             Self.logger.error("\(Self.t) ToolManagerProviding not found")
         }
+
+        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
+            SettingEntryItem(
+                id: Self.settingsEntryID,
+                title: name,
+                systemImage: "app.badge.checkmark",
+                order: order
+            ) {
+                AppStoreConnectSettingsView(viewModel: VM.shared)
+            },
+        ])
 
         let rail = kernel.resolveProvider((any RailViewProviding).self)
         rail?.addTabs([
@@ -183,6 +196,8 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
             Self.agentTools.forEach { manager.remove(id: $0.name) }
         }
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeEntries(ids: [Self.settingsEntryID])
 
         let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
         let wasActive = activityBar?.activeItemID == "\(id).entry"

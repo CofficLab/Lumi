@@ -101,6 +101,7 @@
       }
     },
     "Account" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -511,7 +512,18 @@
         }
       }
     },
+    "Configure App Store Connect API credentials and connection status." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配置 App Store Connect API 凭据并查看连接状态。"
+          }
+        }
+      }
+    },
     "Configure credentials first" : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
