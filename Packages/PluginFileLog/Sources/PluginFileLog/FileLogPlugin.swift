@@ -16,10 +16,11 @@ import os
 /// 插件启动时从 `StorageProviding` 获取日志目录，并启动 `FileLogCoordinator`。
 /// 插件关闭时停止协调器。
 @MainActor
-public final class FileLogPlugin: SuperPlugin, SuperLog {
+public final class FileLogPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated public static let pluginID = "com.coffic.lumi.plugin.file-log"
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.file-log", category: "FileLog")
     public let id = FileLogPlugin.pluginID
+    public let legacyDataDirectoryNames = ["FileLog"]
     public let order = 1
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.file-log",
