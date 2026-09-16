@@ -12,8 +12,8 @@ import os
 
 /// KernelCore implementation of the goal and task workflow.
 ///
-/// It intentionally uses the legacy plugin's storage key and SQLite layout so
-/// existing goals remain visible after the host switches to LumiApp.
+/// It keeps the legacy SQLite layout inside the plugin-owned storage directory
+/// so the database schema and file naming remain unchanged.
 @MainActor
 public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.goal-task", category: "GoalTask")
@@ -42,10 +42,11 @@ public final class GoalTaskSuperPlugin: SuperPlugin, SuperLog {
             return
         }
 
-        // Keep the exact old root key. GoalStateManager appends GoalTaskPlugin
-        // itself, matching the legacy goals.sqlite location byte-for-byte.
+        // Store GoalTask data under the plugin's own ID, consistent with the
+        // other plugins. GoalStateManager retains its inner database directory
+        // to keep the SQLite layout stable within this plugin-owned directory.
         Plugin._sharedManager = try GoalStateManager(
-            databaseRootURL: storage.pluginDataDirectory(for: "GoalTaskPlugin")
+            databaseRootURL: storage.pluginDataDirectory(for: id)
         )
 
         guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
