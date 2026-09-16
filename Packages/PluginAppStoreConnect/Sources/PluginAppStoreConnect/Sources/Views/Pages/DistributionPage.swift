@@ -31,10 +31,8 @@ struct DistributionPage: View {
     @ViewBuilder
     private var versionContent: some View {
         VStack(spacing: 0) {
-            // 版本选择器
-            versionPicker
-                .padding(.horizontal)
-                .padding(.vertical, 12)
+            // 版本选择器、状态、语言与操作合并为一行
+            versionToolbar
 
             Divider()
 
@@ -62,6 +60,23 @@ struct DistributionPage: View {
 
     // MARK: - Version Picker
 
+    private var versionToolbar: some View {
+        AppToolbarContainer(padding: EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)) {
+            HStack(spacing: 16) {
+                versionPicker
+
+                if let version = viewModel.selectedVersion {
+                    VersionStatusBanner(
+                        version: version,
+                        viewModel: viewModel,
+                        localePickerSourceView: "DistributionPage.localePicker",
+                        embedded: true
+                    )
+                }
+            }
+        }
+    }
+
     private var versionPicker: some View {
         HStack(spacing: 12) {
             Text(AppStoreConnectLocalization.string("Version"))
@@ -83,15 +98,6 @@ struct DistributionPage: View {
             }
             .pickerStyle(.menu)
             .frame(maxWidth: 300)
-
-            Spacer()
-
-            // 刷新按钮
-            AppIconButton(systemImage: "arrow.clockwise") {
-                Task { await viewModel.loadVersions() }
-            }
-            .disabled(viewModel.isBusy)
-            .help(AppStoreConnectLocalization.string("Refresh"))
         }
     }
 

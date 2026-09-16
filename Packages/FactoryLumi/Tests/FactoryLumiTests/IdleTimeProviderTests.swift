@@ -49,7 +49,7 @@ struct FactoryLumiIdleTimeTests {
                 == recordedAt.timeIntervalSince1970.rounded(.down))
 
         // 事件与快照已落盘到 Storage 提供的插件数据目录。
-        let idleDirectory = storage.pluginDataDirectory(for: "IdleTime")
+        let idleDirectory = storage.pluginDataDirectory(for: "com.coffic.lumi.plugin.idle-time")
         #expect(FileManager.default.fileExists(
             atPath: idleDirectory.appendingPathComponent("activity.json").path
         ))

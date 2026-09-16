@@ -1,19 +1,35 @@
 import Combine
 import Foundation
-import GitPlugin
+import ProviderGit
 
 protocol GitWorkspaceGitProviding: Sendable {
     func getStatus(path: String) async throws -> GitStatus
     func getLog(path: String, count: Int, branch: String?, file: String?) async throws -> [GitCommitLog]
 }
 
-struct LiveGitWorkspaceGitProvider: GitWorkspaceGitProviding {
+/// 把 `GitRepositoryReading` 契约适配为本模块内部的窄协议。
+///
+/// 插件不得依赖 `PluginGit`，Git 数据统一来自 ProviderGit 契约。
+struct ContractGitWorkspaceGitProvider: GitWorkspaceGitProviding {
+    let git: any GitRepositoryReading
+
     func getStatus(path: String) async throws -> GitStatus {
-        try await GitService.shared.getStatus(path: path)
+        try await git.status(atPath: path)
     }
 
     func getLog(path: String, count: Int, branch: String?, file: String?) async throws -> [GitCommitLog] {
-        try await GitService.shared.getLog(path: path, count: count, branch: branch, file: file)
+        try await git.log(atPath: path, count: count, branch: branch, file: file)
+    }
+}
+
+/// 宿主未装配 `PluginGit` 时的降级实现：面板照常渲染，操作返回明确错误。
+struct UnavailableGitWorkspaceGitProvider: GitWorkspaceGitProviding {
+    func getStatus(path: String) async throws -> GitStatus {
+        throw GitReadError.repositoryNotFound(path: path)
+    }
+
+    func getLog(path: String, count: Int, branch: String?, file: String?) async throws -> [GitCommitLog] {
+        throw GitReadError.repositoryNotFound(path: path)
     }
 }
 

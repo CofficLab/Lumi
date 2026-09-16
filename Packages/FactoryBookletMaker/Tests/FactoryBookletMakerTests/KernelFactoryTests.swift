@@ -91,9 +91,10 @@ struct DefaultFactoryTests {
     @Test("DefaultPluginFactory 产出 BookletMaker 插件")
     func defaultPluginsIncludeBookletMaker() {
         let plugins = DefaultPluginFactory().makePlugins()
-        #expect(plugins.count == 8)
+        #expect(plugins.count == 9)
         #expect(plugins.contains(where: { $0.id == "com.coffic.lumi.plugin.setting-view" }))
         #expect(plugins.contains(where: { $0.id == "com.coffic.lumi.plugin.logo-manager" }))
+        #expect(plugins.contains(where: { $0.id == "com.coffic.lumi.plugin.theme-manager" }))
         #expect(plugins.contains(where: { $0.id == "com.coffic.lumi.plugin.theme-pack" }))
         #expect(!plugins.contains(where: { $0.id.contains("activity-heatmap") }))
         #expect(!plugins.contains(where: { $0.id.contains("llm") }))

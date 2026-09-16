@@ -24,7 +24,7 @@ public struct MindMapAboutView: View {
             tagline: L("A native SwiftUI mind map editor. Grow trees with agent tools in chat or edit directly on the canvas."),
             chips: [L("Canvas"), L("Agent tools"), L("Bilateral tree")],
             metrics: [
-                .init(value: L("Project"), label: L("scope")),
+                .init(value: L("Project"), label: L("storage")),
                 .init(value: L("JSON"), label: L("export"))
             ]
         )
@@ -46,8 +46,8 @@ public struct MindMapAboutView: View {
                       title: L("Tidy Layout"),
                       description: L("Two-sided balanced tree layout that re-flows automatically.")),
                 .init(icon: "square.stack.3d.down.right", tint: theme.warning,
-                      title: L("Dual Scope Storage"),
-                      description: L("Project (.lumi/mind-map) and app-wide scopes.")),
+                      title: L("Project Storage"),
+                      description: L("Mind maps are stored in the current project at `.lumi/mind-map`.")),
                 .init(icon: "arrow.down.doc", tint: theme.primary,
                       title: L("Import & Export"),
                       description: L("Import outlines; export as Markdown or JSON.")),

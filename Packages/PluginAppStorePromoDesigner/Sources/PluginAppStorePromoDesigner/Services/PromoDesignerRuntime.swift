@@ -3,22 +3,6 @@ import Foundation
 import KernelCore
 import ProviderConversationInput
 import ProviderProject
-import ProviderStorage
-
-/// 存储作用域：当前项目目录或应用级数据目录。
-public enum PromoScope: String, CaseIterable, Sendable {
-    case project
-    case app
-
-    var rawName: String { rawValue }
-
-    func displayName() -> String {
-        switch self {
-        case .project: PromoLocalization.string("In Project")
-        case .app: PromoLocalization.string("In App")
-        }
-    }
-}
 
 /// 宿主可注入的促销图设计评审 LLM 服务。
 ///
@@ -37,7 +21,6 @@ public protocol PromoDesignReviewLLMProviding: AnyObject, Sendable {
 
 @MainActor
 enum PromoDesignerRuntime {
-    static private(set) var appStorageDirectory: URL?
     static private(set) var projectStorageDirectory: URL?
     static private(set) var currentProjectPath: String?
 
@@ -49,73 +32,51 @@ enum PromoDesignerRuntime {
 
     static let projectFolderName = "app-store-promo"
 
-    static func configure(kernel: KernelCoreContainer, pluginID: String) {
+    static func configure(kernel: KernelCoreContainer) {
         conversationInput = kernel.resolveProvider((any ConversationInputProviding).self)
-        let appDirectory = kernel.resolveProvider((any StorageProviding).self)?
-            .pluginDataDirectory(for: pluginID)
-        configure(appStorageDirectory: appDirectory)
         updateProjectStorageDirectory(
             projectPath: kernel.resolveProvider((any ProjectProviding).self)?.currentProject?.path
         )
     }
 
-    static func configure(appStorageDirectory: URL?) {
-        let resolved = appStorageDirectory?.standardizedFileURL
-        guard self.appStorageDirectory != resolved else { return }
-        self.appStorageDirectory = resolved
-        WorkspaceStore.shared.setAppStorage(appStorageDirectory: resolved)
-    }
-
     /// Called by the plugin-owned project observer when the active project changes.
     static func updateProjectStorageDirectory(projectPath: String?) {
-        guard projectPath != currentProjectPath else { return }
-        currentProjectPath = projectPath
-        let resolved: URL?
-        if let projectPath, !projectPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            resolved = URL(fileURLWithPath: projectPath, isDirectory: true)
+        let normalizedPath = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let path = normalizedPath?.isEmpty == false ? normalizedPath : nil
+        guard path != currentProjectPath || projectStorageDirectory != nil else { return }
+        currentProjectPath = path
+        let resolved = path.map {
+            URL(fileURLWithPath: $0, isDirectory: true)
                 .appendingPathComponent(".lumi", isDirectory: true)
                 .appendingPathComponent(projectFolderName, isDirectory: true)
                 .standardizedFileURL
-        } else {
-            resolved = nil
         }
         guard projectStorageDirectory != resolved else { return }
         projectStorageDirectory = resolved
         WorkspaceStore.shared.setProjectStorage(
-            projectPath: projectPath,
+            projectPath: path,
             projectStorageDirectory: resolved
         )
     }
 
-    static var hasOpenProject: Bool {
-        guard let path = currentProjectPath?.trimmingCharacters(in: .whitespacesAndNewlines) else {
-            return false
-        }
-        return !path.isEmpty
-    }
-
-    /// 当 LLM 工具没有显式传 scope 时，根据是否有打开项目返回默认 scope。
-    static func defaultScope(hasOpenProject: Bool? = nil) -> PromoScope {
-        (hasOpenProject ?? self.hasOpenProject) ? .project : .app
-    }
-
     /// 测试辅助：手动注入项目路径与项目内存储目录。
     static func setProjectStorage(projectPath: String?, projectStorageDirectory: URL?) {
-        currentProjectPath = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedPath = projectPath?.trimmingCharacters(in: .whitespacesAndNewlines)
+        currentProjectPath = normalizedPath?.isEmpty == false ? normalizedPath : nil
         let resolved = projectStorageDirectory?.standardizedFileURL
-        guard self.projectStorageDirectory != resolved || currentProjectPath != (projectPath?.trimmingCharacters(in: .whitespacesAndNewlines)) else { return }
         self.projectStorageDirectory = resolved
-        WorkspaceStore.shared.setProjectStorage(projectPath: currentProjectPath, projectStorageDirectory: resolved)
+        WorkspaceStore.shared.setProjectStorage(
+            projectPath: currentProjectPath,
+            projectStorageDirectory: resolved
+        )
     }
 
-    /// 测试辅助：重置所有运行时状态（含 app / project 路径及订阅）。
+    /// 测试辅助：重置所有运行时状态及订阅。
     static func reset() {
-        appStorageDirectory = nil
         projectStorageDirectory = nil
         currentProjectPath = nil
         designReviewLLM = nil
         conversationInput = nil
-        WorkspaceStore.shared.setAppStorage(appStorageDirectory: nil)
         WorkspaceStore.shared.setProjectStorage(projectPath: nil, projectStorageDirectory: nil)
     }
 }

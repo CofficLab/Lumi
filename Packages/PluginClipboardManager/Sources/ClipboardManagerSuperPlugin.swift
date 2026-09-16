@@ -6,6 +6,7 @@ import ProviderContentView
 import ProviderDocsView
 import ProviderRailView
 import ProviderRootView
+import ProviderStorage
 import SwiftUI
 import os
 import KitSuperLog
@@ -16,8 +17,9 @@ enum ClipboardManagerPlugin {
 }
 
 @MainActor
-public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
+public final class ClipboardManagerSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     public let id = "com.coffic.lumi.plugin.clipboard-manager"
+    public let legacyDataDirectoryNames = ["ClipboardManager"]
     public let order = 270
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.clipboard-manager",
@@ -46,6 +48,10 @@ public final class ClipboardManagerSuperPlugin: SuperPlugin, SuperLog {
     }
 
     public func onBoot(kernel: KernelCoreContainer) throws {
+        if let storage = kernel.resolveProvider((any StorageProviding).self) {
+            let pluginDirectory = storage.pluginDataDirectory(for: id)
+            ClipboardManagerRuntime.databaseDirectoryProvider = { pluginDirectory }
+        }
         monitorObserver?.cancel()
         monitorObserver = ClipboardMonitorObserver()
         let viewModel = ClipboardManagerViewModel()

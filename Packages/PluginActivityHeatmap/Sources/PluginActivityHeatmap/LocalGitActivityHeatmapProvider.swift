@@ -1,13 +1,16 @@
 import Foundation
-import GitPlugin
 import KitSuperLog
 import os
 import ProviderActivityHeatmap
+import ProviderGit
 
 /// Plugin-owned implementation of the shared Git activity contract.
 ///
 /// The provider owns Git history loading and repository-keyed JSON caching;
 /// settings views only consume snapshots and never talk to Git directly.
+///
+/// Git data comes from the `GitRepositoryReading` provider contract rather than
+/// from `PluginGit` directly: plugin packages must not depend on one another.
 @MainActor
 final class LocalGitActivityHeatmapProvider: ActivityHeatmapProviding, SuperLog {
     nonisolated static let logger = Logger(
@@ -31,8 +34,11 @@ final class LocalGitActivityHeatmapProvider: ActivityHeatmapProviding, SuperLog 
     private(set) var currentSnapshot: ActivityHeatmapSnapshot?
     private(set) var isLoading = false
 
+    /// - Parameter git: Git 读取契约；缺省时该 provider 无法加载提交历史，
+    ///   `refresh` 会直接产出空快照（宿主未装配 `PluginGit` 时的降级路径）。
     init(
         directory: URL,
+        git: (any GitRepositoryReading)? = nil,
         calendar: Calendar = .current,
         now: @escaping @Sendable () -> Date = Date.init,
         commitLoader: CommitLoader? = nil
@@ -41,7 +47,8 @@ final class LocalGitActivityHeatmapProvider: ActivityHeatmapProviding, SuperLog 
         self.calendar = calendar
         self.now = now
         self.loadCommits = commitLoader ?? { repositoryPath, limit, offset in
-            try await GitService.shared.getLogWithSkip(path: repositoryPath, count: limit, skip: offset)
+            guard let git else { throw GitReadError.repositoryNotFound(path: repositoryPath) }
+            return try await git.log(atPath: repositoryPath, count: limit, skip: offset)
         }
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
@@ -163,9 +170,7 @@ final class LocalGitActivityHeatmapProvider: ActivityHeatmapProviding, SuperLog 
     }
 
     nonisolated private static func date(from value: String) -> Date? {
-        let iso = ISO8601DateFormatter()
-        if let date = iso.date(from: value) { return date }
-        return DateParseHelper.formatHandlers.lazy.compactMap { $0.date(from: value) }.first
+        GitDateFormatting.date(from: value)
     }
 
     private func cacheURL(for repository: URL) -> URL {

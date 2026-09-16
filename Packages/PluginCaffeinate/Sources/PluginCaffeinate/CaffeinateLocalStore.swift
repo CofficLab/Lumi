@@ -6,7 +6,7 @@ import KitSuperLog
 /// Caffeinate 插件本地存储
 ///
 /// 负责持久化 Caffeinate 插件的用户配置（默认启动模式等）。
-/// 存储位置：kernel.storage.pluginDataDirectory(for: "Caffeinate")/settings.plist
+/// 存储位置：kernel.storage.pluginDataDirectory(for: CaffeinatePlugin.pluginID)/settings.plist
 @MainActor
 public final class CaffeinateLocalStore: SuperLog, @unchecked Sendable {
     private static let logger = Logger(
@@ -59,17 +59,57 @@ public final class CaffeinateLocalStore: SuperLog, @unchecked Sendable {
             Self.logger.error("\(self.t)storage is nil; caffeinate local store stays unconfigured")
             return
         }
-        let root = storage.pluginDataDirectory(for: "Caffeinate")
+
+        let root = storage.pluginDataDirectory(for: CaffeinatePlugin.pluginID)
+        migrateLegacyStorageIfNeeded(storage: storage, newRoot: root)
+
+        let settingsRoot = root
             .appendingPathComponent("settings", isDirectory: true)
         do {
-            try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+            try fileManager.createDirectory(at: settingsRoot, withIntermediateDirectories: true)
         } catch {
             Self.logger.error("\(self.t)Create caffeinate settings directory failed: \(error.localizedDescription)")
         }
-        self.settingsDirectory = root
-        self.settingsFileURL = root.appendingPathComponent("settings.plist")
-        self.corruptSettingsFileURL = root.appendingPathComponent("settings.corrupt.plist")
+        self.settingsDirectory = settingsRoot
+        self.settingsFileURL = settingsRoot.appendingPathComponent("settings.plist")
+        self.corruptSettingsFileURL = settingsRoot.appendingPathComponent("settings.corrupt.plist")
         self.isConfigured = true
+    }
+
+    /// 将旧版使用短 ID 的目录内容迁移到规范插件 ID 目录。
+    ///
+    /// 只移动目标目录中尚不存在的项目，避免覆盖新目录中的数据；如果发生冲突，
+    /// 保留旧目录并记录日志，交给后续版本继续处理。
+    private func migrateLegacyStorageIfNeeded(storage: any StorageProviding, newRoot: URL) {
+        let legacyRoot = storage.dataRootDirectory
+            .appendingPathComponent("Caffeinate", isDirectory: true)
+        guard legacyRoot.standardizedFileURL != newRoot.standardizedFileURL,
+              fileManager.fileExists(atPath: legacyRoot.path) else {
+            return
+        }
+
+        do {
+            let legacyItems = try fileManager.contentsOfDirectory(
+                at: legacyRoot,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )
+
+            for item in legacyItems {
+                let destination = newRoot.appendingPathComponent(item.lastPathComponent, isDirectory: item.hasDirectoryPath)
+                guard !fileManager.fileExists(atPath: destination.path) else {
+                    Self.logger.warning("\(self.t)Skipped legacy storage item because destination exists: \(destination.path, privacy: .public)")
+                    continue
+                }
+                try fileManager.moveItem(at: item, to: destination)
+            }
+
+            if (try? fileManager.contentsOfDirectory(atPath: legacyRoot.path))?.isEmpty == true {
+                try? fileManager.removeItem(at: legacyRoot)
+            }
+        } catch {
+            Self.logger.error("\(self.t)Migrate legacy caffeinate storage failed: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Public API

@@ -258,7 +258,14 @@ extension AgentLoopManager {
                 let event: TurnEvent = recoverable
                     ? .llmRetryableFailure(reason: reason)
                     : .llmFailed(reason: reason)
-                let (updated, outcome) = TurnReducer.reduce(current, event: event)
+                var (updated, outcome) = TurnReducer.reduce(current, event: event)
+                if outcome != nil {
+                    updated.lastFailure = AgentLoopFailure.from(
+                        error: error,
+                        providerID: current.modelRoute?.providerID,
+                        modelName: current.modelRoute?.modelName
+                    )
+                }
                 runtimes[conversationID] = updated
                 if let outcome {
                     await appendError(in: conversationID, error: error, turnID: currentTurnID)

@@ -997,11 +997,13 @@ public extension Array where Element == MessageToolCall {
 
 public enum AgentLoopError: Error, LocalizedError {
     case invalidResumeRequest
+    case invalidRetryRequest
     case unsupportedStreaming
 
     public var errorDescription: String? {
         switch self {
         case .invalidResumeRequest: return "The resume request does not match a suspended tool call."
+        case .invalidRetryRequest: return "The retry request does not match a failed turn."
         case .unsupportedStreaming: return "The selected LLM provider does not support streaming."
         }
     }

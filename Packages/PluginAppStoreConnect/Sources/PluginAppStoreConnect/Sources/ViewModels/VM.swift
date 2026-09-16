@@ -14,6 +14,7 @@ import ProviderNetwork
 import ProviderRailView
 import ProviderRootView
 import ProviderStorage
+import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
 import os
@@ -27,7 +28,6 @@ final class VM: ObservableObject, SuperLog {
     static let shared = VM()
 
     enum Page: String, CaseIterable, Identifiable {
-        case account
         case distribution
         case xcodeCloud
 
@@ -35,7 +35,6 @@ final class VM: ObservableObject, SuperLog {
 
         var title: String {
             switch self {
-            case .account: return AppStoreConnectLocalization.string("Account")
             case .distribution: return AppStoreConnectLocalization.string("Distribution")
             case .xcodeCloud: return AppStoreConnectLocalization.string("Xcode Cloud")
             }
@@ -43,7 +42,6 @@ final class VM: ObservableObject, SuperLog {
 
         var systemImage: String {
             switch self {
-            case .account: return "key"
             case .distribution: return "shippingbox"
             case .xcodeCloud: return "cloud"
             }
@@ -51,15 +49,12 @@ final class VM: ObservableObject, SuperLog {
 
         var showsTopBar: Bool {
             switch self {
-            case .account: return false
             case .distribution, .xcodeCloud: return true
             }
         }
     }
 
-    static let generalPages: [Page] = [.account]
-
-    @Published var page: Page = .account
+    @Published var page: Page = .distribution
     @Published var credentials: AppStoreConnectCredentials
     @Published var hasStoredPrivateKey: Bool
     @Published var connectionStatus = AppStoreConnectLocalization.string("Not connected")
@@ -125,6 +120,7 @@ final class VM: ObservableObject, SuperLog {
     let credentialStore: CredentialStore
     private(set) var client: ConnectClient
     let localStore: AppStoreConnectPluginLocalStore
+    private(set) var toast: (any ToastProviding)?
 
     init(
         credentialStore: CredentialStore = .shared,
@@ -150,6 +146,10 @@ final class VM: ObservableObject, SuperLog {
 
     func configure(network: any NetworkProviding) {
         client = ConnectClient(credentialsProvider: { [credentialStore] in credentialStore.load() }, network: network)
+    }
+
+    func configure(toast: (any ToastProviding)?) {
+        self.toast = toast
     }
 
     var filteredApps: [AppStoreApp] {

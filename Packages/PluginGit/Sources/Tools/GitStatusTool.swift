@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import ProviderGit
 
 /// 查看 Git 仓库状态：分支、远程、变更文件分类。
 public struct GitStatusV2Tool: SuperAgentTool, @unchecked Sendable {

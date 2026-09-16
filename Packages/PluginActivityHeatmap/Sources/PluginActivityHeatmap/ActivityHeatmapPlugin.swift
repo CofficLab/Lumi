@@ -1,9 +1,11 @@
 import Foundation
-import GitPlugin
 import KernelCore
 import KitLocalization
+import LumiUI
+import ProviderGit
 import ProviderMessage
 import ProviderActivityHeatmap
+import ProviderGit
 import ProviderGitRepositoryWatch
 import ProviderSettingView
 import ProviderIdleTime
@@ -17,9 +19,10 @@ import os
 /// daily message intensity, token trend, and persisted range preference while
 /// consuming only KernelCore providers.
 @MainActor
-public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
+public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.activity-heatmap", category: "ActivityHeatmap")
     public let id = "com.coffic.activity-heatmap"
+    public let legacyDataDirectoryNames = ["ActivityHeatmap"]
     public let order = 9
     public let dependencies = [
         "com.coffic.lumi.plugin.projects",
@@ -48,7 +51,8 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
     public func onBoot(kernel: KernelCoreContainer) throws {
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let provider = LocalGitActivityHeatmapProvider(
-                directory: storage.pluginDataDirectory(for: id)
+                directory: storage.pluginDataDirectory(for: id),
+                git: kernel.resolveProvider((any GitRepositoryReading).self)
             )
             gitActivityProvider = provider
             try kernel.registerProvider((any ActivityHeatmapProviding).self, provider)
@@ -101,7 +105,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t) IdleTimeProviding not found")
         }
         let directory = kernel.resolveProvider((any StorageProviding).self)?
-            .pluginDataDirectory(for: "ActivityHeatmap")
+            .pluginDataDirectory(for: id)
         ActivityHeatmapViewModel.restoreLegacyPeriodIfNeeded(from: directory)
         cache = ActivityHeatmapCache(directory: directory)
         let viewModel = ActivityHeatmapViewModel(messages: messages, cache: cache)
@@ -213,7 +217,21 @@ public final class ActivityHeatmapViewModel {
         didSet { UserDefaults.standard.set(period.rawValue, forKey: Self.periodKey) }
     }
     public private(set) var days: [ActivityDay] = []
+    /// The heatmap keeps a full year's daily history so its layout can decide
+    /// how much to show from the available space independently of `period`.
+    public private(set) var heatmapDays: [ActivityDay] = []
     public private(set) var isLoading = false
+    /// Days drawn by the token trend chart. Fixed to 30 days so the line chart
+    /// matches the HTTP log and conversation dashboards, and so a restored
+    /// legacy "last year" preference cannot pack 365 points into one width.
+    public var trendDays: [ActivityDay] {
+        Array(heatmapDays.suffix(ActivityHeatmapPeriod.days30.rawValue))
+    }
+    /// The day with the highest token consumption inside ``trendDays``, shown
+    /// under the trend chart. Nil when no tokens were consumed in that window.
+    public var peakTokenDay: ActivityDay? {
+        trendDays.max { $0.tokens < $1.tokens }.flatMap { $0.tokens > 0 ? $0 : nil }
+    }
 
     public init(messages: (any MessageManaging)?, cache: ActivityHeatmapCache? = nil) {
         self.messages = messages
@@ -251,7 +269,11 @@ public final class ActivityHeatmapViewModel {
     private func reloadNow() async {
         reloadGeneration += 1
         let generation = reloadGeneration
-        guard let messages else { days = []; return }
+        guard let messages else {
+            days = []
+            heatmapDays = []
+            return
+        }
         isLoading = true
         defer {
             if generation == reloadGeneration {
@@ -260,11 +282,12 @@ public final class ActivityHeatmapViewModel {
         }
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        guard let start = calendar.date(byAdding: .day, value: -(period.rawValue - 1), to: today) else {
+        let heatmapDayCount = ActivityHeatmapPeriod.year.rawValue
+        guard let start = calendar.date(byAdding: .day, value: -(heatmapDayCount - 1), to: today) else {
             isLoading = false
             return
         }
-        let historicalDates = (0..<(period.rawValue - 1)).compactMap {
+        let historicalDates = (0..<(heatmapDayCount - 1)).compactMap {
             calendar.date(byAdding: .day, value: $0, to: start)
         }
         let cached = await cache?.counts(for: historicalDates) ?? [:]
@@ -293,7 +316,7 @@ public final class ActivityHeatmapViewModel {
         guard !Task.isCancelled, generation == reloadGeneration else { return }
         let todayTokens = await messages.dailyTokenCountsAsync(since: today)
         guard !Task.isCancelled, generation == reloadGeneration else { return }
-        days = (0..<period.rawValue).compactMap { offset in
+        let loadedDays: [ActivityDay] = (0..<heatmapDayCount).compactMap { offset in
             guard let date = calendar.date(byAdding: .day, value: offset, to: start) else { return nil }
             let isToday = date == today
             let cachedDay = cached[date]
@@ -303,6 +326,8 @@ public final class ActivityHeatmapViewModel {
                 tokens: isToday ? todayTokens[date, default: 0] : cachedDay?.tokens ?? historical[date]?.tokens ?? 0
             )
         }
+        heatmapDays = loadedDays
+        days = Array(loadedDays.suffix(period.rawValue))
     }
 }
 
@@ -312,8 +337,15 @@ private struct LegacyPeriodPreference: Decodable {
 
 public struct ActivityHeatmapSettingsView: View {
     @State private var model: ActivityHeatmapViewModel
+    @LumiTheme private var theme
     private let idleTime: (any IdleTimeProviding)?
     private let idleTimeState: ActivityHeatmapIdleTimeState
+
+    private static let activityCellMinimumSize: CGFloat = 10
+    private static let activityCellMaximumSize: CGFloat = 14
+    private static let activityCellSpacing: CGFloat = 4
+    private static let activityRowCount = 7
+    private static let activityMaximumColumnCount = 53
 
     private func L(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: .module)
@@ -342,25 +374,6 @@ public struct ActivityHeatmapSettingsView: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(L("Activity Heatmap")).font(.title2.weight(.semibold))
-                        Text(L("Conversation activity and token consumption over time.")).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Picker(L("Period"), selection: $model.period) {
-                        ForEach(ActivityHeatmapPeriod.allCases) { period in
-                            Text(period.title).tag(period)
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(width: 130)
-                    Button { Task { await model.reload() } } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .help(L("Refresh activity"))
-                }
-
                 summary
                 heatmap
                 tokenTrend
@@ -370,14 +383,13 @@ public struct ActivityHeatmapSettingsView: View {
             }
             .padding(24)
         }
-        .onChange(of: model.period) { _, _ in Task { await model.reload() } }
         .task { await model.reload() }
     }
 
     private var summary: some View {
-        let totalMessages = model.days.reduce(0) { $0 + $1.messages }
-        let totalTokens = model.days.reduce(0) { $0 + $1.tokens }
-        let activeDays = model.days.filter { $0.messages > 0 }.count
+        let totalMessages = model.heatmapDays.reduce(0) { $0 + $1.messages }
+        let totalTokens = model.heatmapDays.reduce(0) { $0 + $1.tokens }
+        let activeDays = model.heatmapDays.filter { $0.messages > 0 }.count
         return HStack(spacing: 12) {
             metric(L("Messages"), value: "\(totalMessages)", symbol: "bubble.left.and.bubble.right")
             metric(L("Active days"), value: "\(activeDays)", symbol: "calendar")
@@ -398,15 +410,34 @@ public struct ActivityHeatmapSettingsView: View {
     private var heatmap: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L("Daily activity")).font(.headline)
-            let maximum = max(model.days.map(\.messages).max() ?? 0, 1)
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(14), spacing: 4), count: 14), spacing: 4) {
-                ForEach(model.days) { day in
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(levelColor(day.messages, maximum: maximum))
-                        .frame(width: 14, height: 14)
-                        .help("\(Self.dayFormatter.string(from: day.date)): \(day.messages) \(L("Messages").lowercased())")
+            GeometryReader { proxy in
+                let layout = activityGridLayout(
+                    for: proxy.size.width,
+                    availableDayCount: model.heatmapDays.count
+                )
+                let visibleDays = columnMajorDays(
+                    Array(model.heatmapDays.suffix(layout.visibleDayCount)),
+                    columnCount: layout.columnCount
+                )
+                let maximum = max(visibleDays.map(\.messages).max() ?? 0, 1)
+                LazyVGrid(
+                    columns: Array(
+                        repeating: GridItem(.fixed(layout.cellSize), spacing: Self.activityCellSpacing),
+                        count: layout.columnCount
+                    ),
+                    spacing: Self.activityCellSpacing
+                ) {
+                    ForEach(visibleDays) { day in
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .fill(levelColor(day.messages, maximum: maximum))
+                            .frame(width: layout.cellSize, height: layout.cellSize)
+                            .help("\(Self.dayFormatter.string(from: day.date)): \(day.messages) \(L("Messages").lowercased())")
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(height: Self.activityCellMaximumSize * CGFloat(Self.activityRowCount)
+                + Self.activityCellSpacing * CGFloat(Self.activityRowCount - 1))
             HStack(spacing: 6) {
                 Text(L("Less")).font(.caption2).foregroundStyle(.secondary)
                 ForEach(0...4, id: \.self) { level in
@@ -419,29 +450,99 @@ public struct ActivityHeatmapSettingsView: View {
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private var tokenTrend: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(L("Token trend")).font(.headline)
-            GeometryReader { proxy in
-                let maxTokens = max(model.days.map(\.tokens).max() ?? 0, 1)
-                let width = max(proxy.size.width, 1)
-                let height = max(proxy.size.height, 1)
-                Path { path in
-                    for (index, day) in model.days.enumerated() {
-                        let x = model.days.count < 2 ? width / 2 : width * CGFloat(index) / CGFloat(model.days.count - 1)
-                        let y = height - height * CGFloat(day.tokens) / CGFloat(maxTokens)
-                        index == 0 ? path.move(to: CGPoint(x: x, y: y)) : path.addLine(to: CGPoint(x: x, y: y))
-                    }
-                }
-                .stroke(.orange, style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
+    private func activityGridLayout(
+        for width: CGFloat,
+        availableDayCount: Int
+    ) -> ActivityGridLayout {
+        let availableWidth = max(width, Self.activityCellMinimumSize)
+        let possibleColumns = max(
+            1,
+            Int(floor(
+                (availableWidth + Self.activityCellSpacing)
+                    / (Self.activityCellMinimumSize + Self.activityCellSpacing)
+            ))
+        )
+        let columnCount = max(
+            1,
+            min(
+                possibleColumns,
+                Self.activityMaximumColumnCount,
+                max(availableDayCount, 1)
+            )
+        )
+        let visibleDayCount = min(
+            max(availableDayCount, 0),
+            columnCount * Self.activityRowCount
+        )
+        let cellSize = min(
+            Self.activityCellMaximumSize,
+            max(
+                Self.activityCellMinimumSize,
+                (availableWidth - CGFloat(columnCount - 1) * Self.activityCellSpacing)
+                    / CGFloat(columnCount)
+            )
+        )
+        return ActivityGridLayout(
+            visibleDayCount: visibleDayCount,
+            columnCount: columnCount,
+            cellSize: cellSize
+        )
+    }
+
+    private func columnMajorDays(
+        _ days: [ActivityDay],
+        columnCount: Int
+    ) -> [ActivityDay] {
+        guard !days.isEmpty else { return [] }
+        let rowCount = min(Self.activityRowCount, days.count)
+        return (0..<rowCount).flatMap { row in
+            (0..<columnCount).compactMap { column in
+                let index = column * Self.activityRowCount + row
+                return index < days.count ? days[index] : nil
             }
-            .frame(height: 120)
-            Text(String(format: L("Total: %@ tokens"), TokenCountFormat.compact(model.days.reduce(0) { $0 + $1.tokens })))
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
-        .padding(16)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private struct ActivityGridLayout {
+        let visibleDayCount: Int
+        let columnCount: Int
+        let cellSize: CGFloat
+    }
+
+    private var tokenTrend: some View {
+        let days = model.trendDays
+        let totalTokens = days.reduce(0) { $0 + $1.tokens }
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Label(L("Token trend"), systemImage: "chart.xyaxis.line")
+                    .font(.appCaptionEmphasized)
+                    .foregroundStyle(theme.textPrimary)
+                Spacer(minLength: 0)
+                Text(String(format: L("Total (last 30 days): %@ tokens"), TokenCountFormat.compact(totalTokens)))
+                    .font(.appMicro)
+                    .monospacedDigit()
+                    .foregroundStyle(theme.textSecondary)
+            }
+            ActivityTokenTrendChart(days: days)
+                .frame(height: 132)
+            if let peak = model.peakTokenDay {
+                Text(String(
+                    format: L("Peak day: %@ · %@ tokens"),
+                    Self.dayFormatter.string(from: peak.date),
+                    TokenCountFormat.compact(peak.tokens)
+                ))
+                .font(.appMicro)
+                .monospacedDigit()
+                .foregroundStyle(theme.textSecondary)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(theme.divider, lineWidth: 0.5)
+        }
     }
 
     private func levelColor(_ value: Int, maximum: Int) -> Color {
@@ -516,28 +617,18 @@ private struct IdleTimeSummaryCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label(L("Idle time"), systemImage: "moon.zzz").font(.headline)
-                Spacer()
-                Text(L("Activity patterns and rest windows")).font(.caption).foregroundStyle(.secondary)
-            }
+            Label(L("Idle time"), systemImage: "moon.zzz").font(.headline)
             if let snapshot = state.snapshot {
-                HStack(spacing: 12) {
-                    metric(L("Rest window"), value: restWindow(snapshot))
-                    metric(L("Confidence"), value: snapshot.restWindow.map { "\(Int(($0.confidence * 100).rounded()))%" } ?? L("Learning"))
-                    metric(L("Events"), value: "\(snapshot.eventCount)")
-                    metric(L("Active days"), value: "\(snapshot.observedDayCount)")
+                HStack(spacing: 8) {
+                    Text(L("Rest window")).font(.caption).foregroundStyle(.secondary)
+                    Text(restWindow(snapshot)).font(.subheadline.weight(.medium)).monospacedDigit()
+                    Spacer()
                 }
                 if !snapshot.bucketScores.isEmpty {
-                    HStack(alignment: .bottom, spacing: 2) {
-                        let maximum = max(snapshot.bucketScores.max() ?? 0, 1)
-                        ForEach(Array(snapshot.bucketScores.enumerated()), id: \.offset) { _, score in
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(Color.accentColor.opacity(0.2 + 0.8 * (score / maximum)))
-                                .frame(maxWidth: .infinity, minHeight: 4, maxHeight: 56 * CGFloat(score / maximum) + 4)
-                        }
-                    }
-                    .frame(height: 62, alignment: .bottom)
+                    IdleActivityTimeline(
+                        scores: snapshot.bucketScores,
+                        restWindow: snapshot.restWindow
+                    )
                 }
             } else {
                 ProgressView().controlSize(.small)
@@ -548,18 +639,160 @@ private struct IdleTimeSummaryCard: View {
         .task { state.refresh() }
     }
 
-    private func metric(_ title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.subheadline.weight(.medium)).monospacedDigit()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
     private func restWindow(_ snapshot: IdleInferenceSnapshot) -> String {
         guard let window = snapshot.restWindow else { return L("Learning") }
         func time(_ minute: Int) -> String { String(format: "%02d:%02d", minute / 60, minute % 60) }
         return "\(time(window.startMinuteOfDay)) – \(time(window.endMinuteOfDay))"
+    }
+}
+
+/// Explains the 48 half-hour activity buckets used by idle-time inference.
+private struct IdleActivityTimeline: View {
+    let scores: [Double]
+    let restWindow: RestWindow?
+
+    private static let chartHeight: CGFloat = 92
+    private static let yAxisWidth: CGFloat = 38
+    private static let bucketCount = RestWindowInferencer.bucketsPerDay
+    private static let bucketMinutes = RestWindowInferencer.bucketMinutes
+    private static let timeLabels = [0, 6, 12, 18, 24]
+
+    private func L(_ key: String) -> String {
+        LumiPluginLocalization.string(key, bundle: .module)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(L("Relative activity strength"))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            HStack(alignment: .top, spacing: 8) {
+                yAxis
+                VStack(alignment: .leading, spacing: 4) {
+                    GeometryReader { proxy in
+                        plot(in: proxy.size)
+                    }
+                    .frame(height: Self.chartHeight)
+                    timeAxis
+                }
+            }
+
+            HStack(spacing: 12) {
+                legendSwatch(color: Color.accentColor.opacity(0.72), text: L("Activity"))
+                legendSwatch(color: Color.accentColor.opacity(0.10), text: L("Shaded area = rest window"))
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private var yAxis: some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            Text("100%")
+            Spacer()
+            Text("50%")
+            Spacer()
+            Text("0%")
+        }
+        .font(.caption2.monospacedDigit())
+        .foregroundStyle(.secondary)
+        .frame(width: Self.yAxisWidth, height: Self.chartHeight)
+    }
+
+    private var timeAxis: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(Self.timeLabels.enumerated()), id: \.offset) { index, hour in
+                Text(String(format: "%02d:00", hour))
+                    .frame(maxWidth: .infinity, alignment: axisAlignment(for: index))
+            }
+        }
+        .font(.caption2.monospacedDigit())
+        .foregroundStyle(.secondary)
+    }
+
+    private func axisAlignment(for index: Int) -> Alignment {
+        switch index {
+        case 0: return .leading
+        case Self.timeLabels.count - 1: return .trailing
+        default: return .center
+        }
+    }
+
+    private func plot(in size: CGSize) -> some View {
+        let maximum = max(scores.max() ?? 0, 1)
+
+        return ZStack(alignment: .bottomLeading) {
+            ForEach([0.0, 0.5, 1.0], id: \.self) { level in
+                Rectangle()
+                    .fill(Color.secondary.opacity(level == 0 ? 0.34 : 0.16))
+                    .frame(height: 1)
+                    .offset(y: -size.height * CGFloat(level))
+            }
+
+            ForEach(Array(restSegments.enumerated()), id: \.offset) { _, segment in
+                Rectangle()
+                    .fill(Color.accentColor.opacity(0.08))
+                    .frame(
+                        width: size.width * CGFloat(segment.end - segment.start) / 1440,
+                        height: size.height
+                    )
+                    .offset(x: size.width * CGFloat(segment.start) / 1440)
+            }
+
+            HStack(alignment: .bottom, spacing: 2) {
+                ForEach(0..<Self.bucketCount, id: \.self) { index in
+                    let normalized = normalizedScore(at: index, maximum: maximum)
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(Color.accentColor.opacity(0.20 + 0.80 * normalized))
+                        .frame(
+                            maxWidth: .infinity,
+                            minHeight: normalized > 0 ? 4 : 2,
+                            maxHeight: max(2, size.height * CGFloat(normalized))
+                        )
+                        .help(bucketDescription(at: index, normalized: normalized))
+                        .accessibilityLabel(bucketDescription(at: index, normalized: normalized))
+                }
+            }
+            .padding(.horizontal, 1)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        }
+        .clipped()
+    }
+
+    private var restSegments: [(start: Int, end: Int)] {
+        guard let restWindow else { return [] }
+        let start = max(0, min(1440, restWindow.startMinuteOfDay))
+        let end = max(0, min(1440, restWindow.endMinuteOfDay))
+        if start < end { return [(start, end)] }
+        if start > end { return [(start, 1440), (0, end)] }
+        return []
+    }
+
+    private func normalizedScore(at index: Int, maximum: Double) -> Double {
+        guard scores.indices.contains(index), maximum > 0 else { return 0 }
+        return min(1, max(0, scores[index] / maximum))
+    }
+
+    private func bucketDescription(at index: Int, normalized: Double) -> String {
+        let start = index * Self.bucketMinutes
+        let end = start + Self.bucketMinutes
+        let percent = Int((normalized * 100).rounded())
+        return "\(formatMinute(start))–\(formatMinute(end)) · \(L("Relative activity strength")): \(percent)%"
+    }
+
+    private func formatMinute(_ minute: Int) -> String {
+        let normalizedMinute = minute % 1440
+        return String(format: "%02d:%02d", normalizedMinute / 60, normalizedMinute % 60)
+    }
+
+    private func legendSwatch(color: Color, text: String) -> some View {
+        HStack(spacing: 4) {
+            RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                .fill(color)
+                .frame(width: 10, height: 10)
+            Text(text)
+        }
     }
 }
 

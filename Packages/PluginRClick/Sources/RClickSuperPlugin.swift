@@ -12,9 +12,10 @@ import KitSuperLog
 import os
 
 @MainActor
-public final class RClickSuperPlugin: SuperPlugin, SuperLog {
+public final class RClickSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.rclick", category: "RClick")
     public let id = "com.coffic.lumi.plugin.rclick"
+    public let legacyDataDirectoryNames = ["RClickPlugin"]
     public let order = 50
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.rclick",
@@ -44,6 +45,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
         configObserver = RClickConfigObserver(configManager: configManager)
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             RClickPluginRuntimeBridge.dataRootDirectory = storage.dataRootDirectory
+            RClickPluginRuntimeBridge.pluginDirectory = storage.pluginDataDirectory(for: id)
         }
 
         let content = kernel.resolveProvider((any ContentViewProviding).self)
@@ -116,6 +118,7 @@ public final class RClickSuperPlugin: SuperPlugin, SuperLog {
             kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
         }
         RClickPluginRuntimeBridge.dataRootDirectory = nil
+        RClickPluginRuntimeBridge.pluginDirectory = nil
         configObserver?.cancel()
         configObserver = nil
     }

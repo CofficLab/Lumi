@@ -11,26 +11,40 @@ public struct PromoDesignerView: View {
     @ObservedObject private var workspace: WorkspaceStore
     @State private var mode: Mode = .preview
     @State private var isExporting = false
+    private let onTaskAvailabilityChanged: ((Bool) -> Void)?
 
     // MARK: - 初始化
 
-    init(workspace: WorkspaceStore) {
+    init(
+        workspace: WorkspaceStore,
+        onTaskAvailabilityChanged: ((Bool) -> Void)? = nil
+    ) {
         self.workspace = workspace
+        self.onTaskAvailabilityChanged = onTaskAvailabilityChanged
     }
 
     // MARK: - Body
 
     public var body: some View {
         VStack(spacing: 0) {
-            if let resolved = workspace.selectedImage {
-                toolbar(for: resolved.task)
-            } else {
+            if workspace.projectTasks.isEmpty {
                 emptyToolbar
+                PromoOnboardingView(isProjectOpen: workspace.projectStorageDirectory != nil)
+            } else if let resolved = workspace.selectedImage {
+                topToolbar(for: resolved.task)
+                content
+                bottomToolbar
+            } else {
+                content
             }
-            Divider()
-            content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            notifyTaskAvailability()
+        }
+        .onChange(of: workspace.projectTasks.count) { _, _ in
+            notifyTaskAvailability()
+        }
         .alert(
             PromoLocalization.string("Export Failed"),
             isPresented: errorBinding
@@ -68,35 +82,59 @@ public struct PromoDesignerView: View {
                 .background(Color(nsColor: .textBackgroundColor))
             }
         } else {
-            PromoDesignerEmptyState(
-                message: PromoLocalization.string("Ask the Agent to create a promotional artwork task.")
+            PromoTaskSelectionView(
+                message: PromoLocalization.string(
+                    "Select a task from the left, or ask the Agent to create a promotional artwork task."
+                )
             )
         }
     }
 
     @ViewBuilder
     private var emptyToolbar: some View {
-        HStack {
-            Spacer()
-            Button { workspace.reload() } label: {
-                Label(PromoLocalization.string("Refresh"), systemImage: "arrow.clockwise")
+        AppToolbarContainer(
+            height: 40,
+            backgroundStyle: .toolbar,
+            padding: EdgeInsets(
+                top: DesignTokens.Spacing.sm,
+                leading: DesignTokens.Spacing.md,
+                bottom: DesignTokens.Spacing.sm,
+                trailing: DesignTokens.Spacing.md
+            )
+        ) {
+            HStack {
+                Spacer(minLength: 0)
+                AppIconButton(
+                    systemImage: "arrow.clockwise",
+                    action: workspace.reload
+                )
+                .accessibilityLabel(PromoLocalization.string("Refresh"))
+                .help(PromoLocalization.string("Refresh"))
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
+        .borderBottom()
     }
 
-    private func toolbar(for task: AppStorePromoTask) -> some View {
-        PromoDesignerToolbar(
+    private func topToolbar(for task: AppStorePromoTask) -> some View {
+        PromoDesignerTopToolbar(
             workspace: workspace,
             task: task,
+            onRefresh: { workspace.reload() }
+        )
+    }
+
+    private var bottomToolbar: some View {
+        PromoDesignerBottomToolbar(
             mode: $mode,
             isExporting: isExporting,
-            onRefresh: { workspace.reload() },
             onExport: {
                 Task { await exportSelectedTask() }
             }
         )
+    }
+
+    private func notifyTaskAvailability() {
+        onTaskAvailabilityChanged?(!workspace.projectTasks.isEmpty)
     }
 
     // MARK: - 计算属性
@@ -125,13 +163,12 @@ public struct PromoDesignerView: View {
         isExporting = true
         defer { isExporting = false }
         do {
-            let storagePath = workspace.storagePath(for: workspace.selectedScope)
+            let storagePath = workspace.projectStoragePath
             let task = try workspace.documentStore.readTask(
                 storagePath: storagePath,
                 taskSlug: selected.task.id
             )
-            let scopeSubdir = workspace.selectedScope == .project ? "project" : "app"
-            let targetDirectory = directory.appendingPathComponent(scopeSubdir, isDirectory: true)
+            let targetDirectory = directory
             try FileManager.default.createDirectory(
                 at: targetDirectory,
                 withIntermediateDirectories: true

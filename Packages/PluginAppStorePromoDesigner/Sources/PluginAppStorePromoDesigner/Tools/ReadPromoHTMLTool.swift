@@ -25,9 +25,8 @@ public struct ReadPromoHTMLTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let scope = try await PromoToolSupport.resolveScope(arguments)
         let image = try PromoToolSupport.store.readImage(
-            storagePath: try await PromoToolSupport.storagePath(for: scope),
+            storagePath: try await PromoToolSupport.storagePath(),
             taskSlug: try PromoToolSupport.required("taskId", arguments),
             imageSlug: try PromoToolSupport.required("imageId", arguments),
             localeIdentifier: PromoToolSupport.string(arguments, "localeIdentifier")

@@ -31,7 +31,7 @@ struct MindMapDesignerPluginTests {
         ])
     }
 
-    @Test func activatingPluginHidesChatSectionAndDeactivatingRestoresIt() throws {
+    @Test func activatingPluginShowsChatSectionAndDeactivatingRestoresIt() throws {
         let kernel = KernelCoreContainer()
         let activityBar = DefaultActivityBarProviding()
         let chat = DefaultChatSectionProviding()
@@ -42,7 +42,7 @@ struct MindMapDesignerPluginTests {
         try plugin.onBoot(kernel: kernel)
 
         #expect(activityBar.activeItemID == "\(plugin.id).entry")
-        #expect(!chat.isVisible)
+        #expect(chat.isVisible)
 
         activityBar.activateItem(id: nil)
 
@@ -115,23 +115,21 @@ struct MindMapDesignerPluginTests {
 
     // MARK: - End-to-end agent tools
 
-    @Test func agentToolsBuildAndGrowMapInAppScope() async throws {
+    @Test func agentToolsBuildAndGrowMapInProjectScope() async throws {
         MindMapDesignerRuntime.reset()
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: root) }
-        MindMapDesignerRuntime.configure(appStorageDirectory: root)
+        let projectRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: projectRoot) }
+        MindMapDesignerRuntime.setProjectStorage(projectPath: projectRoot.path, projectStorageDirectory: projectRoot)
 
-        // 没有打开项目时,默认走 app scope。
         let created = try await CreateMindMapTool().execute(
             arguments: [
                 "rootText": ToolArgument("Swift Concurrency"),
                 "title": ToolArgument("Concurrency"),
             ]
         )
-        // 语言无关断言：输出应包含一个思维导图 UUID 且选中作用域为 app。
         let mapId = try #require(firstUUID(in: created))
-        #expect(await MainActor.run { MindMapStore.shared.selectedScope == .app })
+        #expect(await MainActor.run { MindMapStore.shared.selectedScope == .project })
         #expect(await MainActor.run { MindMapStore.shared.selectedMap?.id == mapId })
 
         let added = try await AddChildNodeTool().execute(
@@ -160,58 +158,16 @@ struct MindMapDesignerPluginTests {
         #expect(exported.contains("Task Groups")) // 更新后的子节点
 
         // 落盘确认。
-        #expect(!MindMapFileStore.loadAll(storagePath: root.path).isEmpty)
-    }
-
-    @Test func explicitScopeRoutesWriteAndReadOperations() async throws {
-        MindMapDesignerRuntime.reset()
-        let appRoot = FileManager.default.temporaryDirectory.appendingPathComponent("app-\(UUID().uuidString)", isDirectory: true)
-        let projectRoot = FileManager.default.temporaryDirectory.appendingPathComponent("project-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: appRoot, withIntermediateDirectories: true)
-        try FileManager.default.createDirectory(at: projectRoot, withIntermediateDirectories: true)
-        defer {
-            try? FileManager.default.removeItem(at: appRoot)
-            try? FileManager.default.removeItem(at: projectRoot)
-        }
-        MindMapDesignerRuntime.configure(appStorageDirectory: appRoot)
-        MindMapDesignerRuntime.setProjectStorage(projectPath: projectRoot.path, projectStorageDirectory: projectRoot)
-
-        let appCreate = try await CreateMindMapTool().execute(
-            arguments: ["rootText": ToolArgument("App Map"), "scope": ToolArgument("app")]
-        )
-        #expect(await MainActor.run { MindMapStore.shared.selectedScope == .app })
-        #expect(firstUUID(in: appCreate) != nil)
-
-        let projectCreate = try await CreateMindMapTool().execute(
-            arguments: ["rootText": ToolArgument("Project Map"), "scope": ToolArgument("project")]
-        )
-        #expect(await MainActor.run { MindMapStore.shared.selectedScope == .project })
-        #expect(firstUUID(in: projectCreate) != nil)
-
-        // 文件系统隔离:project scope 存储到项目目录。
         #expect(!MindMapFileStore.loadAll(storagePath: projectRoot.path).isEmpty)
-        #expect(!MindMapFileStore.loadAll(storagePath: appRoot.path).isEmpty)
-
-        let listProject = try await ListMindMapsTool().execute(arguments: ["scope": ToolArgument("project")])
-        #expect(listProject.contains("Project Map"))
-        #expect(!listProject.contains("App Map"))
-
-        let listApp = try await ListMindMapsTool().execute(arguments: ["scope": ToolArgument("app")])
-        #expect(listApp.contains("App Map"))
-        #expect(!listApp.contains("Project Map"))
     }
 
-    @Test func scopeFallsBackToAppWhenProjectMissing() async throws {
+    @Test func mapsCannotBeCreatedWithoutAnOpenProject() async throws {
         MindMapDesignerRuntime.reset()
-        let appRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try FileManager.default.createDirectory(at: appRoot, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: appRoot) }
-        MindMapDesignerRuntime.configure(appStorageDirectory: appRoot)
-
         let created = try await CreateMindMapTool().execute(
-            arguments: ["rootText": ToolArgument("Fallback Map")]
+            arguments: ["rootText": ToolArgument("Project required")]
         )
-        #expect(await MainActor.run { MindMapStore.shared.selectedScope == .app })
+        #expect(firstUUID(in: created) == nil)
+        #expect(await MainActor.run { MindMapStore.shared.projectMaps.isEmpty })
     }
 
     // MARK: - Helpers

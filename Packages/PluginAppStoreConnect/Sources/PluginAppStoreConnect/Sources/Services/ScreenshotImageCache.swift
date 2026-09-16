@@ -32,7 +32,7 @@ enum ScreenshotImageCacheError: LocalizedError {
 actor ScreenshotImageCache {
     static let shared: ScreenshotImageCache = {
         let pluginRoot = AppStoreConnectPluginRuntimeBridge.pluginSubdirectory
-            ?? AppStoreConnectPluginRuntimeBridge.fallbackRootDirectory.appendingPathComponent(ScreenshotCacheConfiguration.pluginName, isDirectory: true)
+            ?? AppStoreConnectPluginRuntimeBridge.fallbackPluginDirectory
         let root = pluginRoot
             .appendingPathComponent(ScreenshotCacheConfiguration.cacheDirectoryName, isDirectory: true)
         return ScreenshotImageCache(rootDirectory: root)

@@ -22,7 +22,8 @@ let package = Package(
         .package(path: "../ProviderRootView"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../KitLocalization"),
-        .package(path: "../KitSuperLog")
+        .package(path: "../KitSuperLog"),
+        .package(path: "../ProviderStorage")
     ],
     targets: [
 .target(
@@ -38,7 +39,8 @@ let package = Package(
                 .product(name: "ProviderRootView", package: "ProviderRootView"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
-                .product(name: "KitSuperLog", package: "KitSuperLog")
+                .product(name: "KitSuperLog", package: "KitSuperLog"),
+                .product(name: "ProviderStorage", package: "ProviderStorage")
             ],
             path: "Sources",
             resources: [

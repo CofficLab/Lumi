@@ -29,8 +29,7 @@ public struct ExportPromoTaskTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let scope = try await PromoToolSupport.resolveScope(arguments)
-        let storagePath = try await PromoToolSupport.storagePath(for: scope)
+        let storagePath = try await PromoToolSupport.storagePath()
         let taskID = try PromoToolSupport.required("taskId", arguments)
         let task = try PromoToolSupport.store.readTask(storagePath: storagePath, taskSlug: taskID)
         guard !task.images.isEmpty else { throw PromoToolSupport.ToolArgumentError.invalid("task has no images") }
@@ -119,6 +118,6 @@ public struct ExportPromoTaskTool: SuperAgentTool {
             throw error
         }
 
-        return (["Exported \(stagedExports.count) App Store promotional PNG files (scope=\(scope.rawValue))."] + stagedExports.map(\.summary)).joined(separator: "\n")
+        return (["Exported \(stagedExports.count) App Store promotional PNG files."] + stagedExports.map(\.summary)).joined(separator: "\n")
     }
 }

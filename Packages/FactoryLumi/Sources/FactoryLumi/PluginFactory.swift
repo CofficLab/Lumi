@@ -104,6 +104,7 @@ import PluginMessageManager
 import PluginMessageRenderer
 import PluginMessageSender
 import PluginAgentLoop
+import PluginAgentLoopRetry
 import PluginLLMContext
 import PluginMindMapDesigner
 import PluginModelSelector
@@ -132,6 +133,7 @@ import PluginSkill
 import PluginOnboarding
 import PluginWelcome
 import PluginThemePack
+import PluginThemeManager
 import PluginToolManager
 import PluginToolbar
 import PluginToolbarSettings
@@ -195,6 +197,7 @@ public struct DefaultPluginFactory: PluginFactory {
             LogoCofficPlugin(),
             LogoSmartLightPlugin(),
             SettingsToolbarPlugin(),
+            ThemeManagerPlugin(),
             ThemePackPlugin(),
             VideoConverterPlugin(),
             WhiteNoisePlugin(),
@@ -273,6 +276,7 @@ public struct DefaultPluginFactory: PluginFactory {
             MessageManagerPlugin(),
             LLMContextPlugin(),
             PluginAgentLoop(),
+            AgentLoopRetryPlugin(),
             MessageSenderPlugin(),
             PluginPluginManager(),
             // 设置视图管理器：替换 ProviderFactory 预注册的默认 SettingViewProviding 实现，

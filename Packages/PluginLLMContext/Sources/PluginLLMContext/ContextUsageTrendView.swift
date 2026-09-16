@@ -54,19 +54,8 @@ struct ContextUsageTrendView: View {
 
 extension ContextUsageTrendView {
     private var header: some View {
-        HStack {
-            Text(String(localized: "Context usage trend", defaultValue: "上下文使用趋势", bundle: .module))
-                .font(.subheadline.weight(.semibold))
-            Spacer()
-            Text(
-                String(
-                    format: String(localized: "%lld requests", defaultValue: "%lld 次请求", bundle: .module),
-                    history.samples.count
-                )
-            )
-            .font(.caption)
-            .foregroundStyle(theme.textSecondary)
-        }
+        Text(String(localized: "Context usage trend", defaultValue: "上下文使用趋势", bundle: .module))
+            .font(.subheadline.weight(.semibold))
     }
 
     private var emptyState: some View {

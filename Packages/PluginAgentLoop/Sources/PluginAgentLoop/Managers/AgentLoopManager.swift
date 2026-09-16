@@ -104,6 +104,22 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
         runtimes[conversationID]?.activeSuspension
     }
 
+    public func lastFailure(for conversationID: UUID) -> AgentLoopFailure? {
+        runtimes[conversationID]?.lastFailure
+    }
+
+    public func retryTurn(
+        in conversationID: UUID,
+        after failedTurnID: UUID
+    ) async throws -> AgentLoopOutcome {
+        guard let runtime = runtimes[conversationID],
+              runtime.lastTurnID == failedTurnID,
+              case .failed = runtime.phase else {
+            throw AgentLoopError.invalidRetryRequest
+        }
+        return try await runTurn(in: conversationID)
+    }
+
     public func currentTurnID(for conversationID: UUID) -> UUID? {
         runtimes[conversationID]?.turnID
     }

@@ -1,17 +1,16 @@
 import KitLLM
 import LumiUI
-import PluginLLMProviderSettings
 import SwiftUI
 
 /// AI 模型配置引导页 —— 首次启动时引导用户选择 LLM 供应商并填写 API Key。
 ///
-/// View 只依赖 `AISetupViewModel`，不直接持有 `LLMManaging` 或 Store。
+/// View 只依赖 `AISetupViewModel`，不直接持有 `LLMManaging`。自定义供应商
+/// 的配置入口只在设置里提供（见页面底部的提示文案）。
 struct AISetupPage: View {
     @LumiTheme private var theme
     @ObservedObject private var viewModel: AISetupViewModel
 
     @State private var isProviderPickerPresented = false
-    @State private var isCustomProviderEditorPresented = false
 
     init(viewModel: AISetupViewModel) {
         self.viewModel = viewModel
@@ -41,12 +40,6 @@ struct AISetupPage: View {
         .frame(maxWidth: 460)
         .padding(.vertical, DesignTokens.Spacing.xxl - 4)
         .onAppear { viewModel.synchronizeSelection() }
-        .sheet(isPresented: $isCustomProviderEditorPresented) {
-            if let editor = viewModel.makeCustomProviderEditor() {
-                editor
-                    .frame(width: 560, height: 620)
-            }
-        }
     }
 
     // MARK: - Sections
@@ -108,19 +101,6 @@ struct AISetupPage: View {
                             .foregroundStyle(theme.success)
                     }
                 }
-            }
-        }
-        .overlay(alignment: .topTrailing) {
-            if viewModel.customProviderEditorAvailable {
-                AppButton(
-                    "添加供应商",
-                    systemImage: "plus",
-                    style: .tonal,
-                    size: .small
-                ) {
-                    isCustomProviderEditorPresented = true
-                }
-                .offset(x: 12, y: -12)
             }
         }
     }

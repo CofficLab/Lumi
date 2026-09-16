@@ -17,6 +17,16 @@ enum AppStoreConnectPluginRuntimeBridge {
         return appSupport.appendingPathComponent(bundleID, isDirectory: true)
     }()
 
+    static let fallbackPluginDirectory: URL = {
+        #if DEBUG
+        let versionedRoot = fallbackRootDirectory.appendingPathComponent("db_debug_v6", isDirectory: true)
+        #else
+        let versionedRoot = fallbackRootDirectory.appendingPathComponent("db_production_v6", isDirectory: true)
+        #endif
+        return versionedRoot
+            .appendingPathComponent("com.coffic.lumi.plugin.app-store-connect", isDirectory: true)
+    }()
+
     @MainActor
     static func configure(kernel: KernelCoreContainer, pluginID: String) {
         guard let storage = kernel.resolveProvider((any StorageProviding).self) else { return }

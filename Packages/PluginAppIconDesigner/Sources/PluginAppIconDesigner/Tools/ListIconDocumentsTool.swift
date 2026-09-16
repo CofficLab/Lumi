@@ -1,14 +1,14 @@
 import KitAgentTool
 import Foundation
 
-/// 列出插件管理的图标文档，跨 project / app 两个作用域。
+/// 列出当前项目中的插件管理图标文档。
 public struct ListIconDocumentsTool: SuperAgentTool {
     public let name = "list_icon_documents"
 
     public init() {}
 
     public func description(for language: LanguagePreference) -> String {
-        "List plugin-managed app icon documents across project and app scopes."
+        "List plugin-managed app icon documents in the current project."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -17,8 +17,8 @@ public struct ListIconDocumentsTool: SuperAgentTool {
             "properties": [
                 "scope": [
                     "type": "string",
-                    "enum": ["all"] + IconScope.allCases.map(\.rawValue),
-                    "description": "Filter by scope: 'project', 'app', or 'all' (default).",
+                    "enum": IconScope.allCases.map(\.rawValue),
+                    "description": "Filter by storage scope. Only 'project' is supported.",
                 ],
             ],
         ]
@@ -33,7 +33,7 @@ public struct ListIconDocumentsTool: SuperAgentTool {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
-        let scopeFilter = (IconToolSupport.string(arguments, "scope") ?? "all")
+        let scopeFilter = (IconToolSupport.string(arguments, "scope") ?? IconScope.project.rawValue)
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
 
@@ -41,13 +41,9 @@ public struct ListIconDocumentsTool: SuperAgentTool {
             // 列表以磁盘为准，确保 Agent 看到最新内容（包括尚未载入内存的文档）。
             var result: [(IconScope, [IconDocument])] = []
             let store = IconDocumentStore.shared
-            if scopeFilter == "all" || scopeFilter == IconScope.project.rawValue {
+            if scopeFilter == IconScope.project.rawValue {
                 let docs = IconDocumentFileStore.loadAll(storagePath: store.projectStoragePath)
                 result.append((.project, docs))
-            }
-            if scopeFilter == "all" || scopeFilter == IconScope.app.rawValue {
-                let docs = IconDocumentFileStore.loadAll(storagePath: store.appStoragePath)
-                result.append((.app, docs))
             }
             return result
         }

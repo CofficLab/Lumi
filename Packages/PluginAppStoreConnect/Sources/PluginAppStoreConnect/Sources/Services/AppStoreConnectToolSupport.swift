@@ -65,11 +65,13 @@ enum AppStoreConnectToolSupport {
         guard credentials.isComplete else {
             return (
                 nil,
-                "App Store Connect credentials are incomplete. Configure issuer ID, key ID, and private key in the App Store Connect plugin settings first."
+                AppStoreConnectLocalization.string(
+                    "App Store Connect credentials are incomplete. Configure issuer ID, key ID, and private key in the App Store Connect plugin settings first."
+                )
             )
         }
         guard let network = networkHolder.get() else {
-            return (nil, "Network service is unavailable.")
+            return (nil, AppStoreConnectLocalization.string("Network service is unavailable."))
         }
         return (
             ConnectClient(credentialsProvider: { credentialStore.load() }, network: network),

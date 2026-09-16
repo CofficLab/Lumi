@@ -25,6 +25,7 @@ let package = Package(
         .package(path: "../ProviderOnboarding"),
         .package(path: "../ProviderAppUpdate"),
         .package(path: "../ProviderSettingView"),
+        .package(path: "../ProviderStorage"),
         .package(path: "../KitLocalization"),
     ],
     targets: [
@@ -41,6 +42,7 @@ let package = Package(
                 .product(name: "ProviderOnboarding", package: "ProviderOnboarding"),
                 .product(name: "ProviderAppUpdate", package: "ProviderAppUpdate"),
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
+                .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
             ],
             path: "Sources/PluginSettingGeneral",

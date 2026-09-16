@@ -7,13 +7,7 @@ struct EditablePage: View {
     @Binding var importingScreenshots: Bool
 
     var body: some View {
-        VStack(spacing: 12) {
-            VersionStatusBanner(
-                version: version,
-                viewModel: viewModel,
-                localePickerSourceView: "EditableVersionPage.localePicker"
-            )
-
+        VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     BuildSection(viewModel: viewModel, version: version)

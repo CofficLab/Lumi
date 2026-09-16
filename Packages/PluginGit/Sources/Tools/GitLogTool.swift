@@ -1,5 +1,6 @@
 import Foundation
 import KitAgentTool
+import ProviderGit
 
 /// 查看 Git 提交历史，支持限制数量、指定分支和文件。
 ///

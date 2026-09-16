@@ -5,7 +5,7 @@ import KitSuperLog
 /// ClipboardManager 插件本地存储
 ///
 /// 负责持久化插件的配置和设置项。
-/// 存储位置：ClipboardManagerRuntime.databaseDirectory()/ClipboardManager/settings.plist
+/// 存储位置：ClipboardManagerRuntime.databaseDirectory()/settings.plist
 public final class ClipboardManagerPluginLocalStore: SuperLog, @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.coffic.lumi", category: "plugin.clipboard-manager.local-store")
     
@@ -25,7 +25,6 @@ public final class ClipboardManagerPluginLocalStore: SuperLog, @unchecked Sendab
     
     public convenience init() {
         self.init(settingsDirectory: ClipboardManagerRuntime.databaseDirectory()
-            .appendingPathComponent("ClipboardManager", isDirectory: true)
             .appendingPathComponent("settings", isDirectory: true))
     }
 

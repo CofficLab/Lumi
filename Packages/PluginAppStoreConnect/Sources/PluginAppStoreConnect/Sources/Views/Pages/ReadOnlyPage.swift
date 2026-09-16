@@ -6,13 +6,7 @@ struct ReadOnlyPage: View {
     let version: AppStoreVersion
 
     var body: some View {
-        VStack(spacing: 12) {
-            VersionStatusBanner(
-                version: version,
-                viewModel: viewModel,
-                localePickerSourceView: "ReadOnlyPage.localePicker"
-            )
-
+        VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     ScreenshotsSection(

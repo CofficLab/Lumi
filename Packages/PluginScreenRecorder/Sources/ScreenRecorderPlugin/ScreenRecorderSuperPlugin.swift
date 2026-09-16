@@ -9,9 +9,10 @@ import KitSuperLog
 import os
 
 @MainActor
-public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
+public final class ScreenRecorderSuperPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.screen-recorder", category: "ScreenRecorder")
     public let id = "com.coffic.lumi.plugin.screen-recorder"
+    public let legacyDataDirectoryNames = ["ScreenRecorder"]
     public let order = 285
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.screen-recorder",
@@ -37,8 +38,8 @@ public final class ScreenRecorderSuperPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let dataDirectory = kernel.resolveProvider((any StorageProviding).self)?
-            .pluginDataDirectory(for: "ScreenRecorder")
-            ?? FileManager.default.temporaryDirectory.appendingPathComponent("ScreenRecorder", isDirectory: true)
+            .pluginDataDirectory(for: id)
+            ?? FileManager.default.temporaryDirectory.appendingPathComponent(id, isDirectory: true)
         ScreenRecorderRuntime.configure(dataDirectory: dataDirectory)
         let settingsState = ScreenRecorderSettingsState()
         self.settingsState = settingsState

@@ -7,6 +7,7 @@ import ProviderContentView
 import ProviderRailView
 import ProviderRootView
 import ProviderStorage
+import ProviderToolbar
 import ProviderToolManager
 import ProviderPromptSuggestion
 import Testing
@@ -39,6 +40,7 @@ struct AppIconDesignerPluginTests {
         let rail = DefaultRailViewProviding()
         let chat = DefaultChatSectionProviding()
         let rootView = DefaultRootViewProvider()
+        let toolbar = DefaultToolbarProviding()
         let storage = TestStorage()
 
         try kernel.registerProvider((any ActivityBarProviding).self, activity)
@@ -50,6 +52,7 @@ struct AppIconDesignerPluginTests {
         try kernel.registerProvider((any ChatSectionProviding).self, chat)
         try kernel.registerProvider((any RootViewProviding).self, rootView)
         try kernel.registerProvider((any StorageProviding).self, storage)
+        try kernel.registerProvider((any ToolbarProviding).self, toolbar)
 
         try kernel.start(plugins: [AppIconDesignerPlugin()])
         try await kernel.enablePlugin(id: AppIconDesignerPlugin().id)
@@ -60,12 +63,15 @@ struct AppIconDesignerPluginTests {
         #expect(chat.isVisible)
         #expect(chat.isContextActive)
         #expect(rootView.isContentHeaderViewHidden)
+        #expect(rootView.isRailViewVisible == false)
+        #expect(toolbar.visibleCategories == [.global, .project, .chat, .design])
 
         try kernel.stop()
 
         #expect(activity.items.isEmpty)
         #expect(rail.tabs.isEmpty)
         #expect(rootView.isContentHeaderViewHidden == false)
+        #expect(rootView.isRailViewVisible)
         try? FileManager.default.removeItem(at: storage.dataRootDirectory)
     }
 
@@ -95,19 +101,19 @@ struct AppIconDesignerPluginTests {
         #expect(AppIconDesignerLocalization.string(key) != key)
     }
 
-    @Test("图标文档在 APP 作用域创建并落盘")
-    func createsAndPersistsAppDocument() throws {
+    @Test("图标文档在项目作用域创建并落盘")
+    func createsAndPersistsProjectDocument() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("IconDocumentStoreTests-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        IconDocumentStore.shared.setAppStorage(appStorageDirectory: directory)
+        IconDocumentStore.shared.setProjectStorage(projectPath: directory.path, projectStorageDirectory: directory)
         let document = IconDocumentStore.shared.createDocument(
             title: "Kernel Icon",
             width: 1024,
             height: 1024,
             background: .color("#00000000"),
-            scope: .app
+            scope: .project
         )
 
         #expect(IconDocumentStore.shared.selectedDocumentId == document.id)
@@ -167,11 +173,11 @@ struct AppIconDesignerPluginTests {
             .appendingPathComponent("IconToolCreateTests-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        IconDocumentStore.shared.setAppStorage(appStorageDirectory: directory)
+        IconDocumentStore.shared.setProjectStorage(projectPath: directory.path, projectStorageDirectory: directory)
 
         let tool = CreateIconDocumentTool()
         let arguments: [String: ToolArgument] = [
-            "scope": ToolArgument(IconScope.app.rawValue),
+            "scope": ToolArgument(IconScope.project.rawValue),
             "title": ToolArgument("Agent Icon"),
             "width": ToolArgument(512.0),
             "height": ToolArgument(512.0),
@@ -179,7 +185,7 @@ struct AppIconDesignerPluginTests {
         let result = try await tool.execute(arguments: arguments)
 
         #expect(result.contains("Agent Icon"))
-        #expect(IconDocumentStore.shared.appDocuments.contains { $0.title == "Agent Icon" })
+        #expect(IconDocumentStore.shared.projectDocuments.contains { $0.title == "Agent Icon" })
 
         IconDesignerRuntime.reset()
     }
@@ -190,18 +196,18 @@ struct AppIconDesignerPluginTests {
             .appendingPathComponent("IconToolPreviewTests-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        IconDocumentStore.shared.setAppStorage(appStorageDirectory: directory)
+        IconDocumentStore.shared.setProjectStorage(projectPath: directory.path, projectStorageDirectory: directory)
         let document = IconDocumentStore.shared.createDocument(
             title: "Preview Icon",
             width: 256,
             height: 256,
             background: .color("#ff0000"),
-            scope: .app
+            scope: .project
         )
 
         let tool = PreviewIconTool()
         let arguments: [String: ToolArgument] = [
-            "scope": ToolArgument(IconScope.app.rawValue),
+            "scope": ToolArgument(IconScope.project.rawValue),
             "documentId": ToolArgument(document.id),
             "pixelSize": ToolArgument(128.0),
         ]

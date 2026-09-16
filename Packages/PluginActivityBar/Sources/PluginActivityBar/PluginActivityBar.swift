@@ -22,12 +22,13 @@ import ProviderStorage
 /// 订阅 `PluginManaging` 的精准事件：当某个插件被卸载或禁用时，自动隐藏其
 /// 贡献的 ActivityBar 入口；当插件重新启用时，自动恢复其入口。
 @MainActor
-public final class PluginActivityBar: SuperPlugin, SuperLog {
+public final class PluginActivityBar: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.lumi.plugin.activity-bar", category: "Plugin")
     public nonisolated static let emoji = "🧱"
     nonisolated static let verbose = true
 
     public let id = "com.coffic.lumi.plugin.activity-bar"
+    public let legacyDataDirectoryNames = ["ActivityBar"]
     public let order = 10
     public let metadata = PluginMetadata(
         id: "com.coffic.lumi.plugin.activity-bar",
@@ -48,7 +49,6 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
     private var pluginManagerObserver: PluginManagerObserver?
     private weak var rootView: (any RootViewProviding)?
 
-    private static let storageDirectoryKey = "ActivityBar"
     private var stateStore: ActivityBarStateStore?
     private var pendingActiveItemID: String?
 
@@ -72,7 +72,7 @@ public final class PluginActivityBar: SuperPlugin, SuperLog {
 
         if let storage = kernel.resolveProvider((any StorageProviding).self) {
             let stateStore = ActivityBarStateStore(
-                directory: storage.pluginDataDirectory(for: Self.storageDirectoryKey)
+                directory: storage.pluginDataDirectory(for: id)
             )
             self.stateStore = stateStore
             self.pendingActiveItemID = stateStore.loadActiveItemID()

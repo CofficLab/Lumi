@@ -38,12 +38,9 @@ struct GitActivityHeatmapProjectSection: View {
                             .font(.appCaption)
                             .foregroundStyle(theme.textSecondary)
                     }
-                    Button {
+                    AppIconButton(systemImage: "arrow.clockwise") {
                         viewModel.refresh()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
                     }
-                    .buttonStyle(.borderless)
                     .help(L("Refresh activity"))
                 }
 

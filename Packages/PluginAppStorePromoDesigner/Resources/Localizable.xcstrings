@@ -1,41 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Prompt.Suggestion.Create" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create an App Store promo image for me"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "帮我创建一张 App Store 宣传图"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "幫我建立一張 App Store 宣傳圖"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "幫我製作一張 App Store 宣傳圖"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "幫我建立一張 App Store 宣傳圖"
-          }
-        }
-      }
-    },
     "%@ · %lld×%lld" : {
       "localizations" : {
         "en" : {
@@ -143,6 +108,9 @@
           }
         }
       }
+    },
+    "APP STORE" : {
+
     },
     "App Store Promo Designer" : {
       "localizations" : {
@@ -913,56 +881,6 @@
         }
       }
     },
-    "In App" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "In App"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "APP 内"
-          }
-        }
-      }
-    },
-    "In App: stored in the app and available in every project." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In App: stored in the app and available in every project."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "APP 内:保存在应用中,所有项目均可使用。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "APP 內:保存在應用程式中,所有專案均可使用。"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "APP 內:保存在應用程式中,所有專案均可使用。"
-          }
-        },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "APP 內:保存在應用程式中,所有專案均可使用。"
-          }
-        }
-      }
-    },
     "In Preview mode, right-click the headline or the screenshot area to draft an edit request for that block." : {
       "localizations" : {
         "en" : {
@@ -1250,6 +1168,7 @@
       }
     },
     "Open a project to enable project-local storage." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1455,6 +1374,9 @@
         }
       }
     },
+    "PROMO" : {
+
+    },
     "Promo Artwork" : {
       "localizations" : {
         "en" : {
@@ -1529,6 +1451,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "宣传图"
+          }
+        }
+      }
+    },
+    "Prompt.Suggestion.Create" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create an App Store promo image for me"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帮我创建一张 App Store 宣传图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我建立一張 App Store 宣傳圖"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我製作一張 App Store 宣傳圖"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫我建立一張 App Store 宣傳圖"
           }
         }
       }
@@ -1645,6 +1602,16 @@
         }
       }
     },
+    "Select a task from the left, or ask the Agent to create a promotional artwork task." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请从左侧选择一个任务，或让 Agent 创建一个宣传图任务。"
+          }
+        }
+      }
+    },
     "Senior Design Review" : {
       "localizations" : {
         "en" : {
@@ -1713,36 +1680,36 @@
         }
       }
     },
-    "Sidebar: the task list, grouped into In Project and In App." : {
+    "Sidebar: the task list for the current project." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sidebar: the task list, grouped into In Project and In App."
+            "value" : "Sidebar: the task list for the current project."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "侧边栏:任务列表,分为「项目内」与「APP 内」两组。"
+            "value" : "侧边栏:当前项目的任务列表。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "側邊欄:任務列表,分為「專案內」與「APP 內」兩組。"
+            "value" : "側邊欄:目前專案的任務列表。"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "側邊欄:任務列表,分為「專案內」與「APP 內」兩組。"
+            "value" : "側邊欄:目前專案的任務列表。"
           }
         },
         "zh-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "側邊欄:任務列表,分為「專案內」與「APP 內」兩組。"
+            "value" : "側邊欄:目前專案的任務列表。"
           }
         }
       }

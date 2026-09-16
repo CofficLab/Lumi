@@ -12,6 +12,7 @@ import SwiftUI
 public struct ConversationStoreSettingsView: View {
     @LumiTheme private var theme
     @ObservedObject private var viewModel: ConversationStoreSettingsViewModel
+    @State private var isTotalCountPopoverPresented = false
 
     private func L(_ key: String) -> String {
         LumiPluginLocalization.string(key, bundle: .module)
@@ -30,13 +31,11 @@ public struct ConversationStoreSettingsView: View {
             VStack(spacing: 12) {
                 HStack {
                     Spacer()
-                    Label(viewModel.conversationCountLabel, systemImage: "bubble.left.and.bubble.right")
-                        .font(.appCaption)
-                        .foregroundStyle(theme.textSecondary)
                     if viewModel.isMigrationActive {
                         ProgressView()
                             .controlSize(.small)
                     }
+                    totalCountButton
                 }
 
                 conversationActivity
@@ -101,6 +100,37 @@ public struct ConversationStoreSettingsView: View {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .stroke(theme.divider, lineWidth: 0.5)
             }
+        }
+    }
+
+    // MARK: - Total Count
+
+    /// 右上角总数按钮，与 HTTP 日志页保持一致：按钮显示计数，点击展开说明气泡。
+    private var totalCountButton: some View {
+        AppButton(viewModel.conversationCountDisplay, systemImage: "bubble.left.and.bubble.right", size: .small) {
+            isTotalCountPopoverPresented.toggle()
+        }
+        .accessibilityLabel(L("Total conversations"))
+        .accessibilityValue(viewModel.conversationCountDisplay)
+        .help(L("Show total conversation details"))
+        .popover(isPresented: $isTotalCountPopoverPresented, arrowEdge: .top) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(L("Total conversations"))
+                    .font(.appBodyEmphasized)
+
+                if let total = viewModel.totalConversationCount {
+                    Text(total.formatted(.number.grouping(.automatic)))
+                        .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(theme.textPrimary)
+                }
+
+                Text(L("The number of conversations currently stored locally, including child conversations."))
+                    .font(.appCaption)
+                    .foregroundStyle(theme.textSecondary)
+            }
+            .padding(14)
+            .frame(width: 300, alignment: .leading)
         }
     }
 

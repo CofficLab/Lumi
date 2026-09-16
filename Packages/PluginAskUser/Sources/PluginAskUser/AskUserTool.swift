@@ -39,6 +39,8 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
         - mode="choice": the answer must be one of a fixed set. You MUST pass a non-empty `options` array. Example: options=["Debug", "Release", "Profile"].
         - mode="free_text": the question is open-ended and cannot be answered by yes/no or a fixed set. Do NOT pass options. Example: "冲突如何处理?", "接下来怎么做?", "想用什么分支名?".
 
+        For mode="choice", each option may include an optional short `badge` such as "推荐" or "更快" when it provides useful decision guidance. Use at most one badge per option, and only use advisory text that is justified by the context. The badge is display-only and is not part of the answer value.
+
         CRITICAL — do NOT use mode="yes_no" for open-ended questions (anything asking how/why/what-next/which-plan). Those MUST use mode="free_text" (single answer) or mode="choice" (you supply the candidates). A yes/no dialog rendered for an open-ended question is a bug.
         """
     }
@@ -63,10 +65,11 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
                         "properties": [
                             "label": ["type": "string", "description": "Short button text; also the value returned as the user's answer."],
                             "description": ["type": "string", "description": "Optional longer explanation shown under the label."],
+                            "badge": ["type": "string", "description": "Optional short advisory badge shown at the top-right of the option, e.g. 推荐. Display-only; not returned as the answer."],
                         ],
                         "required": ["label"],
                     ],
-                    "description": "Required when mode=\"choice\". Each item is {label, description?} (bare strings also accepted). Ignored for yes_no / free_text.",
+                    "description": "Required when mode=\"choice\". Each item is {label, description?, badge?} (bare strings also accepted). Ignored for yes_no / free_text.",
                 ],
             ],
             "required": ["question", "mode"],
@@ -166,7 +169,7 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
         }
     }
 
-    /// 宽容解析 options：对象（label/description）、裸字符串均可。
+    /// 宽容解析 options：对象（label/description/badge）、裸字符串均可。
     static func parseOptions(_ value: Any?) -> [AskUserOption] {
         guard let array = value as? [Any] else { return [] }
         var result: [AskUserOption] = []
@@ -180,7 +183,8 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
                     ?? (dict["text"] as? String)
                 guard let label, !label.isEmpty else { continue }
                 let description = dict["description"] as? String
-                result.append(AskUserOption(label: label, description: description))
+                let badge = dict["badge"] as? String
+                result.append(AskUserOption(label: label, description: description, badge: badge))
             }
         }
         return result
@@ -199,30 +203,35 @@ public struct AskUserTool: SuperAgentTool, @unchecked Sendable {
 public struct AskUserOption: Codable, Equatable, Sendable, Identifiable, Hashable {
     public let label: String
     public let description: String?
+    public let badge: String?
 
-    public init(label: String, description: String? = nil) {
+    public init(label: String, description: String? = nil, badge: String? = nil) {
         self.label = label
         self.description = description
+        self.badge = Self.normalizedBadge(badge)
     }
 
     public var id: String { label }
 
     public init(from decoder: Decoder) throws {
         if let container = try? decoder.container(keyedBy: CodingKeys.self) {
-            self.label = try container.decode(String.self, forKey: .label)
-            self.description = try container.decodeIfPresent(String.self, forKey: .description)
+            self.init(
+                label: try container.decode(String.self, forKey: .label),
+                description: try container.decodeIfPresent(String.self, forKey: .description),
+                badge: try container.decodeIfPresent(String.self, forKey: .badge)
+            )
         } else {
             let container = try decoder.singleValueContainer()
-            self.label = try container.decode(String.self)
-            self.description = nil
+            self.init(label: try container.decode(String.self))
         }
     }
 
     public func encode(to encoder: Encoder) throws {
-        if let description {
+        if description != nil || badge != nil {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(label, forKey: .label)
-            try container.encode(description, forKey: .description)
+            try container.encodeIfPresent(description, forKey: .description)
+            try container.encodeIfPresent(badge, forKey: .badge)
         } else {
             var container = encoder.singleValueContainer()
             try container.encode(label)
@@ -230,7 +239,16 @@ public struct AskUserOption: Codable, Equatable, Sendable, Identifiable, Hashabl
     }
 
     private enum CodingKeys: String, CodingKey {
-        case label, description
+        case label, description, badge
+    }
+
+    private static func normalizedBadge(_ badge: String?) -> String? {
+        guard let badge else { return nil }
+        let normalized = badge
+            .split { $0.isWhitespace }
+            .joined(separator: " ")
+        guard !normalized.isEmpty else { return nil }
+        return String(normalized.prefix(16))
     }
 }
 

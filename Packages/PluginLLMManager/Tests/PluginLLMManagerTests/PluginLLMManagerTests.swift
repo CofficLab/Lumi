@@ -281,8 +281,7 @@ struct PluginLLMManagerTests {
         try manager.register(relay)
         try manager.register(local)
         let viewModel = AISetupViewModel(
-            capability: LLMManagerCapabilityAdapter(manager: manager),
-            customProviderStore: nil
+            capability: LLMManagerCapabilityAdapter(manager: manager)
         )
 
         #expect(viewModel.providers.map(\.providerID) == ["cloud"])

@@ -6,14 +6,14 @@ import Foundation
 /// 复刻旧版 Lumi `ThemeManagerPlugin` 的 `ThemeManager` + `ThemeSelectionStore`：
 /// - 主题贡献收集：`registerTheme` / `unregisterTheme` / `replaceAllThemes`
 /// - 选中与切换：`selectTheme(id:)`（未知 id 抛错）
-/// - 持久化：`<数据根目录>/ThemeManager/theme-selection.plist`，写盘在主线程外执行
+/// - 持久化：由 `ThemeManagerPlugin` 注入 `<数据根目录>/<插件 ID>/`，写盘在主线程外执行
 ///
 /// 消费方（设置项、菜单）直接订阅本 Provider 的主题事件，即可感知主题列表
 /// 与选中状态变化；KernelCore 不参与状态转发。
 @MainActor
 public final class DefaultThemeProviding: ThemeProviding {
-    /// 数据目录名，与旧版 Lumi 的 ThemeManager 保持一致语义。
-    public static let pluginName = "ThemeManager"
+    /// 主题管理插件的稳定 ID；旧版 `ThemeManager` 目录由插件迁移逻辑兼容。
+    public static let pluginName = "com.coffic.lumi.plugin.theme-manager"
 
     public private(set) var themes: [LumiTheme] = []
     public private(set) var selectedThemeId: String?
@@ -33,9 +33,9 @@ public final class DefaultThemeProviding: ThemeProviding {
 
     /// - Parameters:
     ///   - storageDirectory: 持久化目录（存放 `theme-selection.plist`）。
-    ///     传入 `StorageProviding.pluginDataDirectory(for: "ThemeManager")`
+    ///     传入 `StorageProviding.pluginDataDirectory(for: "com.coffic.lumi.plugin.theme-manager")`
     ///     以遵循 Storage 约定；为 `nil` 时回退到
-    ///     `<Application Support>/<bundleID>/ThemeManager/`。
+    ///     `<Application Support>/<bundleID>/<theme-manager-plugin-id>/`。
     ///   - builtinThemes: 初始化时预注册的主题；默认注册全部内置主题。
     public init(
         storageDirectory: URL? = nil,
@@ -116,7 +116,7 @@ public final class DefaultThemeProviding: ThemeProviding {
 
     /// 注入持久化目录（在注册后、任何 `selectTheme` 之前调用）。
     ///
-    /// 用于遵循 `StorageProviding.pluginDataDirectory(for: "ThemeManager")`
+    /// 用于遵循 `StorageProviding.pluginDataDirectory(for: "com.coffic.lumi.plugin.theme-manager")`
     /// 约定：宿主先以默认目录构造，再注入 Storage 提供的目录并恢复已存偏好。
     public func setStorageDirectory(_ directory: URL) {
         let previousSelected = selectedThemeId
@@ -190,7 +190,7 @@ public final class DefaultThemeProviding: ThemeProviding {
 
     // MARK: - Default directory resolution
 
-    /// 默认持久化目录：`<Application Support>/<bundleID>/ThemeManager/`。
+    /// 默认持久化目录：`<Application Support>/<bundleID>/<theme-manager-plugin-id>/`。
     private static var defaultStorageDirectory: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory

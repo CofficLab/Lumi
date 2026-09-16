@@ -35,40 +35,6 @@
         }
       }
     },
-    "%lld conversations": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld conversations"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 个会话"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 個對話"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 個對話"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 個對話"
-          }
-        }
-      }
-    },
     "%lld messages": {
       "localizations": {
         "en": {
@@ -579,40 +545,6 @@
         }
       }
     },
-    "Loading conversations…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Loading conversations…"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在加载会话…"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在加載對話…"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在加載對話…"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在載入對話…"
-          }
-        }
-      }
-    },
     "Loading…": {
       "localizations": {
         "en": {
@@ -1055,6 +987,40 @@
         }
       }
     },
+    "Show total conversation details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show total conversation details"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示会话总数说明"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示對話總數說明"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示對話總數說明"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示對話總數說明"
+          }
+        }
+      }
+    },
     "Showing %lld of the most recent messages (read-only)": {
       "localizations": {
         "en": {
@@ -1089,6 +1055,40 @@
         }
       }
     },
+    "The number of conversations currently stored locally, including child conversations.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The number of conversations currently stored locally, including child conversations."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地当前存储的会话数量，包含子会话。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地目前儲存的對話數量，包含子對話。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地目前儲存的對話數量，包含子對話。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地目前儲存的對話數量，包含子對話。"
+          }
+        }
+      }
+    },
     "Title": {
       "localizations": {
         "en": {
@@ -1119,6 +1119,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "標題"
+          }
+        }
+      }
+    },
+    "Total conversations": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total conversations"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会话总数"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "對話總數"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "對話總數"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "對話總數"
           }
         }
       }

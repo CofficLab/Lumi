@@ -37,6 +37,9 @@ final class GeneralSettingsViewModel: ObservableObject {
     /// 所有提供了说明书的文档条目。
     @Published private(set) var manuals: [DocsEntry] = []
 
+    /// Lumi 数据根目录的实际磁盘占用；nil 表示仍在计算或存储服务不可用。
+    @Published private(set) var storageSizeInBytes: Int64?
+
     /// 当前更新通道（默认稳定版）。
     @Published var selectedUpdateChannel: AppUpdateChannel = .stable {
         didSet {
@@ -62,6 +65,7 @@ final class GeneralSettingsViewModel: ObservableObject {
         self.capability = capability
         refreshManuals()
         selectedUpdateChannel = capability.updateChannel
+        refreshStorageUsage()
     }
 
     // MARK: - 派生状态
@@ -82,15 +86,37 @@ final class GeneralSettingsViewModel: ObservableObject {
         capability.isUninstallAvailable
     }
 
+    var isStorageAvailable: Bool {
+        capability.isStorageAvailable
+    }
+
+    var storageSizeDescription: String {
+        guard isStorageAvailable else { return "存储服务暂不可用" }
+        guard let storageSizeInBytes else { return "正在计算…" }
+        return ByteCountFormatter.string(fromByteCount: storageSizeInBytes, countStyle: .file)
+    }
+
     /// 说明书条目是否变化后由 Observer 调用来刷新。
     func refreshManuals() {
         manuals = capability.manuals
+    }
+
+    func refreshStorageUsage() {
+        storageSizeInBytes = nil
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            storageSizeInBytes = await capability.storageSizeInBytes()
+        }
     }
 
     // MARK: - 用户意图
 
     func replayOnboarding() {
         capability.replayOnboarding()
+    }
+
+    func openStorageDirectory() {
+        capability.openStorageDirectory()
     }
 
     /// 检查更新：广播 `checkForUpdates` 通知，由宿主（如 Sparkle 更新插件）消费。

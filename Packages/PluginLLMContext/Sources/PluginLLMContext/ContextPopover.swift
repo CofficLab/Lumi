@@ -83,7 +83,7 @@ struct ContextPopover: View {
 
     // MARK: - Usage Row
 
-    /// 第一行：左侧是输入估算与输入预算，右侧是上下文窗口圆环。
+    /// 第一行：左侧是输入估算、输入预算与请求次数，右侧是上下文窗口圆环。
     private var usageRow: some View {
         HStack(alignment: .center, spacing: DesignTokens.Spacing.md) {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs + 2) {
@@ -105,6 +105,10 @@ struct ContextPopover: View {
                         .font(.caption)
                         .foregroundStyle(theme.textSecondary)
                 }
+                usageLine(
+                    label: String(localized: "Requests", defaultValue: "请求次数", bundle: .module),
+                    value: "\(history.samples.count)"
+                )
             }
 
             Spacer(minLength: 0)

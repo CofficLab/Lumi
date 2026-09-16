@@ -19,8 +19,8 @@ enum AppManagerPluginRuntimeBridge {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         let bundleID = Bundle.main.bundleIdentifier ?? "com.coffic.lumi"
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "4"
-        let majorVersion = version.split(separator: ".").first.flatMap { Int($0) } ?? 4
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "6"
+        let majorVersion = version.split(separator: ".").first.flatMap { Int($0) } ?? 6
         #if DEBUG
         let dbDirectoryName = "db_debug_v\(majorVersion)"
         #else
@@ -29,6 +29,6 @@ enum AppManagerPluginRuntimeBridge {
         return appSupport
             .appendingPathComponent(bundleID, isDirectory: true)
             .appendingPathComponent(dbDirectoryName, isDirectory: true)
-            .appendingPathComponent("AppManagerPlugin", isDirectory: true)
+            .appendingPathComponent("com.coffic.lumi.plugin.app-manager", isDirectory: true)
     }()
 }

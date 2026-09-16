@@ -1,4 +1,6 @@
 import Testing
+import KernelCore
+import ProviderSettingView
 @testable import PluginAppStoreConnect
 
 @Test("plugin metadata follows the current integration conventions")
@@ -12,6 +14,23 @@ func pluginMetadata() {
     #expect(plugin.metadata.stage == .preview)
     #expect(plugin.metadata.policy == .disabledByDefault)
     #expect(AppStoreConnectPlugin.railTabID == "app-store-connect.sidebar")
+    #expect(AppStoreConnectPlugin.settingsEntryID == "com.coffic.lumi.plugin.app-store-connect.settings")
+}
+
+@Test("plugin contributes its API configuration to Settings")
+@MainActor
+func settingsEntry() throws {
+    let kernel = KernelCoreContainer()
+    let settings = DefaultSettingViewProviding()
+    try kernel.registerProvider((any SettingViewProviding).self, settings)
+
+    let plugin = AppStoreConnectPlugin()
+    try plugin.onBoot(kernel: kernel)
+
+    #expect(settings.entries.contains(where: { $0.id == AppStoreConnectPlugin.settingsEntryID }))
+
+    try plugin.onShutdown(kernel: kernel)
+    #expect(!settings.entries.contains(where: { $0.id == AppStoreConnectPlugin.settingsEntryID }))
 }
 
 @Test("all restored agent tools use unique current names")

@@ -6,7 +6,7 @@ import SwiftData
 /// 剪贴板历史管理器
 ///
 /// 负责历史数据的增删改查和数据清理。
-/// 使用 SwiftData 持久化到 `ClipboardManagerRuntime.databaseDirectory()/ClipboardManager/history.sqlite`
+/// 使用 SwiftData 持久化到 `ClipboardManagerRuntime.databaseDirectory()/history.sqlite`
 public actor ClipboardHistoryManager: SuperLog {
     public nonisolated static let emoji = "📋"
     public nonisolated static let verbose: Bool = false
@@ -39,7 +39,7 @@ public actor ClipboardHistoryManager: SuperLog {
 
     static func makeContainer(databaseDirectory: URL) -> ModelContainer {
         let schema = Schema([ClipboardHistoryItem.self])
-        let dbDir = databaseDirectory.appendingPathComponent("ClipboardManager", isDirectory: true)
+        let dbDir = databaseDirectory
         let dbURL = dbDir.appendingPathComponent("history.sqlite")
         let fileManager = FileManager.default
 

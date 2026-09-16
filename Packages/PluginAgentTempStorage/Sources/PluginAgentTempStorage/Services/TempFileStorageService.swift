@@ -37,7 +37,7 @@ actor TempFileStorageService {
 
     private init() {
         let pluginDir = AgentTempStoragePluginRuntimeBridge.pluginDirectory
-            ?? AgentTempStoragePluginRuntimeBridge.fallbackRootDirectory.appendingPathComponent(AgentTempStoragePluginRuntimeBridge.pluginName, isDirectory: true)
+            ?? AgentTempStoragePluginRuntimeBridge.fallbackPluginDirectory
         filesDirectory = pluginDir.appendingPathComponent("files", isDirectory: true)
         try? FileManager.default.createDirectory(at: filesDirectory, withIntermediateDirectories: true)
         self.retentionDays = { AgentTempStoragePluginLocalStore.shared.retentionDays }
