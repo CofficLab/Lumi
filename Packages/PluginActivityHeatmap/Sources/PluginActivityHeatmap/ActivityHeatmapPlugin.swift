@@ -18,9 +18,10 @@ import os
 /// daily message intensity, token trend, and persisted range preference while
 /// consuming only KernelCore providers.
 @MainActor
-public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
+public final class ActivityHeatmapPlugin: SuperPlugin, PluginDataMigrating, SuperLog {
     nonisolated static let logger = Logger(subsystem: "com.coffic.activity-heatmap", category: "ActivityHeatmap")
     public let id = "com.coffic.activity-heatmap"
+    public let legacyDataDirectoryNames = ["ActivityHeatmap"]
     public let order = 9
     public let dependencies = [
         "com.coffic.lumi.plugin.projects",
@@ -102,7 +103,7 @@ public final class ActivityHeatmapPlugin: SuperPlugin, SuperLog {
             Self.logger.error("\(Self.t) IdleTimeProviding not found")
         }
         let directory = kernel.resolveProvider((any StorageProviding).self)?
-            .pluginDataDirectory(for: "ActivityHeatmap")
+            .pluginDataDirectory(for: id)
         ActivityHeatmapViewModel.restoreLegacyPeriodIfNeeded(from: directory)
         cache = ActivityHeatmapCache(directory: directory)
         let viewModel = ActivityHeatmapViewModel(messages: messages, cache: cache)
