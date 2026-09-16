@@ -35,7 +35,6 @@ public struct PromoDesignerView: View {
                 content
                 bottomToolbar
             } else {
-                emptyToolbar
                 content
             }
         }
