@@ -1,4 +1,5 @@
 import Foundation
+import ProviderAgentLoop
 import ProviderConversationState
 import ProviderMessageStreaming
 import Testing
@@ -92,6 +93,38 @@ struct AgentActivityProjectionTests {
         #expect(projection?.phase == .waitingForUser)
         #expect(projection?.title == "等待你的确认")
         #expect(projection?.detail == "执行删除操作")
+    }
+
+    @Test("回合运行中但 activity 短暂为空时保留状态视图")
+    func runningWithoutActivity() {
+        let state = ConversationStateSnapshot(
+            conversationID: conversationID,
+            agentLoopState: .running
+        )
+
+        let projection = AgentActivityProjection.resolve(
+            conversationState: state,
+            streamingStage: .idle
+        )
+
+        #expect(projection?.phase == .thinking)
+        #expect(projection?.title == "正在处理…")
+    }
+
+    @Test("回合暂停但 activity 短暂为空时保留等待状态")
+    func suspendedWithoutActivity() {
+        let state = ConversationStateSnapshot(
+            conversationID: conversationID,
+            agentLoopState: .suspended
+        )
+
+        let projection = AgentActivityProjection.resolve(
+            conversationState: state,
+            streamingStage: .idle
+        )
+
+        #expect(projection?.phase == .waitingForUser)
+        #expect(projection?.title == "等待你的确认")
     }
 
     @Test("空闲阶段不显示活动视图")
