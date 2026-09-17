@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 
 /// SidebarView 顶部状态行。
@@ -5,6 +6,8 @@ import SwiftUI
 /// 展示当前活跃 Goal 的图标/标题/进度文本,并提供描述弹窗、折叠
 /// 两个操作入口。所有回调由 `SidebarView` 注入,本组件不持有状态机。
 struct SidebarHeader: View {
+    @LumiTheme private var theme
+
     @State private var showDescriptionPopover = false
 
     let activeGoal: GoalDisplayItem?
@@ -65,10 +68,19 @@ struct SidebarHeader: View {
                 showDescriptionPopover.toggle()
             } label: {
                 Image(systemName: "info.circle")
-                    .font(.caption)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(showDescriptionPopover ? theme.primary : theme.textSecondary)
+                    .frame(width: 24, height: 24)
+                    .background(
+                        showDescriptionPopover
+                            ? theme.primary.opacity(0.12)
+                            : theme.textPrimary.opacity(0.06),
+                        in: Circle()
+                    )
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
             .help(LumiPluginLocalization.string("Goal description", bundle: .module))
+            .accessibilityLabel(LumiPluginLocalization.string("Goal description", bundle: .module))
             .popover(isPresented: $showDescriptionPopover, arrowEdge: .bottom) {
                 GoalDescriptionPopoverContent(text: description)
             }
