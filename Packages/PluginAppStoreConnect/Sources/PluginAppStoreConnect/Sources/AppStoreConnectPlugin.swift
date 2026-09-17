@@ -170,7 +170,9 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
                 ownerPluginID: id
             ) { state in
                 if state == .activated {
-                    toolbar?.setVisibleCategories([.global, .general])
+                    // 激活时同时显示 Chat 区块与对话工具栏（新建对话、会话列表）。
+                    // 漏掉 `.chat` 会让 Chat 面板已显示但工具栏缺少对话上下文项。
+                    toolbar?.setVisibleCategories([.global, .chat, .general])
                     toolbar?.addToolbarItems([
                         ToolbarItem(
                             id: Self.openToolbarItemID,
