@@ -281,36 +281,6 @@
         }
       }
     },
-    "Open App Store Connect" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开 App Store Connect"
-          }
-        }
-      }
-    },
-    "Open URL in Browser" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在浏览器中打开 URL"
-          }
-        }
-      }
-    },
-    "Open %@ in Browser" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在浏览器中打开 %@"
-          }
-        }
-      }
-    },
     "Assign a build before submitting for review." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1563,6 +1533,26 @@
         }
       }
     },
+    "Open %@ in Browser" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在浏览器中打开 %@"
+          }
+        }
+      }
+    },
+    "Open App Store Connect" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 App Store Connect"
+          }
+        }
+      }
+    },
     "Open App Store Connect API Keys" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1589,6 +1579,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打开设置指南，了解在哪里查找 Issuer ID、Key ID 和 .p8 私钥。"
+          }
+        }
+      }
+    },
+    "Open URL in Browser" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在浏览器中打开 URL"
           }
         }
       }
@@ -2493,16 +2493,6 @@
         }
       }
     },
-    "Version status" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本状态"
-          }
-        }
-      }
-    },
     "Version %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2540,6 +2530,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "必须填写版本号。"
+          }
+        }
+      }
+    },
+    "Version status" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本状态"
           }
         }
       }

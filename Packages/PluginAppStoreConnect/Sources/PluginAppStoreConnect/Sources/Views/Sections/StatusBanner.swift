@@ -4,7 +4,6 @@ import SwiftUI
 struct VersionActionsBar: View {
     let version: AppStoreVersion
     @ObservedObject var viewModel: VM
-    let localePickerSourceView: String
     var embedded = false
     @State private var showsReleaseConfirmation = false
     @State private var showsSubmitConfirmation = false
@@ -14,27 +13,6 @@ struct VersionActionsBar: View {
 
     private var content: some View {
         HStack(spacing: 16) {
-            if !viewModel.localizations.isEmpty {
-                ToolbarSelectControl(
-                    title: viewModel.selectedLocalization?.locale
-                        ?? AppStoreConnectLocalization.string("Locale"),
-                    systemImage: "globe",
-                    maxTitleWidth: 120
-                ) {
-                    LocalizationOptionsView(viewModel: viewModel)
-                }
-                .appStoreConnectAddToChatMenu(
-                    entityType: "localization",
-                    entityID: viewModel.selectedLocalizationID ?? "none",
-                    title: viewModel.selectedLocalization?.locale ?? "None",
-                    sourceView: localePickerSourceView,
-                    fields: [
-                        "availableCount": String(viewModel.localizations.count),
-                        "selectedLocale": viewModel.selectedLocalization?.locale ?? "-"
-                    ]
-                )
-            }
-
             Spacer()
 
             if version.isSubmittable {
@@ -147,7 +125,7 @@ struct VersionActionsBar: View {
     }
 }
 
-private struct LocalizationOptionsView: View {
+struct LocalizationOptionsView: View {
     @ObservedObject var viewModel: VM
     @Environment(\.dismiss) private var dismiss
 
