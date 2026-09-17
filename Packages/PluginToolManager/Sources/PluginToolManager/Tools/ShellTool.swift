@@ -53,7 +53,7 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
     }
 
     public func description(for language: LanguagePreference) -> String {
-        "Execute a shell command in the terminal. Commands may run for a while, can be cancelled, and captured output is size-limited."
+        "Execute a shell command for files, builds and terminal tasks. Direct desktop control is sandboxed: do not use osascript, CGEvent, GUI launching or screenshots through this tool. For UI tasks use accessibility_observe/accessibility_act first, then managed computer_observe/computer_act if necessary. Commands can be cancelled and output is size-limited."
     }
 
     public func inputSchema(for language: LanguagePreference) -> [String: Any] {
@@ -87,8 +87,8 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
         let (command, options) = try await executionRequest(arguments: arguments)
         let result = try await ShellExecutor.execute(
-            executable: "/bin/zsh",
-            arguments: ["-lc", command],
+            executable: ShellDesktopSandbox.executable,
+            arguments: try ShellDesktopSandbox.arguments(command: command),
             options: options
         )
         return Self.resultText(for: result)
@@ -103,8 +103,8 @@ public struct ShellTool: SuperAgentTool, @unchecked Sendable {
 
         do {
             let result = try await ShellExecutor.executeStreaming(
-                executable: "/bin/zsh",
-                arguments: ["-lc", command],
+                executable: ShellDesktopSandbox.executable,
+                arguments: try ShellDesktopSandbox.arguments(command: command),
                 options: options,
                 onOutput: { chunk in
                     reporter.report(.stdout, text: chunk)
