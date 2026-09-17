@@ -7,12 +7,22 @@ import Foundation
 public protocol ACPTransport: AnyObject {
     /// 收到一帧完整消息（UTF-8 数据）。
     var onMessage: ((Data) -> Void)? { get set }
+    /// 输入流到达 EOF（例如 stdin 关闭）。宿主可借此退出进程。
+    var onEOF: (() -> Void)? { get set }
     /// 启动传输（开始接收）。
     func start() throws
     /// 发送一帧消息。
     func send(_ data: Data) throws
     /// 停止传输。
     func stop()
+}
+
+public extension ACPTransport {
+    /// 默认空实现：不感知 EOF 的传输无需改动。
+    var onEOF: (() -> Void)? {
+        get { nil }
+        set {}
+    }
 }
 
 /// stdio 传输实现：从 stdin 逐帧读取、向 stdout 写入。
@@ -25,6 +35,7 @@ public final class StdioTransport: ACPTransport, @unchecked Sendable {
     private var running = false
 
     public var onMessage: ((Data) -> Void)?
+    public var onEOF: (() -> Void)?
 
     public init() {}
 
@@ -38,9 +49,10 @@ public final class StdioTransport: ACPTransport, @unchecked Sendable {
             guard let self else { return }
             let data = handle.availableData
             if data.isEmpty {
-                // EOF：停止读取，保持 stdout 可用以便收尾。
+                // EOF：停止读取，通知宿主（可退出进程），保持 stdout 可用以便收尾。
                 FileHandle.standardInput.readabilityHandler = nil
                 self.stop()
+                self.onEOF?()
                 return
             }
             self.processIncoming(data)

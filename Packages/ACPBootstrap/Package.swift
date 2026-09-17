@@ -7,6 +7,7 @@ let package = Package(
     dependencies: [
         .package(path: "../FactoryLumi"),
         .package(path: "../ProviderACP"),
+        .package(path: "../PluginACP"),
     ],
     targets: [
         .executableTarget(
@@ -14,6 +15,7 @@ let package = Package(
             dependencies: [
                 .product(name: "FactoryLumi", package: "FactoryLumi"),
                 .product(name: "ProviderACP", package: "ProviderACP"),
+                .product(name: "PluginACP", package: "PluginACP"),
             ],
             path: "Sources/ACPBootstrap"
         ),

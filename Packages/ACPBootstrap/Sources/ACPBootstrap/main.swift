@@ -1,63 +1,28 @@
 import Foundation
 import FactoryLumi
-import KernelCore
+import PluginACP
 import ProviderACP
-import ProviderAgentLoop
-import ProviderConversation
-import ProviderToolManager
 
-/// ACP headless 冒烟测试入口（M2 验证 R1）。
+/// ACP headless 可执行入口（M2：握手验证）。
 ///
-/// 目标：验证 `KernelFactory.makeKernel()` 在**无 NSApplication（GUI）** 环境下
-/// 能否安全启动完整插件目录，并 resolve 出 agent 所需的核心 Provider。
+/// 目标：在无 NSApplication 环境下启动完整 Lumi 内核，以 ACP Agent
+/// 身份通过 stdio 服务外部编辑器（或测试脚本）。
 ///
-/// 运行：`swift run --package-path Packages/ACPBootstrap`
-/// 期望输出：`ACP_BOOTSTRAP_OK` 前缀；任何异常以 `ACP_BOOTSTRAP_FAILED` 退出码 1 退出。
+/// 运行：
+///   echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":1,"clientCapabilities":{}}}' \
+///     | swift run --package-path Packages/ACPBootstrap
 ///
-/// 注意：本进程不创建 NSApplication、不装配任何 SwiftUI 视图。
+/// 协议外的诊断一律走 stderr，stdout 仅承载 ACP 帧。
 
-private enum SmokeFailure: Error, CustomStringConvertible {
-    case missingProvider(String)
-    case unexpected(Error)
-
-    var description: String {
-        switch self {
-        case .missingProvider(let name):
-            return "缺少核心 Provider：\(name)"
-        case .unexpected(let error):
-            return "非预期错误：\(error)"
-        }
-    }
-}
+let plugin = PluginACP()
+plugin.onEOF = { exit(0) }
 
 do {
-    // KernelFactory.makeKernel() 为 @MainActor；Swift 顶层代码默认运行在 MainActor，
-    // 因此这里无需额外包装。
-    let kernel = try KernelFactory.makeKernel()
-
-    // 1. Agent 回合循环
-    guard let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self) else {
-        throw SmokeFailure.missingProvider("AgentLoopProviding")
-    }
-    // 2. 会话/对话管理
-    guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
-        throw SmokeFailure.missingProvider("ConversationManaging")
-    }
-    // 3. 工具系统
-    guard let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
-        throw SmokeFailure.missingProvider("ToolManagerProviding")
-    }
-
-    let toolCount = toolManager.allTools().count
-    let conversationCount = conversations.conversations.count
-
-    print("ACP_BOOTSTRAP_OK agentLoop=\(type(of: agentLoop))")
-    print("ACP_BOOTSTRAP_OK conversations=\(conversationCount) tools=\(toolCount)")
-
-    if toolCount == 0 {
-        print("ACP_BOOTSTRAP_WARN 工具数量为 0：headless 下可能缺少工具注册")
-    }
+    let kernel = try KernelFactory.makeKernel(additionalPlugins: [plugin])
+    try plugin.startACPServer(transport: StdioTransport())
+    // 进程常驻：等待 stdin 帧；EOF 后由 onEOF 退出。
+    RunLoop.main.run()
 } catch {
-    print("ACP_BOOTSTRAP_FAILED \(error)")
+    fputs("ACP_BOOTSTRAP_FAILED \(error)\n", stderr)
     exit(1)
 }
