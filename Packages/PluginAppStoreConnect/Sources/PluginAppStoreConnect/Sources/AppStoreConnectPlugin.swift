@@ -35,6 +35,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
     public static let settingsEntryID = "com.coffic.lumi.plugin.app-store-connect.settings"
     private static let openToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.open"
     private static let workspaceToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.workspace"
+    private static let submitToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.submit"
     private static let distributionToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.distribution"
     private static let refreshToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.refresh"
 
@@ -196,6 +197,16 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
                             AppStoreConnectWorkspaceToolbarView(viewModel: VM.shared)
                         },
                         ToolbarItem(
+                            id: Self.submitToolbarItemID,
+                            title: AppStoreConnectLocalization.string("Submit for Review"),
+                            placement: .trailing,
+                            category: .general,
+                            ownerPluginID: pluginID,
+                            order: refreshToolbarOrder
+                        ) {
+                            AppStoreConnectSubmitToolbarButton(viewModel: VM.shared)
+                        },
+                        ToolbarItem(
                             id: Self.distributionToolbarItemID,
                             title: AppStoreConnectLocalization.string("Version and Locale"),
                             placement: .trailing,
@@ -238,7 +249,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
                     chat?.setActiveContext(nil)
                     chat?.deactivateWidthProfile(ownerID: pluginID)
                     rail?.deactivateWidthProfile(ownerID: pluginID)
-                    toolbar?.removeToolbarItems(ids: [Self.openToolbarItemID, Self.workspaceToolbarItemID, Self.distributionToolbarItemID, Self.refreshToolbarItemID])
+                    toolbar?.removeToolbarItems(ids: [Self.openToolbarItemID, Self.workspaceToolbarItemID, Self.submitToolbarItemID, Self.distributionToolbarItemID, Self.refreshToolbarItemID])
                 }
             },
         ])
