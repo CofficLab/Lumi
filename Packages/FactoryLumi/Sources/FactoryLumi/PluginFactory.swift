@@ -13,6 +13,7 @@ import AppManagerPlugin
 import ClipboardManagerPlugin
 import BrowserPlugin
 import ComputerUsePlugin
+import PluginMCP
 import BrewManagerPlugin
 import DisplayControlPlugin
 import PortManagerPlugin
@@ -239,6 +240,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ClipboardManagerSuperPlugin(),
             BrowserSuperPlugin(),
             ComputerUseSuperPlugin(),
+            MCPSuperPlugin(),
             BrewManagerSuperPlugin(),
             DisplayControlSuperPlugin(),
             PortManagerSuperPlugin(),
