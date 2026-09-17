@@ -36,10 +36,6 @@ struct DistributionPage: View {
 
             Divider()
 
-            if let version = viewModel.selectedVersion {
-                VersionOverviewView(version: version)
-            }
-
             // 版本详情
             if viewModel.selectedVersion == nil {
                 AppEmptyState(
