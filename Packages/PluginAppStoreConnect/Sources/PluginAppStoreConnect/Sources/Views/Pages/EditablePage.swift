@@ -20,10 +20,10 @@ struct EditablePage: View {
 
                     MetadataSection(viewModel: viewModel)
                 }
-                .padding(.top, 12)
                 .padding(.bottom, 24)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.top, 16)
     }
 }
