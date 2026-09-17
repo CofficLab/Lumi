@@ -34,19 +34,18 @@ struct DistributionPage: View {
             Divider()
 
             // 版本详情
-            if viewModel.selectedVersion == nil {
+            if let version = viewModel.selectedVersion {
+                VersionDetailPage(
+                    viewModel: viewModel,
+                    version: version,
+                    isEditable: !viewModel.isReadOnlyVersion,
+                    importingScreenshots: $importingScreenshots
+                )
+            } else {
                 AppEmptyState(
                     icon: "number",
                     title: AppStoreConnectLocalization.string("No Version Selected"),
                     description: AppStoreConnectLocalization.string("Choose a version from the selector above.")
-                )
-            } else if viewModel.isReadOnlyVersion, let version = viewModel.selectedVersion {
-                ReadOnlyPage(viewModel: viewModel, version: version)
-            } else if let version = viewModel.selectedVersion {
-                EditablePage(
-                    viewModel: viewModel,
-                    version: version,
-                    importingScreenshots: $importingScreenshots
                 )
             }
         }

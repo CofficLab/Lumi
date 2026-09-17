@@ -2626,6 +2626,7 @@
       }
     },
     "Withdraw the review submission for version %@? You can submit again later." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
