@@ -59,6 +59,15 @@ public struct AgentLoopFailure: Sendable, Equatable, Codable {
     ) -> AgentLoopFailure {
         let message = error.localizedDescription
 
+        if let kind = Self.kind(forSystemNetworkError: error) {
+            return AgentLoopFailure(
+                kind: kind,
+                message: message,
+                providerID: providerID,
+                modelName: modelName
+            )
+        }
+
         if let vendorError = error as? VendorAPIError {
             switch vendorError {
             case .missingAPIKey, .apiKeyAccessFailed:
@@ -120,6 +129,12 @@ public struct AgentLoopFailure: Sendable, Equatable, Codable {
             providerID: providerID,
             modelName: modelName
         )
+    }
+
+    private static func kind(forSystemNetworkError error: Error) -> Kind? {
+        let nsError = error as NSError
+        guard nsError.domain == NSURLErrorDomain else { return nil }
+        return nsError.code == NSURLErrorTimedOut ? .timeout : .network
     }
 
     private static func kind(forHTTPStatus statusCode: Int, summary: String) -> Kind {

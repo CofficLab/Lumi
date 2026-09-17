@@ -34,10 +34,21 @@ extension ConnectClient {
     /// 使用 relationships 端点，未提交时 Apple 返回 200 + {"data": null}。
     func readSubmissionID(versionID: String) async throws -> String? {
         Self.logger.info("\(Self.t)readSubmissionID versionID=\(versionID)")
-        let response: AppStoreConnectOptionalSubmissionResponse = try await request(
-            path: "/v1/appStoreVersions/\(versionID)/relationships/appStoreVersionSubmission"
-        )
-        return response.data?.id
+        do {
+            let response: AppStoreConnectOptionalSubmissionResponse = try await request(
+                path: "/v1/appStoreVersions/\(versionID)/relationships/appStoreVersionSubmission"
+            )
+            return response.data?.id
+        } catch let error as AppStoreConnectClientError {
+            // Apple occasionally leaves a dangling relationship after a submission
+            // is removed. Treat that stale submission as an unsubmitted version so
+            // it cannot prevent the build list from loading.
+            if case .resourceNotFound = error {
+                Self.logger.warning("\(Self.t)submission relationship is stale for versionID=\(versionID); treating it as nil")
+                return nil
+            }
+            throw error
+        }
     }
 
     /// 撤回待审核的提交（仅 WAITING_FOR_REVIEW 状态可撤回）。

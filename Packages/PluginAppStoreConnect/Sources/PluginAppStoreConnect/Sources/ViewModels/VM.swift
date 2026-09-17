@@ -14,7 +14,6 @@ import ProviderNetwork
 import ProviderRailView
 import ProviderRootView
 import ProviderStorage
-import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
 import os
@@ -120,7 +119,14 @@ final class VM: ObservableObject, SuperLog {
     let credentialStore: CredentialStore
     private(set) var client: ConnectClient
     let localStore: AppStoreConnectPluginLocalStore
-    private(set) var toast: (any ToastProviding)?
+    var isLoadingApps = false
+    var isLoadingVersions = false
+
+    /// 同一用户动作可能串起多个 `runBusy` 操作（嵌套或并发）。
+    /// 由计数决定遮罩的生命周期，避免内层调用中途关掉外层已显示的遮罩。
+    var busyOperationCount = 0
+    /// 首个操作启动的 500ms 遮罩延时任务，由最后一个操作负责取消。
+    var busyOverlayDelayTask: Task<Void, Never>?
 
     init(
         credentialStore: CredentialStore = .shared,
@@ -146,10 +152,6 @@ final class VM: ObservableObject, SuperLog {
 
     func configure(network: any NetworkProviding) {
         client = ConnectClient(credentialsProvider: { [credentialStore] in credentialStore.load() }, network: network)
-    }
-
-    func configure(toast: (any ToastProviding)?) {
-        self.toast = toast
     }
 
     var filteredApps: [AppStoreApp] {

@@ -29,16 +29,16 @@ import Testing
     ])
 }
 
-@Test func parserAcceptsExactlyTwentyActions() throws {
-    let actions = try ComputerUseActionParser.parse(Array(repeating: ["type": "screenshot"], count: 20))
-    #expect(actions.count == 20)
+@Test func parserAcceptsExactlyTenActions() throws {
+    let actions = try ComputerUseActionParser.parse(Array(repeating: ["type": "screenshot"], count: 10))
+    #expect(actions.count == 10)
 }
 
 @Test func parserEnforcesActionAndCoordinateRequirements() {
     expectInvalid(nil, "actions must be an array")
     expectInvalid("screenshot", "actions must be an array")
     expectInvalid([], "actions must not be empty")
-    expectInvalid(Array(repeating: ["type": "screenshot"], count: 21), "a batch may contain at most 20 actions")
+    expectInvalid(Array(repeating: ["type": "screenshot"], count: 11), "a batch may contain at most 10 actions")
     expectInvalid([42], "every action requires a type")
     expectInvalid([["x": 1, "y": 2]], "every action requires a type")
     expectInvalid([["type": "fly"]], "unsupported action type: fly")

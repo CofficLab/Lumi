@@ -12,15 +12,15 @@ struct MainView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if viewModel.page.showsTopBar {
-                TopBar(viewModel: viewModel)
-            }
-
-            if let error = viewModel.errorMessage, shouldShowGlobalError {
+            if let error = viewModel.errorMessage {
                 ErrorBanner(message: error)
                     .padding(.horizontal)
                     .padding(.vertical, 8)
                 Divider()
+            }
+
+            if viewModel.page == .distribution && viewModel.metadataIsDirty {
+                TopBar(viewModel: viewModel)
             }
 
             ZStack {
@@ -48,10 +48,6 @@ struct MainView: View {
                 await viewModel.loadApps(silent: true)
             }
         }
-    }
-
-    private var shouldShowGlobalError: Bool {
-        viewModel.page != .distribution
     }
 
     @ViewBuilder

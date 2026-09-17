@@ -4,16 +4,6 @@
     "" : {
 
     },
-    " (assigned)" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "（已分配）"
-          }
-        }
-      }
-    },
     " (invalid)" : {
       "localizations" : {
         "zh-Hans" : {
@@ -69,6 +59,9 @@
           }
         }
       }
+    },
+    "%lld%%" : {
+
     },
     "A private key is stored in Keychain. Saving replaces it." : {
       "localizations" : {
@@ -418,16 +411,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "取消"
-          }
-        }
-      }
-    },
-    "Change" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更改"
           }
         }
       }
@@ -1553,6 +1536,26 @@
         }
       }
     },
+    "Open %@ in Browser" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在浏览器中打开 %@"
+          }
+        }
+      }
+    },
+    "Open App Store Connect" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 App Store Connect"
+          }
+        }
+      }
+    },
     "Open App Store Connect API Keys" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1579,6 +1582,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打开设置指南，了解在哪里查找 Issuer ID、Key ID 和 .p8 私钥。"
+          }
+        }
+      }
+    },
+    "Open URL in Browser" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在浏览器中打开 URL"
           }
         }
       }
@@ -1789,36 +1802,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "刷新"
-          }
-        }
-      }
-    },
-    "Refreshing" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在刷新"
-          }
-        }
-      }
-    },
-    "Refreshed" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已刷新"
-          }
-        }
-      }
-    },
-    "Refresh failed" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新失败"
           }
         }
       }
@@ -2554,6 +2537,17 @@
         }
       }
     },
+    "Version status" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本状态"
+          }
+        }
+      }
+    },
     "visionOS" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2635,6 +2629,7 @@
       }
     },
     "Withdraw the review submission for version %@? You can submit again later." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2703,6 +2698,9 @@
           }
         }
       }
+    },
+    "双击查看大图" : {
+
     }
   },
   "version" : "1.0"
