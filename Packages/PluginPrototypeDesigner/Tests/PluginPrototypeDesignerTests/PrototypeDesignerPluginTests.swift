@@ -141,6 +141,18 @@ struct PrototypeDesignerPluginTests {
         #expect(WorkspaceStore.shared.lastError == nil)
     }
 
+    /// 空态（无原型项目）时不应有任何可渲染的选中态，主面板直接展示 onboarding 引导。
+    ///
+    /// 该分支曾额外渲染一个只含刷新按钮的顶部工具栏，与引导内容重复；
+    /// 刷新入口已在侧边栏 Rail 提供，因此该工具栏已移除。这里锁定触发条件，
+    /// 确保空态的 UI 分支入口保持单一。
+    @Test func emptyStateHasNoSelectionAndNeedsNoToolbar() {
+        PrototypeDesignerRuntime.reset()
+        #expect(WorkspaceStore.shared.projects.isEmpty)
+        #expect(WorkspaceStore.shared.selectedProject == nil)
+        #expect(WorkspaceStore.shared.selectedScreen == nil)
+    }
+
     // MARK: - Skill
 
     @Test func skillContributorLoadsPrototypeDesignerSkill() {

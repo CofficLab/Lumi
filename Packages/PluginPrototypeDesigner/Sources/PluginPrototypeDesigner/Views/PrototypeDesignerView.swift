@@ -1,7 +1,6 @@
 import AppKit
 import KitHTMLPreview
 import KitPrototype
-import LumiUI
 import SwiftUI
 
 /// 原型设计器主面板：展示当前选中屏幕的预览 / HTML 源码，并支持导出。
@@ -28,7 +27,7 @@ public struct PrototypeDesignerView: View {
     public var body: some View {
         VStack(spacing: 0) {
             if workspace.projects.isEmpty {
-                emptyToolbar
+                // 空态不放工具栏：引导内容自身已完整，刷新入口在侧边栏 Rail。
                 PrototypeOnboardingView(isProjectOpen: workspace.projectStorageDirectory != nil)
             } else if let resolved = workspace.selectedScreen {
                 PrototypeDesignerTopToolbar(
@@ -91,19 +90,6 @@ public struct PrototypeDesignerView: View {
                 )
             )
         }
-    }
-
-    @ViewBuilder
-    private var emptyToolbar: some View {
-        AppToolbarContainer {
-            HStack {
-                Spacer(minLength: 0)
-                AppIconButton(systemImage: "arrow.clockwise", action: workspace.reload)
-                    .accessibilityLabel(PrototypeLocalization.string("Refresh"))
-                    .help(PrototypeLocalization.string("Refresh"))
-            }
-        }
-        .borderBottom()
     }
 
     // MARK: - 计算属性
