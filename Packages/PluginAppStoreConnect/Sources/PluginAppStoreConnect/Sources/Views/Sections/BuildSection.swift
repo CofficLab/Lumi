@@ -60,16 +60,14 @@ struct BuildSection: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            Picker("", selection: $viewModel.selectedBuildID) {
-                Text(AppStoreConnectLocalization.string("Select a build"))
-                    .tag(nil as String?)
-                ForEach(viewModel.builds) { build in
-                    Text(buildOptionLabel(build))
-                        .tag(build.id as String?)
-                }
+            ToolbarSelectControl(
+                title: selectedBuild.map(buildOptionLabel)
+                    ?? AppStoreConnectLocalization.string("Select a build"),
+                systemImage: "shippingbox",
+                maxTitleWidth: 360
+            ) {
+                BuildOptionsView(viewModel: viewModel)
             }
-            .pickerStyle(.menu)
-            .frame(maxWidth: 360)
             .disabled(!version.canAssignBuild)
         }
     }
@@ -189,5 +187,72 @@ struct BuildSection: View {
                 .font(.caption)
                 .foregroundStyle(.red)
         }
+    }
+}
+
+private struct BuildOptionsView: View {
+    @ObservedObject var viewModel: VM
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(AppStoreConnectLocalization.string("Build"))
+                .font(.headline)
+
+            ScrollView {
+                LazyVStack(spacing: 4) {
+                    ForEach(viewModel.builds) { build in
+                        Button {
+                            viewModel.selectedBuildID = build.id
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: build.isAssignable ? "shippingbox" : "exclamationmark.triangle")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(build.isAssignable ? Color.secondary : Color.orange)
+                                    .frame(width: 20)
+
+                                Text(buildOptionLabel(build))
+                                    .font(.system(size: 13, weight: .medium))
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+
+                                Spacer()
+
+                                if viewModel.selectedBuildID == build.id {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 7)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                viewModel.selectedBuildID == build.id
+                                    ? Color.accentColor.opacity(0.12)
+                                    : Color.clear,
+                                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .frame(maxHeight: 280)
+        }
+        .frame(width: 320)
+    }
+
+    private func buildOptionLabel(_ build: ConnectBuild) -> String {
+        var label = build.displayLabel
+        if build.isProcessing {
+            label += AppStoreConnectLocalization.string(" (processing…)")
+        } else if !build.isAssignable {
+            label += AppStoreConnectLocalization.string(" (invalid)")
+        } else if viewModel.assignedBuildID == build.id {
+            label += AppStoreConnectLocalization.string(" (assigned)")
+        }
+        return label
     }
 }

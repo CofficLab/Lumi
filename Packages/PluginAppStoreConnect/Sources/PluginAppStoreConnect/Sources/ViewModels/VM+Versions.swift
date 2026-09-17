@@ -193,5 +193,6 @@ extension VM {
             }
         }
         try await reloadLocalizationsFromNetwork()
+        try await reloadReleaseInfoFromNetwork()
     }
 }
