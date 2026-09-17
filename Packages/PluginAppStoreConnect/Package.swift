@@ -29,6 +29,7 @@ let package = Package(
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../ProviderSkill"),
     ],
     targets: [
         .target(
@@ -51,8 +52,12 @@ let package = Package(
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderSkill", package: "ProviderSkill"),
             ],
-            resources: [.process("Resources/Localizable.xcstrings")],
+            resources: [
+                .process("../../Resources/Localizable.xcstrings"),
+                .copy("../../Resources/Skills"),
+            ],
             linkerSettings: [.linkedFramework("Security")]
         ),
         .testTarget(
@@ -68,6 +73,7 @@ let package = Package(
                 .product(name: "ProviderSettingView", package: "ProviderSettingView"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderSkill", package: "ProviderSkill"),
             ],
             path: "Tests/PluginAppStoreConnectTests"
         ),

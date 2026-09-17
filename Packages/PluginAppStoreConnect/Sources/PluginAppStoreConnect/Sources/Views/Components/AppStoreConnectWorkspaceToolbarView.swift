@@ -20,6 +20,8 @@ struct AppStoreConnectWorkspaceToolbarView: View {
                 ),
                 maxWidth: 320
             )
+            .frame(width: 192)
+            .layoutPriority(1)
         }
     }
 }

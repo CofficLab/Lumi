@@ -22,12 +22,6 @@ struct BuildSection: View {
                 .font(.title3.weight(.semibold))
 
             Spacer()
-
-            AppIconButton(systemImage: "arrow.clockwise") {
-                Task { await viewModel.loadReleaseInfo(forceRefresh: true) }
-            }
-            .disabled(viewModel.isBusy)
-            .help(AppStoreConnectLocalization.string("Refresh"))
         }
         .padding(.horizontal)
     }

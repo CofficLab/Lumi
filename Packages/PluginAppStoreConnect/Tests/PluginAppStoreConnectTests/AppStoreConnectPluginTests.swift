@@ -33,6 +33,15 @@ func settingsEntry() throws {
     #expect(!settings.entries.contains(where: { $0.id == AppStoreConnectPlugin.settingsEntryID }))
 }
 
+@Test("plugin loads its App Store Connect skill from bundled resources")
+func appStoreConnectSkill() {
+    let skills = AppStoreConnectSkillContributor().allSkills
+
+    #expect(skills.count == 1)
+    #expect(skills.first?.name == "app-store-connect")
+    #expect(skills.first?.loadContent()?.contains("app_store_connect_create_version") == true)
+}
+
 @Test("all restored agent tools use unique current names")
 @MainActor
 func toolNamesUseCurrentConvention() {
