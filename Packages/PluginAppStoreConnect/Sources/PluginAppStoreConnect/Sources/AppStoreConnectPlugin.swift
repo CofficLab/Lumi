@@ -12,7 +12,6 @@ import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderStorage
-import ProviderToast
 import ProviderToolbar
 import ProviderToolManager
 import SwiftUI
@@ -85,7 +84,6 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
 
         let network = kernel.resolveProvider((any NetworkProviding).self)
         AppStoreConnectToolSupport.configure(network: network)
-        VM.shared.configure(toast: kernel.resolveProvider((any ToastProviding).self))
         if let network {
             VM.shared.configure(network: network)
             Task { await ScreenshotImageCache.shared.configure(network: network) }
@@ -202,7 +200,6 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
 
     public func onReady(kernel: KernelCoreContainer) throws {
         // The network can be registered after the plugin boot phase by some hosts.
-        VM.shared.configure(toast: kernel.resolveProvider((any ToastProviding).self))
         if let network = kernel.resolveProvider((any NetworkProviding).self) {
             AppStoreConnectToolSupport.configure(network: network)
             VM.shared.configure(network: network)
@@ -233,7 +230,6 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
             kernel.resolveProvider((any ContentViewProviding).self)?.setContentView(nil)
         }
         AppStoreConnectToolSupport.configure(network: nil)
-        VM.shared.configure(toast: nil)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(
             ids: [Self.refreshToolbarItemID]
         )
