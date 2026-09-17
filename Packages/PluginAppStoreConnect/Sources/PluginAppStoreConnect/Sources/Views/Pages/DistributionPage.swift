@@ -31,10 +31,14 @@ struct DistributionPage: View {
     @ViewBuilder
     private var versionContent: some View {
         VStack(spacing: 0) {
-            // 版本选择器、状态、语言与操作合并为一行
+            // 顶部只保留版本选择、语言与操作
             versionToolbar
 
             Divider()
+
+            if let version = viewModel.selectedVersion {
+                VersionOverviewView(version: version)
+            }
 
             // 版本详情
             if viewModel.selectedVersion == nil {
@@ -66,7 +70,7 @@ struct DistributionPage: View {
                 versionPicker
 
                 if let version = viewModel.selectedVersion {
-                    VersionStatusBanner(
+                    VersionActionsBar(
                         version: version,
                         viewModel: viewModel,
                         localePickerSourceView: "DistributionPage.localePicker",

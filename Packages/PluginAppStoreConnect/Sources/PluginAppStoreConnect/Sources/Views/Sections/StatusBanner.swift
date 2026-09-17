@@ -1,7 +1,7 @@
 import LumiUI
 import SwiftUI
 
-struct VersionStatusBanner: View {
+struct VersionActionsBar: View {
     let version: AppStoreVersion
     @ObservedObject var viewModel: VM
     let localePickerSourceView: String
@@ -14,12 +14,6 @@ struct VersionStatusBanner: View {
 
     private var content: some View {
         HStack(spacing: 16) {
-            HStack(spacing: 8) {
-                Text(version.localizedAppStoreStateLabel)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-
             if !viewModel.localizations.isEmpty {
                 HStack(spacing: 8) {
                     AppSectionLabel(AppStoreConnectLocalization.string("Locale"))
@@ -88,11 +82,6 @@ struct VersionStatusBanner: View {
                 .disabled(viewModel.isBusy)
             }
 
-            if let createdDate = version.createdDate {
-                Text(ViewFormatting.formatDateTime(createdDate))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
         }
     }
 
@@ -107,7 +96,7 @@ struct VersionStatusBanner: View {
             }
         }
         .appStoreConnectAddToChatMenu(
-            entityType: "versionStatusBanner",
+            entityType: "versionActionsBar",
             entityID: version.id,
             title: version.versionString,
             sourceView: "VersionDetail.StatusBanner",
@@ -161,5 +150,67 @@ struct VersionStatusBanner: View {
                 version.versionString
             ))
         }
+    }
+}
+
+/// 版本详情顶部的摘要信息，保持在主要内容区域中可见。
+struct VersionOverviewView: View {
+    let version: AppStoreVersion
+
+    private let cardPadding = EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
+
+    var body: some View {
+        AppCard(
+            style: .subtle,
+            cornerRadius: 8,
+            padding: cardPadding,
+            showShadow: false,
+        ) {
+            HStack(spacing: 12) {
+                Image(systemName: "shippingbox.fill")
+                    .font(.title3)
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 28, height: 28)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(AppStoreConnectLocalization.string("Version status"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Text(version.localizedAppStoreStateLabel)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(Color.accentColor.opacity(0.12), in: Capsule())
+                }
+
+                Spacer(minLength: 16)
+
+                if let createdDate = version.createdDate {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(AppStoreConnectLocalization.string("Created"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(ViewFormatting.formatDateTime(createdDate))
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal)
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+        .appStoreConnectAddToChatMenu(
+            entityType: "versionStatusBanner",
+            entityID: version.id,
+            title: version.versionString,
+            sourceView: "VersionDetail.StatusBanner",
+            fields: [
+                "appStoreState": version.appStoreState,
+                "platform": version.platform
+            ]
+        )
     }
 }
