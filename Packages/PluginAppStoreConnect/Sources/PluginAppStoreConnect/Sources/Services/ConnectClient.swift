@@ -21,6 +21,7 @@ enum AppStoreConnectClientError: LocalizedError {
     case missingCredentials
     case invalidPrivateKey
     case invalidURL
+    case resourceNotFound(String)
     case requestFailed(String)
     case invalidResponse
 
@@ -32,6 +33,8 @@ enum AppStoreConnectClientError: LocalizedError {
             return AppStoreConnectLocalization.string("The private key could not be parsed. Use the .p8 key downloaded from App Store Connect.")
         case .invalidURL:
             return AppStoreConnectLocalization.string("The App Store Connect URL is invalid.")
+        case .resourceNotFound(let message):
+            return message
         case .requestFailed(let message):
             return message
         case .invalidResponse:
@@ -49,6 +52,7 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
     private let credentialsProvider: @Sendable () -> AppStoreConnectCredentials
     private let network: (any NetworkProviding)?
     private let cache: ConnectAPICache
+    private static let requestTimeout: TimeInterval = 30
     var fetchPolicy: ConnectFetchPolicy = .cacheFirst
 
     init(
@@ -134,6 +138,7 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
 
         var request = URLRequest(url: url)
         request.httpMethod = method
+        request.timeoutInterval = Self.requestTimeout
         request.setValue("Bearer \(try makeJWT())", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let body {
@@ -144,7 +149,11 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
         let (data, statusCode) = try await send(request)
 
         guard (200 ..< 300).contains(statusCode) else {
-            throw AppStoreConnectClientError.requestFailed(apiErrorMessage(from: data, statusCode: statusCode))
+            let message = apiErrorMessage(from: data, statusCode: statusCode)
+            if statusCode == 404 {
+                throw AppStoreConnectClientError.resourceNotFound(message)
+            }
+            throw AppStoreConnectClientError.requestFailed(message)
         }
 
         if method == "GET" {
@@ -187,6 +196,7 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
 
         var request = URLRequest(url: url)
         request.httpMethod = method
+        request.timeoutInterval = Self.requestTimeout
         request.setValue("Bearer \(try makeJWT())", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let body {
@@ -197,7 +207,11 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
         let (data, statusCode) = try await send(request)
 
         guard (200 ..< 300).contains(statusCode) else {
-            throw AppStoreConnectClientError.requestFailed(apiErrorMessage(from: data, statusCode: statusCode))
+            let message = apiErrorMessage(from: data, statusCode: statusCode)
+            if statusCode == 404 {
+                throw AppStoreConnectClientError.resourceNotFound(message)
+            }
+            throw AppStoreConnectClientError.requestFailed(message)
         }
 
         cache.invalidateAfterMutation(

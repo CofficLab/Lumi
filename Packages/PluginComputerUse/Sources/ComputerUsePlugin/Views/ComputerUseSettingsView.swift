@@ -115,6 +115,15 @@ struct ComputerUseSettingsView: View {
                         }.fixedSize()
                     }
                     AppDivider()
+                    if ComputerUseAuthorizationStore.shared.isNativeAllowed(application.bundleIdentifier) {
+                        AppSettingRow(title: LumiPluginLocalization.string("Mouse and Keyboard Control", bundle: .module),
+                                      description: LumiPluginLocalization.string("Lumi asks you to pause while it operates. Your input pauses the operation.", bundle: .module), icon: "cursorarrow.motionlines") {
+                            AppButton(LumiPluginLocalization.string("Ask Next Time", bundle: .module), size: .small) {
+                                ComputerUseAuthorizationStore.shared.revokeNative(application.bundleIdentifier)
+                                revision += 1
+                            }
+                        }
+                    }
                     AppSettingRow(title: LumiPluginLocalization.string("Computer Use Access", bundle: .module), description: ComputerUseAuthorizationStore.shared.isAllowed(application.bundleIdentifier) ? LumiPluginLocalization.string("Lumi can observe and interact with this application.", bundle: .module) : LumiPluginLocalization.string("Lumi must be allowed before it can interact with this application.", bundle: .module), icon: "hand.raised") { EmptyView() }
                 }.padding(22)
             }

@@ -35,7 +35,7 @@ enum AgentLoopRetryTimeline {
         return Message(
             conversationID: conversationID,
             role: .system,
-            content: "正在重试 Agent 回合（\(attempt)/\(maxAttempts)）：\(reason)",
+            content: "正在重试（\(attempt)/\(maxAttempts)）：\(reason)",
             turnID: failedTurnID,
             metadata: metadata,
             providerID: failure.providerID,
