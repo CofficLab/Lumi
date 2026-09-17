@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CofficLab/LumiUI.git",
       "state" : {
-        "revision" : "f33d07e6e05f6adbaaeb93b4a872d7856ce0e603",
-        "version" : "1.5.0"
+        "revision" : "3b3e3dc58c1c6738030b3493d747371fad941619",
+        "version" : "1.5.1"
       }
     },
     {
