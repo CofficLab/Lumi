@@ -40,7 +40,7 @@ struct BuildSection: View {
             .padding(.horizontal)
         } else {
             VStack(alignment: .leading, spacing: 12) {
-                buildPicker
+                pickerRow
 
                 if let selected = selectedBuild {
                     buildDetail(selected)
@@ -54,72 +54,74 @@ struct BuildSection: View {
         }
     }
 
-    private var buildPicker: some View {
-        HStack(spacing: 12) {
-            Text(AppStoreConnectLocalization.string("Build"))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+    // MARK: - Pickers
 
-            ToolbarSelectControl(
-                title: selectedBuild.map(buildOptionLabel)
-                    ?? AppStoreConnectLocalization.string("Select a build"),
-                systemImage: "shippingbox",
-                maxTitleWidth: 360
-            ) {
-                BuildOptionsView(viewModel: viewModel)
+    /// Build 与出口合规选择同处一行，控件自带图标与当前值，不再重复左侧文字标签。
+    /// 宽度不足时（窄窗口 / iPhone）自动回退为两行，避免文案被过度压缩。
+    private var pickerRow: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                buildPicker
+                if let selected = selectedBuild {
+                    exportCompliancePicker(selected)
+                }
+                Spacer(minLength: 0)
             }
-            .disabled(!version.canAssignBuild)
+
+            VStack(alignment: .leading, spacing: 12) {
+                buildPicker
+                if let selected = selectedBuild {
+                    exportCompliancePicker(selected)
+                }
+            }
         }
     }
 
-    @ViewBuilder
-    private func buildDetail(_ build: ConnectBuild) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 16) {
-                if let uploaded = build.uploadedDate {
-                    Label(ViewFormatting.formatDateTime(uploaded), systemImage: "calendar")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                if let minOS = build.minOsVersion {
-                    Label(AppStoreConnectLocalization.string("minOS %@", minOS), systemImage: "gear")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                processingStateLabel(build)
-            }
+    private var buildPicker: some View {
+        ToolbarSelectControl(
+            title: selectedBuild.map(BuildDisplay.label)
+                ?? AppStoreConnectLocalization.string("Select a build"),
+            systemImage: "shippingbox",
+            iconTint: isSelectedBuildAssigned ? .accentColor : nil,
+            maxTitleWidth: 280
+        ) {
+            BuildOptionsView(viewModel: viewModel)
+        }
+        .disabled(!version.canAssignBuild)
+        .help(AppStoreConnectLocalization.string("Build"))
+    }
 
-            // 加密合规声明
-            HStack(spacing: 8) {
-                Text(AppStoreConnectLocalization.string("Export Compliance"))
+    /// 出口合规选择：与 Build / 版本 / 语言选择保持一致的弹层选择控件。
+    @ViewBuilder
+    private func exportCompliancePicker(_ build: ConnectBuild) -> some View {
+        let choice = ExportComplianceChoice.choice(for: build.usesNonExemptEncryption)
+        ToolbarSelectControl(
+            title: choice?.title ?? AppStoreConnectLocalization.string("Not declared"),
+            systemImage: choice?.systemImage ?? "exclamationmark.triangle",
+            maxTitleWidth: 220
+        ) {
+            ExportComplianceOptionsView(
+                viewModel: viewModel,
+                currentValue: build.usesNonExemptEncryption
+            )
+        }
+        .disabled(!version.canAssignBuild)
+        .help(AppStoreConnectLocalization.string("Export Compliance"))
+    }
+
+    private func buildDetail(_ build: ConnectBuild) -> some View {
+        HStack(spacing: 16) {
+            if let uploaded = build.uploadedDate {
+                Label(ViewFormatting.formatDateTime(uploaded), systemImage: "calendar")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-
-                if let usesNonExempt = build.usesNonExemptEncryption {
-                    Text(usesNonExempt
-                        ? AppStoreConnectLocalization.string("Uses non-exempt encryption")
-                        : AppStoreConnectLocalization.string("No non-exempt encryption"))
-                        .font(.caption)
-                } else {
-                    Text(AppStoreConnectLocalization.string("Not declared"))
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                }
-
-                if version.canAssignBuild {
-                    Menu(AppStoreConnectLocalization.string("Change")) {
-                        Button(AppStoreConnectLocalization.string("No non-exempt encryption")) {
-                            Task { await viewModel.updateSelectedBuildEncryption(usesNonExemptEncryption: false) }
-                        }
-                        Button(AppStoreConnectLocalization.string("Uses non-exempt encryption")) {
-                            Task { await viewModel.updateSelectedBuildEncryption(usesNonExemptEncryption: true) }
-                        }
-                    }
-                    .menuStyle(.borderlessButton)
-                    .font(.caption)
-                    .fixedSize()
-                }
             }
+            if let minOS = build.minOsVersion {
+                Label(AppStoreConnectLocalization.string("minOS %@", minOS), systemImage: "gear")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            processingStateLabel(build)
         }
     }
 
@@ -159,16 +161,10 @@ struct BuildSection: View {
         return selected.isAssignable && viewModel.assignedBuildID != selected.id
     }
 
-    private func buildOptionLabel(_ build: ConnectBuild) -> String {
-        var label = build.displayLabel
-        if build.isProcessing {
-            label += AppStoreConnectLocalization.string(" (processing…)")
-        } else if !build.isAssignable {
-            label += AppStoreConnectLocalization.string(" (invalid)")
-        } else if viewModel.assignedBuildID == build.id {
-            label += AppStoreConnectLocalization.string(" (assigned)")
-        }
-        return label
+    /// 当前选中的 build 是否就是已关联到该版本的 build
+    private var isSelectedBuildAssigned: Bool {
+        guard let selected = selectedBuild else { return false }
+        return viewModel.assignedBuildID == selected.id
     }
 
     @ViewBuilder
@@ -207,12 +203,15 @@ private struct BuildOptionsView: View {
                             dismiss()
                         } label: {
                             HStack(spacing: 8) {
-                                Image(systemName: build.isAssignable ? "shippingbox" : "exclamationmark.triangle")
+                                Image(systemName: BuildDisplay.icon(for: build))
                                     .font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(build.isAssignable ? Color.secondary : Color.orange)
+                                    .foregroundStyle(BuildDisplay.iconColor(
+                                        for: build,
+                                        isAssigned: viewModel.assignedBuildID == build.id
+                                    ))
                                     .frame(width: 20)
 
-                                Text(buildOptionLabel(build))
+                                Text(BuildDisplay.label(for: build))
                                     .font(.system(size: 13, weight: .medium))
                                     .lineLimit(1)
                                     .truncationMode(.middle)
@@ -242,17 +241,5 @@ private struct BuildOptionsView: View {
             .frame(maxHeight: 280)
         }
         .frame(width: 320)
-    }
-
-    private func buildOptionLabel(_ build: ConnectBuild) -> String {
-        var label = build.displayLabel
-        if build.isProcessing {
-            label += AppStoreConnectLocalization.string(" (processing…)")
-        } else if !build.isAssignable {
-            label += AppStoreConnectLocalization.string(" (invalid)")
-        } else if viewModel.assignedBuildID == build.id {
-            label += AppStoreConnectLocalization.string(" (assigned)")
-        }
-        return label
     }
 }

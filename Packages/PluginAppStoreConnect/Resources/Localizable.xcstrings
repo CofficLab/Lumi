@@ -4,16 +4,6 @@
     "" : {
 
     },
-    " (assigned)" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "（已分配）"
-          }
-        }
-      }
-    },
     " (invalid)" : {
       "localizations" : {
         "zh-Hans" : {
@@ -448,16 +438,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "取消"
-          }
-        }
-      }
-    },
-    "Change" : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更改"
           }
         }
       }

@@ -5,6 +5,7 @@ import SwiftUI
 struct ToolbarSelectControl<Content: View>: View {
     let title: String
     let systemImage: String
+    let iconTint: Color?
     let maxTitleWidth: CGFloat
     @ViewBuilder let content: () -> Content
 
@@ -16,11 +17,13 @@ struct ToolbarSelectControl<Content: View>: View {
     init(
         title: String,
         systemImage: String,
+        iconTint: Color? = nil,
         maxTitleWidth: CGFloat = 220,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.title = title
         self.systemImage = systemImage
+        self.iconTint = iconTint
         self.maxTitleWidth = maxTitleWidth
         self.content = content
     }
@@ -32,6 +35,7 @@ struct ToolbarSelectControl<Content: View>: View {
             HStack(spacing: 6) {
                 Image(systemName: systemImage)
                     .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(iconTint ?? theme.textPrimary)
 
                 Text(title)
                     .font(.system(size: 13, weight: .medium))
