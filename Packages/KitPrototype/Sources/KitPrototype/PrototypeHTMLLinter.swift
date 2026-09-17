@@ -1,0 +1,168 @@
+import Foundation
+
+// MARK: - 校验结果
+
+public enum PrototypeLintSeverity: String, Codable, Sendable {
+    case warning
+    case error
+}
+
+public struct PrototypeLintIssue: Codable, Equatable, Sendable {
+    public let severity: PrototypeLintSeverity
+    public let code: String
+    public let message: String
+
+    public init(severity: PrototypeLintSeverity, code: String, message: String) {
+        self.severity = severity
+        self.code = code
+        self.message = message
+    }
+}
+
+public struct PrototypeLintReport: Codable, Equatable, Sendable {
+    public let issues: [PrototypeLintIssue]
+
+    public var errors: [PrototypeLintIssue] { issues.filter { $0.severity == .error } }
+    public var warnings: [PrototypeLintIssue] { issues.filter { $0.severity == .warning } }
+    public var isValid: Bool { errors.isEmpty }
+
+    public init(issues: [PrototypeLintIssue]) {
+        self.issues = issues
+    }
+}
+
+// MARK: - 校验器
+
+/// 原型屏幕 HTML 静态校验器。
+///
+/// 规则集建立在 `AppStorePromoHTMLLinter` 之上，差异有三点，都是原型场景的必然要求：
+///
+/// 1. **允许 `transition` / `animation`**——原型常有过渡效果。promo 场景禁用它们
+///    是为了导出确定性；此处降为 warning（导出时由 `PrototypeHTMLExporter` 关闭动效）。
+/// 2. **要求 `data-block` 标注**——右键区块「发给助手」依赖它定位元素；
+///    没有任何标注时只给 warning，不阻断（存量手写 HTML 仍可预览）。
+/// 3. **跳转目标必须存在于项目内**——`data-prototype-link` 指向不存在的屏幕时，
+///    原型点不通。调用方传入已知屏幕 slug 集合后本规则才生效。
+public struct PrototypeHTMLLinter: Sendable {
+    public let maximumUTF8Bytes: Int
+
+    public init(maximumUTF8Bytes: Int = 2_000_000) {
+        self.maximumUTF8Bytes = maximumUTF8Bytes
+    }
+
+    /// 校验一屏 HTML。
+    ///
+    /// - Parameters:
+    ///   - html: 完整 HTML 文档。
+    ///   - documentDirectory: 屏幕目录；提供时校验本地资源路径安全与存在性。
+    ///   - knownScreenIDs: 项目内已知屏幕 slug；提供时校验跳转目标有效性。
+    ///                      传 `nil` 表示跳过该规则（例如新建项目首屏尚无同伴）。
+    public func lint(
+        html: String,
+        documentDirectory: URL? = nil,
+        knownScreenIDs: Set<String>? = nil
+    ) -> PrototypeLintReport {
+        var issues: [PrototypeLintIssue] = []
+        let lower = html.lowercased()
+
+        func add(_ severity: PrototypeLintSeverity, _ code: String, _ message: String) {
+            issues.append(.init(severity: severity, code: code, message: message))
+        }
+
+        if html.utf8.count > maximumUTF8Bytes {
+            add(.error, "html_too_large", "HTML exceeds the \(maximumUTF8Bytes)-byte limit.")
+        }
+        if !lower.contains("<!doctype html") || !lower.contains("<html") || !lower.contains("</html>") {
+            add(.error, "incomplete_document", "HTML must be a complete document with a doctype and html element.")
+        }
+        if !lower.contains("name=\"viewport\"") && !lower.contains("name='viewport'") {
+            add(.error, "missing_viewport", "HTML must declare a viewport meta tag.")
+        }
+        if lower.range(of: #"<\s*script\b"#, options: .regularExpression) != nil {
+            add(.error, "script_forbidden", "Scripts are not allowed. Declare screen jumps with data-prototype-link instead; the host injects the navigation script.")
+        }
+        if lower.range(of: #"<\s*iframe\b"#, options: .regularExpression) != nil {
+            add(.error, "iframe_forbidden", "Iframes are not allowed.")
+        }
+        if lower.range(of: #"https?://"#, options: .regularExpression) != nil || lower.contains("//cdn.") {
+            add(.error, "remote_resource", "Remote resources are not allowed; import files into the project assets directory.")
+        }
+        if lower.range(of: #"@import\s"#, options: .regularExpression) != nil {
+            add(.error, "css_import_forbidden", "CSS @import is not allowed.")
+        }
+
+        // 原型特有：允许动效，但提醒导出时会关闭。
+        if lower.range(of: #"(?:animation|transition)\s*:"#, options: .regularExpression) != nil {
+            add(.warning, "motion_present", "Motion is disabled during export; keep it decorative only.")
+        }
+        if lower.range(of: #"overflow\s*:\s*hidden"#, options: .regularExpression) == nil {
+            add(.warning, "overflow_not_hidden", "Set overflow: hidden on the page root to avoid accidental scrolling inside the device frame.")
+        }
+        if lower.range(of: #"background(?:-color)?\s*:"#, options: .regularExpression) == nil {
+            add(.warning, "background_missing", "Declare an opaque page background so the exported screen is not transparent.")
+        }
+        if lower.range(of: PrototypeHTMLAttributes.block + #"\s*="#, options: .regularExpression) == nil {
+            add(.warning, "no_block_annotations", "No data-block annotations found. Add data-block and data-block-label to major regions so they can be edited from the preview.")
+        }
+
+        validateJumpTargets(html: html, knownScreenIDs: knownScreenIDs, add: add)
+        validateLocalResources(html: html, documentDirectory: documentDirectory, add: add)
+
+        return PrototypeLintReport(issues: issues)
+    }
+
+    // MARK: - 跳转目标
+
+    private func validateJumpTargets(
+        html: String,
+        knownScreenIDs: Set<String>?,
+        add: (PrototypeLintSeverity, String, String) -> Void
+    ) {
+        guard let knownScreenIDs else { return }
+        let targets = PrototypeHotspot.declaredTargets(inHTML: html)
+        guard !targets.isEmpty else {
+            add(.warning, "no_navigation", "This screen declares no data-prototype-link, so nothing is clickable from it.")
+            return
+        }
+        for target in targets.sorted() where !knownScreenIDs.contains(target) {
+            add(.error, "unknown_link_target", "data-prototype-link=\"\(target)\" does not match any screen in this project.")
+        }
+    }
+
+    // MARK: - 本地资源
+
+    private func validateLocalResources(
+        html: String,
+        documentDirectory: URL?,
+        add: (PrototypeLintSeverity, String, String) -> Void
+    ) {
+        for path in Self.localResourcePaths(in: html) {
+            guard !path.hasPrefix("data:") && !path.hasPrefix("#") else { continue }
+            let decoded = path.removingPercentEncoding ?? path
+            if decoded.hasPrefix("/") || decoded.contains("..") {
+                add(.error, "unsafe_asset_path", "Asset path escapes the screen directory: \(path)")
+                continue
+            }
+            guard let documentDirectory else { continue }
+            let url = documentDirectory.appendingPathComponent(decoded).standardizedFileURL
+            let root = documentDirectory.standardizedFileURL.path
+            guard url.path == root || url.path.hasPrefix(root + "/") else {
+                add(.error, "unsafe_asset_path", "Asset path escapes the screen directory: \(path)")
+                continue
+            }
+            if !FileManager.default.fileExists(atPath: url.path) {
+                add(.error, "missing_asset", "Referenced asset does not exist: \(path)")
+            }
+        }
+    }
+
+    private static func localResourcePaths(in html: String) -> [String] {
+        let pattern = #"(?:src|href)\s*=\s*[\"']([^\"']+)[\"']"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { return [] }
+        let range = NSRange(html.startIndex..., in: html)
+        return regex.matches(in: html, range: range).compactMap { match in
+            guard match.numberOfRanges > 1, let valueRange = Range(match.range(at: 1), in: html) else { return nil }
+            return String(html[valueRange])
+        }
+    }
+}

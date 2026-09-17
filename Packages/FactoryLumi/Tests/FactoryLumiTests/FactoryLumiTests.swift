@@ -492,6 +492,8 @@ struct FactoryLumiTests {
         try kernel.start(plugins: DefaultPluginFactory().makePlugins())
         #expect(kernel.lifecycleState == .running)
         #expect(kernel.resolveProvider((any ThemeProviding).self)?.themes.count == 22)
+        // 设计类插件（图标/促销图/思维导图/简历/原型）均为 disabledByDefault，
+        // 未启用时不贡献 ActivityBar 条目，因此此处只统计默认启用的插件。
         #expect(kernel.resolveProvider((any ActivityBarProviding).self)?.items.count == 10)
     }
 

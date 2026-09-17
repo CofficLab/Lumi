@@ -40,6 +40,7 @@ import PluginActivityBar
 import PluginAppIconDesigner
 import PluginAppStoreConnect
 import PluginAppStorePromoDesigner
+import PluginPrototypeDesigner
 import PluginAskUser
 import PluginCaffeinate
 import PluginChatFileAttachment
@@ -190,6 +191,7 @@ public struct DefaultPluginFactory: PluginFactory {
             AppStorePromoDesignerPlugin(),
             MindMapDesignerPlugin(),
             ResumeDesignerPlugin(),
+            PrototypeDesignerPlugin(),
             // ActivityBar 自定义实现：替换 ProviderFactory 预注册的 DefaultActivityBarProviding，
             // 必须在所有 onBoot 中调用 addItems 的业务插件（如 ResumeDesignerPlugin order=81）之前。
             PluginActivityBar(),
