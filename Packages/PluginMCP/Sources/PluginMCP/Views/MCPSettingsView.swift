@@ -204,7 +204,7 @@ struct MCPSettingsView: View {
                     .truncationMode(.middle)
             }
             Spacer(minLength: 4)
-            Text("\(manager.connectedToolCount(serverID: server.id)) tools")
+            Text(String(format: MCPText.string("tools-count"), manager.connectedToolCount(serverID: server.id)))
                 .font(.appCaption)
                 .foregroundStyle(theme.textSecondary)
             AppToggleRow(
@@ -259,7 +259,7 @@ struct MCPSettingsView: View {
         case .error: color = .red
         case .disconnected: color = theme.textSecondary
         }
-        return Text(state.displayName)
+        return Text(MCPText.string(state.displayName))
             .font(.appCaption)
             .foregroundStyle(color)
             .padding(.horizontal, 6)
@@ -349,10 +349,10 @@ struct MCPSettingsView: View {
     private func riskPicker(selection: Binding<CommandRiskLevel?>, compact: Bool) -> some View {
         Picker("", selection: selection) {
             Text(MCPText.string("Auto")).tag(CommandRiskLevel?.none)
-            Text("Safe").tag(CommandRiskLevel?.some(.safe))
-            Text("Low").tag(CommandRiskLevel?.some(.low))
-            Text("Medium").tag(CommandRiskLevel?.some(.medium))
-            Text("High").tag(CommandRiskLevel?.some(.high))
+            Text(MCPText.string("Safe")).tag(CommandRiskLevel?.some(.safe))
+            Text(MCPText.string("Low")).tag(CommandRiskLevel?.some(.low))
+            Text(MCPText.string("Medium")).tag(CommandRiskLevel?.some(.medium))
+            Text(MCPText.string("High")).tag(CommandRiskLevel?.some(.high))
         }
         .pickerStyle(.menu)
         .labelsHidden()

@@ -44,10 +44,10 @@ public enum MCPProcessTransport {
 
     private static func prepareStdio(config: MCPServerConfig) throws -> MCPPreparedTransport {
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: config.command)
-        if !config.arguments.isEmpty {
-            process.arguments = config.arguments
-        }
+        // 经 /usr/bin/env 启动：`command` 可为 PATH 中的命令名（xcrun / npx / uvx…），
+        // 也保留绝对路径用法（env 会直接透传）。
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = [config.command] + config.arguments
         if !config.environment.isEmpty {
             var environment = ProcessInfo.processInfo.environment
             for (key, value) in config.environment {

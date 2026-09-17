@@ -192,21 +192,25 @@ struct MCPServerConfig: Codable, Sendable {
   onShutdown 全部清理。
 - 验证：`swift test` 全量 + App 集成构建。
 
-### Phase 3：Xcode 预设 + 真实集成验证（首个用例闭环）
+### Phase 3：Xcode 预设 + 真实集成验证（首个用例闭环）✅ 已完成
 
-**Task 3.1 — 内置预设落库**：注册表预置 `Xcode (native)` 与模板。
+**Task 3.1 — 内置预设落库** ✅：注册表首次初始化预置 `Xcode (native)`（`xcrun mcpbridge`，禁用态）+ 模板一键添加。
 
-**Task 3.2 — 真实链路验证（本机 Xcode 27.0）**
-- 前置：Xcode 打开 Lumi.xcodeproj，Intelligence 授权开启。
-- 步骤：启用 → listTools 20 工具（对照调研清单）→ `XcodeRead`/`XcodeGrep`
-  （safe 直执行）→ `BuildProject`（high 审批）→ `GetBuildLog` → `XcodeListNavigatorIssues`。
-- 把实际工具清单与默认分级表回写 `MCPPermissionPolicy`。
+**Task 3.2 — 真实链路验证（本机 Xcode 27.0 (27A266a) 实测完成）** ✅
+- 前置：Xcode 打开 Lumi.xcodeproj，Intelligence → Model Context Protocol 开启。
+- 实测（`/tmp/mcp-probe`，KitMCP stdio 直连）：
+  - `connect`（initialize 握手）→ `listTools`：**54 个工具**（调研预期 20 个，Xcode 27 新增 DeviceInteraction*、StringCatalog*、XcodeNewProject/NewTarget、RunProject/StopProject、RunCodeSnippet、AddEntitlement/AddInfoPlist、GetConsoleOutput、GetCrashIssueLogs 等）；
+  - `XcodeOpenWorkspace` → 打开 Lumi.xcodeproj，返回 `workspaceIdentifier`；
+  - `XcodeListWorkspaces` / `XcodeGlob` / `XcodeGrep` / `XcodeRead` 全部成功（XcodeRead 读 LumiApp.swift 167 行，cat -n + JSON 编码，与 LLM 视角一致）。
+- **关键实测发现（写回实现）**：
+  1. **Xcode 27 授权是逐 agent + 逐工程文件夹**：首次调用须先 `XcodeOpenWorkspace`/`XcodeNewProject` 触发 Xcode UI 授权（MCP 菜单栏图标），或 `sudo xcrun mcp-server approve <id>`；未授权调用返回 "This agent isn't approved…" 错误。
+  2. 多数工具（XcodeRead/Grep/Glob 等）要求 `workspaceIdentifier` 参数（来自 XcodeOpenWorkspace/ListWorkspaces）。
+  3. `xcode-select` 指向 Xcode 时 `xcrun mcpbridge` 可用；`process.executableURL = fileURLWithPath(command)` 不解析 PATH → KitMCP 改用 `/usr/bin/env` 启动（兼容 xcrun/npx/uvx）。
+- 54 个真实工具全量回写 `MCPPermissionPolicy.exactRuleTable`（safe 23 / low 1 / medium 6 / high 24）。
 
-**Task 3.3 — 故障与降级**
-- 覆盖：Xcode 未运行 / 未授权 / 无打开工程（missing tabIdentifier）/ 构建超时 /
-  `xcrun --find mcpbridge` 失败（指向 Command Line Tools）。
-- 每类给可操作错误文案 + 设置页引导；禁止静默失败。
-- 验证：构造各故障场景，断言错误信息。
+**Task 3.3 — 故障与降级** ✅
+- 覆盖：未授权（agent/folder）、等待批准、无打开工作区，`MCPToolAdapter.friendlyHint` 识别 mcpbridge 已知错误并追加中文可操作提示（透传原文）；未连接/进程退出/传输错误已有中文包装。
+- 测试：18+3 本地化测试全绿。
 
 ### Phase 4：可选增强（不阻塞主线）
 

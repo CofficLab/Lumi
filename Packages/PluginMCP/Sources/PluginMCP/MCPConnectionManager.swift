@@ -12,11 +12,12 @@ public enum MCPServerConnectionState: Sendable, Equatable {
     case error(String)
 
     public var displayName: String {
+        // 本地化 key（英文兜底），UI 渲染时经 MCPText 翻译。
         switch self {
-        case .disconnected: return "已断开"
-        case .connecting: return "连接中…"
-        case .connected: return "运行中"
-        case .error: return "错误"
+        case .disconnected: return "Disconnected"
+        case .connecting: return "Connecting"
+        case .connected: return "Running"
+        case .error: return "Error"
         }
     }
 }

@@ -192,4 +192,13 @@ struct MCPToolAdapterTests {
             )
         }
     }
+
+    @Test("mcpbridge 已知错误翻译为可操作提示")
+    func friendlyErrorHints() {
+        #expect(MCPToolAdapter.friendlyHint(for: "This agent isn't approved to use Xcode's tools yet.") != nil)
+        #expect(MCPToolAdapter.friendlyHint(for: "Xcode is waiting for the user to approve this request") != nil)
+        #expect(MCPToolAdapter.friendlyHint(for: "No workspace is currently open") != nil)
+        // 未知名错误不产生提示。
+        #expect(MCPToolAdapter.friendlyHint(for: "something else happened") == nil)
+    }
 }

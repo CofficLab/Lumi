@@ -20,21 +20,49 @@ struct MCPPermissionPolicyTests {
         )
     }
 
-    @Test("Xcode 精确规则表逐项匹配")
+    @Test("Xcode 精确规则表逐项匹配（本机 27.0 实测 54 工具）")
     func xcodeExactTable() {
         let policy = MCPPermissionPolicy()
+        // 只读查询
         #expect(policy.level(for: tool("XcodeRead")) == .safe)
         #expect(policy.level(for: tool("XcodeGrep")) == .safe)
-        #expect(policy.level(for: tool("XcodeListWindows")) == .safe)
+        #expect(policy.level(for: tool("XcodeGlob")) == .safe)
+        #expect(policy.level(for: tool("XcodeLS")) == .safe)
+        #expect(policy.level(for: tool("XcodeListWorkspaces")) == .safe)
+        #expect(policy.level(for: tool("XcodeListSchemes")) == .safe)
         #expect(policy.level(for: tool("GetBuildLog")) == .safe)
+        #expect(policy.level(for: tool("GetTestList")) == .safe)
+        #expect(policy.level(for: tool("GetConsoleOutput")) == .safe)
+        #expect(policy.level(for: tool("GetTargetBuildSettings")) == .safe)
+        #expect(policy.level(for: tool("XcodeRefreshCodeIssuesInFile")) == .safe)
+        #expect(policy.level(for: tool("DocumentationSearch")) == .safe)
+        #expect(policy.level(for: tool("StringCatalogRead")) == .safe)
+        #expect(policy.level(for: tool("LocalizationPlanner")) == .safe)
+        // 低风险
+        #expect(policy.level(for: tool("RenderPreview")) == .low)
+        // 中风险：状态切换
         #expect(policy.level(for: tool("XcodeMakeDir")) == .medium)
+        #expect(policy.level(for: tool("XcodeOpenWorkspace")) == .medium)
+        #expect(policy.level(for: tool("XcodeSwitchScheme")) == .medium)
+        #expect(policy.level(for: tool("XcodeSwitchRunDestination")) == .medium)
+        #expect(policy.level(for: tool("XcodeCloseWorkspace")) == .medium)
+        // 高风险：构建 / 运行 / 写 / 破坏
         #expect(policy.level(for: tool("BuildProject")) == .high)
+        #expect(policy.level(for: tool("RunProject")) == .high)
         #expect(policy.level(for: tool("RunAllTests")) == .high)
+        #expect(policy.level(for: tool("RunSomeTests")) == .high)
+        #expect(policy.level(for: tool("RunCodeSnippet")) == .high)
+        #expect(policy.level(for: tool("InvokeDebuggerCommand")) == .high)
         #expect(policy.level(for: tool("XcodeWrite")) == .high)
         #expect(policy.level(for: tool("XcodeUpdate")) == .high)
         #expect(policy.level(for: tool("XcodeRM")) == .high)
         #expect(policy.level(for: tool("XcodeMV")) == .high)
-        #expect(policy.level(for: tool("ExecuteSnippet")) == .high)
+        #expect(policy.level(for: tool("XcodeNewProject")) == .high)
+        #expect(policy.level(for: tool("AddEntitlement")) == .high)
+        #expect(policy.level(for: tool("AddInfoPlist")) == .high)
+        #expect(policy.level(for: tool("StringCatalogEdit")) == .high)
+        #expect(policy.level(for: tool("DeviceInteractionSynthesize")) == .high)
+        #expect(policy.level(for: tool("DeviceInteractionInstallAndRun")) == .high)
     }
 
     @Test("未知工具默认 high，可配置")

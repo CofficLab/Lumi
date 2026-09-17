@@ -98,7 +98,15 @@ public struct MCPToolAdapter: SuperAgentTool {
 
         do {
             let result = try await session.callTool(name: descriptor.name, arguments: mcpArguments)
-            return MCPToolAdapter.mapResult(result)
+            var mapped = MCPToolAdapter.mapResult(result)
+            if result.isError, let hint = MCPToolAdapter.friendlyHint(for: result.text) {
+                mapped = ToolCallResult(
+                    content: "\(result.text)\n\n💡 \(hint)",
+                    images: mapped.images,
+                    isError: true
+                )
+            }
+            return mapped
         } catch let error as MCPClientError {
             throw ToolExecutionError.executionFailed(
                 toolName: name,
@@ -110,6 +118,26 @@ public struct MCPToolAdapter: SuperAgentTool {
                 reason: "MCP 调用失败：\(error.localizedDescription)"
             )
         }
+    }
+
+    // MARK: - Error Hints
+
+    /// 把服务器返回的已知错误模式翻译成可操作的中文提示（保留原文，追加建议）。
+    /// 覆盖实测的 Xcode mcpbridge 故障路径：未授权 / 等待批准 / 未打开工作区。
+    public static func friendlyHint(for text: String) -> String? {
+        let lower = text.lowercased()
+        if lower.contains("isn't approved") || lower.contains("not approved")
+            || lower.contains("approve this agent") || lower.contains("approve this request") {
+            return "尚未获得 Xcode 授权。先在 Lumi 的 MCP 设置中启用该服务器，并通过工具打开 Xcode 工程以触发授权，再在 Xcode 菜单栏的 MCP 图标中批准访问。"
+        }
+        if lower.contains("waiting for the user to approve") || lower.contains("pending approvals") {
+            return "Xcode 正在等待你批准：请在 Xcode 菜单栏的 MCP 图标中批准本 Agent 与工程文件夹访问，然后重试。"
+        }
+        if lower.contains("no workspace") || lower.contains("no project")
+            || lower.contains("open workspaces: none") || lower.contains("must open") {
+            return "当前没有打开的 Xcode 工作区。请先用工具打开工程（XcodeOpenWorkspace），或手动在 Xcode 中打开工程后重试。"
+        }
+        return nil
     }
 
     // MARK: - Mapping

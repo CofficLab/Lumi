@@ -40,6 +40,7 @@ let package = Package(
             name: "PluginMCPTests",
             dependencies: [
                 "PluginMCP",
+                .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "MCP", package: "swift-sdk"),
             ],
             path: "Tests/PluginMCPTests"

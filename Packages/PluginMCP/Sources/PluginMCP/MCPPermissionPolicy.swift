@@ -6,7 +6,7 @@ import KitMCP
 ///
 /// 判定顺序（前序命中即返回）：
 /// 1. 用户单工具覆盖（`MCPServerRegistry.riskOverride`）；
-/// 2. 精确规则表（Xcode 内置预设逐项列出）；
+/// 2. 精确规则表（Xcode 原生 mcpbridge 全量工具逐项列出，本机 Xcode 27.0 实测 54 个）；
 /// 3. 注解启发：`destructiveHint == true` → `high`（破坏性优先）；
 /// 4. 注解启发：`readOnlyHint == true` → `safe`；
 /// 5. 名称关键词启发（危险 / 写 / 读）；
@@ -34,34 +34,72 @@ public struct MCPPermissionPolicy: Sendable {
 
     // MARK: - Exact Rule Table
 
-    /// 精确规则表：按工具名精确匹配（Xcode 原生 mcpbridge 预设）。
-    /// 参考调研文档 5 节工具清单。
+    /// 精确规则表：按工具名精确匹配。
+    ///
+    /// 基于本机 Xcode 27.0 (27A266a) `xcrun mcpbridge` 实测的 54 个工具，
+    /// 按语义分类：只读查询 safe / 轻副作用 low / 状态切换与写操作 medium /
+    /// 构建运行调试与文件破坏 high。
     public static let exactRuleTable: [String: CommandRiskLevel] = [
-        // 文件操作
+        // ── 只读：文件与代码检索 ──
         "XcodeRead": .safe,
         "XcodeGrep": .safe,
         "XcodeGlob": .safe,
         "XcodeLS": .safe,
+        "XcodeRefreshCodeIssuesInFile": .safe,
+        // ── 只读：工作区与目标查询 ──
+        "XcodeListWorkspaces": .safe,
+        "XcodeListSchemes": .safe,
+        "XcodeListTargets": .safe,
+        "XcodeListTemplates": .safe,
+        "XcodeListTestPlans": .safe,
+        "XcodeListRunDestinations": .safe,
+        // ── 只读：构建与诊断查询 ──
+        "GetBuildLog": .safe,
+        "GetConsoleOutput": .safe,
+        "GetTestList": .safe,
+        "GetFileCompilerFlags": .safe,
+        "GetTargetBuildSettings": .safe,
+        "GetCrashIssueLogs": .safe,
+        "GetTopCrashIssues": .safe,
+        "GetFieldPerformanceIssueLogs": .safe,
+        "GetTopFieldPerformanceIssues": .safe,
+        "DocumentationSearch": .safe,
+        "StringCatalogRead": .safe,
+        "StringCatalogContext": .safe,
+        "LocalizationPlanner": .safe,
+        // ── 低风险：渲染/预览类 ──
+        "RenderPreview": .low,
+        // ── 中风险：工作区状态切换 / 非破坏性写 ──
         "XcodeMakeDir": .medium,
+        "XcodeCloseWorkspace": .medium,
+        "XcodeSwitchScheme": .medium,
+        "XcodeSwitchRunDestination": .medium,
+        "XcodeSwitchTestPlan": .medium,
+        "XcodeOpenWorkspace": .medium,
+        // ── 高风险：文件破坏 / 构建运行 / 调试 / 设备交互 ──
         "XcodeWrite": .high,
         "XcodeUpdate": .high,
         "XcodeRM": .high,
         "XcodeMV": .high,
-        // 构建与测试
-        "GetBuildLog": .safe,
-        "GetTestList": .safe,
+        "XcodeNewProject": .high,
+        "XcodeNewTarget": .high,
+        "AddEntitlement": .high,
+        "AddInfoPlist": .high,
+        "StringCatalogEdit": .high,
+        "UpdateFileCompilerFlags": .high,
+        "UpdateTargetBuildSetting": .high,
         "BuildProject": .high,
+        "RunProject": .high,
+        "StopProject": .high,
         "RunAllTests": .high,
         "RunSomeTests": .high,
-        // 诊断
-        "XcodeListNavigatorIssues": .safe,
-        "XcodeRefreshCodeIssuesInFile": .safe,
-        // 智能
-        "RenderPreview": .low,
-        "DocumentationSearch": .safe,
-        "ExecuteSnippet": .high,
-        // 工作区
-        "XcodeListWindows": .safe,
+        "RunCodeSnippet": .high,
+        "InvokeDebuggerCommand": .high,
+        "DeviceInteractionStartSession": .high,
+        "DeviceInteractionStartWorkspaceSession": .high,
+        "DeviceInteractionEndSession": .high,
+        "DeviceInteractionInstallAndRun": .high,
+        "DeviceInteractionSynthesize": .high,
     ]
 
     // MARK: - Heuristics
