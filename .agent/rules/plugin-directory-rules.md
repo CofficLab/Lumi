@@ -30,6 +30,9 @@ LumiApp/Plugins/<PluginName>/          # 或 LumiApp/Plugins-Agent/<PluginName>/
 ├── Providers/                         # *Providing 契约的实现（按需）
 │   └── *Provider.swift
 │
+├── LLMProviders/                      # LLM 供应商实现（仅 PluginLLMProvider*）
+│   └── *Provider.swift
+│
 ├── Models/                            # 数据模型
 │   └── *.swift
 │
@@ -138,9 +141,30 @@ public final class LLMNetworkProviderAdapter: LLMNetworkProviding {
 - 每个 provider 一个文件，文件名与类型名一致（如 `NetworkProvider.swift` → `final class NetworkProvider`）。
 - 类型名以 `Provider` 结尾；纯桥接类型以 `Adapter` 结尾。
 - 依赖的方向必须是「插件 → 内核/共享协议包」，不得反向（见 [内核与插件边界规范](./core-plugin-boundary-rules.md)）。
-- **LLM 供应商插件**（`PluginLLMProvider*`）用于产出 `SuperLLMProvider` 实现，其目录选择沿用各自现状，暂不适用本节。
 
 **现行示例**：`PluginActivityBar/Providers/ActivityBarProvider.swift`、`PluginMessageSender/Providers/MessageSender.swift`、`PluginToolbar/Providers/ToolbarProvider.swift`。
+
+### LLMProviders/
+
+**LLM 供应商插件**（`PluginLLMProvider*`）**必须**建立 `LLMProviders/` 目录，并将**所有供应商实现文件**放入其中。这是 `Providers/` 在 LLM 供应商场景下的专用目录名，用于按供应商区分实现。
+
+```
+PluginLLMProviderAliyun/
+├── AliyunProviderPlugin.swift          # 插件入口，留在根目录
+└── LLMProviders/
+    ├── AliyunProvider.swift            # 供应商实现
+    └── AliyunTokenPlanProvider.swift   # 供应商实现（同一插件的第二个供应商）
+```
+
+**放入 `LLMProviders/`**：实现 `VendorLLMProvider` / `SuperLLMProvider` / `LumiLLMProvider` 等供应商协议的类型。
+
+**留在原位置**（不得放入）：插件入口 `*Plugin.swift`、CLI / 输出解析等辅助类型、下载器 / Runtime / 模型注册等基础设施、`Views/`、`ViewModels/`、`Capabilities/` 等。
+
+**最佳实践**：
+
+- 每个供应商一个文件，文件名与类型名一致（如 `AliyunProvider.swift` → `final class AliyunProvider`）。
+- 若一个文件同时包含供应商实现与其配置 / 模型 / 错误类型，**整文件移入** `LLMProviders/`，不拆分。
+- 一个插件可含多个供应商（如 `AliyunProvider` + `AliyunTokenPlanProvider`），全部放入同一 `LLMProviders/`。
 
 ### Models/
 
@@ -362,6 +386,10 @@ struct <PluginName>Plugin: SuperPlugin, SuperLog {
 ├── Providers/
 │   ├── ExampleProvider.swift
 │   └── ExampleAdapter.swift
+│
+├── LLMProviders/
+│   ├── ExampleProvider.swift
+│   └── AnotherProvider.swift
 │
 ├── Models/
 │   ├── ModelA.swift
