@@ -119,6 +119,8 @@ final class VM: ObservableObject, SuperLog {
     let credentialStore: CredentialStore
     private(set) var client: ConnectClient
     let localStore: AppStoreConnectPluginLocalStore
+    var isLoadingApps = false
+    var isLoadingVersions = false
 
     init(
         credentialStore: CredentialStore = .shared,

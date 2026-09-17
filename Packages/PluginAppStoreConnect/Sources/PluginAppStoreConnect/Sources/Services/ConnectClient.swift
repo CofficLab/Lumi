@@ -52,6 +52,7 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
     private let credentialsProvider: @Sendable () -> AppStoreConnectCredentials
     private let network: (any NetworkProviding)?
     private let cache: ConnectAPICache
+    private static let requestTimeout: TimeInterval = 30
     var fetchPolicy: ConnectFetchPolicy = .cacheFirst
 
     init(
@@ -137,6 +138,7 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
 
         var request = URLRequest(url: url)
         request.httpMethod = method
+        request.timeoutInterval = Self.requestTimeout
         request.setValue("Bearer \(try makeJWT())", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let body {
@@ -194,6 +196,7 @@ final class ConnectClient: @unchecked Sendable, SuperLog {
 
         var request = URLRequest(url: url)
         request.httpMethod = method
+        request.timeoutInterval = Self.requestTimeout
         request.setValue("Bearer \(try makeJWT())", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let body {
