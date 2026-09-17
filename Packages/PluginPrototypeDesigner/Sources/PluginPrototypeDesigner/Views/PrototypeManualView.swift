@@ -218,7 +218,8 @@ struct PrototypeManualView: View {
     /// 侧边栏屏幕行：序号 + 单线。
     private func screenRowMock(indent: CGFloat) -> some View {
         HStack(spacing: 6) {
-            Text("1")
+            // 纯装饰性序号，非文案：用 verbatim 避免被当作可翻译串提取。
+            Text(verbatim: "1")
                 .font(.system(size: 8, design: .monospaced))
                 .foregroundStyle(theme.textSecondary)
             lineMock(width: 56)

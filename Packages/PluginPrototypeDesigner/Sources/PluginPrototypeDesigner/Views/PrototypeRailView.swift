@@ -24,7 +24,8 @@ public struct PrototypeRailView: View {
                         .font(.appSectionTitle)
                         .foregroundStyle(theme.textPrimary)
                     Spacer(minLength: 0)
-                    Text("\(workspace.projects.count)")
+                    // 计数是数据而非文案。
+                    Text(verbatim: "\(workspace.projects.count)")
                         .font(.appMonoMicro)
                         .foregroundStyle(theme.textTertiary)
                     AppIconButton(systemImage: "arrow.clockwise", action: workspace.reload)

@@ -25,7 +25,8 @@ struct PrototypeScreenRowView: View {
             workspace.select(projectID: project.id, screenID: screen.id)
         }) {
             HStack(spacing: 8) {
-                Text("\(screen.order + 1)")
+                // 屏幕序号是数据而非文案。
+                Text(verbatim: "\(screen.order + 1)")
                     .font(.appMonoMicro)
                     .foregroundStyle(theme.textTertiary)
                 Text(screen.title)

@@ -65,7 +65,9 @@ struct PrototypeTreeView: View {
                         .font(.appMicroEmphasized)
                         .foregroundStyle(theme.textPrimary)
                         .lineLimit(1)
-                    Text("\(project.screens.count) \(PrototypeLocalization.string("screens")) · \(project.style.rawValue) · \(project.device.kind.displayName)")
+                    // 由已本地化片段与数据拼成的摘要，不走 LocalizedStringKey，
+                    // 否则会被当作待翻译字符串提取出无意义的插值 key。
+                    Text(verbatim: "\(project.screens.count) \(PrototypeLocalization.string("screens")) · \(project.style.rawValue) · \(project.device.kind.displayName)")
                         .font(.footnote)
                         .foregroundStyle(theme.textTertiary)
                         .lineLimit(1)
