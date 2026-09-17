@@ -12,6 +12,7 @@ struct BuildSection: View {
             sectionHeader
             content
         }
+        .padding(.top, 12)
     }
 
     // MARK: - Header
