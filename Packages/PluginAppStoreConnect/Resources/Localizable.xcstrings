@@ -60,6 +60,9 @@
         }
       }
     },
+    "%lld%%" : {
+
+    },
     "A private key is stored in Keychain. Saving replaces it." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2695,6 +2698,9 @@
           }
         }
       }
+    },
+    "双击查看大图" : {
+
     }
   },
   "version" : "1.0"
