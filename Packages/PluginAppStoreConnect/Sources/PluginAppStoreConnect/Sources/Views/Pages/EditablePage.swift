@@ -10,12 +10,6 @@ struct EditablePage: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    VersionActionsBar(
-                        version: version,
-                        viewModel: viewModel,
-                        embedded: true
-                    )
-
                     BuildSection(viewModel: viewModel, version: version)
 
                     ScreenshotsSection(
@@ -30,6 +24,5 @@ struct EditablePage: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.top, 16)
     }
 }
