@@ -1,6 +1,6 @@
 # Lumi 接入 ACP（Agent Client Protocol）实施方案
 
-> 状态：草案（已确认：lumi-acp 采用方案 B，内嵌 Lumi.app 分发）
+> 状态：M2 握手已通过（2026-09-18）；lumi-acp 采用方案 B，内嵌 Lumi.app 分发
 > 目标：让 Lumi 以 **ACP Agent** 身份接入外部编辑器（VS Code / Zed 等），使外部编辑器中可直接使用 Lumi 的 agent 能力（模型路由、工具系统、项目智能）。
 > 关联文档：[ACP Introduction](https://agentclientprotocol.com/get-started/introduction)、[ACP Protocol Overview](https://agentclientprotocol.com/protocol/overview)、[ACP Prompt Turn](https://agentclientprotocol.com/protocol/prompt-turn)
 
@@ -377,15 +377,20 @@ sequenceDiagram
 ### M1 — 协议包（ProviderACP）✅ 已完成（2026-09-17）
 - [x] `ACPJSONRPC`（实现为 `ACPMessage`）编解码 + 单测（请求/响应/通知/错误、非法帧拒绝、`result: null` 语义）
 - [x] `ACPTypes` / `ACPCapabilities` 完整类型 + 单测（ContentBlock 五种、SessionUpdate 八种变体、ToolCall、Plan、StopReason、能力协商）
-- [x] `StdioTransport`（newline-delimited 帧、行缓冲、EOF 处理）——**已实现，传输层单测待 M2 联调覆盖**（需管道模拟 stdin/stdout）
+- [x] `StdioTransport`（newline-delimited 帧、行缓冲、EOF 处理）——**已实现；传输层由 M2 端到端握手联调覆盖**（管道注入 initialize + session/new 帧验证）
 - **验收**：`swift test --package-path Packages/ProviderACP` 全绿（40/40，0 失败）；官方 schema 的 JSON 样例双向编解码通过。
 - **实现说明**：信封类型命名为 `ACPMessage`（含 request/response/error/notification 四态），任意 JSON 载荷用 `JSONValue`；工厂方法 `makeRequest` / `makeNotification` / `makeResponse` 提供类型化构造。
 
-### M2 — headless 入口 + 握手
-- [ ] `lumi-acp` target 编译运行，`KernelFactory.makeKernel()` 在无 UI 环境成功
-- [ ] `initialize` 握手（版本/能力协商）通过
-- [ ] `session/new` / `sessionId ↔ conversationID` 映射
-- **验收**：用 ACP 测试客户端（或 `echo` 帧脚本）完成完整握手；`session/new` 后 `ConversationManaging.conversations` 出现新会话。
+### M2 — headless 入口 + 握手 ✅ 握手已通过（2026-09-18）
+- [x] `lumi-acp` 原型（`Packages/ACPBootstrap` 可执行入口）编译运行，`KernelFactory.makeKernel()` 在无 NSApplication 环境成功启动完整插件目录
+- [x] `initialize` 握手（版本/能力协商）通过
+- [x] `session/new` / `sessionId ↔ conversationID` 映射（`PluginACP.ACPSessionManager`）
+- **验收**：echo 帧脚本完成 initialize + session/new 完整握手；新会话以 cwd 作为 projectPath 创建。
+- **验证记录（2026-09-18）**：
+  - R1 冒烟：`ACPBootstrap` 输出 `ACP_BOOTSTRAP_OK agentLoop=AgentLoopManager conversations=0 tools=60`——无 GUI 环境下 `makeKernel()` 全量插件启动成功。
+  - 端到端握手：管道注入 initialize + session/new 两帧，stdout 返回协议版本 1 的能力协商结果与 `sess_<32hex>` 会话 ID；`PluginACP` 14/14 单测全绿。
+- **实现说明**：`PluginACP`（SuperPlugin，order=250）组合 `ACPSessionManager`（会话映射）+ `ACPProtocolHandler`（方法分发）+ `ACPStdioServer`（MainActor 消息循环）；`StdioTransport` 增补 `onEOF` 回调供宿主干净退出。
+- **遗留**：正式 `lumi-acp` Xcode target（内嵌 app 分发、随 DMG+Sparkle 发布）尚未创建；`session/prompt` 等回合逻辑属 M3。
 
 ### M3 — 回合与流式
 - [ ] `session/prompt` 全流程：文本入参 → `runTurn` → `session/update` 流式 → `stopReason`
@@ -410,7 +415,7 @@ sequenceDiagram
 
 | 编号 | 风险/问题 | 影响 | 缓解 |
 | --- | --- | --- | --- |
-| R1 | 部分插件在无 `NSApplication` 环境可能依赖 AppKit 生命周期 | headless 启动崩溃或功能缺失 | M2 先行验证：最小插件集启动冒烟测试；必要时为 headless 建立最小 AppKit 上下文（`NSApplication.shared` 不展示 UI） |
+| R1 | 部分插件在无 `NSApplication` 环境可能依赖 AppKit 生命周期 | headless 启动崩溃或功能缺失 | ✅ 已排除（2026-09-18）：`ACPBootstrap` 冒烟证明 `makeKernel()` 无 GUI 全量启动成功，agent loop 与 60 个工具可用 |
 | R2 | `AgentLoopEvent` 无逐 token 流式事件（需核对 `ProviderMessageStreaming` 回调粒度） | 客户端只见分段帧，流式体验打折 | 桥接层对接 `ProviderMessageStreaming` 原始回调；实在不可得则整段发送 |
 | R3 | 内核为 `@MainActor`，stdio 事件循环在其他线程 | 数据竞争 / 死锁 | 桥接层统一 `@MainActor` 汇聚；传输线程仅做字节搬运；响应回写经 `Task { @MainActor in }` |
 | R4 | 多连接（GUI + CLI 同时跑）访问同一 `ConversationManaging` 存储 | 会话状态竞争 | MVP 限定单一 stdio 连接；远程模式（三期）引入连接级会话命名空间 |
