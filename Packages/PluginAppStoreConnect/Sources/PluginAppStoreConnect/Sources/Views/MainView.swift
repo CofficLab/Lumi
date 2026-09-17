@@ -12,7 +12,7 @@ struct MainView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if viewModel.page.showsTopBar {
+            if viewModel.page == .distribution && viewModel.metadataIsDirty {
                 TopBar(viewModel: viewModel)
             }
 

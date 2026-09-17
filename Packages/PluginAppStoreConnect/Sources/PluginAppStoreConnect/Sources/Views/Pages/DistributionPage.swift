@@ -82,27 +82,20 @@ struct DistributionPage: View {
     }
 
     private var versionPicker: some View {
-        HStack(spacing: 12) {
-            Text(AppStoreConnectLocalization.string("Version"))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            Picker("", selection: $viewModel.selectedVersion) {
-                Text(AppStoreConnectLocalization.string("Select a version"))
-                    .tag(nil as AppStoreVersion?)
-
-                if !viewModel.versions.isEmpty {
-                    ForEach(groupedVersions, id: \.platform) { group in
-                        ForEach(group.versions, id: \.id) { version in
-                            versionLabel(version, platform: group.platform)
-                                .tag(version as AppStoreVersion?)
-                        }
-                    }
-                }
-            }
-            .pickerStyle(.menu)
-            .frame(maxWidth: 300)
+        ToolbarSelectControl(
+            title: versionSelectionTitle,
+            systemImage: "shippingbox",
+            maxTitleWidth: 220
+        ) {
+            VersionOptionsView(viewModel: viewModel, groups: groupedVersions)
         }
+    }
+
+    private var versionSelectionTitle: String {
+        guard let version = viewModel.selectedVersion else {
+            return AppStoreConnectLocalization.string("Select a version")
+        }
+        return versionDisplayTitle(version)
     }
 
     // MARK: - Helpers
@@ -116,9 +109,10 @@ struct DistributionPage: View {
             }
     }
 
-    private func versionLabel(_ version: AppStoreVersion, platform: String) -> Text {
+    private func versionDisplayTitle(_ version: AppStoreVersion) -> String {
+        let platform = version.platform.normalizedASCPlatform
         let platformDisplay = platformDisplayName(platform)
-        return Text("\(version.versionString) (\(platformDisplay))")
+        return "\(version.versionString) (\(platformDisplay))"
     }
 
     private func platformDisplayName(_ platform: String) -> String {
@@ -139,5 +133,81 @@ struct DistributionPage: View {
     private func platformSortIndex(_ platform: String) -> Int {
         let platformOrder = ["IOS", "MAC_OS", "TV_OS", "VISION_OS"]
         return platformOrder.firstIndex(of: platform.normalizedASCPlatform) ?? Int.max
+    }
+}
+
+private struct VersionOptionsView: View {
+    @ObservedObject var viewModel: VM
+    let groups: [(platform: String, versions: [AppStoreVersion])]
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(AppStoreConnectLocalization.string("Version"))
+                .font(.headline)
+
+            if groups.isEmpty {
+                Text(AppStoreConnectLocalization.string("No Versions"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 120)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 8) {
+                        ForEach(groups, id: \.platform) { group in
+                            Text(platformDisplayName(group.platform))
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 8)
+
+                            ForEach(group.versions, id: \.id) { version in
+                                Button {
+                                    viewModel.selectVersion(version)
+                                    dismiss()
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Text(version.versionString)
+                                            .font(.system(size: 13, weight: .medium))
+                                        Spacer()
+                                        if viewModel.selectedVersion?.id == version.id {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 11, weight: .semibold))
+                                                .foregroundStyle(.tint)
+                                        }
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 7)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(
+                                        viewModel.selectedVersion?.id == version.id
+                                            ? Color.accentColor.opacity(0.12)
+                                            : Color.clear,
+                                        in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+                .frame(maxHeight: 320)
+            }
+        }
+        .frame(width: 280)
+    }
+
+    private func platformDisplayName(_ platform: String) -> String {
+        switch platform.normalizedASCPlatform {
+        case "MAC_OS":
+            return AppStoreConnectLocalization.string("macOS")
+        case "IOS":
+            return AppStoreConnectLocalization.string("iOS")
+        case "TV_OS":
+            return AppStoreConnectLocalization.string("tvOS")
+        case "VISION_OS":
+            return AppStoreConnectLocalization.string("visionOS")
+        default:
+            return platform
+        }
     }
 }

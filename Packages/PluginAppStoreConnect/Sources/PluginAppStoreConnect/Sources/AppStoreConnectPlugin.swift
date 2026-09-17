@@ -32,6 +32,8 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
     public let order = 65
     public static let railTabID = "app-store-connect.sidebar"
     public static let settingsEntryID = "com.coffic.lumi.plugin.app-store-connect.settings"
+    private static let openToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.open"
+    private static let workspaceToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.workspace"
     private static let refreshToolbarItemID = "com.coffic.lumi.plugin.app-store-connect.refresh"
 
     public let metadata = PluginMetadata(
@@ -160,6 +162,26 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
                     toolbar?.setVisibleCategories([.global, .general])
                     toolbar?.addToolbarItems([
                         ToolbarItem(
+                            id: Self.openToolbarItemID,
+                            title: AppStoreConnectLocalization.string("Open App Store Connect"),
+                            placement: .leading,
+                            category: .general,
+                            ownerPluginID: pluginID,
+                            order: refreshToolbarOrder
+                        ) {
+                            AppStoreConnectOpenToolbarButton()
+                        },
+                        ToolbarItem(
+                            id: Self.workspaceToolbarItemID,
+                            title: AppStoreConnectLocalization.string("App Store Connect"),
+                            placement: .center,
+                            category: .general,
+                            ownerPluginID: pluginID,
+                            order: refreshToolbarOrder
+                        ) {
+                            AppStoreConnectWorkspaceToolbarView(viewModel: VM.shared)
+                        },
+                        ToolbarItem(
                             id: Self.refreshToolbarItemID,
                             title: AppStoreConnectLocalization.string("Refresh"),
                             placement: .trailing,
@@ -192,7 +214,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
                     chat?.setActiveContext(nil)
                     chat?.deactivateWidthProfile(ownerID: pluginID)
                     rail?.deactivateWidthProfile(ownerID: pluginID)
-                    toolbar?.removeToolbarItems(ids: [Self.refreshToolbarItemID])
+                    toolbar?.removeToolbarItems(ids: [Self.openToolbarItemID, Self.workspaceToolbarItemID, Self.refreshToolbarItemID])
                 }
             },
         ])
@@ -231,7 +253,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
         }
         AppStoreConnectToolSupport.configure(network: nil)
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(
-            ids: [Self.refreshToolbarItemID]
+            ids: [Self.openToolbarItemID, Self.workspaceToolbarItemID, Self.refreshToolbarItemID]
         )
     }
 

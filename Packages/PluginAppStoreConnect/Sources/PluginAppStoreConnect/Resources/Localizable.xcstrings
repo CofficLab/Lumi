@@ -291,6 +291,16 @@
         }
       }
     },
+    "Open App Store Connect" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 App Store Connect"
+          }
+        }
+      }
+    },
     "Assign a build before submitting for review." : {
       "localizations" : {
         "zh-Hans" : {
