@@ -21,12 +21,12 @@ struct MetadataDisplaySection: View {
 
             if let localization {
                 VStack(alignment: .leading, spacing: 14) {
-                    readOnlyField(AppStoreConnectLocalization.string("Promotional Text"), value: localization.promotionalText)
-                    readOnlyField(AppStoreConnectLocalization.string("Description"), value: localization.description)
-                    readOnlyField(AppStoreConnectLocalization.string("Keywords"), value: localization.keywords)
-                    readOnlyField(AppStoreConnectLocalization.string("What's New"), value: localization.whatsNew)
-                    readOnlyURLField(AppStoreConnectLocalization.string("Support URL"), value: localization.supportURL)
-                    readOnlyURLField(AppStoreConnectLocalization.string("Marketing URL"), value: localization.marketingURL)
+                    readOnlyField(AppStoreConnectLocalization.string("Promotional Text"), icon: "megaphone", value: localization.promotionalText)
+                    readOnlyField(AppStoreConnectLocalization.string("Description"), icon: "doc.text", value: localization.description)
+                    readOnlyField(AppStoreConnectLocalization.string("Keywords"), icon: "tag", value: localization.keywords)
+                    readOnlyField(AppStoreConnectLocalization.string("What's New"), icon: "sparkles", value: localization.whatsNew)
+                    readOnlyURLField(AppStoreConnectLocalization.string("Support URL"), icon: "lifepreserver", value: localization.supportURL)
+                    readOnlyURLField(AppStoreConnectLocalization.string("Marketing URL"), icon: "link", value: localization.marketingURL)
                 }
                 .padding(.horizontal)
                 .appStoreConnectAddToChatMenu(
@@ -51,9 +51,9 @@ struct MetadataDisplaySection: View {
     }
 
     @ViewBuilder
-    private func readOnlyField(_ title: String, value: String) -> some View {
+    private func readOnlyField(_ title: String, icon: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            AppSectionLabel(title)
+            MetadataFieldLabel(title: title, systemImage: icon)
 
             if value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text("—")
@@ -69,9 +69,9 @@ struct MetadataDisplaySection: View {
     }
 
     @ViewBuilder
-    private func readOnlyURLField(_ title: String, value: String) -> some View {
+    private func readOnlyURLField(_ title: String, icon: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            AppSectionLabel(title)
+            MetadataFieldLabel(title: title, systemImage: icon)
 
             if let url = URL(string: value), !value.isEmpty {
                 Link(value, destination: url)

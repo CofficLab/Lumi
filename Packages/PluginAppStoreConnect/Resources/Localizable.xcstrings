@@ -301,6 +301,26 @@
         }
       }
     },
+    "Open URL in Browser" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在浏览器中打开 URL"
+          }
+        }
+      }
+    },
+    "Open %@ in Browser" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在浏览器中打开 %@"
+          }
+        }
+      }
+    },
     "Assign a build before submitting for review." : {
       "localizations" : {
         "zh-Hans" : {
