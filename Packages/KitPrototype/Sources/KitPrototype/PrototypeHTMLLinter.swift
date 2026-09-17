@@ -54,12 +54,17 @@ public struct PrototypeHTMLLinter: Sendable {
     ///
     /// - Parameters:
     ///   - html: 完整 HTML 文档。
-    ///   - documentDirectory: 屏幕目录；提供时校验本地资源路径安全与存在性。
+    ///   - documentDirectory: 屏幕目录；相对资源路径以此为基准解析。
+    ///   - allowedResourceRoot: 资源允许存在的最高层级目录。默认等于
+    ///     `documentDirectory`。项目级共享素材位于屏幕目录的父级，因此
+    ///     store 会传入**项目目录**，让 `../assets/x.png` 合法，同时仍然
+    ///     拒绝逃逸出项目之外的路径。
     ///   - knownScreenIDs: 项目内已知屏幕 slug；提供时校验跳转目标有效性。
     ///                      传 `nil` 表示跳过该规则（例如新建项目首屏尚无同伴）。
     public func lint(
         html: String,
         documentDirectory: URL? = nil,
+        allowedResourceRoot: URL? = nil,
         knownScreenIDs: Set<String>? = nil
     ) -> PrototypeLintReport {
         var issues: [PrototypeLintIssue] = []
@@ -67,6 +72,11 @@ public struct PrototypeHTMLLinter: Sendable {
 
         func add(_ severity: PrototypeLintSeverity, _ code: String, _ message: String) {
             issues.append(.init(severity: severity, code: code, message: message))
+        }
+
+        // 已转义为 &lt; 的尖括号会掩盖 script/iframe 检查，先拦下来。
+        if lower.range(of: #"&lt;\s*(script|iframe)\b"#, options: .regularExpression) != nil {
+            add(.warning, "escaped_markup", "Found escaped <script>/<iframe> text. Make sure real markup was not accidentally HTML-escaped.")
         }
 
         if html.utf8.count > maximumUTF8Bytes {
@@ -106,7 +116,12 @@ public struct PrototypeHTMLLinter: Sendable {
         }
 
         validateJumpTargets(html: html, knownScreenIDs: knownScreenIDs, add: add)
-        validateLocalResources(html: html, documentDirectory: documentDirectory, add: add)
+        validateLocalResources(
+            html: html,
+            documentDirectory: documentDirectory,
+            allowedResourceRoot: allowedResourceRoot,
+            add: add
+        )
 
         return PrototypeLintReport(issues: issues)
     }
@@ -131,25 +146,44 @@ public struct PrototypeHTMLLinter: Sendable {
 
     // MARK: - 本地资源
 
+    /// 校验本地资源引用。
+    ///
+    /// 解析基准是**屏幕目录**（`documentDirectory`），允许边界默认也是它。
+    /// 但共享素材位于项目目录（屏幕目录的父级），因此 store 会把
+    /// `allowedResourceRoot` 传成项目目录——这样 `../assets/x.png` 合法，
+    /// 而 `../../../etc/passwd` 之类的越界路径仍被拒绝。
     private func validateLocalResources(
         html: String,
         documentDirectory: URL?,
+        allowedResourceRoot: URL?,
         add: (PrototypeLintSeverity, String, String) -> Void
     ) {
         for path in Self.localResourcePaths(in: html) {
             guard !path.hasPrefix("data:") && !path.hasPrefix("#") else { continue }
             let decoded = path.removingPercentEncoding ?? path
-            if decoded.hasPrefix("/") || decoded.contains("..") {
-                add(.error, "unsafe_asset_path", "Asset path escapes the screen directory: \(path)")
+
+            // 绝对路径一律拒绝：原型必须可随项目整体搬迁。
+            if decoded.hasPrefix("/") {
+                add(.error, "unsafe_asset_path", "Absolute asset paths are not allowed: \(path)")
                 continue
             }
             guard let documentDirectory else { continue }
+
             let url = documentDirectory.appendingPathComponent(decoded).standardizedFileURL
-            let root = documentDirectory.standardizedFileURL.path
-            guard url.path == root || url.path.hasPrefix(root + "/") else {
-                add(.error, "unsafe_asset_path", "Asset path escapes the screen directory: \(path)")
+            let baseDirectory = documentDirectory.standardizedFileURL
+            let allowedRoot = (allowedResourceRoot ?? documentDirectory).standardizedFileURL
+
+            // 先确认路径解析后仍在屏幕目录内，或落在允许的共享根目录内。
+            let basePath = baseDirectory.path
+            let rootPath = allowedRoot.path
+            let resolved = url.path
+            let isInsideScreen = resolved == basePath || resolved.hasPrefix(basePath + "/")
+            let isInsideRoot = resolved == rootPath || resolved.hasPrefix(rootPath + "/")
+            guard isInsideScreen || isInsideRoot else {
+                add(.error, "unsafe_asset_path", "Asset path escapes the prototype directory: \(path)")
                 continue
             }
+
             if !FileManager.default.fileExists(atPath: url.path) {
                 add(.error, "missing_asset", "Referenced asset does not exist: \(path)")
             }

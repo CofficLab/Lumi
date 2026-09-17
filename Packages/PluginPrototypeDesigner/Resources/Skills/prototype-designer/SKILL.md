@@ -104,7 +104,7 @@
 4. **禁止 `<iframe>`**
 5. **禁止远程资源**：不能出现 `http://` / `https://`。图片必须先 `prototype_import_asset`。
 6. **禁止 CSS `@import`**
-7. **资源路径不能逃逸**：不能以 `/` 开头，不能含 `..`（`../assets/x.png` 是合法的，因为屏幕在子目录）。
+7. **资源路径不能逃逸项目目录**：不能以 `/` 开头（绝对路径一律拒绝）。相对路径允许用 `../` 回到项目根引用共享素材——`../assets/x.png` 是**正确写法**，但 `../../../../etc/passwd` 这类逃出项目的路径会被拒绝。
 8. **引用本地图片必须真实存在**，否则报 `missing_asset`。
 
 ### 强烈建议
@@ -191,6 +191,8 @@
 | `malformed` / `incomplete_document` | 传了片段，不是完整文档 | 补齐 `<!DOCTYPE html>` 等骨架 |
 | `unknown_link_target` | `data-prototype-link` 指向不存在的屏 | 先 `prototype_add_screen` 建那屏，或改成已有 screenId |
 | `missing_asset` | 引用了不存在的图片 | 先 `prototype_import_asset` |
+| `unsafe_asset_path` | 路径以 `/` 开头，或逃出了项目目录 | 共享素材用 `../assets/文件名` |
+| `escaped_markup` | HTML 里出现被转义的 `&lt;script&gt;` | 确认没把真正的标签写成转义文本 |
 | `patchTextMissing` | `oldText` 在 HTML 里找不到 | 先 `prototype_read_html` 拿到真实文本（注意空格与换行） |
 | `patchTextNotUnique` | `oldText` 出现多次 | 扩大 `oldText` 范围让它唯一 |
 | 预览里内容被裁 | 内容超过设备高度 | 减少条目或缩小间距 |

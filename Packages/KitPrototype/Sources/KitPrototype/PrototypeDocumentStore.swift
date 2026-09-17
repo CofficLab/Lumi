@@ -459,6 +459,8 @@ public struct PrototypeDocumentStore: @unchecked Sendable {
         return linter.lint(
             html: resolved.html,
             documentDirectory: resolved.directoryURL,
+            // 共享素材位于项目目录，因此允许边界放宽到项目根。
+            allowedResourceRoot: try projectDirectoryURL(storagePath: storagePath, projectSlug: projectSlug),
             knownScreenIDs: Set(resolved.project.screens.map(\.id))
         )
     }
@@ -488,6 +490,8 @@ public struct PrototypeDocumentStore: @unchecked Sendable {
         let report = linter.lint(
             html: html,
             documentDirectory: directory,
+            // 与 lintScreen 一致：共享素材允许引用，边界为项目根。
+            allowedResourceRoot: directory.deletingLastPathComponent(),
             knownScreenIDs: Set(project.screens.map(\.id))
         )
         guard report.isValid else { throw PrototypeStoreError.invalidHTML(report.errors) }

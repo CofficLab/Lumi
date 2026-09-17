@@ -102,7 +102,88 @@ struct KitPrototypeTests {
         <div data-block="x" data-block-label="X"></div><img src="../../../etc/passwd">
         </body></html>
         """
-        #expect(PrototypeHTMLLinter().lint(html: html).errors.map(\.code).contains("unsafe_asset_path"))
+        // 提供屏幕目录后才会做路径解析与越界检查。
+        let screenDirectory = URL(fileURLWithPath: "/tmp/proto/tasks/p/home", isDirectory: true)
+        let report = PrototypeHTMLLinter().lint(html: html, documentDirectory: screenDirectory)
+        #expect(report.errors.map(\.code).contains("unsafe_asset_path"))
+    }
+
+    @Test func linterRejectsAbsoluteAssetPaths() {
+        let html = """
+        <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
+        <body style="background:#fff; overflow:hidden">
+        <div data-block="x" data-block-label="X"></div><img src="/etc/passwd">
+        </body></html>
+        """
+        let screenDirectory = URL(fileURLWithPath: "/tmp/proto/tasks/p/home", isDirectory: true)
+        let report = PrototypeHTMLLinter().lint(html: html, documentDirectory: screenDirectory)
+        #expect(report.errors.map(\.code).contains("unsafe_asset_path"))
+    }
+
+    /// 共享素材位于项目目录（屏幕目录的父级），`../assets/x.png` 必须合法。
+    ///
+    /// 这是素材导入器返回、SKILL.md 教 LLM 使用的路径；若被 linter 拒绝，
+    /// 文档承诺的 happy path 就是断的。同时确认越界路径仍被拦截。
+    @Test func sharedAssetPathIsAcceptedWhileEscapesAreRejected() throws {
+        try withTemporaryStorage { root in
+            let store = PrototypeDocumentStore()
+            _ = try store.createProject(
+                storagePath: root.path,
+                slug: "p",
+                title: "P",
+                style: .hiFi,
+                device: PrototypeDeviceKind.desktop.preset!
+            )
+            _ = try store.addScreen(storagePath: root.path, projectSlug: "p", screenSlug: "home", title: "Home")
+
+            // 放入一张真实素材到项目级共享目录。
+            let assets = try store.assetsDirectoryURL(storagePath: root.path, projectSlug: "p")
+            try Self.writePNG(to: assets.appendingPathComponent("shot.png"), width: 4, height: 4)
+
+            let sharedReference = """
+            <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
+            <body style="background:#fff; overflow:hidden">
+            <div data-block="x" data-block-label="X"><img src="../assets/shot.png"></div>
+            </body></html>
+            """
+            _ = try store.replaceScreenHTML(
+                sharedReference,
+                storagePath: root.path,
+                projectSlug: "p",
+                screenSlug: "home"
+            )
+            let report = try store.lintScreen(storagePath: root.path, projectSlug: "p", screenSlug: "home")
+            #expect(report.isValid, "共享素材路径被拒: \(report.errors.map { "\($0.code) \($0.message)" })")
+
+            // 越界路径必须仍然被拒绝。
+            let escaping = """
+            <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
+            <body style="background:#fff; overflow:hidden">
+            <div data-block="x" data-block-label="X"><img src="../../../../etc/passwd"></div>
+            </body></html>
+            """
+            #expect(throws: PrototypeStoreError.self) {
+                _ = try store.replaceScreenHTML(
+                    escaping,
+                    storagePath: root.path,
+                    projectSlug: "p",
+                    screenSlug: "home"
+                )
+            }
+        }
+    }
+
+    @Test func linterWarnsAboutEscapedScriptMarkup() {
+        let html = """
+        <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
+        <body style="background:#fff; overflow:hidden">
+        <div data-block="x" data-block-label="X">&lt;script&gt;alert(1)&lt;/script&gt;</div>
+        </body></html>
+        """
+        let report = PrototypeHTMLLinter().lint(html: html)
+        // 转义后的尖括号不会被 script 检查命中，因此单独给出提示。
+        #expect(report.isValid)
+        #expect(report.warnings.map(\.code).contains("escaped_markup"))
     }
 
     // MARK: - 模板
