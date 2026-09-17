@@ -1,3 +1,4 @@
+import LumiUI
 import SwiftUI
 import KernelCore
 
@@ -27,7 +28,7 @@ public struct NetworkHistoryGraphView: View {
 
                         if !dataPoints.isEmpty {
                             // Download Graph (Green)
-                            GraphArea(data: dataPoints.map { $0.downloadSpeed }, maxValue: maxValue)
+                            MiniGraphArea(data: dataPoints.map { $0.downloadSpeed }, maxValue: maxValue)
                                 .fill(
                                     LinearGradient(
                                         gradient: Gradient(colors: [Color.green.opacity(0.5), Color.green.opacity(0.1)]),
@@ -36,11 +37,11 @@ public struct NetworkHistoryGraphView: View {
                                     )
                                 )
 
-                            GraphLine(data: dataPoints.map { $0.downloadSpeed }, maxValue: maxValue)
+                            MiniGraphLine(data: dataPoints.map { $0.downloadSpeed }, maxValue: maxValue)
                                 .stroke(.green, lineWidth: 1.5)
 
                             // Upload Graph (Red)
-                            GraphArea(data: dataPoints.map { $0.uploadSpeed }, maxValue: maxValue)
+                            MiniGraphArea(data: dataPoints.map { $0.uploadSpeed }, maxValue: maxValue)
                                 .fill(
                                     LinearGradient(
                                         gradient: Gradient(colors: [Color.red.opacity(0.5), Color.red.opacity(0.1)]),
@@ -49,7 +50,7 @@ public struct NetworkHistoryGraphView: View {
                                     )
                                 )
 
-                            GraphLine(data: dataPoints.map { $0.uploadSpeed }, maxValue: maxValue)
+                            MiniGraphLine(data: dataPoints.map { $0.uploadSpeed }, maxValue: maxValue)
                                 .stroke(.red, lineWidth: 1.5)
                         } else {
                             Text(LumiPluginLocalization.string("Collecting data...", bundle: .module))
@@ -256,63 +257,6 @@ public struct TooltipView: View {
             formatter.dateFormat = "MM-dd HH:mm"
         }
         return formatter.string(from: date)
-    }
-}
-
-// Custom Shape for Filled Area
-public struct GraphArea: Shape {
-    public let data: [Double]
-    public let maxValue: Double
-
-    public func path(in rect: CGRect) -> Path {
-        var path = Path()
-        guard !data.isEmpty, maxValue > 0 else { return path }
-
-        let stepX = rect.width / CGFloat(data.count - 1)
-        let height = rect.height
-
-        path.move(to: CGPoint(x: 0, y: height))
-
-        for (i, value) in data.enumerated() {
-            let x = CGFloat(i) * stepX
-            let y = height - CGFloat(value / maxValue) * height
-            if i == 0 {
-                path.addLine(to: CGPoint(x: x, y: y))
-            } else {
-                path.addLine(to: CGPoint(x: x, y: y))
-            }
-        }
-
-        path.addLine(to: CGPoint(x: CGFloat(data.count - 1) * stepX, y: height))
-        path.closeSubpath()
-
-        return path
-    }
-}
-
-// Custom Shape for Line Stroke
-public struct GraphLine: Shape {
-    public let data: [Double]
-    public let maxValue: Double
-
-    public func path(in rect: CGRect) -> Path {
-        var path = Path()
-        guard !data.isEmpty, maxValue > 0 else { return path }
-
-        let stepX = rect.width / CGFloat(data.count - 1)
-        let height = rect.height
-
-        for (i, value) in data.enumerated() {
-            let x = CGFloat(i) * stepX
-            let y = height - CGFloat(value / maxValue) * height
-            if i == 0 {
-                path.move(to: CGPoint(x: x, y: y))
-            } else {
-                path.addLine(to: CGPoint(x: x, y: y))
-            }
-        }
-
-        return path
     }
 }
 

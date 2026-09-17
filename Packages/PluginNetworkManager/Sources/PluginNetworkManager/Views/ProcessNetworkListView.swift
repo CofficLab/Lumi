@@ -9,7 +9,7 @@ public struct ProcessNetworkListView: View {
         VStack(spacing: 0) {
             // Toolbar
             Text(LumiPluginLocalization.string("Process Monitor", bundle: .module))
-                .font(.system(size: 15, weight: .medium))
+                .font(.appBodyEmphasized)
                 .foregroundColor(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(10)
