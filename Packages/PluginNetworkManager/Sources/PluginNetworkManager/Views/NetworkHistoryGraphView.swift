@@ -316,27 +316,6 @@ public struct GraphLine: Shape {
     }
 }
 
-// Helper for VisualEffectView
-public struct VisualEffectBlur: NSViewRepresentable {
-    public var material: NSVisualEffectView.Material
-    public var blendingMode: NSVisualEffectView.BlendingMode
-    public var state: NSVisualEffectView.State = .active
-
-    public func makeNSView(context: Context) -> NSVisualEffectView {
-        let visualEffectView = NSVisualEffectView()
-        visualEffectView.material = material
-        visualEffectView.blendingMode = blendingMode
-        visualEffectView.state = state
-        return visualEffectView
-    }
-
-    public func updateNSView(_ visualEffectView: NSVisualEffectView, context: Context) {
-        visualEffectView.material = material
-        visualEffectView.blendingMode = blendingMode
-        visualEffectView.state = state
-    }
-}
-
 // MARK: - Preview
 
 #Preview("Network Status Bar Popup") {
