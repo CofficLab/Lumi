@@ -30,12 +30,13 @@ extension VM {
             } else {
                 Self.logger.warning("\(self.t)no sidebarVersions to select")
             }
-        }
 
-        // 初次打开分发页时，版本列表加载流程不会经过 selectVersion，
-        // 因此需要在默认选中版本后主动加载构建和提交状态。
-        if selectedVersion != nil {
-            await loadReleaseInfo()
+            // 初次打开分发页时，版本列表加载流程不会经过 selectVersion，
+            // 因此需要在默认选中版本后主动加载构建和提交状态。放在同一个
+            // 忙碌范围内，让整个切换过程只显示一次 loading。
+            if selectedVersion != nil {
+                await loadReleaseInfo()
+            }
         }
     }
 

@@ -122,6 +122,12 @@ final class VM: ObservableObject, SuperLog {
     var isLoadingApps = false
     var isLoadingVersions = false
 
+    /// 同一用户动作可能串起多个 `runBusy` 操作（嵌套或并发）。
+    /// 由计数决定遮罩的生命周期，避免内层调用中途关掉外层已显示的遮罩。
+    var busyOperationCount = 0
+    /// 首个操作启动的 500ms 遮罩延时任务，由最后一个操作负责取消。
+    var busyOverlayDelayTask: Task<Void, Never>?
+
     init(
         credentialStore: CredentialStore = .shared,
         localStore: AppStoreConnectPluginLocalStore = .shared,
