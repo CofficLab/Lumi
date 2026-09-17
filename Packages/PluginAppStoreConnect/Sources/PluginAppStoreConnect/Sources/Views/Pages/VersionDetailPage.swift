@@ -31,7 +31,7 @@ struct VersionDetailPage: View {
                         MetadataDisplaySection(localization: viewModel.selectedLocalization)
                     }
                 }
-                .padding(.bottom, 24)
+                .padding(.vertical, 24)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
