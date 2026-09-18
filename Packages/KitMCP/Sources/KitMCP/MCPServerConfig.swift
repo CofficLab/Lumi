@@ -61,4 +61,14 @@ public enum MCPServerTemplate {
         command: "xcrun",
         arguments: ["mcpbridge"]
     )
+
+    /// GitHub 官方：`github/github-mcp-server`（Go 二进制，经 Docker 镜像分发，stdio 传输）。
+    /// 覆盖仓库、issues、PR、code search、Actions 等约 130 个工具。
+    /// 需在「环境变量」中填写 `GITHUB_PERSONAL_ACCESS_TOKEN` 后启用。
+    public static let github = MCPServerConfig(
+        name: "GitHub (official)",
+        command: "docker",
+        arguments: ["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server"],
+        environment: ["GITHUB_PERSONAL_ACCESS_TOKEN": ""]
+    )
 }
