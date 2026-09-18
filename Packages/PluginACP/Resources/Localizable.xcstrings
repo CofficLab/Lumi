@@ -1,210 +1,924 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Allow" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Allow"
+  "sourceLanguage": "en",
+  "strings": {
+    "Allow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "允许"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允许"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "允許"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允許"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "允許"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允許"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "允許"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允許"
           }
         }
       }
     },
-    "Allow this operation?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Allow this operation?"
+    "Allow this operation?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow this operation?"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "是否允许执行该操作？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是否允许执行该操作？"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "是否允許執行此操作？"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是否允許執行此操作？"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "是否允許執行此操作？"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是否允許執行此操作？"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "是否允許執行此操作？"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是否允許執行此操作？"
           }
         }
       }
     },
-    "Input required: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Input required: %@"
+    "Input required: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Input required: %@"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要你的输入：%@"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要你的输入：%@"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要你的輸入：%@"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要你的輸入：%@"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要你的輸入：%@"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要你的輸入：%@"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要你的輸入：%@"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要你的輸入：%@"
           }
         }
       }
     },
-    "No" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No"
+    "No": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "否"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "否"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "否"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "否"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "否"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "否"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "否"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "否"
           }
         }
       }
     },
-    "Reject" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reject"
+    "Reject": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reject"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拒绝"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拒绝"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拒絕"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拒絕"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拒絕"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拒絕"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "拒絕"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拒絕"
           }
         }
       }
     },
-    "Yes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yes"
+    "Yes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "是"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "是"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "是"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是"
           }
         },
-        "zh-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "是"
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是"
+          }
+        }
+      }
+    },
+    "ACP": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ACP"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ACP"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ACP"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ACP"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ACP"
+          }
+        }
+      }
+    },
+    "Connect Lumi to external editors": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Lumi to external editors"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将 Lumi 接入外部编辑器"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將 Lumi 接入外部編輯器"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將 Lumi 接入外部編輯器"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將 Lumi 接入外部編輯器"
+          }
+        }
+      }
+    },
+    "What is ACP": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is ACP"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "什么是 ACP"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "什麼是 ACP"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "什麼是 ACP"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "什麼是 ACP"
+          }
+        }
+      }
+    },
+    "ACP lets supported editors (VS Code, Zed, and more) run Lumi as their built-in coding agent over stdio, reusing Lumi's model routing, tool system, and project intelligence.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ACP lets supported editors (VS Code, Zed, and more) run Lumi as their built-in coding agent over stdio, reusing Lumi's model routing, tool system, and project intelligence."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent Client Protocol（ACP）让支持该协议的编辑器（VS Code、Zed 等）通过 stdio 把 Lumi 作为内置编码 agent 使用，并复用 Lumi 的模型路由、工具系统与项目智能。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent Client Protocol（ACP）讓支援該協議的編輯器（VS Code、Zed 等）透過 stdio 把 Lumi 作為內建編碼 agent 使用，並複用 Lumi 的模型路由、工具系統與專案智能。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent Client Protocol（ACP）讓支援該協議的編輯器（VS Code、Zed 等）透過 stdio 把 Lumi 作為內建編碼 agent 使用，並複用 Lumi 的模型路由、工具系統與專案智能。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agent Client Protocol（ACP）讓支援該協議的編輯器（VS Code、Zed 等）透過 stdio 把 Lumi 作為內建編碼 agent 使用，並複用 Lumi 的模型路由、工具系統與專案智能。"
+          }
+        }
+      }
+    },
+    "Prerequisites": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prerequisites"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前提条件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前提條件"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前提條件"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前提條件"
+          }
+        }
+      }
+    },
+    "macOS 14 or later.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14 or later."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14 或更高版本。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14 或更高版本。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14 或更高版本。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14 或更高版本。"
+          }
+        }
+      }
+    },
+    "Xcode Command Line Tools with swift available on PATH.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode Command Line Tools with swift available on PATH."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 命令行工具（PATH 中包含 swift）。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 命令列工具（PATH 中包含 swift）。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 命令列工具（PATH 中包含 swift）。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 命令列工具（PATH 中包含 swift）。"
+          }
+        }
+      }
+    },
+    "A model and API key configured in Lumi — the headless process reuses the app's Keychain.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A model and API key configured in Lumi — the headless process reuses the app's Keychain."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已在 Lumi 中配置模型与 API 密钥（headless 进程会复用应用的钥匙串）。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已在 Lumi 中設定模型與 API 金鑰（headless 程序會複用應用程式的鑰匙圈）。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已在 Lumi 中設定模型與 API 金鑰（headless 程序會複用應用程式的鑰匙圈）。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已在 Lumi 中設定模型與 API 金鑰（headless 程序會複用應用程式的鑰匙圈）。"
+          }
+        }
+      }
+    },
+    "Steps": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Steps"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接入步骤"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接入步驟"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接入步驟"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接入步驟"
+          }
+        }
+      }
+    },
+    "Build the headless entry point": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build the headless entry point"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建 headless 入口"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建置 headless 入口"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建置 headless 入口"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建置 headless 入口"
+          }
+        }
+      }
+    },
+    "In the Lumi repository run:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the Lumi repository run:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Lumi 仓库中运行："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Lumi 倉庫中執行："
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Lumi 倉庫中執行："
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Lumi 倉庫中執行："
+          }
+        }
+      }
+    },
+    "The binary lands at Packages/ACPBootstrap/.build/debug/ACPBootstrap.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The binary lands at Packages/ACPBootstrap/.build/debug/ACPBootstrap."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "产物位于 Packages/ACPBootstrap/.build/debug/ACPBootstrap。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "產物位於 Packages/ACPBootstrap/.build/debug/ACPBootstrap。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "產物位於 Packages/ACPBootstrap/.build/debug/ACPBootstrap。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "產物位於 Packages/ACPBootstrap/.build/debug/ACPBootstrap。"
+          }
+        }
+      }
+    },
+    "Point your editor at the binary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Point your editor at the binary"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将编辑器指向该可执行文件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將編輯器指向該可執行檔"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將編輯器指向該可執行檔"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將編輯器指向該可執行檔"
+          }
+        }
+      }
+    },
+    "In any editor with Agent Client Protocol support, set the agent command to the path above. When the embedded agent ships inside Lumi.app, use /Applications/Lumi.app/Contents/MacOS/lumi-acp.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In any editor with Agent Client Protocol support, set the agent command to the path above. When the embedded agent ships inside Lumi.app, use /Applications/Lumi.app/Contents/MacOS/lumi-acp."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在任何支持 Agent Client Protocol 的编辑器中，将 agent 命令设为上述路径。当 Lumi.app 内嵌 agent 正式发布后，请改用 /Applications/Lumi.app/Contents/MacOS/lumi-acp。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在任何支援 Agent Client Protocol 的編輯器中，將 agent 指令設為上述路徑。當 Lumi.app 內嵌 agent 正式發佈後，請改用 /Applications/Lumi.app/Contents/MacOS/lumi-acp。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在任何支援 Agent Client Protocol 的編輯器中，將 agent 指令設為上述路徑。當 Lumi.app 內嵌 agent 正式發佈後，請改用 /Applications/Lumi.app/Contents/MacOS/lumi-acp。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在任何支援 Agent Client Protocol 的編輯器中，將 agent 指令設為上述路徑。當 Lumi.app 內嵌 agent 正式發佈後，請改用 /Applications/Lumi.app/Contents/MacOS/lumi-acp。"
+          }
+        }
+      }
+    },
+    "Start a conversation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start a conversation"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始对话"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始對話"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始對話"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始對話"
+          }
+        }
+      }
+    },
+    "Create a new ACP session in the editor and send a prompt. Lumi runs the turn and streams updates back to the editor.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a new ACP session in the editor and send a prompt. Lumi runs the turn and streams updates back to the editor."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在编辑器中创建新的 ACP 会话并发送提示。Lumi 会执行回合并将更新流式回编辑器。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在編輯器中建立新的 ACP 會話並發送提示。Lumi 會執行回合並將更新串流回編輯器。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在編輯器中建立新的 ACP 會話並發送提示。Lumi 會執行回合並將更新串流回編輯器。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在編輯器中建立新的 ACP 會話並發送提示。Lumi 會執行回合並將更新串流回編輯器。"
+          }
+        }
+      }
+    },
+    "Verify the connection": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify the connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "验证连接"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "驗證連線"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "驗證連線"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "驗證連線"
+          }
+        }
+      }
+    },
+    "A JSON-RPC response with protocolVersion 1 and agentInfo.name \"lumi-acp\" means the handshake succeeded.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A JSON-RPC response with protocolVersion 1 and agentInfo.name \"lumi-acp\" means the handshake succeeded."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "若返回 protocolVersion 为 1 且 agentInfo.name 为 \"lumi-acp\" 的 JSON-RPC 响应，即表示握手成功。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "若回傳 protocolVersion 為 1 且 agentInfo.name 為 \"lumi-acp\" 的 JSON-RPC 回應，即表示握手成功。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "若回傳 protocolVersion 為 1 且 agentInfo.name 為 \"lumi-acp\" 的 JSON-RPC 回應，即表示握手成功。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "若回傳 protocolVersion 為 1 且 agentInfo.name 為 \"lumi-acp\" 的 JSON-RPC 回應，即表示握手成功。"
+          }
+        }
+      }
+    },
+    "Notes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事项"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事項"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事項"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "注意事項"
+          }
+        }
+      }
+    },
+    "The Lumi app never auto-starts the ACP server — stdin belongs to the editor. Only the headless entry point serves the protocol.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Lumi app never auto-starts the ACP server — stdin belongs to the editor. Only the headless entry point serves the protocol."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 应用不会自动启动 ACP 服务器——stdin 属于编辑器，只有 headless 入口会提供该协议服务。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 應用程式不會自動啟動 ACP 伺服器——stdin 屬於編輯器，只有 headless 入口會提供該協定服務。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 應用程式不會自動啟動 ACP 伺服器——stdin 屬於編輯器，只有 headless 入口會提供該協定服務。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lumi 應用程式不會自動啟動 ACP 伺服器——stdin 屬於編輯器，只有 headless 入口會提供該協定服務。"
+          }
+        }
+      }
+    },
+    "Tool approvals appear as permission prompts inside the editor.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tool approvals appear as permission prompts inside the editor."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具授权会以权限提示的形式显示在编辑器中。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具授權會以權限提示的形式顯示在編輯器中。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具授權會以權限提示的形式顯示在編輯器中。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "工具授權會以權限提示的形式顯示在編輯器中。"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

@@ -6,6 +6,7 @@ import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
 import ProviderMessageStreaming
+import ProviderSettingView
 import ProviderToolManager
 
 /// ACP 插件：把 Lumi 内核暴露为 ACP Agent。
@@ -27,6 +28,9 @@ public final class PluginACP: SuperPlugin {
     /// 只随目录注册、`onBoot` 不做任何事；由 headless 入口显式调用
     /// `startACPServer(transport:)` 才真正开始服务。
     public let autoStartsServer: Bool
+
+    /// 设置页入口 id（onShutdown 时撤回）。
+    public static let settingsEntryID = "com.coffic.lumi.plugin.acp.settings"
 
     private let config: ACPConfig
     private weak var kernel: KernelCoreContainer?
@@ -51,10 +55,27 @@ public final class PluginACP: SuperPlugin {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         self.kernel = kernel
+        // 注册设置入口：引导用户把 Lumi 接入外部编辑器。
+        // 与服务是否自启无关——GUI 进程也需要这个教程页。
+        kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
+            SettingEntryItem(
+                id: Self.settingsEntryID,
+                title: ACPLocalization.string("ACP"),
+                systemImage: "terminal",
+                order: order
+            ) {
+                ACPSettingsView()
+            },
+        ])
         // GUI 进程默认不自启：stdin 属于宿主（编辑器或 app 自身），
         // 抢占它会破坏等价的 stdio 协议通道。
         guard autoStartsServer else { return }
         try startACPServer(transport: StdioTransport())
+    }
+
+    public func onShutdown(kernel: KernelCoreContainer) throws {
+        kernel.resolveProvider((any SettingViewProviding).self)?
+            .removeEntries(ids: [Self.settingsEntryID])
     }
 
     /// 启动 ACP stdio 服务器。
