@@ -1,7 +1,9 @@
 import Foundation
 import KernelCore
 import ProviderACP
+import ProviderAgentLoop
 import ProviderConversation
+import ProviderMessage
 
 /// ACP 插件：把 Lumi 内核暴露为 ACP Agent。
 ///
@@ -19,6 +21,7 @@ public final class PluginACP: SuperPlugin {
     private let config: ACPConfig
     private weak var kernel: KernelCoreContainer?
     private var server: ACPStdioServer?
+    private var coordinator: ACPTurnCoordinator?
 
     /// 输入 EOF 回调（透传自 stdio 服务器），宿主可据此退出进程。
     public var onEOF: (() -> Void)?
@@ -40,7 +43,8 @@ public final class PluginACP: SuperPlugin {
     /// 启动 ACP stdio 服务器。
     ///
     /// 由 headless 入口在 `makeKernel(additionalPlugins: [plugin])` 之后调用；
-    /// 此时内核已完成 Boot，ConversationManaging 为最终实例。
+    /// 此时内核已完成 Boot，ConversationManaging / AgentLoopProviding /
+    /// MessageManaging 均为最终实例。
     public func startACPServer(transport: any ACPTransport) throws {
         guard let kernel else {
             throw ACPPluginError.kernelNotBooted
@@ -48,19 +52,34 @@ public final class PluginACP: SuperPlugin {
         guard let conversations = kernel.resolveProvider((any ConversationManaging).self) else {
             throw ACPPluginError.missingProvider("ConversationManaging")
         }
+        guard let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self) else {
+            throw ACPPluginError.missingProvider("AgentLoopProviding")
+        }
+        guard let messages = kernel.resolveProvider((any MessageManaging).self) else {
+            throw ACPPluginError.missingProvider("MessageManaging")
+        }
 
         let sessions = ACPSessionManager(
             conversationFactory: ConversationCreatingAdapter(conversations)
         )
-        let handler = ACPProtocolHandler(
-            config: config,
-            sessions: sessions,
-            kernel: kernel
-        )
+        let handler = ACPProtocolHandler(config: config, sessions: sessions)
         let server = ACPStdioServer(transport: transport, handler: handler)
         server.onEOF = { [weak self] in
             self?.onEOF?()
         }
+
+        // 回合协调器：事件流 / 异步响应经服务器发回 Client。
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: AgentLoopAdapter(agentLoop),
+            messages: MessageManagerAdapter(messages),
+            sessions: sessions,
+            onSend: { [weak server] message in
+                server?.sendToClient(message)
+            }
+        )
+        handler.coordinator = coordinator
+        self.coordinator = coordinator
+
         try server.start()
         self.server = server
     }
@@ -69,6 +88,7 @@ public final class PluginACP: SuperPlugin {
     public func stopACPServer() {
         server?.stop()
         server = nil
+        coordinator = nil
     }
 
     public enum ACPPluginError: Error, LocalizedError {
@@ -87,10 +107,6 @@ public final class PluginACP: SuperPlugin {
 }
 
 /// 把 `any ConversationManaging` 桥接为 `ACPSessionCreating`。
-///
-/// Swift 的 existential 转换不推断结构性 conformance：
-/// `any ConversationManaging` 不能直接传给需要 `any ACPSessionCreating`
-/// 的参数，需显式适配。
 @MainActor
 private final class ConversationCreatingAdapter: ACPSessionCreating {
     private let conversations: any ConversationManaging
@@ -111,5 +127,58 @@ private final class ConversationCreatingAdapter: ACPSessionCreating {
             providerID: providerID,
             modelName: modelName
         )
+    }
+}
+
+/// 把 `any AgentLoopProviding` 桥接为 `ACPTurnRunning`。
+@MainActor
+private final class AgentLoopAdapter: ACPTurnRunning {
+    private let agentLoop: any AgentLoopProviding
+
+    init(_ agentLoop: any AgentLoopProviding) {
+        self.agentLoop = agentLoop
+    }
+
+    func addAgentLoopObserver(
+        _ callback: @escaping (AgentLoopEvent) -> Void
+    ) -> any AgentLoopObserverHandle {
+        agentLoop.addAgentLoopObserver(callback)
+    }
+
+    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome {
+        try await agentLoop.runTurn(in: conversationID)
+    }
+
+    func resumeTurn(
+        in conversationID: UUID,
+        request: AgentTurnResumeRequest
+    ) async throws -> AgentLoopOutcome {
+        try await agentLoop.resumeTurn(in: conversationID, request: request)
+    }
+
+    func cancelTurn(in conversationID: UUID) {
+        agentLoop.cancelTurn(in: conversationID)
+    }
+
+    func setAutoReplySuppressed(_ suppressed: Bool, for conversationID: UUID) {
+        agentLoop.setAutoReplySuppressed(suppressed, for: conversationID)
+    }
+}
+
+/// 把 `any MessageManaging` 桥接为 `ACPMessageReading`。
+@MainActor
+private final class MessageManagerAdapter: ACPMessageReading {
+    private let messages: any MessageManaging
+
+    init(_ messages: any MessageManaging) {
+        self.messages = messages
+    }
+
+    func insertMessage(_ message: Message, to conversationID: UUID) {
+        messages.insertMessage(message, to: conversationID)
+    }
+
+    func messagesSnapshot(in conversationID: UUID) -> [Message] {
+        messages.messages(for: conversationID)
     }
 }

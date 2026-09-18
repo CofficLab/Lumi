@@ -26,6 +26,9 @@ public final class ACPStdioServer {
     /// transport 回调在后台队列触发，这里通过 `Task { @MainActor }`
     /// 重新进入主 actor 后再处理协议消息。
     public func start() throws {
+        handler.onSend = { [weak self] message in
+            self?.send(message)
+        }
         transport.onMessage = { [weak self] data in
             Task { @MainActor [weak self] in
                 self?.process(data)
@@ -45,6 +48,11 @@ public final class ACPStdioServer {
         transport.onMessage = nil
         transport.onEOF = nil
         transport.stop()
+    }
+
+    /// 向 Client 发送一条消息（供异步事件流 / 回合响应使用）。
+    public func sendToClient(_ message: ACPMessage) {
+        send(message)
     }
 
     // MARK: - 消息处理

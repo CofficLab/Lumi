@@ -64,8 +64,8 @@ public final class StdioTransport: ACPTransport, @unchecked Sendable {
         defer { lock.unlock() }
         var frame = data
         frame.append(0x0A) // newline 帧分隔
+        // 注意：对管道/终端执行 synchronize() 会返回 EINVAL，此处不调用。
         try FileHandle.standardOutput.write(contentsOf: frame)
-        try FileHandle.standardOutput.synchronize()
     }
 
     public func stop() {

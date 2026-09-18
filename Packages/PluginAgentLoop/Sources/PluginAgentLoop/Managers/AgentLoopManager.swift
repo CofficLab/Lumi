@@ -46,6 +46,9 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
     var completionWaiters: [UUID: [CompletionWaiter]] = [:]
     private var agentLoopObservers: [UUID: (AgentLoopEvent) -> Void] = [:]
 
+    /// 自动回复被抑制的会话（外部控制器托管回合，如 ACP）。
+    private var autoReplySuppressed: Set<UUID> = []
+
     // MARK: - Init
 
     init(
@@ -122,6 +125,18 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
 
     public func currentTurnID(for conversationID: UUID) -> UUID? {
         runtimes[conversationID]?.turnID
+    }
+
+    public func isAutoReplySuppressed(for conversationID: UUID) -> Bool {
+        autoReplySuppressed.contains(conversationID)
+    }
+
+    public func setAutoReplySuppressed(_ suppressed: Bool, for conversationID: UUID) {
+        if suppressed {
+            autoReplySuppressed.insert(conversationID)
+        } else {
+            autoReplySuppressed.remove(conversationID)
+        }
     }
 
     public func setLifecycleHooks(_ hooks: (any LifecycleHooksProviding)?) {

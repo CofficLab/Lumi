@@ -2,7 +2,7 @@ import Foundation
 
 /// 任意 JSON 值，用于 JSON-RPC 信封中的 `id`、`params`、`result`、`data` 等
 /// 未类型化载荷，以及 `_meta` 等扩展字段。
-public enum JSONValue: Sendable, Equatable {
+public enum JSONValue: Sendable, Equatable, Hashable {
     case object([String: JSONValue])
     case array([JSONValue])
     case string(String)

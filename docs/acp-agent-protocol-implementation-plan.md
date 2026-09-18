@@ -1,6 +1,6 @@
 # Lumi 接入 ACP（Agent Client Protocol）实施方案
 
-> 状态：M2 握手已通过（2026-09-18）；lumi-acp 采用方案 B，内嵌 Lumi.app 分发
+> 状态：M2 握手已通过（2026-09-18）；M3 回合与流式单测全绿（2026-09-18）；lumi-acp 采用方案 B，内嵌 Lumi.app 分发
 > 目标：让 Lumi 以 **ACP Agent** 身份接入外部编辑器（VS Code / Zed 等），使外部编辑器中可直接使用 Lumi 的 agent 能力（模型路由、工具系统、项目智能）。
 > 关联文档：[ACP Introduction](https://agentclientprotocol.com/get-started/introduction)、[ACP Protocol Overview](https://agentclientprotocol.com/protocol/overview)、[ACP Prompt Turn](https://agentclientprotocol.com/protocol/prompt-turn)
 
@@ -392,11 +392,18 @@ sequenceDiagram
 - **实现说明**：`PluginACP`（SuperPlugin，order=250）组合 `ACPSessionManager`（会话映射）+ `ACPProtocolHandler`（方法分发）+ `ACPStdioServer`（MainActor 消息循环）；`StdioTransport` 增补 `onEOF` 回调供宿主干净退出。
 - **遗留**：正式 `lumi-acp` Xcode target（内嵌 app 分发、随 DMG+Sparkle 发布）尚未创建；`session/prompt` 等回合逻辑属 M3。
 
-### M3 — 回合与流式
-- [ ] `session/prompt` 全流程：文本入参 → `runTurn` → `session/update` 流式 → `stopReason`
-- [ ] 工具调用：`tool_call` / `tool_call_update` 通知
-- [ ] 取消：`session/cancel` → `stopReason: cancelled`
-- **验收**：在 Zed（ACP 支持）中配置 `lumi-acp` 为 agent，实际完成一次含工具调用的编码任务；取消操作即时生效。
+### M3 — 回合与流式 ✅ 单测全绿（2026-09-18）
+- [x] `session/prompt` 全流程：文本入参 → `runTurn` → `session/update` 流式 → `stopReason`
+  - 新增 `ACPTurnCoordinator`（事件桥）：`AgentLoopEvent.toolCallsReceived → session/update(tool_call, pending)`；回合收尾补发 `tool_call_update(completed/failed)` + 最终 assistant 文本 + `session/prompt` 响应（`end_turn`）。
+  - `session/cancel` 通知 → `cancelTurn` → `stopReason: cancelled`；双路径（事件流 / `runTurn` 返回值）以 `finalized` 标志保证只 finalize 一次。
+  - **首响应超时兜底（watchdog）**：回合启动后 `LUMI_ACP_TURN_TIMEOUT`（默认 45s）内无任何 LLM 进展（工具调用/终态事件）→ 按失败收尾，避免无模型/LLM 挂起时 Client 悬挂；任何进展事件到达即取消 watchdog。
+  - **自动回复抑制**：`AgentLoopProviding` 新增 `setAutoReplySuppressed(_:for:)`（内核默认空实现）；ACP 回合先抑制再插入用户消息，避免内核 `MessageObserver` 自动回复与 ACP 回合双启动竞争；回合结束恢复。
+- [x] 工具调用：`tool_call` / `tool_call_update` 通知（`ToolKind` 按工具名推断）
+- [x] 取消：`session/cancel` → `stopReason: cancelled`
+- [x] 挂起（AskUser → ACP 权限桥）：`yes_no` → `session/request_permission`（是/否）；`choice` → 选项列表；`free_text`/非 JSON → 降级为文本提示 + 取消回合；`selected(optionId)` → `resumeTurn(answer:)`，`cancelled` → 取消。
+- **验证**：`swift test --package-path Packages/PluginACP` 全绿（31/31：回合完成、finalize 一次、tool_call/update、yes_no/choice 权限、free_text 降级、取消、watchdog×2、输入校验、纯函数）；`ProviderACP` 40/40；e2e（headless stdio）：initialize + session/new + `session/prompt` → 自动回复抑制生效、回合由 ACP 独占启动、`started` 事件到达。
+- **已知局限（headless e2e 未覆盖完整 LLM 回合）**：headless 下真实消息存储（`PluginMessageManager` 的 `messagesSnapshot` → `Task.detached` 磁盘读取）在无 GUI 初始化时会话下挂起，使 `requestOneLLM` 无法完成；同时 headless 进程无模型配置（UserDefaults 域为空）。完整回合（含真实 LLM 响应与工具执行）需在 M5 内嵌运行时或真实 app 环境验证（见 §10 R7）。
+- **遗留**：正式 `lumi-acp` Xcode target（内嵌 app 分发、随 DMG+Sparkle 发布）尚未创建；Zed 实配实测待 M5。
 
 ### M4 — 授权与文件
 - [ ] `session/request_permission` 双向：挂起、允许/拒绝/取消三分支、恢复
@@ -421,6 +428,7 @@ sequenceDiagram
 | R4 | 多连接（GUI + CLI 同时跑）访问同一 `ConversationManaging` 存储 | 会话状态竞争 | MVP 限定单一 stdio 连接；远程模式（三期）引入连接级会话命名空间 |
 | R5 | ACP 协议仍演进中（远程模式 WIP） | 规范变更返工 | `ProviderACP` 只做协议类型映射，产品逻辑不触碰协议细节；版本协商按规范降级 |
 | R6 | `MCPKit` 空壳、README 声明无 MCP client | 编辑器生态工具（MCP server）不可用 | 三期补齐；MVP 不受影响 |
+| R7 | headless 下内核持久化消息存储（`MessageManager.messagesSnapshot`）与模型配置（UserDefaults 域）不可用 | 完整 LLM 回合无法在独立 headless 进程验证 | 方案 B 内嵌运行时（M5）复用 app 配置与存储；必要时为 headless 提供内存消息存储与默认模型参数 |
 
 **开放问题（需产品确认）**
 

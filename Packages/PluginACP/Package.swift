@@ -13,6 +13,7 @@ let package = Package(
         .package(path: "../ProviderACP"),
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversation"),
+        .package(path: "../ProviderMessage"),
     ],
     targets: [
         .target(
@@ -22,6 +23,7 @@ let package = Package(
                 .product(name: "ProviderACP", package: "ProviderACP"),
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
             ],
             path: "Sources/PluginACP"
         ),
