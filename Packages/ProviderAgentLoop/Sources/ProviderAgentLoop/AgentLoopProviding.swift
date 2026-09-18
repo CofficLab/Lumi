@@ -29,6 +29,10 @@ public protocol AgentLoopProviding: AnyObject {
     func lastFailure(for conversationID: UUID) -> AgentLoopFailure?
     func isRunning(for conversationID: UUID) -> Bool
     func currentTurnID(for conversationID: UUID) -> UUID?
+    /// 是否已抑制该会话的自动回复（外部控制器托管回合时置位）。
+    func isAutoReplySuppressed(for conversationID: UUID) -> Bool
+    /// 设置该会话的自动回复抑制状态。
+    func setAutoReplySuppressed(_ suppressed: Bool, for conversationID: UUID)
 
     /// 在指定失败回合仍然有效时重新启动该回合。
     ///

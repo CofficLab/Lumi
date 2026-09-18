@@ -4,7 +4,6 @@ import Combine
 
 @MainActor
 public class NetworkManagerViewModel: ObservableObject, SuperLog {
-    public static let shared = NetworkManagerViewModel()
     public nonisolated static let emoji = "🌐"
     public nonisolated static let verbose: Bool = false
     @Published var networkState = NetworkState()
@@ -28,9 +27,6 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
             }
         }
     }
-    @Published var onlyActiveProcesses = true
-    @Published var processSearchText = ""
-
     // System boot time
     public var systemUptime: String {
         let uptime = ProcessInfo.processInfo.systemUptime
@@ -38,25 +34,9 @@ public class NetworkManagerViewModel: ObservableObject, SuperLog {
     }
 
     public var filteredProcesses: [NetworkProcess] {
-        var result = processes
-        
-        // 1. Activity filtering (> 0 bytes/s)
-        if onlyActiveProcesses {
-            result = result.filter { $0.totalSpeed > 0 }
-        }
-        
-        // 2. Search filtering
-        if !processSearchText.isEmpty {
-            result = result.filter { 
-                $0.name.localizedCaseInsensitiveContains(processSearchText) ||
-                String($0.id).contains(processSearchText)
-            }
-        }
-        
-        // 3. Sorting (Default by total speed descending)
-        result.sort { $0.totalSpeed > $1.totalSpeed }
-        
-        return result
+        processes
+            .filter { $0.totalSpeed > 0 }
+            .sorted { $0.totalSpeed > $1.totalSpeed }
     }
 
     private var isProcessMonitoringActive = false
