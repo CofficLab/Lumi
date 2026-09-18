@@ -1,3 +1,4 @@
+import AppKit
 import LumiUI
 import SwiftUI
 
@@ -22,11 +23,21 @@ fileprivate struct ACPAppGuide: Identifiable {
 /// ACP 接入引导设置页。
 ///
 /// 列出支持 ACP 的编辑器（Xcode / Zed），每张卡片点击后弹出逐步配置引导 modal。
+/// ACP 二进制随 Lumi.app 内嵌分发（Contents/MacOS/lumi-acp），用户无需手动构建。
 /// 将来加入其他 app 只需往 `appGuides` 数组追加一项。纯静态教程页，不持有插件状态。
 @MainActor
 struct ACPSettingsView: View {
     @LumiTheme private var theme
     @State private var activeGuide: ACPAppGuide?
+    @State private var pathCopied = false
+
+    private var helperPath: String {
+        Bundle.main.bundleURL
+            .appendingPathComponent("Contents")
+            .appendingPathComponent("MacOS")
+            .appendingPathComponent("lumi-acp")
+            .path
+    }
 
     var body: some View {
         PluginSettingsScaffold(
@@ -34,6 +45,7 @@ struct ACPSettingsView: View {
             subtitle: ACPLocalization.string("Connect Lumi to external editors")
         ) {
             VStack(alignment: .leading, spacing: 16) {
+                helperPathCard
                 ForEach(appGuides) { guide in
                     appGuideCard(guide)
                 }
@@ -41,6 +53,49 @@ struct ACPSettingsView: View {
         }
         .sheet(item: $activeGuide) { guide in
             ACPGuideSetupSheetView(guide: guide)
+        }
+    }
+
+    // MARK: - Helper Path
+
+    private var helperPathCard: some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(ACPLocalization.string("ACP executable path"))
+                    .font(.appCaptionEmphasized)
+                    .foregroundStyle(theme.textSecondary)
+                Text(helperPath)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(theme.textPrimary)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(theme.surface, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .stroke(theme.divider, lineWidth: 0.5)
+                    }
+                Button {
+                    copyHelperPath()
+                } label: {
+                    Label(
+                        pathCopied ? ACPLocalization.string("Copied") : ACPLocalization.string("Copy ACP path"),
+                        systemImage: pathCopied ? "checkmark" : "doc.on.doc"
+                    )
+                    .font(.appBodyEmphasized)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+    }
+
+    private func copyHelperPath() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(helperPath, forType: .string)
+        pathCopied = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            pathCopied = false
         }
     }
 
@@ -55,11 +110,6 @@ struct ACPSettingsView: View {
             summaryKey: "Use Lumi as a coding agent inside Xcode via the Agent Client Protocol.",
             steps: [
                 ACPGuideStep(
-                    titleKey: "Build the headless entry point",
-                    bodyKey: "In the Lumi repository run:",
-                    code: "swift build --package-path Packages/ACPBootstrap"
-                ),
-                ACPGuideStep(
                     titleKey: "Open Intelligence settings",
                     bodyKey: "In Xcode, choose Xcode > Settings, then select Intelligence.",
                     code: nil
@@ -71,7 +121,7 @@ struct ACPSettingsView: View {
                 ),
                 ACPGuideStep(
                     titleKey: "Point to the Lumi binary",
-                    bodyKey: "Set Executable to Packages/ACPBootstrap/.build/debug/ACPBootstrap and leave Arguments empty.",
+                    bodyKey: "Set Executable to the lumi-acp path copied from Lumi settings; leave Arguments empty.",
                     code: nil
                 ),
                 ACPGuideStep(
@@ -89,11 +139,6 @@ struct ACPSettingsView: View {
             summaryKey: "Use Lumi as an external agent in Zed's Agent Panel via ACP.",
             steps: [
                 ACPGuideStep(
-                    titleKey: "Build the headless entry point",
-                    bodyKey: "In the Lumi repository run:",
-                    code: "swift build --package-path Packages/ACPBootstrap"
-                ),
-                ACPGuideStep(
                     titleKey: "Open agent settings",
                     bodyKey: "Open the command palette (Cmd+Shift+P), search for and run \"agent: open settings\".",
                     code: nil
@@ -105,8 +150,8 @@ struct ACPSettingsView: View {
                 ),
                 ACPGuideStep(
                     titleKey: "Configure the agent server",
-                    bodyKey: "Add the following to agent_servers in settings.json, replacing the command path with your ACPBootstrap path:",
-                    code: "{\n  \"agent_servers\": {\n    \"Lumi\": {\n      \"type\": \"custom\",\n      \"command\": \"/path/to/ACPBootstrap\",\n      \"args\": [],\n      \"env\": {}\n    }\n  }\n}"
+                    bodyKey: "Add the following to agent_servers in settings.json, replacing the command with the lumi-acp path copied from Lumi settings:",
+                    code: "{\n  \"agent_servers\": {\n    \"Lumi\": {\n      \"type\": \"custom\",\n      \"command\": \"/Applications/Lumi.app/Contents/MacOS/lumi-acp\",\n      \"args\": [],\n      \"env\": {}\n    }\n  }\n}"
                 ),
                 ACPGuideStep(
                     titleKey: "Start using Lumi",
@@ -169,7 +214,7 @@ private struct ACPGuideSetupSheetView: View {
             Divider()
             footer
         }
-        .frame(width: 540, height: 500)
+        .frame(width: 540, height: 480)
     }
 
     private var header: some View {

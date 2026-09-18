@@ -1,8 +1,8 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "%lld": {},
     "A JSON-RPC response with protocolVersion 1 and agentInfo.name \"lumi-acp\" means the handshake succeeded.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -37,6 +37,7 @@
       }
     },
     "A model and API key configured in Lumi — the headless process reuses the app's Keychain.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -105,6 +106,7 @@
       }
     },
     "ACP lets supported editors (VS Code, Zed, and more) run Lumi as their built-in coding agent over stdio, reusing Lumi's model routing, tool system, and project intelligence.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -134,6 +136,108 @@
           "stringUnit": {
             "state": "translated",
             "value": "Agent Client Protocol（ACP）讓支援該協議的編輯器（VS Code、Zed 等）透過 stdio 把 Lumi 作為內建編碼 agent 使用，並複用 Lumi 的模型路由、工具系統與專案智能。"
+          }
+        }
+      }
+    },
+    "Add a custom agent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a custom agent"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加自定义 agent"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增自訂 agent"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增自訂 agent"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增自訂 agent"
+          }
+        }
+      }
+    },
+    "Add an agent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add an agent"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加 agent"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增 agent"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增 agent"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增 agent"
+          }
+        }
+      }
+    },
+    "Add the following to agent_servers in settings.json, replacing the command path with your ACPBootstrap path:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add the following to agent_servers in settings.json, replacing the command path with your ACPBootstrap path:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 settings.json 的 agent_servers 中添加以下配置，将 command 路径替换为你的 ACPBootstrap 路径："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 settings.json 的 agent_servers 中新增以下配置，將 command 路徑取代為你的 ACPBootstrap 路徑："
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 settings.json 的 agent_servers 中新增以下配置，將 command 路徑取代為你的 ACPBootstrap 路徑："
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 settings.json 的 agent_servers 中新增以下配置，將 command 路徑取代為你的 ACPBootstrap 路徑："
           }
         }
       }
@@ -240,6 +344,178 @@
         }
       }
     },
+    "Build the Lumi ACP headless entry point first (see Steps above).": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build the Lumi ACP headless entry point first (see Steps above)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先构建 Lumi ACP headless 入口（见上方步骤）。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先建置 Lumi ACP headless 入口（見上方步驟）。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先建置 Lumi ACP headless 入口（見上方步驟）。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先建置 Lumi ACP headless 入口（見上方步驟）。"
+          }
+        }
+      }
+    },
+    "Click Add Agent, then choose Add Custom Agent.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click Add Agent, then choose Add Custom Agent."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击 Add Agent，然后选择 Add Custom Agent。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊 Add Agent，然後選擇 Add Custom Agent。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊 Add Agent，然後選擇 Add Custom Agent。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊 Add Agent，然後選擇 Add Custom Agent。"
+          }
+        }
+      }
+    },
+    "Click Add, then choose the agent in a new conversation.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click Add, then choose the agent in a new conversation."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击 Add，然后在新对话中选择该 agent。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊 Add，然後在新對話中選擇該 agent。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊 Add，然後在新對話中選擇該 agent。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊 Add，然後在新對話中選擇該 agent。"
+          }
+        }
+      }
+    },
+    "Click Add, then choose the agent in a new conversation. Xcode 27 is in beta; ACP integration is early.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click Add, then choose the agent in a new conversation. Xcode 27 is in beta; ACP integration is early."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击 Add，然后在新对话中选择该 agent。Xcode 27 处于 Beta 阶段，ACP 集成尚在早期。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊 Add，然後在新對話中選擇該 agent。Xcode 27 處於 Beta 階段，ACP 整合尚在早期。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊 Add，然後在新對話中選擇該 agent。Xcode 27 處於 Beta 階段，ACP 整合尚在早期。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點擊 Add，然後在新對話中選擇該 agent。Xcode 27 處於 Beta 階段，ACP 整合尚在早期。"
+          }
+        }
+      }
+    },
+    "Configure the agent server": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure the agent server"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置 agent 服务器"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置 agent 伺服器"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置 agent 伺服器"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置 agent 伺服器"
+          }
+        }
+      }
+    },
     "Connect Lumi to external editors": {
       "localizations": {
         "en": {
@@ -275,6 +551,7 @@
       }
     },
     "Create a new ACP session in the editor and send a prompt. Lumi runs the turn and streams updates back to the editor.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -308,7 +585,42 @@
         }
       }
     },
+    "Done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
+        }
+      }
+    },
     "In any editor with Agent Client Protocol support, set the agent command to the path above. When the embedded agent ships inside Lumi.app, use /Applications/Lumi.app/Contents/MacOS/lumi-acp.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -376,6 +688,40 @@
         }
       }
     },
+    "In Xcode, choose Xcode > Settings, then select Intelligence.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Xcode, choose Xcode > Settings, then select Intelligence."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Xcode 中，选择 Xcode > Settings，然后选择 Intelligence。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Xcode 中，選擇 Xcode > Settings，然後選擇 Intelligence。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Xcode 中，選擇 Xcode > Settings，然後選擇 Intelligence。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Xcode 中，選擇 Xcode > Settings，然後選擇 Intelligence。"
+          }
+        }
+      }
+    },
     "Input required: %@": {
       "localizations": {
         "en": {
@@ -411,6 +757,7 @@
       }
     },
     "macOS 14 or later.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -440,6 +787,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "macOS 14 或更高版本。"
+          }
+        }
+      }
+    },
+    "Next": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步"
           }
         }
       }
@@ -479,6 +860,7 @@
       }
     },
     "Notes": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -512,7 +894,178 @@
         }
       }
     },
+    "Open agent settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open agent settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 agent 设置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 agent 設定"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 agent 設定"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 agent 設定"
+          }
+        }
+      }
+    },
+    "Open Intelligence settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Intelligence settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 Intelligence 设置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 Intelligence 設定"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 Intelligence 設定"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 Intelligence 設定"
+          }
+        }
+      }
+    },
+    "Open the Agent Panel, start a new thread, and select Lumi.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the Agent Panel, start a new thread, and select Lumi."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 Agent Panel，新建 thread，选择 Lumi。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 Agent Panel，新建 thread，選擇 Lumi。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 Agent Panel，新建 thread，選擇 Lumi。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開 Agent Panel，新建 thread，選擇 Lumi。"
+          }
+        }
+      }
+    },
+    "Open the command palette (Cmd+Shift+P), search for and run \"agent: open settings\".": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the command palette (Cmd+Shift+P), search for and run \"agent: open settings\"."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开命令面板（Cmd+Shift+P），搜索并运行 \"agent: open settings\"。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開命令面板（Cmd+Shift+P），搜尋並執行 \"agent: open settings\"。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開命令面板（Cmd+Shift+P），搜尋並執行 \"agent: open settings\"。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打開命令面板（Cmd+Shift+P），搜尋並執行 \"agent: open settings\"。"
+          }
+        }
+      }
+    },
+    "Point to the Lumi binary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Point to the Lumi binary"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指向 Lumi 二进制"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指向 Lumi 二進位檔"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指向 Lumi 二進位檔"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指向 Lumi 二進位檔"
+          }
+        }
+      }
+    },
     "Point your editor at the binary": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -547,6 +1100,7 @@
       }
     },
     "Prerequisites": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -576,6 +1130,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "前提條件"
+          }
+        }
+      }
+    },
+    "Previous": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一步"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一步"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一步"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一步"
+          }
+        }
+      }
+    },
+    "Recent Zed release": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent Zed release"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "近期 Zed 版本"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "近期 Zed 版本"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "近期 Zed 版本"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "近期 Zed 版本"
           }
         }
       }
@@ -614,7 +1236,77 @@
         }
       }
     },
+    "Set Executable to the ACPBootstrap binary path; leave Arguments empty.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set Executable to the ACPBootstrap binary path; leave Arguments empty."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将 Executable 设为 ACPBootstrap 二进制路径，Arguments 留空。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將 Executable 設為 ACPBootstrap 二進位檔路徑，Arguments 留空。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將 Executable 設為 ACPBootstrap 二進位檔路徑，Arguments 留空。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將 Executable 設為 ACPBootstrap 二進位檔路徑，Arguments 留空。"
+          }
+        }
+      }
+    },
+    "Show setup steps": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show setup steps"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看配置步骤"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視配置步驟"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視配置步驟"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢視配置步驟"
+          }
+        }
+      }
+    },
     "Start a conversation": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -648,7 +1340,52 @@
         }
       }
     },
+    "Start using Lumi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start using Lumi"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始使用 Lumi"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始使用 Lumi"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始使用 Lumi"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始使用 Lumi"
+          }
+        }
+      }
+    },
+    "Step %lld / %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Step %1$lld / %2$lld"
+          }
+        }
+      }
+    },
     "Steps": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -683,6 +1420,7 @@
       }
     },
     "The binary lands at Packages/ACPBootstrap/.build/debug/ACPBootstrap.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -717,6 +1455,7 @@
       }
     },
     "The Lumi app never auto-starts the ACP server — stdin belongs to the editor. Only the headless entry point serves the protocol.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -751,6 +1490,7 @@
       }
     },
     "Tool approvals appear as permission prompts inside the editor.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -780,278 +1520,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "工具授權會以權限提示的形式顯示在編輯器中。"
-          }
-        }
-      }
-    },
-    "Verify the connection": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verify the connection"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "验证连接"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "驗證連線"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "驗證連線"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "驗證連線"
-          }
-        }
-      }
-    },
-    "What is ACP": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What is ACP"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "什么是 ACP"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "什麼是 ACP"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "什麼是 ACP"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "什麼是 ACP"
-          }
-        }
-      }
-    },
-    "Xcode Command Line Tools with swift available on PATH.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode Command Line Tools with swift available on PATH."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 命令行工具（PATH 中包含 swift）。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 命令列工具（PATH 中包含 swift）。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 命令列工具（PATH 中包含 swift）。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 命令列工具（PATH 中包含 swift）。"
-          }
-        }
-      }
-    },
-    "Yes": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Yes"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "是"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "是"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "是"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "是"
-          }
-        }
-      }
-    },
-    "Use in your editor": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Use in your editor"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在编辑器中使用"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在編輯器中使用"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在編輯器中使用"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在編輯器中使用"
-          }
-        }
-      }
-    },
-    "Xcode 27 or later (Xcode 26.6 has early ACP support).": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 27 or later (Xcode 26.6 has early ACP support)."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 27 或更高版本（Xcode 26.6 有早期 ACP 支持）。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 27 或更高版本（Xcode 26.6 有早期 ACP 支援）。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 27 或更高版本（Xcode 26.6 有早期 ACP 支援）。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 27 或更高版本（Xcode 26.6 有早期 ACP 支援）。"
-          }
-        }
-      }
-    },
-    "Build the Lumi ACP headless entry point first (see Steps above).": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Build the Lumi ACP headless entry point first (see Steps above)."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "先构建 Lumi ACP headless 入口（见上方步骤）。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "先建置 Lumi ACP headless 入口（見上方步驟）。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "先建置 Lumi ACP headless 入口（見上方步驟）。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "先建置 Lumi ACP headless 入口（見上方步驟）。"
-          }
-        }
-      }
-    },
-    "In Xcode, choose Xcode > Settings, then select Intelligence.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In Xcode, choose Xcode > Settings, then select Intelligence."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Xcode 中，选择 Xcode > Settings，然后选择 Intelligence。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Xcode 中，選擇 Xcode > Settings，然後選擇 Intelligence。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Xcode 中，選擇 Xcode > Settings，然後選擇 Intelligence。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Xcode 中，選擇 Xcode > Settings，然後選擇 Intelligence。"
           }
         }
       }
@@ -1090,138 +1558,37 @@
         }
       }
     },
-    "Set Executable to the ACPBootstrap binary path; leave Arguments empty.": {
+    "Use in your editor": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Set Executable to the ACPBootstrap binary path; leave Arguments empty."
+            "value": "Use in your editor"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "将 Executable 设为 ACPBootstrap 二进制路径，Arguments 留空。"
+            "value": "在编辑器中使用"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "將 Executable 設為 ACPBootstrap 二進位檔路徑，Arguments 留空。"
+            "value": "在編輯器中使用"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "將 Executable 設為 ACPBootstrap 二進位檔路徑，Arguments 留空。"
+            "value": "在編輯器中使用"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "將 Executable 設為 ACPBootstrap 二進位檔路徑，Arguments 留空。"
-          }
-        }
-      }
-    },
-    "Click Add, then choose the agent in a new conversation.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Click Add, then choose the agent in a new conversation."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "点击 Add，然后在新对话中选择该 agent。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點擊 Add，然後在新對話中選擇該 agent。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點擊 Add，然後在新對話中選擇該 agent。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點擊 Add，然後在新對話中選擇該 agent。"
-          }
-        }
-      }
-    },
-    "Xcode 27 is currently in beta; ACP integration is early and protocol compatibility may vary.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 27 is currently in beta; ACP integration is early and protocol compatibility may vary."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 27 目前处于 Beta 阶段，ACP 集成尚在早期，协议兼容性可能存在差异。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 27 目前處於 Beta 階段，ACP 整合尚在早期，協定相容性可能存在差異。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 27 目前處於 Beta 階段，ACP 整合尚在早期，協定相容性可能存在差異。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xcode 27 目前處於 Beta 階段，ACP 整合尚在早期，協定相容性可能存在差異。"
-          }
-        }
-      }
-    },
-    "Show setup steps": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Show setup steps"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "查看配置步骤"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "檢視配置步驟"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "檢視配置步驟"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "檢視配置步驟"
+            "value": "在編輯器中使用"
           }
         }
       }
@@ -1294,6 +1661,146 @@
         }
       }
     },
+    "Verify the connection": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify the connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "验证连接"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "驗證連線"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "驗證連線"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "驗證連線"
+          }
+        }
+      }
+    },
+    "What is ACP": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is ACP"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "什么是 ACP"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "什麼是 ACP"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "什麼是 ACP"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "什麼是 ACP"
+          }
+        }
+      }
+    },
+    "Xcode 27 is currently in beta; ACP integration is early and protocol compatibility may vary.": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 27 is currently in beta; ACP integration is early and protocol compatibility may vary."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 27 目前处于 Beta 阶段，ACP 集成尚在早期，协议兼容性可能存在差异。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 27 目前處於 Beta 階段，ACP 整合尚在早期，協定相容性可能存在差異。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 27 目前處於 Beta 階段，ACP 整合尚在早期，協定相容性可能存在差異。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 27 目前處於 Beta 階段，ACP 整合尚在早期，協定相容性可能存在差異。"
+          }
+        }
+      }
+    },
+    "Xcode 27 or later (Xcode 26.6 has early ACP support).": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 27 or later (Xcode 26.6 has early ACP support)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 27 或更高版本（Xcode 26.6 有早期 ACP 支持）。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 27 或更高版本（Xcode 26.6 有早期 ACP 支援）。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 27 或更高版本（Xcode 26.6 有早期 ACP 支援）。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode 27 或更高版本（Xcode 26.6 有早期 ACP 支援）。"
+          }
+        }
+      }
+    },
     "Xcode 27+": {
       "localizations": {
         "en": {
@@ -1328,546 +1835,241 @@
         }
       }
     },
-    "Recent Zed release": {
+    "Xcode Command Line Tools with swift available on PATH.": {
+      "extractionState": "stale",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recent Zed release"
+            "value": "Xcode Command Line Tools with swift available on PATH."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "近期 Zed 版本"
+            "value": "Xcode 命令行工具（PATH 中包含 swift）。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "近期 Zed 版本"
+            "value": "Xcode 命令列工具（PATH 中包含 swift）。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "近期 Zed 版本"
+            "value": "Xcode 命令列工具（PATH 中包含 swift）。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "近期 Zed 版本"
+            "value": "Xcode 命令列工具（PATH 中包含 swift）。"
           }
         }
       }
     },
-    "Open Intelligence settings": {
+    "Yes": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open Intelligence settings"
+            "value": "Yes"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "打开 Intelligence 设置"
+            "value": "是"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "打開 Intelligence 設定"
+            "value": "是"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "打開 Intelligence 設定"
+            "value": "是"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "打開 Intelligence 設定"
+            "value": "是"
           }
         }
       }
     },
-    "Point to the Lumi binary": {
+    "ACP executable path": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Point to the Lumi binary"
+            "value": "ACP executable path"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "指向 Lumi 二进制"
+            "value": "ACP 可执行文件路径"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "指向 Lumi 二進位檔"
+            "value": "ACP 可執行檔路徑"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "指向 Lumi 二進位檔"
+            "value": "ACP 可執行檔路徑"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "指向 Lumi 二進位檔"
+            "value": "ACP 可執行檔路徑"
           }
         }
       }
     },
-    "Click Add, then choose the agent in a new conversation. Xcode 27 is in beta; ACP integration is early.": {
+    "Copy ACP path": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Click Add, then choose the agent in a new conversation. Xcode 27 is in beta; ACP integration is early."
+            "value": "Copy ACP path"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "点击 Add，然后在新对话中选择该 agent。Xcode 27 处于 Beta 阶段，ACP 集成尚在早期。"
+            "value": "复制 ACP 路径"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "點擊 Add，然後在新對話中選擇該 agent。Xcode 27 處於 Beta 階段，ACP 整合尚在早期。"
+            "value": "複製 ACP 路徑"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "點擊 Add，然後在新對話中選擇該 agent。Xcode 27 處於 Beta 階段，ACP 整合尚在早期。"
+            "value": "複製 ACP 路徑"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "點擊 Add，然後在新對話中選擇該 agent。Xcode 27 處於 Beta 階段，ACP 整合尚在早期。"
+            "value": "複製 ACP 路徑"
           }
         }
       }
     },
-    "Open agent settings": {
+    "Copied": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open agent settings"
+            "value": "Copied"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "打开 agent 设置"
+            "value": "已复制"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "打開 agent 設定"
+            "value": "已複製"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "打開 agent 設定"
+            "value": "已複製"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "打開 agent 設定"
+            "value": "已複製"
           }
         }
       }
     },
-    "Open the command palette (Cmd+Shift+P), search for and run \"agent: open settings\".": {
+    "Set Executable to the lumi-acp path copied from Lumi settings; leave Arguments empty.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open the command palette (Cmd+Shift+P), search for and run \"agent: open settings\"."
+            "value": "Set Executable to the lumi-acp path copied from Lumi settings; leave Arguments empty."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "打开命令面板（Cmd+Shift+P），搜索并运行 \"agent: open settings\"。"
+            "value": "将 Executable 设为从 Lumi 设置复制的 lumi-acp 路径，Arguments 留空。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "打開命令面板（Cmd+Shift+P），搜尋並執行 \"agent: open settings\"。"
+            "value": "將 Executable 設為從 Lumi 設定複製的 lumi-acp 路徑，Arguments 留空。"
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "打開命令面板（Cmd+Shift+P），搜尋並執行 \"agent: open settings\"。"
+            "value": "將 Executable 設為從 Lumi 設定複製的 lumi-acp 路徑，Arguments 留空。"
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "打開命令面板（Cmd+Shift+P），搜尋並執行 \"agent: open settings\"。"
+            "value": "將 Executable 設為從 Lumi 設定複製的 lumi-acp 路徑，Arguments 留空。"
           }
         }
       }
     },
-    "Add a custom agent": {
+    "Add the following to agent_servers in settings.json, replacing the command with the lumi-acp path copied from Lumi settings:": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add a custom agent"
+            "value": "Add the following to agent_servers in settings.json, replacing the command with the lumi-acp path copied from Lumi settings:"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "添加自定义 agent"
+            "value": "在 settings.json 的 agent_servers 中添加以下配置，将 command 替换为从 Lumi 设置复制的 lumi-acp 路径："
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "新增自訂 agent"
+            "value": "在 settings.json 的 agent_servers 中新增以下配置，將 command 取代為從 Lumi 設定複製的 lumi-acp 路徑："
           }
         },
         "zh-HK": {
           "stringUnit": {
             "state": "translated",
-            "value": "新增自訂 agent"
+            "value": "在 settings.json 的 agent_servers 中新增以下配置，將 command 取代為從 Lumi 設定複製的 lumi-acp 路徑："
           }
         },
         "zh-TW": {
           "stringUnit": {
             "state": "translated",
-            "value": "新增自訂 agent"
-          }
-        }
-      }
-    },
-    "Click Add Agent, then choose Add Custom Agent.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Click Add Agent, then choose Add Custom Agent."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "点击 Add Agent，然后选择 Add Custom Agent。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點擊 Add Agent，然後選擇 Add Custom Agent。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點擊 Add Agent，然後選擇 Add Custom Agent。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "點擊 Add Agent，然後選擇 Add Custom Agent。"
-          }
-        }
-      }
-    },
-    "Configure the agent server": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configure the agent server"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "配置 agent 服务器"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "配置 agent 伺服器"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "配置 agent 伺服器"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "配置 agent 伺服器"
-          }
-        }
-      }
-    },
-    "Add the following to agent_servers in settings.json, replacing the command path with your ACPBootstrap path:": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add the following to agent_servers in settings.json, replacing the command path with your ACPBootstrap path:"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 settings.json 的 agent_servers 中添加以下配置，将 command 路径替换为你的 ACPBootstrap 路径："
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 settings.json 的 agent_servers 中新增以下配置，將 command 路徑取代為你的 ACPBootstrap 路徑："
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 settings.json 的 agent_servers 中新增以下配置，將 command 路徑取代為你的 ACPBootstrap 路徑："
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 settings.json 的 agent_servers 中新增以下配置，將 command 路徑取代為你的 ACPBootstrap 路徑："
-          }
-        }
-      }
-    },
-    "Open the Agent Panel, start a new thread, and select Lumi.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open the Agent Panel, start a new thread, and select Lumi."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开 Agent Panel，新建 thread，选择 Lumi。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打開 Agent Panel，新建 thread，選擇 Lumi。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打開 Agent Panel，新建 thread，選擇 Lumi。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打開 Agent Panel，新建 thread，選擇 Lumi。"
-          }
-        }
-      }
-    },
-    "Previous": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Previous"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一步"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一步"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一步"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一步"
-          }
-        }
-      }
-    },
-    "Next": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下一步"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下一步"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下一步"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下一步"
-          }
-        }
-      }
-    },
-    "Done": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Done"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完成"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完成"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完成"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完成"
-          }
-        }
-      }
-    },
-    "Add an agent": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add an agent"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加 agent"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增 agent"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增 agent"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增 agent"
-          }
-        }
-      }
-    },
-    "Start using Lumi": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Start using Lumi"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "开始使用 Lumi"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開始使用 Lumi"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開始使用 Lumi"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開始使用 Lumi"
+            "value": "在 settings.json 的 agent_servers 中新增以下配置，將 command 取代為從 Lumi 設定複製的 lumi-acp 路徑："
           }
         }
       }
