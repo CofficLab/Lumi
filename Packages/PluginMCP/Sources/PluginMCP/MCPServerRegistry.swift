@@ -37,10 +37,12 @@ public final class MCPServerRegistry: ObservableObject {
 
     // MARK: - Init
 
-    public init(defaults: UserDefaults = .standard) {
+    public init(defaults: UserDefaults = .standard, contributor: MCPServerContributor? = nil) {
         self.defaults = defaults
         load()
-        seedPresetsIfNeeded()
+        if let contributor {
+            observeContributor(contributor)
+        }
     }
 
     private func load() {
@@ -52,28 +54,32 @@ public final class MCPServerRegistry: ObservableObject {
         servers = decodeServers(defaults.data(forKey: Keys.servers))
     }
 
-    private func seedPresetsIfNeeded() {
-        let seededVersion = defaults.integer(forKey: Keys.seededPresetsVersion)
-        guard seededVersion < Self.currentPresetsVersion else { return }
+    /// 观察贡献收集器：新贡献的服务器模板以禁用态自动 seed 到本地列表。
+    private func observeContributor(_ contributor: MCPServerContributor) {
+        // 立即处理已有贡献
+        seedContributions(contributor.contributions)
+        // 后续新贡献自动接入
+        withObservationTracking {
+            _ = contributor.contributions
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.seedContributions(contributor.contributions)
+                self.observeContributor(contributor)
+            }
+        }
+    }
 
-        var toAdd: [MCPServerConfig] = []
-        if seededVersion < 1 {
-            var xcode = MCPServerTemplate.xcodeNative
-            xcode.enabled = false
-            toAdd.append(xcode)
+    private func seedContributions(_ contributions: [MCPServerConfig]) {
+        var changed = false
+        for var template in contributions where !servers.contains(where: {
+            $0.command == template.command && $0.arguments == template.arguments
+        }) {
+            template.enabled = false
+            servers.append(template)
+            changed = true
         }
-        if seededVersion < 2 {
-            var github = MCPServerTemplate.github
-            github.enabled = false
-            toAdd.append(github)
-        }
-
-        // 内置预设统一以禁用态落库（用户显式启用）；按名称去重，避免老用户重复写入。
-        for preset in toAdd where !servers.contains(where: { $0.name == preset.name }) {
-            servers.append(preset)
-        }
-        defaults.set(Self.currentPresetsVersion, forKey: Keys.seededPresetsVersion)
-        persist()
+        if changed { persist() }
     }
 
     // MARK: - Server CRUD

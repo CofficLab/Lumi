@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import KitAgentTool
 import KitMCP
+import ProviderMCP
 import KitSuperLog
 import ProviderSettingView
 import ProviderToolManager
@@ -37,11 +38,13 @@ public final class MCPSuperPlugin: SuperPlugin, SuperLog {
 
     private var registry: MCPServerRegistry?
     private var manager: MCPConnectionManager?
+    private var contributor: MCPServerContributor?
 
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        let registry = MCPServerRegistry()
+        let contributor = MCPServerContributor()
+        let registry = MCPServerRegistry(contributor: contributor)
         let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
         let manager = MCPConnectionManager(
             registry: registry,
@@ -50,6 +53,10 @@ public final class MCPSuperPlugin: SuperPlugin, SuperLog {
         )
         self.registry = registry
         self.manager = manager
+        self.contributor = contributor
+
+        // 注册贡献收集器，其他插件可 resolve 并 contribute 内置服务器模板。
+        try kernel.registerProvider(MCPServerContributionProviding.self, contributor)
 
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
@@ -84,5 +91,6 @@ public final class MCPSuperPlugin: SuperPlugin, SuperLog {
             .removeEntries(ids: [Self.settingsEntryID])
         manager = nil
         registry = nil
+        contributor = nil
     }
 }
