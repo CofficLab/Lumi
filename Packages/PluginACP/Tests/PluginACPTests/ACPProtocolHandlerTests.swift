@@ -21,6 +21,12 @@ final class ACPProtocolHandlerTests: XCTestCase {
     private var sessions: ACPSessionManager!
     private var handler: ACPProtocolHandler!
 
+    /// MainActor 隔离的消息收集盒。
+    @MainActor
+    private final class SentBox {
+        var messages: [ACPMessage] = []
+    }
+
     override func setUp() {
         super.setUp()
         factory = MockConversationFactory()
@@ -139,5 +145,120 @@ final class ACPProtocolHandlerTests: XCTestCase {
     func testNotificationIsIgnored() throws {
         let message = try ACPMessage.makeNotification(method: "session/update", params: JSONValue.null)
         XCTAssertNil(handler.handle(message))
+    }
+
+    // MARK: - Client 能力捕获
+
+    func testInitializeCapturesFileSystemCapabilities() throws {
+        XCTAssertFalse(handler.clientCapabilities.readTextFile)
+        XCTAssertFalse(handler.clientCapabilities.writeTextFile)
+        XCTAssertFalse(handler.clientCapabilities.hasFileSystemBridge)
+
+        let message = try ACPMessage.makeRequest(
+            id: 1,
+            method: ACPMethod.initialize,
+            params: ACPInitializeParams(
+                protocolVersion: 1,
+                clientCapabilities: ACPClientCapabilities(
+                    fs: ACPFSClientCapabilities(readTextFile: true, writeTextFile: true)
+                )
+            )
+        )
+        _ = handler.handle(message)
+
+        XCTAssertTrue(handler.clientCapabilities.readTextFile)
+        XCTAssertTrue(handler.clientCapabilities.writeTextFile)
+        XCTAssertTrue(handler.clientCapabilities.hasFileSystemBridge)
+    }
+
+    func testInitializeWithoutCapabilitiesKeepsDefaults() throws {
+        let message = try ACPMessage.makeRequest(
+            id: 1,
+            method: ACPMethod.initialize,
+            params: ACPInitializeParams(
+                protocolVersion: 1,
+                clientCapabilities: ACPClientCapabilities()
+            )
+        )
+        _ = handler.handle(message)
+        // 未声明一律视为不支持（ACP 要求）。
+        XCTAssertFalse(handler.clientCapabilities.hasFileSystemBridge)
+    }
+
+    func testPartialFileSystemCapabilityIsNotBridgeable() throws {
+        let message = try ACPMessage.makeRequest(
+            id: 1,
+            method: ACPMethod.initialize,
+            params: ACPInitializeParams(
+                protocolVersion: 1,
+                clientCapabilities: ACPClientCapabilities(
+                    fs: ACPFSClientCapabilities(readTextFile: true, writeTextFile: false)
+                )
+            )
+        )
+        _ = handler.handle(message)
+        XCTAssertTrue(handler.clientCapabilities.readTextFile)
+        XCTAssertFalse(handler.clientCapabilities.hasFileSystemBridge)
+    }
+
+    // MARK: - 出站响应路由
+
+    func testResponseRoutesToRequesterByID() throws {
+        let box = SentBox()
+        let requester = ACPClientRequester { message in box.messages.append(message) }
+        handler.requester = requester
+
+        let started = expectation(description: "request resolved")
+        Task { @MainActor in
+            _ = try? await requester.request(
+                method: ACPMethod.fsReadTextFile,
+                params: .null,
+                sessionID: nil
+            )
+            started.fulfill()
+        }
+        // 等待请求发出。
+        let deadline = Date().addingTimeInterval(3)
+        while box.messages.isEmpty && Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.02))
+        }
+        guard case .request(let id, _, _)? = box.messages.first else {
+            return XCTFail("期望出站请求")
+        }
+        // 通过 handler 派发响应，应唤醒 requester。
+        handler.handle(.response(id: id, result: .null))
+        wait(for: [started], timeout: 3)
+        XCTAssertEqual(requester.pendingCount, 0)
+    }
+
+    func testErrorResponseRoutesToRequester() throws {
+        let box = SentBox()
+        let requester = ACPClientRequester { message in box.messages.append(message) }
+        handler.requester = requester
+
+        var failure: Error?
+        let done = expectation(description: "request failed")
+        Task { @MainActor in
+            do {
+                _ = try await requester.request(
+                    method: ACPMethod.fsReadTextFile,
+                    params: .null,
+                    sessionID: nil
+                )
+            } catch {
+                failure = error
+            }
+            done.fulfill()
+        }
+        let deadline = Date().addingTimeInterval(3)
+        while box.messages.isEmpty && Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.02))
+        }
+        guard case .request(let id, _, _)? = box.messages.first else {
+            return XCTFail("期望出站请求")
+        }
+        handler.handle(.error(id: id, error: ACPError(code: ACPErrorCode.requestCancelled, message: "x")))
+        wait(for: [done], timeout: 3)
+        XCTAssertNotNil(failure)
     }
 }

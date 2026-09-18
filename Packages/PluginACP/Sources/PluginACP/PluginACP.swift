@@ -1,9 +1,11 @@
 import Foundation
+import KitAgentTool
 import KernelCore
 import ProviderACP
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
+import ProviderToolManager
 
 /// ACP 插件：把 Lumi 内核暴露为 ACP Agent。
 ///
@@ -22,6 +24,8 @@ public final class PluginACP: SuperPlugin {
     private weak var kernel: KernelCoreContainer?
     private var server: ACPStdioServer?
     private var coordinator: ACPTurnCoordinator?
+    /// 已注册的 fs 桥接工具（停止时撤回）。
+    private var registeredFileTools: [any SuperAgentTool] = []
 
     /// 输入 EOF 回调（透传自 stdio 服务器），宿主可据此退出进程。
     public var onEOF: (() -> Void)?
@@ -68,11 +72,18 @@ public final class PluginACP: SuperPlugin {
             self?.onEOF?()
         }
 
+        // 出站请求收发器：请求经服务器发回 Client，响应按 id 唤醒等待者。
+        let requester = ACPClientRequester { [weak server] message in
+            server?.sendToClient(message)
+        }
+        handler.requester = requester
+
         // 回合协调器：事件流 / 异步响应经服务器发回 Client。
         let coordinator = ACPTurnCoordinator(
             agentLoop: AgentLoopAdapter(agentLoop),
             messages: MessageManagerAdapter(messages),
             sessions: sessions,
+            requester: requester,
             onSend: { [weak server] message in
                 server?.sendToClient(message)
             }
@@ -82,6 +93,30 @@ public final class PluginACP: SuperPlugin {
 
         try server.start()
         self.server = server
+
+        // Client 声明 fs 能力时，注册经编辑器的文件工具覆盖内置实现，
+        // 让编辑器的未保存缓冲区与 diff 视图天然正确。
+        if handler.clientCapabilities.hasFileSystemBridge,
+           let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            let fileClient = ACPFileClient(
+                requester: requester,
+                capabilities: handler.clientCapabilities,
+                sessions: sessions
+            )
+            let bridge = ACPFileBridge(
+                client: fileClient,
+                sessions: sessions,
+                capabilities: handler.clientCapabilities
+            )
+            let tools: [any SuperAgentTool] = [
+                ACPReadFileTool(bridge: bridge),
+                ACPWriteFileTool(bridge: bridge),
+            ]
+            for tool in tools {
+                toolManager.add(tool, pluginID: id)
+            }
+            registeredFileTools = tools
+        }
     }
 
     /// 停止 ACP 服务器（退出前调用）。
@@ -89,6 +124,14 @@ public final class PluginACP: SuperPlugin {
         server?.stop()
         server = nil
         coordinator = nil
+        // 撤回 fs 桥工具，恢复内核自带文件工具。
+        if let kernel,
+           let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
+            for tool in registeredFileTools {
+                toolManager.remove(id: tool.name)
+            }
+        }
+        registeredFileTools = []
     }
 
     public enum ACPPluginError: Error, LocalizedError {

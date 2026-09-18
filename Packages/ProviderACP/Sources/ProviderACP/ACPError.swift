@@ -51,6 +51,11 @@ public enum ACPErrorCode {
     public static let invalidParams = -32602
     /// 内部错误。
     public static let internalError = -32603
+    /// 请求被取消（`session/cancel` 或回合结束导致挂起请求作废）。
+    /// 参考：https://agentclientprotocol.com/protocol/cancellation
+    public static let requestCancelled = -32800
+    /// Agent 侧等待 Client 响应超时（Lumi 自定义，用于防止 Client 无响应时悬挂）。
+    public static let requestTimeout = -32801
 }
 
 public extension ACPError {

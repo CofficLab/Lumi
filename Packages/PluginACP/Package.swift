@@ -14,6 +14,8 @@ let package = Package(
         .package(path: "../ProviderAgentLoop"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
+        .package(path: "../ProviderToolManager"),
+        .package(path: "../KitAgentTool"),
     ],
     targets: [
         .target(
@@ -24,6 +26,8 @@ let package = Package(
                 .product(name: "ProviderAgentLoop", package: "ProviderAgentLoop"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
+                .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
             ],
             path: "Sources/PluginACP"
         ),
@@ -33,6 +37,7 @@ let package = Package(
                 "PluginACP",
                 .product(name: "ProviderACP", package: "ProviderACP"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
+                .product(name: "KitAgentTool", package: "KitAgentTool"),
             ],
             path: "Tests/PluginACPTests"
         ),

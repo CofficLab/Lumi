@@ -14,8 +14,13 @@ import ProviderACP
 public final class ACPProtocolHandler {
     public let config: ACPConfig
     public let sessions: ACPSessionManager
+    /// Client 能力登记簿（`initialize` 时写入）。
+    public let clientCapabilities: ACPClientCapabilitiesStore
     /// 回合协调器（装配阶段注入；session/prompt 依赖）。
     public var coordinator: ACPTurnCoordinator?
+
+    /// 出站请求收发器（由服务器注入；`session/request_permission` / `fs/*` 依赖）。
+    public var requester: ACPClientRequester?
 
     /// 异步消息发送通道（由服务器注入，转发到传输层）。
     public var onSend: ((ACPMessage) -> Void)?
@@ -23,11 +28,13 @@ public final class ACPProtocolHandler {
     public init(
         config: ACPConfig,
         sessions: ACPSessionManager,
-        coordinator: ACPTurnCoordinator? = nil
+        coordinator: ACPTurnCoordinator? = nil,
+        clientCapabilities: ACPClientCapabilitiesStore = ACPClientCapabilitiesStore()
     ) {
         self.config = config
         self.sessions = sessions
         self.coordinator = coordinator
+        self.clientCapabilities = clientCapabilities
     }
 
     /// 处理一条入站消息。
@@ -46,7 +53,9 @@ public final class ACPProtocolHandler {
         case .response(let id, let result):
             handleResponse(id: id, result: result)
             return nil
-        case .error:
+        case .error(let id, let error):
+            // Agent 主动发起的请求（权限 / fs）失败：唤醒对应等待者。
+            requester?.handleError(id: id, error: error)
             return nil
         }
     }
@@ -82,7 +91,8 @@ public final class ACPProtocolHandler {
     // MARK: - Response 分发
 
     private func handleResponse(id: JSONValue, result: JSONValue?) {
-        coordinator?.handlePermissionResponse(id: id, result: result)
+        // Agent 主动发起的请求（权限 / fs）的响应由 requester 按 id 认领。
+        requester?.handleResponse(id: id, result: result)
     }
 
     // MARK: - initialize
@@ -92,6 +102,9 @@ public final class ACPProtocolHandler {
               let decoded = try? params.decoded(as: ACPInitializeParams.self) else {
             return .error(id: id, error: .invalidParams)
         }
+
+        // 能力是连接级的：记录 Client 声明，供 fs 桥与权限桥判断。
+        clientCapabilities.update(from: decoded.clientCapabilities)
 
         // 版本协商：Agent 只支持协议版本 1。
         // 若 Client 声明的主版本与 Agent 不同，Agent 仍应答自身版本，

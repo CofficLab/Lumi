@@ -42,10 +42,15 @@ public protocol ACPMessageReading: AnyObject {
 ///
 /// 事件映射（AgentLoopEvent → ACP）：
 /// - `toolCallsReceived` → `session/update(tool_call)`，回合末补发 `tool_call_update`
-/// - `suspended`（AskUser 类交互）→ `session/request_permission`（yes_no/choice）
+/// - `suspended`（工具授权）→ `session/request_permission`（allow_once / reject_once），
+///   允许后补发 `tool_call_update(in_progress)` 并恢复回合
+/// - `suspended`（AskUser 交互）→ `session/request_permission`（yes_no/choice）
 ///   或降级为文本提示 + 结束回合（free_text / 非 JSON payload）
 /// - `completed` / `failed` → 整段文本 `agent_message_chunk` + `end_turn`
 /// - `cancelled` → `cancelled`
+///
+/// 所有出站 `request_permission` 都经 `ACPClientRequester` 发出并等待响应，
+/// 因此响应到达、超时、会话取消三条路径都会收敛到同一个 continuation。
 @MainActor
 public final class ACPTurnCoordinator {
     /// 进行中的回合。
@@ -59,24 +64,34 @@ public final class ACPTurnCoordinator {
         var hasLLMProgress = false
     }
 
-    /// 待用户决定的权限请求。
-    private struct PendingPermission {
+    /// 已上报、可能进入授权流程的工具调用元数据。
+    private struct ToolCallMetadata {
         let sessionID: ACPSessionId
-        let suspension: AgentLoopSuspension
-        /// optionId → resume answer（AskUser 的 label/值）。
-        let answersByOption: [String: String]
+        let name: String
+        let kind: ToolKind
+        let title: String
+        let rawInput: JSONValue?
+    }
+
+    /// 权限选项：optionId → 恢复回合时提交给内核的 answer。
+    private struct PermissionOptions {
+        let options: [ACPPermissionOption]
+        let answersByOptionID: [String: String]
     }
 
     private let agentLoop: any ACPTurnRunning
     private let messages: any ACPMessageReading
     private let sessions: ACPSessionManager
+    private let requester: ACPClientRequester
     private let onSend: @MainActor (ACPMessage) -> Void
     /// 回合启动后等待首个 LLM 进展的超时（无进展则按失败收尾，避免悬挂）。
     private let turnStartTimeout: TimeInterval
 
     private var activeTurns: [ACPSessionId: ActiveTurn] = [:]
-    private var pendingPermissions: [JSONValue: PendingPermission] = [:]
-    private var nextPermissionID = 100
+    /// 正在等待用户决定的权限请求（每会话至多一个）。
+    private var permissionTasks: [ACPSessionId: Task<Void, Never>] = [:]
+    /// 已上报工具调用元数据（key: toolCallId）。
+    private var toolCallMetadata: [String: ToolCallMetadata] = [:]
     private var observerHandle: (any AgentLoopObserverHandle)?
     private var watchdogTasks: [ACPSessionId: Task<Void, Never>] = [:]
 
@@ -84,12 +99,14 @@ public final class ACPTurnCoordinator {
         agentLoop: any ACPTurnRunning,
         messages: any ACPMessageReading,
         sessions: ACPSessionManager,
+        requester: ACPClientRequester,
         onSend: @escaping @MainActor (ACPMessage) -> Void,
         turnStartTimeout: TimeInterval? = nil
     ) {
         self.agentLoop = agentLoop
         self.messages = messages
         self.sessions = sessions
+        self.requester = requester
         self.onSend = onSend
         // 默认 45 秒；支持 LUMI_ACP_TURN_TIMEOUT 环境变量覆盖（秒）。
         if let turnStartTimeout {
@@ -112,7 +129,7 @@ public final class ACPTurnCoordinator {
     /// - Parameters:
     ///   - sessionID: ACP 会话。
     ///   - requestID: `session/prompt` 的 JSON-RPC 请求 ID（最终响应回执）。
-    ///   - prompt: 用户提示块（M3 支持 text / resource / resourceLink；image/audio 报错）。
+    ///   - prompt: 用户提示块（支持 text / resource / resourceLink；image/audio 忽略）。
     /// - Returns: 错误消息（同步校验失败时），否则 nil 表示回合已启动。
     public func startTurn(
         sessionID: ACPSessionId,
@@ -172,37 +189,13 @@ public final class ACPTurnCoordinator {
     }
 
     /// 取消会话进行中的回合（`session/cancel` 通知）。
+    ///
+    /// ACP 要求：收到取消后，该会话所有挂起的 `session/request_permission`
+    /// 立即以 `cancelled` 收尾，避免 Client 悬挂。
     public func cancel(sessionID: ACPSessionId) {
         guard let record = sessions.record(for: sessionID) else { return }
+        cancelPendingPermissions(sessionID: sessionID)
         agentLoop.cancelTurn(in: record.conversationID)
-    }
-
-    /// 处理 Client 对 `session/request_permission` 的响应。
-    public func handlePermissionResponse(id: JSONValue, result: JSONValue?) {
-        guard let pending = pendingPermissions.removeValue(forKey: id) else { return }
-        guard let decoded = try? result?.decoded(as: ACPRequestPermissionResult.self) else {
-            // 无法解析：视为拒绝并结束挂起回合。
-            agentLoop.cancelTurn(in: pending.suspension.conversationID)
-            return
-        }
-        switch decoded.outcome {
-        case .cancelled:
-            agentLoop.cancelTurn(in: pending.suspension.conversationID)
-        case .selected(let optionId):
-            guard let answer = pending.answersByOption[optionId] else {
-                agentLoop.cancelTurn(in: pending.suspension.conversationID)
-                return
-            }
-            Task { @MainActor [weak self] in
-                _ = try? await self?.agentLoop.resumeTurn(
-                    in: pending.suspension.conversationID,
-                    request: AgentTurnResumeRequest(
-                        suspensionID: pending.suspension.suspensionID,
-                        answer: answer
-                    )
-                )
-            }
-        }
     }
 
     // MARK: - 事件处理
@@ -262,7 +255,7 @@ public final class ACPTurnCoordinator {
             case .cancelled:
                 await finalize(conversationID: conversationID, cancelled: true, errorText: nil)
             case .suspended:
-                // 回合挂起等待用户输入（resume 后继续），不结束。
+                // 回合挂起等待用户决定（resume 后继续），不结束。
                 break
             }
         } catch {
@@ -276,102 +269,198 @@ public final class ACPTurnCoordinator {
     private func reportToolCalls(conversationID: UUID, toolCalls: [MessageToolCall]) {
         guard let sessionID = activeSessionID(for: conversationID) else { return }
         for call in toolCalls {
-            let update = ToolCallUpdate(
-                toolCallId: call.id,
-                title: call.displayDescription ?? call.name,
-                kind: Self.toolKind(for: call.name),
-                status: .pending,
-                rawInput: Self.json(from: call.arguments)
+            let kind = Self.toolKind(for: call.name)
+            let title = call.displayDescription ?? call.name
+            let rawInput = Self.json(from: call.arguments)
+            // 登记元数据：授权弹窗需要真实 toolCallId / 标题 / 类别 / 原始入参。
+            toolCallMetadata[call.id] = ToolCallMetadata(
+                sessionID: sessionID,
+                name: call.name,
+                kind: kind,
+                title: title,
+                rawInput: rawInput
             )
-            sendUpdate(sessionID: sessionID, update: .toolCall(update))
+            sendUpdate(sessionID: sessionID, update: .toolCall(ToolCallUpdate(
+                toolCallId: call.id,
+                title: title,
+                kind: kind,
+                status: .pending,
+                rawInput: rawInput
+            )))
         }
     }
 
-    // MARK: - 挂起处理（AskUser 交互）
+    // MARK: - 挂起处理
 
     private func handleSuspension(_ suspension: AgentLoopSuspension) {
         guard let sessionID = sessions.sessionID(for: suspension.conversationID),
               activeTurns[sessionID] != nil else { return }
 
-        guard let data = suspension.payload.data(using: .utf8),
-              let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-              let mode = json["mode"] as? String else {
+        let payload = Self.jsonObject(from: suspension.payload)
+
+        // 工具授权挂起：内核以 payload.kind == "permission" 标记（见 ToolManager+Run）。
+        if payload?["kind"] as? String == "permission" {
+            presentToolPermission(suspension, payload: payload, sessionID: sessionID)
+            return
+        }
+
+        // 其余为 AskUser 交互（需要 payload.mode 判别）。
+        guard let mode = payload?["mode"] as? String else {
             // 非 AskUser 载荷：把 payload 作为问题文本推送，并结束回合。
             sendAgentText(suspension.payload, sessionID: sessionID)
             agentLoop.cancelTurn(in: suspension.conversationID)
             return
         }
 
-        let question = (json["question"] as? String) ?? suspension.payload
+        let question = (payload?["question"] as? String) ?? suspension.payload
         switch mode {
         case "choice":
-            let options = Self.choiceOptions(from: json["options"])
-            guard !options.isEmpty else {
+            let labels = Self.choiceOptions(from: payload?["options"])
+            guard !labels.isEmpty else {
                 sendAgentText("需要你的输入：\(question)", sessionID: sessionID)
                 agentLoop.cancelTurn(in: suspension.conversationID)
                 return
             }
-            requestPermission(
-                sessionID: sessionID,
+            // AskUser 的 answer 就是选项标签本身；optionId 直接复用标签。
+            let options = PermissionOptions(
+                options: labels.map { ACPPermissionOption(optionId: $0, name: $0, kind: .allowOnce) },
+                answersByOptionID: Dictionary(uniqueKeysWithValues: labels.map { ($0, $0) })
+            )
+            awaitPermission(
                 suspension: suspension,
-                question: question,
-                options: options.map { (id: $0, name: $0, kind: .allowOnce) }
+                sessionID: sessionID,
+                toolCallUpdate: ToolCallUpdate(
+                    toolCallId: suspension.toolCallID ?? "ask-\(suspension.suspensionID)",
+                    title: question,
+                    status: .pending
+                ),
+                options: options
             )
         case "free_text":
             // ACP 无自由文本输入通道：降级为文本问题 + 结束回合，用户下轮回答。
             sendAgentText("需要你的输入：\(question)", sessionID: sessionID)
             agentLoop.cancelTurn(in: suspension.conversationID)
         default: // yes_no
-            requestPermission(
-                sessionID: sessionID,
-                suspension: suspension,
-                question: question,
+            let options = PermissionOptions(
                 options: [
-                    ("是", "是", .allowOnce),
-                    ("否", "否", .rejectOnce),
-                ]
+                    ACPPermissionOption(optionId: "是", name: "是", kind: .allowOnce),
+                    ACPPermissionOption(optionId: "否", name: "否", kind: .rejectOnce),
+                ],
+                answersByOptionID: ["是": "是", "否": "否"]
+            )
+            awaitPermission(
+                suspension: suspension,
+                sessionID: sessionID,
+                toolCallUpdate: ToolCallUpdate(
+                    toolCallId: suspension.toolCallID ?? "ask-\(suspension.suspensionID)",
+                    title: question,
+                    status: .pending
+                ),
+                options: options
             )
         }
     }
 
-    private func requestPermission(
-        sessionID: ACPSessionId,
-        suspension: AgentLoopSuspension,
-        question: String,
-        options: [(id: String, name: String, kind: ACPPermissionOptionKind)]
+    /// 工具授权挂起：以真实 `toolCallId` 发起 `session/request_permission`。
+    private func presentToolPermission(
+        _ suspension: AgentLoopSuspension,
+        payload: [String: Any]?,
+        sessionID: ACPSessionId
     ) {
-        let requestID = nextPermissionID
-        nextPermissionID += 1
+        // 用真实 toolCallId（内核授权挂起的 suspension.toolCallID 即模型原始调用 ID），
+        // 与先前上报的 `tool_call` 通知保持一致；payload 里的 "approval:<id>" 不可用。
+        let toolCallID = suspension.toolCallID ?? ""
+        let metadata = toolCallMetadata[toolCallID]
+        let question = (payload?["question"] as? String) ?? "是否允许执行该操作？"
 
-        var answers: [String: String] = [:]
-        let acpOptions = options.map { option -> ACPPermissionOption in
-            answers[option.id] = option.name
-            return ACPPermissionOption(optionId: option.id, name: option.name, kind: option.kind)
-        }
-        pendingPermissions[JSONValue.number(Double(requestID))] = PendingPermission(
-            sessionID: sessionID,
-            suspension: suspension,
-            answersByOption: answers
+        let options = PermissionOptions(
+            options: [
+                ACPPermissionOption(optionId: "allow_once", name: "允许", kind: .allowOnce),
+                ACPPermissionOption(optionId: "reject_once", name: "拒绝", kind: .rejectOnce),
+            ],
+            // resolveUserResponse 仅在 answer 为允许词时执行工具。
+            answersByOptionID: ["allow_once": "允许", "reject_once": "拒绝"]
         )
+        awaitPermission(
+            suspension: suspension,
+            sessionID: sessionID,
+            toolCallUpdate: ToolCallUpdate(
+                toolCallId: toolCallID,
+                title: metadata?.title ?? question,
+                kind: metadata?.kind,
+                status: .pending,
+                rawInput: metadata?.rawInput
+            ),
+            options: options
+        )
+    }
+
+    /// 发起权限请求并异步处理用户决定（allow / reject / cancel / 超时）。
+    private func awaitPermission(
+        suspension: AgentLoopSuspension,
+        sessionID: ACPSessionId,
+        toolCallUpdate: ToolCallUpdate,
+        options: PermissionOptions
+    ) {
+        guard permissionTasks[sessionID] == nil else {
+            // 同一会话已有一个待决定权限：拒绝并发挂起，避免响应错配。
+            agentLoop.cancelTurn(in: suspension.conversationID)
+            return
+        }
 
         let params = ACPRequestPermissionParams(
             sessionId: sessionID,
-            toolCall: ToolCallUpdate(
-                toolCallId: suspension.toolCallID ?? "suspension-\(requestID)",
-                title: question,
-                status: .pending
-            ),
-            options: acpOptions
+            toolCall: toolCallUpdate,
+            options: options.options
         )
-        do {
-            onSend(try ACPMessage.makeRequest(
-                id: requestID,
-                method: ACPMethod.sessionRequestPermission,
-                params: params
-            ))
-        } catch {
-            onSend(.error(id: .number(Double(requestID)), error: .internalError))
+
+        permissionTasks[sessionID] = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.permissionTasks[sessionID] = nil }
+
+            let outcome: ACPRequestPermissionResult
+            do {
+                outcome = try await self.requester.requestPermission(params)
+            } catch {
+                // 客户端无响应（超时）或连接中断：终止回合，避免悬挂。
+                self.agentLoop.cancelTurn(in: suspension.conversationID)
+                return
+            }
+
+            switch outcome.outcome {
+            case .cancelled:
+                self.agentLoop.cancelTurn(in: suspension.conversationID)
+            case .selected(let optionId):
+                guard let answer = options.answersByOptionID[optionId] else {
+                    self.agentLoop.cancelTurn(in: suspension.conversationID)
+                    return
+                }
+                // 授权通过：先按 ACP 规范把工具置为 in_progress，再恢复回合。
+                if optionId.hasPrefix("allow") {
+                    self.sendUpdate(
+                        sessionID: sessionID,
+                        update: .toolCallUpdate(ToolCallUpdate(
+                            toolCallId: toolCallUpdate.toolCallId,
+                            status: .inProgress
+                        ))
+                    )
+                }
+                _ = try? await self.agentLoop.resumeTurn(
+                    in: suspension.conversationID,
+                    request: AgentTurnResumeRequest(
+                        suspensionID: suspension.suspensionID,
+                        answer: answer
+                    )
+                )
+            }
         }
+    }
+
+    /// 作废会话的挂起权限请求（回合收尾 / 取消时调用）。
+    private func cancelPendingPermissions(sessionID: ACPSessionId) {
+        permissionTasks[sessionID]?.cancel()
+        permissionTasks[sessionID] = nil
+        requester.cancelRequests(for: sessionID)
     }
 
     // MARK: - 回合收尾
@@ -382,6 +471,11 @@ public final class ACPTurnCoordinator {
             return
         }
         activeTurns[sessionID]?.finalized = true
+
+        // ACP 要求：回合结束前不得残留挂起的权限请求；未完成的工具调用
+        // 一律以 cancelled 收尾，Client 才能正确收敛 UI 状态。
+        cancelPendingPermissions(sessionID: sessionID)
+        publishCancelledToolCalls(sessionID: sessionID)
 
         if cancelled {
             if let errorText {
@@ -409,6 +503,26 @@ public final class ACPTurnCoordinator {
         watchdogTasks[sessionID] = nil
         // 回合结束：恢复自动回复（该会话回到内核默认行为）。
         agentLoop.setAutoReplySuppressed(false, for: conversationID)
+    }
+
+    /// 回合结束时，把本会话尚未出结果的工具调用标记为 cancelled。
+    private func publishCancelledToolCalls(sessionID: ACPSessionId) {
+        let snapshot = messages.messagesSnapshot(in: sessions.conversationID(for: sessionID) ?? UUID())
+        let completedIDs = Set(
+            snapshot.flatMap { $0.toolCalls ?? [] }
+                .filter { $0.result != nil }
+                .map(\.id)
+        )
+        let pendingIDs = toolCallMetadata
+            .filter { $0.value.sessionID == sessionID && !completedIDs.contains($0.key) }
+            .map(\.key)
+        for toolCallID in pendingIDs {
+            sendUpdate(sessionID: sessionID, update: .toolCallUpdate(ToolCallUpdate(
+                toolCallId: toolCallID,
+                status: .cancelled
+            )))
+        }
+        toolCallMetadata = toolCallMetadata.filter { $0.value.sessionID != sessionID }
     }
 
     /// 回合正常结束后：补发工具完成状态 + 最终 assistant 文本。
@@ -496,6 +610,12 @@ public final class ACPTurnCoordinator {
     /// 把 JSON 字符串解析为 JSONValue（失败返回 nil）。
     static func json(from string: String) -> JSONValue? {
         try? JSONDecoder().decode(JSONValue.self, from: Data(string.utf8))
+    }
+
+    /// 把 JSON 字符串解析为字典（失败或非对象返回 nil）。
+    static func jsonObject(from string: String) -> [String: Any]? {
+        guard let data = string.data(using: .utf8) else { return nil }
+        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
     }
 
     /// 解析 AskUser choice 选项（对象 {label,description?,badge?} 或裸字符串）。

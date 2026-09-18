@@ -91,10 +91,65 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         var messages: [ACPMessage] = []
     }
 
+    /// 模拟 Client：记录 Agent 出站请求，并允许测试手动或自动回包。
+    @MainActor
+    private final class MockClient {
+        private let box: SentBox
+        private(set) var requests: [(id: JSONValue, method: String, params: JSONValue?)] = []
+        /// 自动回包脚本：返回非 nil 即立即回复该结果。
+        var autoRespond: ((String, JSONValue?) -> JSONValue?)? = nil
+        private var requester: ACPClientRequester!
+
+        init(box: SentBox) {
+            self.box = box
+        }
+
+        func makeRequester() -> ACPClientRequester {
+            let requester = ACPClientRequester { [weak self] message in
+                self?.record(message)
+            }
+            self.requester = requester
+            return requester
+        }
+
+        private func record(_ message: ACPMessage) {
+            box.messages.append(message)
+            guard case .request(let id, let method, let params) = message else { return }
+            requests.append((id, method, params))
+            if let autoRespond, let result = autoRespond(method, params) {
+                requester.handleResponse(id: id, result: result)
+            }
+        }
+
+        func lastRequest(method: String) -> (id: JSONValue, method: String, params: JSONValue?)? {
+            requests.last { $0.method == method }
+        }
+
+        func respondToLast(method: String, result: JSONValue?) {
+            guard let request = lastRequest(method: method) else { return }
+            requester.handleResponse(id: request.id, result: result)
+        }
+
+        func failLast(method: String, error: ACPError) {
+            guard let request = lastRequest(method: method) else { return }
+            requester.handleError(id: request.id, error: error)
+        }
+    }
+
+    /// 构造权限选择的响应载荷。
+    private func permissionResult(_ optionId: String) -> JSONValue? {
+        try? JSONValue.stringify(ACPRequestPermissionResult(outcome: .selected(optionId: optionId)))
+    }
+
+    private var cancelledResult: JSONValue? {
+        try? JSONValue.stringify(ACPRequestPermissionResult(outcome: .cancelled))
+    }
+
     private var runner: MockTurnRunner!
     private var store: MockMessageStore!
     private var sessions: ACPSessionManager!
     private var box: SentBox!
+    private var client: MockClient!
     private var coordinator: ACPTurnCoordinator!
 
     override func setUp() {
@@ -103,10 +158,12 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         store = MockMessageStore()
         sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
         box = SentBox()
+        client = MockClient(box: box)
         coordinator = ACPTurnCoordinator(
             agentLoop: runner,
             messages: store,
             sessions: sessions,
+            requester: client.makeRequester(),
             onSend: { [box] message in
                 box.messages.append(message)
             }
@@ -128,6 +185,29 @@ final class ACPTurnCoordinatorTests: XCTestCase {
 
     private func makeSessionID() throws -> ACPSessionId {
         try sessions.createSession(cwd: "/tmp/project")
+    }
+
+    /// 解析最近一次 `session/request_permission` 的参数。
+    private func permissionParams() throws -> ACPRequestPermissionParams? {
+        guard let request = client.lastRequest(method: ACPMethod.sessionRequestPermission) else {
+            return nil
+        }
+        return try request.params?.decoded(as: ACPRequestPermissionParams.self)
+    }
+
+    /// 上报一次工具调用（授权流程的前置条件）。
+    private func reportToolCall(
+        conversationID: UUID,
+        id: String,
+        name: String = "write_file",
+        arguments: String = #"{"path":"/tmp/a.swift"}"#
+    ) {
+        runner.emit(.toolCallsReceived(
+            conversationID: conversationID,
+            turnID: UUID(),
+            assistantMessageID: UUID(),
+            toolCalls: [MessageToolCall(id: id, name: name, arguments: arguments)]
+        ))
     }
 
     // MARK: - 回合完成
@@ -157,7 +237,6 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
-        // 回合完成：写 assistant 消息后发事件 + runTurn 返回 .completed。
         store.messagesByConversation[conversationID, default: []].append(
             Message(conversationID: conversationID, role: .assistant, content: "已修复")
         )
@@ -165,14 +244,13 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         runner.nextOutcome = .completed
         waitUntil { self.sent.contains { $0.id == .number(1) } }
 
-        let response = sent.first { $0.id == .number(1) }
-        guard case .response(_, let result) = response else {
+        guard let response = sent.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
             return XCTFail("期望最终响应")
         }
         let decoded = try result?.decoded(as: ACPPromptResult.self)
         XCTAssertEqual(decoded?.stopReason, .endTurn)
 
-        // 文本通知。
         XCTAssertTrue(sent.contains {
             if case .notification(let method, let params) = $0 {
                 return method == ACPMethod.sessionUpdate &&
@@ -196,11 +274,9 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
         runner.nextOutcome = .completed
         waitUntil { self.sent.contains { $0.id == .number(1) } }
-        // 等双路径都跑完
-        waitUntil { self.runner.runCalls.count >= 1 && self.sent.filter { $0.id == .number(1) }.count >= 1 }
+        waitUntil { self.sent.filter { $0.id == .number(1) }.count >= 1 }
 
-        let responses = sent.filter { $0.id == .number(1) }
-        XCTAssertEqual(responses.count, 1)
+        XCTAssertEqual(sent.filter { $0.id == .number(1) }.count, 1)
     }
 
     // MARK: - 工具调用
@@ -211,13 +287,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
-        let call = MessageToolCall(id: "call_001", name: "bash", arguments: #"{"cmd":"ls"}"#)
-        runner.emit(.toolCallsReceived(
-            conversationID: conversationID,
-            turnID: UUID(),
-            assistantMessageID: UUID(),
-            toolCalls: [call]
-        ))
+        reportToolCall(conversationID: conversationID, id: "call_001", name: "bash", arguments: #"{"cmd":"ls"}"#)
 
         waitUntil { self.sent.count >= 1 }
         XCTAssertTrue(sent.contains {
@@ -239,7 +309,6 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
         waitUntil { self.runner.runCalls.contains(conversationID) }
 
-        // assistant 消息带工具调用与结果。
         let call = MessageToolCall(
             id: "call_001",
             name: "bash",
@@ -265,7 +334,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         })
     }
 
-    // MARK: - 挂起与权限
+    // MARK: - AskUser 权限桥
 
     func testSuspendedYesNoRequestsPermission() throws {
         let sessionID = try makeSessionID()
@@ -282,19 +351,10 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         runner.emit(.suspended(conversationID: conversationID, turnID: UUID(), suspension: suspension))
 
-        waitUntil { self.sent.contains { $0.method == ACPMethod.sessionRequestPermission } }
-        guard let permissionRequest = sent.first(where: { $0.method == ACPMethod.sessionRequestPermission }),
-              case .request(let id, _, let params) = permissionRequest else {
-            return XCTFail("期望 request_permission 请求")
-        }
-        let decoded = try params?.decoded(as: ACPRequestPermissionParams.self)
-        XCTAssertEqual(decoded?.options.map(\.name), ["是", "否"])
+        waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
+        XCTAssertEqual(try permissionParams()?.options.map(\.name), ["是", "否"])
 
-        // 用户选"是" → resume。
-        coordinator.handlePermissionResponse(
-            id: id,
-            result: try? JSONValue.stringify(ACPRequestPermissionResult(outcome: .selected(optionId: "是")))
-        )
+        client.respondToLast(method: ACPMethod.sessionRequestPermission, result: permissionResult("是"))
         waitUntil { self.runner.resumeCalls.count == 1 }
         XCTAssertEqual(runner.resumeCalls.first?.suspensionID, "userInput:call_001")
         XCTAssertEqual(runner.resumeCalls.first?.answer, "是")
@@ -315,13 +375,13 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         runner.emit(.suspended(conversationID: conversationID, turnID: UUID(), suspension: suspension))
 
-        waitUntil { self.sent.contains { $0.method == ACPMethod.sessionRequestPermission } }
-        guard let permissionRequest = sent.first(where: { $0.method == ACPMethod.sessionRequestPermission }),
-              case .request(_, _, let params) = permissionRequest else {
-            return XCTFail("期望 request_permission 请求")
-        }
-        let decoded = try params?.decoded(as: ACPRequestPermissionParams.self)
-        XCTAssertEqual(decoded?.options.map(\.name), ["Debug", "Release"])
+        waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
+        XCTAssertEqual(try permissionParams()?.options.map(\.name), ["Debug", "Release"])
+
+        client.respondToLast(method: ACPMethod.sessionRequestPermission, result: permissionResult("Release"))
+        waitUntil { self.runner.resumeCalls.count == 1 }
+        // choice 的 answer 就是选项标签本身。
+        XCTAssertEqual(runner.resumeCalls.first?.answer, "Release")
     }
 
     func testSuspendedFreeTextDegradesToTextAndCancel() throws {
@@ -340,7 +400,301 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         runner.emit(.suspended(conversationID: conversationID, turnID: UUID(), suspension: suspension))
 
         waitUntil { self.runner.cancelCalls.contains(conversationID) }
+        // free_text 不应发起权限请求（ACP 无自由文本通道）。
+        XCTAssertNil(client.lastRequest(method: ACPMethod.sessionRequestPermission))
+        XCTAssertTrue(sent.contains {
+            guard case .notification(_, let params) = $0,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .agentMessageChunk(let content) = update.update,
+                  case .text(let text, _) = content else { return false }
+            return text.contains("想用什么分支名?")
+        })
+    }
+
+    // MARK: - 工具授权（M4）
+
+    func testToolPermissionUsesRealToolCallIDAndStandardOptions() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        reportToolCall(conversationID: conversationID, id: "call_write_1")
+        let suspension = AgentLoopSuspension(
+            suspensionID: "userInput:call_write_1",
+            conversationID: conversationID,
+            toolCallID: "call_write_1",
+            kind: "userInput",
+            // 内核授权挂起的 payload 携带 approval:<id>，但 ACP 必须用真实 toolCallId。
+            payload: #"{"toolCallId":"approval:call_write_1","kind":"permission","question":"此操作被判定为高风险，是否允许执行？","options":["允许","拒绝"],"mode":"yes_no"}"#
+        )
+        runner.emit(.suspended(conversationID: conversationID, turnID: UUID(), suspension: suspension))
+
+        waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
+        let params = try XCTUnwrap(try permissionParams())
+        XCTAssertEqual(params.toolCall.toolCallId, "call_write_1")
+        XCTAssertEqual(params.options.map(\.optionId), ["allow_once", "reject_once"])
+        XCTAssertEqual(params.options.map(\.kind), [.allowOnce, .rejectOnce])
+        // 上报的 tool_call 与授权请求必须指向同一个 id。
+        XCTAssertTrue(sent.contains {
+            guard case .notification(_, let p) = $0,
+                  let update = try? p?.decoded(as: ACPSessionUpdateParams.self),
+                  case .toolCall(let tc) = update.update else { return false }
+            return tc.toolCallId == "call_write_1"
+        })
+    }
+
+    func testToolPermissionAllowSendsInProgressAndResumes() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        reportToolCall(conversationID: conversationID, id: "call_write_1")
+        runner.emit(.suspended(
+            conversationID: conversationID,
+            turnID: UUID(),
+            suspension: AgentLoopSuspension(
+                suspensionID: "userInput:call_write_1",
+                conversationID: conversationID,
+                toolCallID: "call_write_1",
+                kind: "userInput",
+                payload: #"{"kind":"permission","question":"允许吗?"}"#
+            )
+        ))
+        waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
+
+        client.respondToLast(
+            method: ACPMethod.sessionRequestPermission,
+            result: permissionResult("allow_once")
+        )
+        waitUntil { self.runner.resumeCalls.count == 1 }
+        // 允许词必须能被内核 resolveUserResponse 识别为"执行"。
+        XCTAssertEqual(runner.resumeCalls.first?.answer, "允许")
+        XCTAssertEqual(runner.resumeCalls.first?.suspensionID, "userInput:call_write_1")
+
+        // 授权后应发 in_progress。
+        waitUntil {
+            self.sent.contains {
+                guard case .notification(_, let p) = $0,
+                      let update = try? p?.decoded(as: ACPSessionUpdateParams.self),
+                      case .toolCallUpdate(let tc) = update.update else { return false }
+                return tc.toolCallId == "call_write_1" && tc.status == .inProgress
+            }
+        }
+    }
+
+    func testToolPermissionRejectResumesWithRejectAnswer() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        reportToolCall(conversationID: conversationID, id: "call_write_2")
+        runner.emit(.suspended(
+            conversationID: conversationID,
+            turnID: UUID(),
+            suspension: AgentLoopSuspension(
+                suspensionID: "userInput:call_write_2",
+                conversationID: conversationID,
+                toolCallID: "call_write_2",
+                kind: "userInput",
+                payload: #"{"kind":"permission","question":"允许吗?"}"#
+            )
+        ))
+        waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
+
+        client.respondToLast(
+            method: ACPMethod.sessionRequestPermission,
+            result: permissionResult("reject_once")
+        )
+        waitUntil { self.runner.resumeCalls.count == 1 }
+        // 非允许词 → 内核视为用户拒绝执行。
+        XCTAssertEqual(runner.resumeCalls.first?.answer, "拒绝")
+        // 拒绝不应发 in_progress。
+        XCTAssertFalse(sent.contains {
+            guard case .notification(_, let p) = $0,
+                  let update = try? p?.decoded(as: ACPSessionUpdateParams.self),
+                  case .toolCallUpdate(let tc) = update.update else { return false }
+            return tc.toolCallId == "call_write_2" && tc.status == .inProgress
+        })
+    }
+
+    func testPermissionCancelledOutcomeCancelsTurn() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        reportToolCall(conversationID: conversationID, id: "call_write_3")
+        runner.emit(.suspended(
+            conversationID: conversationID,
+            turnID: UUID(),
+            suspension: AgentLoopSuspension(
+                suspensionID: "userInput:call_write_3",
+                conversationID: conversationID,
+                toolCallID: "call_write_3",
+                kind: "userInput",
+                payload: #"{"kind":"permission","question":"允许吗?"}"#
+            )
+        ))
+        waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
+
+        // 规范：回合取消时 Client 以 cancelled outcome 回复权限请求。
+        client.respondToLast(method: ACPMethod.sessionRequestPermission, result: cancelledResult)
+        waitUntil { self.runner.cancelCalls.contains(conversationID) }
         XCTAssertTrue(runner.cancelCalls.contains(conversationID))
+        XCTAssertTrue(runner.resumeCalls.isEmpty)
+    }
+
+    func testPermissionFailureCancelsTurn() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        reportToolCall(conversationID: conversationID, id: "call_write_4")
+        runner.emit(.suspended(
+            conversationID: conversationID,
+            turnID: UUID(),
+            suspension: AgentLoopSuspension(
+                suspensionID: "userInput:call_write_4",
+                conversationID: conversationID,
+                toolCallID: "call_write_4",
+                kind: "userInput",
+                payload: #"{"kind":"permission","question":"允许吗?"}"#
+            )
+        ))
+        waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
+
+        // Client 返回 JSON-RPC 错误（如连接异常）：不能悬挂，直接终止回合。
+        client.failLast(
+            method: ACPMethod.sessionRequestPermission,
+            error: ACPError(code: ACPErrorCode.requestCancelled, message: "cancelled")
+        )
+        waitUntil { self.runner.cancelCalls.contains(conversationID) }
+        XCTAssertTrue(runner.resumeCalls.isEmpty)
+    }
+
+    func testPermissionRequestTimeoutCancelsTurn() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let client = MockClient(box: box)
+        let requester = ACPClientRequester(
+            onSend: { message in box.messages.append(message) },
+            timeout: 0.3,
+            permissionTimeout: 0.3
+        )
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: requester,
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/timeout")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        runner.emit(.suspended(
+            conversationID: conversationID,
+            turnID: UUID(),
+            suspension: AgentLoopSuspension(
+                suspensionID: "userInput:call_t",
+                conversationID: conversationID,
+                toolCallID: "call_t",
+                kind: "userInput",
+                payload: #"{"kind":"permission","question":"允许吗?"}"#
+            )
+        ))
+        // 不回复：请求超时后必须终止回合，而非永久悬挂。
+        waitUntil({ runner.cancelCalls.contains(conversationID) }, timeout: 5.0)
+        XCTAssertTrue(runner.cancelCalls.contains(conversationID))
+        XCTAssertTrue(runner.resumeCalls.isEmpty)
+    }
+
+    // MARK: - 回合收尾清理挂起请求
+
+    func testFinalizeMarksPendingToolCallsCancelled() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        reportToolCall(conversationID: conversationID, id: "call_pending")
+        // 回合被取消：未出结果的工具调用应补发 cancelled。
+        runner.emit(.cancelled(conversationID: conversationID, turnID: UUID()))
+        runner.nextOutcome = .cancelled
+        waitUntil { self.sent.contains { $0.id == .number(1) } }
+
+        XCTAssertTrue(sent.contains {
+            guard case .notification(_, let p) = $0,
+                  let update = try? p?.decoded(as: ACPSessionUpdateParams.self),
+                  case .toolCallUpdate(let tc) = update.update else { return false }
+            return tc.toolCallId == "call_pending" && tc.status == .cancelled
+        })
+    }
+
+    func testFinalizeCancelsPendingPermissionRequest() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        reportToolCall(conversationID: conversationID, id: "call_p")
+        runner.emit(.suspended(
+            conversationID: conversationID,
+            turnID: UUID(),
+            suspension: AgentLoopSuspension(
+                suspensionID: "userInput:call_p",
+                conversationID: conversationID,
+                toolCallID: "call_p",
+                kind: "userInput",
+                payload: #"{"kind":"permission","question":"允许吗?"}"#
+            )
+        ))
+        waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
+
+        // 回合因外部原因结束：挂起的权限请求必须被作废，不能残留。
+        runner.emit(.cancelled(conversationID: conversationID, turnID: UUID()))
+        runner.nextOutcome = .cancelled
+        waitUntil { self.sent.contains { $0.id == .number(1) } }
+        // 请求已被作废：之后再回包不应触发 resume。
+        client.respondToLast(method: ACPMethod.sessionRequestPermission, result: permissionResult("allow_once"))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        XCTAssertTrue(runner.resumeCalls.isEmpty)
+    }
+
+    func testSessionCancelCancelsPendingPermission() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        reportToolCall(conversationID: conversationID, id: "call_c")
+        runner.emit(.suspended(
+            conversationID: conversationID,
+            turnID: UUID(),
+            suspension: AgentLoopSuspension(
+                suspensionID: "userInput:call_c",
+                conversationID: conversationID,
+                toolCallID: "call_c",
+                kind: "userInput",
+                payload: #"{"kind":"permission","question":"允许吗?"}"#
+            )
+        ))
+        waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
+
+        coordinator.cancel(sessionID: sessionID)
+        waitUntil { self.runner.cancelCalls.contains(conversationID) }
+
+        // 取消后迟到的授权回包不得恢复回合。
+        client.respondToLast(method: ACPMethod.sessionRequestPermission, result: permissionResult("allow_once"))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        XCTAssertTrue(runner.resumeCalls.isEmpty)
     }
 
     // MARK: - 取消
@@ -376,7 +730,6 @@ final class ACPTurnCoordinatorTests: XCTestCase {
 
     func testStartTurnRejectsEmptyText() throws {
         let sessionID = try makeSessionID()
-        // image 块无文本 → 提示内容为空 → 拒绝。
         let error = coordinator.startTurn(
             sessionID: sessionID,
             requestID: .number(1),
@@ -403,6 +756,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
             agentLoop: runner,
             messages: store,
             sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
             onSend: { [box] message in box.messages.append(message) },
             turnStartTimeout: 0.5
         )
@@ -412,7 +766,6 @@ final class ACPTurnCoordinatorTests: XCTestCase {
             requestID: .number(1),
             prompt: [.text("hello")]
         )
-        // 不注入任何事件：watchdog 应在 0.5s 后按失败收尾。
         waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
         guard let response = box.messages.first(where: { $0.id == .number(1) }),
               case .response(_, let result) = response else {
@@ -420,7 +773,6 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         }
         let decoded = try result?.decoded(as: ACPPromptResult.self)
         XCTAssertEqual(decoded?.stopReason, .endTurn)
-        // 超时文本通知。
         XCTAssertTrue(box.messages.contains {
             if case .notification(let method, let params) = $0,
                method == ACPMethod.sessionUpdate,
@@ -442,6 +794,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
             agentLoop: runner,
             messages: store,
             sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
             onSend: { [box] message in box.messages.append(message) },
             turnStartTimeout: 0.5
         )
@@ -449,7 +802,6 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
         _ = shortCoordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hello")])
         waitUntil { runner.runCalls.count == 1 }
-        // 事件到达即视为进展：watchdog 不应再触发。
         runner.emit(.toolCallsReceived(
             conversationID: conversationID,
             turnID: UUID(),
@@ -463,7 +815,6 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         waitUntil({ box.messages.contains { $0.id == .number(1) } }, timeout: 3.0)
         let responses = box.messages.filter { $0.id == .number(1) }
         XCTAssertEqual(responses.count, 1)
-        // 应来自 completed（end_turn），而非超时文本。
         guard let response = responses.first, case .response(_, let result) = response else {
             return XCTFail("期望响应")
         }

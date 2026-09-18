@@ -1,6 +1,6 @@
 # Lumi 接入 ACP（Agent Client Protocol）实施方案
 
-> 状态：M2 握手已通过（2026-09-18）；M3 回合与流式单测全绿（2026-09-18）；lumi-acp 采用方案 B，内嵌 Lumi.app 分发
+> 状态：M2 握手已通过（2026-09-18）；M3 回合与流式单测全绿（2026-09-18）；M4 授权与文件已完成（2026-09-18，PluginACP 60/60）；lumi-acp 采用方案 B，内嵌 Lumi.app 分发
 > 目标：让 Lumi 以 **ACP Agent** 身份接入外部编辑器（VS Code / Zed 等），使外部编辑器中可直接使用 Lumi 的 agent 能力（模型路由、工具系统、项目智能）。
 > 关联文档：[ACP Introduction](https://agentclientprotocol.com/get-started/introduction)、[ACP Protocol Overview](https://agentclientprotocol.com/protocol/overview)、[ACP Prompt Turn](https://agentclientprotocol.com/protocol/prompt-turn)
 
@@ -405,10 +405,20 @@ sequenceDiagram
 - **已知局限（headless e2e 未覆盖完整 LLM 回合）**：headless 下真实消息存储（`PluginMessageManager` 的 `messagesSnapshot` → `Task.detached` 磁盘读取）在无 GUI 初始化时会话下挂起，使 `requestOneLLM` 无法完成；同时 headless 进程无模型配置（UserDefaults 域为空）。完整回合（含真实 LLM 响应与工具执行）需在 M5 内嵌运行时或真实 app 环境验证（见 §10 R7）。
 - **遗留**：正式 `lumi-acp` Xcode target（内嵌 app 分发、随 DMG+Sparkle 发布）尚未创建；Zed 实配实测待 M5。
 
-### M4 — 授权与文件
-- [ ] `session/request_permission` 双向：挂起、允许/拒绝/取消三分支、恢复
-- [ ] `fs/read_text_file` / `fs/write_text_file` 桥接工具（编辑器声明能力时启用）
-- **验收**：高风险工具（如 shell 写操作）触发编辑器授权弹窗；允许/拒绝均正确恢复回合；文件编辑在编辑器中出现 diff。
+### M4 — 授权与文件 ✅ 已完成（2026-09-18）
+- [x] `session/request_permission` 双向：挂起、允许/拒绝/取消三分支、恢复
+  - 新增 `ACPClientRequester`（出站请求收发器）：Agent 主动请求（权限 / fs）统一按 id 关联 continuation，响应、错误、超时、会话取消四条路径都恰好 resume 一次；Agent 侧请求 id 从 1000 起，避免与 Client 请求 id 混淆。
+  - **工具授权挂起识别**：内核授权挂起以 payload `kind == "permission"` 标记，此前被当作普通 AskUser `yes_no` 处理。现已单独识别，并使用**真实 `toolCallId`**（`suspension.toolCallID`）与规范 optionId（`allow_once` / `reject_once`），与先前上报的 `tool_call` 通知保持一致；授权弹窗携带工具名、`ToolKind` 与原始入参。
+  - **允许 → 恢复**：先补发 `tool_call_update(in_progress)`（符合 ACP 规范），再以内核可识别的允许词恢复回合；**拒绝**以非允许词恢复（内核 `resolveUserResponse` 判为拒绝执行）；**取消/超时/错误响应**一律 `cancelTurn`，不悬挂。
+  - 权限请求超时默认 300s（`LUMI_ACP_REQUEST_TIMEOUT` 可调，且权限窗口不小于该值），避免无响应的 Client 让回合永久挂起。
+- [x] `fs/read_text_file` / `fs/write_text_file` 桥接工具（编辑器声明能力时启用）
+  - `ACPClientCapabilitiesStore`：捕获并存储 `initialize` 声明的 `clientCapabilities.fs`（未声明一律视为不支持）。
+  - `ACPFileClient`：fs 请求构造与路径校验（**必须绝对路径**；越出会话 `cwd` 的路径与 `..` 穿越一律拒绝，按路径组件比较避免前缀误判）。
+  - `ACPReadFileTool` / `ACPWriteFileTool`：覆盖内置 `read_file` / `write_file`，经编辑器读写，使未保存缓冲区与编辑器 diff 视图天然正确；**仅在 Client 声明完整 fs 能力时注册**，否则回退内核自带文件工具；`stopACPServer` 时撤回。
+- [x] **回合收尾清理挂起请求**：`finalize` 与 `session/cancel` 都会作废该会话全部挂起权限请求，并把未出结果的工具调用补发 `tool_call_update(cancelled)`，满足 ACP「取消后不得残留挂起请求」的要求。
+- **验证**：`swift test --package-path Packages/PluginACP` 全绿（**60/60**，较 M3 的 31 增加 29 条：出站请求器 6、文件客户端 9、能力捕获与响应路由 5、工具授权三分支与超时/失败 5、挂起清理 3、AskUser 回归 1）；`ProviderACP` 40/40。e2e（headless stdio）：`initialize`（声明 fs 能力）+ `session/new` + `session/cancel` 帧往返正常，`ACPBootstrap` 可执行产物构建通过。
+- **已知局限**：与 M3 相同，headless 下真实消息存储与模型配置不可用，**完整 LLM 回合 + 真实工具授权弹窗 + 编辑器 diff** 需在 M5 内嵌运行时或真实 app（Zed）环境验证；fs 桥的路径边界依赖 `session/new` 的 `cwd`，多根项目需后续支持。
+- **遗留**：正式 `lumi-acp` Xcode target（内嵌 app 分发、随 DMG+Sparkle 发布）尚未创建；Zed 实配实测待 M5。
 
 ### M5 — 二期/三期能力（后续迭代）
 - [ ] `session/load`（会话续载）、`session/set_mode`（模式切换）
@@ -429,6 +439,8 @@ sequenceDiagram
 | R5 | ACP 协议仍演进中（远程模式 WIP） | 规范变更返工 | `ProviderACP` 只做协议类型映射，产品逻辑不触碰协议细节；版本协商按规范降级 |
 | R6 | `MCPKit` 空壳、README 声明无 MCP client | 编辑器生态工具（MCP server）不可用 | 三期补齐；MVP 不受影响 |
 | R7 | headless 下内核持久化消息存储（`MessageManager.messagesSnapshot`）与模型配置（UserDefaults 域）不可用 | 完整 LLM 回合无法在独立 headless 进程验证 | 方案 B 内嵌运行时（M5）复用 app 配置与存储；必要时为 headless 提供内存消息存储与默认模型参数 |
+| R8 | 内核授权挂起载荷不含模型原始 `toolCallId`（`payload.toolCallId` 为 `approval:<id>`） | 若误用该字段，编辑器授权弹窗与已上报的 `tool_call` 对不上 | ✅ 已处置（2026-09-18）：`ACPTurnCoordinator` 一律取 `suspension.toolCallID`（内核已回填模型原始 id），并新增测试锁定该行为 |
+| R9 | fs 桥的路径边界只认 `session/new` 的单个 `cwd` | 多根/多工作区项目下，合法文件路径可能被误判越权 | 当前按单根保守校验（安全优先）；后续按需扩展为多根白名单 |
 
 **开放问题（需产品确认）**
 
