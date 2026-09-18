@@ -224,7 +224,7 @@ struct MemorySettingsView: View {
                         .lineLimit(1)
                     Spacer(minLength: 0)
                     Text(item.type.displayName)
-                        .font(.appMicroMonospaced)
+                        .font(.appMonoMicro)
                         .foregroundStyle(colorForType(item.type))
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
@@ -261,7 +261,7 @@ struct MemorySettingsView: View {
                             .font(.appBody)
                             .foregroundStyle(colorForType(memory.type))
                         Text(memory.name)
-                            .font(.appTitle3Emphasized)
+                            .font(.appSectionTitle)
                             .foregroundStyle(theme.textPrimary)
                         Spacer(minLength: 0)
                         Button {
