@@ -60,10 +60,16 @@ struct ACPSettingsView: View {
 
     private var helperPathCard: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(ACPLocalization.string("ACP executable path"))
-                    .font(.appCaptionEmphasized)
-                    .foregroundStyle(theme.textSecondary)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "terminal")
+                        .foregroundStyle(theme.primary)
+                        .frame(width: 18, height: 18)
+                    Text(ACPLocalization.string("ACP executable path"))
+                        .font(.appBodyEmphasized)
+                        .foregroundStyle(theme.textPrimary)
+                    Spacer()
+                }
                 Text(helperPath)
                     .font(.system(.caption, design: .monospaced))
                     .foregroundStyle(theme.textPrimary)
@@ -75,16 +81,14 @@ struct ACPSettingsView: View {
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .stroke(theme.divider, lineWidth: 0.5)
                     }
-                Button {
-                    copyHelperPath()
-                } label: {
-                    Label(
-                        pathCopied ? ACPLocalization.string("Copied") : ACPLocalization.string("Copy ACP path"),
-                        systemImage: pathCopied ? "checkmark" : "doc.on.doc"
-                    )
-                    .font(.appBodyEmphasized)
+                if pathCopied {
+                    AppButton(ACPLocalization.string("Copied"), systemImage: "checkmark", style: .primary, size: .small) {}
+                        .disabled(true)
+                } else {
+                    AppButton(ACPLocalization.string("Copy ACP path"), systemImage: "doc.on.doc", style: .secondary, size: .small) {
+                        copyHelperPath()
+                    }
                 }
-                .buttonStyle(.bordered)
             }
         }
     }
@@ -173,22 +177,15 @@ struct ACPSettingsView: View {
                         .font(.appBodyEmphasized)
                         .foregroundStyle(theme.textPrimary)
                     Spacer(minLength: 8)
-                    Text(ACPLocalization.string(guide.requirementKey))
-                        .font(.appCaption)
-                        .foregroundStyle(theme.textSecondary)
+                    AppTag(ACPLocalization.string(guide.requirementKey), style: .subtle)
                 }
                 Text(ACPLocalization.string(guide.summaryKey))
                     .font(.appBody)
                     .foregroundStyle(theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Button {
+                AppButton(ACPLocalization.string("Show setup steps"), style: .primary) {
                     activeGuide = guide
-                } label: {
-                    Text(ACPLocalization.string("Show setup steps"))
-                        .font(.appBodyEmphasized)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(theme.primary)
             }
         }
     }
@@ -225,7 +222,7 @@ private struct ACPGuideSetupSheetView: View {
                 .font(.appBodyEmphasized)
                 .foregroundStyle(theme.textPrimary)
             Spacer()
-            Button(ACPLocalization.string("Done")) {
+            AppButton(ACPLocalization.string("Done"), style: .ghost, size: .small) {
                 dismiss()
             }
         }
@@ -261,24 +258,19 @@ private struct ACPGuideSetupSheetView: View {
 
     private var footer: some View {
         HStack {
-            Button(ACPLocalization.string("Previous")) {
+            AppButton(ACPLocalization.string("Previous"), style: .secondary) {
                 stepIndex -= 1
             }
             .disabled(stepIndex == 0)
-            .buttonStyle(.bordered)
             Spacer()
             if stepIndex < guide.steps.count - 1 {
-                Button(ACPLocalization.string("Next")) {
+                AppButton(ACPLocalization.string("Next"), style: .primary) {
                     stepIndex += 1
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(theme.primary)
             } else {
-                Button(ACPLocalization.string("Done")) {
+                AppButton(ACPLocalization.string("Done"), style: .primary) {
                     dismiss()
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(theme.primary)
             }
         }
         .padding(.horizontal, 20)
