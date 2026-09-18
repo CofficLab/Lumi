@@ -3,42 +3,29 @@ import KitAgentTool
 import KitMCP
 import Combine
 
-/// MCP 服务器注册表：配置持久化 + CRUD + 单工具风险覆盖 + 全局设置。
+/// MCP 服务器注册表：配置持久化 + CRUD。
 ///
-/// 存储约定与现有插件一致：`UserDefaults` + JSON 编码（`MCPServerConfig` 与
-/// `CommandRiskLevel` 均 `Codable`）。主线程隔离（UI 直接观察）。
+/// 持久化到插件数据目录下的 `mcp-servers.json`（与其他插件一致），
+/// 不再使用 UserDefaults。主线程隔离（UI 直接观察）。
 @MainActor
 public final class MCPServerRegistry: ObservableObject {
     // MARK: - Published State
 
     /// 全部已配置服务器（含禁用项）。
     @Published public private(set) var servers: [MCPServerConfig] = []
-    /// MCP 总开关。关闭时全部服务器不连接、不注册工具。
+    /// MCP 总开关（始终启用，保留属性以兼容 UI 绑定）。
     @Published public var globalEnabled: Bool = true
-    /// 未知工具（不在任何分级规则中）的默认风险等级。默认 `high`。
+    /// 未知工具默认风险等级（保留兼容，UI 已移除）。
     @Published public var unknownToolDefaultLevel: CommandRiskLevel = .high
 
     // MARK: - Storage
 
-    private let defaults: UserDefaults
-    private let lock = NSLock()
-
-    private enum Keys {
-        static let servers = "PluginMCP.servers"
-        static let riskOverrides = "PluginMCP.toolRiskOverrides"
-        static let globalEnabled = "PluginMCP.globalEnabled"
-        static let unknownDefault = "PluginMCP.unknownDefault"
-        static let seededPresetsVersion = "PluginMCP.seededPresetsVersion"
-    }
-
-    /// 内置预设版本号：每新增一批内置预设 +1。
-    /// 已安装的老用户按版本号增量补齐新预设，而不是只在首次安装时写入一次。
-    private static let currentPresetsVersion = 2
+    private let fileURL: URL
 
     // MARK: - Init
 
-    public init(defaults: UserDefaults = .standard, contributor: MCPServerContributor? = nil) {
-        self.defaults = defaults
+    public init(directory: URL, contributor: MCPServerContributor? = nil) {
+        self.fileURL = directory.appendingPathComponent("mcp-servers.json", isDirectory: false)
         load()
         if let contributor {
             observeContributor(contributor)
@@ -46,19 +33,18 @@ public final class MCPServerRegistry: ObservableObject {
     }
 
     private func load() {
-        globalEnabled = defaults.object(forKey: Keys.globalEnabled) as? Bool ?? true
-        if let raw = defaults.string(forKey: Keys.unknownDefault),
-           let level = CommandRiskLevel(rawValue: raw) {
-            unknownToolDefaultLevel = level
+        guard let data = try? Data(contentsOf: fileURL),
+              let decoded = try? JSONDecoder().decode([MCPServerConfig].self, from: data)
+        else {
+            servers = []
+            return
         }
-        servers = decodeServers(defaults.data(forKey: Keys.servers))
+        servers = decoded
     }
 
     /// 观察贡献收集器：新贡献的服务器模板以禁用态自动 seed 到本地列表。
     private func observeContributor(_ contributor: MCPServerContributor) {
-        // 立即处理已有贡献
         seedContributions(contributor.contributions)
-        // 后续新贡献自动接入
         withObservationTracking {
             _ = contributor.contributions
         } onChange: { [weak self] in
@@ -106,12 +92,9 @@ public final class MCPServerRegistry: ObservableObject {
         persist()
     }
 
-    /// 按 id 移除服务器（同时清理该服务器的风险覆盖）。
+    /// 按 id 移除服务器。
     public func removeServer(id: String) {
         servers.removeAll { $0.id == id }
-        var overrides = decodeOverrides(defaults.data(forKey: Keys.riskOverrides))
-        overrides.removeValue(forKey: id)
-        setOverrides(overrides)
         persist()
     }
 
@@ -119,55 +102,15 @@ public final class MCPServerRegistry: ObservableObject {
         servers.first { $0.id == id }
     }
 
-    // MARK: - Per-Tool Risk Overrides
-
-    /// 用户为某台服务器的某个工具指定的风险等级覆盖。
-    public func riskOverride(serverID: String, toolName: String) -> CommandRiskLevel? {
-        decodeOverrides(defaults.data(forKey: Keys.riskOverrides))[serverID]?[toolName]
-    }
-
-    /// 设置（或清除）单工具风险覆盖。`nil` 表示回到策略自动判定。
-    public func setRiskOverride(serverID: String, toolName: String, level: CommandRiskLevel?) {
-        var overrides = decodeOverrides(defaults.data(forKey: Keys.riskOverrides))
-        if let level {
-            overrides[serverID, default: [:]][toolName] = level
-        } else {
-            overrides[serverID]?[toolName] = nil
-            if overrides[serverID]?.isEmpty == true { overrides[serverID] = nil }
-        }
-        setOverrides(overrides)
-        persist()
-    }
-
     // MARK: - Persistence
 
     private func persist() {
-        defaults.set(globalEnabled, forKey: Keys.globalEnabled)
-        defaults.set(unknownToolDefaultLevel.rawValue, forKey: Keys.unknownDefault)
-        if let data = try? JSONEncoder().encode(servers) {
-            defaults.set(data, forKey: Keys.servers)
+        do {
+            let data = try JSONEncoder().encode(servers)
+            try data.write(to: fileURL, options: .atomic)
+        } catch {
+            print("[MCPServerRegistry] persist failed: \(error)")
         }
-        // riskOverrides 已在 setOverrides 中写入
-    }
-
-    private func setOverrides(_ overrides: [String: [String: CommandRiskLevel]]) {
-        if let data = try? JSONEncoder().encode(overrides) {
-            defaults.set(data, forKey: Keys.riskOverrides)
-        }
-    }
-
-    private func decodeServers(_ data: Data?) -> [MCPServerConfig] {
-        guard let data, let decoded = try? JSONDecoder().decode([MCPServerConfig].self, from: data) else {
-            return []
-        }
-        return decoded
-    }
-
-    private func decodeOverrides(_ data: Data?) -> [String: [String: CommandRiskLevel]] {
-        guard let data, let decoded = try? JSONDecoder().decode([String: [String: CommandRiskLevel]].self, from: data) else {
-            return [:]
-        }
-        return decoded
     }
 }
 

@@ -5,6 +5,7 @@ import KitMCP
 import ProviderMCP
 import KitSuperLog
 import ProviderSettingView
+import ProviderStorage
 import ProviderToolManager
 import SwiftUI
 import os
@@ -44,7 +45,11 @@ public final class MCPSuperPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let contributor = MCPServerContributor()
-        let registry = MCPServerRegistry(contributor: contributor)
+        let dataDir = kernel.resolveProvider((any StorageProviding).self)?
+            .pluginDataDirectory(for: id)
+            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("PluginMCP", isDirectory: true)
+        let registry = MCPServerRegistry(directory: dataDir, contributor: contributor)
         let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
         let manager = MCPConnectionManager(
             registry: registry,
