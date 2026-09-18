@@ -366,9 +366,6 @@ struct MCPServerEditSheet: View {
             }
 
             HStack {
-                Text(MCPText.string("This server runs programs with Lumi's permissions. Only add trusted sources."))
-                    .font(.appCaption)
-                    .foregroundStyle(theme.warning)
                 Spacer()
                 AppButton(MCPText.string("Cancel"), size: .small) { dismiss() }
                 AppButton(MCPText.string("Save & Connect"), size: .small) {
