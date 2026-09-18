@@ -12,9 +12,12 @@ let package = Package(
         .package(path: "../KernelCore"),
         .package(path: "../KitSuperLog"),
         .package(path: "../KitAgentTool"),
+        .package(path: "../KitLocalization"),
+        .package(path: "../LumiUI"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderProject"),
+        .package(path: "../ProviderSettingView"),
     ],
     targets: [
         .target(
@@ -22,9 +25,12 @@ let package = Package(
             dependencies: [
                 "KernelCore",
                 "KitAgentTool",
+                "KitLocalization",
+                "LumiUI",
                 "ProviderStorage",
                 "ProviderToolManager",
                 "ProviderProject",
+                "ProviderSettingView",
             ],
             path: "Sources/PluginMemory"
         ),
