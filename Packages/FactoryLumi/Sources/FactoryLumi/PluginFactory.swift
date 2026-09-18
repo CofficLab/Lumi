@@ -15,6 +15,7 @@ import BrowserPlugin
 import ComputerUsePlugin
 import PluginMCP
 import PluginXcodeMCP
+import PluginGithubMCP
 import BrewManagerPlugin
 import DisplayControlPlugin
 import PortManagerPlugin
@@ -243,6 +244,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ComputerUseSuperPlugin(),
             MCPPlugin(),
             PluginXcodeMCP(),
+            PluginGithubMCP(),
             BrewManagerSuperPlugin(),
             DisplayControlSuperPlugin(),
             PortManagerSuperPlugin(),
