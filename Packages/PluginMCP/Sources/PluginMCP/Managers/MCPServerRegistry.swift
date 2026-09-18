@@ -55,16 +55,14 @@ public final class MCPServerRegistry: ObservableObject {
     }
 
     /// 观察贡献收集器：新贡献的服务器模板以禁用态自动 seed 到本地列表。
+    ///
+    /// 用同步回调而非 Observation：`withObservationTracking` 对 `@Published`
+    /// 属性的读取不注册访问跟踪，onChange 不会触发，导致 Registry 初始化
+    /// 之后的贡献（如 PluginXcodeMCP 贡献的 Xcode）全部丢失。
     private func observeContributor(_ contributor: MCPServerContributor) {
         seedContributions(contributor.contributions)
-        withObservationTracking {
-            _ = contributor.contributions
-        } onChange: { [weak self] in
-            Task { @MainActor in
-                guard let self else { return }
-                self.seedContributions(contributor.contributions)
-                self.observeContributor(contributor)
-            }
+        contributor.onContribute = { [weak self] server in
+            self?.seedContributions([server])
         }
     }
 

@@ -126,4 +126,27 @@ struct MCPServerRegistryTests {
         #expect(registry.servers.filter { $0.id == dupID }.count == 1)
         #expect(registry.servers.first { $0.id == dupID }?.command == "/opt/homebrew/bin/python3")
     }
+
+    @Test("模拟 boot 序列：先贡献 Xcode 再贡献 GitHub，两个都应 seed")
+    func simulateBootContributions() async {
+        let dir = makeTempDirectory()
+        let contributor = MCPServerContributor()
+        let registry = MCPServerRegistry(directory: dir, contributor: contributor)
+
+        // PluginXcodeMCP.boot（order 280）
+        contributor.contribute(MCPServerConfig(
+            name: "Xcode (native)",
+            command: "xcrun",
+            arguments: ["mcpbridge"]
+        ))
+        await Task.yield()
+
+        // PluginGithubMCP.boot（order 281）
+        contributor.contribute(MCPServerTemplate.github)
+        await Task.yield()
+        await Task.yield()
+
+        #expect(registry.servers.contains { $0.command == "xcrun" }, "Xcode 应被 seed")
+        #expect(registry.servers.contains { $0.command == "docker" }, "GitHub 应被 seed")
+    }
 }
