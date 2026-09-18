@@ -304,8 +304,6 @@ struct MCPServerEditSheet: View {
     @State private var transport: MCPTransport = .stdio
     @State private var url: String = ""
     @State private var environmentText: String = ""
-    @State private var autoStart = false
-    @State private var enabled = true
     @State private var errorMessage: String?
     @State private var isSaving = false
 
@@ -355,16 +353,6 @@ struct MCPServerEditSheet: View {
                                 .stroke(theme.divider, lineWidth: 0.5)
                         }
                 }
-                AppToggleRow(
-                    title: LocalizedStringKey(MCPText.string("Auto-start")),
-                    description: LocalizedStringKey(MCPText.string("Connect automatically when Lumi starts.")),
-                    isOn: $autoStart
-                )
-                AppToggleRow(
-                    title: LocalizedStringKey(MCPText.string("Enabled")),
-                    description: LocalizedStringKey(MCPText.string("Disabled servers never spawn or register tools.")),
-                    isOn: $enabled
-                )
             }
 
             if let errorMessage {
@@ -402,8 +390,6 @@ struct MCPServerEditSheet: View {
         transport = server.transport
         url = server.url ?? ""
         environmentText = server.environment.map { "\($0.key)=\($0.value)" }.joined(separator: "\n")
-        autoStart = server.autoStart
-        enabled = server.enabled
     }
 
     private func formField<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
@@ -451,6 +437,7 @@ struct MCPServerEditSheet: View {
             }
         }
 
+        let initialEnabled = server?.enabled ?? true
         let config = MCPServerConfig(
             id: server?.id ?? "",
             name: trimmedName,
@@ -459,8 +446,8 @@ struct MCPServerEditSheet: View {
             environment: environment,
             transport: transport,
             url: transport == .streamableHTTP ? trimmedURL : nil,
-            autoStart: autoStart,
-            enabled: enabled
+            autoStart: initialEnabled,
+            enabled: initialEnabled
         )
 
         isSaving = true
