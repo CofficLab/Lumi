@@ -1,6 +1,6 @@
 # Lumi 接入 ACP（Agent Client Protocol）实施方案
 
-> 状态：M2 握手已通过（2026-09-18）；M3 回合与流式单测全绿（2026-09-18）；M4 授权与文件已完成（2026-09-18，PluginACP 60/60）；lumi-acp 采用方案 B，内嵌 Lumi.app 分发
+> 状态：M2 握手已通过（2026-09-18）；M3 回合与流式单测全绿（2026-09-18）；M4 授权与文件已完成并**通过真实 app 环境端到端验证**（2026-09-18，PluginACP 60/60，详见 §9 M5 验证记录）；headless 阻塞问题已定位并修复；lumi-acp 采用方案 B，内嵌 Lumi.app 分发
 > 目标：让 Lumi 以 **ACP Agent** 身份接入外部编辑器（VS Code / Zed 等），使外部编辑器中可直接使用 Lumi 的 agent 能力（模型路由、工具系统、项目智能）。
 > 关联文档：[ACP Introduction](https://agentclientprotocol.com/get-started/introduction)、[ACP Protocol Overview](https://agentclientprotocol.com/protocol/overview)、[ACP Prompt Turn](https://agentclientprotocol.com/protocol/prompt-turn)
 
@@ -402,7 +402,7 @@ sequenceDiagram
 - [x] 取消：`session/cancel` → `stopReason: cancelled`
 - [x] 挂起（AskUser → ACP 权限桥）：`yes_no` → `session/request_permission`（是/否）；`choice` → 选项列表；`free_text`/非 JSON → 降级为文本提示 + 取消回合；`selected(optionId)` → `resumeTurn(answer:)`，`cancelled` → 取消。
 - **验证**：`swift test --package-path Packages/PluginACP` 全绿（31/31：回合完成、finalize 一次、tool_call/update、yes_no/choice 权限、free_text 降级、取消、watchdog×2、输入校验、纯函数）；`ProviderACP` 40/40；e2e（headless stdio）：initialize + session/new + `session/prompt` → 自动回复抑制生效、回合由 ACP 独占启动、`started` 事件到达。
-- **已知局限（headless e2e 未覆盖完整 LLM 回合）**：headless 下真实消息存储（`PluginMessageManager` 的 `messagesSnapshot` → `Task.detached` 磁盘读取）在无 GUI 初始化时会话下挂起，使 `requestOneLLM` 无法完成；同时 headless 进程无模型配置（UserDefaults 域为空）。完整回合（含真实 LLM 响应与工具执行）需在 M5 内嵌运行时或真实 app 环境验证（见 §10 R7）。
+- **已知局限（记录已更正，2026-09-18）**：原记录称"headless 下真实消息存储挂起、读不到模型配置"导致无法验证完整回合。经实测，**这两点均不成立**（`messagesSnapshot` 正常返回；模型配置可读）。真实阻塞源是 API Key 读取弹窗与通知插件崩溃，已修复，完整回合现已在 headless 环境验证通过（见 M5 验证记录）。
 - **遗留**：正式 `lumi-acp` Xcode target（内嵌 app 分发、随 DMG+Sparkle 发布）尚未创建；Zed 实配实测待 M5。
 
 ### M4 — 授权与文件 ✅ 已完成（2026-09-18）
@@ -417,14 +417,43 @@ sequenceDiagram
   - `ACPReadFileTool` / `ACPWriteFileTool`：覆盖内置 `read_file` / `write_file`，经编辑器读写，使未保存缓冲区与编辑器 diff 视图天然正确；**仅在 Client 声明完整 fs 能力时注册**，否则回退内核自带文件工具；`stopACPServer` 时撤回。
 - [x] **回合收尾清理挂起请求**：`finalize` 与 `session/cancel` 都会作废该会话全部挂起权限请求，并把未出结果的工具调用补发 `tool_call_update(cancelled)`，满足 ACP「取消后不得残留挂起请求」的要求。
 - **验证**：`swift test --package-path Packages/PluginACP` 全绿（**60/60**，较 M3 的 31 增加 29 条：出站请求器 6、文件客户端 9、能力捕获与响应路由 5、工具授权三分支与超时/失败 5、挂起清理 3、AskUser 回归 1）；`ProviderACP` 40/40。e2e（headless stdio）：`initialize`（声明 fs 能力）+ `session/new` + `session/cancel` 帧往返正常，`ACPBootstrap` 可执行产物构建通过。
-- **已知局限**：与 M3 相同，headless 下真实消息存储与模型配置不可用，**完整 LLM 回合 + 真实工具授权弹窗 + 编辑器 diff** 需在 M5 内嵌运行时或真实 app（Zed）环境验证；fs 桥的路径边界依赖 `session/new` 的 `cwd`，多根项目需后续支持。
+- **已知局限（2026-09-18 已补验）**：原记录的"完整回合需 M5 或真实 app 验证"已在 headless 环境完成——文本回合、工具调用、fs 读写、权限允许/拒绝全部通过（见 §9 M5 验证记录）；期间还修掉了一个 M4 装配缺陷——**fs 桥原先从未激活**（安装时机早于 `initialize`），现已改为按 `initialize` 声明的能力安装。fs 桥的路径边界仍依赖 `session/new` 的 `cwd`（R9）。
 - **遗留**：正式 `lumi-acp` Xcode target（内嵌 app 分发、随 DMG+Sparkle 发布）尚未创建；Zed 实配实测待 M5。
 
-### M5 — 二期/三期能力（后续迭代）
+### M5 — 二期/三期能力（进行中）
+- [x] **解除 headless 回合阻塞（2026-09-18）** —— 见下方"验证记录"。此前 M3/M4 记录的"headless 无法验证完整回合"根因判断**不准确**，实测已更正。
+- [x] **M4 验收补验（2026-09-18）**：真实 headless agent 上完成文本回合、工具调用生命周期、编辑器 fs 读写、权限允许/拒绝全链路。
 - [ ] `session/load`（会话续载）、`session/set_mode`（模式切换）
 - [ ] 远程 HTTP/WebSocket 传输（复用 `LumiWebServer`）
 - [ ] `MCPKit` MCP client（stdio/SSE/HTTP），消费编辑器下发的 MCP server 配置
 - [ ] `promptCapabilities.image`（粘贴截图提问）
+
+#### M5 验证记录（2026-09-18）：headless 回合阻塞的根因与修复
+
+**现象**：headless `session/prompt` 后回合静默消失，连 watchdog 都不触发（MainActor 被同步阻塞）。
+
+**排查方式**：`sample <pid>` 抓取运行中 agent 的调用栈。
+
+**三个真实根因**（互相独立，此前记录均未命中）：
+
+| 根因 | 机制 | 修复 |
+| --- | --- | --- |
+| API Key 读取弹窗阻塞 | `VendorAPIKeyTools` 在无 Data Protection entitlement 的进程里回退到 file-based Keychain，`SecItemCopyMatching` 触发系统密码对话框并**永久阻塞**该线程（且有非重试状态码如 `errSecAuthFailed` 导致连缓存回退都被跳过） | Keychain 增加**无提示读取**模式（`kSecUseAuthenticationUIFail`）；API Key 解析一律走无提示路径，需要授权时立即失败并回退缓存 |
+| 进程崩溃（回合静默消失） | `AgentTurnNotificationPlugin` 在无 bundle 的 CLI 进程中调用 `UNUserNotificationCenter.current()`，抛 `NSInternalInconsistencyException` 直接终止进程 | 无 bundle identifier 时跳过通知投递与订阅 |
+| 自动标题争抢 | `ConversationTitlePlugin` 对每条新用户消息发起标题 LLM 请求，与 ACP 回合竞争并拖延 | headless agent 进程（`LUMI_ACP_HEADLESS=1`）禁用自动标题 |
+
+**修复后的端到端结果**（真实 `ACPBootstrap` 二进制 + 真实模型）：
+
+| 场景 | 结果 |
+| --- | --- |
+| 文本回合 | `agent_message_chunk` + `stopReason: end_turn` ✅ |
+| 工具调用生命周期 | `tool_call(pending)` → `tool_call_update(completed, 内容)` ✅ |
+| 编辑器 fs 读桥 | 发出 `fs/read_text_file`（id 1000 起），内容为**原始文件内容**而非内置工具的行号格式 ✅ |
+| 编辑器 fs 写桥 | 发出 `fs/write_text_file`，文件落盘 ✅ |
+| 权限**允许** | `session/request_permission` → `tool_call_update(in_progress)` → 文件被真实修改 → `end_turn` ✅ |
+| 权限**拒绝** | 拒绝后文件**未被修改**；`toolCallId` 与上报的 `tool_call` 一致，选项为规范 `allow_once`/`reject_once` ✅ |
+
+**同时修复的 M4 装配缺陷**：fs 桥原先在 `startACPServer` 阶段安装，而此刻 `initialize` 尚未声明 `clientCapabilities`，导致桥**从未激活**（实测工具走了内置实现）。现改为在 `initialize` 回调中按能力安装（幂等）。
 
 ---
 
@@ -438,7 +467,8 @@ sequenceDiagram
 | R4 | 多连接（GUI + CLI 同时跑）访问同一 `ConversationManaging` 存储 | 会话状态竞争 | MVP 限定单一 stdio 连接；远程模式（三期）引入连接级会话命名空间 |
 | R5 | ACP 协议仍演进中（远程模式 WIP） | 规范变更返工 | `ProviderACP` 只做协议类型映射，产品逻辑不触碰协议细节；版本协商按规范降级 |
 | R6 | `MCPKit` 空壳、README 声明无 MCP client | 编辑器生态工具（MCP server）不可用 | 三期补齐；MVP 不受影响 |
-| R7 | headless 下内核持久化消息存储（`MessageManager.messagesSnapshot`）与模型配置（UserDefaults 域）不可用 | 完整 LLM 回合无法在独立 headless 进程验证 | 方案 B 内嵌运行时（M5）复用 app 配置与存储；必要时为 headless 提供内存消息存储与默认模型参数 |
+| R7 | ~~headless 下内核持久化消息存储（`MessageManager.messagesSnapshot`）与模型配置（UserDefaults 域）不可用~~ | ~~完整 LLM 回合无法在独立 headless 进程验证~~ | ✅ **记录有误，2026-09-18 实测更正**：headless 下 `messagesSnapshot` 正常（`Task.detached` 读取完成后正常返回），模型配置也可读取（实测路由到 `aliyun/qwen3.7-plus`）。真正的阻塞源是 API Key 读取弹窗 + 通知插件崩溃，见 §9 M5 验证记录 |
+| R10 | 未签名/无 bundle 的 CLI 进程访问 file-based Keychain 会弹系统密码框并**永久阻塞** | 任何自动触发的凭据读取都可能让线程卡死（headless agent 回合静默消失） | ✅ 已处置（2026-09-18）：Keychain 读取支持无提示模式，凭据解析路径一律不弹窗；`UNUserNotificationCenter` 调用点增加无 bundle 保护 |
 | R8 | 内核授权挂起载荷不含模型原始 `toolCallId`（`payload.toolCallId` 为 `approval:<id>`） | 若误用该字段，编辑器授权弹窗与已上报的 `tool_call` 对不上 | ✅ 已处置（2026-09-18）：`ACPTurnCoordinator` 一律取 `suspension.toolCallID`（内核已回填模型原始 id），并新增测试锁定该行为 |
 | R9 | fs 桥的路径边界只认 `session/new` 的单个 `cwd` | 多根/多工作区项目下，合法文件路径可能被误判越权 | 当前按单根保守校验（安全优先）；后续按需扩展为多根白名单 |
 
