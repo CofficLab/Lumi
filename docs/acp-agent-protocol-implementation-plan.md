@@ -18,7 +18,8 @@ ACP（Agent Client Protocol）正是解决"编辑器 ↔ 编码 agent"互联的�
 | --- | --- | --- |
 | MVP | `initialize` / `session/new` / `session/prompt` / `session/update` / `session/cancel` / `session/request_permission` | 本地 stdio 传输，单连接多会话，文本提示，流式输出，工具调用与授权 |
 | 二期 | `fs/read_text_file`、`fs/write_text_file` 桥接、`session/load`、`session/set_mode` | 编辑器侧文件能力利用、会话续载、模式切换 |
-| 三期 | 远程 HTTP/WebSocket、MCP client（`MCPKit`）、图片/音频提示 | ACP 远程模式（官方 WIP）、编辑器 MCP server 配置接入 |
+| 三期 | 远程 HTTP/WebSocket、图片/音频提示 | ACP 远程模式（官方 WIP） |
+| **规范 MUST（未完成）** | **ACP MCP server 接入** | 规范要求 Agent MUST 支持 stdio MCP；Lumi 已有 MCP client（`KitMCP` + `PluginMCP`），缺的是 ACP 侧的接线 |
 
 ---
 
@@ -429,8 +430,11 @@ sequenceDiagram
 - [x] **app 插件装配（2026-09-18）**：`PluginACP` 已注册进 `FactoryLumi` 的 `DefaultPluginFactory`，app 可解析该实例；插件新增 `autoStartsServer`（默认 `false`）——GUI 进程不得抢占 stdin，仅注册不启服务，由 headless 入口显式启动。**顺带修掉一处潜在双注册**：headless 入口原先以 `additionalPlugins` 传入自己的实例，目录里再有同名插件会让内核抛 `pluginAlreadyRegistered` 而无法启动；现改为按 id 从内核解析目录实例。
 - [ ] **正式 `lumi-acp` Xcode target**（见下方"未完成项"）
 - [ ] `session/load`（会话续载）、`session/set_mode`（模式切换）
+- [ ] **把 ACP 下发的 MCP server 接入已有 MCP 机制 —— 规范 `MUST`**：规范原文 "All Agents **MUST** support connecting to MCP servers via stdio"。
+  - **更正（2026-09-18）**：此前本表写 "`MCPKit` 空壳 / MCP client 未实现"，**该判断是错的**。实际 `KitMCP` 已是完整 MCP client（基于官方 `swift-sdk`，含 stdio 子进程传输、`connect`/`listTools`/`callTool`），`PluginMCP` 已实现连接管理、工具适配（`MCPToolAdapter`，命名 `{serverID}.{toolName}`）与权限策略。缺的不是 MCP 能力，而是**ACP 未消费它**：`session/new` 下发的 server 被忽略（现改为 stderr 显式告警）。
+  - 待办：把 ACP 声明映射为 `MCPServerConfig`（`kind`/`command`/`args`/`env` 已够用），经 `ProviderMCP` 契约交给 `PluginMCP` 连接并注册工具，连接结束时回收。
 - [ ] 远程 HTTP/WebSocket 传输（复用 `LumiWebServer`）
-- [ ] **MCP client（stdio）—— 属规范 `MUST`，不是可选增强**：规范原文 "All Agents **MUST** support connecting to MCP servers via stdio"。当前**完全未实现**，`session/new` / `session/load` 下发的 server 会被忽略（已改为 stderr 显式告警，不再静默）。补齐前，编辑器侧配置的 MCP 工具不会生效；**若目标编辑器依赖该能力，应视为阻塞项**。HTTP/SSE transport 另需 `mcpCapabilities` 声明。
+- [ ] MCP HTTP/SSE transport（需先完成上条；另需 `mcpCapabilities` 声明）
 - [ ] `promptCapabilities.image`（粘贴截图提问）
 
 #### M5 未完成项：`lumi-acp` target（受阻于验证手段）
@@ -482,7 +486,7 @@ sequenceDiagram
 | R3 | 内核为 `@MainActor`，stdio 事件循环在其他线程 | 数据竞争 / 死锁 | 桥接层统一 `@MainActor` 汇聚；传输线程仅做字节搬运；响应回写经 `Task { @MainActor in }` |
 | R4 | 多连接（GUI + CLI 同时跑）访问同一 `ConversationManaging` 存储 | 会话状态竞争 | MVP 限定单一 stdio 连接；远程模式（三期）引入连接级会话命名空间 |
 | R5 | ACP 协议仍演进中（远程模式 WIP） | 规范变更返工 | `ProviderACP` 只做协议类型映射，产品逻辑不触碰协议细节；版本协商按规范降级 |
-| R6 | `MCPKit` 空壳、README 声明无 MCP client | 编辑器生态工具（MCP server）不可用 | 三期补齐；MVP 不受影响 |
+| R6 | ~~`MCPKit` 空壳、README 声明无 MCP client~~ | ~~编辑器生态工具（MCP server）不可用~~ | ✅ **记录有误，2026-09-18 更正**：`KitMCP` 已是完整 MCP client（官方 `swift-sdk` + stdio 传输），`PluginMCP` 已有连接管理与工具适配。真实缺口仅为「ACP 未消费该能力」，见 §9 待办 |
 | R7 | ~~headless 下内核持久化消息存储（`MessageManager.messagesSnapshot`）与模型配置（UserDefaults 域）不可用~~ | ~~完整 LLM 回合无法在独立 headless 进程验证~~ | ✅ **记录有误，2026-09-18 实测更正**：headless 下 `messagesSnapshot` 正常（`Task.detached` 读取完成后正常返回），模型配置也可读取（实测路由到 `aliyun/qwen3.7-plus`）。真正的阻塞源是 API Key 读取弹窗 + 通知插件崩溃，见 §9 M5 验证记录 |
 | R10 | 未签名/无 bundle 的 CLI 进程访问 file-based Keychain 会弹系统密码框并**永久阻塞** | 任何自动触发的凭据读取都可能让线程卡死（headless agent 回合静默消失） | ✅ 已处置（2026-09-18）：Keychain 读取支持无提示模式，凭据解析路径一律不弹窗；`UNUserNotificationCenter` 调用点增加无 bundle 保护 |
 | R8 | 内核授权挂起载荷不含模型原始 `toolCallId`（`payload.toolCallId` 为 `approval:<id>`） | 若误用该字段，编辑器授权弹窗与已上报的 `tool_call` 对不上 | ✅ 已处置（2026-09-18）：`ACPTurnCoordinator` 一律取 `suspension.toolCallID`（内核已回填模型原始 id），并新增测试锁定该行为 |
