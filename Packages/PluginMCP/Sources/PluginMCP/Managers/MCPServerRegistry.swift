@@ -39,7 +39,19 @@ public final class MCPServerRegistry: ObservableObject {
             servers = []
             return
         }
-        servers = decoded
+        // 数据自愈：按 id 去重。历史版本编辑服务器会追加同 id 条目，
+        // 重复 id 会让 SwiftUI ForEach 渲染错乱（列表出现空白行）。去重后写回。
+        let rawCount = decoded.count
+        servers = deduplicated(decoded)
+        if servers.count != rawCount {
+            persist()
+        }
+    }
+
+    /// 按 `id` 去重，保留每条 id 首次出现的位置与内容。
+    private func deduplicated(_ configs: [MCPServerConfig]) -> [MCPServerConfig] {
+        var seen = Set<String>()
+        return configs.filter { seen.insert($0.id).inserted }
     }
 
     /// 观察贡献收集器：新贡献的服务器模板以禁用态自动 seed 到本地列表。
@@ -83,12 +95,14 @@ public final class MCPServerRegistry: ObservableObject {
     }
 
     /// 更新服务器（按 id 匹配；不存在则新增）。
+    /// 同 id 的历史重复条目一并替换，保证 `id` 在列表中唯一。
     public func updateServer(_ config: MCPServerConfig) {
         guard let index = servers.firstIndex(where: { $0.id == config.id }) else {
             addServer(config)
             return
         }
-        servers[index] = config
+        servers.removeAll { $0.id == config.id }
+        servers.insert(config, at: index)
         persist()
     }
 

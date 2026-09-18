@@ -45,6 +45,8 @@ public final class MCPPlugin: SuperPlugin, SuperLog {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         let contributor = MCPServerContributor()
+        // 内置 GitHub 官方模板：以禁用态 seed，启用前需在环境变量填写 token。
+        contributor.contribute(MCPServerTemplate.github)
         let dataDir = kernel.resolveProvider((any StorageProviding).self)?
             .pluginDataDirectory(for: id)
             ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
