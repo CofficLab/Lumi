@@ -23,7 +23,13 @@ do {
     // PluginACP 已随默认插件目录注册（FactoryLumi 的 DefaultPluginFactory），
     // 因此这里**不再**额外传入实例——否则同 id 重复注册会直接启动失败。
     // GUI 下该插件不自启服务，正好由本入口解析实例后显式启动。
-    let kernel = try KernelFactory.makeKernel()
+    // 使用 ACP 专用插件目录：只启动 turn 执行链必须的插件，
+    // 剔除 UI / 设计器 / 编辑器等桌面插件，减小二进制体积。
+    // Provider 层仍由 DefaultProviderFactory 完整注册，确保核心插件 onBoot 不缺 provider。
+    let kernel = try KernelFactory.makeKernel(
+        providerFactory: DefaultProviderFactory(),
+        pluginFactory: ACPPluginFactory()
+    )
     guard let plugin = kernel.resolvePlugin(id: "acp") as? PluginACP else {
         fputs("ACP_BOOTSTRAP_FAILED plugin 'acp' not found in default catalog\n", stderr)
         exit(1)
