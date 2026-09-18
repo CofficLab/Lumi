@@ -99,8 +99,6 @@ struct MCPSettingsView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            globalToggle
-            AppDivider()
             AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(MCPText.string("Search servers")))
                 .padding(12)
             AppDivider()
@@ -126,22 +124,7 @@ struct MCPSettingsView: View {
         .appSurface(style: .panel, cornerRadius: 0)
     }
 
-    private var globalToggle: some View {
-        AppToggleRow(
-            title: LocalizedStringKey(MCPText.string("Enable MCP")),
-            systemImage: "link",
-            description: LocalizedStringKey(MCPText.string("When off, no server connects and no MCP tool is available.")),
-            isOn: Binding(
-                get: { registry.globalEnabled },
-                set: { value in
-                    registry.globalEnabled = value
-                    revision += 1
-                }
-            )
-        )
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-    }
+    // MARK: - Sidebar Rows
 
     private func serverRow(_ server: MCPServerConfig) -> some View {
         let isSelected = selectedServerID == server.id

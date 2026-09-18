@@ -73,6 +73,7 @@
       }
     },
     "An MCP server runs programs on this machine with Lumi's permissions — equivalent to executing arbitrary local commands. Only add servers you trust. Unknown tools default to high risk and require approval." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -209,6 +210,7 @@
       }
     },
     "Built-in Templates" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -345,6 +347,7 @@
       }
     },
     "Configured MCP servers. Only trusted sources — each server runs programs on this machine." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -379,6 +382,7 @@
       }
     },
     "Connect a server to discover its tools." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -617,6 +621,7 @@
       }
     },
     "Discovered tools, grouped by server. Risk can be overridden per tool." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -855,6 +860,7 @@
       }
     },
     "General" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -889,6 +895,7 @@
       }
     },
     "Global switches for all MCP servers." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1133,6 +1140,7 @@
       }
     },
     "No servers yet. Add one below." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1167,6 +1175,7 @@
       }
     },
     "One-click add common servers." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1201,6 +1210,7 @@
       }
     },
     "Risk applied to tools not covered by any rule. High means approval required." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1371,6 +1381,7 @@
       }
     },
     "Servers" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1479,6 +1490,7 @@
       }
     },
     "tools-count" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1547,6 +1559,7 @@
       }
     },
     "Unknown tool risk" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1682,7 +1695,13 @@
         }
       }
     },
+    "Xcode (native)" : {
+
+    },
     "xcrun" : {
+
+    },
+    "xcrun mcpbridge" : {
 
     }
   },
