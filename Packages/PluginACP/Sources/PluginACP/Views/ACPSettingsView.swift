@@ -250,6 +250,7 @@ private struct ACPGuideSetupSheetView: View {
                 .font(.appBody)
                 .foregroundStyle(theme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+            ACPGuideIllustration(appId: guide.id, stepIndex: stepIndex)
             if let code = step.code {
                 codeBlock(code)
             }
