@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     dependencies: [
         .package(path: "../FactoryLumi"),
+        .package(path: "../KernelCore"),
         .package(path: "../ProviderACP"),
         .package(path: "../PluginACP"),
     ],
@@ -14,6 +15,7 @@ let package = Package(
             name: "ACPBootstrap",
             dependencies: [
                 .product(name: "FactoryLumi", package: "FactoryLumi"),
+                .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderACP", package: "ProviderACP"),
                 .product(name: "PluginACP", package: "PluginACP"),
             ],

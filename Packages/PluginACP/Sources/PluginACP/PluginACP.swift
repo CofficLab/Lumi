@@ -21,6 +21,13 @@ public final class PluginACP: SuperPlugin {
 
     public let metadata: PluginMetadata
 
+    /// 是否随内核启动自动开启 stdio 服务。
+    ///
+    /// 默认 `false`：GUI 进程**不得**抢占 stdin（编辑器需要它），因此插件
+    /// 只随目录注册、`onBoot` 不做任何事；由 headless 入口显式调用
+    /// `startACPServer(transport:)` 才真正开始服务。
+    public let autoStartsServer: Bool
+
     private let config: ACPConfig
     private weak var kernel: KernelCoreContainer?
     private var server: ACPStdioServer?
@@ -31,8 +38,9 @@ public final class PluginACP: SuperPlugin {
     /// 输入 EOF 回调（透传自 stdio 服务器），宿主可据此退出进程。
     public var onEOF: (() -> Void)?
 
-    public init(config: ACPConfig = .default) {
+    public init(config: ACPConfig = .default, autoStartsServer: Bool = false) {
         self.config = config
+        self.autoStartsServer = autoStartsServer
         self.metadata = PluginMetadata(
             id: "acp",
             name: "ACP",
@@ -43,6 +51,10 @@ public final class PluginACP: SuperPlugin {
 
     public func onBoot(kernel: KernelCoreContainer) throws {
         self.kernel = kernel
+        // GUI 进程默认不自启：stdin 属于宿主（编辑器或 app 自身），
+        // 抢占它会破坏等价的 stdio 协议通道。
+        guard autoStartsServer else { return }
+        try startACPServer(transport: StdioTransport())
     }
 
     /// 启动 ACP stdio 服务器。
