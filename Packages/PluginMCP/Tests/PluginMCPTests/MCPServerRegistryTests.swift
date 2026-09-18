@@ -7,27 +7,44 @@ import Testing
 @Suite("MCPServerRegistry")
 @MainActor
 struct MCPServerRegistryTests {
-    private func makeRegistry() -> MCPServerRegistry {
-        let suiteName = "PluginMCPTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
-        return MCPServerRegistry(defaults: defaults)
+    private func makeTempDirectory() -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PluginMCPTests-\(UUID().uuidString)", isDirectory: true)
+        try! FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
     }
 
-    @Test("首次初始化落库 Xcode 预设（禁用态）")
+    private func makeRegistry(contributions: [MCPServerConfig] = []) -> (MCPServerRegistry, URL) {
+        let dir = makeTempDirectory()
+        let contributor = MCPServerContributor()
+        for server in contributions { contributor.contribute(server) }
+        let registry = MCPServerRegistry(directory: dir, contributor: contributor)
+        return (registry, dir)
+    }
+
+    @Test("贡献的内置预设（Xcode 与 GitHub）以禁用态落库")
     func seedsPreset() {
-        let registry = makeRegistry()
-        #expect(registry.servers.count == 1)
-        let preset = try! #require(registry.servers.first)
-        #expect(preset.name == "Xcode (native)")
-        #expect(preset.command == "xcrun")
-        #expect(preset.arguments == ["mcpbridge"])
-        #expect(preset.enabled == false)
+        let (registry, _) = makeRegistry(contributions: [
+            MCPServerTemplate.xcodeNative,
+            MCPServerTemplate.github,
+        ])
+        #expect(registry.servers.count == 2)
+
+        let xcode = try! #require(registry.servers.first { $0.name == "Xcode (native)" })
+        #expect(xcode.command == "xcrun")
+        #expect(xcode.arguments == ["mcpbridge"])
+        #expect(xcode.enabled == false)
+
+        let github = try! #require(registry.servers.first { $0.name == "GitHub (official)" })
+        #expect(github.command == "docker")
+        #expect(github.arguments.contains("ghcr.io/github/github-mcp-server"))
+        #expect(github.environment["GITHUB_PERSONAL_ACCESS_TOKEN"] != nil)
+        #expect(github.enabled == false)
     }
 
     @Test("CRUD：新增 / 更新 / 删除")
     func crud() {
-        let registry = makeRegistry()
+        let (registry, _) = makeRegistry()
         let added = registry.addServer(MCPServerConfig(name: "Test", command: "/bin/echo"))
         #expect(!added.id.isEmpty)
         #expect(registry.server(id: added.id)?.command == "/bin/echo")
@@ -46,12 +63,9 @@ struct MCPServerRegistryTests {
     }
 
     @Test("持久化往返：重建实例后状态一致")
-    func persistenceRoundTrip() {
-        let suiteName = "PluginMCPTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
-
-        let first = MCPServerRegistry(defaults: defaults)
+    func persistenceRoundTrip() throws {
+        let dir = makeTempDirectory()
+        let first = MCPServerRegistry(directory: dir)
         let added = first.addServer(MCPServerConfig(
             name: "Persist",
             command: "npx",
@@ -60,42 +74,79 @@ struct MCPServerRegistryTests {
             autoStart: true,
             enabled: true
         ))
-        first.globalEnabled = false
-        first.unknownToolDefaultLevel = .medium
-        first.setRiskOverride(serverID: added.id, toolName: "write_file", level: .high)
 
-        let second = MCPServerRegistry(defaults: defaults)
-        #expect(second.globalEnabled == false)
-        #expect(second.unknownToolDefaultLevel == .medium)
-        let restored = try! #require(second.server(id: added.id))
+        let second = MCPServerRegistry(directory: dir)
+        let restored = try #require(second.server(id: added.id))
         #expect(restored.name == "Persist")
         #expect(restored.command == "npx")
         #expect(restored.autoStart == true)
         #expect(restored.enabled == true)
-        #expect(second.riskOverride(serverID: added.id, toolName: "write_file") == .high)
     }
 
-    @Test("风险覆盖：设置与清除")
-    func riskOverride() {
-        let registry = makeRegistry()
-        let added = registry.addServer(MCPServerConfig(name: "T", command: "/bin/echo"))
-        #expect(registry.riskOverride(serverID: added.id, toolName: "read_file") == nil)
-
-        registry.setRiskOverride(serverID: added.id, toolName: "read_file", level: .safe)
-        #expect(registry.riskOverride(serverID: added.id, toolName: "read_file") == .safe)
-
-        registry.setRiskOverride(serverID: added.id, toolName: "read_file", level: nil)
-        #expect(registry.riskOverride(serverID: added.id, toolName: "read_file") == nil)
-    }
-
-    @Test("预设模板不重复写入")
+    @Test("重复初始化不重复写入贡献预设")
     func noDuplicateSeed() {
-        let suiteName = "PluginMCPTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
+        let dir = makeTempDirectory()
+        let contributor = MCPServerContributor()
+        contributor.contribute(MCPServerTemplate.xcodeNative)
 
-        _ = MCPServerRegistry(defaults: defaults)
-        let second = MCPServerRegistry(defaults: defaults)
-        #expect(second.servers.count == 1)
+        _ = MCPServerRegistry(directory: dir, contributor: contributor)
+        let second = MCPServerRegistry(directory: dir, contributor: contributor)
+        #expect(second.servers.filter { $0.name == "Xcode (native)" }.count == 1)
+    }
+
+    @Test("加载时按 id 去重（自愈历史重复数据）")
+    func loadDeduplicatesById() throws {
+        let dir = makeTempDirectory()
+        let dupID = UUID().uuidString
+        let a = MCPServerConfig(id: dupID, name: "test", command: "python3", arguments: ["a.py"])
+        let b = MCPServerConfig(id: dupID, name: "test", command: "python3", arguments: ["b.py"])
+        let c = MCPServerConfig(id: UUID().uuidString, name: "Other", command: "/bin/echo")
+        let data = try JSONEncoder().encode([a, b, c])
+        try data.write(to: dir.appendingPathComponent("mcp-servers.json"))
+
+        let registry = MCPServerRegistry(directory: dir)
+        #expect(registry.servers.filter { $0.id == dupID }.count == 1)
+        // 保留第一条出现的内容。
+        #expect(registry.servers.first { $0.id == dupID }?.arguments == ["a.py"])
+    }
+
+    @Test("更新时替换全部同 id 条目，不产生重复")
+    func updateReplacesAllSameId() {
+        let (registry, _) = makeRegistry()
+        let dupID = UUID().uuidString
+        let a = MCPServerConfig(id: dupID, name: "test", command: "python3", arguments: ["a.py"])
+        let b = MCPServerConfig(id: dupID, name: "test", command: "python3", arguments: ["b.py"])
+        registry.addServer(a)
+        registry.addServer(b)
+        #expect(registry.servers.filter { $0.id == dupID }.count == 2)
+
+        var updated = a
+        updated.command = "/opt/homebrew/bin/python3"
+        registry.updateServer(updated)
+        #expect(registry.servers.filter { $0.id == dupID }.count == 1)
+        #expect(registry.servers.first { $0.id == dupID }?.command == "/opt/homebrew/bin/python3")
+    }
+
+    @Test("模拟 boot 序列：先贡献 Xcode 再贡献 GitHub，两个都应 seed")
+    func simulateBootContributions() async {
+        let dir = makeTempDirectory()
+        let contributor = MCPServerContributor()
+        let registry = MCPServerRegistry(directory: dir, contributor: contributor)
+
+        // PluginXcodeMCP.boot（order 280）
+        contributor.contribute(MCPServerConfig(
+            name: "Xcode (native)",
+            command: "xcrun",
+            arguments: ["mcpbridge"]
+        ))
+        await Task.yield()
+
+        // PluginGithubMCP.boot（order 281）
+        contributor.contribute(MCPServerTemplate.github)
+        await Task.yield()
+        await Task.yield()
+
+        #expect(registry.servers.contains { $0.command == "xcrun" }, "Xcode 应被 seed")
+        #expect(registry.servers.contains { $0.command == "docker" }, "GitHub 应被 seed")
     }
 }

@@ -101,7 +101,7 @@ public final class MCPConnectionManager: ObservableObject {
                     descriptor: descriptor,
                     session: session,
                     policy: policy,
-                    riskOverride: registry.riskOverride(serverID: serverID, toolName: descriptor.name)
+                    riskOverride: nil
                 )
             }
             // 幂等：先移除同名残留（如连接重试），再注册。

@@ -2,8 +2,10 @@ import Foundation
 import KernelCore
 import KitAgentTool
 import KitMCP
+import ProviderMCP
 import KitSuperLog
 import ProviderSettingView
+import ProviderStorage
 import ProviderToolManager
 import SwiftUI
 import os
@@ -15,7 +17,7 @@ import os
 ///   `ToolManagerProviding`，LLM 可直接调用（审批流与内置工具一致）；
 /// - 内置 Xcode (native) 预设（`xcrun mcpbridge`）。
 @MainActor
-public final class MCPSuperPlugin: SuperPlugin, SuperLog {
+public final class MCPPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi.plugin.mcp",
         category: "MCP"
@@ -37,11 +39,17 @@ public final class MCPSuperPlugin: SuperPlugin, SuperLog {
 
     private var registry: MCPServerRegistry?
     private var manager: MCPConnectionManager?
+    private var contributor: MCPServerContributor?
 
     public init() {}
 
     public func onBoot(kernel: KernelCoreContainer) throws {
-        let registry = MCPServerRegistry()
+        let contributor = MCPServerContributor()
+        let dataDir = kernel.resolveProvider((any StorageProviding).self)?
+            .pluginDataDirectory(for: id)
+            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("PluginMCP", isDirectory: true)
+        let registry = MCPServerRegistry(directory: dataDir, contributor: contributor)
         let toolManager = kernel.resolveProvider((any ToolManagerProviding).self)
         let manager = MCPConnectionManager(
             registry: registry,
@@ -50,6 +58,10 @@ public final class MCPSuperPlugin: SuperPlugin, SuperLog {
         )
         self.registry = registry
         self.manager = manager
+        self.contributor = contributor
+
+        // 注册贡献收集器，其他插件可 resolve 并 contribute 内置服务器模板。
+        try kernel.registerProvider(MCPServerContributionProviding.self, contributor)
 
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
             SettingEntryItem(
@@ -84,5 +96,6 @@ public final class MCPSuperPlugin: SuperPlugin, SuperLog {
             .removeEntries(ids: [Self.settingsEntryID])
         manager = nil
         registry = nil
+        contributor = nil
     }
 }
