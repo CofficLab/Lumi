@@ -423,10 +423,26 @@ sequenceDiagram
 ### M5 — 二期/三期能力（进行中）
 - [x] **解除 headless 回合阻塞（2026-09-18）** —— 见下方"验证记录"。此前 M3/M4 记录的"headless 无法验证完整回合"根因判断**不准确**，实测已更正。
 - [x] **M4 验收补验（2026-09-18）**：真实 headless agent 上完成文本回合、工具调用生命周期、编辑器 fs 读写、权限允许/拒绝全链路。
+- [x] **流式输出（2026-09-18）**：新增 `ACPStreamingBridge` 订阅内核流式 store，回合**进行中**即发 `agent_message_chunk` 增量帧（此前只在收尾整段发送）；已流式的回合收尾不重复整段重发。e2e 实测一次回复产生 **27 个增量帧**。
+- [x] **失败语义修正 + 错误路径（2026-09-18）**：`stopReason` 原先只有 `cancelled`/`end_turn` 两态，**失败被伪装成 `end_turn`**（客户端会把错误当成功）。现按方案 §5 映射 `.failed → refusal` 并保留原因文本；`session/prompt` 对未知会话改为**同步**返回 `invalidParams`（此前会因无活动回合而永远不响应，客户端悬挂）。
+- [x] **权限文案 i18n（2026-09-18）**：新建 `Resources/Localizable.xcstrings`（en / zh-Hans / zh-Hant / zh-HK / zh-TW）。**关键修正**：展示文案改为本地化，同时把提交内核的 answer 与界面文案**解耦**——原先 yes_no 与授权分别传「是」「允许」作为 answer，而内核只认允许词表，非中文环境下点「允许」会被判为拒绝执行。
+- [ ] **正式 `lumi-acp` Xcode target 与 app 装配**（见下方"未完成项"）
 - [ ] `session/load`（会话续载）、`session/set_mode`（模式切换）
 - [ ] 远程 HTTP/WebSocket 传输（复用 `LumiWebServer`）
 - [ ] `MCPKit` MCP client（stdio/SSE/HTTP），消费编辑器下发的 MCP server 配置
 - [ ] `promptCapabilities.image`（粘贴截图提问）
+
+#### M5 未完成项：`lumi-acp` target（受阻于验证手段）
+
+`Packages/ACPBootstrap` 目前是一个 **Package 内可执行 target**，不是产品形态：
+
+- `Lumi.xcodeproj` 中没有任何 ACP target（全工程 "ACP" 匹配数为 0）；
+- `Packages/FactoryLumi` 未引用 `PluginACP`，`DefaultPluginFactory` 未注册该插件；
+- 因此用户**无法通过安装 Lumi.app 使用 ACP**，只能用 `swift run` 驱动仓库内源码。
+
+落地需要：新建 `lumi-acp` command line target、把三个 ACP 包接入工程、嵌入 `Lumi.app/Contents/MacOS/`、处理签名（另有一条更简路径：编进 `Lumi.app` 主二进制、借 `argv[0]` 分派 headless 模式，可省去嵌入与签名）。
+
+**当前阻塞**：本环境 `xcodebuild` 被沙箱拒绝（`sandbox-exec: sandbox_apply: Operation not permitted`），**无法构建或验证**任何 Xcode 工程改动。pbxproj 为手工维护（非 XcodeGen/Tuist 生成），盲改不可验证，故本轮未动，留待能在 Xcode 中构建的环境完成。
 
 #### M5 验证记录（2026-09-18）：headless 回合阻塞的根因与修复
 

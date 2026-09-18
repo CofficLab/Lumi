@@ -2,6 +2,8 @@ import Foundation
 import XCTest
 @testable import PluginACP
 import ProviderACP
+import ProviderAgentLoop
+import ProviderMessage
 
 @MainActor
 final class ACPProtocolHandlerTests: XCTestCase {
@@ -147,6 +149,32 @@ final class ACPProtocolHandlerTests: XCTestCase {
         XCTAssertNil(handler.handle(message))
     }
 
+    func testSessionPromptRejectsUnknownSession() throws {
+        // 未知会话必须在同步路径回错误，否则客户端会永远等不到响应。
+        handler.coordinator = ACPTurnCoordinator(
+            agentLoop: NoopTurnRunner(),
+            messages: NoopMessageStore(),
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            onSend: { _ in }
+        )
+        let message = try ACPMessage.makeRequest(
+            id: 5,
+            method: ACPMethod.sessionPrompt,
+            params: ACPPromptParams(
+                sessionId: ACPSessionId(rawValue: "sess_does_not_exist"),
+                prompt: [.text("hi")]
+            )
+        )
+        let response = handler.handle(message)
+        guard case .error(let id, let error) = response else {
+            return XCTFail("期望错误响应，得到 \(String(describing: response))")
+        }
+        XCTAssertEqual(id, .number(5))
+        XCTAssertEqual(error.code, ACPErrorCode.invalidParams)
+        XCTAssertTrue(error.message.contains("Unknown session"))
+    }
+
     // MARK: - Client 能力捕获
 
     func testInitializeCapturesFileSystemCapabilities() throws {
@@ -261,4 +289,27 @@ final class ACPProtocolHandlerTests: XCTestCase {
         wait(for: [done], timeout: 3)
         XCTAssertNotNil(failure)
     }
+}
+
+
+/// 未知会话测试用的最小桩（不会真正运行回合）。
+@MainActor
+private final class NoopTurnRunner: ACPTurnRunning {
+    func addAgentLoopObserver(_ callback: @escaping (AgentLoopEvent) -> Void) -> any AgentLoopObserverHandle {
+        NoopAgentLoopHandle()
+    }
+    func runTurn(in conversationID: UUID) async throws -> AgentLoopOutcome { .completed }
+    func resumeTurn(in conversationID: UUID, request: AgentTurnResumeRequest) async throws -> AgentLoopOutcome { .completed }
+    func cancelTurn(in conversationID: UUID) {}
+    func setAutoReplySuppressed(_ suppressed: Bool, for conversationID: UUID) {}
+}
+
+private final class NoopAgentLoopHandle: AgentLoopObserverHandle {
+    func cancel() {}
+}
+
+@MainActor
+private final class NoopMessageStore: ACPMessageReading {
+    func insertMessage(_ message: Message, to conversationID: UUID) {}
+    func messagesSnapshot(in conversationID: UUID) -> [Message] { [] }
 }

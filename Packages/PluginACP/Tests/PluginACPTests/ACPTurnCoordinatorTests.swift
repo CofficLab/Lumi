@@ -352,12 +352,14 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         runner.emit(.suspended(conversationID: conversationID, turnID: UUID(), suspension: suspension))
 
         waitUntil { self.client.lastRequest(method: ACPMethod.sessionRequestPermission) != nil }
-        XCTAssertEqual(try permissionParams()?.options.map(\.name), ["是", "否"])
+        // optionId 稳定为 yes/no；展示名走本地化（内容随语言变化，不硬断言）。
+        XCTAssertEqual(try permissionParams()?.options.map(\.optionId), ["yes", "no"])
 
-        client.respondToLast(method: ACPMethod.sessionRequestPermission, result: permissionResult("是"))
+        client.respondToLast(method: ACPMethod.sessionRequestPermission, result: permissionResult("yes"))
         waitUntil { self.runner.resumeCalls.count == 1 }
         XCTAssertEqual(runner.resumeCalls.first?.suspensionID, "userInput:call_001")
-        XCTAssertEqual(runner.resumeCalls.first?.answer, "是")
+        // answer 必须是内核 resolveUserResponse 认可的允许词，不能随界面语言变化。
+        XCTAssertEqual(runner.resumeCalls.first?.answer, "approved")
     }
 
     func testSuspendedChoiceRequestsPermissionWithOptions() throws {
@@ -470,7 +472,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         waitUntil { self.runner.resumeCalls.count == 1 }
         // 允许词必须能被内核 resolveUserResponse 识别为"执行"。
-        XCTAssertEqual(runner.resumeCalls.first?.answer, "允许")
+        XCTAssertEqual(runner.resumeCalls.first?.answer, "approved")
         XCTAssertEqual(runner.resumeCalls.first?.suspensionID, "userInput:call_write_1")
 
         // 授权后应发 in_progress。
@@ -510,7 +512,7 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         )
         waitUntil { self.runner.resumeCalls.count == 1 }
         // 非允许词 → 内核视为用户拒绝执行。
-        XCTAssertEqual(runner.resumeCalls.first?.answer, "拒绝")
+        XCTAssertEqual(runner.resumeCalls.first?.answer, "denied")
         // 拒绝不应发 in_progress。
         XCTAssertFalse(sent.contains {
             guard case .notification(_, let p) = $0,
@@ -772,7 +774,8 @@ final class ACPTurnCoordinatorTests: XCTestCase {
             return XCTFail("期望 watchdog 超时响应")
         }
         let decoded = try result?.decoded(as: ACPPromptResult.self)
-        XCTAssertEqual(decoded?.stopReason, .endTurn)
+        // 超时属于失败，必须如实上报 refusal，否则客户端会把错误当成功。
+        XCTAssertEqual(decoded?.stopReason, .refusal)
         XCTAssertTrue(box.messages.contains {
             if case .notification(let method, let params) = $0,
                method == ACPMethod.sessionUpdate,
@@ -820,6 +823,158 @@ final class ACPTurnCoordinatorTests: XCTestCase {
         }
         let decoded = try result?.decoded(as: ACPPromptResult.self)
         XCTAssertEqual(decoded?.stopReason, .endTurn)
+    }
+
+    // MARK: - 流式输出
+
+    /// 可手动推进的流式 store mock。
+    @MainActor
+    private final class MockStream: ACPStreamObserving {
+        var observer: ((UUID) -> Void)?
+        var contentByConversation: [UUID: String] = [:]
+
+        func addACPStreamObserver(_ callback: @escaping (UUID) -> Void) -> any ACPStreamObserverHandle {
+            observer = callback
+            return NoopStreamHandle()
+        }
+
+        func acpStreamingContent(for conversationID: UUID) -> String? {
+            contentByConversation[conversationID]
+        }
+
+        /// 模拟内核追加一段 token。
+        func append(_ text: String, to conversationID: UUID) {
+            contentByConversation[conversationID, default: ""] += text
+            observer?(conversationID)
+        }
+    }
+
+    private final class NoopStreamHandle: ACPStreamObserverHandle {
+        func cancel() {}
+    }
+
+    func testStreamingEmitsIncrementalChunks() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        // 内核分两次追加 token。
+        stream.append("你好", to: conversationID)
+        stream.append("，世界", to: conversationID)
+
+        let texts = box.messages.compactMap { message -> String? in
+            guard case .notification(_, let params) = message,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .agentMessageChunk(let content) = update.update,
+                  case .text(let text, _) = content else { return nil }
+            return text
+        }
+        // 必须是增量帧（而非等回合结束整段发）。
+        XCTAssertEqual(texts, ["你好", "，世界"])
+    }
+
+    func testStreamedTurnDoesNotResendFullTextAtFinalize() throws {
+        let sessions = ACPSessionManager(conversationFactory: MockConversationFactory())
+        let runner = MockTurnRunner()
+        let store = MockMessageStore()
+        let box = SentBox()
+        let stream = MockStream()
+        let coordinator = ACPTurnCoordinator(
+            agentLoop: runner,
+            messages: store,
+            sessions: sessions,
+            requester: ACPClientRequester(onSend: { _ in }),
+            streaming: ACPStreamingBridge(stream: stream),
+            onSend: { [box] message in box.messages.append(message) }
+        )
+        let sessionID = try sessions.createSession(cwd: "/tmp/stream2")
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { runner.runCalls.contains(conversationID) }
+
+        stream.append("完整答复", to: conversationID)
+        // 收尾时落库一条相同的 assistant 消息。
+        store.messagesByConversation[conversationID, default: []].append(
+            Message(conversationID: conversationID, role: .assistant, content: "完整答复")
+        )
+        runner.emit(.completed(conversationID: conversationID, turnID: UUID()))
+        runner.nextOutcome = .completed
+        waitUntil { box.messages.contains { $0.id == .number(1) } }
+
+        // 已流式发送过的文本不得在收尾时重复整段发送。
+        // 流式那次本身就会产生一个等于全量的增量帧，因此这里断言"恰好一次"
+        // ——收尾若再整段重发，就会出现第二次。
+        let fullSends = box.messages.filter { message in
+            guard case .notification(_, let params) = message,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .agentMessageChunk(let content) = update.update,
+                  case .text(let text, _) = content else { return false }
+            return text == "完整答复"
+        }
+        XCTAssertEqual(fullSends.count, 1, "收尾不应重发已流式发送过的整段文本")
+    }
+
+    // MARK: - 失败回合的 stopReason
+
+    func testFailedTurnReportsRefusal() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        // 内核回合失败：必须上报 refusal，而不是把错误伪装成 end_turn。
+        runner.emit(.failed(conversationID: conversationID, turnID: UUID(), reason: "provider exploded"))
+        runner.nextOutcome = .failed("provider exploded")
+        waitUntil { self.sent.contains { $0.id == .number(1) } }
+
+        guard let response = sent.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望响应")
+        }
+        let decoded = try result?.decoded(as: ACPPromptResult.self)
+        XCTAssertEqual(decoded?.stopReason, .refusal)
+
+        // 失败原因应以文本帧告知客户端，便于用户看到原因。
+        XCTAssertTrue(sent.contains {
+            guard case .notification(_, let params) = $0,
+                  let update = try? params?.decoded(as: ACPSessionUpdateParams.self),
+                  case .agentMessageChunk(let content) = update.update,
+                  case .text(let text, _) = content else { return false }
+            return text.contains("provider exploded")
+        })
+    }
+
+    func testCancelledTurnStillReportsCancelledNotRefusal() throws {
+        let sessionID = try makeSessionID()
+        let conversationID = try XCTUnwrap(sessions.conversationID(for: sessionID))
+        _ = coordinator.startTurn(sessionID: sessionID, requestID: .number(1), prompt: [.text("hi")])
+        waitUntil { self.runner.runCalls.contains(conversationID) }
+
+        // 取消即使带 errorText 也必须保持 cancelled 语义。
+        runner.emit(.cancelled(conversationID: conversationID, turnID: UUID()))
+        runner.nextOutcome = .cancelled
+        waitUntil { self.sent.contains { $0.id == .number(1) } }
+
+        guard let response = sent.first(where: { $0.id == .number(1) }),
+              case .response(_, let result) = response else {
+            return XCTFail("期望响应")
+        }
+        let decoded = try result?.decoded(as: ACPPromptResult.self)
+        XCTAssertEqual(decoded?.stopReason, .cancelled)
     }
 
     // MARK: - 纯函数

@@ -5,6 +5,7 @@ import ProviderACP
 import ProviderAgentLoop
 import ProviderConversation
 import ProviderMessage
+import ProviderMessageStreaming
 import ProviderToolManager
 
 /// ACP 插件：把 Lumi 内核暴露为 ACP Agent。
@@ -79,11 +80,15 @@ public final class PluginACP: SuperPlugin {
         handler.requester = requester
 
         // 回合协调器：事件流 / 异步响应经服务器发回 Client。
+        // 若内核提供流式 store，则接上增量桥，让编辑器实时看到 token。
+        let streamingBridge = kernel.resolveProvider((any MessageStreamingProviding).self)
+            .map { ACPStreamingBridge(stream: MessageStreamingAdapter($0)) }
         let coordinator = ACPTurnCoordinator(
             agentLoop: AgentLoopAdapter(agentLoop),
             messages: MessageManagerAdapter(messages),
             sessions: sessions,
             requester: requester,
+            streaming: streamingBridge,
             onSend: { [weak server] message in
                 server?.sendToClient(message)
             }
@@ -245,5 +250,46 @@ private final class MessageManagerAdapter: ACPMessageReading {
 
     func messagesSnapshot(in conversationID: UUID) -> [Message] {
         messages.messages(for: conversationID)
+    }
+}
+
+/// 把 `any MessageStreamingProviding` 桥接为 `ACPStreamObserving`。
+@MainActor
+private final class MessageStreamingAdapter: ACPStreamObserving {
+    private let stream: any MessageStreamingProviding
+
+    init(_ stream: any MessageStreamingProviding) {
+        self.stream = stream
+    }
+
+    func addACPStreamObserver(
+        _ callback: @escaping (UUID) -> Void
+    ) -> any ACPStreamObserverHandle {
+        let handle = stream.addMessageStreamingObserver { change in
+            // `updated` 携带会话 ID；流式追加即触发。
+            if case .updated(let conversationID) = change {
+                callback(conversationID)
+            }
+        }
+        return MessageStreamObserverHandle(handle)
+    }
+
+    func acpStreamingContent(for conversationID: UUID) -> String? {
+        guard let message = stream.streamingMessage(for: conversationID) else { return nil }
+        return message.content
+    }
+}
+
+/// 令牌适配：把 MessageStreaming 的注销令牌转成 ACP 侧协议。
+@MainActor
+private final class MessageStreamObserverHandle: ACPStreamObserverHandle {
+    private let handle: any MessageStreamingObserverHandle
+
+    init(_ handle: any MessageStreamingObserverHandle) {
+        self.handle = handle
+    }
+
+    func cancel() {
+        handle.cancel()
     }
 }

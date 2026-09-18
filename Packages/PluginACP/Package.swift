@@ -15,7 +15,9 @@ let package = Package(
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderMessage"),
         .package(path: "../ProviderToolManager"),
+        .package(path: "../ProviderMessageStreaming"),
         .package(path: "../KitAgentTool"),
+        .package(path: "../KitLocalization"),
     ],
     targets: [
         .target(
@@ -27,9 +29,12 @@ let package = Package(
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
+                .product(name: "ProviderMessageStreaming", package: "ProviderMessageStreaming"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
+                .product(name: "KitLocalization", package: "KitLocalization"),
             ],
-            path: "Sources/PluginACP"
+            path: "Sources/PluginACP",
+            resources: [.process("../../Resources/Localizable.xcstrings")]
         ),
         .testTarget(
             name: "PluginACPTests",

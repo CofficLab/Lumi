@@ -181,6 +181,17 @@ public final class ACPProtocolHandler {
               let decoded = try? params.decoded(as: ACPPromptParams.self) else {
             return .error(id: id, error: .invalidParams)
         }
+        // 会话不存在时必须在**同步**路径回错误：若交给协调器异步收尾，
+        // 未知会话没有活动回合，客户端将永远收不到响应而悬挂。
+        guard sessions.record(for: decoded.sessionId) != nil else {
+            return .error(
+                id: id,
+                error: ACPError(
+                    code: ACPErrorCode.invalidParams,
+                    message: "Unknown session: \(decoded.sessionId.rawValue)"
+                )
+            )
+        }
 
         if let error = coordinator.startTurn(
             sessionID: decoded.sessionId,

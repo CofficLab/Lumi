@@ -83,6 +83,8 @@ public final class ACPTurnCoordinator {
     private let messages: any ACPMessageReading
     private let sessions: ACPSessionManager
     private let requester: ACPClientRequester
+    /// 流式增量桥（可空：未接入流式时回合结束整段发送）。
+    private let streaming: ACPStreamingBridge?
     private let onSend: @MainActor (ACPMessage) -> Void
     /// 回合启动后等待首个 LLM 进展的超时（无进展则按失败收尾，避免悬挂）。
     private let turnStartTimeout: TimeInterval
@@ -100,6 +102,7 @@ public final class ACPTurnCoordinator {
         messages: any ACPMessageReading,
         sessions: ACPSessionManager,
         requester: ACPClientRequester,
+        streaming: ACPStreamingBridge? = nil,
         onSend: @escaping @MainActor (ACPMessage) -> Void,
         turnStartTimeout: TimeInterval? = nil
     ) {
@@ -107,6 +110,7 @@ public final class ACPTurnCoordinator {
         self.messages = messages
         self.sessions = sessions
         self.requester = requester
+        self.streaming = streaming
         self.onSend = onSend
         // 默认 45 秒；支持 LUMI_ACP_TURN_TIMEOUT 环境变量覆盖（秒）。
         if let turnStartTimeout {
@@ -119,6 +123,12 @@ public final class ACPTurnCoordinator {
         }
         observerHandle = agentLoop.addAgentLoopObserver { [weak self] event in
             self?.handle(event)
+        }
+        // 流式增量：内核追加 token 时立即转发为 agent_message_chunk。
+        streaming?.onDelta = { [weak self] conversationID, delta in
+            guard let self,
+                  let sessionID = self.activeSessionID(for: conversationID) else { return }
+            self.sendUpdate(sessionID: sessionID, update: .agentMessageChunk(.text(delta)))
         }
     }
 
@@ -317,11 +327,12 @@ public final class ACPTurnCoordinator {
         case "choice":
             let labels = Self.choiceOptions(from: payload?["options"])
             guard !labels.isEmpty else {
-                sendAgentText("需要你的输入：\(question)", sessionID: sessionID)
+                sendAgentText(ACPLocalization.inputRequired(question), sessionID: sessionID)
                 agentLoop.cancelTurn(in: suspension.conversationID)
                 return
             }
-            // AskUser 的 answer 就是选项标签本身；optionId 直接复用标签。
+            // AskUser 的 answer 必须是选项标签本身（内核按标签匹配）；optionId
+            // 也用标签，因为标签可能含空格/任意语言，不适合作为稳定标识。
             let options = PermissionOptions(
                 options: labels.map { ACPPermissionOption(optionId: $0, name: $0, kind: .allowOnce) },
                 answersByOptionID: Dictionary(uniqueKeysWithValues: labels.map { ($0, $0) })
@@ -338,15 +349,17 @@ public final class ACPTurnCoordinator {
             )
         case "free_text":
             // ACP 无自由文本输入通道：降级为文本问题 + 结束回合，用户下轮回答。
-            sendAgentText("需要你的输入：\(question)", sessionID: sessionID)
+            sendAgentText(ACPLocalization.inputRequired(question), sessionID: sessionID)
             agentLoop.cancelTurn(in: suspension.conversationID)
         default: // yes_no
+            // 展示文案走本地化，但 answer 固定传内核可识别的允许/拒绝词，
+            // 否则非中文环境下用户点"允许"会被内核当成拒绝执行。
             let options = PermissionOptions(
                 options: [
-                    ACPPermissionOption(optionId: "是", name: "是", kind: .allowOnce),
-                    ACPPermissionOption(optionId: "否", name: "否", kind: .rejectOnce),
+                    ACPPermissionOption(optionId: "yes", name: ACPLocalization.yes, kind: .allowOnce),
+                    ACPPermissionOption(optionId: "no", name: ACPLocalization.no, kind: .rejectOnce),
                 ],
-                answersByOptionID: ["是": "是", "否": "否"]
+                answersByOptionID: ["yes": "approved", "no": "denied"]
             )
             awaitPermission(
                 suspension: suspension,
@@ -371,15 +384,16 @@ public final class ACPTurnCoordinator {
         // 与先前上报的 `tool_call` 通知保持一致；payload 里的 "approval:<id>" 不可用。
         let toolCallID = suspension.toolCallID ?? ""
         let metadata = toolCallMetadata[toolCallID]
-        let question = (payload?["question"] as? String) ?? "是否允许执行该操作？"
+        let question = (payload?["question"] as? String) ?? ACPLocalization.allowThisOperation
 
         let options = PermissionOptions(
             options: [
-                ACPPermissionOption(optionId: "allow_once", name: "允许", kind: .allowOnce),
-                ACPPermissionOption(optionId: "reject_once", name: "拒绝", kind: .rejectOnce),
+                ACPPermissionOption(optionId: "allow_once", name: ACPLocalization.allow, kind: .allowOnce),
+                ACPPermissionOption(optionId: "reject_once", name: ACPLocalization.reject, kind: .rejectOnce),
             ],
-            // resolveUserResponse 仅在 answer 为允许词时执行工具。
-            answersByOptionID: ["allow_once": "允许", "reject_once": "拒绝"]
+            // 展示文案随系统语言变化，但 answer 必须是内核能识别的允许词，
+            // 否则非中文环境下"允许"会被 resolveUserResponse 判为拒绝。
+            answersByOptionID: ["allow_once": "approved", "reject_once": "denied"]
         )
         awaitPermission(
             suspension: suspension,
@@ -477,18 +491,25 @@ public final class ACPTurnCoordinator {
         cancelPendingPermissions(sessionID: sessionID)
         publishCancelledToolCalls(sessionID: sessionID)
 
-        if cancelled {
-            if let errorText {
-                sendAgentText(errorText, sessionID: sessionID)
-            }
-        } else {
-            await publishFinalContent(conversationID: conversationID, sessionID: sessionID)
-            if let errorText {
-                sendAgentText(errorText, sessionID: sessionID)
-            }
+        // stopReason 必须如实反映回合结局：把失败混成 end_turn 会让客户端
+        // 把错误当成功（方案 §5 约定 failed → refusal）。因此先判定是否失败。
+        let failed = !cancelled && errorText != nil
+        if let errorText {
+            sendAgentText(errorText, sessionID: sessionID)
         }
+        if !failed {
+            await publishFinalContent(conversationID: conversationID, sessionID: sessionID)
+        }
+        streaming?.reset(conversationID: conversationID)
 
-        let stopReason: StopReason = cancelled ? .cancelled : .endTurn
+        let stopReason: StopReason
+        if cancelled {
+            stopReason = .cancelled
+        } else if failed {
+            stopReason = .refusal
+        } else {
+            stopReason = .endTurn
+        }
         do {
             onSend(try ACPMessage.makeResponse(
                 id: turn.requestID,
@@ -546,7 +567,9 @@ public final class ACPTurnCoordinator {
         }
 
         // 2. 最终 assistant 文本（第一个非空内容）。
-        if let finalText = assistantMessages.first(where: { !$0.content.isEmpty })?.content {
+        // 已经流式发出过增量的回合不再整段重发，否则客户端会看到重复文本。
+        if streaming?.didStream(conversationID: conversationID) != true,
+           let finalText = assistantMessages.first(where: { !$0.content.isEmpty })?.content {
             sendAgentText(finalText, sessionID: sessionID)
         }
     }
