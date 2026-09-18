@@ -533,7 +533,13 @@ struct MCPServerEditSheet: View {
 
         isSaving = true
         errorMessage = nil
-        let saved = registry.addServer(config)
+        let saved: MCPServerConfig
+        if isEditing {
+            registry.updateServer(config)
+            saved = config
+        } else {
+            saved = registry.addServer(config)
+        }
         Task { @MainActor in
             if saved.enabled {
                 await manager.reconnectIfActive(serverID: saved.id)

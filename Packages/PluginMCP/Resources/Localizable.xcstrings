@@ -5,6 +5,7 @@
 
     },
     "Add" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -724,6 +725,7 @@
       }
     },
     "Enable MCP" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1662,6 +1664,7 @@
       }
     },
     "When off, no server connects and no MCP tool is available." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1695,13 +1698,7 @@
         }
       }
     },
-    "Xcode (native)" : {
-
-    },
     "xcrun" : {
-
-    },
-    "xcrun mcpbridge" : {
 
     }
   },
