@@ -1434,6 +1434,7 @@
 
     },
     "This server runs programs with Lumi's permissions. Only add trusted sources." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

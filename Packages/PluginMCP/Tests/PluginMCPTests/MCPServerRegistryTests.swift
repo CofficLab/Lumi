@@ -14,15 +14,21 @@ struct MCPServerRegistryTests {
         return MCPServerRegistry(defaults: defaults)
     }
 
-    @Test("首次初始化落库 Xcode 预设（禁用态）")
+    @Test("首次初始化落库内置预设（Xcode 与 GitHub，均为禁用态）")
     func seedsPreset() {
         let registry = makeRegistry()
-        #expect(registry.servers.count == 1)
-        let preset = try! #require(registry.servers.first)
-        #expect(preset.name == "Xcode (native)")
-        #expect(preset.command == "xcrun")
-        #expect(preset.arguments == ["mcpbridge"])
-        #expect(preset.enabled == false)
+        #expect(registry.servers.count == 2)
+
+        let xcode = try! #require(registry.servers.first { $0.name == "Xcode (native)" })
+        #expect(xcode.command == "xcrun")
+        #expect(xcode.arguments == ["mcpbridge"])
+        #expect(xcode.enabled == false)
+
+        let github = try! #require(registry.servers.first { $0.name == "GitHub (official)" })
+        #expect(github.command == "docker")
+        #expect(github.arguments.contains("ghcr.io/github/github-mcp-server"))
+        #expect(github.environment["GITHUB_PERSONAL_ACCESS_TOKEN"] != nil)
+        #expect(github.enabled == false)
     }
 
     @Test("CRUD：新增 / 更新 / 删除")
@@ -96,6 +102,28 @@ struct MCPServerRegistryTests {
 
         _ = MCPServerRegistry(defaults: defaults)
         let second = MCPServerRegistry(defaults: defaults)
-        #expect(second.servers.count == 1)
+        #expect(second.servers.count == 2)
+    }
+
+    @Test("老用户（v1）增量补齐 GitHub 预设且不重复 Xcode")
+    func migratesV1ToV2() {
+        let suiteName = "PluginMCPTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+
+        // 模拟 v1 安装：存储键与 MCPServerRegistry.Keys 保持一致。
+        let v1Xcode = MCPServerConfig(
+            name: "Xcode (native)",
+            command: "xcrun",
+            arguments: ["mcpbridge"],
+            enabled: false
+        )
+        defaults.set(try! JSONEncoder().encode([v1Xcode]), forKey: "PluginMCP.servers")
+        defaults.set(1, forKey: "PluginMCP.seededPresetsVersion")
+
+        let registry = MCPServerRegistry(defaults: defaults)
+        #expect(registry.servers.count == 2)
+        #expect(registry.servers.contains { $0.name == "GitHub (official)" })
+        #expect(registry.servers.filter { $0.name == "Xcode (native)" }.count == 1)
     }
 }

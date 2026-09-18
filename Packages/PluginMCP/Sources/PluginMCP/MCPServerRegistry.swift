@@ -28,8 +28,12 @@ public final class MCPServerRegistry: ObservableObject {
         static let riskOverrides = "PluginMCP.toolRiskOverrides"
         static let globalEnabled = "PluginMCP.globalEnabled"
         static let unknownDefault = "PluginMCP.unknownDefault"
-        static let hasSeededPresets = "PluginMCP.hasSeededPresets"
+        static let seededPresetsVersion = "PluginMCP.seededPresetsVersion"
     }
+
+    /// 内置预设版本号：每新增一批内置预设 +1。
+    /// 已安装的老用户按版本号增量补齐新预设，而不是只在首次安装时写入一次。
+    private static let currentPresetsVersion = 2
 
     // MARK: - Init
 
@@ -49,12 +53,26 @@ public final class MCPServerRegistry: ObservableObject {
     }
 
     private func seedPresetsIfNeeded() {
-        guard !defaults.bool(forKey: Keys.hasSeededPresets) else { return }
-        // 首次运行：落库 Xcode (native) 内置预设（禁用态，用户显式启用）。
-        var preset = MCPServerTemplate.xcodeNative
-        preset.enabled = false
-        servers.append(preset)
-        defaults.set(true, forKey: Keys.hasSeededPresets)
+        let seededVersion = defaults.integer(forKey: Keys.seededPresetsVersion)
+        guard seededVersion < Self.currentPresetsVersion else { return }
+
+        var toAdd: [MCPServerConfig] = []
+        if seededVersion < 1 {
+            var xcode = MCPServerTemplate.xcodeNative
+            xcode.enabled = false
+            toAdd.append(xcode)
+        }
+        if seededVersion < 2 {
+            var github = MCPServerTemplate.github
+            github.enabled = false
+            toAdd.append(github)
+        }
+
+        // 内置预设统一以禁用态落库（用户显式启用）；按名称去重，避免老用户重复写入。
+        for preset in toAdd where !servers.contains(where: { $0.name == preset.name }) {
+            servers.append(preset)
+        }
+        defaults.set(Self.currentPresetsVersion, forKey: Keys.seededPresetsVersion)
         persist()
     }
 

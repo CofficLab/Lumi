@@ -227,12 +227,21 @@ struct MCPSettingsView: View {
             // 该服务器的工具列表
             let tools = manager.registeredTools
             if let adapters = tools[server.id], !adapters.isEmpty {
-                AppDivider()
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(MCPText.string("Tools"))
-                        .font(.appCaptionEmphasized)
-                    ForEach(adapters, id: \.name) { adapter in
-                        toolRow(server: server, adapter: adapter)
+                AppSettingSection(title: MCPText.string("Tools"), titleAlignment: .leading) {
+                    VStack(spacing: 0) {
+                        ForEach(Array(adapters.enumerated()), id: \.element.name) { index, adapter in
+                            if index > 0 {
+                                Divider()
+                                    .padding(.vertical, 8)
+                            }
+                            AppSettingRow(
+                                title: adapter.descriptor.name,
+                                description: adapter.descriptor.description,
+                                icon: "wrench.and.screwdriver"
+                            ) {
+                                EmptyView()
+                            }
+                        }
                     }
                 }
             }
@@ -240,21 +249,6 @@ struct MCPSettingsView: View {
         }
     }
 
-    private func toolRow(server: MCPServerConfig, adapter: MCPToolAdapter) -> some View {
-        HStack(spacing: 8) {
-            Text(adapter.descriptor.name)
-                .font(.appBody)
-                .lineLimit(1)
-            if let description = adapter.descriptor.description {
-                Text(description)
-                    .font(.appCaption)
-                    .foregroundStyle(theme.textSecondary)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 4)
-        }
-        .padding(.vertical, 4)
-    }
 
     private func statusBadge(_ state: MCPServerConnectionState) -> some View {
         let color: Color
