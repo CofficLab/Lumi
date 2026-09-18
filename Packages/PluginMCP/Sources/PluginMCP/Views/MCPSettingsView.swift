@@ -237,19 +237,6 @@ struct MCPSettingsView: View {
                 }
             }
 
-            AppDivider()
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(theme.warning)
-                    .frame(width: 24)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(MCPText.string("Security notice"))
-                        .font(.appBodyEmphasized)
-                    Text(MCPText.string("An MCP server runs programs on this machine with Lumi's permissions. Only add servers you trust."))
-                        .font(.appCaption)
-                        .foregroundStyle(theme.textSecondary)
-                }
-            }
         }
     }
 
