@@ -117,9 +117,6 @@ struct MCPSettingsView: View {
                 .padding(8)
             }
             .frame(maxHeight: .infinity)
-            AppDivider()
-            templateRow
-                .padding(8)
         }
         .appSurface(style: .panel, cornerRadius: 0)
     }
@@ -150,27 +147,6 @@ struct MCPSettingsView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-    }
-
-    private var templateRow: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "hammer")
-                .foregroundStyle(theme.primary)
-                .frame(width: 22, height: 22)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Xcode (native)")
-                    .font(.appCaptionEmphasized)
-                Text("xcrun mcpbridge")
-                    .font(.appMicro)
-                    .foregroundStyle(theme.textSecondary)
-            }
-            Spacer(minLength: 4)
-            AppButton(MCPText.string("Add"), size: .small) {
-                addTemplate(MCPServerTemplate.xcodeNative)
-            }
-        }
-        .padding(8)
-        .background(theme.surface, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
     // MARK: - Detail Pane
@@ -374,18 +350,6 @@ struct MCPSettingsView: View {
             $0.name.localizedCaseInsensitiveContains(searchText)
             || $0.command.localizedCaseInsensitiveContains(searchText)
         }
-    }
-
-    private func addTemplate(_ template: MCPServerConfig) {
-        if registry.servers.contains(where: { $0.command == template.command && $0.arguments == template.arguments }) {
-            return
-        }
-        var config = template
-        config.enabled = true
-        let saved = registry.addServer(config)
-        Task { @MainActor in await manager.connect(serverID: saved.id) }
-        selectedServerID = saved.id
-        revision += 1
     }
 }
 
