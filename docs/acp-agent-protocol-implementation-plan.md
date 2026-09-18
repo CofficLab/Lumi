@@ -426,7 +426,8 @@ sequenceDiagram
 - [x] **流式输出（2026-09-18）**：新增 `ACPStreamingBridge` 订阅内核流式 store，回合**进行中**即发 `agent_message_chunk` 增量帧（此前只在收尾整段发送）；已流式的回合收尾不重复整段重发。e2e 实测一次回复产生 **27 个增量帧**。
 - [x] **失败语义修正 + 错误路径（2026-09-18）**：`stopReason` 原先只有 `cancelled`/`end_turn` 两态，**失败被伪装成 `end_turn`**（客户端会把错误当成功）。现按方案 §5 映射 `.failed → refusal` 并保留原因文本；`session/prompt` 对未知会话改为**同步**返回 `invalidParams`（此前会因无活动回合而永远不响应，客户端悬挂）。
 - [x] **权限文案 i18n（2026-09-18）**：新建 `Resources/Localizable.xcstrings`（en / zh-Hans / zh-Hant / zh-HK / zh-TW）。**关键修正**：展示文案改为本地化，同时把提交内核的 answer 与界面文案**解耦**——原先 yes_no 与授权分别传「是」「允许」作为 answer，而内核只认允许词表，非中文环境下点「允许」会被判为拒绝执行。
-- [ ] **正式 `lumi-acp` Xcode target 与 app 装配**（见下方"未完成项"）
+- [x] **app 插件装配（2026-09-18）**：`PluginACP` 已注册进 `FactoryLumi` 的 `DefaultPluginFactory`，app 可解析该实例；插件新增 `autoStartsServer`（默认 `false`）——GUI 进程不得抢占 stdin，仅注册不启服务，由 headless 入口显式启动。**顺带修掉一处潜在双注册**：headless 入口原先以 `additionalPlugins` 传入自己的实例，目录里再有同名插件会让内核抛 `pluginAlreadyRegistered` 而无法启动；现改为按 id 从内核解析目录实例。
+- [ ] **正式 `lumi-acp` Xcode target**（见下方"未完成项"）
 - [ ] `session/load`（会话续载）、`session/set_mode`（模式切换）
 - [ ] 远程 HTTP/WebSocket 传输（复用 `LumiWebServer`）
 - [ ] `MCPKit` MCP client（stdio/SSE/HTTP），消费编辑器下发的 MCP server 配置
@@ -434,10 +435,9 @@ sequenceDiagram
 
 #### M5 未完成项：`lumi-acp` target（受阻于验证手段）
 
-`Packages/ACPBootstrap` 目前是一个 **Package 内可执行 target**，不是产品形态：
+`Packages/ACPBootstrap` 目前是一个 **Package 内可执行 target**，还不是产品形态。**注意：装配这一半已完成**（见上条），剩下的只有工程侧：
 
-- `Lumi.xcodeproj` 中没有任何 ACP target（全工程 "ACP" 匹配数为 0）；
-- `Packages/FactoryLumi` 未引用 `PluginACP`，`DefaultPluginFactory` 未注册该插件；
+- `Lumi.xcodeproj` 中仍没有任何 ACP target（全工程 "ACP" 匹配数为 0）；
 - 因此用户**无法通过安装 Lumi.app 使用 ACP**，只能用 `swift run` 驱动仓库内源码。
 
 落地需要：新建 `lumi-acp` command line target、把三个 ACP 包接入工程、嵌入 `Lumi.app/Contents/MacOS/`、处理签名（另有一条更简路径：编进 `Lumi.app` 主二进制、借 `argv[0]` 分派 headless 模式，可省去嵌入与签名）。
