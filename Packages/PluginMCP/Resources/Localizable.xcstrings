@@ -1,1672 +1,1690 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "MCP Servers": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MCP Servers"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    "Add" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MCP 服务器"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MCP 伺服器"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MCP 伺服器"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MCP 伺服器"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增"
           }
         }
       }
     },
-    "Connect any Model Context Protocol server and let the agent use its tools.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connect any Model Context Protocol server and let the agent use its tools."
+    "Add Server" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Server"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "连接任意 Model Context Protocol 服务器，让 Agent 使用其工具。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加服务器"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "連接任意 Model Context Protocol 伺服器，讓 Agent 使用其工具。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增伺服器"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "連接任意 Model Context Protocol 伺服器，讓 Agent 使用其工具。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增伺服器"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "連接任意 Model Context Protocol 伺服器，讓 Agent 使用其工具。"
-          }
-        }
-      }
-    },
-    "General": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "General"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通用"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一般"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一般"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一般"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增伺服器"
           }
         }
       }
     },
-    "Global switches for all MCP servers.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Global switches for all MCP servers."
+    "An MCP server runs programs on this machine with Lumi's permissions — equivalent to executing arbitrary local commands. Only add servers you trust. Unknown tools default to high risk and require approval." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An MCP server runs programs on this machine with Lumi's permissions — equivalent to executing arbitrary local commands. Only add servers you trust. Unknown tools default to high risk and require approval."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "作用于所有 MCP 服务器的全局开关。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MCP 服务器会以 Lumi 的权限在本机运行程序——等同于执行任意本地命令。只添加你信任的服务器。未知工具默认为高风险并需要授权。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "作用於所有 MCP 伺服器的全域開關。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MCP 伺服器會以 Lumi 的權限在本機執行程式——等同於執行任意本機命令。只新增你信任的伺服器。未知工具預設為高風險並需要授權。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "作用於所有 MCP 伺服器的全域開關。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MCP 伺服器會以 Lumi 的權限在本機執行程式——等同於執行任意本機命令。只新增你信任的伺服器。未知工具預設為高風險並需要授權。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "作用於所有 MCP 伺服器的全域開關。"
-          }
-        }
-      }
-    },
-    "Enable MCP": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enable MCP"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "启用 MCP"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "啟用 MCP"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "啟用 MCP"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "啟用 MCP"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MCP 伺服器會以 Lumi 的權限在本機執行程式——等同於執行任意本機命令。只新增你信任的伺服器。未知工具預設為高風險並需要授權。"
           }
         }
       }
     },
-    "When off, no server connects and no MCP tool is available.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "When off, no server connects and no MCP tool is available."
+    "Arguments (space-separated)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arguments (space-separated)"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "关闭后，所有服务器都不连接，MCP 工具也不可用。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "参数（以空格分隔）"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "關閉後，所有伺服器都不連接，MCP 工具也不可用。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "參數（以空格分隔）"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "關閉後，所有伺服器都不連接，MCP 工具也不可用。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "參數（以空格分隔）"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "關閉後，所有伺服器都不連接，MCP 工具也不可用。"
-          }
-        }
-      }
-    },
-    "Unknown tool risk": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unknown tool risk"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未知工具风险"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未知工具風險"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未知工具風險"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未知工具風險"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "參數（以空格分隔）"
           }
         }
       }
     },
-    "Risk applied to tools not covered by any rule. High means approval required.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Risk applied to tools not covered by any rule. High means approval required."
+    "Auto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "应用于未被任何规则覆盖的工具。高风险表示需要授权。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "套用於未被任何規則覆蓋的工具。高風險表示需要授權。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "套用於未被任何規則覆蓋的工具。高風險表示需要授權。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "套用於未被任何規則覆蓋的工具。高風險表示需要授權。"
-          }
-        }
-      }
-    },
-    "Built-in Templates": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Built-in Templates"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "内置模板"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "內建範本"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "內建範本"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "內建範本"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動"
           }
         }
       }
     },
-    "One-click add common servers.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "One-click add common servers."
+    "Auto-start" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto-start"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一键添加常用服务器。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动启动"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一鍵新增常用伺服器。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動啟動"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一鍵新增常用伺服器。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動啟動"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一鍵新增常用伺服器。"
-          }
-        }
-      }
-    },
-    "Servers": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Servers"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "服务器"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "伺服器"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "伺服器"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "伺服器"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動啟動"
           }
         }
       }
     },
-    "Configured MCP servers. Only trusted sources — each server runs programs on this machine.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configured MCP servers. Only trusted sources — each server runs programs on this machine."
+    "Built-in Templates" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Built-in Templates"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已配置的 MCP 服务器。只添加可信来源——每个服务器都会在本机运行程序。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内置模板"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已設定的 MCP 伺服器。只新增可信來源——每個伺服器都會在本機執行程式。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "內建範本"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已設定的 MCP 伺服器。只新增可信來源——每個伺服器都會在本機執行程式。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "內建範本"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已設定的 MCP 伺服器。只新增可信來源——每個伺服器都會在本機執行程式。"
-          }
-        }
-      }
-    },
-    "No servers yet. Add one below.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No servers yet. Add one below."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "还没有服务器，请在下方添加。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "還沒有伺服器，請在下方新增。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "還沒有伺服器，請在下方新增。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "還沒有伺服器，請在下方新增。"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "內建範本"
           }
         }
       }
     },
-    "Add Server": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add Server"
+    "Cancel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加服务器"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增伺服器"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增伺服器"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增伺服器"
-          }
-        }
-      }
-    },
-    "Tools": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tools"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "工具"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "工具"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "工具"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "工具"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
           }
         }
       }
     },
-    "Discovered tools, grouped by server. Risk can be overridden per tool.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Discovered tools, grouped by server. Risk can be overridden per tool."
+    "Command" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Command"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已发现的工具，按服务器分组。每个工具的风险都可单独覆盖。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "命令"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已發現的工具，按伺服器分組。每個工具的風險都可單獨覆寫。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "命令"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已發現的工具，按伺服器分組。每個工具的風險都可單獨覆寫。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "命令"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已發現的工具，按伺服器分組。每個工具的風險都可單獨覆寫。"
-          }
-        }
-      }
-    },
-    "Connect a server to discover its tools.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connect a server to discover its tools."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "连接服务器以发现其工具。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "連接伺服器以發現其工具。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "連接伺服器以發現其工具。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "連接伺服器以發現其工具。"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "命令"
           }
         }
       }
     },
-    "Security notice": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Security notice"
+    "Command is required." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Command is required."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安全提示"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请填写命令。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安全提示"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請填寫命令。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安全提示"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請填寫命令。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安全提示"
-          }
-        }
-      }
-    },
-    "An MCP server runs programs on this machine with Lumi's permissions — equivalent to executing arbitrary local commands. Only add servers you trust. Unknown tools default to high risk and require approval.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "An MCP server runs programs on this machine with Lumi's permissions — equivalent to executing arbitrary local commands. Only add servers you trust. Unknown tools default to high risk and require approval."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MCP 服务器会以 Lumi 的权限在本机运行程序——等同于执行任意本地命令。只添加你信任的服务器。未知工具默认为高风险并需要授权。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MCP 伺服器會以 Lumi 的權限在本機執行程式——等同於執行任意本機命令。只新增你信任的伺服器。未知工具預設為高風險並需要授權。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MCP 伺服器會以 Lumi 的權限在本機執行程式——等同於執行任意本機命令。只新增你信任的伺服器。未知工具預設為高風險並需要授權。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MCP 伺服器會以 Lumi 的權限在本機執行程式——等同於執行任意本機命令。只新增你信任的伺服器。未知工具預設為高風險並需要授權。"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請填寫命令。"
           }
         }
       }
     },
-    "Edit": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edit"
+    "Configured MCP servers. Only trusted sources — each server runs programs on this machine." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configured MCP servers. Only trusted sources — each server runs programs on this machine."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "编辑"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已配置的 MCP 服务器。只添加可信来源——每个服务器都会在本机运行程序。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已設定的 MCP 伺服器。只新增可信來源——每個伺服器都會在本機執行程式。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已設定的 MCP 伺服器。只新增可信來源——每個伺服器都會在本機執行程式。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "編輯"
-          }
-        }
-      }
-    },
-    "Delete": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "删除"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "刪除"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "刪除"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "刪除"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已設定的 MCP 伺服器。只新增可信來源——每個伺服器都會在本機執行程式。"
           }
         }
       }
     },
-    "Add": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add"
+    "Connect a server to discover its tools." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect a server to discover its tools."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接服务器以发现其工具。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連接伺服器以發現其工具。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連接伺服器以發現其工具。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新增"
-          }
-        }
-      }
-    },
-    "Auto": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自动"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自動"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自動"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自動"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連接伺服器以發現其工具。"
           }
         }
       }
     },
-    "Name": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Name"
+    "Connect any Model Context Protocol server and let the agent use its tools." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect any Model Context Protocol server and let the agent use its tools."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "名称"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接任意 Model Context Protocol 服务器，让 Agent 使用其工具。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "名稱"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連接任意 Model Context Protocol 伺服器，讓 Agent 使用其工具。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "名稱"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連接任意 Model Context Protocol 伺服器，讓 Agent 使用其工具。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "名稱"
-          }
-        }
-      }
-    },
-    "e.g. Xcode (native)": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "e.g. Xcode (native)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "例如：Xcode (native)"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "例如：Xcode (native)"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "例如：Xcode (native)"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "例如：Xcode (native)"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連接任意 Model Context Protocol 伺服器，讓 Agent 使用其工具。"
           }
         }
       }
     },
-    "Transport": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transport"
+    "Connect automatically when Lumi starts." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect automatically when Lumi starts."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "传输方式"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Lumi 启动时自动连接。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "傳輸方式"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Lumi 啟動時自動連接。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "傳輸方式"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Lumi 啟動時自動連接。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "傳輸方式"
-          }
-        }
-      }
-    },
-    "Command": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Command"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "命令"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "命令"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "命令"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "命令"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Lumi 啟動時自動連接。"
           }
         }
       }
     },
-    "Arguments (space-separated)": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Arguments (space-separated)"
+    "Connecting" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "参数（以空格分隔）"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接中…"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "參數（以空格分隔）"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連線中…"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "參數（以空格分隔）"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連線中…"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "參數（以空格分隔）"
-          }
-        }
-      }
-    },
-    "URL": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "URL"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "URL"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "URL"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "URL"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "URL"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連線中…"
           }
         }
       }
     },
-    "Environment (KEY=VALUE, one per line)": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Environment (KEY=VALUE, one per line)"
+    "Delete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "环境变量（每行 KEY=VALUE）"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "環境變數（每行 KEY=VALUE）"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "環境變數（每行 KEY=VALUE）"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "環境變數（每行 KEY=VALUE）"
-          }
-        }
-      }
-    },
-    "Auto-start": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto-start"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自动启动"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自動啟動"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自動啟動"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自動啟動"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除"
           }
         }
       }
     },
-    "Connect automatically when Lumi starts.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connect automatically when Lumi starts."
+    "Disabled servers never spawn or register tools." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disabled servers never spawn or register tools."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Lumi 启动时自动连接。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已禁用的服务器不会启动，也不会注册工具。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Lumi 啟動時自動連接。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已停用的伺服器不會啟動，也不會註冊工具。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Lumi 啟動時自動連接。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已停用的伺服器不會啟動，也不會註冊工具。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Lumi 啟動時自動連接。"
-          }
-        }
-      }
-    },
-    "Enabled": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enabled"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已启用"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已啟用"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已啟用"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已啟用"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已停用的伺服器不會啟動，也不會註冊工具。"
           }
         }
       }
     },
-    "Disabled servers never spawn or register tools.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Disabled servers never spawn or register tools."
+    "Disconnected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disconnected"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已禁用的服务器不会启动，也不会注册工具。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已断开"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已停用的伺服器不會啟動，也不會註冊工具。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已中斷"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已停用的伺服器不會啟動，也不會註冊工具。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已中斷"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已停用的伺服器不會啟動，也不會註冊工具。"
-          }
-        }
-      }
-    },
-    "This server runs programs with Lumi's permissions. Only add trusted sources.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This server runs programs with Lumi's permissions. Only add trusted sources."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "该服务器会以 Lumi 的权限运行程序。只添加可信来源。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "該伺服器會以 Lumi 的權限執行程式。只新增可信來源。"
-          }
-        },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "該伺服器會以 Lumi 的權限執行程式。只新增可信來源。"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "該伺服器會以 Lumi 的權限執行程式。只新增可信來源。"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已中斷"
           }
         }
       }
     },
-    "Cancel": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancel"
+    "Discovered tools, grouped by server. Risk can be overridden per tool." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discovered tools, grouped by server. Risk can be overridden per tool."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "取消"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已发现的工具，按服务器分组。每个工具的风险都可单独覆盖。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "取消"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已發現的工具，按伺服器分組。每個工具的風險都可單獨覆寫。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "取消"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已發現的工具，按伺服器分組。每個工具的風險都可單獨覆寫。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "取消"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已發現的工具，按伺服器分組。每個工具的風險都可單獨覆寫。"
           }
         }
       }
     },
-    "Save & Connect": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save & Connect"
+    "e.g. Xcode (native)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. Xcode (native)"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保存并连接"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "例如：Xcode (native)"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "儲存並連接"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "例如：Xcode (native)"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "儲存並連接"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "例如：Xcode (native)"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "儲存並連接"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "例如：Xcode (native)"
           }
         }
       }
     },
-    "Name is required.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Name is required."
+    "Edit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请填写名称。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請填寫名稱。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請填寫名稱。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請填寫名稱。"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯"
           }
         }
       }
     },
-    "Command is required.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Command is required."
+    "Enable MCP" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable MCP"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请填写命令。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用 MCP"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請填寫命令。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用 MCP"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請填寫命令。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用 MCP"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請填寫命令。"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用 MCP"
           }
         }
       }
     },
-    "URL is required for HTTP transport.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "URL is required for HTTP transport."
+    "Enabled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enabled"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HTTP 传输方式需要填写 URL。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已启用"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HTTP 傳輸方式需要填寫 URL。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已啟用"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HTTP 傳輸方式需要填寫 URL。"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已啟用"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HTTP 傳輸方式需要填寫 URL。"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已啟用"
           }
         }
       }
     },
-    "Disconnected": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Disconnected"
+    "Environment (KEY=VALUE, one per line)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Environment (KEY=VALUE, one per line)"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已断开"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "环境变量（每行 KEY=VALUE）"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已中斷"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "環境變數（每行 KEY=VALUE）"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已中斷"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "環境變數（每行 KEY=VALUE）"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已中斷"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "環境變數（每行 KEY=VALUE）"
           }
         }
       }
     },
-    "Connecting": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connecting"
+    "Error" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "连接中…"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "错误"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "連線中…"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錯誤"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "連線中…"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錯誤"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "連線中…"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錯誤"
           }
         }
       }
     },
-    "Running": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Running"
+    "General" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "运行中"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通用"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "執行中"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "執行中"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "執行中"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般"
           }
         }
       }
     },
-    "Error": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Error"
+    "Global switches for all MCP servers." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Global switches for all MCP servers."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "错误"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作用于所有 MCP 服务器的全局开关。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "錯誤"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作用於所有 MCP 伺服器的全域開關。"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "錯誤"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作用於所有 MCP 伺服器的全域開關。"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "錯誤"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作用於所有 MCP 伺服器的全域開關。"
           }
         }
       }
     },
-    "tools-count": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d tools"
+    "High" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d 个工具"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高风险"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d 個工具"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高風險"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d 個工具"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高風險"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d 個工具"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高風險"
           }
         }
       }
     },
-    "Safe": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Safe"
+    "https://example.com/mcp" : {
+
+    },
+    "Low" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Low"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安全"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "低风险"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安全"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "低風險"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安全"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "低風險"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "安全"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "低風險"
           }
         }
       }
     },
-    "Low": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Low"
+    "MCP Servers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MCP Servers"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "低风险"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MCP 服务器"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "低風險"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MCP 伺服器"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "低風險"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MCP 伺服器"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "低風險"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MCP 伺服器"
           }
         }
       }
     },
-    "Medium": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Medium"
+    "mcpbridge" : {
+
+    },
+    "Medium" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medium"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "中风险"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中风险"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "中風險"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中風險"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "中風險"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中風險"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "中風險"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中風險"
           }
         }
       }
     },
-    "High": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "High"
+    "Name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "高风险"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "名称"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "高風險"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "名稱"
           }
         },
-        "zh-HK": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "高風險"
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "名稱"
           }
         },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "高風險"
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "名稱"
           }
         }
       }
+    },
+    "Name is required." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name is required."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请填写名称。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請填寫名稱。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請填寫名稱。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請填寫名稱。"
+          }
+        }
+      }
+    },
+    "No servers yet. Add one below." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No servers yet. Add one below."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有服务器，请在下方添加。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有伺服器，請在下方新增。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有伺服器，請在下方新增。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有伺服器，請在下方新增。"
+          }
+        }
+      }
+    },
+    "One-click add common servers." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One-click add common servers."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一键添加常用服务器。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一鍵新增常用伺服器。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一鍵新增常用伺服器。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一鍵新增常用伺服器。"
+          }
+        }
+      }
+    },
+    "Risk applied to tools not covered by any rule. High means approval required." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Risk applied to tools not covered by any rule. High means approval required."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用于未被任何规则覆盖的工具。高风险表示需要授权。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "套用於未被任何規則覆蓋的工具。高風險表示需要授權。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "套用於未被任何規則覆蓋的工具。高風險表示需要授權。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "套用於未被任何規則覆蓋的工具。高風險表示需要授權。"
+          }
+        }
+      }
+    },
+    "Running" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "运行中"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "執行中"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "執行中"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "執行中"
+          }
+        }
+      }
+    },
+    "Safe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Safe"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安全"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安全"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安全"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安全"
+          }
+        }
+      }
+    },
+    "Save & Connect" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save & Connect"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存并连接"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存並連接"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存並連接"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存並連接"
+          }
+        }
+      }
+    },
+    "Security notice" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Security notice"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安全提示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安全提示"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安全提示"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安全提示"
+          }
+        }
+      }
+    },
+    "Servers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servers"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "伺服器"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "伺服器"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "伺服器"
+          }
+        }
+      }
+    },
+    "stdio" : {
+
+    },
+    "Streamable HTTP" : {
+
+    },
+    "This server runs programs with Lumi's permissions. Only add trusted sources." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This server runs programs with Lumi's permissions. Only add trusted sources."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该服务器会以 Lumi 的权限运行程序。只添加可信来源。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "該伺服器會以 Lumi 的權限執行程式。只新增可信來源。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "該伺服器會以 Lumi 的權限執行程式。只新增可信來源。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "該伺服器會以 Lumi 的權限執行程式。只新增可信來源。"
+          }
+        }
+      }
+    },
+    "Tools" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工具"
+          }
+        }
+      }
+    },
+    "tools-count" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d tools"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 个工具"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 個工具"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 個工具"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 個工具"
+          }
+        }
+      }
+    },
+    "Transport" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transport"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "传输方式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "傳輸方式"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "傳輸方式"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "傳輸方式"
+          }
+        }
+      }
+    },
+    "Unknown tool risk" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown tool risk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知工具风险"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知工具風險"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知工具風險"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知工具風險"
+          }
+        }
+      }
+    },
+    "URL" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL"
+          }
+        }
+      }
+    },
+    "URL is required for HTTP transport." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL is required for HTTP transport."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTTP 传输方式需要填写 URL。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTTP 傳輸方式需要填寫 URL。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTTP 傳輸方式需要填寫 URL。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTTP 傳輸方式需要填寫 URL。"
+          }
+        }
+      }
+    },
+    "When off, no server connects and no MCP tool is available." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When off, no server connects and no MCP tool is available."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭后，所有服务器都不连接，MCP 工具也不可用。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉後，所有伺服器都不連接，MCP 工具也不可用。"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉後，所有伺服器都不連接，MCP 工具也不可用。"
+          }
+        },
+        "zh-TW" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉後，所有伺服器都不連接，MCP 工具也不可用。"
+          }
+        }
+      }
+    },
+    "xcrun" : {
+
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

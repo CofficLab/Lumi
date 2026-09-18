@@ -4,20 +4,22 @@ import KitMCP
 import LumiUI
 import SwiftUI
 
-/// Cursor 式"MCP 服务器"设置页。
+/// Cursor 式"MCP 服务器"设置页——左侧列表 + 右侧详情。
 ///
-/// - 服务器列表：卡片式，状态 / 工具数 / 启停 / 编辑 / 删除；
-/// - 添加/编辑表单：传输、命令、参数、环境变量、自动启动，"保存并连接"；
-/// - 内置模板区：Xcode (native) 一键添加；
-/// - 工具清单：按服务器分组，风险徽标 + 单工具覆盖；
-/// - 全局设置与安全提示。
+/// - 左侧：全局开关、搜索、服务器列表（点击选中）；
+/// - 右侧：选中服务器的状态、启停、工具列表与编辑/删除；
+/// - 添加/编辑表单仍走 sheet；
+/// - 内置模板区放在左侧列表底部。
 @MainActor
 struct MCPSettingsView: View {
     @ObservedObject var registry: MCPServerRegistry
     @ObservedObject var manager: MCPConnectionManager
     @LumiTheme private var theme
+
     @State private var showingAddSheet = false
     @State private var editingServerID: String?
+    @State private var selectedServerID: String?
+    @State private var searchText = ""
     @State private var revision = 0
 
     var body: some View {
@@ -25,284 +27,274 @@ struct MCPSettingsView: View {
             title: MCPText.string("MCP Servers"),
             subtitle: MCPText.string("Connect any Model Context Protocol server and let the agent use its tools."),
             showHeader: false,
-            scrollsContent: true
+            scrollsContent: false
         ) {
             VStack(alignment: .leading, spacing: 14) {
-                globalSection
-                templatesSection
-                serversSection
-                toolsSection
-                securityNotice
+                header
+                masterDetail
             }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .id(revision)
         .sheet(isPresented: $showingAddSheet) {
-            MCPServerEditSheet(
-                registry: registry,
-                manager: manager,
-                server: nil
-            ) { _ in revision += 1 }
+            MCPServerEditSheet(registry: registry, manager: manager, server: nil) { _ in revision += 1 }
         }
         .sheet(item: Binding(
             get: { editingServerID.flatMap { id in registry.server(id: id) } },
             set: { editingServerID = $0?.id }
         )) { server in
-            MCPServerEditSheet(
-                registry: registry,
-                manager: manager,
-                server: server
-            ) { _ in revision += 1 }
+            MCPServerEditSheet(registry: registry, manager: manager, server: server) { _ in revision += 1 }
+        }
+        .onAppear {
+            if selectedServerID == nil, let first = registry.servers.first {
+                selectedServerID = first.id
+            }
+        }
+        .onChange(of: registry.servers.count) { _, _ in
+            if selectedServerID == nil, let first = registry.servers.first {
+                selectedServerID = first.id
+            }
         }
     }
 
-    // MARK: - Sections
+    // MARK: - Header
 
-    private var globalSection: some View {
-        AppSettingsSection(
-            title: MCPText.string("General"),
-            subtitle: MCPText.string("Global switches for all MCP servers.")
-        ) {
-            AppToggleRow(
-                title: LocalizedStringKey(MCPText.string("Enable MCP")),
-                systemImage: "link",
-                description: LocalizedStringKey(MCPText.string("When off, no server connects and no MCP tool is available.")),
-                isOn: Binding(
-                    get: { registry.globalEnabled },
-                    set: { value in
-                        registry.globalEnabled = value
-                        revision += 1
-                    }
-                )
+    private var header: some View {
+        HStack(spacing: 10) {
+            Label(
+                MCPText.string("MCP Servers"),
+                systemImage: "shippingbox"
             )
+            Text(String(format: MCPText.string("%d servers"), registry.servers.count))
+                .font(.appCaption)
+                .foregroundStyle(theme.textSecondary)
+            Spacer()
+            AppButton(MCPText.string("Add Server"), systemImage: "plus", style: .primary, size: .small) {
+                showingAddSheet = true
+            }
+        }
+        .font(.appCaption)
+    }
+
+    // MARK: - Master–Detail
+
+    private var masterDetail: some View {
+        HStack(spacing: 0) {
+            sidebar
+                .frame(width: 280)
+                .frame(maxHeight: .infinity)
+            AppDivider(.vertical)
+            detailPane
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .frame(minHeight: 460, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(theme.divider, lineWidth: 1)
+        }
+    }
+
+    // MARK: - Sidebar
+
+    private var sidebar: some View {
+        VStack(spacing: 0) {
+            globalToggle
             AppDivider()
+            AppSearchBar(text: $searchText, placeholder: LocalizedStringKey(MCPText.string("Search servers")))
+                .padding(12)
+            AppDivider()
+            ScrollView {
+                LazyVStack(spacing: 4) {
+                    ForEach(filteredServers) { server in
+                        serverRow(server)
+                    }
+                    if filteredServers.isEmpty {
+                        Text(MCPText.string("No servers found"))
+                            .font(.appCaption)
+                            .foregroundStyle(theme.textSecondary)
+                            .padding(.vertical, 32)
+                    }
+                }
+                .padding(8)
+            }
+            .frame(maxHeight: .infinity)
+            AppDivider()
+            templateRow
+                .padding(8)
+        }
+        .appSurface(style: .panel, cornerRadius: 0)
+    }
+
+    private var globalToggle: some View {
+        AppToggleRow(
+            title: LocalizedStringKey(MCPText.string("Enable MCP")),
+            systemImage: "link",
+            description: LocalizedStringKey(MCPText.string("When off, no server connects and no MCP tool is available.")),
+            isOn: Binding(
+                get: { registry.globalEnabled },
+                set: { value in
+                    registry.globalEnabled = value
+                    revision += 1
+                }
+            )
+        )
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+    }
+
+    private func serverRow(_ server: MCPServerConfig) -> some View {
+        let isSelected = selectedServerID == server.id
+        let state = manager.state(for: server.id)
+        return AppListRow(isSelected: isSelected, action: {
+            withAnimation(.easeInOut(duration: 0.15)) { selectedServerID = server.id }
+        }) {
             HStack(spacing: 10) {
-                Image(systemName: "shield.lefthalf.filled")
-                    .foregroundStyle(theme.warning)
-                    .frame(width: 24)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(MCPText.string("Unknown tool risk"))
-                        .font(.appBody)
-                    Text(MCPText.string("Risk applied to tools not covered by any rule. High means approval required."))
+                Image(systemName: state == .connected ? "link.circle.fill" : "link.circle")
+                    .foregroundStyle(state == .connected ? theme.success : theme.textSecondary)
+                    .frame(width: 22, height: 22)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(server.name)
+                        .font(.appCaptionEmphasized)
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(1)
+                    Text(server.command + (server.arguments.isEmpty ? "" : " " + server.arguments.joined(separator: " ")))
+                        .font(.appMicro)
+                        .foregroundStyle(theme.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private var templateRow: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "hammer")
+                .foregroundStyle(theme.primary)
+                .frame(width: 22, height: 22)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Xcode (native)")
+                    .font(.appCaptionEmphasized)
+                Text("xcrun mcpbridge")
+                    .font(.appMicro)
+                    .foregroundStyle(theme.textSecondary)
+            }
+            Spacer(minLength: 4)
+            AppButton(MCPText.string("Add"), size: .small) {
+                addTemplate(MCPServerTemplate.xcodeNative)
+            }
+        }
+        .padding(8)
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+    }
+
+    // MARK: - Detail Pane
+
+    @ViewBuilder
+    private var detailPane: some View {
+        if let selectedServerID,
+           let server = registry.server(id: selectedServerID) {
+            ScrollView {
+                serverDetail(server)
+                    .padding(22)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+            .appSurface(style: .panel, cornerRadius: 0)
+        } else {
+            AppEmptyState(
+                icon: "shippingbox",
+                title: MCPText.string("Select a server"),
+                description: MCPText.string("Choose a server from the list, or add a new one.")
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .appSurface(style: .panel, cornerRadius: 0)
+        }
+    }
+
+    private func serverDetail(_ server: MCPServerConfig) -> some View {
+        let state = manager.state(for: server.id)
+        return VStack(alignment: .leading, spacing: 18) {
+            // 标题行：名称 + 状态 + 启停开关 + 编辑/删除
+            HStack(spacing: 12) {
+                Image(systemName: state == .connected ? "link.circle.fill" : "link.circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(state == .connected ? theme.success : theme.textSecondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(server.name)
+                            .font(.title3.weight(.semibold))
+                        statusBadge(state)
+                    }
+                    Text(server.command + (server.arguments.isEmpty ? "" : " " + server.arguments.joined(separator: " ")))
                         .font(.appCaption)
                         .foregroundStyle(theme.textSecondary)
                 }
-                Spacer()
-                riskPicker(
-                    selection: Binding(
-                        get: { registry.unknownToolDefaultLevel },
-                        set: { registry.unknownToolDefaultLevel = $0 ?? .high }
-                    ),
-                    compact: false
-                )
-            }
-            .padding(.vertical, 6)
-        }
-    }
-
-    private var templatesSection: some View {
-        AppSettingsSection(
-            title: MCPText.string("Built-in Templates"),
-            subtitle: MCPText.string("One-click add common servers.")
-        ) {
-            templateCard(
-                title: "Xcode (native)",
-                detail: "xcrun mcpbridge · requires a running Xcode with Intelligence → Model Context Protocol enabled.",
-                systemImage: "hammer",
-                add: {
-                    addTemplate(MCPServerTemplate.xcodeNative)
-                }
-            )
-        }
-    }
-
-    private var serversSection: some View {
-        AppSettingsSection(
-            title: MCPText.string("Servers"),
-            subtitle: MCPText.string("Configured MCP servers. Only trusted sources — each server runs programs on this machine.")
-        ) {
-            if !registry.servers.isEmpty {
-                ForEach(registry.servers) { server in
-                    serverCard(server)
-                }
-            } else {
-                Text(MCPText.string("No servers yet. Add one below."))
-                    .font(.appCaption)
-                    .foregroundStyle(theme.textSecondary)
-            }
-            HStack(spacing: 10) {
-                AppButton(MCPText.string("Add Server"), systemImage: "plus", size: .small) {
-                    showingAddSheet = true
-                }
-                Spacer()
-            }
-            .padding(.top, 6)
-        }
-    }
-
-    private var toolsSection: some View {
-        AppSettingsSection(
-            title: MCPText.string("Tools"),
-            subtitle: MCPText.string("Discovered tools, grouped by server. Risk can be overridden per tool.")
-        ) {
-            let tools = manager.registeredTools
-            if tools.isEmpty {
-                Text(MCPText.string("Connect a server to discover its tools."))
-                    .font(.appCaption)
-                    .foregroundStyle(theme.textSecondary)
-            } else {
-                ForEach(tools.keys.sorted(), id: \.self) { serverID in
-                    if let config = registry.server(id: serverID), let adapters = tools[serverID] {
-                        toolGroup(config: config, adapters: adapters)
-                    }
-                }
-            }
-        }
-    }
-
-    private var securityNotice: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(theme.warning)
-                .frame(width: 24)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(MCPText.string("Security notice"))
-                    .font(.appBodyEmphasized)
-                Text(MCPText.string("An MCP server runs programs on this machine with Lumi's permissions — equivalent to executing arbitrary local commands. Only add servers you trust. Unknown tools default to high risk and require approval."))
-                    .font(.appCaption)
-                    .foregroundStyle(theme.textSecondary)
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(theme.divider, lineWidth: 0.5)
-        }
-    }
-
-    // MARK: - Subviews
-
-    private func serverCard(_ server: MCPServerConfig) -> some View {
-        let state = manager.state(for: server.id)
-        return HStack(spacing: 10) {
-            Image(systemName: state == .connected ? "link.circle.fill" : "link.circle")
-                .foregroundStyle(state == .connected ? theme.success : theme.textSecondary)
-                .frame(width: 24)
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(server.name)
-                        .font(.appBodyEmphasized)
-                        .lineLimit(1)
-                    statusBadge(state)
-                }
-                Text(server.command + (server.arguments.isEmpty ? "" : " " + server.arguments.joined(separator: " ")))
-                    .font(.appCaption)
-                    .foregroundStyle(theme.textSecondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-            Spacer(minLength: 4)
-            Text(String(format: MCPText.string("tools-count"), manager.connectedToolCount(serverID: server.id)))
-                .font(.appCaption)
-                .foregroundStyle(theme.textSecondary)
-            AppToggleRow(
-                title: "",
-                isOn: Binding(
+                Spacer(minLength: 8)
+                Toggle("", isOn: Binding(
                     get: { server.enabled },
                     set: { enabled in
                         var updated = server
                         updated.enabled = enabled
                         registry.updateServer(updated)
                         Task { @MainActor in
-                            if enabled {
-                                await manager.connect(serverID: server.id)
-                            } else {
-                                await manager.disconnect(serverID: server.id)
-                            }
+                            if enabled { await manager.connect(serverID: server.id) }
+                            else { await manager.disconnect(serverID: server.id) }
                         }
                         revision += 1
                     }
-                )
-            )
-            .toggleStyle(.switch)
-            .labelsHidden()
-            .controlSize(.small)
-            AppButton("", systemImage: "pencil", size: .small) {
-                editingServerID = server.id
-            }
-            .help(MCPText.string("Edit"))
-            AppButton("", systemImage: "trash", size: .small) {
-                Task { @MainActor in
-                    await manager.disconnect(serverID: server.id)
+                ))
+                .toggleStyle(.switch)
+                .labelsHidden()
+                .controlSize(.small)
+                AppButton("", systemImage: "pencil", size: .small) { editingServerID = server.id }
+                    .help(MCPText.string("Edit"))
+                AppButton("", systemImage: "trash", size: .small) {
+                    Task { @MainActor in await manager.disconnect(serverID: server.id) }
+                    registry.removeServer(id: server.id)
+                    if selectedServerID == server.id { selectedServerID = nil }
+                    revision += 1
                 }
-                registry.removeServer(id: server.id)
-                revision += 1
+                .help(MCPText.string("Delete"))
             }
-            .help(MCPText.string("Delete"))
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(theme.divider, lineWidth: 0.5)
-        }
-    }
 
-    private func statusBadge(_ state: MCPServerConnectionState) -> some View {
-        let color: Color
-        switch state {
-        case .connected: color = theme.success
-        case .connecting: color = theme.warning
-        case .error: color = .red
-        case .disconnected: color = theme.textSecondary
-        }
-        return Text(MCPText.string(state.displayName))
-            .font(.appCaption)
-            .foregroundStyle(color)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 1)
-            .background(color.opacity(0.12), in: Capsule())
-    }
+            AppDivider()
 
-    private func templateCard(title: String, detail: String, systemImage: String, add: @escaping () -> Void) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: systemImage)
-                .foregroundStyle(theme.primary)
-                .frame(width: 24)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.appBodyEmphasized)
-                Text(detail)
+            // 工具数与未知工具风险
+            HStack(spacing: 10) {
+                Text(String(format: MCPText.string("%d tools"), manager.connectedToolCount(serverID: server.id)))
                     .font(.appCaption)
                     .foregroundStyle(theme.textSecondary)
+                Spacer()
+                riskPicker(
+                    selection: Binding(
+                        get: { registry.unknownToolDefaultLevel },
+                        set: { registry.unknownToolDefaultLevel = $0 ?? .high }
+                    ),
+                    compact: true
+                )
             }
-            Spacer(minLength: 4)
-            AppButton(MCPText.string("Add"), size: .small, action: add)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(theme.divider, lineWidth: 0.5)
+
+            // 该服务器的工具列表
+            let tools = manager.registeredTools
+            if let adapters = tools[server.id], !adapters.isEmpty {
+                AppDivider()
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(MCPText.string("Tools"))
+                        .font(.appCaptionEmphasized)
+                    ForEach(adapters, id: \.name) { adapter in
+                        toolRow(server: server, adapter: adapter)
+                    }
+                }
+            }
+
+            AppDivider()
+            securityNotice
         }
     }
 
-    private func toolGroup(config: MCPServerConfig, adapters: [MCPToolAdapter]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(config.name)
-                .font(.appBodyEmphasized)
-                .padding(.top, 4)
-            ForEach(adapters, id: \.name) { adapter in
-                toolRow(config: config, adapter: adapter)
-            }
-        }
-    }
-
-    private func toolRow(config: MCPServerConfig, adapter: MCPToolAdapter) -> some View {
+    private func toolRow(server: MCPServerConfig, adapter: MCPToolAdapter) -> some View {
         let level = adapter.policy.level(
             for: adapter.descriptor,
             override: adapter.riskOverride
@@ -321,13 +313,29 @@ struct MCPSettingsView: View {
             riskBadge(level)
             riskPicker(
                 selection: Binding(
-                    get: { registry.riskOverride(serverID: config.id, toolName: adapter.descriptor.name) },
-                    set: { registry.setRiskOverride(serverID: config.id, toolName: adapter.descriptor.name, level: $0) }
+                    get: { registry.riskOverride(serverID: server.id, toolName: adapter.descriptor.name) },
+                    set: { registry.setRiskOverride(serverID: server.id, toolName: adapter.descriptor.name, level: $0) }
                 ),
                 compact: true
             )
         }
         .padding(.vertical, 4)
+    }
+
+    private func statusBadge(_ state: MCPServerConnectionState) -> some View {
+        let color: Color
+        switch state {
+        case .connected: color = theme.success
+        case .connecting: color = theme.warning
+        case .error: color = .red
+        case .disconnected: color = theme.textSecondary
+        }
+        return Text(MCPText.string(state.displayName))
+            .font(.appCaption)
+            .foregroundStyle(color)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 1)
+            .background(color.opacity(0.12), in: Capsule())
     }
 
     private func riskBadge(_ level: CommandRiskLevel) -> some View {
@@ -360,7 +368,30 @@ struct MCPSettingsView: View {
         .controlSize(.small)
     }
 
-    // MARK: - Actions
+    private var securityNotice: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(theme.warning)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(MCPText.string("Security notice"))
+                    .font(.appBodyEmphasized)
+                Text(MCPText.string("An MCP server runs programs on this machine with Lumi's permissions — equivalent to executing arbitrary local commands. Only add servers you trust."))
+                    .font(.appCaption)
+                    .foregroundStyle(theme.textSecondary)
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private var filteredServers: [MCPServerConfig] {
+        if searchText.isEmpty { return registry.servers }
+        return registry.servers.filter {
+            $0.name.localizedCaseInsensitiveContains(searchText)
+            || $0.command.localizedCaseInsensitiveContains(searchText)
+        }
+    }
 
     private func addTemplate(_ template: MCPServerConfig) {
         if registry.servers.contains(where: { $0.command == template.command && $0.arguments == template.arguments }) {
@@ -369,9 +400,8 @@ struct MCPSettingsView: View {
         var config = template
         config.enabled = true
         let saved = registry.addServer(config)
-        Task { @MainActor in
-            await manager.connect(serverID: saved.id)
-        }
+        Task { @MainActor in await manager.connect(serverID: saved.id) }
+        selectedServerID = saved.id
         revision += 1
     }
 }
