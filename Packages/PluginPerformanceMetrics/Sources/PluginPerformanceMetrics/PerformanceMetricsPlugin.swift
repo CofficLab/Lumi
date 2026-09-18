@@ -1,5 +1,6 @@
 import KernelCore
 import KitLocalization
+import LumiUI
 import ProviderPerformanceMetrics
 import ProviderSettingView
 import ProviderStorage
@@ -106,18 +107,20 @@ public struct PerformanceMetricsSettingsView: View {
             Spacer()
 
             HStack(spacing: 8) {
-                Button(PerformanceMetricsLocalization.string("Clear", bundle: .module)) {
+                AppButton(
+                    PerformanceMetricsLocalization.string("Clear", bundle: .module),
+                    systemImage: "trash",
+                    style: .secondary,
+                    size: .small
+                ) {
                     provider.clear()
                     Task { await reload() }
                 }
                 .disabled(isLoading)
 
-                Button {
+                AppIconButton(systemImage: "arrow.clockwise") {
                     Task { await reload() }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
                 }
-                .buttonStyle(.borderless)
                 .help(PerformanceMetricsLocalization.string("Refresh performance data", bundle: .module))
             }
         }
