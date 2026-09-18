@@ -175,6 +175,22 @@ final class ACPProtocolHandlerTests: XCTestCase {
         XCTAssertTrue(error.message.contains("Unknown session"))
     }
 
+    func testSessionNewRejectsRelativeCwd() throws {
+        // 规范要求 cwd MUST 为绝对路径，且它是会话文件系统根。
+        let message = try ACPMessage.makeRequest(
+            id: 6,
+            method: ACPMethod.sessionNew,
+            params: ACPSessionNewParams(cwd: "relative/project")
+        )
+        let response = handler.handle(message)
+        guard case .error(let id, let error) = response else {
+            return XCTFail("相对 cwd 应被拒绝，得到 \(String(describing: response))")
+        }
+        XCTAssertEqual(id, .number(6))
+        XCTAssertEqual(error.code, ACPErrorCode.invalidParams)
+        XCTAssertTrue(error.message.contains("absolute"))
+    }
+
     // MARK: - MCP server 下发
 
     func testSessionNewAcceptsMCPServersWithoutFailing() throws {

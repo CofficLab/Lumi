@@ -155,6 +155,17 @@ public final class ACPProtocolHandler {
         guard !decoded.cwd.isEmpty else {
             return .error(id: id, error: .invalidParams)
         }
+        // 规范要求 cwd **MUST** 为绝对路径，且它是会话的文件系统根：
+        // 相对路径会让"会话边界"语义失真（不同进程 cwd 不同），因此直接拒绝。
+        guard decoded.cwd.hasPrefix("/") else {
+            return .error(
+                id: id,
+                error: ACPError(
+                    code: ACPErrorCode.invalidParams,
+                    message: "cwd must be an absolute path: \(decoded.cwd)"
+                )
+            )
+        }
 
         // MCP 尚未实现（规范要求 Agent MUST 支持 stdio MCP transport）。
         // 在补齐之前，客户端下发的 server 一律**显式告警**而非静默丢弃：

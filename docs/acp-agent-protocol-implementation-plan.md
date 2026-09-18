@@ -430,7 +430,7 @@ sequenceDiagram
 - [ ] **正式 `lumi-acp` Xcode target**（见下方"未完成项"）
 - [ ] `session/load`（会话续载）、`session/set_mode`（模式切换）
 - [ ] 远程 HTTP/WebSocket 传输（复用 `LumiWebServer`）
-- [ ] `MCPKit` MCP client（stdio/SSE/HTTP），消费编辑器下发的 MCP server 配置
+- [ ] **MCP client（stdio）—— 属规范 `MUST`，不是可选增强**：规范原文 "All Agents **MUST** support connecting to MCP servers via stdio"。当前**完全未实现**，`session/new` / `session/load` 下发的 server 会被忽略（已改为 stderr 显式告警，不再静默）。补齐前，编辑器侧配置的 MCP 工具不会生效；**若目标编辑器依赖该能力，应视为阻塞项**。HTTP/SSE transport 另需 `mcpCapabilities` 声明。
 - [ ] `promptCapabilities.image`（粘贴截图提问）
 
 #### M5 未完成项：`lumi-acp` target（受阻于验证手段）
@@ -487,6 +487,8 @@ sequenceDiagram
 | R10 | 未签名/无 bundle 的 CLI 进程访问 file-based Keychain 会弹系统密码框并**永久阻塞** | 任何自动触发的凭据读取都可能让线程卡死（headless agent 回合静默消失） | ✅ 已处置（2026-09-18）：Keychain 读取支持无提示模式，凭据解析路径一律不弹窗；`UNUserNotificationCenter` 调用点增加无 bundle 保护 |
 | R8 | 内核授权挂起载荷不含模型原始 `toolCallId`（`payload.toolCallId` 为 `approval:<id>`） | 若误用该字段，编辑器授权弹窗与已上报的 `tool_call` 对不上 | ✅ 已处置（2026-09-18）：`ACPTurnCoordinator` 一律取 `suspension.toolCallID`（内核已回填模型原始 id），并新增测试锁定该行为 |
 | R9 | fs 桥的路径边界只认 `session/new` 的单个 `cwd` | 多根/多工作区项目下，合法文件路径可能被误判越权 | 当前按单根保守校验（安全优先）；后续按需扩展为多根白名单 |
+| R11 | ~~消息流的 `cwd` 未校验为绝对路径~~ | ~~相对路径会让根集合语义失真~~ | ✅ 已处置（2026-09-18）：`session/new` 现校验 `cwd` 必须为绝对路径，否则返回 `invalidParams`（规范 MUST）；`cwd` 作为会话根已落库于 `ACPSessionManager.SessionRecord` |
+| R12 | `additionalDirectories`（额外工作区根）未实现，且**当前会拒绝未知字段**吗？——需验证：若客户端在该能力未声明时下发，行为应可预期 | 多根项目场景下文件操作被误判越权 | 该能力需 `sessionCapabilities.additionalDirectories` 声明；当前未声明，客户端不应下发（符合规范）。后续实现时一并接入 R9 的多根白名单 |
 
 **开放问题（需产品确认）**
 
