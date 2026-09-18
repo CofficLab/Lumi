@@ -156,6 +156,18 @@ public final class ACPProtocolHandler {
             return .error(id: id, error: .invalidParams)
         }
 
+        // MCP 尚未实现（规范要求 Agent MUST 支持 stdio MCP transport）。
+        // 在补齐之前，客户端下发的 server 一律**显式告警**而非静默丢弃：
+        // 否则编辑器会以为 MCP 工具可用，实际永远不生效，排查成本极高。
+        if let servers = decoded.mcpServers, !servers.isEmpty {
+            fputs(
+                "ACP session/new: ignoring \(servers.count) MCP server(s) "
+                    + "[\(servers.map(\.name).joined(separator: ", "))]; "
+                    + "MCP client support is not implemented yet\n",
+                stderr
+            )
+        }
+
         do {
             let sessionID = try sessions.createSession(cwd: decoded.cwd)
             let result = ACPSessionNewResult(sessionId: sessionID)

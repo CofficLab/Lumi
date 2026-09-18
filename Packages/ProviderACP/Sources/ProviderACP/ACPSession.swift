@@ -47,6 +47,17 @@ public struct ACPMCPHttpHeader: Sendable, Equatable, Codable {
     }
 }
 
+/// MCP server 的展示名称（三种 transport 都带 `name`）。
+public extension ACPMCPServer {
+    var name: String {
+        switch self {
+        case .stdio(let name, _, _, _): return name
+        case .http(let name, _, _): return name
+        case .sse(let name, _, _): return name
+        }
+    }
+}
+
 extension ACPMCPServer: Codable {
     private enum CodingKeys: String, CodingKey {
         case type, name, command, args, env, url, headers

@@ -175,6 +175,39 @@ final class ACPProtocolHandlerTests: XCTestCase {
         XCTAssertTrue(error.message.contains("Unknown session"))
     }
 
+    // MARK: - MCP server 下发
+
+    func testSessionNewAcceptsMCPServersWithoutFailing() throws {
+        // 规范要求 Agent 支持 stdio MCP，但我们尚未实现；当前策略是
+        // **不因 MCP 而失败**（会话照常创建），同时在 stderr 显式告警。
+        let message = try ACPMessage.makeRequest(
+            id: 4,
+            method: ACPMethod.sessionNew,
+            params: ACPSessionNewParams(
+                cwd: "/tmp/project",
+                mcpServers: [
+                    .stdio(name: "filesystem", command: "/usr/bin/mcp-fs", args: [], env: []),
+                ]
+            )
+        )
+        let response = handler.handle(message)
+        guard case .response(let id, let result) = response else {
+            return XCTFail("MCP 未实现不应导致 session/new 失败，得到 \(String(describing: response))")
+        }
+        XCTAssertEqual(id, .number(4))
+        let decoded = try result?.decoded(as: ACPSessionNewResult.self)
+        XCTAssertNotNil(decoded?.sessionId)
+    }
+
+    func testMCPServerNameExposedForAllTransports() {
+        let stdio = ACPMCPServer.stdio(name: "a", command: "/x", args: [], env: [])
+        let http = ACPMCPServer.http(name: "b", url: "https://x", headers: [])
+        let sse = ACPMCPServer.sse(name: "c", url: "https://y", headers: [])
+        XCTAssertEqual(stdio.name, "a")
+        XCTAssertEqual(http.name, "b")
+        XCTAssertEqual(sse.name, "c")
+    }
+
     // MARK: - Client 能力捕获
 
     func testInitializeCapturesFileSystemCapabilities() throws {
