@@ -220,20 +220,9 @@ struct MCPSettingsView: View {
 
             AppDivider()
 
-            // 工具数与未知工具风险
-            HStack(spacing: 10) {
-                Text(String(format: MCPText.string("%d tools"), manager.connectedToolCount(serverID: server.id)))
-                    .font(.appCaption)
-                    .foregroundStyle(theme.textSecondary)
-                Spacer()
-                riskPicker(
-                    selection: Binding(
-                        get: { registry.unknownToolDefaultLevel },
-                        set: { registry.unknownToolDefaultLevel = $0 ?? .high }
-                    ),
-                    compact: true
-                )
-            }
+            Text(String(format: MCPText.string("%d tools"), manager.connectedToolCount(serverID: server.id)))
+                .font(.appCaption)
+                .foregroundStyle(theme.textSecondary)
 
             // 该服务器的工具列表
             let tools = manager.registeredTools
@@ -249,16 +238,23 @@ struct MCPSettingsView: View {
             }
 
             AppDivider()
-            securityNotice
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(theme.warning)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(MCPText.string("Security notice"))
+                        .font(.appBodyEmphasized)
+                    Text(MCPText.string("An MCP server runs programs on this machine with Lumi's permissions. Only add servers you trust."))
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                }
+            }
         }
     }
 
     private func toolRow(server: MCPServerConfig, adapter: MCPToolAdapter) -> some View {
-        let level = adapter.policy.level(
-            for: adapter.descriptor,
-            override: adapter.riskOverride
-        )
-        return HStack(spacing: 8) {
+        HStack(spacing: 8) {
             Text(adapter.descriptor.name)
                 .font(.appBody)
                 .lineLimit(1)
@@ -269,14 +265,6 @@ struct MCPSettingsView: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 4)
-            riskBadge(level)
-            riskPicker(
-                selection: Binding(
-                    get: { registry.riskOverride(serverID: server.id, toolName: adapter.descriptor.name) },
-                    set: { registry.setRiskOverride(serverID: server.id, toolName: adapter.descriptor.name, level: $0) }
-                ),
-                compact: true
-            )
         }
         .padding(.vertical, 4)
     }
@@ -297,50 +285,7 @@ struct MCPSettingsView: View {
             .background(color.opacity(0.12), in: Capsule())
     }
 
-    private func riskBadge(_ level: CommandRiskLevel) -> some View {
-        let color: Color
-        switch level {
-        case .safe: color = theme.success
-        case .low: color = theme.success.opacity(0.8)
-        case .medium: color = theme.warning
-        case .high: color = .red
-        }
-        return Text(level.displayName)
-            .font(.appCaption)
-            .foregroundStyle(color)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 1)
-            .background(color.opacity(0.12), in: Capsule())
-    }
 
-    private func riskPicker(selection: Binding<CommandRiskLevel?>, compact: Bool) -> some View {
-        Picker("", selection: selection) {
-            Text(MCPText.string("Auto")).tag(CommandRiskLevel?.none)
-            Text(MCPText.string("Safe")).tag(CommandRiskLevel?.some(.safe))
-            Text(MCPText.string("Low")).tag(CommandRiskLevel?.some(.low))
-            Text(MCPText.string("Medium")).tag(CommandRiskLevel?.some(.medium))
-            Text(MCPText.string("High")).tag(CommandRiskLevel?.some(.high))
-        }
-        .pickerStyle(.menu)
-        .labelsHidden()
-        .frame(width: compact ? 90 : 110)
-        .controlSize(.small)
-    }
-
-    private var securityNotice: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(theme.warning)
-                .frame(width: 24)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(MCPText.string("Security notice"))
-                    .font(.appBodyEmphasized)
-                Text(MCPText.string("An MCP server runs programs on this machine with Lumi's permissions — equivalent to executing arbitrary local commands. Only add servers you trust."))
-                    .font(.appCaption)
-                    .foregroundStyle(theme.textSecondary)
-            }
-        }
-    }
 
     // MARK: - Helpers
 
