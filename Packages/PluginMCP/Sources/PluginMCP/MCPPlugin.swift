@@ -17,7 +17,7 @@ import os
 ///   `ToolManagerProviding`，LLM 可直接调用（审批流与内置工具一致）；
 /// - 内置 Xcode (native) 预设（`xcrun mcpbridge`）。
 @MainActor
-public final class MCPSuperPlugin: SuperPlugin, SuperLog {
+public final class MCPPlugin: SuperPlugin, SuperLog {
     nonisolated static let logger = Logger(
         subsystem: "com.coffic.lumi.plugin.mcp",
         category: "MCP"

@@ -241,7 +241,7 @@ public struct DefaultPluginFactory: PluginFactory {
             ClipboardManagerSuperPlugin(),
             BrowserSuperPlugin(),
             ComputerUseSuperPlugin(),
-            MCPSuperPlugin(),
+            MCPPlugin(),
             PluginXcodeMCP(),
             BrewManagerSuperPlugin(),
             DisplayControlSuperPlugin(),
