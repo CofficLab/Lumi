@@ -114,7 +114,7 @@ final class StubKeychainBackend: KeychainBackend, @unchecked Sendable {
         lock.withLock { storedReadCount }
     }
 
-    func read(service: String, account: String) -> KeychainResult {
+    func read(service: String, account: String, allowInteraction: Bool) -> KeychainResult {
         lock.withLock {
             storedReadCount += 1
         }

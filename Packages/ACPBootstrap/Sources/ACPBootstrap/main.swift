@@ -14,6 +14,10 @@ import ProviderACP
 ///
 /// 协议外的诊断一律走 stderr，stdout 仅承载 ACP 帧。
 
+// 标记为 headless agent 进程：消费方（如自动标题）据此关闭针对 GUI 会话的
+// 后台行为。必须在装配内核之前设置，插件 onBoot 时会读取。
+setenv("LUMI_ACP_HEADLESS", "1", 1)
+
 let plugin = PluginACP()
 plugin.onEOF = { exit(0) }
 

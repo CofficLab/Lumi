@@ -25,6 +25,12 @@ public final class ACPProtocolHandler {
     /// 异步消息发送通道（由服务器注入，转发到传输层）。
     public var onSend: ((ACPMessage) -> Void)?
 
+    /// `initialize` 完成后回调，供装配层在能力确定后启用 fs 桥。
+    ///
+    /// Client 能力只在 `initialize` 中声明，因此 `startACPServer` 执行时
+    /// 还无从判断；装配层必须挂在这个回调上，而不是在启动阶段直接判断。
+    public var onClientCapabilitiesUpdated: (() -> Void)?
+
     public init(
         config: ACPConfig,
         sessions: ACPSessionManager,
@@ -105,6 +111,8 @@ public final class ACPProtocolHandler {
 
         // 能力是连接级的：记录 Client 声明，供 fs 桥与权限桥判断。
         clientCapabilities.update(from: decoded.clientCapabilities)
+        // 通知装配层：能力已确定，可据此启用能力相关工具（fs 桥）。
+        onClientCapabilitiesUpdated?()
 
         // 版本协商：Agent 只支持协议版本 1。
         // 若 Client 声明的主版本与 Agent 不同，Agent 仍应答自身版本，

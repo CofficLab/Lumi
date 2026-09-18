@@ -94,29 +94,51 @@ public final class PluginACP: SuperPlugin {
         try server.start()
         self.server = server
 
-        // Client 声明 fs 能力时，注册经编辑器的文件工具覆盖内置实现，
-        // 让编辑器的未保存缓冲区与 diff 视图天然正确。
-        if handler.clientCapabilities.hasFileSystemBridge,
-           let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) {
-            let fileClient = ACPFileClient(
+        // Client 能力只在 `initialize` 中声明，此刻还无从判断；挂在回调上，
+        // 待能力确定后按需启用 fs 桥（幂等，重复 initialize 只装一次）。
+        handler.onClientCapabilitiesUpdated = { [weak self] in
+            self?.installFileSystemBridgeIfNeeded(
+                handler: handler,
                 requester: requester,
-                capabilities: handler.clientCapabilities,
-                sessions: sessions
-            )
-            let bridge = ACPFileBridge(
-                client: fileClient,
                 sessions: sessions,
-                capabilities: handler.clientCapabilities
+                kernel: kernel
             )
-            let tools: [any SuperAgentTool] = [
-                ACPReadFileTool(bridge: bridge),
-                ACPWriteFileTool(bridge: bridge),
-            ]
-            for tool in tools {
-                toolManager.add(tool, pluginID: id)
-            }
-            registeredFileTools = tools
         }
+    }
+
+    /// Client 声明 fs 能力后，注册经编辑器的文件工具覆盖内置实现。
+    ///
+    /// 之所以覆盖而非新增：模型仍调用 `read_file` / `write_file`，但读写改走
+    /// 编辑器环境，未保存缓冲区与编辑器 diff 视图天然正确。
+    private func installFileSystemBridgeIfNeeded(
+        handler: ACPProtocolHandler,
+        requester: ACPClientRequester,
+        sessions: ACPSessionManager,
+        kernel: KernelCoreContainer
+    ) {
+        guard handler.clientCapabilities.hasFileSystemBridge,
+              registeredFileTools.isEmpty,
+              let toolManager = kernel.resolveProvider((any ToolManagerProviding).self) else {
+            return
+        }
+        let fileClient = ACPFileClient(
+            requester: requester,
+            capabilities: handler.clientCapabilities,
+            sessions: sessions
+        )
+        let bridge = ACPFileBridge(
+            client: fileClient,
+            sessions: sessions,
+            capabilities: handler.clientCapabilities
+        )
+        let tools: [any SuperAgentTool] = [
+            ACPReadFileTool(bridge: bridge),
+            ACPWriteFileTool(bridge: bridge),
+        ]
+        for tool in tools {
+            toolManager.add(tool, pluginID: id)
+        }
+        registeredFileTools = tools
     }
 
     /// 停止 ACP 服务器（退出前调用）。
