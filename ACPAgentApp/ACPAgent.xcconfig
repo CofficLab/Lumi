@@ -1,0 +1,21 @@
+//
+// ACPAgent.xcconfig
+// ACPAgent target（Debug 与 Release 共用）。
+//
+
+#include "../LumiApp/Config/App-Shared.xcconfig"
+
+// 产物
+PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.acpagent
+INFOPLIST_KEY_CFBundleDisplayName = ACPAgent
+INFOPLIST_FILE = ACPAgentApp/ACPAgent-Info.plist
+
+// 沙盒：关闭
+ENABLE_APP_SANDBOX = NO
+
+// 权限
+CODE_SIGN_ENTITLEMENTS = ACPAgentApp/App.entitlements
+
+// 版本号
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1
