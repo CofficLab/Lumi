@@ -25,7 +25,7 @@ public final class PluginXcodeMCP: SuperPlugin, SuperLog {
         description: "Contributes the native Xcode MCP server (xcrun mcpbridge).",
         category: .integration,
         stage: .preview,
-        policy: .enabledByDefault
+        policy: .required
     )
 
     public init() {}

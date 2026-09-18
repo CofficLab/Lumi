@@ -31,7 +31,7 @@ public final class MCPPlugin: SuperPlugin, SuperLog {
         description: "Connect any MCP server (Xcode, GitHub, filesystem, …) and let the agent use its tools, Cursor-style.",
         category: .integration,
         stage: .preview,
-        policy: .enabledByDefault
+        policy: .required
     )
 
     /// 设置页入口 id（onShutdown 时撤回）。
