@@ -9,7 +9,7 @@ Lumi 是一款面向 macOS 的 AI 驱动个人桌面助理应用。它将 LLM �
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/badge/release-v5.17.0-blue.svg)](https://github.com/CofficLab/Lumi/releases)
 
-![Lumi 应用示意图](docs/hero2.png)
+![Lumi 应用示意图](docs/hero3.png)
 
 ## 功能特性
 
