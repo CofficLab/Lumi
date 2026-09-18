@@ -18,8 +18,105 @@ struct ACPSettingsView: View {
             whatIsSection
             prerequisitesSection
             stepsSection
+            appGuidesSection
             verifySection
             notesSection
+        }
+    }
+
+    // MARK: - App Guides
+
+    /// 单个 app 的 ACP 接入引导。将来加入其他 app 只需往 `appGuides` 数组追加一项。
+    private struct ACPAppGuide: Identifiable {
+        let id: String
+        let name: String
+        let systemImage: String
+        let requirementKey: String
+        let stepKeys: [String]
+        let noteKey: String?
+    }
+
+    private let appGuides: [ACPAppGuide] = [
+        ACPAppGuide(
+            id: "xcode",
+            name: "Xcode",
+            systemImage: "hammer",
+            requirementKey: "Xcode 27 or later (Xcode 26.6 has early ACP support).",
+            stepKeys: [
+                "Build the Lumi ACP headless entry point first (see Steps above).",
+                "In Xcode, choose Xcode > Settings, then select Intelligence.",
+                "Under Agents, click Add an Agent.",
+                "Set Executable to the ACPBootstrap binary path; leave Arguments empty.",
+                "Click Add, then choose the agent in a new conversation.",
+            ],
+            noteKey: "Xcode 27 is currently in beta; ACP integration is early and protocol compatibility may vary."
+        ),
+    ]
+
+    private var appGuidesSection: some View {
+        AppCard {
+            AppSettingsSection(title: ACPLocalization.string("Use in your editor")) {
+                VStack(alignment: .leading, spacing: 16) {
+                    ForEach(appGuides) { guide in
+                        appGuideCard(guide)
+                    }
+                }
+            }
+        }
+    }
+
+    private func appGuideCard(_ guide: ACPAppGuide) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: guide.systemImage)
+                    .foregroundStyle(theme.primary)
+                    .frame(width: 16, height: 16)
+                Text(guide.name)
+                    .font(.appBodyEmphasized)
+                    .foregroundStyle(theme.textPrimary)
+                Spacer(minLength: 8)
+                Text(ACPLocalization.string(guide.requirementKey))
+                    .font(.appCaption)
+                    .foregroundStyle(theme.textSecondary)
+                    .multilineTextAlignment(.trailing)
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(guide.stepKeys.enumerated()), id: \.offset) { index, stepKey in
+                    guideStepRow(index: index + 1, text: ACPLocalization.string(stepKey))
+                }
+            }
+
+            if let noteKey = guide.noteKey {
+                Divider()
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundStyle(theme.info)
+                        .frame(width: 14, height: 14)
+                        .padding(.top, 2)
+                    Text(ACPLocalization.string(noteKey))
+                        .font(.appCaption)
+                        .foregroundStyle(theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    private func guideStepRow(index: Int, text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("\(index)")
+                .font(.appCaptionEmphasized)
+                .foregroundStyle(.white)
+                .frame(width: 18, height: 18)
+                .background(theme.primary, in: Circle())
+                .padding(.top, 1)
+            Text(text)
+                .font(.appBody)
+                .foregroundStyle(theme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
