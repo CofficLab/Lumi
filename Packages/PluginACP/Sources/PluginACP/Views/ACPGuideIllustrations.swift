@@ -12,10 +12,10 @@ struct ACPGuideIllustration: View {
 
     var body: some View {
         switch (appId, stepIndex) {
-        case ("xcode", 0): XcodeSettingsIllustration()
-        case ("xcode", 1): XcodeAgentsIllustration()
-        case ("xcode", 2): XcodeAddAgentIllustration()
-        case ("xcode", 3): XcodeAgentPickerIllustration()
+        case ("xcode", 0): XcodeSettingsIllustrationReal()
+        case ("xcode", 1): XcodeAgentsIllustrationReal()
+        case ("xcode", 2): XcodeAddAgentIllustrationReal()
+        case ("xcode", 3): XcodeAgentPickerIllustrationReal()
         case ("zed", 0): ZedCommandPaletteIllustration()
         case ("zed", 1): ZedAddAgentIllustration()
         case ("zed", 2): ZedSettingsJsonIllustration()
@@ -155,201 +155,479 @@ private struct MockTextField: View {
 
 // MARK: - Xcode Illustrations
 
+// MARK: - Xcode-accurate Illustrations
+
+/// These illustrations mirror Xcode's actual Intelligence hierarchy instead
+/// of using generic macOS mock windows. Keep the four steps visually related:
+/// Settings → Intelligence → Add an ACP Agent → Coding Assistant.
 @MainActor
-private struct XcodeSettingsIllustration: View {
+private struct XcodeRealWindow<Content: View>: View {
     @LumiTheme private var theme
-    private let icons = ["gearshape", "person", "bell", "lightbulb.fill", "network", "lock.shield"]
+    let title: String
+    let content: Content
+
+    init(title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
 
     var body: some View {
-        MockWindow(title: "Xcode Settings") {
-            HStack(spacing: 0) {
-                VStack(spacing: 6) {
-                    ForEach(Array(icons.enumerated()), id: \.offset) { i, name in
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 5)
-                                .fill(i == 3 ? theme.primary.opacity(0.25) : Color.clear)
-                                .frame(width: 22, height: 22)
-                            Image(systemName: name)
-                                .font(.system(size: 11))
-                                .foregroundStyle(i == 3 ? theme.primary : theme.textSecondary)
-                        }
-                    }
-                }
-                .padding(.vertical, 8)
-                .frame(width: 36)
-                .background(theme.surface.opacity(0.5))
-
-                Rectangle().fill(theme.divider).frame(width: 0.5)
-
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Intelligence")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(theme.textPrimary)
-                    Text("Configure coding agents and chat providers.")
-                        .font(.system(size: 9))
-                        .foregroundStyle(theme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer()
-                }
-                .padding(10)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(spacing: 0) {
+            HStack(spacing: 5) {
+                Circle().fill(Color.red.opacity(0.85)).frame(width: 8, height: 8)
+                Circle().fill(Color.yellow.opacity(0.85)).frame(width: 8, height: 8)
+                Circle().fill(Color.green.opacity(0.85)).frame(width: 8, height: 8)
+                Spacer()
+                Text(title)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(theme.textSecondary)
+                Spacer()
+                Image(systemName: "ellipsis.circle")
+                    .font(.system(size: 10))
+                    .foregroundStyle(theme.textSecondary.opacity(0.7))
             }
+            .padding(.horizontal, 10)
+            .frame(height: 25)
+            .background(theme.surface)
+            content
         }
-        .frame(height: 140)
+        .background(theme.surface.opacity(0.72))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(theme.divider, lineWidth: 1)
+        }
+        .clipped()
     }
 }
 
 @MainActor
-private struct XcodeAgentsIllustration: View {
+private struct XcodeRealSidebar: View {
     @LumiTheme private var theme
 
+    private let items = [
+        ("General", "gearshape"),
+        ("Accounts", "person.crop.circle"),
+        ("Behaviors", "bolt"),
+        ("Navigation", "arrow.left.arrow.right"),
+        ("Text Editing", "textformat"),
+        ("Key Bindings", "keyboard"),
+        ("Fonts & Colors", "textformat.size"),
+        ("Source Control", "arrow.triangle.branch"),
+        ("Components", "square.stack.3d.up"),
+        ("Locations", "folder"),
+        ("Intelligence", "sparkles")
+    ]
+
     var body: some View {
-        MockWindow(title: "Intelligence") {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Agents")
-                    .font(.system(size: 11, weight: .semibold))
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(items, id: \.0) { item in
+                HStack(spacing: 6) {
+                    Image(systemName: item.1)
+                        .font(.system(size: 8))
+                        .frame(width: 12)
+                    Text(item.0)
+                        .font(.system(size: 8.5))
+                    Spacer(minLength: 0)
+                }
+                .foregroundStyle(item.0 == "Intelligence" ? theme.textPrimary : theme.textSecondary)
+                .padding(.horizontal, 6)
+                .frame(height: 18)
+                .background(
+                    item.0 == "Intelligence" ? theme.primary.opacity(0.18) : Color.clear,
+                    in: RoundedRectangle(cornerRadius: 4, style: .continuous)
+                )
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 8)
+        .frame(width: 126)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(theme.surface.opacity(0.55))
+    }
+}
+
+@MainActor
+private struct XcodeRealButton: View {
+    @LumiTheme private var theme
+    let title: String
+    let filled: Bool
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 8, weight: .medium))
+            .foregroundStyle(filled ? Color.white : theme.textPrimary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(filled ? theme.primary : theme.surface, in: RoundedRectangle(cornerRadius: 4))
+            .overlay {
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(filled ? theme.primary : theme.divider, lineWidth: 0.5)
+            }
+    }
+}
+
+@MainActor
+private struct XcodeRealAgentRow: View {
+    @LumiTheme private var theme
+    let name: String
+    let vendor: String
+
+    var body: some View {
+        HStack(spacing: 7) {
+            ZStack {
+                Circle().fill(theme.primary.opacity(0.16))
+                Image(systemName: "sparkles")
+                    .font(.system(size: 8))
+                    .foregroundStyle(theme.primary)
+            }
+            .frame(width: 21, height: 21)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(name)
+                    .font(.system(size: 8.5, weight: .medium))
                     .foregroundStyle(theme.textPrimary)
+                Text(vendor)
+                    .font(.system(size: 7.5))
+                    .foregroundStyle(theme.textSecondary)
+            }
+            Spacer(minLength: 4)
+            XcodeRealButton(title: "Get", filled: false)
+        }
+        .padding(.vertical, 2)
+    }
+}
 
-                HStack {
-                    Circle().fill(theme.textSecondary.opacity(0.3)).frame(width: 14, height: 14)
-                    Text("Codex")
-                        .font(.system(size: 9))
-                        .foregroundStyle(theme.textSecondary)
-                    Spacer()
+@MainActor
+private struct XcodeRealIntelligencePane: View {
+    @LumiTheme private var theme
+    let highlightAddAgent: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Coding Intelligence")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(theme.textPrimary)
+            Text("Use built-in and third-party intelligence to work with your project files and code.")
+                .font(.system(size: 8))
+                .foregroundStyle(theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("About Intelligence in Xcode and privacy…")
+                .font(.system(size: 8))
+                .foregroundStyle(theme.primary)
+
+            Text("Agents")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(theme.textPrimary)
+                .padding(.top, 4)
+            XcodeRealAgentRow(name: "Claude Agent", vendor: "Anthropic")
+            XcodeRealAgentRow(name: "Codex", vendor: "OpenAI")
+            HStack(spacing: 6) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 10))
+                Text("Add an Agent…")
+                    .font(.system(size: 8.5, weight: .medium))
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(theme.primary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .background(
+                highlightAddAgent ? theme.primary.opacity(0.12) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 5, style: .continuous)
+            )
+            .overlay {
+                if highlightAddAgent {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .stroke(theme.primary, lineWidth: 1.2)
                 }
-                .padding(.vertical, 2)
+            }
 
-                HighlightBox {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 10))
-                            .foregroundStyle(theme.primary)
-                        Text("Add an Agent…")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(theme.primary)
-                        Spacer()
+            Text("Model Context Protocol")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(theme.textPrimary)
+                .padding(.top, 4)
+            HStack(spacing: 7) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Xcode Tools")
+                        .font(.system(size: 8.5, weight: .medium))
+                        .foregroundStyle(theme.textPrimary)
+                    Text("Allow external agents to use Xcode tools")
+                        .font(.system(size: 7.5))
+                        .foregroundStyle(theme.textSecondary)
+                }
+                Spacer(minLength: 0)
+                Capsule()
+                    .fill(theme.primary)
+                    .frame(width: 25, height: 14)
+                    .overlay(alignment: .trailing) {
+                        Circle().fill(Color.white).frame(width: 11, height: 11).padding(1.5)
                     }
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 5)
-                }
-
-                Spacer()
             }
-            .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text("Chat")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(theme.textPrimary)
+                .padding(.top, 4)
+            HStack {
+                Text("ChatGPT in Xcode")
+                    .font(.system(size: 8.5))
+                    .foregroundStyle(theme.textPrimary)
+                Spacer()
+                XcodeRealButton(title: "Turn On", filled: false)
+            }
         }
-        .frame(height: 130)
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
 @MainActor
-private struct XcodeAddAgentIllustration: View {
-    @LumiTheme private var theme
-
+private struct XcodeSettingsIllustrationReal: View {
     var body: some View {
-        MockWindow(title: "Add an Agent") {
-            VStack(alignment: .leading, spacing: 8) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Executable")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(theme.textSecondary)
-                    MockTextField(
-                        placeholder: "/path/to/executable",
-                        value: "/Applications/Lumi.app/Contents/MacOS/lumi-acp",
-                        highlighted: true
-                    )
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Arguments")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(theme.textSecondary)
-                    MockTextField(placeholder: "None")
-                }
-
-                Spacer()
-
-                HStack {
-                    Spacer()
-                    MockButton("Cancel")
-                    Spacer().frame(width: 6)
-                    MockButton("Add", highlighted: true)
-                }
+        XcodeRealWindow(title: "Xcode Settings") {
+            HStack(spacing: 0) {
+                XcodeRealSidebar()
+                Rectangle().fill(Color.gray.opacity(0.25)).frame(width: 0.5)
+                XcodeRealIntelligencePane(highlightAddAgent: false)
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(height: 160)
+        .frame(height: 235)
     }
 }
 
 @MainActor
-private struct XcodeAgentPickerIllustration: View {
+private struct XcodeAgentsIllustrationReal: View {
+    var body: some View {
+        XcodeRealWindow(title: "Xcode Settings") {
+            HStack(spacing: 0) {
+                XcodeRealSidebar()
+                Rectangle().fill(Color.gray.opacity(0.25)).frame(width: 0.5)
+                XcodeRealIntelligencePane(highlightAddAgent: true)
+            }
+        }
+        .frame(height: 235)
+    }
+}
+
+@MainActor
+private struct XcodeRealFormField: View {
+    @LumiTheme private var theme
+    let label: String
+    let value: String
+    let placeholder: Bool
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Text(label)
+                .font(.system(size: 8.5))
+                .foregroundStyle(theme.textSecondary)
+                .frame(width: 70, alignment: .trailing)
+            Text(value)
+                .font(.system(size: 8.5, design: .monospaced))
+                .foregroundStyle(placeholder ? theme.textSecondary.opacity(0.55) : theme.textPrimary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
+                .background(theme.surface)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .stroke(theme.divider, lineWidth: 0.5)
+                }
+        }
+    }
+}
+
+@MainActor
+private struct XcodeAddAgentIllustrationReal: View {
     @LumiTheme private var theme
 
     var body: some View {
-        MockWindow(title: "MyProject — Xcode") {
-            VStack(spacing: 0) {
+        ZStack {
+            XcodeRealWindow(title: "Xcode Settings") {
+                HStack(spacing: 0) {
+                    XcodeRealSidebar()
+                    Rectangle().fill(Color.gray.opacity(0.25)).frame(width: 0.5)
+                    XcodeRealIntelligencePane(highlightAddAgent: true)
+                }
+            }
+            Color.black.opacity(0.20)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Add an ACP Agent")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(theme.textPrimary)
+                Text("Add an agent that supports the Agent Client Protocol (ACP).")
+                    .font(.system(size: 7.5))
+                    .foregroundStyle(theme.textSecondary)
+                Text("Learn more about ACP agents…")
+                    .font(.system(size: 7.5))
+                    .foregroundStyle(theme.primary)
+                XcodeRealFormField(label: "Name", value: "Lumi", placeholder: false)
+                XcodeRealFormField(label: "Executable", value: "/Applications/Lumi.app/Contents/MacOS/lumi-acp", placeholder: false)
+                XcodeRealFormField(label: "Interpreter", value: "Optional", placeholder: true)
+                XcodeRealFormField(label: "Arguments", value: "Optional", placeholder: true)
                 HStack {
-                    MockButton("▶")
-                    Spacer().frame(width: 6)
-                    MockButton("▶︎")
+                    Text("Environment Variables")
+                        .font(.system(size: 8.5))
+                        .foregroundStyle(theme.textSecondary)
                     Spacer()
-                    Text("MyProject")
+                    Image(systemName: "plus.circle")
                         .font(.system(size: 9))
-                        .foregroundStyle(theme.textSecondary)
-                    Spacer()
-                    MockButton("Lumi ▾", highlighted: true)
+                        .foregroundStyle(theme.primary)
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(theme.surface.opacity(0.5))
+                Spacer(minLength: 0)
+                HStack {
+                    Spacer()
+                    XcodeRealButton(title: "Cancel", filled: false)
+                    XcodeRealButton(title: "Add", filled: true)
+                }
+            }
+            .padding(13)
+            .frame(width: 330, height: 222)
+            .background(theme.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(theme.divider, lineWidth: 1)
+            }
+            .shadow(color: Color.black.opacity(0.22), radius: 12, y: 5)
+        }
+        .frame(height: 245)
+    }
+}
 
-                Rectangle().fill(theme.divider).frame(height: 0.5)
+@MainActor
+private struct XcodeAgentPickerIllustrationReal: View {
+    @LumiTheme private var theme
+
+    var body: some View {
+        XcodeRealWindow(title: "MyProject — Xcode") {
+            VStack(spacing: 0) {
+                HStack(spacing: 7) {
+                    Image(systemName: "sidebar.leading")
+                    Text("MyProject")
+                        .font(.system(size: 8.5, weight: .medium))
+                    Spacer()
+                    Text("My Mac")
+                        .font(.system(size: 7.5))
+                        .foregroundStyle(theme.textSecondary)
+                    XcodeRealButton(title: "▶", filled: false)
+                    Image(systemName: "wand.and.stars")
+                        .font(.system(size: 10))
+                        .foregroundStyle(theme.primary)
+                }
+                .padding(.horizontal, 9)
+                .frame(height: 25)
+                .background(theme.surface)
 
                 HStack(spacing: 0) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        ForEach(0..<4, id: \.self) { i in
-                            HStack(spacing: 4) {
-                                Text("\(i + 1)")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("PROJECT NAVIGATOR")
+                            .font(.system(size: 6.5, weight: .semibold))
+                            .foregroundStyle(theme.textSecondary)
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.down")
+                            Image(systemName: "folder.fill")
+                                .foregroundStyle(theme.primary)
+                            Text("MyProject")
+                                .font(.system(size: 8.5, weight: .medium))
+                        }
+                        HStack(spacing: 4) {
+                            Spacer().frame(width: 9)
+                            Image(systemName: "swift")
+                                .foregroundStyle(.orange)
+                            Text("ContentView.swift")
+                                .font(.system(size: 7.5))
+                        }
+                        Spacer()
+                    }
+                    .font(.system(size: 7))
+                    .padding(8)
+                    .frame(width: 104)
+                    .frame(maxHeight: .infinity, alignment: .topLeading)
+                    .background(theme.surface.opacity(0.38))
+                    Rectangle().fill(theme.divider).frame(width: 0.5)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("ContentView.swift")
+                            .font(.system(size: 8.5, weight: .medium))
+                            .foregroundStyle(theme.textPrimary)
+                        ForEach(Array(["struct ContentView: View {", "    var body: some View {", "        Text(\"Hello, world!\")", "    }", "}"].enumerated()), id: \.offset) { index, line in
+                            HStack(spacing: 5) {
+                                Text("\(index + 1)")
+                                    .font(.system(size: 6.5, design: .monospaced))
+                                    .foregroundStyle(theme.textSecondary.opacity(0.45))
+                                    .frame(width: 13, alignment: .trailing)
+                                Text(line)
                                     .font(.system(size: 7, design: .monospaced))
-                                    .foregroundStyle(theme.textSecondary.opacity(0.4))
-                                    .frame(width: 12, alignment: .trailing)
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(theme.textSecondary.opacity(0.15 + Double(i % 3) * 0.05))
-                                    .frame(width: CGFloat(50 + i * 15), height: 5)
+                                    .foregroundStyle(index == 2 ? theme.primary : theme.textSecondary)
                                 Spacer()
                             }
                         }
                         Spacer()
                     }
-                    .padding(7)
-                    .frame(maxWidth: .infinity)
-
+                    .padding(8)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     Rectangle().fill(theme.divider).frame(width: 0.5)
 
-                    VStack(alignment: .leading, spacing: 5) {
+                    VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Circle().fill(theme.primary).frame(width: 7, height: 7)
-                            Text("Lumi")
+                            Text("Coding Assistant")
                                 .font(.system(size: 9, weight: .semibold))
-                                .foregroundStyle(theme.primary)
+                                .foregroundStyle(theme.textPrimary)
                             Spacer()
+                            Image(systemName: "plus")
+                                .font(.system(size: 8))
                         }
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(theme.primary.opacity(0.1))
-                            .frame(height: 22)
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(theme.textSecondary.opacity(0.1))
-                            .frame(height: 14)
+                        HStack(spacing: 5) {
+                            Image(systemName: "plus")
+                            Text("New Conversation")
+                                .font(.system(size: 7.5, weight: .medium))
+                            Spacer()
+                            Image(systemName: "chevron.down")
+                        }
+                        .foregroundStyle(theme.primary)
+                        .padding(6)
+                        .background(theme.primary.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Agents")
+                                .font(.system(size: 7, weight: .semibold))
+                                .foregroundStyle(theme.textSecondary)
+                            HStack(spacing: 5) {
+                                Circle().fill(theme.primary).frame(width: 9, height: 9)
+                                Text("Lumi")
+                                    .font(.system(size: 8, weight: .medium))
+                                Spacer()
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(theme.primary)
+                            }
+                            .padding(6)
+                            .background(theme.primary.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
+                            HStack(spacing: 5) {
+                                Circle().fill(theme.textSecondary.opacity(0.35)).frame(width: 9, height: 9)
+                                Text("Codex")
+                                    .font(.system(size: 8))
+                                Spacer()
+                            }
+                            .padding(.horizontal, 6)
+                        }
+                        .padding(6)
+                        .background(theme.surface)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .stroke(theme.divider, lineWidth: 0.5)
+                        }
                         Spacer()
                     }
-                    .padding(7)
-                    .frame(width: 110)
+                    .padding(8)
+                    .frame(width: 154)
+                    .frame(maxHeight: .infinity, alignment: .topLeading)
+                    .background(theme.surface.opacity(0.45))
                 }
             }
         }
-        .frame(height: 150)
+        .frame(height: 235)
     }
 }
 

@@ -110,7 +110,7 @@ struct ACPSettingsView: View {
             id: "xcode",
             name: "Xcode",
             systemImage: "hammer",
-            requirementKey: "Xcode 27+",
+            requirementKey: "Xcode 27 or later (Xcode 26.6 has early ACP support).",
             summaryKey: "Use Lumi as a coding agent inside Xcode via the Agent Client Protocol.",
             steps: [
                 ACPGuideStep(
