@@ -51,10 +51,20 @@ sync
 
 hdiutil detach "/Volumes/$VOLUME_NAME" -force >/dev/null 2>&1 || true
 
+# Keep enough free space for the app, Finder metadata, and the Applications
+# alias. The old fixed 200 MiB image became too small as Lumi grew beyond that
+# size and made DMG creation fail with "device full".
+APP_SIZE_KB="$(du -sk "$APP_PATH" | awk '{print $1}')"
+IMAGE_SIZE_KB=$((APP_SIZE_KB + APP_SIZE_KB / 4 + 64 * 1024))
+MIN_IMAGE_SIZE_KB=$((200 * 1024))
+if (( IMAGE_SIZE_KB < MIN_IMAGE_SIZE_KB )); then
+  IMAGE_SIZE_KB="$MIN_IMAGE_SIZE_KB"
+fi
+
 create_read_write_image() {
   rm -f "$READ_WRITE_DMG"
   hdiutil create \
-    -size 200m \
+    -size "${IMAGE_SIZE_KB}k" \
     -fs HFS+ \
     -volname "$VOLUME_NAME" \
     -srcfolder "$STAGING_DIR" \
