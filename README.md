@@ -9,7 +9,7 @@ Lumi is an AI-powered personal desktop assistant for macOS. It combines LLM chat
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/badge/release-v5.17.0-blue.svg)](https://github.com/CofficLab/Lumi/releases)
 
-![Lumi Application](docs/hero2.png)
+![Lumi Application](docs/hero3.png)
 
 ## Features
 
@@ -69,7 +69,7 @@ The main implementation layers are:
 - [`FactoryLumi`](Packages/FactoryLumi) — composition and dependency wiring.
 - [`PluginAgentLoop`](Packages/PluginAgentLoop) — agent-loop integration.
 - [`PluginToolManager`](Packages/PluginToolManager) — tool registration, authorization, execution, and records.
-- [`KitLLM`](Packages/KitLLM) and the `ProviderLLMVendors` package — shared LLM models, adapters, and provider contracts.
+- [`KitLLM`](Packages/KitLLM) — shared LLM models, adapters, and provider contracts.
 - [`PluginProjectRAG`](Packages/PluginProjectRAG) — project indexing and local vector search.
 - [`PluginWebServer`](Packages/PluginWebServer) — plugin route registration for the local web server.
 

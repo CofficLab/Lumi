@@ -123,10 +123,15 @@ public enum VendorAPIKeyTools {
         for (index, store) in stores().enumerated() {
             do {
                 let value: String?
+                // API Key 解析是**自动路径**（每次请求都可能触发），且会在
+                // headless / 后台进程里执行。这里一律使用无提示读取：若某个
+                // 历史条目需要用户授权，系统对话框在无界面进程中会永久阻塞
+                // 该线程（表现为 ACP 回合卡死），因此宁可立即失败后走缓存/
+                // 回退，也不弹窗。
                 if index == 0 {
-                    value = try store.loadMigratingLegacyUserDefaultsReportingErrors(forKey: storageKey)
+                    value = try store.loadMigratingLegacyUserDefaultsWithoutPromptReportingErrors(forKey: storageKey)
                 } else {
-                    value = try store.stringReportingErrors(forKey: storageKey)
+                    value = try store.stringWithoutPromptReportingErrors(forKey: storageKey)
                 }
 
                 guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else {

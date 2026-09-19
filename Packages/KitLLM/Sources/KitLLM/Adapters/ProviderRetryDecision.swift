@@ -46,6 +46,7 @@ public enum ProviderRetryPolicy {
             NSURLErrorNotConnectedToInternet,
             NSURLErrorCannotConnectToHost,
             NSURLErrorNetworkConnectionLost,
+            NSURLErrorSecureConnectionFailed,
         ]
         if retryableCodes.contains(nsError.code) {
             return ProviderRetryDecision(shouldRetry: true, delaySeconds: nil)

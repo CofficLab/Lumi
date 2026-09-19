@@ -2,6 +2,10 @@ import Foundation
 import KitSuperLog
 extension VM {
     func loadApps(silent: Bool = false) async {
+        guard !isLoadingApps else { return }
+        isLoadingApps = true
+        defer { isLoadingApps = false }
+
         if silent {
             do {
                 try await reloadAppsFromNetwork()

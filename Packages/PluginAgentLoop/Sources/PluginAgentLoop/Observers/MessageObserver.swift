@@ -33,8 +33,12 @@ final class MessageObserver: SuperLog {
 
     private func handle(message: Message, conversationID: UUID) {
         guard message.role == .user else { return }
-        guard agentLoop != nil else {
+        guard let agentLoop = self.agentLoop else {
             Self.logger.error("\(Self.emoji)无法处理用户消息事件：AgentLoopProvider 已释放")
+            return
+        }
+        // 外部控制器（如 ACP）托管回合时会抑制自动回复，避免双回合竞争。
+        if agentLoop.isAutoReplySuppressed(for: conversationID) {
             return
         }
         if Self.verbose {

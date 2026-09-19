@@ -252,21 +252,31 @@ private final class RecordingKeychainBackend: KeychainBackend, @unchecked Sendab
     private var storedDeleteCount = 0
     private var storedWriteCount = 0
     private var storedReadCount = 0
+    private var storedInteractionFlags: [Bool] = []
 
     private let writeResult: OSStatus
+    private let readStatus: OSStatus?
 
-    init(readData: Data? = nil, writeResult: OSStatus = errSecSuccess) {
+    init(readData: Data? = nil, writeResult: OSStatus = errSecSuccess, readStatus: OSStatus? = nil) {
         self.readData = readData
         self.writeResult = writeResult
+        self.readStatus = readStatus
     }
 
     var writtenData: [Data] { lock.withLock { storedWrittenData } }
     var deleteCount: Int { lock.withLock { storedDeleteCount } }
     var writeCount: Int { lock.withLock { storedWriteCount } }
     var readCount: Int { lock.withLock { storedReadCount } }
+    var interactionFlags: [Bool] { lock.withLock { storedInteractionFlags } }
 
-    func read(service: String, account: String) -> KeychainResult {
-        lock.withLock { storedReadCount += 1 }
+    func read(service: String, account: String, allowInteraction: Bool) -> KeychainResult {
+        lock.withLock {
+            storedReadCount += 1
+            storedInteractionFlags.append(allowInteraction)
+        }
+        if let readStatus {
+            return KeychainResult(status: readStatus, data: nil)
+        }
         if let readData {
             return KeychainResult(status: errSecSuccess, data: readData)
         }
@@ -284,5 +294,42 @@ private final class RecordingKeychainBackend: KeychainBackend, @unchecked Sendab
     func delete(service: String, account: String) -> KeychainResult {
         lock.withLock { storedDeleteCount += 1 }
         return KeychainResult(status: errSecSuccess, data: nil)
+    }
+}
+
+/// 无提示读取（headless / 后台进程）相关测试。
+///
+/// 背景：未签名或缺少 Data Protection entitlement 的进程读取 file-based
+/// Keychain 时会触发系统授权对话框。若在无界面进程（如 ACP agent）中触发，
+/// 读取会永久阻塞在无人应答的对话框上。无提示模式通过传
+/// `kSecUseAuthenticationUIFail` 把该情况转为立即失败。
+final class KeychainNoPromptReadTests: XCTestCase {
+    func testPromptFreeReadPassesAllowInteractionFalse() throws {
+        let backend = RecordingKeychainBackend(readData: Data("secret".utf8))
+        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+
+        XCTAssertEqual(try store.stringWithoutPromptReportingErrors(forKey: "account"), "secret")
+        XCTAssertEqual(backend.interactionFlags, [false])
+    }
+
+    func testDefaultReadStillAllowsInteraction() throws {
+        let backend = RecordingKeychainBackend(readData: Data("secret".utf8))
+        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+
+        XCTAssertEqual(try store.stringReportingErrors(forKey: "account"), "secret")
+        // 既有调用点行为不变：默认仍允许系统交互。
+        XCTAssertEqual(backend.interactionFlags, [true])
+    }
+
+    func testPromptFreeReadFoldsInteractionDeniedIntoNil() {
+        // 无提示模式下需要授权的条目会返回 errSecInteractionNotAllowed。
+        let backend = RecordingKeychainBackend(
+            readData: nil,
+            writeResult: errSecSuccess,
+            readStatus: errSecInteractionNotAllowed
+        )
+        let store = KeychainStore(service: "test", backend: backend, sleeper: { _ in })
+        // 折叠为 nil（视为不可读），不抛出、不阻塞。
+        XCTAssertNil(store.stringWithoutPrompt(forKey: "account"))
     }
 }

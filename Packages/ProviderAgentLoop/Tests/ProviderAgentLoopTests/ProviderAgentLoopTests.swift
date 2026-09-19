@@ -27,6 +27,20 @@ struct ProviderAgentLoopTests {
         #expect(failure.httpStatusCode == nil)
     }
 
+    @Test("系统 TLS 错误会归类为可重试网络失败")
+    func systemTLSFailureIsRetryable() {
+        let error = NSError(
+            domain: NSURLErrorDomain,
+            code: NSURLErrorSecureConnectionFailed,
+            userInfo: [NSLocalizedDescriptionKey: "TLS错误导致安全连接失败"]
+        )
+        let failure = AgentLoopFailure.from(error: error, providerID: "goatplan")
+
+        #expect(failure.kind == .network)
+        #expect(failure.isRetryable)
+        #expect(failure.providerID == "goatplan")
+    }
+
     @Test("结构化失败区分限流、服务端和鉴权错误")
     func classifiesHTTPFailures() {
         let rateLimited = AgentLoopFailure.from(

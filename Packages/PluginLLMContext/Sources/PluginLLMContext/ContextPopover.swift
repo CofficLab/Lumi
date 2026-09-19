@@ -79,6 +79,7 @@ struct ContextPopover: View {
                 .padding(.vertical, 8)
             }
         }
+        .padding(.top, 12)
     }
 
     // MARK: - Usage Row

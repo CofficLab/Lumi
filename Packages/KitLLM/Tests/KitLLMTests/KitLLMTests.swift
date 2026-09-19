@@ -413,6 +413,13 @@ struct KitLLMTests {
         )
         #expect(network.shouldRetry)
 
+        let tls = ProviderRetryPolicy.decision(
+            forNetworkError: NSError(domain: NSURLErrorDomain, code: NSURLErrorSecureConnectionFailed),
+            attempt: 1,
+            maxAttempts: 3
+        )
+        #expect(tls.shouldRetry)
+
         let unauthorized = ProviderRetryPolicy.decision(
             statusCode: 401,
             retryAfter: nil,

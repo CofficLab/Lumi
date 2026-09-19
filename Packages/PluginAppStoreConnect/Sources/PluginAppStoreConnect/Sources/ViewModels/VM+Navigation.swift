@@ -1,14 +1,12 @@
 import Foundation
 
 extension VM {
+    /// 工具栏刷新入口。
+    ///
+    /// 刷新过程静默执行：忙碌状态由页面内的加载遮罩表达，失败信息通过
+    /// `errorMessage` 交给界面上的错误横幅呈现，因此这里不弹出任何 toast。
     func refreshWorkspace() async {
         guard credentials.isComplete else { return }
-
-        toast?.show(
-            AppStoreConnectLocalization.string("Refreshing"),
-            style: .info,
-            duration: 1.2
-        )
 
         await runBusy(forceRefresh: true) {
             try await reloadAppsFromNetwork()
@@ -25,21 +23,6 @@ extension VM {
                     try await reloadCiProductsFromNetwork()
                 }
             }
-        }
-
-        if let errorMessage {
-            toast?.show(
-                AppStoreConnectLocalization.string("Refresh failed"),
-                detail: errorMessage,
-                style: .error,
-                duration: 3
-            )
-        } else {
-            toast?.show(
-                AppStoreConnectLocalization.string("Refreshed"),
-                style: .success,
-                duration: 1.8
-            )
         }
     }
 

@@ -30,7 +30,6 @@ extension VM {
 
     func reloadScreenshotsForSelectedDisplayType(forceRefresh: Bool = false) async {
         await runBusy(forceRefresh: forceRefresh) {
-            alignSelectedScreenshotDisplayType()
             try await loadScreenshots()
         }
     }

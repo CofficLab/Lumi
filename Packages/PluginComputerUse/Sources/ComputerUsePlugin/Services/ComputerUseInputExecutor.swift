@@ -1,51 +1,15 @@
-import ApplicationServices
 import Carbon.HIToolbox
 import CoreGraphics
 import Foundation
 
+/// Coordinate/key mapping only. Native input is emitted exclusively by NativeInputDriver.
 enum ComputerUseInputExecutor {
     static func execute(_ action: ComputerUseAction, observation: ComputerUseObservation) async throws {
         switch action {
-        case .screenshot:
-            return
-        case .click(let x, let y, let button, let count):
-            let point = try screenPoint(x: x, y: y, observation: observation)
-            try postClick(at: point, button: button, count: count)
-        case .move(let x, let y):
-            let point = try screenPoint(x: x, y: y, observation: observation)
-            guard let event = CGEvent(
-                mouseEventSource: eventSource(),
-                mouseType: .mouseMoved,
-                mouseCursorPosition: point,
-                mouseButton: .left
-            ) else { throw ComputerUseError.eventCreationFailed }
-            event.post(tap: .cghidEventTap)
-        case .drag(let path):
-            try postDrag(path: path, observation: observation)
-        case .scroll(let x, let y, let deltaX, let deltaY):
-            let point = try screenPoint(x: x, y: y, observation: observation)
-            try moveMouse(to: point)
-            guard let event = CGEvent(
-                scrollWheelEvent2Source: eventSource(),
-                units: .pixel,
-                wheelCount: 2,
-                wheel1: Int32(clamping: Int(-deltaY.rounded())),
-                wheel2: Int32(clamping: Int(-deltaX.rounded())),
-                wheel3: 0
-            ) else { throw ComputerUseError.eventCreationFailed }
-            event.post(tap: .cghidEventTap)
-        case .type(let text):
-            try ensureFocusedElementIsNotSecure()
-            try postUnicodeText(text)
-        case .keypress(let keys):
-            try postKeypress(keys)
-        case .wait(let milliseconds):
-            try await Task.sleep(for: .milliseconds(milliseconds))
+        case .screenshot: return
+        case .wait(let milliseconds): try await Task.sleep(for: .milliseconds(milliseconds))
+        default: throw ComputerUseError.invalidArguments("Native input requires a coordinator lease. Use computer_act.")
         }
-    }
-
-    private static func eventSource() -> CGEventSource? {
-        CGEventSource(stateID: .hidSystemState)
     }
 
     static func screenPoint(
@@ -62,152 +26,6 @@ enum ComputerUseInputExecutor {
             )
         }
         return observation.screenPoint(imageX: x, imageY: y)
-    }
-
-    private static func moveMouse(to point: CGPoint) throws {
-        guard let event = CGEvent(
-            mouseEventSource: eventSource(),
-            mouseType: .mouseMoved,
-            mouseCursorPosition: point,
-            mouseButton: .left
-        ) else { throw ComputerUseError.eventCreationFailed }
-        event.post(tap: .cghidEventTap)
-    }
-
-    private static func postClick(at point: CGPoint, button: ComputerMouseButton, count: Int) throws {
-        let downType: CGEventType
-        let upType: CGEventType
-        let cgButton: CGMouseButton
-        switch button {
-        case .left:
-            (downType, upType, cgButton) = (.leftMouseDown, .leftMouseUp, .left)
-        case .right:
-            (downType, upType, cgButton) = (.rightMouseDown, .rightMouseUp, .right)
-        case .center:
-            (downType, upType, cgButton) = (.otherMouseDown, .otherMouseUp, .center)
-        }
-
-        for clickIndex in 1...max(1, min(count, 2)) {
-            guard let down = CGEvent(
-                mouseEventSource: eventSource(),
-                mouseType: downType,
-                mouseCursorPosition: point,
-                mouseButton: cgButton
-            ), let up = CGEvent(
-                mouseEventSource: eventSource(),
-                mouseType: upType,
-                mouseCursorPosition: point,
-                mouseButton: cgButton
-            ) else { throw ComputerUseError.eventCreationFailed }
-            let state = Int64(count == 2 ? clickIndex : 1)
-            down.setIntegerValueField(.mouseEventClickState, value: state)
-            up.setIntegerValueField(.mouseEventClickState, value: state)
-            down.post(tap: .cghidEventTap)
-            up.post(tap: .cghidEventTap)
-        }
-    }
-
-    private static func postDrag(path: [CGPoint], observation: ComputerUseObservation) throws {
-        let screenPath = try path.map {
-            try screenPoint(x: $0.x, y: $0.y, observation: observation)
-        }
-        guard let first = screenPath.first,
-              let down = CGEvent(
-                mouseEventSource: eventSource(),
-                mouseType: .leftMouseDown,
-                mouseCursorPosition: first,
-                mouseButton: .left
-              )
-        else { throw ComputerUseError.eventCreationFailed }
-        try moveMouse(to: first)
-        down.post(tap: .cghidEventTap)
-        for point in screenPath.dropFirst() {
-            guard let event = CGEvent(
-                mouseEventSource: eventSource(),
-                mouseType: .leftMouseDragged,
-                mouseCursorPosition: point,
-                mouseButton: .left
-            ) else { throw ComputerUseError.eventCreationFailed }
-            event.post(tap: .cghidEventTap)
-        }
-        guard let last = screenPath.last,
-              let up = CGEvent(
-                mouseEventSource: eventSource(),
-                mouseType: .leftMouseUp,
-                mouseCursorPosition: last,
-                mouseButton: .left
-              )
-        else { throw ComputerUseError.eventCreationFailed }
-        up.post(tap: .cghidEventTap)
-    }
-
-    private static func ensureFocusedElementIsNotSecure() throws {
-        let systemWide = AXUIElementCreateSystemWide()
-        var focusedValue: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            systemWide,
-            kAXFocusedUIElementAttribute as CFString,
-            &focusedValue
-        ) == .success,
-        let focusedValue else { return }
-        let focused = focusedValue as! AXUIElement
-        var roleValue: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            focused,
-            kAXSubroleAttribute as CFString,
-            &roleValue
-        ) == .success,
-        let role = roleValue as? String else { return }
-        if role == "AXSecureTextField" {
-            throw ComputerUseError.secureInputBlocked
-        }
-    }
-
-    private static func postUnicodeText(_ text: String) throws {
-        let utf16 = Array(text.utf16)
-        for start in stride(from: 0, to: utf16.count, by: 20) {
-            let end = min(start + 20, utf16.count)
-            let chunk = Array(utf16[start..<end])
-            guard let down = CGEvent(keyboardEventSource: eventSource(), virtualKey: 0, keyDown: true),
-                  let up = CGEvent(keyboardEventSource: eventSource(), virtualKey: 0, keyDown: false)
-            else { throw ComputerUseError.eventCreationFailed }
-            chunk.withUnsafeBufferPointer { buffer in
-                guard let baseAddress = buffer.baseAddress else { return }
-                down.keyboardSetUnicodeString(stringLength: buffer.count, unicodeString: baseAddress)
-                up.keyboardSetUnicodeString(stringLength: buffer.count, unicodeString: baseAddress)
-            }
-            down.post(tap: .cghidEventTap)
-            up.post(tap: .cghidEventTap)
-        }
-    }
-
-    private static func postKeypress(_ rawKeys: [String]) throws {
-        let keys = rawKeys.map { $0.uppercased().replacingOccurrences(of: " ", with: "") }
-        var flags: CGEventFlags = []
-        for key in keys {
-            switch key {
-            case "CMD", "COMMAND", "META": flags.insert(.maskCommand)
-            case "SHIFT": flags.insert(.maskShift)
-            case "CTRL", "CONTROL": flags.insert(.maskControl)
-            case "OPTION", "ALT": flags.insert(.maskAlternate)
-            case "FN": flags.insert(.maskSecondaryFn)
-            default: break
-            }
-        }
-        let nonModifiers = keys.filter { keyCode(for: $0) != nil }
-        guard !nonModifiers.isEmpty else {
-            throw ComputerUseError.invalidArguments("keypress must contain a non-modifier key")
-        }
-        for key in nonModifiers {
-            guard let keyCode = keyCode(for: key),
-                  let down = CGEvent(keyboardEventSource: eventSource(), virtualKey: keyCode, keyDown: true),
-                  let up = CGEvent(keyboardEventSource: eventSource(), virtualKey: keyCode, keyDown: false)
-            else { throw ComputerUseError.eventCreationFailed }
-            down.flags = flags
-            up.flags = flags
-            down.post(tap: .cghidEventTap)
-            up.post(tap: .cghidEventTap)
-        }
     }
 
     static func keyCode(for key: String) -> CGKeyCode? {
