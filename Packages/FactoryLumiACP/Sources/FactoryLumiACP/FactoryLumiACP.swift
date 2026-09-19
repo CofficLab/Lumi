@@ -1,44 +1,26 @@
 import Foundation
 import KernelCore
-import FactoryLumi
-
-// Core plugins
-import PluginStorage
-import PluginCommand
-import PluginToast
-import PluginLLMManager
-import PluginToolManager
+import PluginACP
 import PluginAgentLoop
 import PluginAgentLoopRetry
-import PluginMessageSender
-import PluginConversationManager
-import PluginMessageManager
-import PluginLLMContext
-import PluginConversationState
-import PluginConversationPendingMessage
-import PluginConversationTitle
-import PluginACP
-import PluginAskUser
+import PluginAgentPlanStorage
 import PluginAgentRules
 import PluginAgentTempStorage
-import PluginAgentPlanStorage
-import PluginFileLog
-import PluginSkill
-import PluginPluginManager
-import PluginLLMProviderSettings
-import PluginModelSelector
-import PluginMCP
-
-// Tool plugins that agents commonly use
-import PluginWebFetch
-import PluginWebSearch
+import PluginAskUser
+import PluginCommand
+import PluginConversationManager
+import PluginConversationPendingMessage
+import PluginConversationState
+import PluginConversationTitle
 import PluginDocxRead
-import TerminalPlugin
-
-// LLM providers — keep all so any user-configured provider works
+import PluginFileLog
+import PluginLLMContext
+import PluginLLMManager
 import PluginLLMProviderAiRouter
 import PluginLLMProviderAliyun
 import PluginLLMProviderAnthropic
+import PluginLLMProviderCodex
+import PluginLLMProviderCommandCode
 import PluginLLMProviderDeepSeek
 import PluginLLMProviderFeifeimiao
 import PluginLLMProviderFlyMux
@@ -46,41 +28,86 @@ import PluginLLMProviderHappyCode
 import PluginLLMProviderHyperAPI
 import PluginLLMProviderKimiCode
 import PluginLLMProviderLPgpt
+import PluginLLMProviderMLX
 import PluginLLMProviderMegaLLM
 import PluginLLMProviderMiniMax
 import PluginLLMProviderOpenAI
 import PluginLLMProviderOpenCode
-import PluginLLMProviderCommandCode
 import PluginLLMProviderOpenRouter
+import PluginLLMProviderSettings
 import PluginLLMProviderStepFun
 import PluginLLMProviderSublyx
 import PluginLLMProviderTencent
 import PluginLLMProviderXiaomi
 import PluginLLMProviderXybbz
 import PluginLLMProviderZhipu
-import PluginLLMProviderCodex
-import PluginLLMProviderMLX
+import PluginMCP
+import PluginMessageManager
+import PluginMessageSender
+import PluginModelSelector
+import PluginPluginManager
+import PluginSkill
+import PluginStorage
+import PluginToast
+import PluginToolManager
+import PluginWebFetch
+import PluginWebSearch
+import ProviderACP
+import TerminalPlugin
 
-/// Headless ACP 专用插件目录：只包含 ACP turn 执行链必须的插件，
-/// 剔除所有 UI / 设计器 / 编辑器 / open-in 等桌面插件。
+/// ACP 专用的 Lumi 装配根。
 ///
-/// 与 `DefaultPluginFactory` 的差异：
-/// - 不实例化 UI 插件（聊天面板、工具栏、活动栏、设计器、编辑器等），
-///   链接器可 dead-strip 这些插件的代码，显著减小二进制体积。
-/// - Provider 层仍由 `DefaultProviderFactory` 完整注册，确保核心插件
-///   onBoot 时解析 provider 不会失败。
+/// ACP 与 GUI 共用 KernelCore、Provider 和功能插件，但只启动 headless
+/// agent 所需的插件目录。宿主（LumiACPApp 或 ACPBootstrap）只依赖本工厂，
+/// 不再各自维护一份 ACP 装配逻辑。
+@MainActor
+public enum FactoryLumiACP {
+    public static func makeKernel() throws -> KernelCoreContainer {
+        try KernelFactory.makeKernel(
+            providerFactory: DefaultProviderFactory(),
+            pluginFactory: ACPPluginFactory()
+        )
+    }
+
+    /// 启动 ACP 的 stdio JSON-RPC 服务。
+    ///
+    /// 入口由 LumiACP app 和历史 ACPBootstrap 共用，确保两个发布形态
+    /// 不会因为各自维护一份启动逻辑而产生行为差异。
+    public static func runACPServer() throws {
+        setenv("LUMI_ACP_HEADLESS", "1", 1)
+
+        let kernel = try makeKernel()
+        guard let plugin = kernel.resolvePlugin(id: "acp") as? PluginACP else {
+            throw ACPBootstrapError.pluginNotFound
+        }
+
+        plugin.onEOF = { exit(0) }
+        try plugin.startACPServer(transport: StdioTransport())
+        RunLoop.main.run()
+    }
+}
+
+public enum ACPBootstrapError: Error, CustomStringConvertible {
+    case pluginNotFound
+
+    public var description: String {
+        switch self {
+        case .pluginNotFound:
+            "plugin 'acp' not found"
+        }
+    }
+}
+
+/// ACP headless 专用插件目录。
 @MainActor
 public struct ACPPluginFactory: PluginFactory {
     public init() {}
 
     public func makePlugins() -> [any SuperPlugin] {
         [
-            // 核心基础
             try! StorageSuperPlugin(),
             CommandPlugin(),
             ToastSuperPlugin(),
-
-            // LLM / Agent loop / 工具
             PluginLLMManager(),
             PluginToolManager(),
             PluginAgentLoop(),
@@ -89,16 +116,12 @@ public struct ACPPluginFactory: PluginFactory {
             AgentRulesPlugin(),
             AgentTempStoragePlugin(),
             AgentPlanStoragePlugin(),
-
-            // 会话 / 消息
             ConversationManagerPlugin(),
             MessageManagerPlugin(),
             LLMContextPlugin(),
             ConversationStatePlugin(),
             ConversationPendingMessagePlugin(),
             ConversationTitlePlugin(),
-
-            // 能力
             AskUserPlugin(),
             FileLogPlugin(),
             SkillPlugin(),
@@ -106,17 +129,11 @@ public struct ACPPluginFactory: PluginFactory {
             LLMProviderSettingsPlugin(),
             ModelSelectorPlugin(),
             MCPPlugin(),
-
-            // 工具插件
             WebFetchPlugin(),
             WebSearchPlugin(),
             DocxReadPlugin(),
             TerminalSuperPlugin(),
-
-            // ACP 本身
             PluginACP(),
-
-            // LLM providers（全部保留，用户可能配置任意一个）
             AiRouterProviderPlugin(),
             AliyunProviderPlugin(),
             AnthropicProviderPlugin(),
