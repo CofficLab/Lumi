@@ -68,6 +68,7 @@ let package = Package(
             dependencies: [
                 "PluginPrototypeDesigner",
                 "KitAgentTool",
+                "KitHTMLPreview",
                 "KitPrototype",
                 "KernelCore",
                 "ProviderStorage",
