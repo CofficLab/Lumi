@@ -4,14 +4,14 @@
         <title>Lumi</title>
         <item>
             <title>6.1.0</title>
-            <pubDate>Fri, 18 Sep 2026 06:08:28 +0000</pubDate>
-            <sparkle:version>20260918052610</sparkle:version>
+            <pubDate>Sun, 20 Sep 2026 01:27:03 +0000</pubDate>
+            <sparkle:version>20260920001130</sparkle:version>
             <sparkle:shortVersionString>6.1.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>Preview p6.1.0(20260918052610)</h2>
+            <description><![CDATA[<h2>Preview p6.1.0(20260920001130)</h2>
 <p>This preview build was published from the pre branch and may contain unfinished changes.</p>]]></description>
-            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/p6.1.0(20260918052610)</sparkle:fullReleaseNotesLink>
-            <enclosure url="https://s.kuaiyizhi.cn/lumi/pre/Lumi_6.1.0_x86_64.dmg" length="41534831" type="application/octet-stream" sparkle:edSignature="V2j78VRZ1vArH6nzEZJfCXFwHuJvK8E5X2B20PDENaJl6w4CrOzCmE292ooBWfbm1NE3H7cnAiT2reKdLBp7DQ=="/>
+            <sparkle:fullReleaseNotesLink>https://github.com/CofficLab/Lumi/releases/tag/p6.1.0(20260920001130)</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://s.kuaiyizhi.cn/lumi/pre/Lumi_6.1.0_x86_64.dmg" length="53507076" type="application/octet-stream" sparkle:edSignature="zFw098mNTKxOwm2G3xo2xiQq9VmzVWWQ6X5NC3kFOmwUj8okCd4hpYyluOdN48a0YIM7wXXSz/Do1YU/0/ojDQ=="/>
         </item>
     </channel>
 </rss>
