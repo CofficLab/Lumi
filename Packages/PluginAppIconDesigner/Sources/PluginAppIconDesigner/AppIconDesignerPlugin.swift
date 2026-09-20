@@ -3,6 +3,7 @@ import KitAgentTool
 import KitSuperLog
 import os
 import ProviderActivityBar
+import ProviderAgentRules
 import ProviderToolbar
 import ProviderChatSection
 import ProviderContentView
@@ -95,6 +96,13 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
             if !skillProvider.isProviderRegistered(providerID: id) {
                 let contributor = AppIconDesignerSkillContributor(providerID: id)
                 skillProvider.addProvider(contributor)
+            }
+        }
+
+        // 注册 Agent Rule 贡献者。
+        if let ruleProvider = kernel.resolveProvider((any AgentRuleProviding).self) {
+            if !ruleProvider.isProviderRegistered(providerID: id) {
+                ruleProvider.addProvider(AppIconDesignerRuleContributor(providerID: id))
             }
         }
 
@@ -243,6 +251,9 @@ public final class AppIconDesignerPlugin: SuperPlugin, SuperLog {
         if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
             skillProvider.removeProvider(providerID: id)
         }
+
+        // 撤回 Agent Rule 贡献。
+        kernel.resolveProvider((any AgentRuleProviding).self)?.removeProvider(providerID: id)
 
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
