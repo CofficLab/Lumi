@@ -8,35 +8,29 @@ import Testing
 @MainActor
 @Suite("Prototype element conversation action")
 struct PrototypeElementConversationActionTests {
-    @Test("appends and focuses without submitting")
-    func appendsAndFocuses() throws {
+    @Test("appends the screen HTML file URL without submitting")
+    func appendsFileURL() throws {
         let input = DefaultConversationInputProvider()
         input.text = "Make it warmer"
         let resolved = resolvedScreen()
 
-        let outcome = try PrototypeElementConversationAction.apply(
-            reference: reference(),
+        let outcome = PrototypeElementConversationAction.apply(
             resolved: resolved,
-            currentProjectPath: "/workspace",
             selectedProjectID: resolved.project.id,
             selectedScreenID: resolved.screen.id,
             input: input
         )
 
         #expect(outcome == .appended)
-        #expect(input.text.hasPrefix("Make it warmer\n\n"))
-        #expect(input.text.contains("checkout-flow"))
-        #expect(input.isInputFocused)
+        #expect(input.text.contains(resolved.htmlURL.path))
         #expect(input.isSending == false)
     }
 
     @Test("returns unavailable when no input provider exists")
     func unavailableInput() throws {
         let resolved = resolvedScreen()
-        let outcome = try PrototypeElementConversationAction.apply(
-            reference: reference(),
+        let outcome = PrototypeElementConversationAction.apply(
             resolved: resolved,
-            currentProjectPath: "/workspace",
             selectedProjectID: resolved.project.id,
             selectedScreenID: resolved.screen.id,
             input: nil
@@ -49,10 +43,8 @@ struct PrototypeElementConversationActionTests {
     func discardsStaleSelection() throws {
         let input = DefaultConversationInputProvider()
         let resolved = resolvedScreen()
-        let outcome = try PrototypeElementConversationAction.apply(
-            reference: reference(),
+        let outcome = PrototypeElementConversationAction.apply(
             resolved: resolved,
-            currentProjectPath: "/workspace",
             selectedProjectID: resolved.project.id,
             selectedScreenID: "02-other",
             input: input
@@ -60,7 +52,6 @@ struct PrototypeElementConversationActionTests {
 
         #expect(outcome == .staleSelection)
         #expect(input.text.isEmpty)
-        #expect(!input.isInputFocused)
     }
 
     private func resolvedScreen() -> PrototypeResolvedScreen {
@@ -76,17 +67,6 @@ struct PrototypeElementConversationActionTests {
             screen: screen,
             directoryURL: URL(fileURLWithPath: "/workspace/.lumi/prototype/tasks/checkout-flow/01-home"),
             html: "<html></html>"
-        )
-    }
-
-    private func reference() -> HTMLPreviewElementReference {
-        HTMLPreviewElementReference(
-            selector: #"[data-block="primary-action"]"#,
-            tagName: "button",
-            label: "Pay",
-            outerHTML: "<button data-block=\"primary-action\">Pay</button>",
-            blockID: "primary-action",
-            blockLabel: "Primary Action"
         )
     }
 }

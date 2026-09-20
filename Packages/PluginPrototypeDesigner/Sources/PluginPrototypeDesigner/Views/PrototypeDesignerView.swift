@@ -163,9 +163,7 @@ public struct PrototypeDesignerView: View {
     ) {
         do {
             _ = try PrototypeElementConversationAction.apply(
-                reference: reference,
                 resolved: resolved,
-                currentProjectPath: workspace.currentProjectPath,
                 selectedProjectID: workspace.selectedProjectID,
                 selectedScreenID: workspace.selectedScreenID,
                 input: PrototypeDesignerRuntime.conversationInput

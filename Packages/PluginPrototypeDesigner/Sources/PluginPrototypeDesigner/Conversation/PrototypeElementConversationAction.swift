@@ -1,4 +1,3 @@
-import KitHTMLPreview
 import KitPrototype
 import ProviderConversationInput
 
@@ -10,35 +9,20 @@ enum PrototypeElementConversationActionOutcome: Equatable {
 
 @MainActor
 enum PrototypeElementConversationAction {
+    /// 把当前屏幕的 HTML 文件引用发送到对话输入（与文件树的「发送到对话」一致）。
     static func apply(
-        reference: HTMLPreviewElementReference,
         resolved: PrototypeResolvedScreen,
-        currentProjectPath: String?,
         selectedProjectID: String?,
         selectedScreenID: String?,
         input: (any ConversationInputProviding)?
-    ) throws -> PrototypeElementConversationActionOutcome {
+    ) -> PrototypeElementConversationActionOutcome {
         guard selectedProjectID == resolved.project.id,
               selectedScreenID == resolved.screen.id else {
             return .staleSelection
         }
         guard let input else { return .unavailable }
 
-        let context = PrototypeElementConversationContext(
-            projectTitle: resolved.project.title,
-            projectID: resolved.project.id,
-            screenTitle: resolved.screen.title,
-            screenID: resolved.screen.id,
-            deviceName: resolved.project.device.kind.displayName,
-            sourceURL: resolved.htmlURL,
-            projectRootPath: currentProjectPath
-        )
-        let draft = try PrototypeElementConversationDraftBuilder.draft(
-            reference: reference,
-            context: context
-        )
-        input.text = PrototypeElementConversationDraftBuilder.appending(draft, to: input.text)
-        input.isInputFocused = true
+        input.addToConversation(fileURLs: [resolved.htmlURL])
         return .appended
     }
 }
