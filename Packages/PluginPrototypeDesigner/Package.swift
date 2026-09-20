@@ -79,6 +79,7 @@ let package = Package(
                 "ProviderRootView",
                 "ProviderToolbar",
                 .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
+                .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
             ]
         ),
     ]

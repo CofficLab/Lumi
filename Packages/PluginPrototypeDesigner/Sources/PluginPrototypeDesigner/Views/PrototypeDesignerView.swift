@@ -49,7 +49,7 @@ public struct PrototypeDesignerView: View {
         .onAppear { notifyProjectAvailability() }
         .onChange(of: workspace.projects.count) { _, _ in notifyProjectAvailability() }
         .alert(
-            PrototypeLocalization.string("Export Failed"),
+            PrototypeLocalization.string("Operation Failed"),
             isPresented: errorBinding
         ) {
             Button(PrototypeLocalization.string("OK"), role: .cancel) { workspace.lastError = nil }
@@ -68,9 +68,10 @@ public struct PrototypeDesignerView: View {
                     htmlText: resolved.html,
                     fileURL: resolved.htmlURL,
                     contentSize: resolved.project.device.logicalSize,
-                    onBlockSelected: { selection in
-                        sendBlockToChat(selection, resolved: resolved)
-                    }
+                    onElementReferenceSelected: { reference in
+                        sendElementToConversation(reference, resolved: resolved)
+                    },
+                    isElementReferenceActionEnabled: PrototypeDesignerRuntime.conversationInput != nil
                 )
                 .id("\(resolved.screen.updatedAt.timeIntervalSince1970)-\(resolved.project.device.kind.rawValue)")
             } else {
@@ -155,33 +156,23 @@ public struct PrototypeDesignerView: View {
         }
     }
 
-    /// 把右键选中的区块连同上下文组装成草稿，写入聊天输入框等待发送。
-    ///
-    /// 遵循「填入输入框待发送」语义：不自动发送，只预填 + 聚焦，用户可补充说明后回车。
     @MainActor
-    private func sendBlockToChat(_ selection: PromoBlockSelection, resolved: PrototypeResolvedScreen) {
-        guard let input = PrototypeDesignerRuntime.conversationInput else { return }
-
-        let draft = """
-        帮我改一下这屏原型的「\(selection.label)」区块。
-
-        原型项目：\(resolved.project.title)（\(resolved.project.id)）
-        屏幕：\(resolved.screen.title)（\(resolved.screen.id)）
-        设备：\(resolved.project.device.kind.displayName)
-        区块标识：\(selection.blockID)
-
-        当前该区块的 HTML：
-        ```html
-        \(selection.outerHTML)
-        ```
-        """
-
-        if input.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            input.text = draft
-        } else {
-            input.text = input.text.trimmingCharacters(in: .whitespacesAndNewlines) + "\n\n" + draft
+    private func sendElementToConversation(
+        _ reference: HTMLPreviewElementReference,
+        resolved: PrototypeResolvedScreen
+    ) {
+        do {
+            _ = try PrototypeElementConversationAction.apply(
+                reference: reference,
+                resolved: resolved,
+                currentProjectPath: workspace.currentProjectPath,
+                selectedProjectID: workspace.selectedProjectID,
+                selectedScreenID: workspace.selectedScreenID,
+                input: PrototypeDesignerRuntime.conversationInput
+            )
+        } catch {
+            workspace.setError(error)
         }
-        input.isInputFocused = true
     }
 }
 
