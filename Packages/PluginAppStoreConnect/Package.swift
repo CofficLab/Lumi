@@ -30,6 +30,7 @@ let package = Package(
         .package(path: "../ProviderToolbar"),
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderSkill"),
+        .package(path: "../ProviderAgentRules"),
     ],
     targets: [
         .target(
@@ -53,10 +54,12 @@ let package = Package(
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderSkill", package: "ProviderSkill"),
+                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
             ],
             resources: [
                 .process("../../Resources/Localizable.xcstrings"),
                 .copy("../../Resources/Skills"),
+                .copy("../../Resources/AgentRules"),
             ],
             linkerSettings: [.linkedFramework("Security")]
         ),
@@ -75,6 +78,7 @@ let package = Package(
                 .product(name: "ProviderToolbar", package: "ProviderToolbar"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
                 .product(name: "ProviderSkill", package: "ProviderSkill"),
+                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
             ],
             path: "Tests/PluginAppStoreConnectTests"
         ),
