@@ -1,6 +1,24 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Conversation Unavailable": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Conversation Unavailable" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "对话暂不可用" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "對話暫不可用" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "對話暫不可用" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "對話暫不可用" } }
+      }
+    },
+    "Element": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Element" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "元素" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "元素" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "元素" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "元素" } }
+      }
+    },
     "No HTML content to preview.": {
       "comment": "Empty state when there is no HTML to render",
       "localizations": {
@@ -34,6 +52,42 @@
             "value": "沒有可預覽的 HTML 內容。"
           }
         }
+      }
+    },
+    "Send Parent “%@” to Conversation": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Send Parent “%@” to Conversation" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "发送父级“%@”到对话" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "傳送父層「%@」至對話" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "傳送父層「%@」至對話" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "傳送父層「%@」至對話" } }
+      }
+    },
+    "Send “%@” to Conversation": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Send “%@” to Conversation" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "发送“%@”到对话" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "傳送「%@」至對話" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "傳送「%@」至對話" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "傳送「%@」至對話" } }
+      }
+    },
+    "Unnamed Button": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unnamed Button" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "未命名按钮" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "未命名按鈕" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "未命名按鈕" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "未命名按鈕" } }
+      }
+    },
+    "Unnamed Section": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unnamed Section" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "未命名区块" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "未命名區塊" } },
+        "zh-HK": { "stringUnit": { "state": "translated", "value": "未命名區塊" } },
+        "zh-TW": { "stringUnit": { "state": "translated", "value": "未命名區塊" } }
       }
     }
   },

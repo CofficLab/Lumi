@@ -20,6 +20,7 @@ public struct HTMLPreviewView: View {
 
     /// 右键菜单中选择一个精确 DOM 元素后回调。
     var onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)?
+    var isElementReferenceActionEnabled: Bool
 
     public init(
         htmlText: String,
@@ -27,7 +28,8 @@ public struct HTMLPreviewView: View {
         contentSize: CGSize? = nil,
         onWebViewResolved: ((WKWebView) -> Void)? = nil,
         onBlockSelected: ((PromoBlockSelection) -> Void)? = nil,
-        onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)? = nil
+        onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)? = nil,
+        isElementReferenceActionEnabled: Bool = true
     ) {
         self.htmlText = htmlText
         self.fileURL = fileURL
@@ -35,6 +37,7 @@ public struct HTMLPreviewView: View {
         self.onWebViewResolved = onWebViewResolved
         self.onBlockSelected = onBlockSelected
         self.onElementReferenceSelected = onElementReferenceSelected
+        self.isElementReferenceActionEnabled = isElementReferenceActionEnabled
     }
 
     public var body: some View {
@@ -65,7 +68,8 @@ public struct HTMLPreviewView: View {
                 containerSize: webViewSize,
                 onWebViewResolved: onWebViewResolved,
                 onBlockSelected: onBlockSelected,
-                onElementReferenceSelected: onElementReferenceSelected
+                onElementReferenceSelected: onElementReferenceSelected,
+                isElementReferenceActionEnabled: isElementReferenceActionEnabled
             )
             .frame(width: webViewSize.width, height: webViewSize.height)
             .scaleEffect(fitScale)
@@ -107,11 +111,13 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
     let onWebViewResolved: ((WKWebView) -> Void)?
     let onBlockSelected: ((PromoBlockSelection) -> Void)?
     let onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)?
+    let isElementReferenceActionEnabled: Bool
 
     func makeCoordinator() -> Coordinator {
         Coordinator(
             onBlockSelected: onBlockSelected,
-            onElementReferenceSelected: onElementReferenceSelected
+            onElementReferenceSelected: onElementReferenceSelected,
+            isElementReferenceActionEnabled: isElementReferenceActionEnabled
         )
     }
 
@@ -151,6 +157,7 @@ private struct _WKWebViewWrapper: NSViewRepresentable {
         // 回调指针可能变化（闭包重建），同步给 coordinator。
         context.coordinator.onBlockSelected = onBlockSelected
         context.coordinator.onElementReferenceSelected = onElementReferenceSelected
+        context.coordinator.isElementReferenceActionEnabled = isElementReferenceActionEnabled
 
         DispatchQueue.main.async {
             onWebViewResolved?(webView)
@@ -195,23 +202,28 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
     weak var webView: WKWebView?
     var onBlockSelected: ((PromoBlockSelection) -> Void)?
     var onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)?
+    var isElementReferenceActionEnabled: Bool
     var lastLoadKey: LoadKey?
     /// 标记当前 webview 实例是否已注入选区脚本（重载后会被重置，需重新注入）。
     var didInjectSelectionScript = false
     var didInjectElementBridge = false
     var navigationGeneration = 0
+    private let elementContextMenuPresenter = HTMLPreviewElementContextMenuPresenter()
 
     init(
         onBlockSelected: ((PromoBlockSelection) -> Void)?,
-        onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)?
+        onElementReferenceSelected: ((HTMLPreviewElementReference) -> Void)?,
+        isElementReferenceActionEnabled: Bool
     ) {
         self.onBlockSelected = onBlockSelected
         self.onElementReferenceSelected = onElementReferenceSelected
+        self.isElementReferenceActionEnabled = isElementReferenceActionEnabled
     }
 
     // MARK: WKNavigationDelegate
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        elementContextMenuPresenter.dismiss()
         navigationGeneration += 1
         didInjectSelectionScript = false
         didInjectElementBridge = false
@@ -226,9 +238,28 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if message.name == HTMLPreviewElementBridgeScript.messageHandlerName {
-            // Task 3 installs the native context-menu presenter. Decoding happens here so
-            // untrusted WebKit messages never reach product callbacks directly.
-            _ = try? HTMLPreviewContextMenuRequestDecoder.decode(body: message.body)
+            guard let request = try? HTMLPreviewContextMenuRequestDecoder.decode(body: message.body),
+                  request.navigationGeneration == navigationGeneration,
+                  let webView else { return }
+            let generation = navigationGeneration
+            elementContextMenuPresenter.present(
+                request: request,
+                in: webView,
+                isEnabled: isElementReferenceActionEnabled,
+                onSelect: { [weak self, weak webView] reference in
+                    guard let self, self.navigationGeneration == generation else { return }
+                    self.onElementReferenceSelected?(reference)
+                    guard let webView else { return }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self, weak webView] in
+                        guard self?.navigationGeneration == generation, let webView else { return }
+                        webView.evaluateJavaScript("window.__lumiElementBridge && window.__lumiElementBridge.clear()")
+                    }
+                },
+                onCancel: { [weak self, weak webView] in
+                    guard self?.navigationGeneration == generation, let webView else { return }
+                    webView.evaluateJavaScript("window.__lumiElementBridge && window.__lumiElementBridge.clear()")
+                }
+            )
             return
         }
         guard message.name == _WKWebViewWrapper.legacyMessageHandlerName else { return }
