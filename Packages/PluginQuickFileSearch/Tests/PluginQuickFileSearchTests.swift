@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-import KernelLumi
+import ProviderEditor
 @testable import QuickFileSearchPlugin
 
 @MainActor

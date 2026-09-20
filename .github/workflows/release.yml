@@ -22,6 +22,7 @@ env:
   DESTINATION: "generic/platform=macOS"
   ENTITLEMENTS_PATH: "LumiApp/App.entitlements"
   DERIVED_DATA_PATH: "./DerivedData"
+  SOURCE_PACKAGES_PATH: "./SourcePackages"
   ArchivePath: "./my-app"
   BuildPath: "./temp"
   RELEASE_ARCHS: "arm64 x86_64"
@@ -239,20 +240,39 @@ jobs:
           done
           echo "⚠️ Timestamp service is not reachable after 3 attempts; continuing and letting codesign validate timestamping"
 
-      - name: Install xcpretty
-        run: gem install xcpretty
+      - name: Compute Dependency Hash
+        id: dep-hash
+        run: |
+          set -euo pipefail
+          # Compute a stable hash from dependency inputs.
+          # Includes: main lock, all Package.swift files, project.pbxproj.
+          hash_input=$(
+            {
+              cat "Lumi.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" 2>/dev/null || true
+              find Packages -name "Package.swift" -type f -exec cat {} + 2>/dev/null || true
+              cat Lumi.xcodeproj/project.pbxproj 2>/dev/null || true
+            } | shasum -a 256 | awk '{print $1}'
+          )
+          echo "hash=${hash_input}" >> "$GITHUB_OUTPUT"
+          echo "Dependency hash: ${hash_input}"
+
+      - name: Cache SPM Source Packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SOURCE_PACKAGES_PATH }}
+          key: spm-src-v1-${{ runner.os }}-${{ runner.arch }}-xcode26.3-${{ steps.dep-hash.outputs.hash }}
+          restore-keys: |
+            spm-src-v1-${{ runner.os }}-${{ runner.arch }}-xcode26.3-
 
       - name: Resolve SPM Dependencies
         run: |
-          # Clean DerivedData first to avoid any cached dirty state
-          rm -rf "${{ env.DERIVED_DATA_PATH }}/SourcePackages"
-          mkdir -p "${{ env.DERIVED_DATA_PATH }}/SourcePackages"
-
-          xcodebuild -project ${{ env.SCHEME }}.xcodeproj \
-            -scheme ${{ env.SCHEME }} \
-            -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
-            -resolvePackageDependencies \
-            -skipPackagePluginValidation
+          set -euo pipefail
+          chmod +x .github/scripts/resolve-ci-packages.sh
+          .github/scripts/resolve-ci-packages.sh \
+            "${{ env.SCHEME }}.xcodeproj" \
+            "${{ env.SCHEME }}" \
+            "${{ env.SOURCE_PACKAGES_PATH }}" \
+            --derived-data-path "${{ env.DERIVED_DATA_PATH }}"
 
       - name: Build App (Archive)
         run: |
@@ -261,55 +281,46 @@ jobs:
           mkdir -p ./temp
 
           # Verify SPM packages are resolved
-          if [ ! -d "${{ env.DERIVED_DATA_PATH }}/SourcePackages/checkouts" ]; then
-            echo "❌ SPM checkouts not found in DerivedData, re-resolving..."
-            xcodebuild -project ${{ env.SCHEME }}.xcodeproj \
-              -scheme ${{ env.SCHEME }} \
-              -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
-              -resolvePackageDependencies \
-              -skipPackagePluginValidation
+          if [ ! -d "${{ env.SOURCE_PACKAGES_PATH }}/checkouts" ]; then
+            echo "❌ SPM checkouts not found, re-resolving..."
+            chmod +x .github/scripts/resolve-ci-packages.sh
+            .github/scripts/resolve-ci-packages.sh \
+              "${{ env.SCHEME }}.xcodeproj" \
+              "${{ env.SCHEME }}" \
+              "${{ env.SOURCE_PACKAGES_PATH }}" \
+              --derived-data-path "${{ env.DERIVED_DATA_PATH }}"
           fi
-          echo "✅ SPM checkouts: $(ls ${{ env.DERIVED_DATA_PATH }}/SourcePackages/checkouts | wc -l | tr -d ' ') packages"
+          echo "✅ SPM checkouts: $(ls ${{ env.SOURCE_PACKAGES_PATH }}/checkouts | wc -l | tr -d ' ') packages"
 
-          FIRST_ARCH=true
+          chmod +x .github/scripts/archive-lumi.sh
+
+          # Architectures stay serial here on purpose: this step is the
+          # measurement baseline for the later isolated-job experiment.
           for arch in ${{ env.RELEASE_ARCHS }}; do
-            echo "🏗️ Archiving ${{ env.SCHEME }} for $arch..."
-            rm -rf "./temp/${{ env.SCHEME }}-${arch}.xcarchive"
-
-            # Log xcodebuild output to a file so the full failure context is preserved.
-            ARCHIVE_LOG="./temp/archive-${arch}.log"
-            set +e
-            xcodebuild archive \
-              -project ${{ env.SCHEME }}.xcodeproj \
-              -scheme ${{ env.SCHEME }} \
-              -destination "${{ env.DESTINATION }}" \
-              -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
-              -archivePath "./temp/${{ env.SCHEME }}-${arch}.xcarchive" \
-              -configuration Release \
-              -skipPackagePluginValidation \
-              -skipPackageSignatureValidation \
-              CODE_SIGN_STYLE=Manual \
-              CODE_SIGN_IDENTITY="-" \
-              DEVELOPMENT_TEAM="${{ steps.signing.outputs.team_id }}" \
-              PROVISIONING_PROFILE_SPECIFIER="" \
-              CODE_SIGNING_REQUIRED=NO \
-              AD_HOC_CODE_SIGNING_ALLOWED=YES \
-              ARCHS="$arch" \
-              ONLY_ACTIVE_ARCH=NO > "$ARCHIVE_LOG" 2>&1
-            ARCHIVE_EXIT=$?
-            set -e
-
-            if [ $ARCHIVE_EXIT -ne 0 ]; then
-              echo "❌ Archive failed for $arch (exit $ARCHIVE_EXIT); tailing log:"
-              tail -200 "$ARCHIVE_LOG" || true
-              echo ""
-              echo "--- error / failure lines ---"
-              grep -E "(error:|FAILED|BUILD FAILED|Cannot find)" "$ARCHIVE_LOG" | head -60 || true
-              exit 1
-            fi
-
-            FIRST_ARCH=false
+            .github/scripts/archive-lumi.sh "$arch" "${{ steps.signing.outputs.team_id }}"
           done
+
+      - name: Collect Build Metrics
+        if: always()
+        run: |
+          set -euo pipefail
+          chmod +x .github/scripts/collect-build-metrics.sh
+          .github/scripts/collect-build-metrics.sh \
+            --archive-dir ./temp \
+            --output ./temp/build-metrics.json
+          cat ./temp/build-metrics.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Build Diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-diagnostics
+          path: |
+            temp/archive-*.log
+            temp/results-*.xcresult
+            temp/build-metrics.json
+          retention-days: 14
+          if-no-files-found: ignore
 
       - name: Codesign App
         run: |

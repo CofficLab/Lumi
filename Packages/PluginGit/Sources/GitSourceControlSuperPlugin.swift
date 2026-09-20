@@ -1,4 +1,4 @@
-import EditorContracts
+import ProviderEditor
 import KernelCore
 import KitAgentTool
 import KitSuperLog

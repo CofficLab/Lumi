@@ -18,4 +18,18 @@ public struct PromoBlockSelection: Sendable, Equatable {
         self.label = label
         self.outerHTML = outerHTML
     }
+
+    /// Decode the payload produced by the original block-selection bridge.
+    ///
+    /// Kept separate from the element-reference bridge so existing consumers can
+    /// continue using the legacy callback without enabling the new context menu.
+    static func decodeLegacyMessageBody(_ body: Any) -> PromoBlockSelection? {
+        guard let body = body as? [String: Any],
+              body["action"] as? String == "send" else { return nil }
+
+        let blockID = body["blockID"] as? String ?? "block"
+        let label = (body["label"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? blockID
+        let outerHTML = body["outerHTML"] as? String ?? ""
+        return PromoBlockSelection(blockID: blockID, label: label, outerHTML: outerHTML)
+    }
 }

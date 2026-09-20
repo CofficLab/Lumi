@@ -187,16 +187,17 @@ public func resolveProvider<T>(_ type: T.Type = T.self) -> T? {
 
 ## 3. 四层包结构
 
-真实的包结构是这样的（`Packages/` 下 225 个包）：
+真实的包按职责与命名前缀归类；编辑器包也必须遵守同一套 `Kit*`、`Provider*`、`Plugin*` 规则，不存在单独的 `Editor*` 包类别：
 
-| 前缀 | 数量 | 职责 | 允许依赖 |
-| --- | ---: | --- | --- |
-| `KernelCore` | 1 | 注册表 + 生命周期 | 只依赖 `KitSuperLog` |
-| `Provider*` | 47 | 能力**契约**（协议 + DTO + 默认实现） | `KernelCore`、`Kit*` |
-| `Kit*` | 17 | 无业务语义的基础设施（Shell、Keychain、Markdown、LLM 内核、HTML 预览…） | 尽量无依赖 |
-| `Plugin*` | 148 | 业务实现与外部集成 | 只依赖「它需要的」`Provider*` + `Kit*` + LumiUI |
-| `Editor*` | 6 | 编辑器独立分层（渲染 → 视图 → 内核 → 门面） | 严格自下而上 |
-| `Factory*` | 5 | Composition Root：装配表 + 宿主外壳 | 全部 |
+| 前缀 / 类别 | 职责 | 允许依赖 |
+| --- | --- | --- |
+| `KernelCore` | 注册表 + 生命周期 | 只依赖 `Kit*` |
+| `Provider*` | 能力**契约**（协议 + DTO + 默认实现） | `KernelCore`、`Kit*` |
+| `Kit*` | 无业务语义的可复用基础设施与引擎层 | 尽量无依赖，只向下依赖其他 `Kit*` |
+| `Plugin*` | 业务实现与外部集成 | 所需的 `Provider*` + `Kit*` + LumiUI |
+| `Factory*` | Composition Root：装配表 + 宿主外壳 | 全部 |
+
+编辑器包按职责映射到上述三类：`ProviderEditor` 定义契约；`KitEditorKernel`、`KitEditorSource`、`KitEditorTextView`、`KitEditorLanguageRuntime` 提供可复用实现；`PluginCodeEditor*` 与 `PluginEditorPreview` 提供宿主、界面、语言及预览集成。`EditorService` 是 `PluginCodeEditorHost` 内部 target，不是 package。
 
 依赖方向是**严格单向**的：
 

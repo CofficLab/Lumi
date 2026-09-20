@@ -22,6 +22,7 @@ let package = Package(
         .package(path: "../ProviderContentView"),
         .package(path: "../ProviderDocsView"),
         .package(path: "../ProviderProject"),
+        .package(path: "../ProviderToast"),
         .package(path: "../ProviderRailView"),
         .package(path: "../ProviderRootView"),
         .package(path: "../ProviderConversationInput"),
@@ -29,6 +30,7 @@ let package = Package(
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
         .package(path: "../ProviderSkill"),
+        .package(path: "../ProviderAgentRules"),
     ],
     targets: [
         .target(
@@ -47,6 +49,7 @@ let package = Package(
                 "ProviderContentView",
                 "ProviderDocsView",
                 "ProviderProject",
+                "ProviderToast",
                 "ProviderRailView",
                 "ProviderRootView",
                 "ProviderStorage",
@@ -54,10 +57,12 @@ let package = Package(
                 "ProviderPromptSuggestion",
                 .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
                 "ProviderSkill",
+                "ProviderAgentRules",
             ],
             resources: [
                 .process("../../Resources/Localizable.xcstrings"),
                 .copy("../../Resources/Skills"),
+                .copy("../../Resources/AgentRules"),
             ]
         ),
         .testTarget(
@@ -65,6 +70,7 @@ let package = Package(
             dependencies: [
                 "PluginPrototypeDesigner",
                 "KitAgentTool",
+                "KitHTMLPreview",
                 "KitPrototype",
                 "KernelCore",
                 "ProviderStorage",
@@ -74,6 +80,8 @@ let package = Package(
                 "ProviderRailView",
                 "ProviderRootView",
                 "ProviderToolbar",
+                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
+                .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
             ]
         ),
     ]

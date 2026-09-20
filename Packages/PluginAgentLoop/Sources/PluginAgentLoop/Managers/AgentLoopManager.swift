@@ -92,7 +92,10 @@ public final class AgentLoopManager: AgentLoopProviding, SuperLog {
         switch phase {
         case .idle: state = .idle
         case .requestingLLM, .executingTools, .waitingForToolJobs: state = .running
-        case .awaitingUser: state = .suspended
+        case .awaitingUser:
+            // resumeTurn 会先登记恢复意图，再异步读取消息/解析用户响应。
+            // 在这段窗口内 FSM phase 仍是 awaitingUser，但挂起已不再是当前状态。
+            state = resumingConversations.contains(conversationID) ? .running : .suspended
         case .completed: state = .completed
         case .failed: state = .failed
         case .cancelled: state = .cancelled

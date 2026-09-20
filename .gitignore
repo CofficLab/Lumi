@@ -48,6 +48,7 @@ playground.xcworkspace
 
 .build/
 Packages/*/Package.resolved
+!Packages/ACPBootstrap/Package.resolved
 
 # CocoaPods
 #

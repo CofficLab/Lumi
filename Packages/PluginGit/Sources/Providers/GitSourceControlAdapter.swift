@@ -1,4 +1,4 @@
-import EditorContracts
+import ProviderEditor
 import Foundation
 import KitShell
 import ProviderGit

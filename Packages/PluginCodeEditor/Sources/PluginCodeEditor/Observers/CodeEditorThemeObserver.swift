@@ -1,23 +1,23 @@
 import AppKit
-import EditorService
 import Foundation
+import ProviderEditor
 import ProviderTheme
 import SwiftUI
 
-/// 将 `ThemeProviding` 的当前主题同步到 `EditorService`。
+/// 将 `ThemeProviding` 的当前主题同步到 `EditorProviding`。
 ///
 /// 主题 Provider 是应用主题的唯一来源；编辑器只消费注册到
-/// `EditorExtensionRegistry` 的 `SuperEditorThemeContributor`。监听器负责两者
-/// 之间的适配和生命周期管理，避免 EditorService 反向依赖 ProviderTheme。
+/// `EditorThemeProviding` 的主题贡献。监听器负责两者之间的适配和生命周期管理，
+/// 避免编辑器 Host 反向依赖 ProviderTheme。
 @MainActor
 final class CodeEditorThemeObserver {
-    private weak var editor: EditorService?
+    private weak var editor: (any EditorProviding)?
     private weak var theme: (any ThemeProviding)?
     private var themeObserver: (any ThemeProvidingObserverHandle)?
     private var systemAppearanceObserver: NSObjectProtocol?
     private var registeredThemeIDs = Set<String>()
 
-    init(theme: any ThemeProviding, editor: EditorService) {
+    init(theme: any ThemeProviding, editor: any EditorProviding) {
         self.theme = theme
         self.editor = editor
     }
@@ -51,9 +51,9 @@ final class CodeEditorThemeObserver {
 
         if let editor {
             for id in registeredThemeIDs {
-                editor.editorExtensions.unregisterThemeContributor(id: id)
+                editor.themes.uninstall(themeID: id)
             }
-            editor.theme.syncInitialThemeFromExternal("xcode-dark")
+            editor.themes.select(themeID: "xcode-dark")
         }
         registeredThemeIDs.removeAll()
     }
@@ -61,12 +61,13 @@ final class CodeEditorThemeObserver {
     private func syncCurrentThemes() {
         guard let theme, let editor else { return }
 
-        let contributors: [PaletteSyntaxThemeContributor] = theme.themes.flatMap { appTheme in
+        let contributors: [EditorThemeContribution] = theme.themes.flatMap { appTheme in
             CodeEditorThemeAdapter.palettes(for: appTheme).map { scheme, palette in
                 let id = CodeEditorThemeAdapter.editorThemeID(for: appTheme, colorScheme: scheme)
-                return PaletteSyntaxThemeContributor(
+                return EditorThemeContribution(
                     id: id,
                     displayName: appTheme.displayName,
+                    icon: "paintpalette",
                     isDark: scheme == .dark,
                     palette: palette
                 )
@@ -75,15 +76,15 @@ final class CodeEditorThemeObserver {
         let nextIDs = Set(contributors.map { $0.id })
 
         for staleID in registeredThemeIDs.subtracting(nextIDs) {
-            editor.editorExtensions.unregisterThemeContributor(id: staleID)
+            editor.themes.uninstall(themeID: staleID)
         }
         for contributor in contributors {
-            editor.editorExtensions.registerOrReplaceThemeContributor(contributor)
+            editor.themes.install(contributor)
         }
         registeredThemeIDs = nextIDs
 
         guard let selected = theme.selectedTheme else {
-            editor.theme.syncInitialThemeFromExternal("xcode-dark")
+            editor.themes.select(themeID: "xcode-dark")
             return
         }
         let activeScheme = CodeEditorThemeAdapter.colorScheme(for: selected)
@@ -91,6 +92,6 @@ final class CodeEditorThemeObserver {
             for: selected,
             colorScheme: activeScheme
         )
-        editor.theme.syncInitialThemeFromExternal(activeID)
+        editor.themes.select(themeID: activeID)
     }
 }

@@ -29,6 +29,7 @@ let package = Package(
         .package(path: "../ProviderPromptSuggestion"),
         .package(path: "../ProviderSkill"),
         .package(path: "../ProviderProject"),
+        .package(path: "../ProviderAgentRules"),
     ],
     targets: [
         .target(
@@ -54,10 +55,12 @@ let package = Package(
                 "ProviderSkill",
                 "ProviderProject",
                 .product(name: "ProviderConversationInput", package: "ProviderConversationInput"),
+                "ProviderAgentRules",
             ],
             resources: [
                 .process("../../Resources/Localizable.xcstrings"),
                 .copy("../../Resources/Skills"),
+                .copy("../../Resources/AgentRules"),
             ]
         ),
         .testTarget(
@@ -74,6 +77,7 @@ let package = Package(
                 "ProviderStorage",
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
+                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
                 "KitResume",
             ]
         ),

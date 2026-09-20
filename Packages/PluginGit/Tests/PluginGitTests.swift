@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 import Testing
-import EditorContracts
+import ProviderEditor
 import KernelCore
 import KitAgentTool
 import ProviderGit

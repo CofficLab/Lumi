@@ -36,15 +36,32 @@ public struct WriteFileTool: SuperAgentTool, @unchecked Sendable {
     }
 
     public func execute(arguments: [String: ToolArgument]) async throws -> String {
+        try await execute(arguments: arguments, workspaceRootOverride: nil)
+    }
+
+    public func executeResult(
+        context: ToolExecutionContext,
+        arguments: [String: ToolArgument]
+    ) async throws -> ToolCallResult {
+        let workspaceRoot = await context.conversationProjectPath()
+        let content = try await execute(arguments: arguments, workspaceRootOverride: workspaceRoot)
+        return ToolCallResult(content: content)
+    }
+
+    private func execute(
+        arguments: [String: ToolArgument],
+        workspaceRootOverride: String?
+    ) async throws -> String {
         guard let path = arguments.stringValue("path"),
               let content = arguments.stringValue("content")
         else {
             throw NSError(domain: "WriteFileTool", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing path or content"])
         }
 
+        let defaultRoot = await workspaceRootProvider()
         let url = WorkspacePathResolver.resolve(
             path: path,
-            workspaceRoot: await workspaceRootProvider()
+            workspaceRoot: workspaceRootOverride ?? defaultRoot
         )
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try content.write(to: url, atomically: true, encoding: .utf8)

@@ -26,6 +26,7 @@ let package = Package(
         .package(path: "../ProviderToolManager"),
         .package(path: "../ProviderPromptSuggestion"),
         .package(path: "../ProviderSkill"),
+        .package(path: "../ProviderAgentRules"),
     ],
     targets: [
         .target(
@@ -48,10 +49,12 @@ let package = Package(
                 "ProviderToolManager",
                 "ProviderPromptSuggestion",
                 "ProviderSkill",
+                "ProviderAgentRules",
             ],
             resources: [
                 .process("../../Resources/Localizable.xcstrings"),
                 .copy("../../Resources/Skills"),
+                .copy("../../Resources/AgentRules"),
             ]
         ),
         .testTarget(
@@ -60,6 +63,7 @@ let package = Package(
                 "PluginAppIconDesigner",
                 "KitAgentTool",
                 "KernelCore",
+                .product(name: "ProviderAgentRules", package: "ProviderAgentRules"),
                 "ProviderActivityBar",
                 "ProviderChatSection",
                 "ProviderContentView",

@@ -15,6 +15,7 @@ import ProviderStorage
 import ProviderToolbar
 import ProviderToolManager
 import ProviderSkill
+import ProviderAgentRules
 import SwiftUI
 
 /// App Store Connect 管理插件。
@@ -110,6 +111,15 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
             }
         } else {
             Self.logger.warning("\(Self.t) SkillProviding not found; skipping skill contribution")
+        }
+
+        // 注册 Agent Rule 贡献者。
+        if let ruleProvider = kernel.resolveProvider((any AgentRuleProviding).self) {
+            if !ruleProvider.isProviderRegistered(providerID: id) {
+                let contributor = AppStoreConnectRuleContributor(providerID: id)
+                ruleProvider.addProvider(contributor)
+                Self.logger.info("\(Self.t)Contributed \(contributor.allRules.count) rule(s) via AgentRuleProviding")
+            }
         }
 
         kernel.resolveProvider((any SettingViewProviding).self)?.addEntries([
@@ -268,6 +278,7 @@ public final class AppStoreConnectPlugin: SuperPlugin, PluginDataMigrating, Supe
             Self.agentTools.forEach { manager.remove(id: $0.name) }
         }
         kernel.resolveProvider((any SkillProviding).self)?.removeProvider(providerID: id)
+        kernel.resolveProvider((any AgentRuleProviding).self)?.removeProvider(providerID: id)
         kernel.resolveProvider((any RailViewProviding).self)?.removeTabs(ids: [Self.railTabID])
         kernel.resolveProvider((any SettingViewProviding).self)?
             .removeEntries(ids: [Self.settingsEntryID])

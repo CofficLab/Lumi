@@ -10,8 +10,9 @@ let package = Package(
     dependencies: [
         .package(path: "../KitSuperLog"),
         .package(path: "../KernelCore"),
-        .package(path: "../EditorService"),
-        .package(path: "../EditorLanguageRuntime"),
+        .package(path: "../ProviderEditor"),
+        .package(path: "../PluginCodeEditorHost"),
+        .package(path: "../KitEditorLanguageRuntime"),
         .package(
             url: "https://github.com/alex-pinkus/tree-sitter-swift.git",
             revision: "31d17fe7e818a2048c808b5c6fdc2dc792f4f5b5"
@@ -30,8 +31,7 @@ let package = Package(
             dependencies: [
                 "KitSuperLog",
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "EditorService", package: "EditorService"),
-                .product(name: "EditorLanguageRuntime", package: "EditorLanguageRuntime"),
+                .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "TreeSitterSwift", package: "tree-sitter-swift"),
                 .product(name: "TreeSitterJavaScript", package: "tree-sitter-javascript"),
                 .product(name: "TreeSitterTypeScript", package: "tree-sitter-typescript"),
@@ -48,7 +48,9 @@ let package = Package(
             dependencies: [
                 "PluginCodeEditorLanguages",
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "ProviderEditor", package: "ProviderEditor"),
+                .product(name: "PluginCodeEditorHost", package: "PluginCodeEditorHost"),
+                .product(name: "EditorLanguageRuntime", package: "KitEditorLanguageRuntime"),
             ]
         ),
     ]

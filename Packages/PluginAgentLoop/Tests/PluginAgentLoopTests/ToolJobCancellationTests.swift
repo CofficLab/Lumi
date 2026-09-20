@@ -13,6 +13,94 @@ import ProviderToolManager
 @testable import PluginAgentLoop
 
 @MainActor
+@Test("恢复中的 awaitingUser 阶段对外显示为 running")
+func resumingSuspendedTurnReportsRunning() {
+    let messages = DefaultMessageManager()
+    let conversationID = UUID()
+    let turnID = UUID()
+    let suspension = AgentLoopSuspension(
+        suspensionID: "userInput:ask-1",
+        conversationID: conversationID,
+        toolCallID: "ask-1",
+        kind: "userInput",
+        payload: "{}"
+    )
+    let loop = AgentLoopManager(
+        messages: messages,
+        llmManager: DefaultLLMManager(),
+        toolManager: DefaultToolManagerProviding(),
+        streaming: DefaultMessageStreamingProviding(),
+        conversations: DefaultConversationManager(),
+        contextProvider: PassthroughLLMContextProvider(messages: messages)
+    )
+    loop.runtimes[conversationID] = TurnRuntime(
+        phase: .awaitingUser(
+            turnID: turnID,
+            assistantMessageID: UUID(),
+            pendingToolCalls: [],
+            suspension: suspension
+        ),
+        lastTurnID: turnID
+    )
+
+    #expect(loop.state(for: conversationID) == .suspended)
+    loop.resumingConversations.insert(conversationID)
+    #expect(loop.state(for: conversationID) == .running)
+    loop.resumingConversations.remove(conversationID)
+    #expect(loop.state(for: conversationID) == .suspended)
+}
+
+@MainActor
+@Test("拒绝无效恢复请求后仍发布有效的挂起状态")
+func invalidResumeRequestKeepsSuspendedTurnObservable() async {
+    let messages = DefaultMessageManager()
+    let conversationID = UUID()
+    let turnID = UUID()
+    let suspension = AgentLoopSuspension(
+        suspensionID: "userInput:ask-1",
+        conversationID: conversationID,
+        toolCallID: "ask-1",
+        kind: "userInput",
+        payload: "{}"
+    )
+    let loop = AgentLoopManager(
+        messages: messages,
+        llmManager: DefaultLLMManager(),
+        toolManager: DefaultToolManagerProviding(),
+        streaming: DefaultMessageStreamingProviding(),
+        conversations: DefaultConversationManager(),
+        contextProvider: PassthroughLLMContextProvider(messages: messages)
+    )
+    loop.runtimes[conversationID] = TurnRuntime(
+        phase: .awaitingUser(
+            turnID: turnID,
+            assistantMessageID: UUID(),
+            pendingToolCalls: [],
+            suspension: suspension
+        ),
+        lastTurnID: turnID
+    )
+    var suspendedEventCount = 0
+    let observer = loop.addAgentLoopObserver { event in
+        if case .suspended = event { suspendedEventCount += 1 }
+    }
+
+    do {
+        _ = try await loop.resumeTurn(
+            in: conversationID,
+            request: AgentTurnResumeRequest(suspensionID: "wrong-id", answer: "继续")
+        )
+        Issue.record("无效的挂起 ID 不应恢复回合")
+    } catch {
+        #expect(error is AgentLoopError)
+    }
+
+    #expect(loop.state(for: conversationID) == .suspended)
+    #expect(suspendedEventCount == 1)
+    observer.cancel()
+}
+
+@MainActor
 @Test("取消回合后迟到的 LLM 响应不会复活回合")
 func lateLLMResponseAfterCancellationIsIgnored() async throws {
     let llmManager = BlockingLLMManager()

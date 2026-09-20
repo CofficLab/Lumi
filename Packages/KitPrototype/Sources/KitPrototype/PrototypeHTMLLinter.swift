@@ -115,6 +115,7 @@ public struct PrototypeHTMLLinter: Sendable {
             add(.warning, "no_block_annotations", "No data-block annotations found. Add data-block and data-block-label to major regions so they can be edited from the preview.")
         }
 
+        validateBlockAnnotations(html: html, add: add)
         validateJumpTargets(html: html, knownScreenIDs: knownScreenIDs, add: add)
         validateLocalResources(
             html: html,
@@ -124,6 +125,55 @@ public struct PrototypeHTMLLinter: Sendable {
         )
 
         return PrototypeLintReport(issues: issues)
+    }
+
+    // MARK: - 可编辑区块标注
+
+    private func validateBlockAnnotations(
+        html: String,
+        add: (PrototypeLintSeverity, String, String) -> Void
+    ) {
+        let tagPattern = #"<[a-zA-Z][^>]*\bdata-block\s*=\s*[\"']([^\"']*)[\"'][^>]*>"#
+        guard let tagRegex = try? NSRegularExpression(pattern: tagPattern, options: [.caseInsensitive]) else {
+            return
+        }
+        let labelPattern = #"\bdata-block-label\s*=\s*[\"'][^\"']*[\"']"#
+        let labelRegex = try? NSRegularExpression(pattern: labelPattern, options: [.caseInsensitive])
+        let documentRange = NSRange(html.startIndex..., in: html)
+        var counts: [String: Int] = [:]
+
+        for match in tagRegex.matches(in: html, range: documentRange) {
+            guard match.numberOfRanges > 1,
+                  let idRange = Range(match.range(at: 1), in: html),
+                  let tagRange = Range(match.range(at: 0), in: html) else { continue }
+            let rawID = String(html[idRange])
+            let blockID = Self.decodeBasicHTMLEntities(rawID)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if blockID.isEmpty {
+                add(.warning, "empty_block_id", "data-block values must not be empty.")
+            } else {
+                counts[blockID, default: 0] += 1
+            }
+
+            let tag = String(html[tagRange])
+            let tagNSRange = NSRange(tag.startIndex..., in: tag)
+            if labelRegex?.firstMatch(in: tag, range: tagNSRange) == nil {
+                let identity = blockID.isEmpty ? "this element" : "data-block=\"\(blockID)\""
+                add(.warning, "missing_block_label", "Add data-block-label to \(identity) so the context menu is readable.")
+            }
+        }
+
+        for blockID in counts.keys.sorted() where counts[blockID, default: 0] > 1 {
+            add(.warning, "duplicate_block_id", "data-block=\"\(blockID)\" is duplicated. Block IDs must be unique within a screen.")
+        }
+    }
+
+    private static func decodeBasicHTMLEntities(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&apos;", with: "'")
+            .replacingOccurrences(of: "&#39;", with: "'")
+            .replacingOccurrences(of: "&amp;", with: "&")
     }
 
     // MARK: - 跳转目标

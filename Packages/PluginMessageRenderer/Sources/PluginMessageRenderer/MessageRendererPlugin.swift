@@ -38,6 +38,7 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
         "core-turn-completed",
         "core-context-compaction",
         "core-agent-loop-retry",
+        "core-goal-task-continuation",
         "core-status-message",
         "core-error-message",
         "core-tool-message",
@@ -127,6 +128,17 @@ public final class MessageRendererPlugin: SuperPlugin, SuperLog {
             },
             render: { message, _ in
                 AnyView(AgentLoopRetryMessageView(message: message))
+            }
+        ))
+
+        manager.register(MessageRendererItem(
+            id: "core-goal-task-continuation",
+            order: base + 313,
+            canRender: { message in
+                MessageTimelineEvent.isGoalTaskContinuation(message)
+            },
+            render: { message, _ in
+                AnyView(GoalTaskContinuationMessageView(message: message))
             }
         ))
 

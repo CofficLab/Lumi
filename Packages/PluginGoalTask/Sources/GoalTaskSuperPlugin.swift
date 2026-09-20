@@ -4,6 +4,7 @@ import ProviderAgentLoop
 import ProviderChatSection
 import ProviderConversation
 import ProviderLifecycleHooks
+import ProviderMessage
 import ProviderStorage
 import ProviderToolManager
 import SwiftUI
@@ -118,8 +119,9 @@ public final class GoalTaskSuperPlugin: SuperPlugin, PluginDataMigrating, SuperL
         tools.forEach { toolManager?.add($0, pluginID: id) }
 
         guard let hooks = kernel.resolveProvider((any LifecycleHooksProviding).self),
-              let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self) else { return }
-        let hook = GoalTaskTurnFinishedHook(agentLoop: agentLoop)
+              let agentLoop = kernel.resolveProvider((any AgentLoopProviding).self),
+              let messages = kernel.resolveProvider((any MessageManaging).self) else { return }
+        let hook = GoalTaskTurnFinishedHook(agentLoop: agentLoop, messages: messages)
         turnFinishedHook = hook
         hooks.addTurnFinishedHook { [weak hook] context in
             await hook?.apply(to: context)

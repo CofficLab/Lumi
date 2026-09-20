@@ -1,6 +1,6 @@
 # Next Edit Prediction 设计方案
 
-本文档描述在 Lumi 编辑器中实现类似 Cursor “预测下一步编辑，按 Tab 接受”的功能方案。方案基于当前代码结构：`EditorService` 作为编辑器门面，`EditorInputRouter` 分发文本与选区变化，`EditorKernel` 提供 transaction/TextEdit 应用能力，`EditorPanelPlugin` 内的 overlay 视图提供编辑器浮层，`LumiApp` 已有 `LLMService` 与多供应商模型接入。
+本文档描述在 Lumi 编辑器中实现类似 Cursor “预测下一步编辑，按 Tab 接受”的功能方案。方案基于当前代码结构：Host 内部 `EditorService` target 作为编辑器门面，`EditorInputRouter` 分发文本与选区变化，`KitEditorKernel` 提供 transaction/TextEdit 应用能力，`PluginCodeEditor` 承载工作区 UI，`LumiApp` 已有 `LLMService` 与多供应商模型接入。
 
 ## 目标
 
@@ -14,27 +14,27 @@
 
 ### 输入与选区事件
 
-- `Packages/EditorService/Sources/EditorService/Editor/EditorInputRouter.swift`
+- `Packages/PluginCodeEditorHost/Sources/EditorService/Editor/EditorInputRouter.swift`
   - `handleTextDidChange` 已经在文本变化后构造 `EditorInteractionContext`，并调用 `editorExtensions.runInteractionTextDidChange`。
   - `handleSelectionDidChange` 已经在选区变化后调用 `editorExtensions.runInteractionSelectionDidChange`。
-- `Packages/EditorService/Sources/EditorService/Proto/SuperEditorExtensionContributors.swift`
+- `Packages/PluginCodeEditorHost/Sources/EditorService/Proto/SuperEditorExtensionContributors.swift`
   - 已有 `SuperEditorInteractionContributor` 扩展点，适合注册预测调度器。
 
 ### Tab 与编辑应用
 
-- `Packages/EditorService/Sources/EditorService/Store/EditorState.swift`
+- `Packages/PluginCodeEditorHost/Sources/EditorService/Store/EditorState.swift`
   - `handleInsertTabInput` 是 Tab 的核心入口。
   - `applyCompletionEdit`、`applySnippetCompletionEdit`、`applyTextEditsToCurrentDocument` 已经走 transaction 路径。
-- `Packages/EditorKernel/Sources/EditorKernel/EditorTransaction.swift`
+- `Packages/KitEditorKernel/Sources/Foundation/EditorTransaction.swift`
   - `EditorTransaction` 支持多 replacement 和更新选区。
-- `Packages/EditorKernel/Sources/EditorKernel/TextEditTransactionBuilder.swift`
+- `Packages/KitEditorKernel/Sources/LSP/TextEditTransactionBuilder.swift`
   - 可把 LSP `TextEdit` 转为 transaction。
 
 ### 展示层
 
-- `Plugins/EditorPanelPlugin/Sources/Overlay/EditorInlinePresentationsOverlayView.swift`
+- `Packages/PluginCodeEditor` 中的编辑器浮层 UI（本方案接入点）
   - 已有 inline presentation 浮层，但当前 `SourceEditorView` 中相关 overlay 被注释。
-- `Packages/EditorService/Sources/EditorService/Kernel/EditorInlinePresentation.swift`
+- `Packages/PluginCodeEditorHost/Sources/EditorService/Kernel/EditorInlinePresentation.swift`
   - 已有 `.diff` 样式，可复用为轻量 “Tab 接受” 提示。
 
 ### 模型能力
@@ -48,7 +48,7 @@
 
 ## 推荐架构
 
-新增一个独立插件：`Plugins/PluginNextEditPredictionEditor`。它只负责智能预测，不混入普通 LSP completion。
+新增一个独立插件包：`Packages/PluginNextEditPredictionEditor`。它只负责智能预测，不混入普通 LSP completion。
 
 ```mermaid
 flowchart TD

@@ -21,6 +21,7 @@ let package = Package(
         .package(path: "../ProviderChatSection"),
         .package(path: "../ProviderConversation"),
         .package(path: "../ProviderLifecycleHooks"),
+        .package(path: "../ProviderMessage"),
         .package(path: "../ProviderStorage"),
         .package(path: "../ProviderToolManager")
     ],
@@ -37,6 +38,7 @@ let package = Package(
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),
                 .product(name: "ProviderConversation", package: "ProviderConversation"),
                 .product(name: "ProviderLifecycleHooks", package: "ProviderLifecycleHooks"),
+                .product(name: "ProviderMessage", package: "ProviderMessage"),
                 .product(name: "ProviderStorage", package: "ProviderStorage"),
                 .product(name: "ProviderToolManager", package: "ProviderToolManager"),
             ],
