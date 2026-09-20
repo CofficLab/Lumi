@@ -42,8 +42,11 @@ public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, Supe
     public let order = 30
     public let metadata = PluginMetadata(
         id: pluginID,
-        name: "Project File Tree",
-        description: "Browse project files with Git status, drag-and-drop and file operations in the Explorer rail.",
+        name: LumiPluginLocalization.string("Project File Tree", bundle: .module),
+        description: LumiPluginLocalization.string(
+            "Browse project files with Git status, drag-and-drop and file operations in the Explorer rail.",
+            bundle: .module
+        ),
         version: "1.0.0",
         category: .project,
         stage: .preview,
@@ -159,7 +162,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, Supe
                 RailTabItem(
                     id: Self.railTabID,
                     category: .fileTree,
-                    title: "Explorer",
+                    title: LumiPluginLocalization.string("Explorer", bundle: .module),
                     systemImage: "square.grid.2x2.fill",
                     order: order
                 ) {
