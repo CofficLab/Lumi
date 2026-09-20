@@ -28,6 +28,7 @@ import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderSkill
+import ProviderAgentRules
 import ProviderStorage
 import ProviderToast
 import ProviderToolbar
@@ -138,6 +139,9 @@ public protocol ProviderFactory {
     /// 默认实现 `DefaultSkillProvider` 只维护注册表；插件在 `onBoot` 解析
     /// 它并注入自己的技能，`PluginSkill` 负责把内置 / 项目层合入 system prompt。
     func makeSkillProvider() -> any SkillProviding
+
+    /// 产出 Agent 规则贡献注册表。
+    func makeAgentRuleProvider() -> any AgentRuleProviding
 
     /// 产出 `DeveloperModeProviding` 实现（运行时开发者模式开关）。
     func makeDeveloperModeProvider() -> any DeveloperModeProviding
