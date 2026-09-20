@@ -263,13 +263,7 @@ fileprivate final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMes
             return
         }
         guard message.name == _WKWebViewWrapper.legacyMessageHandlerName else { return }
-        guard let body = message.body as? [String: Any],
-              let action = body["action"] as? String,
-              action == "send" else { return }
-        let blockID = (body["blockID"] as? String) ?? "block"
-        let label = (body["label"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? blockID
-        let outerHTML = (body["outerHTML"] as? String) ?? ""
-        let selection = PromoBlockSelection(blockID: blockID, label: label, outerHTML: outerHTML)
+        guard let selection = PromoBlockSelection.decodeLegacyMessageBody(message.body) else { return }
         onBlockSelected?(selection)
     }
 
