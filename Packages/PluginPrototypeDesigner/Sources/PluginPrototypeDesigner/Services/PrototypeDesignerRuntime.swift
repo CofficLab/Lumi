@@ -3,6 +3,7 @@ import KernelCore
 import ProviderConversationInput
 import ProviderProject
 import ProviderToast
+import os
 
 /// 原型设计器的运行时状态。
 ///
@@ -24,6 +25,9 @@ enum PrototypeDesignerRuntime {
     static func configure(kernel: KernelCoreContainer) {
         conversationInput = kernel.resolveProvider((any ConversationInputProviding).self)
         toast = kernel.resolveProvider((any ToastProviding).self)
+        Logger(subsystem: "com.coffic.lumi.plugin.prototype-designer", category: "ConversationSend")
+            .info("configure conversationInput=\(conversationInput != nil) toast=\(toast != nil)")
+        print("[PrototypeDesigner] configure conversationInput=\(conversationInput != nil) toast=\(toast != nil)")
         updateProjectStorageDirectory(
             projectPath: kernel.resolveProvider((any ProjectProviding).self)?.currentProject?.path
         )
