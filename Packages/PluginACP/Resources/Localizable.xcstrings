@@ -74,6 +74,9 @@
         }
       }
     },
+    "About Intelligence in Xcode and privacy…" : {
+
+    },
     "ACP" : {
       "localizations" : {
         "en" : {
@@ -214,6 +217,9 @@
     "Add Agent" : {
 
     },
+    "Add an ACP Agent" : {
+
+    },
     "Add an agent" : {
       "localizations" : {
         "en" : {
@@ -247,6 +253,9 @@
           }
         }
       }
+    },
+    "Add an agent that supports the Agent Client Protocol (ACP)." : {
+
     },
     "Add an Agent…" : {
 
@@ -372,6 +381,9 @@
         }
       }
     },
+    "Allow external agents to use Xcode tools" : {
+
+    },
     "Allow this operation?" : {
       "localizations" : {
         "en" : {
@@ -479,6 +491,12 @@
         }
       }
     },
+    "Chat" : {
+
+    },
+    "ChatGPT in Xcode" : {
+
+    },
     "Click Add Agent, then choose Add Custom Agent." : {
       "localizations" : {
         "en" : {
@@ -585,7 +603,10 @@
     "Codex" : {
 
     },
-    "Configure coding agents and chat providers." : {
+    "Coding Assistant" : {
+
+    },
+    "Coding Intelligence" : {
 
     },
     "Configure the agent server" : {
@@ -655,6 +676,9 @@
           }
         }
       }
+    },
+    "ContentView.swift" : {
+
     },
     "Copied" : {
       "localizations" : {
@@ -792,6 +816,9 @@
           }
         }
       }
+    },
+    "Environment Variables" : {
+
     },
     "Executable" : {
 
@@ -940,6 +967,9 @@
     "Intelligence" : {
 
     },
+    "Learn more about ACP agents…" : {
+
+    },
     "Lumi" : {
 
     },
@@ -978,7 +1008,16 @@
         }
       }
     },
+    "Model Context Protocol" : {
+
+    },
+    "My Mac" : {
+
+    },
     "MyProject" : {
+
+    },
+    "New Conversation" : {
 
     },
     "Next" : {
@@ -1357,6 +1396,9 @@
           }
         }
       }
+    },
+    "PROJECT NAVIGATOR" : {
+
     },
     "Recent Zed release" : {
       "localizations" : {
@@ -1782,6 +1824,9 @@
         }
       }
     },
+    "Use built-in and third-party intelligence to work with your project files and code." : {
+
+    },
     "Use in your editor" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2026,6 +2071,7 @@
       }
     },
     "Xcode 27+" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2093,6 +2139,9 @@
           }
         }
       }
+    },
+    "Xcode Tools" : {
+
     },
     "Yes" : {
       "localizations" : {

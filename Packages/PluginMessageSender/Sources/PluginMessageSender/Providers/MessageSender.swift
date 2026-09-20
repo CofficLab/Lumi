@@ -385,7 +385,14 @@ public final class MessageSender: MessageSendingProviding, SuperLog {
             conversationID = id
             outcome = .completed
             notify(.turnCompleted(conversationID: id, outcome: outcome))
-        case .suspended(let id, _, let suspension):
+        case .suspended(let id, let turn, let suspension):
+            // AgentLoop 的 finish 通知是异步投递的。若该回合已恢复，迟到的旧挂起
+            // 事件不能结束发送任务或启动队列中的下一条消息。
+            guard agentLoop.state(for: id) == .suspended,
+                  agentLoop.currentTurnID(for: id) == turn,
+                  agentLoop.suspension(for: id)?.suspensionID == suspension.suspensionID else {
+                return
+            }
             conversationID = id
             outcome = .suspended(suspension.suspensionID)
             notify(.turnCompleted(conversationID: id, outcome: outcome))
