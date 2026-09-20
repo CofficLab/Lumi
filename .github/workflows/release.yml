@@ -279,6 +279,28 @@ jobs:
             .github/scripts/archive-lumi.sh "$arch" "${{ steps.signing.outputs.team_id }}"
           done
 
+      - name: Collect Build Metrics
+        if: always()
+        run: |
+          set -euo pipefail
+          chmod +x .github/scripts/collect-build-metrics.sh
+          .github/scripts/collect-build-metrics.sh \
+            --archive-dir ./temp \
+            --output ./temp/build-metrics.json
+          cat ./temp/build-metrics.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Build Diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-diagnostics
+          path: |
+            temp/archive-*.log
+            temp/results-*.xcresult
+            temp/build-metrics.json
+          retention-days: 14
+          if-no-files-found: ignore
+
       - name: Codesign App
         run: |
           set -euo pipefail

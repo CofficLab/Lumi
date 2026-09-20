@@ -33,6 +33,14 @@
 #   ARCHIVE_DIR        where .xcarchive and logs are written  (default: ./temp)
 #   DEVELOPMENT_TEAM   fallback team id when arg 2 is omitted
 #   XCODEBUILD_BIN     xcodebuild executable to run (default: xcodebuild)
+#
+# Diagnostics:
+#   Each archive also produces:
+#     * ${archive_dir}/results-${arch}.xcresult  — Xcode result bundle
+#       (timing summary, per-target build durations, diagnostics)
+#     * -showBuildTimingSummary output in the log
+#   The result bundle path is cleaned before the run so a stale bundle from
+#   an earlier archive never mixes with the current one.
 
 set -euo pipefail
 
@@ -70,16 +78,19 @@ xcodebuild_bin="${XCODEBUILD_BIN:-xcodebuild}"
 
 archive_path="${archive_dir}/${scheme}-${arch}.xcarchive"
 archive_log="${archive_dir}/archive-${arch}.log"
+result_bundle_path="${archive_dir}/results-${arch}.xcresult"
 
 mkdir -p "${archive_dir}"
 
 # Always start from an empty target path: a stale bundle from an earlier run
 # must never be mistaken for the result of this one.
 rm -rf "${archive_path}"
+rm -rf "${result_bundle_path}"
 
 echo "🏗️  Archiving ${scheme} for ${arch}..."
 echo "    archive: ${archive_path}"
 echo "    log:     ${archive_log}"
+echo "    results: ${result_bundle_path}"
 
 started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 start_seconds="${SECONDS}"
@@ -103,7 +114,9 @@ set +e
   CODE_SIGNING_REQUIRED=NO \
   AD_HOC_CODE_SIGNING_ALLOWED=YES \
   ARCHS="${arch}" \
-  ONLY_ACTIVE_ARCH=NO > "${archive_log}" 2>&1
+  ONLY_ACTIVE_ARCH=NO \
+  -showBuildTimingSummary \
+  -resultBundlePath "${result_bundle_path}" > "${archive_log}" 2>&1
 archive_exit=$?
 set -e
 

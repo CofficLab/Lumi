@@ -123,6 +123,9 @@ expect_contains "${ARGS}" "ARCHS=arm64" "targets only arm64"
 expect_contains "${ARGS}" "ONLY_ACTIVE_ARCH=NO" "keeps ONLY_ACTIVE_ARCH=NO"
 expect_contains "${ARGS}" "-skipPackagePluginValidation" "keeps plugin validation skip"
 expect_contains "${ARGS}" "-skipPackageSignatureValidation" "keeps signature validation skip"
+expect_contains "${ARGS}" "-showBuildTimingSummary" "includes build timing summary"
+expect_contains "${ARGS}" "-resultBundlePath" "includes result bundle path flag"
+expect_contains "${ARGS}" "${CASE_DIR}/temp/results-arm64.xcresult" "passes the per-arch result bundle path"
 expect_exists "${CASE_DIR}/temp/archive-arm64.log" "writes a per-arch log file"
 
 # ---------------------------------------------------------------------------
