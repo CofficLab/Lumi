@@ -1,6 +1,7 @@
 import AppKit
 import KitHTMLPreview
 import KitPrototype
+import ProviderToast
 import SwiftUI
 
 /// 原型设计器主面板：展示当前选中屏幕的预览 / HTML 源码，并支持导出。
@@ -161,15 +162,30 @@ public struct PrototypeDesignerView: View {
         _ reference: HTMLPreviewElementReference,
         resolved: PrototypeResolvedScreen
     ) {
-        do {
-            _ = try PrototypeElementConversationAction.apply(
-                resolved: resolved,
-                selectedProjectID: workspace.selectedProjectID,
-                selectedScreenID: workspace.selectedScreenID,
-                input: PrototypeDesignerRuntime.conversationInput
+        let outcome = PrototypeElementConversationAction.apply(
+            resolved: resolved,
+            selectedProjectID: workspace.selectedProjectID,
+            selectedScreenID: workspace.selectedScreenID,
+            input: PrototypeDesignerRuntime.conversationInput
+        )
+        guard let toast = PrototypeDesignerRuntime.toast else { return }
+        switch outcome {
+        case .appended:
+            toast.show(
+                PrototypeLocalization.string("Sent to Conversation"),
+                detail: resolved.screen.title,
+                style: .success
             )
-        } catch {
-            workspace.setError(error)
+        case .unavailable:
+            toast.show(
+                PrototypeLocalization.string("Conversation input is unavailable."),
+                style: .error
+            )
+        case .staleSelection:
+            toast.show(
+                PrototypeLocalization.string("Selection changed; please try again."),
+                style: .warning
+            )
         }
     }
 }

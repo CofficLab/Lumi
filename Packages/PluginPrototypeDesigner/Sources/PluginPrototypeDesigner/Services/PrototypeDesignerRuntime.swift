@@ -2,6 +2,7 @@ import Foundation
 import KernelCore
 import ProviderConversationInput
 import ProviderProject
+import ProviderToast
 
 /// 原型设计器的运行时状态。
 ///
@@ -17,9 +18,12 @@ enum PrototypeDesignerRuntime {
 
     /// 聊天输入框服务（宿主注入，可空）。用于把选中的区块预填进输入框待发送。
     static var conversationInput: (any ConversationInputProviding)?
+    /// 瞬时提示服务（宿主注入，可空）。用于发送到对话的成功 / 失败反馈。
+    static var toast: (any ToastProviding)?
 
     static func configure(kernel: KernelCoreContainer) {
         conversationInput = kernel.resolveProvider((any ConversationInputProviding).self)
+        toast = kernel.resolveProvider((any ToastProviding).self)
         updateProjectStorageDirectory(
             projectPath: kernel.resolveProvider((any ProjectProviding).self)?.currentProject?.path
         )
@@ -62,6 +66,7 @@ enum PrototypeDesignerRuntime {
         projectStorageDirectory = nil
         currentProjectPath = nil
         conversationInput = nil
+        toast = nil
         WorkspaceStore.shared.setProjectStorage(projectPath: nil, projectStorageDirectory: nil)
     }
 }
