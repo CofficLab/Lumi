@@ -1,0 +1,14 @@
+#include "../LumiApp/Config/App-Shared.xcconfig"
+
+PRODUCT_BUNDLE_IDENTIFIER = com.coffic.lumi.acp.debug
+INFOPLIST_KEY_CFBundleDisplayName = Lumi ACP Debug
+INFOPLIST_FILE = LumiACPApp/LumiACP-Info.plist
+ENABLE_APP_SANDBOX = NO
+ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES
+CODE_SIGN_ENTITLEMENTS = LumiACPApp/App.entitlements
+
+LUMI_ENVIRONMENT = debug
+LUMI_APP_GROUP_IDENTIFIER = group.com.coffic.lumi.debug
+LUMI_KEYCHAIN_SERVICE_SUFFIX = .debug
+MARKETING_VERSION = 6.0.0
+CURRENT_PROJECT_VERSION = 1

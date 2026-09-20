@@ -69,7 +69,7 @@ graph TB
 - [`FactoryLumi`](Packages/FactoryLumi)：装配和依赖接线。
 - [`PluginAgentLoop`](Packages/PluginAgentLoop)：Agent 循环集成。
 - [`PluginToolManager`](Packages/PluginToolManager)：工具注册、授权、执行和记录。
-- [`KitLLM`](Packages/KitLLM) 与 `ProviderLLMVendors`：LLM 模型、适配器和供应商契约。
+- [`KitLLM`](Packages/KitLLM)：LLM 模型、适配器和供应商契约。
 - [`PluginProjectRAG`](Packages/PluginProjectRAG)：项目索引和本地向量检索。
 - [`PluginWebServer`](Packages/PluginWebServer)：插件路由注册和本地 Web 服务集成。
 

@@ -19,6 +19,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		AC0000000000000000000012 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AC0000000000000000000009;
+			remoteInfo = LumiACP;
+		};
 		LF000000000000000012 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F54F8C762F1A3B6500AABB2A /* Project object */;
@@ -44,7 +51,9 @@
 
 /* Begin PBXFileReference section */
 		08B37721AB3348660D4B2D5E /* DatabaseManager.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = DatabaseManager.xcconfig; path = DatabaseManagerApp/DatabaseManager.xcconfig; sourceTree = "<group>"; };
-		AC0000000000000000000002 /* ACPAgent.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = ACPAgent.xcconfig; path = ACPAgentApp/ACPAgent.xcconfig; sourceTree = "<group>"; };
+		AC0000000000000000000002 /* LumiACP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LumiACP.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC000000000000000000000D /* LumiACP-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "LumiACP-Debug.xcconfig"; path = "LumiACPApp/LumiACP-Debug.xcconfig"; sourceTree = "<group>"; };
+		AC000000000000000000000E /* LumiACP-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "LumiACP-Release.xcconfig"; path = "LumiACPApp/LumiACP-Release.xcconfig"; sourceTree = "<group>"; };
 		10DD2383E811EBAC5B6264D5 /* AppIconDesigner.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = AppIconDesigner.xcconfig; path = AppIconDesignerApp/AppIconDesigner.xcconfig; sourceTree = "<group>"; };
 		4991976404FE2623D0C4E068 /* Lumi-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Lumi-Debug.xcconfig"; path = "LumiApp/Config/Lumi-Debug.xcconfig"; sourceTree = "<group>"; };
 		57BB92AADE19B8FAE116DCAD /* Lumi-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Lumi-Release.xcconfig"; path = "LumiApp/Config/Lumi-Release.xcconfig"; sourceTree = "<group>"; };
@@ -55,13 +64,22 @@
 		BEB5089FCE8F5EB98AEF0906 /* LumiFinder-Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "LumiFinder-Debug.xcconfig"; path = "Packages/PluginRClick/FinderExtension/LumiFinder-Debug.xcconfig"; sourceTree = "<group>"; };
 		CD0000000000000000000002 /* CADDesigner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CADDesigner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DB0000000000000000000002 /* DatabaseManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DatabaseManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AC0000000000000000000001 /* ACPAgent.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ACPAgent.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED0129D9D619E8053070A012 /* LumiFinder-Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "LumiFinder-Release.xcconfig"; path = "Packages/PluginRClick/FinderExtension/LumiFinder-Release.xcconfig"; sourceTree = "<group>"; };
 		F53C49142F1A42EC00929321 /* Lumi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		LF000000000000000001 /* LumiFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LumiFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AC0000000000000000000003 /* Exceptions for "LumiACPApp" folder in "LumiACP" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"LumiACP-Info.plist",
+				"LumiACP-Debug.xcconfig",
+				"LumiACP-Release.xcconfig",
+				App.entitlements,
+			);
+			target = AC0000000000000000000009 /* LumiACP */;
+		};
 		AI0000000000000000000003 /* Exceptions for "AppIconDesignerApp" folder in "AppIconDesigner" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -100,6 +118,14 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		AC0000000000000000000004 /* LumiACPApp */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AC0000000000000000000003 /* Exceptions for "LumiACPApp" folder in "LumiACP" target */,
+			);
+			path = LumiACPApp;
+			sourceTree = "<group>";
+		};
 		AI0000000000000000000004 /* AppIconDesignerApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -132,14 +158,6 @@
 			path = LumiApp;
 			sourceTree = "<group>";
 		};
-		AC0000000000000000000003 /* ACPAgentApp */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				AC000000000000000000000C /* Exceptions for "ACPAgentApp" folder in "ACPAgent" target */,
-			);
-			path = ACPAgentApp;
-			sourceTree = "<group>";
-		};
 		LF000000000000000009 /* Packages/PluginRClick/FinderExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -151,6 +169,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		AC0000000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AI0000000000000000000005 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -194,13 +219,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		AC0000000000000000000004 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -215,16 +233,16 @@
 			isa = PBXGroup;
 			children = (
 				F5F4DFD42F3ACC5100C76EA0 /* LumiApp */,
+				AC0000000000000000000004 /* LumiACPApp */,
 				AI0000000000000000000004 /* AppIconDesignerApp */,
 				CD0000000000000000000004 /* CADDesignerApp */,
 				DB0000000000000000000004 /* DatabaseManagerApp */,
-				AC0000000000000000000003 /* ACPAgentApp */,
 				LF000000000000000009 /* Packages/PluginRClick/FinderExtension */,
 				F53C49142F1A42EC00929321 /* Lumi.app */,
+				AC0000000000000000000002 /* LumiACP.app */,
 				AI0000000000000000000002 /* AppIconDesigner.app */,
 				CD0000000000000000000002 /* CADDesigner.app */,
 				DB0000000000000000000002 /* DatabaseManager.app */,
-				AC0000000000000000000001 /* ACPAgent.app */,
 				LF000000000000000001 /* LumiFinder.appex */,
 				0BBD822C30067A13005CCD05 /* Frameworks */,
 				7BACB91084647EBF2FC35695 /* Project-Debug.xcconfig */,
@@ -232,11 +250,12 @@
 				10DD2383E811EBAC5B6264D5 /* AppIconDesigner.xcconfig */,
 				70E0C23EA196F323323F057B /* CADDesigner.xcconfig */,
 				08B37721AB3348660D4B2D5E /* DatabaseManager.xcconfig */,
-				AC0000000000000000000002 /* ACPAgent.xcconfig */,
 				4991976404FE2623D0C4E068 /* Lumi-Debug.xcconfig */,
 				57BB92AADE19B8FAE116DCAD /* Lumi-Release.xcconfig */,
 				BEB5089FCE8F5EB98AEF0906 /* LumiFinder-Debug.xcconfig */,
 				ED0129D9D619E8053070A012 /* LumiFinder-Release.xcconfig */,
+				AC000000000000000000000D /* LumiACP-Debug.xcconfig */,
+				AC000000000000000000000E /* LumiACP-Release.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
@@ -326,6 +345,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				AC0000000000000000000013 /* PBXTargetDependency */,
 				LF000000000000000011 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -341,27 +361,27 @@
 			productReference = F53C49142F1A42EC00929321 /* Lumi.app */;
 			productType = "com.apple.product-type.application";
 		};
-		AC0000000000000000000007 /* ACPAgent */ = {
+		AC0000000000000000000009 /* LumiACP */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AC000000000000000000000A /* Build configuration list for PBXNativeTarget "ACPAgent" */;
+			buildConfigurationList = AC000000000000000000000F /* Build configuration list for PBXNativeTarget "LumiACP" */;
 			buildPhases = (
-				AC0000000000000000000006 /* Sources */,
-				AC0000000000000000000004 /* Frameworks */,
-				AC0000000000000000000005 /* Resources */,
+				AC0000000000000000000007 /* Sources */,
+				AC0000000000000000000005 /* Frameworks */,
+				AC0000000000000000000006 /* Resources */,
+				AC0000000000000000000014 /* Build ACP Executable */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				AC0000000000000000000003 /* ACPAgentApp */,
+				AC0000000000000000000004 /* LumiACPApp */,
 			);
-			name = ACPAgent;
+			name = LumiACP;
 			packageProductDependencies = (
-				AC000000000000000000000B /* FactoryACP */,
 			);
-			productName = ACPAgent;
-			productReference = AC0000000000000000000001 /* ACPAgent.app */;
+			productName = LumiACP;
+			productReference = AC0000000000000000000002 /* LumiACP.app */;
 			productType = "com.apple.product-type.application";
 		};
 		LF000000000000000002 /* LumiFinder */ = {
@@ -398,6 +418,9 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					AC0000000000000000000009 = {
+						CreatedOnToolsVersion = 16.4;
+					};
 					AI0000000000000000000009 = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -437,7 +460,6 @@
 				CD2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryCADDesigner" */,
 				DB2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryDatabaseManager" */,
 				LC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/PluginLLMProviderCodex" */,
-				AC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryACP" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54F8C752F1A3B6500AABB2A;
@@ -445,16 +467,23 @@
 			projectRoot = "";
 			targets = (
 				F54F8C7D2F1A3B6500AABB2A /* Lumi */,
+				AC0000000000000000000009 /* LumiACP */,
 				AI0000000000000000000009 /* AppIconDesigner */,
 				CD0000000000000000000009 /* CADDesigner */,
 				DB0000000000000000000009 /* DatabaseManager */,
-				AC0000000000000000000007 /* ACPAgent */,
 				LF000000000000000002 /* LumiFinder */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		AC0000000000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AI0000000000000000000006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -490,16 +519,29 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		AC0000000000000000000005 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		AC0000000000000000000014 /* Build ACP Executable */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Packages/ACPBootstrap/Package.swift",
+			);
+			name = "Build ACP Executable";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "set -euo pipefail\n\nACP_PACKAGE=\"${SRCROOT}/Packages/ACPBootstrap\"\nBUILD_CONFIG=\"debug\"\nif [[ \"${CONFIGURATION}\" == \"Release\" ]]; then\n  BUILD_CONFIG=\"release\"\nfi\n\n/usr/bin/env swift build --package-path \"${ACP_PACKAGE}\" -c \"${BUILD_CONFIG}\" --product ACPBootstrap\nBIN_DIR=\"$(/usr/bin/env swift build --package-path \"${ACP_PACKAGE}\" -c \"${BUILD_CONFIG}\" --product ACPBootstrap --show-bin-path)\"\nSOURCE=\"${BIN_DIR}/ACPBootstrap\"\nDEST=\"${TARGET_BUILD_DIR}/${EXECUTABLE_FOLDER_PATH}/LumiACP\"\nRESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\n\nif [[ ! -x \"${SOURCE}\" ]]; then\n  echo \"error: ACPBootstrap did not produce ${SOURCE}\" >&2\n  exit 1\nfi\n\n/bin/mkdir -p \"$(/usr/bin/dirname \"${DEST}\")\" \"${RESOURCES}\"\n/bin/cp -f \"${SOURCE}\" \"${DEST}\"\n/bin/chmod 755 \"${DEST}\"\n\n# SwiftPM resource accessors search Bundle.main.resourceURL for these bundles.\nfor BUNDLE in \"${BIN_DIR}\"/*.bundle; do\n  [[ -d \"${BUNDLE}\" ]] || continue\n  /usr/bin/ditto \"${BUNDLE}\" \"${RESOURCES}/$(/usr/bin/basename \"${BUNDLE}\")\"\ndone\n";
+		};
 		F5A4E9203026524000A90001 /* Embed Signed RAG Vector Extension */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -530,6 +572,7 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/LumiACP.app/Contents/MacOS/LumiACP",
 			);
 			name = "Embed ACP Helper";
 			outputFileListPaths = (
@@ -539,11 +582,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "set -euo pipefail\n\nBUILD_CONFIG=\"release\"\nif [[ \"${CONFIGURATION}\" == \"Debug\" ]]; then\n  BUILD_CONFIG=\"debug\"\nfi\n\nACP_PACKAGE=\"${SRCROOT}/Packages/ACPBootstrap\"\n/usr/bin/env swift build --package-path \"${ACP_PACKAGE}\" -c \"${BUILD_CONFIG}\" --product ACPBootstrap\n\nSOURCE=\"${ACP_PACKAGE}/.build/${BUILD_CONFIG}/ACPBootstrap\"\nDEST=\"${TARGET_BUILD_DIR}/${EXECUTABLE_FOLDER_PATH}/lumi-acp\"\n\n/bin/mkdir -p \"$(/usr/bin/dirname \"${DEST}\")\"\n/bin/cp -f \"${SOURCE}\" \"${DEST}\"\n/bin/chmod 755 \"${DEST}\"\n\nif [[ \"${CODE_SIGNING_ALLOWED:-NO}\" == \"YES\" ]]; then\n  SIGN_IDENTITY=\"${EXPANDED_CODE_SIGN_IDENTITY:-}\"\n  if [[ -z \"${SIGN_IDENTITY}\" ]]; then\n    SIGN_IDENTITY=\"${CODE_SIGN_IDENTITY:-}\"\n  fi\n  if [[ -n \"${SIGN_IDENTITY}\" ]]; then\n    /usr/bin/codesign --force --sign \"${SIGN_IDENTITY}\" --timestamp=none \"${DEST}\"\n  fi\nfi\n";
+			shellScript = "set -euo pipefail\n\nSOURCE=\"${BUILT_PRODUCTS_DIR}/LumiACP.app/Contents/MacOS/LumiACP\"\nACP_RESOURCES=\"${BUILT_PRODUCTS_DIR}/LumiACP.app/Contents/Resources\"\nDEST=\"${TARGET_BUILD_DIR}/${EXECUTABLE_FOLDER_PATH}/lumi-acp\"\nDEST_RESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\n\nif [[ ! -x \"${SOURCE}\" ]]; then\n  echo \"error: LumiACP target did not produce ${SOURCE}\" >&2\n  exit 1\nfi\n\n/bin/mkdir -p \"$(/usr/bin/dirname \"${DEST}\")\" \"${DEST_RESOURCES}\"\n/bin/cp -f \"${SOURCE}\" \"${DEST}\"\n/bin/chmod 755 \"${DEST}\"\n\n# The embedded executable uses Bundle.main, so carry SwiftPM resource bundles\n# into Lumi.app alongside the helper binary.\nfor BUNDLE in \"${ACP_RESOURCES}\"/*.bundle; do\n  [[ -d \"${BUNDLE}\" ]] || continue\n  /usr/bin/ditto \"${BUNDLE}\" \"${DEST_RESOURCES}/$(/usr/bin/basename \"${BUNDLE}\")\"\ndone\n\nif [[ \"${CODE_SIGNING_ALLOWED:-NO}\" == \"YES\" ]]; then\n  SIGN_IDENTITY=\"${EXPANDED_CODE_SIGN_IDENTITY:-}\"\n  if [[ -z \"${SIGN_IDENTITY}\" ]]; then\n    SIGN_IDENTITY=\"${CODE_SIGN_IDENTITY:-}\"\n  fi\n  if [[ -n \"${SIGN_IDENTITY}\" ]]; then\n    /usr/bin/codesign --force --sign \"${SIGN_IDENTITY}\" --timestamp=none \"${DEST}\"\n  fi\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		AC0000000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AI0000000000000000000007 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -579,16 +629,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		AC0000000000000000000006 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		AC0000000000000000000013 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AC0000000000000000000009 /* LumiACP */;
+			targetProxy = AC0000000000000000000012 /* PBXContainerItemProxy */;
+		};
 		LF000000000000000011 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = LF000000000000000002 /* LumiFinder */;
@@ -597,6 +645,20 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		AC000000000000000000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AC000000000000000000000D /* LumiACP-Debug.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		AC000000000000000000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AC000000000000000000000E /* LumiACP-Release.xcconfig */;
+			buildSettings = {
+			};
+			name = Release;
+		};
 		AI000000000000000000000D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 10DD2383E811EBAC5B6264D5 /* AppIconDesigner.xcconfig */;
@@ -631,20 +693,6 @@
 			buildSettings = {
 			};
 			name = Debug;
-		};
-		AC0000000000000000000008 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = AC0000000000000000000002 /* ACPAgent.xcconfig */;
-			buildSettings = {
-			};
-			name = Debug;
-		};
-		AC0000000000000000000009 /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = AC0000000000000000000002 /* ACPAgent.xcconfig */;
-			buildSettings = {
-			};
-			name = Release;
 		};
 		DB000000000000000000000E /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -698,6 +746,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		AC000000000000000000000F /* Build configuration list for PBXNativeTarget "LumiACP" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC000000000000000000000B /* Debug */,
+				AC000000000000000000000C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		AI000000000000000000000F /* Build configuration list for PBXNativeTarget "AppIconDesigner" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -712,15 +769,6 @@
 			buildConfigurations = (
 				CD000000000000000000000D /* Debug */,
 				CD000000000000000000000E /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		AC000000000000000000000A /* Build configuration list for PBXNativeTarget "ACPAgent" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				AC0000000000000000000008 /* Debug */,
-				AC0000000000000000000009 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -800,15 +848,9 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/KitLocalization;
 		};
-		AC2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryACP" */ = {
-			isa = XCLocalSwiftPackageReference;
-			repositoryURL = "Packages/FactoryACP";
-			relativePath = Packages/FactoryACP;
-		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		AC000000000000000000000B /* FactoryACP */ = {isa = XCSwiftPackageProductDependency; productName = FactoryACP; };
 		AI2AFD000000000000000001 /* FactoryAppIconDesigner */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AI2APL0000000000000000001 /* XCLocalSwiftPackageReference "Packages/FactoryAppIconDesigner" */;

@@ -8,7 +8,7 @@
 
 ## 1. 背景与目标
 
-Lumi 目前是"编辑器 + agent"一体化的 macOS 应用：agent 内核（`PluginAgentLoop`）、工具系统（`PluginToolManager`）、LLM 路由（`KitLLM` + `ProviderLLMVendors`）均已完备，但只能在本应用内使用。用户希望在其他编辑器（VS Code / Zed 等）中直接调用 Lumi 的 agent。
+Lumi 目前是"编辑器 + agent"一体化的 macOS 应用：agent 内核（`PluginAgentLoop`）、工具系统（`PluginToolManager`）、LLM 路由（`KitLLM`）均已完备，但只能在本应用内使用。用户希望在其他编辑器（VS Code / Zed 等）中直接调用 Lumi 的 agent。
 
 ACP（Agent Client Protocol）正是解决"编辑器 ↔ 编码 agent"互联的标准协议：编辑器是 **Client**，agent 是 **Agent**，双方通过 JSON-RPC 2.0 通信。Lumi 需要扮演 **Agent 端**。
 
@@ -72,7 +72,7 @@ ACP（Agent Client Protocol）正是解决"编辑器 ↔ 编码 agent"互联的�
 | `ProviderAgentLoop`（`AgentLoopSuspension.swift` / `AgentTurnResumeRequest.swift`） | `suspensionID` / `toolCallID` / `kind: "userInput"` / `payload`；`suspensionID` + `answer` | 工具授权挂起/恢复 → `session/request_permission` |
 | `ProviderConversation`（`ConversationManaging.swift`） | `createConversation(title:projectPath:providerID:modelName:)` / `selectConversation(id:)` | `session/new` 映射，`sessionId ↔ conversationID` |
 | `ProviderToolManager`（`ToolManagerProviding.swift`） | `authorizationDecision(for:conversationID:)`（`blocked` / `autoApproved` / `requiresUserApproval`）、`execute` / `executeAuthorized` / `rejectAuthorized` / `resolveUserResponse` | 工具授权决策与执行 |
-| `KitLLM` + `ProviderLLMVendors` | 20+ 提供商路由、`LLMModelRoute` | headless 模型路由 |
+| `KitLLM` | 20+ 提供商路由、`LLMModelRoute` | headless 模型路由 |
 | `KitWebServer`（`LumiWebServer.swift`） | `WebServerProviding` / `register(_:forPlugin:)` / `WebRoute` | 三期远程 HTTP 传输复用 |
 | `KeychainKit` | Keychain 凭据存取 | headless 进程读取 API key |
 | `KernelCore`（`SuperPlugin.swift`） + `FactoryLumi`（`PluginFactory.swift`） | 插件注册/生命周期 | 新 `PluginACP` 挂载点 |
@@ -125,7 +125,7 @@ graph TB
         subgraph Reuse["【复用】Lumi 内核"]
             LOOP["PluginAgentLoop<br/>AgentTurnFSM · runTurn/resume/cancel"]
             TOOL["PluginToolManager<br/>authorizationDecision · execute"]
-            LLM["KitLLM + ProviderLLMVendors"]
+            LLM["KitLLM"]
             CONV["ConversationManaging"]
             MCP["MCPKit（三期补 MCP client）"]
         end
