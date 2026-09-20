@@ -54,6 +54,7 @@ let package = Package(
             resources: [
                 .process("../../Resources/Localizable.xcstrings"),
                 .copy("../../Resources/Skills"),
+                .copy("../../Resources/AgentRules"),
             ]
         ),
         .testTarget(
