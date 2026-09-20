@@ -21,7 +21,9 @@ final class FixtureDelegate: NSObject, NSApplicationDelegate {
         window.contentView?.addSubview(text)
         window.contentView?.addSubview(password)
         self.window = window
-        window.orderBack(nil)
+        // Keep the fixture observable without activating it or taking focus from
+        // the test runner/user desktop.
+        window.orderFrontRegardless()
     }
 }
 

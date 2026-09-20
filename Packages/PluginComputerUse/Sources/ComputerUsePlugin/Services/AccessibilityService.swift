@@ -101,8 +101,9 @@ final class AccessibilityService {
                     var count: CFIndex = 0
                     guard AXUIElementGetAttributeValueCount(ref, key as CFString, &count) == .success, count > 0 else { continue }
                     if AXUIElementCopyAttributeValues(ref, key as CFString, 0, min(count, 200), &children) == .success,
-                       let children = children as? [AXUIElement] {
-                        queue.append(contentsOf: children.prefix(max(0, 400 - queue.count)).map { ($0, id, depth + 1) })
+                       let children {
+                        let refs = axElements(from: children)
+                        queue.append(contentsOf: refs.prefix(max(0, 400 - queue.count)).map { ($0, id, depth + 1) })
                     }
                 }
             }
@@ -180,6 +181,13 @@ final class AccessibilityService {
     private func actionNames(_ ref: AXUIElement) -> [String] {
         var value: CFArray?
         return AXUIElementCopyActionNames(ref, &value) == .success ? (value as? [String] ?? []) : []
+    }
+
+    private func axElements(from array: CFArray) -> [AXUIElement] {
+        (0..<CFArrayGetCount(array)).compactMap { index in
+            guard let pointer = CFArrayGetValueAtIndex(array, index) else { return nil }
+            return unsafeBitCast(pointer, to: AXUIElement.self)
+        }
     }
     private func json<T: Encodable>(_ value: T) throws -> String {
         let encoder = JSONEncoder()
