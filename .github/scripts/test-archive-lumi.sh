@@ -87,6 +87,7 @@ case_start() { # slug
   export PROJECT="Lumi.xcodeproj"
   export DESTINATION="generic/platform=macOS"
   export DERIVED_DATA_PATH="${CASE_DIR}/DerivedData"
+  export SOURCE_PACKAGES_PATH="${CASE_DIR}/SourcePackages"
   export ARCHIVE_DIR="${CASE_DIR}/temp"
   unset FAKE_XCODEBUILD_EXIT FAKE_XCODEBUILD_SKIP_ARCHIVE
   echo "▶ $2"
@@ -126,6 +127,8 @@ expect_contains "${ARGS}" "-skipPackageSignatureValidation" "keeps signature val
 expect_contains "${ARGS}" "-showBuildTimingSummary" "includes build timing summary"
 expect_contains "${ARGS}" "-resultBundlePath" "includes result bundle path flag"
 expect_contains "${ARGS}" "${CASE_DIR}/temp/results-arm64.xcresult" "passes the per-arch result bundle path"
+expect_contains "${ARGS}" "-clonedSourcePackagesDirPath" "includes source packages path flag"
+expect_contains "${ARGS}" "${CASE_DIR}/SourcePackages" "passes the source packages path"
 expect_exists "${CASE_DIR}/temp/archive-arm64.log" "writes a per-arch log file"
 
 # ---------------------------------------------------------------------------

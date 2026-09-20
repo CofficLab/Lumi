@@ -30,6 +30,7 @@
 #   PROJECT            Xcode project path     (default: ${SCHEME}.xcodeproj)
 #   DESTINATION        xcodebuild -destination (default: generic/platform=macOS)
 #   DERIVED_DATA_PATH  xcodebuild -derivedDataPath       (default: ./DerivedData)
+#   SOURCE_PACKAGES_PATH  xcodebuild -clonedSourcePackagesDirPath (default: ./SourcePackages)
 #   ARCHIVE_DIR        where .xcarchive and logs are written  (default: ./temp)
 #   DEVELOPMENT_TEAM   fallback team id when arg 2 is omitted
 #   XCODEBUILD_BIN     xcodebuild executable to run (default: xcodebuild)
@@ -73,6 +74,7 @@ scheme="${SCHEME:-${DEFAULT_SCHEME}}"
 project="${PROJECT:-${scheme}.xcodeproj}"
 destination="${DESTINATION:-generic/platform=macOS}"
 derived_data_path="${DERIVED_DATA_PATH:-./DerivedData}"
+source_packages_path="${SOURCE_PACKAGES_PATH:-./SourcePackages}"
 archive_dir="${ARCHIVE_DIR:-./temp}"
 xcodebuild_bin="${XCODEBUILD_BIN:-xcodebuild}"
 
@@ -103,6 +105,7 @@ set +e
   -scheme "${scheme}" \
   -destination "${destination}" \
   -derivedDataPath "${derived_data_path}" \
+  -clonedSourcePackagesDirPath "${source_packages_path}" \
   -archivePath "${archive_path}" \
   -configuration Release \
   -skipPackagePluginValidation \
