@@ -9,6 +9,7 @@ import ProviderRailView
 import ProviderStorage
 import ProviderRootView
 import ProviderSkill
+import ProviderAgentRules
 import ProviderToolManager
 import ProviderPromptSuggestion
 import ProviderProject
@@ -95,6 +96,15 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
                 let contributor = AppStorePromoDesignerSkillContributor(providerID: id)
                 skillProvider.addProvider(contributor)
                 Self.logger.info("\(Self.t)Contributed \(contributor.allSkills.count) skill(s) via SkillProviding")
+            }
+        }
+
+        // 注册 Agent Rule 贡献者。
+        if let ruleProvider = kernel.resolveProvider((any AgentRuleProviding).self) {
+            if !ruleProvider.isProviderRegistered(providerID: id) {
+                let contributor = AppStorePromoDesignerRuleContributor(providerID: id)
+                ruleProvider.addProvider(contributor)
+                Self.logger.info("\(Self.t)Contributed \(contributor.allRules.count) rule(s) via AgentRuleProviding")
             }
         }
 
@@ -241,6 +251,7 @@ public final class AppStorePromoDesignerPlugin: SuperPlugin, SuperLog {
         if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
             skillProvider.removeProvider(providerID: id)
         }
+        kernel.resolveProvider((any AgentRuleProviding).self)?.removeProvider(providerID: id)
 
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
