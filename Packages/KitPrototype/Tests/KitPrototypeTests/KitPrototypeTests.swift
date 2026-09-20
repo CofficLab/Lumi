@@ -74,6 +74,40 @@ struct KitPrototypeTests {
         #expect(report.warnings.map(\.code).contains("motion_present"))
     }
 
+    @Test func linterWarnsAboutUnstableBlockAnnotations() {
+        let html = """
+        <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
+        <body style="background:#fff; overflow:hidden">
+        <section data-block="hero" data-block-label="Hero"></section>
+        <section data-block="hero" data-block-label="Repeated"></section>
+        <button data-block="   ">Go</button>
+        <article data-block="summary"></article>
+        </body></html>
+        """
+
+        let codes = PrototypeHTMLLinter().lint(html: html).warnings.map(\.code)
+
+        #expect(codes.contains("duplicate_block_id"))
+        #expect(codes.contains("empty_block_id"))
+        #expect(codes.contains("missing_block_label"))
+    }
+
+    @Test func linterAcceptsUniqueLabeledBlocks() {
+        let html = """
+        <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
+        <body style="background:#fff; overflow:hidden">
+        <section data-block="hero" data-block-label="Hero"></section>
+        <button data-block="primary-action" data-block-label="Primary Action">Go</button>
+        </body></html>
+        """
+
+        let codes = Set(PrototypeHTMLLinter().lint(html: html).warnings.map(\.code))
+
+        #expect(!codes.contains("duplicate_block_id"))
+        #expect(!codes.contains("empty_block_id"))
+        #expect(!codes.contains("missing_block_label"))
+    }
+
     @Test func linterReportsUnknownJumpTarget() {
         let html = """
         <!doctype html><html><head><meta name="viewport" content="width=device-width"></head>
