@@ -11,6 +11,7 @@ import ProviderRootView
 import ProviderToolManager
 import ProviderPromptSuggestion
 import ProviderSkill
+import ProviderAgentRules
 import ProviderProject
 import SwiftUI
 import KitSuperLog
@@ -87,6 +88,15 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
                 let contributor = ResumeDesignerSkillContributor(providerID: id)
                 skillProvider.addProvider(contributor)
                 Self.logger.info("\(Self.t)Contributed \(contributor.allSkills.count) skill(s) via SkillProviding")
+            }
+        }
+
+        // 注册 Agent Rule 贡献者。
+        if let ruleProvider = kernel.resolveProvider((any AgentRuleProviding).self) {
+            if !ruleProvider.isProviderRegistered(providerID: id) {
+                let contributor = ResumeDesignerRuleContributor(providerID: id)
+                ruleProvider.addProvider(contributor)
+                Self.logger.info("\(Self.t)Contributed \(contributor.allRules.count) rule(s) via AgentRuleProviding")
             }
         }
 
@@ -223,6 +233,7 @@ public final class ResumeDesignerPlugin: SuperPlugin, SuperLog {
         if let skillProvider = kernel.resolveProvider((any SkillProviding).self) {
             skillProvider.removeProvider(providerID: id)
         }
+        kernel.resolveProvider((any AgentRuleProviding).self)?.removeProvider(providerID: id)
 
         kernel.resolveProvider((any RailViewProviding).self)?
             .removeTabs(ids: [Self.railTabID])
