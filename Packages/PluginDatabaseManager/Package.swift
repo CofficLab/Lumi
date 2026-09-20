@@ -15,8 +15,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../EditorContracts"),
-        .package(path: "../EditorService"),
+        .package(path: "../ProviderEditor"),
+        .package(path: "../PluginCodeEditorHost"),
         .package(path: "../KernelCore"),
         .package(path: "../KitAgentTool"),
         .package(path: "../ProviderActivityBar"),
@@ -43,8 +43,7 @@ let package = Package(
         .target(
             name: "DatabaseManagerPlugin",
             dependencies: [
-                .product(name: "EditorContracts", package: "EditorContracts"),
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "KitAgentTool", package: "KitAgentTool"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
@@ -86,7 +85,8 @@ let package = Package(
             name: "DatabaseManagerPluginTests",
             dependencies: [
                 "DatabaseManagerPlugin",
-                .product(name: "EditorService", package: "EditorService"),
+                .product(name: "ProviderEditor", package: "ProviderEditor"),
+                .product(name: "PluginCodeEditorHost", package: "PluginCodeEditorHost"),
                 .product(name: "KernelCore", package: "KernelCore"),
                 .product(name: "ProviderActivityBar", package: "ProviderActivityBar"),
                 .product(name: "ProviderChatSection", package: "ProviderChatSection"),

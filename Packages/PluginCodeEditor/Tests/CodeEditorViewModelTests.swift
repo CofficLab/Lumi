@@ -1,6 +1,8 @@
-import EditorService
 import Foundation
+import KernelCore
 import PluginCodeEditor
+import ProviderEditor
+import PluginCodeEditorHost
 import Testing
 
 @MainActor
@@ -12,15 +14,20 @@ struct CodeEditorViewModelTests {
         try "let value = 1\n".write(to: file, atomically: true, encoding: .utf8)
         defer { try? FileManager.default.removeItem(at: file) }
 
-        let editor = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
-        let viewModel = CodeEditorViewModel(editor: editor)
+        let kernel = KernelCoreContainer()
+        try kernel.start(plugins: [CodeEditorHostSuperPlugin()])
+        defer { try? kernel.stop() }
+        let provider = try #require(kernel.resolveProvider(EditorProviding.self))
+        let viewModel = CodeEditorViewModel(editor: provider)
 
         viewModel.updateCurrentFile(file)
-        await waitForFileLoad(editor)
+        await waitForDocument(provider, fileURL: file)
 
         #expect(viewModel.currentFileURL == file.standardizedFileURL)
-        #expect(editor.files.currentFileURL == file.standardizedFileURL)
-        #expect(editor.files.content?.string == "let value = 1\n")
+        #expect(provider.documents.activeDocument?.uri == file.standardizedFileURL)
+        let document = try #require(provider.documents.activeDocument)
+        let snapshot = try await provider.documents.snapshot(documentID: document.id)
+        #expect(snapshot.text == "let value = 1\n")
     }
 
     @Test("clearing the current project file clears the editor")
@@ -30,20 +37,25 @@ struct CodeEditorViewModelTests {
         try "let value = 1\n".write(to: file, atomically: true, encoding: .utf8)
         defer { try? FileManager.default.removeItem(at: file) }
 
-        let editor = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
-        let viewModel = CodeEditorViewModel(editor: editor)
+        let kernel = KernelCoreContainer()
+        try kernel.start(plugins: [CodeEditorHostSuperPlugin()])
+        defer { try? kernel.stop() }
+        let provider = try #require(kernel.resolveProvider(EditorProviding.self))
+        let viewModel = CodeEditorViewModel(editor: provider)
 
         viewModel.updateCurrentFile(file)
-        await waitForFileLoad(editor)
+        await waitForDocument(provider, fileURL: file)
         viewModel.updateCurrentFile(nil)
+        for _ in 0..<100 where provider.documents.activeDocument != nil {
+            try? await Task.sleep(for: .milliseconds(10))
+        }
 
         #expect(viewModel.currentFileURL == nil)
-        #expect(editor.files.currentFileURL == nil)
-        #expect(editor.files.content == nil)
+        #expect(provider.documents.activeDocument == nil)
     }
 
-    private func waitForFileLoad(_ editor: EditorService) async {
-        for _ in 0..<100 where editor.state.isFileLoadInProgress {
+    private func waitForDocument(_ editor: any EditorProviding, fileURL: URL) async {
+        for _ in 0..<100 where editor.documents.activeDocument?.uri != fileURL.standardizedFileURL {
             try? await Task.sleep(for: .milliseconds(10))
         }
     }

@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KernelCore"),
-        .package(path: "../EditorContracts"),
+        .package(path: "../ProviderEditor"),
         .package(path: "../KitLocalization"),
         .package(url: "https://github.com/CofficLab/LumiUI.git", from: "1.0.1"),
         .package(path: "../ProviderProject"),
@@ -30,7 +30,7 @@ let package = Package(
             name: "QuickFileSearchPlugin",
             dependencies: [
                 .product(name: "KernelCore", package: "KernelCore"),
-                .product(name: "EditorContracts", package: "EditorContracts"),
+                .product(name: "ProviderEditor", package: "ProviderEditor"),
                 .product(name: "KitLocalization", package: "KitLocalization"),
                 .product(name: "LumiUI", package: "LumiUI"),
                 .product(name: "ProviderProject", package: "ProviderProject"),
@@ -48,6 +48,7 @@ let package = Package(
             name: "QuickFileSearchPluginTests",
             dependencies: [
                 "QuickFileSearchPlugin",
+                .product(name: "ProviderEditor", package: "ProviderEditor"),
             ],
             path: "Tests"
         )

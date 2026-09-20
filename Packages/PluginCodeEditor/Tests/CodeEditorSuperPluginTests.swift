@@ -1,6 +1,5 @@
 import Combine
-import EditorContracts
-import EditorService
+import ProviderEditor
 import Foundation
 import KernelCore
 import PluginCodeEditorHost
@@ -22,7 +21,8 @@ struct CodeEditorSuperPluginTests {
         let plugin = CodeEditorSuperPlugin()
         #expect(plugin.metadata.policy == .disabledByDefault)
         #expect(plugin.dependencies == [
-            "com.coffic.lumi.plugin.editor-host"
+            "com.coffic.lumi.plugin.editor-host",
+            "com.coffic.lumi.plugin.project-file-tree",
         ])
     }
 
@@ -51,7 +51,11 @@ struct CodeEditorSuperPluginTests {
         try kernel.registerProvider((any ProjectProviding).self, project)
         try kernel.registerProvider((any RootViewProviding).self, rootView)
         let workspace = CodeEditorSuperPlugin()
-        try kernel.start(plugins: [CodeEditorHostSuperPlugin(), workspace])
+        try kernel.start(plugins: [
+            CodeEditorHostSuperPlugin(),
+            ProjectFileTreeDependencyPlugin(),
+            workspace,
+        ])
         let control = DefaultPluginControlling(kernel: kernel)
 
         #expect(docs.aboutEntries.map(\.id) == [workspace.id])
@@ -68,11 +72,13 @@ struct CodeEditorSuperPluginTests {
         try "let value = 1\n".write(to: file, atomically: true, encoding: .utf8)
         defer { try? FileManager.default.removeItem(at: file) }
         project.updateCurrentFile(file)
-        await waitForFileLoad(editor: try #require(kernel.resolveProvider(EditorService.self)))
+        let editor = try #require(kernel.resolveProvider(EditorProviding.self))
+        await waitForFileLoad(editor: editor, fileURL: file)
 
-        let editor = try #require(kernel.resolveProvider(EditorService.self))
-        #expect(editor.files.currentFileURL == file.standardizedFileURL)
-        #expect(editor.files.content?.string == "let value = 1\n")
+        #expect(editor.documents.activeDocument?.uri == file.standardizedFileURL)
+        let document = try #require(editor.documents.activeDocument)
+        let snapshot = try await editor.documents.snapshot(documentID: document.id)
+        #expect(snapshot.text == "let value = 1\n")
 
         #expect(await control.disablePlugin(id: workspace.id))
         #expect(activity.items.allSatisfy { $0.id != CodeEditorSuperPlugin.activityItemID })
@@ -83,7 +89,7 @@ struct CodeEditorSuperPluginTests {
         #expect(activity.items.filter { $0.id == CodeEditorSuperPlugin.activityItemID }.count == 1)
     }
 
-    @Test("同步 ThemeProviding 主题到 EditorService")
+    @Test("同步 ThemeProviding 主题到编辑器 Host 契约")
     func themeChangesSyncToEditor() throws {
         let storageDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("CodeEditorThemeObserver-\(UUID().uuidString)", isDirectory: true)
@@ -93,23 +99,22 @@ struct CodeEditorSuperPluginTests {
             storageDirectory: storageDirectory,
             builtinThemes: [BuiltinThemes.dark, BuiltinThemes.light]
         )
-        let editor = EditorService(editorExtensionRegistry: EditorExtensionRegistry())
+        let kernel = KernelCoreContainer()
+        try kernel.start(plugins: [CodeEditorHostSuperPlugin()])
+        defer { try? kernel.stop() }
+        let editor = try #require(kernel.resolveProvider(EditorProviding.self))
         let observer = CodeEditorThemeObserver(theme: theme, editor: editor)
         observer.start()
 
         let darkID = CodeEditorThemeAdapter.editorThemeID(for: BuiltinThemes.dark, colorScheme: .dark)
-        #expect(editor.theme.currentThemeId == darkID)
-        #expect(editor.editorExtensions.theme(for: darkID) != nil)
+        #expect(editor.themes.activeThemeID == darkID)
 
         try theme.selectTheme(id: BuiltinThemes.light.id)
         let lightID = CodeEditorThemeAdapter.editorThemeID(for: BuiltinThemes.light, colorScheme: .light)
-        #expect(editor.theme.currentThemeId == lightID)
-        #expect(editor.editorExtensions.theme(for: lightID) != nil)
-        #expect(editor.editorExtensions.theme(for: darkID) != nil)
+        #expect(editor.themes.activeThemeID == lightID)
 
         observer.cancel()
-        #expect(editor.theme.currentThemeId == "xcode-dark")
-        #expect(editor.editorExtensions.theme(for: lightID) == nil)
+        #expect(editor.themes.activeThemeID == "xcode-dark")
     }
 
     @Test("主题语义色板可转换为编辑器语法色板")
@@ -122,8 +127,8 @@ struct CodeEditorSuperPluginTests {
         #expect(palette.comments.colorHex == BuiltinThemes.light.palette.textSecondary.light)
     }
 
-    private func waitForFileLoad(editor: EditorService) async {
-        for _ in 0..<100 where editor.state.isFileLoadInProgress {
+    private func waitForFileLoad(editor: any EditorProviding, fileURL: URL) async {
+        for _ in 0..<100 where editor.documents.activeDocument?.uri != fileURL.standardizedFileURL {
             try? await Task.sleep(for: .milliseconds(10))
         }
     }
@@ -141,4 +146,17 @@ private final class TestContentProvider: ContentViewProviding {
     }
 
     func makeContentView() -> AnyView { AnyView(EmptyView()) }
+}
+
+@MainActor
+private final class ProjectFileTreeDependencyPlugin: SuperPlugin {
+    let id = "com.coffic.lumi.plugin.project-file-tree"
+    let order = 1
+    let dependencies: [String] = []
+    let metadata = PluginMetadata(
+        id: "com.coffic.lumi.plugin.project-file-tree",
+        name: "Project File Tree Test Dependency",
+        category: .project,
+        policy: .required
+    )
 }

@@ -1,1 +1,1 @@
-@_exported import EditorContracts
+@_exported import ProviderEditor

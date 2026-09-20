@@ -1,6 +1,7 @@
 import DatabaseManagerPlugin
-import EditorService
 import KernelCore
+import ProviderEditor
+import PluginCodeEditorHost
 import ProviderActivityBar
 import ProviderChatSection
 import ProviderContentView
@@ -14,7 +15,7 @@ import Testing
 @MainActor
 struct DatabaseManagerV2PluginTests {
     @Test("V2 plugin restores workspace, SQL grammar, and SQLite external-file routing")
-    func restoresDatabaseWorkspace() throws {
+    func restoresDatabaseWorkspace() async throws {
         let kernel = KernelCoreContainer()
         let content = DefaultContentViewProviding()
         let activityBar = DefaultActivityBarProviding()
@@ -31,10 +32,28 @@ struct DatabaseManagerV2PluginTests {
         try kernel.registerProvider((any ExternalFileOpening).self, externalFiles)
         try kernel.registerProvider((any ToolbarProviding).self, DefaultToolbarProviding())
         try kernel.registerProvider((any ToolManagerProviding).self, tools)
-        try kernel.registerProvider(EditorService.self, EditorService(editorExtensionRegistry: EditorExtensionRegistry()))
+        let editorHost = CodeEditorHostSuperPlugin()
+        try editorHost.onBoot(kernel: kernel)
+        let editor = try #require(kernel.resolveProvider(EditorProviding.self))
 
         let plugin = DatabaseManagerSuperPlugin()
         try plugin.onBoot(kernel: kernel)
+
+        let sqlDocument = EditorDocumentSummary(
+            id: .makeUnique(),
+            uri: URL(fileURLWithPath: "/tmp/query.sql"),
+            languageID: "sql",
+            revision: 0,
+            isDirty: false,
+            isReadOnly: false,
+            largeFileMode: .normal
+        )
+        #expect(editor.extensions.availability(for: .syntax, document: sqlDocument).isAvailable)
+
+        try await plugin.onDisable(kernel: kernel)
+        #expect(editor.extensions.availability(for: .syntax, document: sqlDocument).state == .noProvider)
+        try await plugin.onEnable(kernel: kernel)
+        #expect(editor.extensions.availability(for: .syntax, document: sqlDocument).isAvailable)
 
         #expect(externalFiles.open(URL(fileURLWithPath: "/tmp/lumi-v2.sqlite")))
         #expect(!externalFiles.open(URL(fileURLWithPath: "/tmp/lumi-v2.txt")))
@@ -49,6 +68,8 @@ struct DatabaseManagerV2PluginTests {
         #expect(!chat.isVisible)
         #expect(rootView.isContentHeaderViewHidden)
         try plugin.onShutdown(kernel: kernel)
+        #expect(editor.extensions.availability(for: .syntax, document: sqlDocument).state == .noProvider)
+        try editorHost.onShutdown(kernel: kernel)
         #expect(chat.isVisible)
         #expect(railView.tabs.isEmpty)
         #expect(railView.visibleTabID == nil)
