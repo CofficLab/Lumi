@@ -16,6 +16,7 @@ import ProviderRailView
 import ProviderRootView
 import ProviderSettingView
 import ProviderSkill
+import ProviderAgentRules
 import ProviderStorage
 import ProviderToast
 import ProviderToolbar
@@ -249,6 +250,10 @@ public struct DefaultProviderFactory: ProviderFactory {
         DefaultSkillProvider()
     }
 
+    public func makeAgentRuleProvider() -> any AgentRuleProviding {
+        DefaultAgentRuleProvider()
+    }
+
     /// 产出 `DeveloperModeProviding` 实现（默认内存实现）。
     public func makeDeveloperModeProvider() -> any DeveloperModeProviding {
         DefaultDeveloperModeProviding()
@@ -396,6 +401,8 @@ public struct DefaultProviderFactory: ProviderFactory {
         // Skill 管理：插件技能贡献注册表。必须在插件启动前注册，
         // 使各插件在 onBoot 中能解析到 SkillProviding 并注入技能。
         try kernel.registerProvider((any SkillProviding).self, makeSkillProvider())
+        // Agent Rule 管理：插件规则贡献注册表。必须在插件启动前注册。
+        try kernel.registerProvider((any AgentRuleProviding).self, makeAgentRuleProvider())
 
         // 开发者模式：运行时开关。必须在插件启动前注册，
         // 使 DeveloperModePlugin 在 onBoot 中能解析到。
