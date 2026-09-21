@@ -77,6 +77,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin, PluginDataMigrating, Sup
                 toolbar?.setVisibleCategories([.global, .project])
                 root?.setContentHeaderViewHidden(true)
                 rail?.setVisibleTabID(Self.railTabID)
+                root?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
                 rail?.activateWidthProfile(
                     ownerID: pluginID,
                     recommended: RailViewWidth(minWidth: 260, idealWidth: 320, maxWidth: 460),
@@ -92,6 +93,7 @@ public final class StoryWriterSuperPlugin: SuperPlugin, PluginDataMigrating, Sup
                 toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                 root?.setContentHeaderViewHidden(false)
                 rail?.setVisibleCategories(Set(RailViewCategory.allCases))
+                root?.setRailViewVisible(rail?.hasVisibleTabs ?? false)
                 chat?.deactivateWidthProfile(ownerID: pluginID)
                 rail?.deactivateWidthProfile(ownerID: pluginID)
             }
@@ -115,7 +117,9 @@ public final class StoryWriterSuperPlugin: SuperPlugin, PluginDataMigrating, Sup
             kernel.resolveProvider((any ChatSectionProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
-            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
         kernel.resolveProvider((any DocsViewProviding).self)?.removeEntries(id: id)
         let tools = kernel.resolveProvider((any ToolManagerProviding).self)

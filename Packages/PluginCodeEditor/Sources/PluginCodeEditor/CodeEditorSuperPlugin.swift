@@ -166,6 +166,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                     rootView?.setContentFooterViewHidden(false)
                     // Code Editor 激活时只显示文件树，避免带出其它项目类 RailView。
                     railView?.setVisibleCategories([.fileTree])
+                    rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         railView?.activateWidthProfile(
                             ownerID: pluginID,
                             recommended: RailViewWidth(minWidth: 240, idealWidth: 300, maxWidth: 440),
@@ -187,6 +188,8 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
                     toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                     rootView?.setContentHeaderViewHidden(true)
                     rootView?.setContentFooterViewHidden(true)
+                    railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+                    rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                     chat?.setActiveContext(nil)
                     chat?.deactivateWidthProfile(ownerID: pluginID)
                     railView?.deactivateWidthProfile(ownerID: pluginID)
@@ -211,6 +214,7 @@ public final class CodeEditorSuperPlugin: SuperPlugin, SuperLog {
             rootView?.setContentHeaderViewHidden(true)
             rootView?.setContentFooterViewHidden(true)
             railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+            rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
         projectObserver?.cancel()
         projectObserver = nil

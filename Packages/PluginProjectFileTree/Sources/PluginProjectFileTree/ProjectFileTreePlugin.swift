@@ -6,6 +6,7 @@ import os
 import ProviderConversationInput
 import ProviderProject
 import ProviderRailView
+import ProviderRootView
 import ProviderStorage
 import ProviderToast
 import SwiftUI
@@ -59,6 +60,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, Supe
     private var packageDependencyStore: PackageDependencyStore?
     private var projectObserver: ProjectProvidingObserver?
     private weak var railView: (any RailViewProviding)?
+    private weak var rootView: (any RootViewProviding)?
 
     public init() {}
 
@@ -126,6 +128,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, Supe
             return
         }
         self.railView = railView
+        rootView = kernel.resolveProvider((any RootViewProviding).self)
 
         updateExplorerTabVisibility(
             for: project?.currentProject,
@@ -144,6 +147,7 @@ public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, Supe
         fileTreeObserver = nil
         packageDependencyStore = nil
         railView?.removeTabs(ids: [Self.railTabID])
+        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         railView = nil
     }
 
@@ -175,5 +179,6 @@ public final class ProjectFileTreePlugin: SuperPlugin, PluginDataMigrating, Supe
                 }
             ])
         }
+        rootView?.setRailViewVisible(railView.hasVisibleTabs)
     }
 }

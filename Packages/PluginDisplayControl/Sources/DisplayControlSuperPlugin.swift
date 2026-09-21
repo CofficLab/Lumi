@@ -66,6 +66,7 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         rootView?.setContentHeaderViewHidden(false)
                     }
                 },
@@ -79,7 +80,13 @@ public final class DisplayControlSuperPlugin: SuperPlugin, SuperLog {
         observer?.cancel()
         observer = nil
         viewModel = nil
-        kernel.resolveProvider((any ActivityBarProviding).self)?.removeItems(ids: ["\(id).entry"])
+        let activityBar = kernel.resolveProvider((any ActivityBarProviding).self)
+        let wasActive = activityBar?.activeItemID == "\(id).entry"
+        activityBar?.removeItems(ids: ["\(id).entry"])
+        if wasActive {
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
+        }
     }
 
     public func onUnregister(kernel: KernelCoreContainer) throws {

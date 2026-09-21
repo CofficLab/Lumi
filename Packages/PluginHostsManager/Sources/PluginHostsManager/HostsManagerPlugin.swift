@@ -80,6 +80,7 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
                         toolbar?.setVisibleCategories(Set(ToolbarItemCategory.allCases))
                         chat?.setVisible(true)
                         rootView?.setRailView(railView?.makeRailView())
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         rootView?.setContentHeaderViewHidden(false)
                     }
                 },
@@ -98,6 +99,7 @@ public final class HostsManagerPlugin: SuperPlugin, SuperLog {
             let railView = kernel.resolveProvider((any RailViewProviding).self)
             let rootView = kernel.resolveProvider((any RootViewProviding).self)
             rootView?.setRailView(railView?.makeRailView())
+            rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
             rootView?.setContentHeaderViewHidden(false)
         }
         if activityBar == nil || activityBar?.activeItemID == nil {

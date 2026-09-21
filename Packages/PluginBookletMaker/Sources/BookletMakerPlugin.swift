@@ -140,6 +140,7 @@ public final class BookletMakerPlugin: SuperPlugin, PluginDataMigrating, SuperLo
                         chat?.setVisible(false)
                         railView?.setVisibleCategories([.design])
                         railView?.setVisibleTabID(Self.railTabID)
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         railView?.activateWidthProfile(
                             ownerID: pluginID,
                             recommended: RailViewWidth(minWidth: 260, idealWidth: 300, maxWidth: 420),
@@ -163,6 +164,7 @@ public final class BookletMakerPlugin: SuperPlugin, PluginDataMigrating, SuperLo
                         chat?.setVisible(true)
                         rootView?.setContentHeaderViewHidden(false)
                         railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+                        rootView?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
                         railView?.deactivateWidthProfile(ownerID: pluginID)
                         toolbar?.removeToolbarItems(ids: ["\(self.id).title"])
                     }
@@ -229,7 +231,9 @@ public final class BookletMakerPlugin: SuperPlugin, PluginDataMigrating, SuperLo
             kernel.resolveProvider((any RailViewProviding).self)?.deactivateWidthProfile(ownerID: id)
             kernel.resolveProvider((any ChatSectionProviding).self)?.setVisible(true)
             kernel.resolveProvider((any RootViewProviding).self)?.setContentHeaderViewHidden(false)
-            kernel.resolveProvider((any RailViewProviding).self)?.setVisibleCategories(Set(RailViewCategory.allCases))
+            let railView = kernel.resolveProvider((any RailViewProviding).self)
+            railView?.setVisibleCategories(Set(RailViewCategory.allCases))
+            kernel.resolveProvider((any RootViewProviding).self)?.setRailViewVisible(railView?.hasVisibleTabs ?? false)
         }
         kernel.resolveProvider((any ToolbarProviding).self)?.removeToolbarItems(ids: ["\(id).title"])
         BookletMakerRuntimeBridge.directoryURL = nil
